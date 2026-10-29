@@ -25,7 +25,10 @@ import {
  *   Any UNKNOWN exception with no earlier TRUE one also yields requires_review,
  *   because the exception might apply.
  * - UNKNOWN applicability never yields eligible or ineligible; it yields
- *   requires_review with truth unknown.
+ *   requires_review with truth unknown. That per-rule requires_review is not an
+ *   escalation by itself: screenCrop decides from the rule's declared effect
+ *   whether an unknown rule blocks the verdict (HARD) or is listed as an
+ *   unresolved condition (SOFT).
  */
 export interface Evaluation {
   truth: Truth;
@@ -52,7 +55,10 @@ export class RuleTypeError extends Error {}
 function leafTruth(c: Exclude<Condition, { all: Condition[] } | { any: Condition[] } | { not: Condition }>, ctx: RuleContext): Evaluation {
   if (!(c.field in RULE_FIELD_TYPES)) throw new RuleTypeError(`field not allowlisted: ${c.field}`);
   const v = readField(ctx, c.field);
-  const missing = v === null || v === undefined;
+  // Weather values only count when observed or forecast; scenario/illustrative/derived/unavailable/etc. are not proof.
+  const weatherState = ctx.weather?.evidenceState ?? null;
+  const weatherUnproven = c.field.startsWith('weather.') && weatherState !== 'observed' && weatherState !== 'forecast';
+  const missing = v === null || v === undefined || weatherUnproven;
   if (c.op === 'known') {
     const t = !missing === c.value;
     return { truth: t ? 'true' : 'false', unknownFields: [] };
@@ -114,32 +120,71 @@ function uniq<T>(xs: T[]): T[] {
   return [...new Set(xs)];
 }
 
-/** Scope applicability: region AND season AND irrigation, each three-valued. */
-export function scopeApplies(rule: CropRule, ctx: RuleContext): Evaluation {
-  const region: Evaluation = (() => {
-    if (rule.scope.regionIds.includes(NATIONAL_REGION_ID)) return { truth: 'true', unknownFields: [] };
-    const d = ctx.location?.districtId ?? null;
-    const s = ctx.location?.stateId ?? null;
-    if ((d !== null && rule.scope.regionIds.includes(d)) || (s !== null && rule.scope.regionIds.includes(s))) return { truth: 'true', unknownFields: [] };
-    if (d !== null && s !== null) return { truth: 'false', unknownFields: [] };
+const STATE_ID = /^IN-[A-Z]{2}$/;
+const DISTRICT_ID = /^(IN-[A-Z]{2})-.+$/;
+const T: Evaluation = { truth: 'true', unknownFields: [] };
+const F: Evaluation = { truth: 'false', unknownFields: [] };
+
+/**
+ * Region applicability, three-valued (see NATIONAL_REGION_ID in contracts):
+ * - `IN` matches any location; an id equal to the farm's district or state matches.
+ * - `IN-XX` (state) can only match the state: false when the state is known and differs.
+ * - `IN-XX-name` (district) can only match the district: false when the district is known
+ *   and differs, or when the farm's state is known and is not `IN-XX` (district lists that
+ *   exclude the farm's district therefore do not apply).
+ * - Other ids (agro-region, synthetic) are opaque: false only when district and state are both known.
+ * A district id `IN-XX-name` in the context implies state `IN-XX` when stateId is missing.
+ * Any id true -> true; else any unknown -> unknown; else false.
+ */
+export function regionApplies(regionIds: string[], location: RuleContext['location']): Evaluation {
+  if (regionIds.includes(NATIONAL_REGION_ID)) return T;
+  const d = location?.districtId ?? null;
+  const s = location?.stateId ?? (d !== null ? (DISTRICT_ID.exec(d)?.[1] ?? null) : null);
+  const per = regionIds.map((id): Evaluation => {
+    if (id === d || id === s) return T;
+    if (STATE_ID.test(id)) return s !== null ? F : { truth: 'unknown', unknownFields: ['location.stateId'] };
+    const dm = DISTRICT_ID.exec(id);
+    if (dm) {
+      if (d !== null) return F;
+      if (s !== null && STATE_ID.test(s) && s !== dm[1]) return F;
+      return { truth: 'unknown', unknownFields: s === null ? ['location.districtId', 'location.stateId'] : ['location.districtId'] };
+    }
+    if (d !== null && s !== null) return F;
     const unk: RuleField[] = [];
     if (d === null) unk.push('location.districtId');
     if (s === null) unk.push('location.stateId');
     return { truth: 'unknown', unknownFields: unk };
-  })();
+  });
+  if (per.some((p) => p.truth === 'true')) return T;
+  return combineUnknown(per, 'false');
+}
+
+/** Scope applicability: region AND season AND irrigation, each three-valued. */
+export function scopeApplies(rule: CropRule, ctx: RuleContext): Evaluation {
+  const region = regionApplies(rule.scope.regionIds, ctx.location);
   const season: Evaluation =
     rule.scope.seasons.length === 0
-      ? { truth: 'true', unknownFields: [] }
+      ? T
       : ctx.season == null
         ? { truth: 'unknown', unknownFields: ['season'] }
         : { truth: rule.scope.seasons.includes(ctx.season) ? 'true' : 'false', unknownFields: [] };
   const irr: Evaluation =
     rule.scope.irrigation.length === 0
-      ? { truth: 'true', unknownFields: [] }
+      ? T
       : ctx.irrigation?.category == null
         ? { truth: 'unknown', unknownFields: ['irrigation.category'] }
         : { truth: rule.scope.irrigation.includes(ctx.irrigation.category) ? 'true' : 'false', unknownFields: [] };
   return evaluateParts([region, season, irr]);
+}
+
+/**
+ * Product scoping. Rules are agronomic (crop-wide) unless `scope.productSpecific` is true; only then
+ * does `productId` restrict the rule to that product. With no product requested every rule of the crop applies.
+ */
+export function ruleAppliesToProduct(rule: CropRule, productId: string | null | undefined): boolean {
+  if (productId == null || rule.productId == null) return true;
+  if (rule.scope.productSpecific !== true) return true;
+  return rule.productId === productId;
 }
 
 /** A rule may execute only if approved, or synthetic in synthetic mode. */
@@ -197,32 +242,125 @@ export function evaluateRule(rule: CropRule, ctx: RuleContext, opts: { mode: Mod
   return { ...base, truth: 'true', effect: rule.effect.type, reasons: [{ reasonCode: rule.effect.reasonCode, source: 'rule' }], unknownFields: [], appliedExceptionId: null };
 }
 
+/** HARD effects decide eligibility; SOFT effects annotate it (requires_review only escalates when true). */
+export const HARD_EFFECTS = ['eligible', 'ineligible'] as const;
+const isHard = (e: string) => e === 'eligible' || e === 'ineligible';
+
+/** An applicable input that is not known and could change the screening once supplied. */
+export interface UnresolvedCondition {
+  field: RuleField;
+  ruleId: string;
+  /** Set when the unknown field belongs to an exception rather than the rule's own scope/condition. */
+  exceptionId: string | null;
+  /** Effect produced if the condition (rule, or the named exception) turns out true. */
+  effectIfTrue: RuleEvaluationResult['effect'];
+  evidenceIds: string[];
+}
+
+export type VerdictBasis =
+  | 'hard_ineligible' // a HARD ineligible rule holds
+  | 'hard_rule_unresolved' // a HARD rule (or an exception with a HARD effect) is unknown and could change the verdict
+  | 'review_rule' // a requires_review rule holds (explicit, source-driven review)
+  | 'hard_eligible' // at least one HARD eligible rule holds
+  | 'no_applicable_hard_rule'; // nothing decides eligibility: unknown, never eligible by default
+
 export interface CropScreening {
   cropId: string;
+  productId: string | null;
   outcome: ScreeningOutcome;
+  verdictBasis: VerdictBasis;
   results: RuleEvaluationResult[];
+  /** Reasons of rules whose truth is true and effect is caution / prefer / requires_review. */
   cautions: RuleReason[];
   preferences: RuleReason[];
+  reviews: RuleReason[];
   unknownFields: RuleField[];
+  unresolvedConditions: UnresolvedCondition[];
+  /** Counts of applicable (not not_applicable) rules by resolution; a count, not a probability. */
+  confidenceNote: { resolvedRules: number; unresolvedRules: number; unresolvedFields: number; text: string };
 }
 
 /**
- * Combine a crop's rule results:
- * - any definitive ineligible -> ineligible (agronomic exclusion is never overridden by price)
- * - else any requires_review -> requires_review
- * - else at least one definitive eligible -> eligible
- * - else (no applicable eligibility rule) -> unknown, never eligible by default.
+ * Effects a rule could still produce given the context, following exception precedence: a true exception
+ * stops the walk (later exceptions and the rule's own effect are unreachable), unknown ones stay possible.
  */
-export function screenCrop(cropId: string, rules: CropRule[], ctx: RuleContext, opts: { mode: Mode }): CropScreening {
-  const results = rules.filter((r) => r.cropId === cropId).map((r) => evaluateRule(r, ctx, opts));
-  const has = (e: string) => results.some((r) => r.effect === e);
-  const outcome: ScreeningOutcome = has('ineligible') ? 'ineligible' : has('requires_review') ? 'requires_review' : has('eligible') ? 'eligible' : 'unknown';
+function reachable(rule: CropRule, ctx: RuleContext): { effects: string[]; ownEffect: RuleEvaluationResult['effect']; exceptionUnknowns: UnresolvedCondition[] } {
+  const effects: string[] = [];
+  const exceptionUnknowns: UnresolvedCondition[] = [];
+  for (const ex of rule.exceptions) {
+    const r = evaluateCondition(ex.when, ctx);
+    if (r.truth === 'false') continue;
+    effects.push(ex.effect.type);
+    if (r.truth === 'true') {
+      // With no unresolved earlier exception, the rule (if it applies) produces this exception's effect.
+      return { effects, ownEffect: exceptionUnknowns.length === 0 ? ex.effect.type : rule.effect.type, exceptionUnknowns };
+    }
+    for (const field of r.unknownFields) exceptionUnknowns.push({ field, ruleId: rule.id, exceptionId: ex.id, effectIfTrue: ex.effect.type, evidenceIds: ex.evidenceIds });
+  }
+  effects.push(rule.effect.type);
+  return { effects, ownEffect: rule.effect.type, exceptionUnknowns };
+}
+
+function unresolvedFor(rule: CropRule, ctx: RuleContext): UnresolvedCondition[] {
+  const own = and(scopeApplies(rule, ctx), evaluateCondition(rule.when, ctx));
+  const { ownEffect, exceptionUnknowns } = reachable(rule, ctx);
+  return [...own.unknownFields.map((field) => ({ field, ruleId: rule.id, exceptionId: null, effectIfTrue: ownEffect, evidenceIds: rule.evidenceIds })), ...exceptionUnknowns];
+}
+
+/**
+ * Combine a crop's rule results for one product and context (HARD = eligible | ineligible; SOFT = prefer | caution | requires_review):
+ * 1. any HARD ineligible holds -> ineligible (agronomic exclusion is never overridden by price)
+ * 2. else a rule that could yield ineligible is unknown, or no HARD eligible holds while a rule that could yield eligible
+ *    is unknown -> requires_review (eligibility itself is unresolved). An unknown rule whose only possible effect is
+ *    eligible is redundant once another HARD eligible holds.
+ * 3. else any requires_review rule holds -> requires_review (explicit, source-driven review)
+ * 4. else at least one HARD eligible holds -> eligible
+ * 5. else -> unknown (never eligible by default)
+ * Unknown SOFT rules never change the verdict; they are listed in `unresolvedConditions`. An unknown input
+ * therefore cannot become a positive recommendation (step 4 needs a true HARD eligible rule) nor a definitive
+ * exclusion (step 1 needs truth true).
+ */
+export function screenCrop(cropId: string, rules: CropRule[], ctx: RuleContext, opts: { mode: Mode; productId?: string | null }): CropScreening {
+  const productId = opts.productId ?? null;
+  const own = rules.filter((r) => r.cropId === cropId && ruleAppliesToProduct(r, productId));
+  const evaluated = own.map((rule) => ({ rule, res: evaluateRule(rule, ctx, opts) }));
+  const results = evaluated.map((e) => e.res);
+  const holds = (e: string) => results.some((r) => r.truth === 'true' && r.effect === e);
+  const unknownRules = evaluated.filter((e) => e.res.truth === 'unknown' && e.res.effect !== 'not_applicable');
+  const eligibleHolds = holds('eligible');
+  const hardUnresolved = unknownRules.some(({ rule }) => {
+    const pe = reachable(rule, ctx).effects;
+    if (pe.includes('ineligible')) return true;
+    return !eligibleHolds && pe.some(isHard);
+  });
+  let outcome: ScreeningOutcome;
+  let verdictBasis: VerdictBasis;
+  if (holds('ineligible')) [outcome, verdictBasis] = ['ineligible', 'hard_ineligible'];
+  else if (hardUnresolved) [outcome, verdictBasis] = ['requires_review', 'hard_rule_unresolved'];
+  else if (holds('requires_review')) [outcome, verdictBasis] = ['requires_review', 'review_rule'];
+  else if (eligibleHolds) [outcome, verdictBasis] = ['eligible', 'hard_eligible'];
+  else [outcome, verdictBasis] = ['unknown', 'no_applicable_hard_rule'];
+
+  const unresolvedConditions = unknownRules.flatMap(({ rule }) => unresolvedFor(rule, ctx));
+  const resolved = results.filter((r) => r.truth === 'true').length;
+  const unresolvedFields = uniq(unresolvedConditions.map((u) => u.field)).length;
+  const byEffect = (e: string) => results.filter((r) => r.truth === 'true' && r.effect === e).flatMap((r) => r.reasons);
   return {
     cropId,
+    productId,
     outcome,
+    verdictBasis,
     results,
-    cautions: results.filter((r) => r.effect === 'caution').flatMap((r) => r.reasons),
-    preferences: results.filter((r) => r.effect === 'prefer').flatMap((r) => r.reasons),
+    cautions: byEffect('caution'),
+    preferences: byEffect('prefer'),
+    reviews: byEffect('requires_review'),
     unknownFields: uniq(results.flatMap((r) => r.unknownFields)),
+    unresolvedConditions,
+    confidenceNote: {
+      resolvedRules: resolved,
+      unresolvedRules: unknownRules.length,
+      unresolvedFields,
+      text: `${resolved} applicable rule(s) resolved, ${unknownRules.length} unresolved on ${unresolvedFields} unknown input(s).`,
+    },
   };
 }

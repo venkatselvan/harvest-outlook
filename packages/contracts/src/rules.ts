@@ -160,6 +160,13 @@ export type ReviewStatus = z.infer<typeof ReviewStatus>;
  * National scope token. A region id equal to this value matches any location,
  * including an unknown one. Otherwise a region id matches the context's
  * districtId or stateId.
+ *
+ * Hierarchical id convention used by the screening engine: `IN-XX` (two
+ * upper-case letters) is a state; `IN-XX-<name>` is a district of state `IN-XX`.
+ * A state id can only match the context's stateId, and a district id cannot
+ * match a farm known to be in another state, so these are decidable with an
+ * unknown district. Any other id (agro-region, synthetic) is opaque: it can
+ * only be ruled out when both districtId and stateId are known.
  */
 export const NATIONAL_REGION_ID = 'IN' as const;
 
@@ -170,6 +177,14 @@ export const RuleScope = z
     seasons: z.array(Season),
     /** Empty array = not restricted by irrigation category. */
     irrigation: z.array(IrrigationCategory),
+    /**
+     * Product scoping. Absent/false: the rule is agronomic and applies to every
+     * market product of the crop, even when `productId` names one product (the
+     * T05b ginger rules name `ginger.fresh` but describe cultivation). Only when
+     * true does `productId` restrict the rule to that product (market or
+     * product-specific rules).
+     */
+    productSpecific: z.boolean().optional(),
   })
   .strict();
 export type RuleScope = z.infer<typeof RuleScope>;
