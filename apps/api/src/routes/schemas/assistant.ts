@@ -40,6 +40,25 @@ export const turnOut = z.object({
   approvedTextHash: z.string().nullable(),
   limitations: z.array(z.string()),
   incomplete: z.object({ reasons: z.array(z.string()) }).nullable(),
+  /**
+   * What the output gate withheld (F8), so the client can say "withheld" honestly: removed blocks, claims,
+   * limitations, clarifications/options with reason codes (no withheld text); evidence ids that are only
+   * machine-grounded; and blocks whose text was replaced by a server template. Null when no gate ran.
+   */
+  gateReport: z
+    .object({
+      removed: z.array(
+        z.object({
+          field: z.enum(["answerBlock", "claimEvidenceRef", "limitation", "clarification", "clarificationOption"]),
+          id: z.string().nullable(),
+          index: z.number().int(),
+          codes: z.array(z.string()),
+        }),
+      ),
+      groundedEvidenceIds: z.array(z.string()),
+      templateSubstituted: z.array(z.object({ blockId: z.string(), template: z.string() })),
+    })
+    .nullable(),
   costEstimate: z.object({ estimatedUsd: z.number(), settledUsd: z.number(), providerCalls: z.number(), billable: z.boolean(), basis: z.literal("estimated_not_billed") }),
 });
 export type TurnOut = z.infer<typeof turnOut>;

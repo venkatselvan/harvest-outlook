@@ -21,14 +21,20 @@ const ctx = (over: Partial<GateContext> = {}): GateContext => ({
   ...over,
 });
 
-const tr = (id: string, result: unknown, over: Partial<StoredToolResult> = {}): StoredToolResult => ({ id, ownerId: OWNER, agentRunId: RUN, runMode: "synthetic", toolName: "calculate_scenarios", status: "ok", result, ...over });
+// F8: units come from the stored tool output. Legacy flat fixtures are wrapped as {value, unit} records
+// (the unit is fixed here, never taken from the ref) and refs to those keys point at ".../value".
+const FIXTURE_UNITS: Record<string, string> = { netInr: "INR", areaAcre: "acre", areaHa: "ha", yieldQuintal: "quintal", rainMm: "mm", rain: "mm", price: "INR/quintal", yieldQ: "quintal", v: "mm" };
+const withUnits = (r: Record<string, unknown>): Record<string, unknown> =>
+  Object.fromEntries(Object.entries(r).map(([k, v]) => (k in FIXTURE_UNITS && (typeof v === "number" || typeof v === "string") ? [k, { kind: "quantity", value: v, unit: FIXTURE_UNITS[k] }] : [k, v])));
+const unitPointer = (p: string) => (/^\/[A-Za-z]+$/.test(p) && p.slice(1) in FIXTURE_UNITS ? `${p}/value` : p);
+const tr = (id: string, result: unknown, over: Partial<StoredToolResult> = {}): StoredToolResult => ({ id, ownerId: OWNER, agentRunId: RUN, runMode: "synthetic", toolName: "calculate_scenarios", status: "ok", result: withUnits(result as Record<string, unknown>), ...over });
 const ev = (id: string, over: Partial<EvidenceFact> = {}): EvidenceFact => ({ id, mode: "synthetic", validationStatus: "validated", geographyLevel: "district", geographyIds: ["IN-KA-HAS"], cropIds: [GINGER_ID], effectiveAvailableAt: "2026-01-01T00:00:00.000Z", availabilityBasis: "verified_publication", ...over });
 const facts = (t: StoredToolResult[] = [], e: EvidenceFact[] = []): GateFacts => ({ toolResults: new Map(t.map((x) => [x.id, x])), evidence: new Map(e.map((x) => [x.id, x])) });
 
 const ref = (id: string, toolResultId: string, jsonPointer: string, unit: string, sourceUnit = unit, digits = 0, mode: "decimals" | "significant" = "decimals") => ({
   id,
   toolResultId,
-  jsonPointer,
+  jsonPointer: unitPointer(jsonPointer),
   presentation: { unit, sourceUnit, rounding: { mode, digits }, intervalLabel: "none" },
 });
 const out = (over: Partial<StructuredAssistantOutput> = {}): unknown => ({
@@ -281,9 +287,9 @@ describe("gate: database lookups", () => {
   afterAll(async () => pool.end());
 
   it("approves against stored rows and blocks foreign, unvalidated and missing ones", async () => {
-    const t = await storeToolResult(pool, owner, run, "calculate_scenarios", { netInr: "1250" });
+    const t = await storeToolResult(pool, owner, run, "calculate_scenarios", withUnits({ netInr: "1250" }));
     const foreignRun = await seedRun(pool, other, "synthetic");
-    const foreign = await storeToolResult(pool, other, foreignRun, "calculate_scenarios", { netInr: "1250" });
+    const foreign = await storeToolResult(pool, other, foreignRun, "calculate_scenarios", withUnits({ netInr: "1250" }));
     const good = await seedEvidence(pool);
     const pending = await seedEvidence(pool, { validation: "pending" });
     const wrongDistrict = await seedEvidence(pool, { geographyIds: ["IN-KA-MND"] });
@@ -304,7 +310,7 @@ describe("gate: database lookups", () => {
 
   it("a tool result stored by another run of the same owner is not usable in this run", async () => {
     const otherRun = await seedRun(pool, owner, "synthetic");
-    const t = await storeToolResult(pool, owner, otherRun, "calculate_scenarios", { netInr: "1250" });
+    const t = await storeToolResult(pool, owner, otherRun, "calculate_scenarios", withUnits({ netInr: "1250" }));
     const r = await runOutputGate(pool, out({ answerBlocks: [numBlock("b1", "Net is ₹1,250.", ["n1"])] as never, numericRefs: [ref("n1", t, "/netInr", "INR")] as never }), ctx({ ownerId: owner, agentRunId: run }));
     expect(codes(r)).toContain("tool_result_foreign");
   });

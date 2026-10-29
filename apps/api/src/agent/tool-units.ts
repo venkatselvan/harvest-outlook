@@ -1,0 +1,117 @@
+import { Unit, type ToolName } from "@harvest/contracts";
+
+/**
+ * Server-side source of truth for the unit of a number a numericRef points at (F8, review R3a #2).
+ * The model's `presentation.sourceUnit` is a declaration only: the gate derives the unit here and
+ * rejects a ref whose declaration differs, or whose target has no derivable unit (fail closed).
+ *
+ * Two derivations, in order:
+ * 1. Unit-bearing record: the pointer targets `value`/`amount` (or `value|amount/low|central|high`) of an
+ *    object whose own `unit` field is a contract Unit (ValueRecord quantity/range, AreaValue, typed
+ *    price/yield inputs). A ValueRecord whose `kind` is not quantity/range is refused.
+ * 2. Legacy scalar fields whose unit is fixed by the contract field definition (EconomicsFigures
+ *    `...Inr`, WaterRun `...Mm`, ForecastArtifact quantiles = target.unit 'INR/kg'), listed per tool below.
+ *    `*` matches one pointer segment; `{a|b}` expands alternatives.
+ *
+ * Contract numbers with no Unit-enum equivalent are deliberately absent and therefore refused:
+ * WaterRun.grossLitresPerHa (L/ha), FarmProfile water capacityMmPerWeek (mm/week), soil ph, soil
+ * availableWaterMmPerM (mm/m), interpret_observation uncertainty.value, get_job_status progress,
+ * request_visual_keyframes allowedStageCount, forecast missingness.fractionMissingWeeks, quantile levels.
+ */
+type UnitRule = { pattern: string; unit: Unit | ((result: unknown, segs: string[]) => Unit | null) };
+
+const INR_FIGURES = "{grossRevenueInr|cashProductionCostInr|harvestCostInr|saleAndTransportCostInr|processingCostInr|netCashReturnInr|economicReturnInr}";
+const RUN_MM = "{tawMm|etcMm|effectiveRainMm|effectiveRainFromForecastMm|netIrrigationMm|grossIrrigationMm|deepPercolationMm}";
+
+export const TOOL_UNIT_MAP: Partial<Record<ToolName, UnitRule[]>> = {
+  calculate_scenarios: [
+    { pattern: `/result/scenarios/*/perHa/${INR_FIGURES}`, unit: "INR/ha" },
+    { pattern: `/result/scenarios/*/total/${INR_FIGURES}`, unit: "INR" },
+    { pattern: "/result/scenarios/*/perHa/marketableKgTotal", unit: "kg/ha" },
+    { pattern: "/result/scenarios/*/total/marketableKgTotal", unit: "kg" },
+    { pattern: "/result/scenarios/*/perHa/marketableQuantityKg/*/kg", unit: "kg/ha" },
+    { pattern: "/result/scenarios/*/total/marketableQuantityKg/*/kg", unit: "kg" },
+    { pattern: "/result/scenarios/*/{perHa|total}/breakEvenPriceInrPerKg", unit: "INR/kg" },
+    { pattern: "/result/scenarios/*/{perHa|total}/breakEvenMarketableYieldKgPerHa", unit: "kg/ha" },
+    { pattern: "/result/sensitivity/*/{netCashAtLowInputInrPerHa|netCashAtHighInputInrPerHa}", unit: "INR/ha" },
+  ],
+  calculate_water_balance: [
+    { pattern: `/result/runs/*/${RUN_MM}`, unit: "mm" },
+    { pattern: "/result/runs/*/grossLitresTotal", unit: "L" },
+    { pattern: "/result/runs/*/stressDays", unit: "days" },
+    { pattern: "/result/runs/*/events/*/netMm", unit: "mm" },
+    { pattern: "/result/runs/*/daily/*/{etcMm|effectiveRainMm|irrigationNetMm|depletionEndMm}", unit: "mm" },
+  ],
+  get_market_outlook: [
+    // ForecastArtifact.target.unit is the contract literal 'INR/kg'.
+    { pattern: "/forecasts/*/predictions/*/quantiles/*/value", unit: "INR/kg" },
+    { pattern: "/forecasts/*/horizonDays", unit: "days" },
+  ],
+  get_farm_context: [
+    {
+      pattern: "/farm/budget/value/amountInr",
+      unit: (result) => {
+        const per = (result as { farm?: { budget?: { value?: { per?: unknown } } } })?.farm?.budget?.value?.per;
+        return per === "farm" ? "INR" : per === "ha" ? "INR/ha" : null;
+      },
+    },
+  ],
+};
+
+function expand(pattern: string): string[] {
+  const m = /\{([^}]+)\}/.exec(pattern);
+  if (!m) return [pattern];
+  return m[1]!.split("|").flatMap((alt) => expand(pattern.slice(0, m.index) + alt + pattern.slice(m.index + m[0].length)));
+}
+const COMPILED: Partial<Record<string, { segs: string[]; unit: UnitRule["unit"] }[]>> = Object.fromEntries(
+  Object.entries(TOOL_UNIT_MAP).map(([tool, rules]) => [tool, rules!.flatMap((r) => expand(r.pattern).map((p) => ({ segs: p.slice(1).split("/"), unit: r.unit })))]),
+);
+
+/** All expanded map pointers per tool (for the contract drift test). */
+export function mappedPointers(): Record<string, string[]> {
+  return Object.fromEntries(Object.entries(COMPILED).map(([t, rs]) => [t, rs!.map((r) => `/${r.segs.join("/")}`)]));
+}
+
+const segments = (pointer: string): string[] | null => (pointer.startsWith("/") ? pointer.slice(1).split("/").map((k) => k.replace(/~1/g, "/").replace(/~0/g, "~")) : null);
+
+function walk(doc: unknown, segs: string[]): { found: boolean; value: unknown } {
+  let cur = doc;
+  for (const key of segs) {
+    if (Array.isArray(cur)) {
+      if (!/^(0|[1-9]\d*)$/.test(key) || Number(key) >= cur.length) return { found: false, value: undefined };
+      cur = cur[Number(key)];
+    } else if (typeof cur === "object" && cur !== null && Object.prototype.hasOwnProperty.call(cur, key)) cur = (cur as Record<string, unknown>)[key];
+    else return { found: false, value: undefined };
+  }
+  return { found: true, value: cur };
+}
+
+export type UnitBasis = "unit_record" | "tool_unit_map";
+
+/** The unit of the number at `pointer` in a stored tool result, or null when it cannot be derived. */
+export function unitAtPointer(toolName: string, result: unknown, pointer: string): { unit: Unit; basis: UnitBasis } | null {
+  const segs = segments(pointer);
+  if (!segs || segs.length === 0) return null;
+  const n = segs.length;
+  // 1. unit-bearing record (parent for value/amount; grandparent for value|amount/low|central|high).
+  for (const k of [1, 2]) {
+    if (n < k) continue;
+    const below = segs.slice(n - k);
+    const shapeOk = k === 1 ? ["value", "amount"].includes(below[0]!) : ["value", "amount"].includes(below[0]!) && ["low", "central", "high"].includes(below[1]!);
+    if (!shapeOk) continue;
+    const owner = walk(result, segs.slice(0, n - k));
+    if (!owner.found || typeof owner.value !== "object" || owner.value === null || Array.isArray(owner.value)) continue;
+    const o = owner.value as Record<string, unknown>;
+    if (!Object.prototype.hasOwnProperty.call(o, "unit")) continue;
+    if ("kind" in o && o.kind !== "quantity" && o.kind !== "range") return null;
+    const u = Unit.safeParse(o.unit);
+    return u.success ? { unit: u.data, basis: "unit_record" } : null;
+  }
+  // 2. legacy scalar map.
+  for (const r of COMPILED[toolName] ?? []) {
+    if (r.segs.length !== n || !r.segs.every((s, i) => s === "*" || s === segs[i])) continue;
+    const unit = typeof r.unit === "function" ? r.unit(result, segs) : r.unit;
+    return unit ? { unit, basis: "tool_unit_map" } : null;
+  }
+  return null;
+}

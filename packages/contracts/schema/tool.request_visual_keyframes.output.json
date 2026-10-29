@@ -27,6 +27,7 @@
       "type": "string",
       "enum": [
         "reserved",
+        "checked",
         "denied"
       ]
     }

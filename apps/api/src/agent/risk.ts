@@ -18,13 +18,16 @@ import {
   HEDGE,
   INDIC_RATE_MARK,
   INDIC_SCRIPT,
+  LATIN_RISK_LEXICON,
+  LOSS,
   MONEY,
   MULTIPLY_GAIN,
   NATIVE_RISK_LEXICON,
   NEGATION_EN,
   PER,
   RAIN,
-  RAIN_FUTURE_VERB,
+  ROMAN_CHEMICAL_NOUNS,
+  ROMAN_DOSAGE_VERBS,
   UNIT_TERMS,
   YIELD,
   termRe,
@@ -86,8 +89,7 @@ const prep = (text: string) => normaliseForChecks(text, { englishDates: false })
 
 // ------------------------------------------------------------------ future rain
 const RAIN_RE = termRe(RAIN);
-const RAIN_VERB_RE = termRe(RAIN_FUTURE_VERB);
-const MM_RE = new RegExp(`\\d\\s?${termSource(UNIT_TERMS.mm!)}`, "iu");
+const WEEKDAYS = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
 
 function relativeDays(s: string): number[] {
   const out: number[] = [];
@@ -99,14 +101,50 @@ function relativeDays(s: string): number[] {
   if (/\bnext\s+(?:week|fortnight)\b|अगले\s*(?:हफ्ते|हफ़्ते|सप्ताह)|अगला\s*(?:हफ्ता|सप्ताह)|அடுத்த\s*வார|வரும்\s*வார/iu.test(s)) out.push(14);
   if (/\btomorrow\b|(?<![\p{L}\p{M}])कल(?![\p{L}\p{M}])|நாளை/iu.test(s)) out.push(1);
   if (/day\s+after\s+tomorrow|परसों|நாளை\s*மறுநாள்/iu.test(s)) out.push(2);
+  // F8: "fortnight", "next Friday" (conservatively the later reading: 8-14 days), "this weekend" is near.
+  if (/\bfortnight\b|पखवाड़|இரண்டு\s*வார/iu.test(s)) out.push(14);
+  if (/\b(?:later\s+this|end\s+of\s+(?:the|this))\s+month\b|\bmonth[\s-]end\b|\bnext\s+season\b/iu.test(s)) out.push(30);
+  return out;
+}
+
+/** Days from asOf to a named weekday ("on Friday" = next occurrence; "next Friday" = the one after). */
+function weekdayDays(s: string, asOf: Date): number[] {
+  const out: number[] = [];
+  for (const m of s.matchAll(/\b(next|this|coming|on)?\s*(sunday|monday|tuesday|wednesday|thursday|friday|saturday)\b/giu)) {
+    const target = WEEKDAYS.indexOf(m[2]!.toLowerCase());
+    let d = (target - asOf.getUTCDay() + 7) % 7 || 7;
+    if (m[1] && m[1].toLowerCase() === "next") d += 7;
+    out.push(d);
+  }
+  return out;
+}
+
+/** dd/mm and dd-mm dates (Indian order), resolved like month-name dates. */
+function numericDates(s: string, asOf: Date): number[] {
+  const out: number[] = [];
+  const asOfMs = utc(asOf.getUTCFullYear(), asOf.getUTCMonth(), asOf.getUTCDate());
+  for (const m of s.matchAll(/(?<![\d/.-])(\d{1,2})[/.-](\d{1,2})(?:[/.-](\d{2,4}))?(?![\d/.-])/gu)) {
+    const day = +m[1]!;
+    const mon = +m[2]! - 1;
+    if (day < 1 || day > 31 || mon < 0 || mon > 11) continue;
+    let y = m[3] ? (m[3].length === 2 ? 2000 + +m[3] : +m[3]) : asOf.getUTCFullYear();
+    let t = utc(y, mon, day);
+    if (!m[3] && t < asOfMs - 30 * 86_400_000) t = utc(++y, mon, day);
+    out.push(t);
+  }
   return out;
 }
 
 export function detectFutureRain(text: string, asOf: Date, horizonDays: number): RiskHit | null {
   const limit = Date.UTC(asOf.getUTCFullYear(), asOf.getUTCMonth(), asOf.getUTCDate()) + horizonDays * 86_400_000;
   for (const s of sentences(prep(text))) {
-    if (!RAIN_RE.test(s) || !(MM_RE.test(s) || RAIN_VERB_RE.test(s) || /\bheavy\s+rain\s+on\b/iu.test(s))) continue;
-    const beyond = extractDates(s, asOf).some((d) => d > limit) || relativeDays(s).some((d) => d > horizonDays);
+    // F8: any weather noun with a date beyond the horizon, whatever the verb (or none) and with or without mm.
+    if (!RAIN_RE.test(s)) continue;
+    const beyond =
+      extractDates(s, asOf).some((d) => d > limit) ||
+      numericDates(s, asOf).some((d) => d > limit) ||
+      relativeDays(s).some((d) => d > horizonDays) ||
+      weekdayDays(s, asOf).some((d) => d > horizonDays);
     if (beyond) return { code: "future_daily_rain_beyond_horizon", message: `exact rain stated beyond the ${horizonDays}-day forecast horizon` };
   }
   return null;
@@ -120,7 +158,14 @@ const ASSERTED_DIAGNOSIS_EN = new RegExp(
   [
     `\\b(?:your|the|this|these|my)\\s+(?:crop|plants?|ginger|leaves?|field|rhizomes?|stems?|roots?|yellowing|spots?|damage|symptoms?)\\b[^.\\n]{0,30}\\b(?:has|have|is\\s+suffering\\s+from|are\\s+suffering\\s+from|is\\s+infected\\s+with|are\\s+infected\\s+with|is\\s+affected\\s+by|are\\s+affected\\s+by|suffers?\\s+from|is\\s+diagnosed\\s+with|got|caught)\\b[^.\\n]{0,40}${D}`,
     `\\bthis\\s+is\\s+(?:a\\s+case\\s+of\\s+|an?\\s+)?${D}`,
-    `\\bit\\s+is\\s+(?:a\\s+|an\\s+)?[a-z ]{0,20}${D}`,
+    `\\b(?:it|this|that)(?:\\s+is|'s|’s|s)\\s+(?:a\\s+|an\\s+)?[a-z ]{0,20}${D}`,
+    // F8: disease as complement or subject: "you have X", "X is what is happening", "the problem is X",
+    // "there is X in your field", a clause that only asserts "X in the field".
+    `\\byou(?:'ve|’ve|\\s+have|\\s+have\\s+got|\\s+got|\\s+are\\s+(?:dealing|facing|seeing)\\s+(?:with\\s+)?)\\b[^.\\n]{0,40}${D}`,
+    `${D}[^.\\n]{0,10}\\s+(?:is|are)\\s+(?:what|exactly\\s+what|the\\s+(?:cause|problem|issue|reason|culprit|diagnosis))\\b`,
+    `\\bthe\\s+(?:problem|issue|cause|culprit|diagnosis|reason)\\s+(?:here\\s+)?(?:is|are)\\s+[^.\\n]{0,25}${D}`,
+    `\\bthere\\s+(?:is|are)\\s+[^.\\n]{0,25}${D}[^.\\n]{0,10}\\b(?:in|on|affecting)\\s+(?:the|your)\\s+(?:field|crop|plants?|farm|beds?|rhizomes?)`,
+    `^\\s*[\\p{L} ]{0,25}${D}\\s+(?:in|on)\\s+(?:the|your)\\s+(?:field|crop|plants?|farm|beds?)\\s*[.!]?\\s*$`,
     `\\b(?:caused\\s+by|due\\s+to|because\\s+of|result\\s+of|a\\s+(?:clear\\s+)?(?:sign|symptom|case)\\s+of)\\b[^.\\n]{0,40}${D}`,
   ].join("|"),
   "iu",
@@ -131,7 +176,8 @@ const DISEASE_RE = termRe(DISEASE);
 const SUBJECT_INDIC_RE = termRe(DIAGNOSIS_SUBJECT);
 
 export function detectDiagnosisCertainty(text: string): RiskHit | null {
-  for (const s of clauses(prep(text))) {
+  // A hedge must sit in the same comma-separated clause as the assertion ("This may not be X, it's Y").
+  for (const s of clauses(prep(text)).flatMap((c) => c.split(/,/u)).map((c) => c.trim()).filter(Boolean)) {
     if (CERTAIN_DIAGNOSIS_EN.test(s)) return { code: "diagnosis_certainty", message: "diagnosis stated with certainty" };
     if (ASSERTED_DIAGNOSIS_EN.test(s) && !HEDGE_RE.test(s)) return { code: "diagnosis_certainty", message: "diagnosis asserted without hedging" };
     if (isIndic(s) && DISEASE_RE.test(s)) {
@@ -144,8 +190,21 @@ export function detectDiagnosisCertainty(text: string): RiskHit | null {
 }
 
 // ------------------------------------------------------------------ dosage
-const VERB_RE = termRe(DOSAGE_VERBS);
-const CHEM_RE = termRe(CHEMICAL_NOUNS);
+const VERB_RE = new RegExp(`${termSource(DOSAGE_VERBS)}|${termSource(ROMAN_DOSAGE_VERBS)}`, "iu");
+const CHEM_RE = new RegExp(`${termSource(CHEMICAL_NOUNS)}|${termSource(ROMAN_CHEMICAL_NOUNS)}`, "iu");
+/**
+ * F8: dose-unit and container words WITHOUT a number ("spray the litre", "a bag of urea" before
+ * normalisation). Single-letter unit symbols (l, g, t) are excluded here: they collide with ordinary text.
+ */
+const DOSE_WORD_RE = new RegExp(
+  termSource({
+    en: ["kilos?", "kilograms?", "kgs?", "lit(?:re|er)s?", "ltrs?", "leeta?rs?", "millilit(?:re|er)s?", "ml", "grams?", "gms?", "quintals?", "qtls?", "tonnes?",
+      ...((UNIT_TERMS.spoon!.en ?? []) as string[])],
+    indic: [...(UNIT_TERMS.L!.indic ?? []), ...(UNIT_TERMS.ml!.indic ?? []), ...(UNIT_TERMS.kg!.indic ?? []), ...(UNIT_TERMS.g!.indic ?? []), ...(UNIT_TERMS.quintal!.indic ?? []), ...(UNIT_TERMS.spoon!.indic ?? [])],
+  }),
+  "giu",
+);
+const DENOM_BEFORE_RE = /(?:\bper|\/|\beach|\bevery|प्रति|हर|ஒவ்வொரு)\s*$/iu;
 const DENOM_AFTER_RE = new RegExp(`^\\s*(?:of\\s+[\\p{L}\\p{M} ]{0,30}?\\s*)?${termSource(PER)}\\s*(?:\\d+\\s*)?${termSource(DENOMINATOR)}`, "iu");
 const INDIC_RATE_RE = termRe(INDIC_RATE_MARK);
 const MASS_PER_AREA_RE = new RegExp(`^\\s*${termSource(UNIT_TERMS.kg!)}\\s*${termSource(PER)}?\\s*(${termSource(UNIT_TERMS.ha!)}|${termSource(UNIT_TERMS.acre!)})`, "iu");
@@ -167,6 +226,7 @@ export function dosageMentions(text: string): DosageMention[] {
     const verb = VERB_RE.test(s);
     const chem = CHEM_RE.test(s);
     const indicRate = isIndic(s) && INDIC_RATE_RE.test(s);
+    const before = out.length;
     for (const t of toks) {
       const u = unitAt(t);
       if (!u || !DOSE_UNIT_SET.has(u)) continue;
@@ -177,6 +237,22 @@ export function dosageMentions(text: string): DosageMention[] {
       const rate = u === "kg" && area ? (new RegExp(termSource(UNIT_TERMS.ha!), "iu").test(area[1]!) ? "kg/ha" : "kg/acre") : u === "kg" && isIndic(s) ? indicAreaRate(t) : null;
       out.push({ value: t.value.toString(), unit: u, rate });
     }
+    // F8: a dose without a number: a dose-unit/container word together with a chemical noun or an
+    // application verb in one clause. A unit used only as a price/rate denominator ("₹40 per kg") counts
+    // only when a chemical is named.
+    if (out.length === before) {
+      for (const c of s.split(/[;:,]/u)) {
+        const cv = VERB_RE.test(c);
+        const cc = CHEM_RE.test(c);
+        if (!cv && !cc) continue;
+        const words = [...c.matchAll(DOSE_WORD_RE)];
+        const nonDenom = words.some((m) => !DENOM_BEFORE_RE.test(c.slice(0, m.index)));
+        if (words.length > 0 && (cc || nonDenom)) {
+          out.push({ value: "", unit: "unquantified", rate: null });
+          break;
+        }
+      }
+    }
   }
   return out;
 }
@@ -186,6 +262,11 @@ function indicAreaRate(t: NumberToken): "kg/ha" | "kg/acre" | null {
   if (new RegExp(termSource(UNIT_TERMS.ha!), "iu").test(around)) return "kg/ha";
   if (new RegExp(termSource(UNIT_TERMS.acre!), "iu").test(around)) return "kg/acre";
   return null;
+}
+
+/** True when a (normalised) sentence applies an input: an application verb together with a chemical/input noun. */
+export function isApplicationContext(sentence: string): boolean {
+  return VERB_RE.test(sentence) && CHEM_RE.test(sentence);
 }
 
 export function detectDosage(text: string): RiskHit | null {
@@ -208,6 +289,7 @@ export function detectCanopyYield(text: string): RiskHit | null {
 const GUARANTEE_RE = new RegExp(`${termSource(GUARANTEE)}|${termSource({ en: ["certain(?:ly)?\\s+(?:to\\s+)?(?:earn|profit|make)", "definitely\\s+(?:earn|profit|make)", "surely", "for\\s+sure"] })}`, "iu");
 const GUARANTEE_INDIC_RE = termRe({ indic: [...(GUARANTEE.indic ?? []), ...(CERTAINTY.indic ?? [])] });
 const MONEY_RE = termRe(MONEY);
+const LOSS_RE = termRe(LOSS);
 const GAIN_RE = termRe(MULTIPLY_GAIN);
 const WILL_RICH_RE = /\bwill\s+(?:make\s+you\s+(?:rich|wealthy)|bring\s+(?:you\s+)?(?:big|huge|high|great)\s+(?:profits?|income|returns?))/iu;
 export function detectGuaranteedProfit(text: string): RiskHit | null {
@@ -215,12 +297,14 @@ export function detectGuaranteedProfit(text: string): RiskHit | null {
     const money = MONEY_RE.test(s);
     if (isIndic(s)) {
       // Hindi/Tamil: negation is not honoured (fail closed).
-      if (money && (GUARANTEE_INDIC_RE.test(s) || GAIN_RE.test(s))) return { code: "guaranteed_profit", message: "guaranteed or multiplied profit/income claim" };
+      if ((money || LOSS_RE.test(s)) && (GUARANTEE_INDIC_RE.test(s) || GAIN_RE.test(s))) return { code: "guaranteed_profit", message: "guaranteed or multiplied profit/income claim" };
       if (termRe({ indic: GUARANTEE.indic ?? [] }).test(s)) return { code: "guaranteed_profit", message: "guarantee stated" };
       continue;
     }
     if (NEGATION_EN.test(s)) continue;
     if ((GUARANTEE_RE.test(s) && money) || (GAIN_RE.test(s) && money) || WILL_RICH_RE.test(s)) return { code: "guaranteed_profit", message: "guaranteed or multiplied profit/income claim" };
+    // F8: a guaranteed loss/failure is also a guaranteed outcome.
+    if (GUARANTEE_RE.test(s) && LOSS_RE.test(s)) return { code: "guaranteed_profit", message: "guaranteed loss or outcome claim" };
   }
   return null;
 }
@@ -241,7 +325,9 @@ export function detectHighRisk(text: string, o: { asOf: Date; rainHorizonDays: n
 }
 
 /** Hindi/Tamil high-risk lexicon hits (used by the gate's non-English fail-closed rule). */
-export function nativeLexiconHits(text: string): string[] {
+export function nativeLexiconHits(text: string, o: { latin?: boolean } = {}): string[] {
   const t = text.normalize("NFC");
-  return NATIVE_RISK_LEXICON.filter((l) => termRe(l.list).test(t)).map((l) => l.name);
+  const hits = NATIVE_RISK_LEXICON.filter((l) => termRe(l.list).test(t)).map((l) => l.name);
+  if (o.latin && /\p{Script=Latin}/u.test(t)) hits.push(...LATIN_RISK_LEXICON.filter((l) => termRe(l.list).test(t)).map((l) => `latin_${l.name}`));
+  return hits;
 }

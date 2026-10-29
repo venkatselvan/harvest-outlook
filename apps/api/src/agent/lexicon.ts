@@ -43,12 +43,12 @@ export const merge = (...lists: TermList[]): TermList => ({ en: lists.flatMap((l
 export const UNIT_TERMS: Record<string, TermList> = {
   mm: { en: ["mm", "millimet(?:re|er)s?"], indic: ["मिमी", "मि.मी.", "मिलीमीटर", "मिलिमीटर", "மிமீ", "மி.மீ", "மில்லிமீட்டர்", "மில்லி மீட்டர்"] },
   ml: { en: ["ml", "mls", "millilit(?:re|er)s?", "cc"], indic: ["मिलीलीटर", "मिलिलीटर", "मिली$", "मि.ली.", "மில்லிலிட்டர்", "மில்லி லிட்டர்", "மில்லி", "மி.லி"] },
-  L: { en: ["l", "ltrs?", "lit(?:re|er)s?"], indic: ["लीटर", "लिटर", "லிட்டர", "லிட்டர்"] },
+  L: { en: ["l", "ltrs?", "lit(?:re|er)s?", "leeta?rs?"], indic: ["लीटर", "लिटर", "லிட்டர", "லிட்டர்"] },
   g: { en: ["g", "gms?", "grams?", "grammes?"], indic: ["ग्राम", "கிராம்"] },
-  kg: { en: ["kg", "kgs", "kilos?", "kilograms?", "kilogrammes?"], indic: ["किलोग्राम", "किलो", "कि.ग्रा.", "கிலோகிராம்", "கிலோ"] },
+  kg: { en: ["kg", "kgs", "kilos?", "kilograms?", "kilogrammes?", "killa"], indic: ["किलोग्राम", "किलो", "कि.ग्रा.", "கிலோகிராம்", "கிலோ"] },
   quintal: { en: ["quintals?", "qtls?"], indic: ["क्विंटल", "कुंटल", "குவிண்டால", "குவின்டால"] },
   t: { en: ["t", "tonnes?", "tons?", "mt"], indic: ["टन$", "டன்"] },
-  acre: { en: ["acres?", "ac"], indic: ["एकड़", "एकड", "ஏக்கர"] },
+  acre: { en: ["acres?", "ac", "ekad", "ekar", "ekkar", "eker"], indic: ["एकड़", "एकड", "ஏக்கர"] },
   ha: { en: ["ha", "hectares?", "hectors?"], indic: ["हेक्टेयर", "हेक्टेअर", "ஹெக்டேர", "ஹெக்டர"] },
   days: { en: ["days?"], indic: ["दिन", "நாட்கள", "நாள", "நாட்"] },
   weeks: { en: ["weeks?"], indic: ["हफ्ते", "हफ़्ते", "हफ्तों", "सप्ताह", "வாரம்", "வாரங்கள", "வார"] },
@@ -59,8 +59,10 @@ export const UNIT_TERMS: Record<string, TermList> = {
   cm: { en: ["cm", "centimet(?:re|er)s?"], indic: ["सेमी", "से.मी.", "सेंटीमीटर", "செமீ", "செ.மீ", "சென்டிமீட்டர"] },
   m3: { raw: ["m³"], en: ["m3", "cubic\\s+met(?:re|er)s?"], indic: ["घन मीटर", "கன மீட்டர"] },
   spoon: {
-    en: ["spoons?", "spoonfuls?", "teaspoons?", "tablespoons?", "tsp", "tbsp", "caps?", "capfuls?", "packets?", "sachets?", "bottles?", "bags?", "drops?", "handfuls?"],
-    indic: ["चम्मच", "ढक्कन", "पैकेट", "बोरी", "बोरे", "बूंद", "बूँद", "मुट्ठी", "ஸ்பூன்", "கரண்டி", "மூடி", "பாக்கெட்", "மூட்டை", "சொட்டு", "கைப்பிடி"],
+    en: ["spoons?", "spoonfuls?", "teaspoons?", "tablespoons?", "tsp", "tbsp", "caps?", "capfuls?", "packets?", "sachets?", "bottles?", "bags?", "drops?", "handfuls?",
+      // Containers that measure an input amount (F8): "two tanks", "a pump of" ...; romanised Hindi/Tamil too.
+      "tanks?", "tankfuls?", "pumps?", "drums?", "buckets?", "knapsacks?", "sprayers?", "kattas?", "bori", "boriyan", "chammach", "tanki", "mootai", "moottai"],
+    indic: ["चम्मच", "ढक्कन", "पैकेट", "बोरी", "बोरे", "बूंद", "बूँद", "मुट्ठी", "टंकी", "पंप", "कट्टा", "कट्टे", "ஸ்பூன்", "கரண்டி", "மூடி", "பாக்கெட்", "மூட்டை", "சொட்டு", "கைப்பிடி", "டேங்க", "தொட்டி"],
   },
 };
 
@@ -111,8 +113,39 @@ export const TA_NUMBER_STEMS: [string, number][] = [
   ["ஒரு", 1],
 ].map(([s, v]) => [(s as string).normalize("NFC"), v as number] as [string, number]).sort((a, b) => b[0].length - a[0].length);
 
+/**
+ * Fractional and colloquial Hindi/Tamil number words (F8). Values are the conventional ones (सवा = 1.25,
+ * ढाई = 2.5, அரை = 0.5 ...). Hindi prefix modifiers (सवा/साढ़े/पौने + number) are applied in numbers.ts.
+ */
+export const HI_FRACTION_WORDS: Record<string, number> = Object.fromEntries(
+  ([["सवा", 1.25], ["आधा", 0.5], ["आधी", 0.5], ["आधे", 0.5], ["ढाई", 2.5], ["अढ़ाई", 2.5], ["डेढ़", 1.5], ["डेढ", 1.5], ["पौना", 0.75], ["पौने", 0.75]] as const).map(([w, v]) => [w.normalize("NFC"), v]),
+);
+/** Hindi modifiers: सवा X = X + 0.25, साढ़े X = X + 0.5, पौने X = X - 0.25 (when another number follows). */
+export const HI_MODIFIERS: Record<string, number> = Object.fromEntries(([["सवा", 0.25], ["साढ़े", 0.5], ["साढे", 0.5], ["पौने", -0.25]] as const).map(([w, v]) => [w.normalize("NFC"), v]));
+/** Tamil colloquial/fractional words matched as whole words only (அரை, கால் are also ordinary words). */
+export const TA_EXACT_WORDS: Record<string, number> = Object.fromEntries(
+  ([["அரை", 0.5], ["கால்", 0.25], ["முக்கால்", 0.75], ["ஒன்னு", 1], ["ஒண்ணு", 1]] as const).map(([w, v]) => [w.normalize("NFC"), v]),
+);
+/** Colloquial Tamil numerals matched as word stems. */
+export const TA_COLLOQUIAL_STEMS: [string, number][] = ([["ரெண்டு", 2], ["மூணு", 3], ["நாலு", 4], ["அஞ்சு", 5]] as const).map(([w, v]) => [w.normalize("NFC"), v] as [string, number]);
+/**
+ * Romanised Hindi/Tamil number words (F8). Many are also English or ordinary words ("do", "teen", "das",
+ * "oru"), so every one of them counts as a number only before a unit or multiplier word.
+ */
+export const ROMAN_NUMBER_WORDS: Record<string, number> = {
+  ek: 1, do: 2, teen: 3, tin: 3, char: 4, chaar: 4, paanch: 5, panch: 5, chhe: 6, chhah: 6, saat: 7, aath: 8, nau: 9, das: 10, bees: 20, pachaas: 50, sau: 100,
+  aadha: 0.5, adha: 0.5, aadhi: 0.5, aadhe: 0.5, dhai: 2.5, dhaai: 2.5, adhai: 2.5, sawa: 1.25, sava: 1.25, dedh: 1.5, dedhh: 1.5, pauna: 0.75, paune: 0.75,
+  onnu: 1, onru: 1, oru: 1, rendu: 2, randu: 2, irandu: 2, moonu: 3, munu: 3, moondru: 3, naalu: 4, nalu: 4, anju: 5, ainthu: 5, aaru: 6, pathu: 10,
+  arai: 0.5, ara: 0.5, kaal: 0.25, mukkaal: 0.75,
+};
+/** Romanised multipliers (Latin script). */
+export const ROMAN_MULTIPLIERS: [TermList, number][] = [
+  [{ en: ["hazaa?r", "hajaa?r", "aayiram", "ayiram"] }, 1000],
+  [{ en: ["latcham", "latsam", "laksham"] }, 100000],
+];
+
 /** Single words that are also ordinary words ("one", "दो" = give, "ஒரு" = a, "ஆறு" = river): numbers only before a unit/multiplier. */
-export const AMBIGUOUS_NUMBER_WORDS = new Set(["one", "एक", "दो", "ஒரு", "இரு", "ஆறு"].map((s) => s.normalize("NFC")));
+export const AMBIGUOUS_NUMBER_WORDS = new Set(["one", "एक", "दो", "ஒரு", "இரு", "ஆறு", "கால்", ...Object.keys(ROMAN_NUMBER_WORDS)].map((s) => s.normalize("NFC")));
 
 /** Multipliers that scale the preceding number. */
 export const MULTIPLIERS: [TermList, number][] = [
@@ -121,17 +154,30 @@ export const MULTIPLIERS: [TermList, number][] = [
   [{ en: ["lakhs?", "lacs?", "lac"], indic: ["लाख", "லட்சம்", "லட்சத்", "லட்ச"] }, 100000],
   [{ en: ["millions?"], indic: ["मिलियन"] }, 1000000],
   [{ en: ["crores?"], indic: ["करोड़", "करोड", "கோடி"] }, 10000000],
+  [{ en: ["dozens?"], indic: ["दर्जन", "டஜன்"] }, 12],
+  ...ROMAN_MULTIPLIERS,
 ];
 
 // ------------------------------------------------------------------ high-risk vocabularies
 export const DOSAGE_VERBS: TermList = {
   en: ["spray(?:ing|ed)?", "apply(?:ing)?", "dose", "dosage", "mix(?:ing)?", "dissolve", "drench(?:ing)?", "dilute", "add(?:ing)?", "sprinkle", "use", "put", "pour", "broadcast", "top[\\s-]?dress(?:ing)?", "inject", "fumigate", "treat"],
   indic: ["छिड़काव", "छिड़कें", "छिड़कना", "छिड़क", "डालें", "डालना", "डालकर", "डाल$", "मिलाएं", "मिलाएँ", "मिलाकर", "मिलाना", "मिलायें", "घोलें", "घोलकर", "प्रयोग करें", "इस्तेमाल करें",
-    "தெளிக்", "தெளியுங்கள்", "மிளிக்கவும்", "இடவும்", "இடுங்கள்", "இட்டு", "கலக்கவும்", "கலந்து", "கரைத்து", "ஊற்றவும்", "பயன்படுத்தவும்"],
+    "தெளிக்", "தெளியுங்கள்", "மிளிக்கவும்", "இடவும்", "இடுங்கள்", "இட்டு", "கலக்கவும்", "கலந்து", "கரைத்து", "ஊற்றவும்", "பயன்படுத்தவும்",
+    // Colloquial Tamil (F8): போடுங்க / போடவும் ("put/apply"), தெளிங்க, அடிங்க ("spray").
+    "போடுங்க", "போடுங்கள்", "போடவும்", "போட்டு", "தெளிங்க", "அடிங்க", "அடிக்கவும்"],
+};
+/** Romanised Hindi/Tamil application verbs (Latin script, F8). */
+export const ROMAN_DOSAGE_VERBS: TermList = {
+  en: ["karo", "karein", "karen", "kariye", "dalo", "daalo", "dalein", "daalein", "daaliye", "dale", "chhidko", "chidko", "chhidkav", "chidkav", "chhidkaav", "milao", "ghol(?:o|ein)?",
+    "podunga", "podungal", "podu", "podavum", "theliyunga", "theliungal", "thelikkavum", "thelinga", "thelikanum", "idunga", "idungal", "idavum", "adinga", "adikkanum"],
+};
+/** Romanised Hindi/Tamil input and chemical nouns (Latin script, F8). */
+export const ROMAN_CHEMICAL_NOUNS: TermList = {
+  en: ["dawa", "dawai", "dava", "davai", "dawaai", "khaad", "khad", "keetnashak", "marundhu", "marunthu", "marundu", "uram", "yoorea", "yuria", "yuriya", "uriya", "potash", "dap"],
 };
 export const CHEMICAL_NOUNS: TermList = {
-  en: ["urea", "dap", "potash", "fertili[sz]ers?", "pesticides?", "fungicides?", "insecticides?", "herbicides?", "weedicides?", "chlorpyrifos", "mancozeb", "carbendazim", "copper\\s+oxychloride", "metalaxyl", "imidacloprid", "bordeaux", "neem\\s+oil", "chemicals?"],
-  indic: ["यूरिया", "दवा", "दवाई", "कीटनाशक", "फफूंदनाशक", "खरपतवारनाशक", "उर्वरक", "रसायन", "யூரியா", "மருந்து", "பூச்சிக்கொல்லி", "பூஞ்சைக்கொல்லி", "உரம்", "ரசாயன"],
+  en: ["dawa", "dawai", "davai", "marundhu", "marunthu", "yoorea", "yuriya", "khaad", "manure", "nitrogen", "npk", "zinc\\s+sulphate", "gypsum", "urea", "dap", "potash", "fertili[sz]ers?", "pesticides?", "fungicides?", "insecticides?", "herbicides?", "weedicides?", "chlorpyrifos", "mancozeb", "carbendazim", "copper\\s+oxychloride", "metalaxyl", "imidacloprid", "bordeaux", "neem\\s+oil", "chemicals?"],
+  indic: ["खाद", "डीएपी", "पोटाश", "यूरिया", "दवा", "दवाई", "कीटनाशक", "फफूंदनाशक", "खरपतवारनाशक", "उर्वरक", "रसायन", "யூரியா", "மருந்து", "பூச்சிக்கொல்லி", "பூஞ்சைக்கொல்லி", "உரம்", "ரசாயன"],
 };
 export const CERTAINTY: TermList = {
   en: ["definitely", "certainly", "surely", "undoubtedly", "clearly", "confirmed", "for\\s+sure", "without\\s+doubt"],
@@ -160,8 +206,26 @@ export const HEDGE: TermList = {
 };
 export const NEGATION_EN = /\b(no|not|cannot|can't|cant|never|without|isn't|aren't|don't|doesn't|won't|nor|neither)\b/iu;
 export const RAIN: TermList = {
-  en: ["rain", "rainfall", "rains", "raining", "shower", "showers", "precipitation", "downpour", "drizzle"],
-  indic: ["बारिश", "वर्षा", "बरसात", "मॉनसून", "मझை", "மழை"],
+  en: ["rain", "rainfall", "rains", "raining", "rainy", "shower", "showers", "precipitation", "downpours?", "drizzle", "storms?", "thunderstorms?", "cyclones?", "cloudburst", "wet\\s+spell", "baarish", "barish", "mazhai", "malai"],
+  indic: ["बारिश", "वर्षा", "बरसात", "मॉनसून", "आंधी", "तूफान", "तूफ़ान", "मझை", "மழை", "புயல்", "இடிமழை"],
+};
+/** Loss/failure words: a guarantee about these is a guaranteed-outcome claim (F8). */
+export const LOSS: TermList = {
+  en: ["loss(?:es)?", "lose", "losing", "damage", "fail(?:ure|s)?", "crop\\s+failure", "wiped\\s+out"],
+  indic: ["नुकसान", "घाटा", "हानि", "நஷ்ட", "இழப்பு", "சேதம்"],
+};
+/**
+ * Product-form words (F8). A claim or block naming a product form must be scoped to products of that
+ * form. Keys are contract ProductBasis values.
+ */
+const FORM_CROPS = "(?:ginger|turmeric|rhizomes?|chill?i(?:es|s)?|chilly|chillies|tomato(?:es)?|potato(?:es)?|okra|brinjals?|produce|form|product)";
+export const PRODUCT_FORM_WORDS: Record<string, TermList> = {
+  fresh: { en: [`fresh\\s+${FORM_CROPS}`, "green\\s+ginger"], indic: ["ताज़ा अदरक", "ताजा अदरक", "ताज़ी अदरक", "ताजी अदरक", "हरी अदरक", "ताज़ी हल्दी", "ताजी हल्दी", "பச்சை இஞ்சி", "புதிய இஞ்சி"] },
+  dry: { en: [`(?:dry|dried)\\s+${FORM_CROPS}`, "sonth", "sukku", "chukku"], indic: ["सूखी अदरक", "सूखा अदरक", "सूखी हल्दी", "सूखी मिर्च", "सोंठ", "சுக்கு", "உலர்ந்த இஞ்சி", "உலர் இஞ்சி", "காய்ந்த மிளகாய்", "வர மிளகாய்"] },
+  green: { en: ["green\\s+(?:chill?i(?:es|s)?|chilly|chillies|pepper)"], indic: ["हरी मिर्च", "பச்சை மிளகாய்"] },
+  milled: { en: ["milled(?:\\s+rice)?", "polished\\s+rice"], indic: [] },
+  kapas: { en: ["kapas", "seed\\s+cotton"], indic: ["कपास"] },
+  lint: { en: ["lint", "ginned\\s+cotton"], indic: [] },
 };
 export const RAIN_FUTURE_VERB: TermList = {
   en: ["will\\s+(?:rain|pour|receive|get)", "it\\s+will\\s+rain", "expect(?:ed)?", "forecast\\s+to", "going\\s+to\\s+rain"],
@@ -179,6 +243,11 @@ export const YIELD: TermList = {
   en: ["yield", "harvest", "production", "tonnes?", "tons?", "quintals?"],
   indic: ["उपज", "पैदावार", "उत्पादन", "விளைச்சல", "மகசூல"],
 };
+/** Romanised Hindi/Tamil risk words checked in Latin-script text of a hi/ta turn (F8). */
+export const ROMAN_RISK: TermList = {
+  en: [...(ROMAN_DOSAGE_VERBS.en ?? []), ...(ROMAN_CHEMICAL_NOUNS.en ?? []), "pakka", "zaroor", "jaroor", "guarantee", "nishchit", "rog", "bimari", "beemari", "keeda", "nichayam", "kandippa", "noi", "azhugal"],
+};
+
 export const CONFIDENCE: TermList = {
   en: ["confiden\\w*", "certain\\w*", "sure", "accura\\w*", "probab\\w*", "likel\\w*", "chance"],
   indic: ["भरोसा", "विश्वास", "निश्चित", "संभावना", "सटीक", "நம்பிக்கை", "உறுதி", "வாய்ப்பு", "துல்லிய"],
@@ -201,5 +270,23 @@ export const NATIVE_RISK_LEXICON: { name: string; list: TermList }[] = [
   { name: "rain", list: { indic: RAIN.indic ?? [] } },
   { name: "relative_time", list: { indic: RELATIVE_TIME.indic ?? [] } },
 ];
+
+/**
+ * Latin-script risk lexicon used by the fail-closed rule when the turn language is hi/ta (F8): romanised
+ * Hindi/Tamil terms plus the English dosage, chemical, certainty, guarantee and disease words. A weather
+ * noun alone is not withheld (the future-rain detector runs on every text in every language).
+ */
+export const LATIN_RISK_LEXICON: { name: string; list: TermList }[] = [
+  { name: "romanised", list: ROMAN_RISK },
+  { name: "dosage_verb", list: { en: DOSAGE_VERBS.en ?? [] } },
+  { name: "chemical", list: { en: CHEMICAL_NOUNS.en ?? [] } },
+  { name: "certainty", list: { en: CERTAINTY.en ?? [] } },
+  { name: "guarantee", list: { en: [...(GUARANTEE.en ?? []), ...(MULTIPLY_GAIN.en ?? [])] } },
+  { name: "disease", list: { en: DISEASE.en ?? [] } },
+];
+
+/** Hindi and Tamil month names (clarification option values). */
+export const MONTH_NAMES_INDIC = ["जनवरी", "फरवरी", "फ़रवरी", "मार्च", "अप्रैल", "मई$", "जून", "जुलाई", "अगस्त", "सितंबर", "सितम्बर", "अक्टूबर", "अक्तूबर", "नवंबर", "नवम्बर", "दिसंबर", "दिसम्बर",
+  "ஜனவரி", "பிப்ரவரி", "மார்ச்", "ஏப்ரல்", "மே$", "ஜூன்", "ஜூலை", "ஆகஸ்ட்", "செப்டம்பர்", "அக்டோபர்", "நவம்பர்", "டிசம்பர்", "சித்திரை", "வைகாசி", "ஆனி", "ஆடி", "ஆவணி", "புரட்டாசி", "ஐப்பசி", "கார்த்திகை", "மார்கழி", "தை$", "மாசி", "பங்குனி"];
 
 export const INDIC_SCRIPT = /[\p{Script=Devanagari}\p{Script=Tamil}]/u;

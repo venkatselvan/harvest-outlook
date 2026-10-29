@@ -35,6 +35,8 @@ describe("POST /api/v1/assistant/turns (synthetic mode)", () => {
     expect(j.data.traceId).toMatch(/^[0-9a-f-]{36}$/);
     expect(j.data.answerBlocks.length).toBeGreaterThan(0);
     expect(j.data.clarifications).toHaveLength(1);
+    // F8: the gate report is exposed so the Ask UI can show what was withheld.
+    expect(j.data.gateReport).toMatchObject({ removed: expect.any(Array), groundedEvidenceIds: expect.any(Array), templateSubstituted: expect.any(Array) });
     expect(j.data.limitations.join(" ")).toMatch(/Synthetic fixture/);
     const { isApprovedText } = await import("../src/speech/approved");
     const ownerId = (await h.pool.query("SELECT owner_id FROM agent_runs WHERE id=$1", [j.data.traceId])).rows[0].owner_id;

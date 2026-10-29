@@ -23,11 +23,17 @@ const ctx = (over: Partial<GateContext> = {}): GateContext => ({
   rainHorizonDays: 7,
   ...over,
 });
-const tr: StoredToolResult = { id: "t1", ownerId: OWNER, agentRunId: RUN, runMode: "synthetic", toolName: "calculate_scenarios", status: "ok", result: { areaAcre: 2, areaHa: 0.81, rain: 40, netInr: "200000", price: "2050", yieldQ: 25 } };
-const wx: StoredToolResult = { ...tr, id: "t2", toolName: "get_weather_forecast", result: { rainMm: 12.4 } };
+// F8: units come from the stored tool output. Legacy flat fixtures are wrapped as {value, unit} records
+// (the unit is fixed here, never taken from the ref) and refs to those keys point at ".../value".
+const FIXTURE_UNITS: Record<string, string> = { netInr: "INR", areaAcre: "acre", areaHa: "ha", yieldQuintal: "quintal", rainMm: "mm", rain: "mm", price: "INR/quintal", yieldQ: "quintal", v: "mm" };
+const withUnits = (r: Record<string, unknown>): Record<string, unknown> =>
+  Object.fromEntries(Object.entries(r).map(([k, v]) => (k in FIXTURE_UNITS && (typeof v === "number" || typeof v === "string") ? [k, { kind: "quantity", value: v, unit: FIXTURE_UNITS[k] }] : [k, v])));
+const unitPointer = (p: string) => (/^\/[A-Za-z]+$/.test(p) && p.slice(1) in FIXTURE_UNITS ? `${p}/value` : p);
+const tr: StoredToolResult = { id: "t1", ownerId: OWNER, agentRunId: RUN, runMode: "synthetic", toolName: "calculate_scenarios", status: "ok", result: withUnits({ areaAcre: 2, areaHa: 0.81, rain: 40, netInr: "200000", price: "2050", yieldQ: 25 }) };
+const wx: StoredToolResult = { ...tr, id: "t2", toolName: "get_weather_forecast", result: withUnits({ rainMm: 12.4 }) };
 const ev = (id: string, over: Partial<EvidenceFact> = {}): EvidenceFact => ({ id, mode: "synthetic", validationStatus: "validated", geographyLevel: "district", geographyIds: ["IN-KA-HAS"], cropIds: [GINGER_ID], effectiveAvailableAt: "2026-01-01T00:00:00.000Z", availabilityBasis: "verified_publication", ...over });
 const facts = (e: EvidenceFact[] = [], knownCropIds: string[] = [GINGER_ID]): GateFacts => ({ toolResults: new Map([["t1", tr], ["t2", wx]]), evidence: new Map(e.map((x) => [x.id, x])), knownCropIds: new Set(knownCropIds) });
-const ref = (id: string, p: string, unit: string, sourceUnit = unit, digits = 0, toolResultId = "t1") => ({ id, toolResultId, jsonPointer: p, presentation: { unit, sourceUnit, rounding: { mode: "decimals", digits }, intervalLabel: "none" } });
+const ref = (id: string, p: string, unit: string, sourceUnit = unit, digits = 0, toolResultId = "t1") => ({ id, toolResultId, jsonPointer: unitPointer(p), presentation: { unit, sourceUnit, rounding: { mode: "decimals", digits }, intervalLabel: "none" } });
 const out = (o: Record<string, unknown> = {}) => ({ schemaVersion: SCHEMA_VERSION, intent: "plan_question", language: "en", proposedFacts: [], clarifications: [], toolRequests: [], answerBlocks: [], numericRefs: [], claimEvidenceRefs: [], limitations: [], ...o });
 const blk = (text: string, refs: string[] = [], claims: string[] = [], id = "b1") => ({ id, kind: refs.length ? "numeric" : claims.length ? "evidence" : "text", text, numericRefIds: refs, claimIds: claims });
 const codes = (r: ReturnType<typeof evaluateGate>) => r.issues.map((i) => i.code);

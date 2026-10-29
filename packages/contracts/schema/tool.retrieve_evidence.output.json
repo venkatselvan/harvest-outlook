@@ -71,6 +71,13 @@
               "maxLength": 200,
               "pattern": "^[A-Za-z0-9][A-Za-z0-9._:\\/-]*$"
             }
+          },
+          "validationStatus": {
+            "type": "string",
+            "enum": [
+              "validated",
+              "grounded"
+            ]
           }
         },
         "required": [
@@ -78,7 +85,8 @@
           "excerpt",
           "effectiveAvailableAt",
           "scope",
-          "cropIds"
+          "cropIds",
+          "validationStatus"
         ],
         "additionalProperties": false
       }

@@ -135,9 +135,14 @@ export async function runAgentTurn(deps: AgentDeps, input: AgentTurnInput): Prom
 
   // Server-derived claim scope: the plan's crop and the owned farm's district/state.
   const planCropIds: string[] = [];
+  // F8: the plan's product (catalogue slug) scopes product-form claims ("dry ginger price ...").
+  const planProductIds: string[] = [];
   if (input.planId && UUID_RE.test(input.planId)) {
-    const pr = await pool.query<{ crop_id: string }>("SELECT crop_id FROM plans WHERE id = $1 AND owner_id = $2", [input.planId, input.ownerId]);
-    for (const row of pr.rows) planCropIds.push(row.crop_id);
+    const pr = await pool.query<{ crop_id: string; product_ref: string | null }>("SELECT crop_id, product_ref FROM plans WHERE id = $1 AND owner_id = $2", [input.planId, input.ownerId]);
+    for (const row of pr.rows) {
+      planCropIds.push(row.crop_id);
+      if (row.product_ref) planProductIds.push(row.product_ref);
+    }
   }
   let farmGeo = input.farmGeography;
   if (!farmGeo && farmUuid) {
@@ -150,6 +155,7 @@ export async function runAgentTurn(deps: AgentDeps, input: AgentTurnInput): Prom
     stateIds: farmGeo?.stateCode ? [farmGeo.stateCode, `IN-${farmGeo.stateCode}`] : [],
     regionIds: farmGeo?.regionIds ?? [],
     cropIds: planCropIds,
+    productIds: planProductIds,
   };
   const gateCtx = (): GateContext => ({ ownerId: input.ownerId, mode: input.mode, agentRunId: runId, asOf, language: input.language, claimScope, userText: input.text, rainHorizonDays: limits.rainHorizonDays });
 
@@ -532,6 +538,19 @@ export async function runAgentTurn(deps: AgentDeps, input: AgentTurnInput): Prom
   const incomplete = status === "approved" ? undefined : (final?.gate.incomplete ?? (stop ? { reasons: [stop.code] } : useGate?.incomplete ?? { reasons: ["no_verified_answer"] }));
   if (incomplete && status !== "approved") limitations.push("Part of the answer was withheld because it could not be verified.");
 
+  // Only one clarification is asked per turn; the trimmed ones are recorded as removed (F8).
+  const approvedClarifications = final?.gate.approvedClarifications ?? [];
+  const baseReport = final?.gate.report ?? useGate?.report ?? null;
+  const gateReport: GateResult["report"] | null =
+    baseReport && approvedClarifications.length > 1
+      ? {
+          ...baseReport,
+          removed: [
+            ...baseReport.removed,
+            ...approvedClarifications.slice(1).map((q) => ({ field: "clarification" as const, id: q.id, index: (final?.gate.parsed?.clarifications ?? []).findIndex((x) => x.id === q.id), codes: ["clarification_limit"] })),
+          ],
+        }
+      : baseReport;
   const result: AgentRunResult = {
     runId,
     status,
@@ -542,11 +561,11 @@ export async function runAgentTurn(deps: AgentDeps, input: AgentTurnInput): Prom
       ? { answerBlocks: final.gate.approvedBlocks, numericRefs: final.gate.approvedNumericRefs, claimEvidenceRefs: final.gate.approvedClaimEvidenceRefs }
       : { answerBlocks: [], numericRefs: [], claimEvidenceRefs: [] },
     proposedFacts: proposedFactsFromProfile(profile, input.farmId),
-    clarifications: (final?.gate.approvedClarifications ?? []).slice(0, 1),
+    clarifications: approvedClarifications.slice(0, 1),
     limitations: [...new Set(limitations)],
     incomplete,
     gateStatus: useGate?.status ?? null,
-    gateReport: final?.gate.report ?? useGate?.report ?? null,
+    gateReport,
     ...(stop ? { error: { code: stop.code, message: stop.message } } : {}),
     cost: { estimatedUsd: safeNum(estimatedUsd), settledUsd: safeNum(settledUsd), providerCalls, billable: provider.billable, cachedInputTokensObserved: usage.cachedInputTokens },
     usage,

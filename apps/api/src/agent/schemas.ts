@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { AssistantIntent, Id, LanguageCode, Unit } from "@harvest/contracts";
+import { AssistantIntent, ClaimEvidenceRef, LanguageCode, Unit } from "@harvest/contracts";
 
 /** Output of the interpretation pass: proposals only. Code maps these to ValueRecords and the farmer confirms. */
 export const ProposedProfile = z
@@ -30,28 +30,16 @@ export type ProposedProfile = z.infer<typeof ProposedProfile>;
 export const PROFILE_FIELDS: readonly string[] = ProposedProfile.shape.facts.element.shape.field.options;
 
 /**
- * Agent-local extension of `claimEvidenceRefs` items (not yet in @harvest/contracts): a claim may declare
- * the crops it is about and the spatial granularity it is stated at. The gate strips these fields before
- * the strict contract parse and never returns them to the client. Proposed for promotion into the
- * contract (StructuredAssistantOutput.claimEvidenceRefs).
+ * Claim scope fields (F8: promoted into @harvest/contracts ClaimEvidenceRef; re-exported here). The gate
+ * still splits them off before the strict parse so it can check them against server-derived scope.
  */
-export const ClaimGranularity = z.enum(["district", "state", "region", "national"]);
-export type ClaimGranularity = z.infer<typeof ClaimGranularity>;
-export const ClaimScopeExtras = z
-  .object({ cropIds: z.array(Id).max(10).optional(), granularity: ClaimGranularity.optional() })
-  .strict();
+export { ClaimGranularity } from "@harvest/contracts";
+export const ClaimScopeExtras = ClaimEvidenceRef.pick({ cropIds: true, productIds: true, granularity: true }).strict();
 export type ClaimScopeExtras = z.infer<typeof ClaimScopeExtras>;
-export const AgentClaimEvidenceRef = z
-  .object({
-    claimId: Id,
-    text: z.string().min(1).max(1000),
-    evidenceIds: z.array(Id).min(1),
-    cropIds: z.array(Id).max(10).optional(),
-    granularity: ClaimGranularity.optional(),
-  })
-  .strict();
+/** Same schema as the contract (kept as a named export for the loop's JSON schema). */
+export const AgentClaimEvidenceRef = ClaimEvidenceRef;
 
-const EXTRA_KEYS = ["cropIds", "granularity"] as const;
+const EXTRA_KEYS = ["cropIds", "productIds", "granularity"] as const;
 
 /** Splits the agent-local claim fields off a raw output. Never throws; invalid extras are reported. */
 export function splitClaimExtras(raw: unknown): { ok: true; stripped: unknown; extras: Map<string, ClaimScopeExtras> } | { ok: false; message: string } {

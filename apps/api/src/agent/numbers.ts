@@ -4,8 +4,13 @@ import {
   CURRENCY_PREFIX,
   CURRENCY_WORD,
   EN_NUMBER_WORDS,
+  HI_FRACTION_WORDS,
+  HI_MODIFIERS,
   HI_NUMBER_WORDS,
   MULTIPLIERS,
+  ROMAN_NUMBER_WORDS,
+  TA_COLLOQUIAL_STEMS,
+  TA_EXACT_WORDS,
   TA_NUMBER_STEMS,
   UNIT_TERMS,
   termSource,
@@ -57,10 +62,16 @@ const ANY_MULT_RE = new RegExp(`^\\s*(?:${MULTIPLIERS.map(([t]) => termSource(t)
 /** Tamil stems that are also ordinary words or prefixes of ordinary words: whole-word match only. */
 const TA_EXACT = new Set(["ஒரு", "ஆறு", "ஏழு", "எட்டு"].map((x) => x.normalize("NFC")));
 
+const own = (o: Record<string, number>, k: string) => Object.prototype.hasOwnProperty.call(o, k);
 function numberWordValue(word: string): { value: number; kind: "unit" | "mult" } | null {
   const w = word.toLowerCase().normalize("NFC");
-  if (w in EN_NUMBER_WORDS) return { value: EN_NUMBER_WORDS[w]!, kind: "unit" };
-  if (w in HI_NUMBER_WORDS) return { value: HI_NUMBER_WORDS[w]!, kind: "unit" };
+  if (own(EN_NUMBER_WORDS, w)) return { value: EN_NUMBER_WORDS[w]!, kind: "unit" };
+  if (own(HI_NUMBER_WORDS, w)) return { value: HI_NUMBER_WORDS[w]!, kind: "unit" };
+  if (own(HI_FRACTION_WORDS, w)) return { value: HI_FRACTION_WORDS[w]!, kind: "unit" };
+  if (own(HI_MODIFIERS, w)) return { value: 0, kind: "unit" };
+  if (own(TA_EXACT_WORDS, w)) return { value: TA_EXACT_WORDS[w]!, kind: "unit" };
+  if (own(ROMAN_NUMBER_WORDS, w)) return { value: ROMAN_NUMBER_WORDS[w]!, kind: "unit" };
+  for (const [stem, v] of TA_COLLOQUIAL_STEMS) if (w.startsWith(stem)) return { value: v, kind: "unit" };
   for (const [re, v] of MULT_RES) {
     const m = re.exec(w);
     if (m && m[0].trim().length === w.length) return { value: v, kind: "mult" };
@@ -111,13 +122,26 @@ export function wordsToDigits(text: string): string {
     }
     const single = j === i && parts.length === 1;
     // A lone multiplier word ("lakh") is left for the digit pass; ambiguous single words need a unit next.
+    // A run containing a romanised Hindi/Tamil word ("do", "oru", "teen") also needs a unit or multiplier next.
     const onlyMult = vals.every((v) => v.kind === "mult");
-    const ambiguous = single && AMBIGUOUS_NUMBER_WORDS.has(first[0].toLowerCase().normalize("NFC"));
+    const runWords = text.slice(first.index, end).toLowerCase().normalize("NFC").split(/[^\p{L}\p{M}]+/u).filter(Boolean);
+    const romanised = runWords.some((w) => own(ROMAN_NUMBER_WORDS, w));
+    const ambiguous = (single && AMBIGUOUS_NUMBER_WORDS.has(first[0].toLowerCase().normalize("NFC"))) || romanised;
     const rest = text.slice(end);
     const articled = onlyMult && /(?:^|[^\p{L}\p{M}])(?:a|an)\s+$/iu.test(text.slice(0, first.index));
     if ((onlyMult && !articled) || (ambiguous && !ANY_UNIT_RE.test(rest) && !ANY_MULT_RE.test(rest))) {
       i = j + 1;
       continue;
+    }
+    // Hindi modifiers: सवा X = X + 0.25, साढ़े X = X + 0.5, पौने X = X - 0.25; alone सवा = 1.25, पौने = 0.75.
+    const firstWord = first[0].toLowerCase().normalize("NFC");
+    if (own(HI_MODIFIERS, firstWord)) {
+      if (vals.length > 1 && vals[1]!.kind === "unit") vals = [{ value: vals[1]!.value + HI_MODIFIERS[firstWord]!, kind: "unit" }, ...vals.slice(2)];
+      else if (own(HI_FRACTION_WORDS, firstWord)) vals = [{ value: HI_FRACTION_WORDS[firstWord]!, kind: "unit" }, ...vals.slice(1)];
+      else {
+        i = j + 1;
+        continue;
+      }
     }
     let total = 0;
     let current = 0;
@@ -136,6 +160,27 @@ export function wordsToDigits(text: string): string {
   }
   out.push(text.slice(cursor));
   return out.join("");
+}
+
+/**
+ * Sentinel value for vague quantities ("a few bags", "several litres"): counted as a number that needs a
+ * reference, but it never equals a real stored value.
+ */
+export const VAGUE_QUANTITY = "0.000000271828";
+const EN_QTY_UNIT =
+  "(?:kilo(?:gram(?:me)?)?s?|kgs?|lit(?:re|er)s?|ltrs?|millilit(?:re|er)s?|mls?|grams?|quintals?|qtls?|tonnes?|tons?|acres?|hectares?|bags?|packets?|bottles?|sachets?|(?:tea|table)?spoon(?:ful)?s?|caps?|capfuls?|handfuls?|tanks?|tankfuls?|drums?|buckets?|pumps?|kattas?|dozens?|ekad|ekar)\\b";
+/**
+ * English indefinite and fractional quantities as digits (F8): "a kilo" -> 1 kilo, "half a litre" -> 0.5
+ * litre, "a couple of kilos" -> 2 kilos, "a quarter litre" -> 0.25 litre, "a few bags" -> vague. "a/an"
+ * used as a rate after a quantity ("₹2050 a quintal", "20 ml a litre") is left alone.
+ */
+export function englishQuantityPhrases(t: string): string {
+  return t
+    .replace(/\b(?:a|an)\s+(?:couple|pair)\s+(?:of\s+)?/giu, " 2 ")
+    .replace(new RegExp(`\\b(?:(?:a|an)\\s+)?(?:few|several|some|many)\\s+(?:(?:more|of|of\\s+the)\\s+)?(?=${EN_QTY_UNIT})`, "giu"), ` ${VAGUE_QUANTITY} `)
+    .replace(/(?<!\b(?:first|second|other|latter|in)\s+)\bhalf[\s-]+(?:(?:a|an)\s+)?/giu, " 0.5 ")
+    .replace(/\b(?:(?:a|an|one)\s+)?quarter[\s-]+(?:of\s+)?(?:(?:a|an)\s+)?(?=\S)/giu, (m, off: number, all: string) => (/^(?:a|an|one)\s/i.test(m) || /(?:of|a|an)\s+$/i.test(m) || new RegExp(`^${EN_QTY_UNIT}`, "iu").test(all.slice(off + m.length)) ? " 0.25 " : m))
+    .replace(new RegExp(`\\b(?:a|an)\\s+(?=${EN_QTY_UNIT})`, "giu"), (m, off: number, all: string) => (/\d[\d,.]*\s*(?:[\p{L}₹%/.]+\s*){0,2}$/u.test(all.slice(Math.max(0, off - 30), off)) ? m : " 1 "));
 }
 
 export interface NumberToken {
@@ -163,6 +208,7 @@ export function normaliseForChecks(input: string, o: { englishDates: boolean }):
     t = t.replace(/(^|\n)\s*\d{1,2}[.)]\s/g, "$1 ");
   }
   t = t.replace(/(?<![\p{L}\p{M}])m3(?![\p{L}\p{M}\p{N}])/gu, "m³");
+  t = englishQuantityPhrases(t);
   t = wordsToDigits(t);
   // Digits glued to letters ("Rs500", "500kg", "INR2,000") are separated so they are always counted.
   t = t.replace(/([\p{L}\p{M}])(?=\d)/gu, "$1 ").replace(/(\d)(?=[\p{L}\p{M}])/gu, "$1 ");

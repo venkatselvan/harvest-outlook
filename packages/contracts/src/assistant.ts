@@ -71,6 +71,8 @@ export const ToolSchemas = {
               effectiveAvailableAt: IsoDateTime.nullable(),
               scope: SpatialScope,
               cropIds: z.array(Id),
+              /** Promoted from the agent-local extension (D28/F8): only validated or machine-grounded evidence is citable. */
+              validationStatus: z.enum(['validated', 'grounded']),
             })
             .strict(),
         ),
@@ -200,7 +202,7 @@ export const ToolSchemas = {
   request_visual_keyframes: {
     input: z.object({ planId: Id, briefId: Id, stageIds: z.array(Id).min(1).max(8) }).strict(),
     output: z
-      .object({ jobId: Id.nullable(), deduplicated: z.boolean(), allowedStageCount: z.number().int().nonnegative(), budgetGate: z.enum(['reserved', 'denied']) })
+      .object({ jobId: Id.nullable(), deduplicated: z.boolean(), allowedStageCount: z.number().int().nonnegative(), budgetGate: z.enum(['reserved', 'checked', 'denied']) })
       .strict(),
   },
   get_job_status: {
@@ -234,6 +236,28 @@ export const NumericRef = z
   })
   .strict();
 export type NumericRef = z.infer<typeof NumericRef>;
+
+/** Spatial granularity a claim is stated at (F8: promoted from the agent-local extension). */
+export const ClaimGranularity = z.enum(['district', 'state', 'region', 'national']);
+export type ClaimGranularity = z.infer<typeof ClaimGranularity>;
+
+/**
+ * A claim and the evidence cited for it. `cropIds`, `productIds` and `granularity` are declared scope
+ * (F8: promoted from the agent-local extension); the server gate checks them against server-derived
+ * plan scope and the evidence rows, never trusting the declaration alone.
+ */
+export const ClaimEvidenceRef = z
+  .object({
+    claimId: Id,
+    text: z.string().min(1).max(1000),
+    evidenceIds: z.array(Id).min(1),
+    cropIds: z.array(Id).max(10).optional(),
+    /** Catalogue product ids (e.g. ginger-dry) when the claim is about a product form. */
+    productIds: z.array(Id).max(10).optional(),
+    granularity: ClaimGranularity.optional(),
+  })
+  .strict();
+export type ClaimEvidenceRef = z.infer<typeof ClaimEvidenceRef>;
 
 export const AssistantIntent = z.enum([
   'explore_crops',
@@ -284,7 +308,7 @@ export const StructuredAssistantOutput = z
         .strict(),
     ),
     numericRefs: z.array(NumericRef),
-    claimEvidenceRefs: z.array(z.object({ claimId: Id, text: z.string().min(1).max(1000), evidenceIds: z.array(Id).min(1) }).strict()),
+    claimEvidenceRefs: z.array(ClaimEvidenceRef),
     proposedPlanChange: ToolSchemas.propose_plan_revision.input.optional(),
     limitations: z.array(z.string().min(1).max(1000)),
   })

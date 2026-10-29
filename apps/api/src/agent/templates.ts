@@ -79,7 +79,8 @@ const UNIT_WORDING: Partial<Record<Unit, Record<TemplateLanguage, (v: string) =>
 
 /** "/scenarios/0/netInr" -> "net inr". Digits are dropped so the label never carries a number. */
 export function fieldLabel(jsonPointer: string): string {
-  const seg = jsonPointer.split("/").filter((s) => s !== "" && !/^\d+$/.test(s)).pop() ?? "value";
+  // ".../value", ".../amount/central" (unit-bearing records, F8) are labelled by the record's field name.
+  const seg = jsonPointer.split("/").filter((s) => s !== "" && !/^\d+$/.test(s) && !/^(value|amount|low|central|high)$/.test(s)).pop() ?? "value";
   const words = seg.replace(/~1/g, " ").replace(/~0/g, " ").replace(/([a-z])([A-Z])/g, "$1 $2").replace(/[_\-.]+/g, " ").replace(/\d+/g, " ").replace(/[^\p{L}\p{M} ]/gu, " ").trim().toLowerCase().replace(/\s+/g, " ");
   return words || "value";
 }

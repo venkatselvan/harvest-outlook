@@ -120,8 +120,33 @@ function uniq<T>(xs: T[]): T[] {
   return [...new Set(xs)];
 }
 
-const STATE_ID = /^IN-[A-Z]{2}$/;
-const DISTRICT_ID = /^(IN-[A-Z]{2})-.+$/;
+const STATE_ID = /^in-[a-z]{2}$/;
+const DISTRICT_ID = /^(in-[a-z]{2})-.+$/;
+
+/** Region-id options. `regionAliases` maps other spellings (e.g. `IN-KA-HAS`) to registry ids (`IN-KA-hassan`). */
+export interface RegionOptions {
+  regionAliases?: Readonly<Record<string, string>> | undefined;
+}
+
+/**
+ * Canonical comparison key for a region id (F8, review R3a #9): trimmed and lower-cased; the farm form's
+ * typed district `typed:KA:hassan` becomes `in-ka-hassan`; a bare state code `KA` becomes `in-ka`; then
+ * an alias from the caller's registry is applied (aliases are never guessed: `IN-KA-HAS` only maps to
+ * `IN-KA-hassan` when the registry says so).
+ */
+export function canonicalRegionId(id: string, opts: RegionOptions = {}): string {
+  let c = id.trim().toLowerCase();
+  const typed = /^typed:([a-z]{2}):(.+)$/.exec(c);
+  if (typed) c = `in-${typed[1]}-${typed[2]}`;
+  else if (/^[a-z]{2}$/.test(c) && c !== 'in') c = `in-${c}`;
+  const aliases = opts.regionAliases;
+  if (aliases) {
+    for (const [from, to] of Object.entries(aliases)) {
+      if (from.trim().toLowerCase() === c) return canonicalRegionId(to, {});
+    }
+  }
+  return c;
+}
 const T: Evaluation = { truth: 'true', unknownFields: [] };
 const F: Evaluation = { truth: 'false', unknownFields: [] };
 
@@ -136,10 +161,12 @@ const F: Evaluation = { truth: 'false', unknownFields: [] };
  * A district id `IN-XX-name` in the context implies state `IN-XX` when stateId is missing.
  * Any id true -> true; else any unknown -> unknown; else false.
  */
-export function regionApplies(regionIds: string[], location: RuleContext['location']): Evaluation {
-  if (regionIds.includes(NATIONAL_REGION_ID)) return T;
-  const d = location?.districtId ?? null;
-  const s = location?.stateId ?? (d !== null ? (DISTRICT_ID.exec(d)?.[1] ?? null) : null);
+export function regionApplies(regionIdsIn: string[], location: RuleContext['location'], opts: RegionOptions = {}): Evaluation {
+  const national = NATIONAL_REGION_ID.toLowerCase();
+  const regionIds = regionIdsIn.map((x) => canonicalRegionId(x, opts));
+  if (regionIds.includes(national)) return T;
+  const d = location?.districtId != null ? canonicalRegionId(location.districtId, opts) : null;
+  const s = location?.stateId != null ? canonicalRegionId(location.stateId, opts) : d !== null ? (DISTRICT_ID.exec(d)?.[1] ?? null) : null;
   const per = regionIds.map((id): Evaluation => {
     if (id === d || id === s) return T;
     if (STATE_ID.test(id)) return s !== null ? F : { truth: 'unknown', unknownFields: ['location.stateId'] };
@@ -160,8 +187,8 @@ export function regionApplies(regionIds: string[], location: RuleContext['locati
 }
 
 /** Scope applicability: region AND season AND irrigation, each three-valued. */
-export function scopeApplies(rule: CropRule, ctx: RuleContext): Evaluation {
-  const region = regionApplies(rule.scope.regionIds, ctx.location);
+export function scopeApplies(rule: CropRule, ctx: RuleContext, opts: RegionOptions = {}): Evaluation {
+  const region = regionApplies(rule.scope.regionIds, ctx.location, opts);
   const season: Evaluation =
     rule.scope.seasons.length === 0
       ? T
@@ -196,13 +223,45 @@ export function ruleExecutable(rule: CropRule, mode: Mode): { ok: true } | { ok:
   return { ok: true };
 }
 
-export function evaluateRule(rule: CropRule, ctx: RuleContext, opts: { mode: Mode }): RuleEvaluationResult {
+/** True when a condition tree contains the `known` operator. */
+export function conditionUsesKnown(c: Condition): boolean {
+  if ('all' in c) return c.all.some(conditionUsesKnown);
+  if ('any' in c) return c.any.some(conditionUsesKnown);
+  if ('not' in c) return conditionUsesKnown(c.not);
+  return c.op === 'known';
+}
+
+/**
+ * F8 (review R3a #10): `known` makes missing data decidable, so a rule that can produce a HARD effect
+ * (its own effect or any exception's) must not use it anywhere: an unknown input would otherwise decide
+ * eligibility. Returns the offending locations (empty = acceptable). Enforced at catalogue load and,
+ * by default, at evaluation (the rule is then not executable).
+ */
+export function knownInHardRule(rule: CropRule): string[] {
+  const hard = isHard(rule.effect.type) || rule.exceptions.some((e) => isHard(e.effect.type));
+  if (!hard) return [];
+  const out: string[] = [];
+  if (conditionUsesKnown(rule.when)) out.push(`${rule.id}.when`);
+  for (const e of rule.exceptions) if (conditionUsesKnown(e.when)) out.push(`${rule.id}.exceptions.${e.id}`);
+  return out;
+}
+
+export interface EvaluateOptions extends RegionOptions {
+  mode: Mode;
+  /** Escape hatch for tests of legacy data only; default false (guard on). */
+  allowKnownInHardRules?: boolean | undefined;
+}
+
+export function evaluateRule(rule: CropRule, ctx: RuleContext, opts: EvaluateOptions): RuleEvaluationResult {
   const base = { ruleId: rule.id, ruleVersion: rule.version, cropId: rule.cropId };
   const exec = ruleExecutable(rule, opts.mode);
   if (!exec.ok) {
     return { ...base, truth: 'false', effect: 'not_applicable', reasons: [{ reasonCode: exec.reasonCode, source: 'gate' }], unknownFields: [], appliedExceptionId: null };
   }
-  const applies = and(scopeApplies(rule, ctx), evaluateCondition(rule.when, ctx));
+  if (opts.allowKnownInHardRules !== true && knownInHardRule(rule).length > 0) {
+    return { ...base, truth: 'false', effect: 'not_applicable', reasons: [{ reasonCode: 'known_operator_in_hard_rule', source: 'gate' }], unknownFields: [], appliedExceptionId: null };
+  }
+  const applies = and(scopeApplies(rule, ctx, opts), evaluateCondition(rule.when, ctx));
   if (applies.truth === 'false') {
     return { ...base, truth: 'false', effect: 'not_applicable', reasons: [], unknownFields: [], appliedExceptionId: null };
   }
@@ -301,8 +360,8 @@ function reachable(rule: CropRule, ctx: RuleContext): { effects: string[]; ownEf
   return { effects, ownEffect: rule.effect.type, exceptionUnknowns };
 }
 
-function unresolvedFor(rule: CropRule, ctx: RuleContext): UnresolvedCondition[] {
-  const own = and(scopeApplies(rule, ctx), evaluateCondition(rule.when, ctx));
+function unresolvedFor(rule: CropRule, ctx: RuleContext, opts: RegionOptions = {}): UnresolvedCondition[] {
+  const own = and(scopeApplies(rule, ctx, opts), evaluateCondition(rule.when, ctx));
   const { ownEffect, exceptionUnknowns } = reachable(rule, ctx);
   return [...own.unknownFields.map((field) => ({ field, ruleId: rule.id, exceptionId: null, effectIfTrue: ownEffect, evidenceIds: rule.evidenceIds })), ...exceptionUnknowns];
 }
@@ -320,7 +379,7 @@ function unresolvedFor(rule: CropRule, ctx: RuleContext): UnresolvedCondition[] 
  * therefore cannot become a positive recommendation (step 4 needs a true HARD eligible rule) nor a definitive
  * exclusion (step 1 needs truth true).
  */
-export function screenCrop(cropId: string, rules: CropRule[], ctx: RuleContext, opts: { mode: Mode; productId?: string | null }): CropScreening {
+export function screenCrop(cropId: string, rules: CropRule[], ctx: RuleContext, opts: EvaluateOptions & { productId?: string | null }): CropScreening {
   const productId = opts.productId ?? null;
   const own = rules.filter((r) => r.cropId === cropId && ruleAppliesToProduct(r, productId));
   const evaluated = own.map((rule) => ({ rule, res: evaluateRule(rule, ctx, opts) }));
@@ -341,7 +400,7 @@ export function screenCrop(cropId: string, rules: CropRule[], ctx: RuleContext, 
   else if (eligibleHolds) [outcome, verdictBasis] = ['eligible', 'hard_eligible'];
   else [outcome, verdictBasis] = ['unknown', 'no_applicable_hard_rule'];
 
-  const unresolvedConditions = unknownRules.flatMap(({ rule }) => unresolvedFor(rule, ctx));
+  const unresolvedConditions = unknownRules.flatMap(({ rule }) => unresolvedFor(rule, ctx, opts));
   const resolved = results.filter((r) => r.truth === 'true').length;
   const unresolvedFields = uniq(unresolvedConditions.map((u) => u.field)).length;
   const byEffect = (e: string) => results.filter((r) => r.truth === 'true' && r.effect === e).flatMap((r) => r.reasons);

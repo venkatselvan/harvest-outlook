@@ -2,10 +2,11 @@ import { z } from "zod";
 import { Mode, StructuredAssistantOutput, type Unit } from "@harvest/contracts";
 import { Decimal, convertDecimal } from "@harvest/domain";
 import type { Pool } from "../db/pool";
-import { GRANULARITY_LABEL, INDIC_SCRIPT, termRe } from "./lexicon";
-import { contextWord, numberTokens, proseNumbers, unitAdjacent, unitAt, type NumberToken } from "./numbers";
-import { detectHighRisk, dosageMentions, nativeLexiconHits, type RiskCode } from "./risk";
+import { CERTAINTY, CHEMICAL_NOUNS, DISEASE, DOSAGE_VERBS, GRANULARITY_LABEL, GUARANTEE, INDIC_SCRIPT, MONTH_NAMES_INDIC, PRODUCT_FORM_WORDS, ROMAN_CHEMICAL_NOUNS, ROMAN_DOSAGE_VERBS, UNIT_TERMS, termRe, termSource } from "./lexicon";
+import { MONTH_RE, contextWord, normalizeDigits, numberTokens, proseNumbers, unitAdjacent, unitAt, type NumberToken } from "./numbers";
+import { detectHighRisk, dosageMentions, isApplicationContext, nativeLexiconHits, type RiskCode } from "./risk";
 import { PROFILE_FIELDS, splitClaimExtras, type ClaimGranularity, type ClaimScopeExtras } from "./schemas";
+import { unitAtPointer } from "./tool-units";
 
 export { proseNumbers };
 
@@ -22,6 +23,11 @@ export { proseNumbers };
  * be displayed from a validated numericRef of the same block with its unit, and any Hindi/Tamil
  * high-risk lexicon term needs a validated numericRef or claim on the block. The farmer-number and
  * date exemptions apply to English text only.
+ *
+ * F8: units come from the stored tool output, never from the model (tool-units.ts); a claim that names a
+ * product form must be scoped to products of that form and cite evidence covering those products;
+ * clarification options must be short profile values. When the turn language is hi/ta, Latin-script text
+ * is fail-closed as well (romanised Hindi/Tamil).
  *
  * This is a rule-based gate. It does not verify meaning: narrative agronomy that avoids the lexicons
  * and carries no number is not detected, and no semantic verifier exists yet.
@@ -47,6 +53,8 @@ export const GateContext = z
         stateIds: z.array(z.string()).default([]),
         regionIds: z.array(z.string()).default([]),
         cropIds: z.array(z.string()),
+        /** Server-derived product ids (catalogue slugs) of the plan; used only for product-form claims. */
+        productIds: z.array(z.string()).default([]),
       })
       .strict(),
     /** The farmer's own message; numbers the farmer stated may be echoed (English, same unit) without a reference. */
@@ -75,6 +83,8 @@ export interface EvidenceFact {
   geographyLevel: string | null;
   geographyIds: string[];
   cropIds: string[];
+  /** Catalogue product ids the evidence covers; empty/absent = crop-level evidence only. */
+  productIds?: string[];
   effectiveAvailableAt: string | null;
   availabilityBasis: string | null;
 }
@@ -84,6 +94,8 @@ export interface GateFacts {
   evidence: Map<string, EvidenceFact>;
   /** Catalogue crop ids that exist (for claim-declared crops). Missing = none verifiable. */
   knownCropIds?: Set<string>;
+  /** Catalogue product id -> product basis (fresh, dry ...). Missing = form unverifiable (fail closed). */
+  productForms?: Map<string, string>;
 }
 
 export interface GateIssue {
@@ -98,6 +110,7 @@ export type GateStatus = "approved" | "partial" | "correction_requested" | "unve
 
 export interface RemovedItem {
   field: "answerBlock" | "claimEvidenceRef" | "limitation" | "clarification" | "clarificationOption";
+  /* "clarification" entries with code clarification_limit are added by the loop when it trims to one question. */
   /** Block id, claim id or clarification id; null for limitations. */
   id: string | null;
   index: number;
@@ -220,7 +233,7 @@ function farmGeo(ctx: Ctx): FarmGeo {
 }
 
 /** Problems that stop one evidence row from supporting a claim at the given crops and granularity. */
-export function evidenceCoversScope(e: EvidenceFact, ctx: Ctx, scope: { cropIds: string[]; granularity: ClaimGranularity }, geo: FarmGeo = farmGeo(ctx)): string[] {
+export function evidenceCoversScope(e: EvidenceFact, ctx: Ctx, scope: { cropIds: string[]; granularity: ClaimGranularity; productIds?: string[] }, geo: FarmGeo = farmGeo(ctx)): string[] {
   const problems: string[] = [];
   if (e.validationStatus !== "validated" && e.validationStatus !== "grounded") problems.push("evidence_not_validated");
   const modeOk = ctx.mode === "synthetic" ? e.mode === "synthetic" : ctx.mode === "replay" ? e.mode === "replay" || e.mode === "live" : e.mode === "live";
@@ -246,6 +259,10 @@ export function evidenceCoversScope(e: EvidenceFact, ctx: Ctx, scope: { cropIds:
     if (!covers) problems.push("evidence_scope_geography");
   }
   if (scope.cropIds.length === 0 || !scope.cropIds.every((c) => e.cropIds.includes(c))) problems.push("evidence_scope_crop");
+  // F8: product-specific claims need evidence that names every claimed product; crop-level evidence
+  // (no product ids) supports crop-level claims only.
+  const claimed = scope.productIds ?? [];
+  if (claimed.length > 0 && !claimed.every((p) => (e.productIds ?? []).includes(p))) problems.push("evidence_scope_product");
   return problems;
 }
 
@@ -275,7 +292,13 @@ function checkText(
   const native = isNativeText(ctx.language, text);
   if (UNSUPPORTED_SCRIPT.test(text)) issues.push({ code: "unsupported_script", message: `${o.label}: text in a script other than Latin, Devanagari or Tamil cannot be verified` });
 
-  const { tokens } = numberTokens(text, { englishDates: !native });
+  const { text: normText, tokens } = numberTokens(text, { englishDates: !native });
+  const sentenceAt = (pos: number) => {
+    const before = normText.slice(0, pos);
+    const start = Math.max(before.search(/[.!?।\n][^.!?।\n]*$/u), 0);
+    const endRel = normText.slice(pos).search(/[.!?।\n]/u);
+    return normText.slice(start, endRel < 0 ? normText.length : pos + endRel);
+  };
   const covered = new Set<NumberToken>();
   for (const pv of o.presented) {
     const same = tokens.filter((t) => t.value.equals(pv.value));
@@ -288,7 +311,8 @@ function checkText(
   for (const t of tokens) {
     if (covered.has(t)) continue;
     const key = tokenKey(t);
-    const farmerOk = !native && key !== null && o.farmer.some((f) => f.key === key && f.value.equals(t.value));
+    // A farmer-stated number may be echoed, but never inside an input-application sentence (F8): there it reads as a dose.
+    const farmerOk = !native && key !== null && o.farmer.some((f) => f.key === key && f.value.equals(t.value)) && !isApplicationContext(sentenceAt(t.start));
     if (farmerOk) continue;
     issues.push({
       code: "prose_number_without_ref",
@@ -306,13 +330,63 @@ function checkText(
     issues.push({ code: h.code, message: `${o.label}: ${h.message}` });
   }
   if (native && !o.supported) {
-    const hits = nativeLexiconHits(text);
+    // F8: in a hi/ta turn Latin-script text (romanised Hindi/Tamil or English) is fail-closed too.
+    const hits = nativeLexiconHits(text, { latin: /^(hi|ta)(-|$)/i.test(ctx.language) });
     if (hits.length > 0) issues.push({ code: "native_risk_term_unsupported", message: `${o.label}: Hindi/Tamil high-risk wording (${hits.join(", ")}) without a validated numericRef or claim` });
   }
   return { issues, risks };
 }
 
 const labelRe = (g: "state" | "region" | "national") => termRe(GRANULARITY_LABEL[g]);
+
+// ---------------------------------------------------------------- product forms
+const FORM_RES = Object.entries(PRODUCT_FORM_WORDS).map(([basis, list]) => [basis, termRe(list)] as const);
+/** Product bases named in a text ("dry ginger" -> dry). */
+export function productFormsIn(text: string): string[] {
+  const t = text.normalize("NFC");
+  return FORM_RES.filter(([, re]) => re.test(t)).map(([b]) => b);
+}
+
+// ---------------------------------------------------------------- clarification options
+const OPTION_UNSAFE_RE = new RegExp(
+  [DOSAGE_VERBS, CHEMICAL_NOUNS, DISEASE, GUARANTEE, CERTAINTY, ROMAN_DOSAGE_VERBS, ROMAN_CHEMICAL_NOUNS].map(termSource).join("|"),
+  "iu",
+);
+const YES_NO = termRe({
+  en: ["yes", "no", "not\\s+sure", "(?:i\\s+)?don'?t\\s+know", "unknown", "maybe", "none", "haan", "haa", "nahi", "nahin", "pata\\s+nahi", "aamaa?", "illai", "theriyadhu", "theriyathu"],
+  indic: ["हाँ$", "हां$", "जी हाँ", "नहीं$", "पता नहीं", "मालूम नहीं", "ஆம்$", "ஆமாம்$", "இல்லை$", "தெரியாது$"],
+});
+const FIELD_VOCAB: Record<string, string[]> = {
+  irrigation: ["rain[\\s-]?fed", "irrigated", "(?:partly|partially)\\s+irrigated", "drip", "sprinkler", "flood", "furrow", "bore\\s?well", "open\\s+well", "well", "canal", "tank", "river", "pond", "rain\\s+only", "no\\s+irrigation", "limited", "adequate", "plenty", "assured", "protective"],
+  water_availability: ["low", "medium", "moderate", "high", "scarce", "limited", "adequate", "enough", "plenty", "assured", "seasonal", "year[\\s-]round", "rain\\s+only"],
+  soil: ["sandy", "loamy", "loam", "clay", "clayey", "sandy\\s+loam", "clay\\s+loam", "silty", "red", "black", "laterite", "lateritic", "alluvial", "well[\\s-]drained", "poorly\\s+drained", "moderately\\s+drained", "waterlogged", "acidic", "alkaline", "saline", "(?:red|black|sandy|clay|loamy|alluvial|laterite)\\s+soil"],
+  labour: ["low", "medium", "high", "family(?:\\s+labou?r)?", "hired(?:\\s+labou?r)?", "limited", "enough", "plenty", "only\\s+family", "me\\s+only", "just\\s+me"],
+  experience: ["first\\s+time", "beginner", "new", "some", "experienced", "very\\s+experienced", "never\\s+grown", "grown\\s+before"],
+  planting_window: ["this\\s+season", "next\\s+season", "kharif", "rabi", "zaid", "summer", "monsoon", "winter", "now", "not\\s+decided", "soon"],
+};
+const MONTH_OPT = new RegExp(`^(?:early|mid|late|end\\s+of|start\\s+of)?\\s*${MONTH_RE}(?:\\s*(?:-|–|to)\\s*${MONTH_RE})?(?:\\s+\\d{4})?$`, "iu");
+const MONTH_INDIC = termRe({ indic: MONTH_NAMES_INDIC });
+const QTY_UNIT = [UNIT_TERMS.acre!, UNIT_TERMS.ha!, UNIT_TERMS.months!, UNIT_TERMS.weeks!, UNIT_TERMS.days!, { en: ["years?", "yrs?", "lakhs?", "thousands?", "rupees?", "rs\\.?", "inr", "cents?", "guntas?", "bighas?"], indic: ["साल", "वर्ष", "லட்ச", "ஆயிர", "ஆண்டு", "வருட"] }].map(termSource).join("|");
+const NUMBER_OPT = new RegExp(`^(?:about|around|approx\\.?|under|over|less\\s+than|more\\s+than|up\\s*to|below|above|<|>)?\\s*(?:₹|rs\\.?|inr)?\\s*\\d[\\d,.]*(?:\\s*(?:-|–|to)\\s*(?:₹|rs\\.?)?\\s*\\d[\\d,.]*)?\\s*(?:(?:${QTY_UNIT})\\s*){0,2}(?:or\\s+(?:more|less))?$`, "iu");
+const PLACE_OPT = /^[\p{L}\p{M}][\p{L}\p{M} .'-]{0,30}$/u;
+
+/**
+ * F8 (review R3a #5): a clarification option is a short profile value, never an instruction. Returns an
+ * issue code, or null when the option is acceptable for the field.
+ */
+export function clarificationOptionProblem(field: string, option: string): string | null {
+  const t = normalizeDigits(option.normalize("NFC")).trim();
+  const words = t.split(/\s+/u).filter(Boolean);
+  if (t.length === 0 || t.length > 40 || words.length > 6) return "clarification_option_not_value";
+  if (OPTION_UNSAFE_RE.test(t)) return "clarification_option_unsafe";
+  if (YES_NO.test(t) && words.length <= 3) return null;
+  if (NUMBER_OPT.test(t) && ["area", "budget", "experience", "water_availability", "labour"].includes(field)) return null;
+  if ((MONTH_OPT.test(t) || (MONTH_INDIC.test(t) && words.length <= 4)) && field === "planting_window") return null;
+  const vocab = FIELD_VOCAB[field];
+  if (vocab && new RegExp(`^(?:${vocab.join("|")})(?:\\s+(?:soil|irrigation|labou?r|water))?$`, "iu").test(t)) return null;
+  if ((field === "district" || field === "state") && PLACE_OPT.test(t) && words.length <= 3) return null;
+  return "clarification_option_not_value";
+}
 
 // ---------------------------------------------------------------- pure evaluation
 export function evaluateGate(raw: unknown, ctxIn: GateContext, facts: GateFacts): GateResult {
@@ -386,8 +460,18 @@ export function evaluateGate(raw: unknown, ctxIn: GateContext, facts: GateFacts)
         refProblem.set(r.id, { code: "numeric_ref_not_numeric", message: `numericRef ${r.id} does not point at a number` });
         continue;
       }
+      // F8: the source unit is derived from the stored tool output; the model's declaration must agree.
+      const derived = unitAtPointer(tr.toolName, tr.result, r.jsonPointer);
+      if (!derived) {
+        refProblem.set(r.id, { code: "numeric_ref_unit_unknown", message: `numericRef ${r.id}: the tool output carries no unit for this value; point at a value with a unit (e.g. .../value of a quantity record)` });
+        continue;
+      }
+      if (derived.unit !== r.presentation.sourceUnit) {
+        refProblem.set(r.id, { code: "numeric_ref_unit_mismatch", message: `numericRef ${r.id}: the stored value is in ${derived.unit}, not ${r.presentation.sourceUnit}` });
+        continue;
+      }
       try {
-        refPresented.set(r.id, presentedValue(dec, r.presentation.sourceUnit, r.presentation.unit, r.presentation.rounding));
+        refPresented.set(r.id, presentedValue(dec, derived.unit, r.presentation.unit, r.presentation.rounding));
         refTool.set(r.id, tr.toolName);
       } catch {
         refProblem.set(r.id, { code: "unit_conversion_not_permitted", message: `numericRef ${r.id}: ${r.presentation.sourceUnit} to ${r.presentation.unit} is not a permitted conversion` });
@@ -416,13 +500,32 @@ export function evaluateGate(raw: unknown, ctxIn: GateContext, facts: GateFacts)
         if (!ex.cropIds.every((x) => knownCrops.has(x))) probs.push({ code: "claim_crop_unknown", message: `claim ${c.claimId} declares a crop id that is not in the catalogue` });
         crops = ex.cropIds;
       } else probs.push({ code: "claim_crop_scope_missing", message: `claim ${c.claimId} must declare cropIds (no plan crop is in scope)` });
+      // F8 product scope: a claim that names a product form, or declares productIds, is product-specific.
+      const citingTexts = [c.text, ...out.answerBlocks.filter((b) => b.claimIds.includes(c.claimId)).map((b) => b.text)];
+      const forms = [...new Set(citingTexts.flatMap(productFormsIn))];
+      let products: string[] = [];
+      const productSpecific = forms.length > 0 || (ex.productIds?.length ?? 0) > 0;
+      if (productSpecific) {
+        const planProducts = ctx.claimScope.productIds;
+        if (ex.productIds && ex.productIds.length > 0) {
+          products = ex.productIds;
+          if (planProducts.length > 0 && products.some((x) => !planProducts.includes(x))) probs.push({ code: "claim_product_outside_scope", message: `claim ${c.claimId} declares products outside the plan's product` });
+        } else products = planProducts;
+        if (products.length === 0) probs.push({ code: "claim_product_scope_missing", message: `claim ${c.claimId} names a product form (${forms.join(", ")}); declare productIds and cite product-specific evidence` });
+        else {
+          const known = facts.productForms;
+          const productBases = products.map((x) => known?.get(x));
+          if (productBases.some((x) => x === undefined)) probs.push({ code: "claim_product_unknown", message: `claim ${c.claimId} declares a product id that is not in the catalogue` });
+          else if (forms.some((f) => !productBases.includes(f))) probs.push({ code: "claim_product_form_mismatch", message: `claim ${c.claimId}: the text names ${forms.join(", ")} but the claim's products are ${[...new Set(productBases)].join(", ")}` });
+        }
+      }
       const granularity = ex.granularity ?? defaultGranularity;
       claimGranularity.set(c.claimId, { granularity, declaredCoarser: ex.granularity !== undefined && GRANULARITY_RANK[ex.granularity] > GRANULARITY_RANK[defaultGranularity] });
       if (probs.length === 0) {
         const rows = c.evidenceIds.map((id) => ({ id, row: facts.evidence.get(id) }));
         if (rows.some((r) => !r.row)) probs.push({ code: "evidence_missing", message: `claim ${c.claimId} cites evidence that does not exist` });
         else {
-          const results = rows.map((r) => ({ id: r.id, row: r.row!, problems: evidenceCoversScope(r.row!, ctx, { cropIds: crops, granularity }, geo) }));
+          const results = rows.map((r) => ({ id: r.id, row: r.row!, problems: evidenceCoversScope(r.row!, ctx, { cropIds: crops, granularity, productIds: productSpecific ? products : [] }, geo) }));
           const ok = results.filter((r) => r.problems.length === 0);
           if (ok.length === 0) {
             const first = results[0]!.problems[0] ?? "evidence_scope";
@@ -501,9 +604,11 @@ export function evaluateGate(raw: unknown, ctxIn: GateContext, facts: GateFacts)
       }
       const options = q.options.filter((opt, j) => {
         const ot = checkText(opt, ctx, { label: `clarification ${q.id} option ${j}`, presented: [], requireDisplayed: false, farmer, supported: false });
-        if (ot.issues.length === 0) return true;
-        report.removed.push({ field: "clarificationOption", id: q.id, index: j, codes: [...new Set(ot.issues.map((x) => x.code))] });
-        for (const x of ot.issues) addIssue(x.code, x.message);
+        const shape = clarificationOptionProblem(q.field!, opt);
+        const all = [...ot.issues, ...(shape ? [{ code: shape, message: `clarification ${q.id} option ${j}: options must be short profile values for ${q.field} (no instructions, inputs or diagnoses)` }] : [])];
+        if (all.length === 0) return true;
+        report.removed.push({ field: "clarificationOption", id: q.id, index: j, codes: [...new Set(all.map((x) => x.code))] });
+        for (const x of all) addIssue(x.code, x.message);
         return false;
       });
       approvedClarifications.push({ ...q, options });
@@ -543,21 +648,23 @@ export function evaluateGate(raw: unknown, ctxIn: GateContext, facts: GateFacts)
 }
 
 // ---------------------------------------------------------------- DB lookups + composition
-export async function loadGateFacts(pool: Pool, raw: unknown): Promise<GateFacts> {
+export async function loadGateFacts(pool: Pool, raw: unknown, scopeProductIds: string[] = []): Promise<GateFacts> {
   const o = typeof raw === "object" && raw !== null ? (raw as Record<string, unknown>) : {};
   const trIds = new Set<string>();
   const evIds = new Set<string>();
   const cropIds = new Set<string>();
+  const productIds = new Set<string>(scopeProductIds);
   if (Array.isArray(o.numericRefs)) for (const r of o.numericRefs) if (typeof (r as { toolResultId?: unknown })?.toolResultId === "string") trIds.add((r as { toolResultId: string }).toolResultId);
   if (Array.isArray(o.claimEvidenceRefs))
     for (const c of o.claimEvidenceRefs) {
       if (Array.isArray((c as { evidenceIds?: unknown })?.evidenceIds)) for (const id of (c as { evidenceIds: unknown[] }).evidenceIds) if (typeof id === "string") evIds.add(id);
       if (Array.isArray((c as { cropIds?: unknown })?.cropIds)) for (const id of (c as { cropIds: unknown[] }).cropIds) if (typeof id === "string") cropIds.add(id);
+      if (Array.isArray((c as { productIds?: unknown })?.productIds)) for (const id of (c as { productIds: unknown[] }).productIds) if (typeof id === "string" && id.length <= 200) productIds.add(id);
     }
   const tr = [...trIds].filter((x) => UUID.test(x));
   const ev = [...evIds].filter((x) => UUID.test(x));
   const crops = [...cropIds].filter((x) => UUID.test(x));
-  const facts: GateFacts = { toolResults: new Map(), evidence: new Map(), knownCropIds: new Set() };
+  const facts: GateFacts = { toolResults: new Map(), evidence: new Map(), knownCropIds: new Set(), productForms: new Map() };
   if (tr.length > 0) {
     const r = await pool.query<{ id: string; owner_id: string; agent_run_id: string; mode: string; tool_name: string; status: string; result: unknown }>(
       `SELECT t.id, t.owner_id, t.agent_run_id, a.mode, t.tool_name, t.status, t.result
@@ -567,8 +674,8 @@ export async function loadGateFacts(pool: Pool, raw: unknown): Promise<GateFacts
     for (const row of r.rows) facts.toolResults.set(row.id, { id: row.id, ownerId: row.owner_id, agentRunId: row.agent_run_id, runMode: row.mode, toolName: row.tool_name, status: row.status, result: row.result });
   }
   if (ev.length > 0) {
-    const r = await pool.query<{ id: string; mode: string; validation_status: string; geography_level: string | null; geography_ids: string[]; crop_ids: string[]; effective_available_at: Date | null; availability_basis: string | null }>(
-      `SELECT id, mode, validation_status, geography_level, geography_ids, crop_ids, effective_available_at, availability_basis FROM evidence_records WHERE id = ANY($1::uuid[])`,
+    const r = await pool.query<{ id: string; mode: string; validation_status: string; geography_level: string | null; geography_ids: string[]; crop_ids: string[]; product_ids: string[] | null; effective_available_at: Date | null; availability_basis: string | null }>(
+      `SELECT id, mode, validation_status, geography_level, geography_ids, crop_ids, product_ids, effective_available_at, availability_basis FROM evidence_records WHERE id = ANY($1::uuid[])`,
       [ev],
     );
     for (const row of r.rows) {
@@ -579,6 +686,7 @@ export async function loadGateFacts(pool: Pool, raw: unknown): Promise<GateFacts
         geographyLevel: row.geography_level,
         geographyIds: row.geography_ids,
         cropIds: row.crop_ids,
+        productIds: row.product_ids ?? [],
         effectiveAvailableAt: row.effective_available_at ? row.effective_available_at.toISOString() : null,
         availabilityBasis: row.availability_basis,
       });
@@ -588,12 +696,16 @@ export async function loadGateFacts(pool: Pool, raw: unknown): Promise<GateFacts
     const r = await pool.query<{ id: string }>("SELECT id FROM crop_identities WHERE id = ANY($1::uuid[])", [crops]);
     for (const row of r.rows) facts.knownCropIds!.add(row.id);
   }
+  if (productIds.size > 0) {
+    const r = await pool.query<{ slug: string; form: string }>("SELECT slug, form FROM crop_products WHERE slug = ANY($1::text[])", [[...productIds]]);
+    for (const row of r.rows) facts.productForms!.set(row.slug, row.form);
+  }
   return facts;
 }
 
 export async function runOutputGate(pool: Pool, raw: unknown, ctx: GateContext): Promise<GateResult> {
   try {
-    const facts = await loadGateFacts(pool, raw);
+    const facts = await loadGateFacts(pool, raw, ctx.claimScope?.productIds ?? []);
     return evaluateGate(raw, ctx, facts);
   } catch {
     return unverified("gate_lookup_failed");

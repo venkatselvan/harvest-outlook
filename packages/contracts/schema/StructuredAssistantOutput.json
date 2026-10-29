@@ -1144,6 +1144,35 @@
               "maxLength": 200,
               "pattern": "^[A-Za-z0-9][A-Za-z0-9._:\\/-]*$"
             }
+          },
+          "cropIds": {
+            "maxItems": 10,
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 200,
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9._:\\/-]*$"
+            }
+          },
+          "productIds": {
+            "maxItems": 10,
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 200,
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9._:\\/-]*$"
+            }
+          },
+          "granularity": {
+            "type": "string",
+            "enum": [
+              "district",
+              "state",
+              "region",
+              "national"
+            ]
           }
         },
         "required": [

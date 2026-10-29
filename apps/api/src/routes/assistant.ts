@@ -51,6 +51,13 @@ export function toTurnOut(r: AgentRunResult, approved: { text: string | null; ha
     clarifications: r.clarifications,
     limitations: r.limitations,
     incomplete: r.incomplete ?? null,
+    gateReport: r.gateReport
+      ? {
+          removed: r.gateReport.removed.map((x) => ({ field: x.field, id: x.id, index: x.index, codes: x.codes })),
+          groundedEvidenceIds: r.gateReport.groundedEvidenceIds,
+          templateSubstituted: r.gateReport.templated.map((t) => ({ blockId: t.blockId, template: t.template })),
+        }
+      : null,
     costEstimate: { estimatedUsd: r.cost.estimatedUsd, settledUsd: r.cost.settledUsd, providerCalls: r.cost.providerCalls, billable: r.cost.billable, basis: "estimated_not_billed" },
   };
 }

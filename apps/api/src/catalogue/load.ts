@@ -3,6 +3,7 @@ import type { Pool } from "../db/pool";
 import { withTransaction } from "../db/pool";
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
+import { knownInHardRule } from "@harvest/domain";
 import { readCatalogueFiles, REPO_ROOT, type CatalogueFiles } from "./files";
 
 /** Same normalisation as scripts/catalogue/common.ts normaliseForMatch (excerpt-in-source check). */
@@ -102,8 +103,46 @@ export interface LoadCounts {
   states: number;
 }
 
+export interface CatalogueValidation {
+  /** Rule/stage/coverage region ids that are not in the district registry (districts.json) and are not `IN`. */
+  unknownRegionIds: { where: string; id: string }[];
+  /** Rules that can produce a HARD effect (eligible/ineligible) and use the `known` operator. */
+  knownInHardRules: string[];
+}
+
+export class CatalogueValidationError extends Error {
+  constructor(public readonly validation: CatalogueValidation) {
+    const parts = [
+      ...validation.unknownRegionIds.slice(0, 20).map((u) => `${u.where}: unknown region id ${u.id}`),
+      ...validation.knownInHardRules.slice(0, 20).map((r) => `${r}: the known operator is not allowed in a rule with a HARD effect`),
+    ];
+    super(`catalogue validation failed (${validation.unknownRegionIds.length} unknown region ids, ${validation.knownInHardRules.length} HARD rules using known): ${parts.join("; ")}`);
+  }
+}
+
+/**
+ * Load-time rule checks (F8, review R3a #9/#10). Region ids are compared exactly against the registry
+ * (`IN` = national); a different spelling of a registry id (e.g. `IN-KA-HAS` for `IN-KA-hassan`, or a
+ * case difference) is reported, never silently mapped. Without a registry every non-`IN` id is unknown.
+ */
+export function validateCatalogue(files: Pick<CatalogueFiles, "ruleSets" | "stages" | "coverage" | "areas">): CatalogueValidation {
+  const registry = new Set(files.areas.map((a) => a.id));
+  const unknownRegionIds: CatalogueValidation["unknownRegionIds"] = [];
+  const check = (where: string, id: string) => {
+    if (id !== "IN" && !registry.has(id)) unknownRegionIds.push({ where, id });
+  };
+  for (const set of files.ruleSets) for (const r of set.rules) for (const id of r.scope.regionIds) check(`${set.file}#${r.id}`, id);
+  for (const st of files.stages) if (st.scope.level !== "farm") for (const id of st.scope.ids) check(`stage ${st.id}`, id);
+  for (const c of files.coverage) if (c.region.level !== "farm") for (const id of c.region.ids) check(`coverage ${c.id}`, id);
+  const knownInHardRules = files.ruleSets.flatMap((set) => set.rules.flatMap((r) => knownInHardRule(r).map((x) => `${set.file}#${x}`)));
+  return { unknownRegionIds, knownInHardRules };
+}
+
 /** Idempotent upsert of the whole catalogue. Public reference data: mode-agnostic, no farmer data. */
 export async function loadCatalogueIntoDb(pool: Pool, files: CatalogueFiles = readCatalogueFiles()): Promise<LoadCounts> {
+  // Fail loudly before writing anything.
+  const validation = validateCatalogue(files);
+  if (validation.unknownRegionIds.length > 0 || validation.knownInHardRules.length > 0) throw new CatalogueValidationError(validation);
   const knownProducts = new Set(files.products.map((p) => p.id));
   return withTransaction(pool, async (db) => {
     const cropUuid = new Map<string, string>();
