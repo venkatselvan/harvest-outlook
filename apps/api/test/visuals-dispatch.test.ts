@@ -208,3 +208,29 @@ describe("F8: dispatch markers stop a re-claimed job from calling the provider a
     expect(rows.every((r) => r.outcome === "completed")).toBe(true);
   });
 });
+
+describe("F9: a lock wait that times out is a visible failed stage, not a silent skip", () => {
+  it("marks the stage failed with lock_timeout_needs_retry in assets and result; other stages still generate", async () => {
+    const plan = await makePlan(a, ownerA);
+    const m = await mediaWithRegion(REGION);
+    const mkJob = async (k: string) =>
+      (await h.pool.query<{ id: string }>(`INSERT INTO jobs (owner_id, type, payload, payload_hash, idempotency_key) VALUES ($1,'visuals.keyframes',$2::jsonb,$3,$3) RETURNING id`, [ownerA, JSON.stringify({ planId: plan, mediaId: m.mediaId, regionVersion: m.version, sessionId: null }), k])).rows[0]!.id;
+    // Learn the cache keys with a normal run, then clear the assets so the next job has to generate again.
+    await runVisualKeyframes(deps(goodEdit() as unknown as typeof fetch), await jobRow(await mkJob("lock-first-0001")), hb);
+    const keys = (await h.pool.query<{ cache_key: string; stage_key: string }>("SELECT cache_key, stage_key FROM visual_assets WHERE plan_id=$1", [plan])).rows;
+    await h.pool.query("DELETE FROM visual_assets WHERE plan_id=$1", [plan]);
+    const target = keys[0]!;
+    const holder = await h.pool.connect(); // another job holding the generation lock for the whole wait
+    try {
+      await holder.query("SELECT pg_advisory_lock(hashtextextended($1, 0))", [`visuals:${target.cache_key}:${target.stage_key}`]);
+      const f = goodEdit();
+      const out = await runVisualKeyframes(deps(f as unknown as typeof fetch, { stageLockWaitMs: 120 }), await jobRow(await mkJob("lock-second-0002")), hb);
+      expect(out.lockTimeoutStages).toEqual([target.stage_key]);
+      expect(out.assets.find((x) => x.stageId === target.stage_key)).toMatchObject({ state: "failed", reason: "lock_timeout_needs_retry" });
+      expect(f).toHaveBeenCalledTimes(keys.length - 1);
+    } finally {
+      await holder.query("SELECT pg_advisory_unlock_all()");
+      holder.release();
+    }
+  });
+});

@@ -57,7 +57,7 @@ export function parseIdempotencyKey(header: unknown): string | undefined {
  */
 export async function runIdempotent(
   pool: Pool,
-  opts: { ownerId: string; key: string | undefined; route: string; hashInput: unknown; resourceRefs?: ResourceRefs },
+  opts: { ownerId: string; key: string | undefined; route: string; hashInput: unknown; resourceRefs?: ResourceRefs; /** Test seam: runs between exec and the stored-response write. */ beforeStore?: () => Promise<void> },
   exec: () => Promise<StoredResponse>,
 ): Promise<StoredResponse & { replay: boolean }> {
   if (!opts.key) return { ...(await exec()), replay: false };
@@ -74,13 +74,18 @@ export async function runIdempotent(
         const out = await exec();
         if (out.status >= 200 && out.status < 300) {
           const refs = deriveRefs(opts.route, opts.hashInput, out.body, { ...opts.resourceRefs, ...out.refs });
-          await pool.query("UPDATE idempotency_keys SET status_code=$2, response=$3::jsonb, farm_id=$4, media_id=$5 WHERE id=$1", [
-            id,
-            out.status,
-            JSON.stringify(out.body),
-            refs.farmId,
-            refs.mediaId,
-          ]);
+          await opts.beforeStore?.();
+          // Conditional write: the linked farm/media must still exist. FOR SHARE makes a concurrent farm delete (which holds
+          // FOR UPDATE on the farm row for its whole transaction) either finish first, so nothing is stored, or wait until
+          // this row is committed and purge it by farm_id.
+          const stored = await pool.query(
+            `UPDATE idempotency_keys k SET status_code=$2, response=$3::jsonb, farm_id=$4, media_id=$5
+             WHERE k.id=$1
+               AND ($4::uuid IS NULL OR EXISTS (SELECT 1 FROM (SELECT id FROM farms WHERE id=$4::uuid AND owner_id=$6 FOR SHARE) f))
+               AND ($5::uuid IS NULL OR EXISTS (SELECT 1 FROM (SELECT id FROM media_objects WHERE id=$5::uuid AND owner_id=$6 FOR SHARE) m))`,
+            [id, out.status, JSON.stringify(out.body), refs.farmId, refs.mediaId, opts.ownerId],
+          );
+          if (!stored.rowCount) await pool.query("DELETE FROM idempotency_keys WHERE id=$1", [id]); // resource deleted meanwhile: never replay it
         } else {
           await pool.query("DELETE FROM idempotency_keys WHERE id=$1", [id]);
         }

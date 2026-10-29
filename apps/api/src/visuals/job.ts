@@ -19,6 +19,8 @@ import { adoptReusable, findByCacheKeys, toOut, upsertAsset, type AssetRow, type
 export const PROVIDER = "meta";
 /** Stage failure_reason when a previous attempt may have called the provider and the outcome was lost. Shown as failed; a new request may retry. */
 export const UNCERTAIN_REASON = "uncertain_needs_review";
+/** Stage failure_reason when the per-stage generation lock stayed held by another job for the whole wait; a new request may retry. */
+export const LOCK_TIMEOUT_REASON = "lock_timeout_needs_retry";
 
 export const keyframesPayload = z
   .object({
@@ -52,6 +54,8 @@ export interface KeyframesResult {
   cancelled: boolean;
   /** Stages whose provider outcome is unknown (a previous attempt may have called the provider): never re-dispatched by this job. */
   uncertainStages: string[];
+  /** Stages marked failed (`lock_timeout_needs_retry`) because another job held their generation lock for the whole wait. */
+  lockTimeoutStages: string[];
   assets: VisualAssetOut[];
   /** Estimated = reserved worst case; settled = images actually returned x unit price. Both null when no budget was touched. */
   cost: { reservedUsd: number; settledUsd: number; images: number; outcome: "settled" | "released" | "uncertain" } | null;
@@ -137,13 +141,14 @@ export async function runVisualKeyframes(
     if (key) await writeFailed(d.stage_key, key, UNCERTAIN_REASON);
   }
   const uncertainStages = [...blocked];
+  const lockTimeoutStages: string[] = [];
 
   const todo = v.selected.filter((s) => !blocked.has(s.stageId) && !isCacheHit(existing.get(v.assetKeys.get(s.stageId)!)));
   const finish = async (extra: Pick<KeyframesResult, "providerCalls" | "cancelled" | "cost">): Promise<KeyframesResult> => {
     const rows = await findByCacheKeys(pool, ownerId, v.planId, keys);
     const byKey = new Map(rows.map((r) => [r.cache_key, r]));
     const assets = v.selected.map((s) => byKey.get(v.assetKeys.get(s.stageId)!)).filter((r): r is AssetRow => !!r).map(toOut);
-    return { cacheHit: todo.length === 0 && blocked.size === 0, mode: v.effectiveMode, uncertainStages, assets, ...extra };
+    return { cacheHit: todo.length === 0 && blocked.size === 0, mode: v.effectiveMode, uncertainStages, lockTimeoutStages, assets, ...extra };
   };
   // Cache hit: zero provider calls, zero budget, same rows.
   if (todo.length === 0) return finish({ providerCalls: 0, cancelled: false, cost: null });
@@ -273,7 +278,13 @@ export async function runVisualKeyframes(
           await ctx.heartbeat().catch(() => undefined);
         }
       }
-      if (!held) continue; // another job has been generating this stage for the whole wait; it owns the result
+      if (!held) {
+        // Not silent: the stage is failed (never overwriting a ready asset) and reported so the caller can retry.
+        lockTimeoutStages.push(s.stageId);
+        await writeFailed(s.stageId, cacheKey, LOCK_TIMEOUT_REASON).catch(() => undefined);
+        await ctx.heartbeat(0.1 + (0.85 * (i + 1)) / gen.length).catch(() => undefined);
+        continue;
+      }
       try {
         await generateStage(s, cacheKey);
       } finally {

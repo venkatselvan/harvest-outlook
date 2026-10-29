@@ -13,6 +13,7 @@ import { ApiError } from "../services/errors";
 import { sha256Hex } from "../services/hash";
 import { getMedia, readContent } from "../services/media";
 import type { StorageAdapter } from "../storage/types";
+import { claimDispatch, finishDispatch, unresolvedDispatches } from "../visuals/dispatch";
 import { gateInterpretation, type GatedInterpretation } from "./gate";
 import { leafPlanId, stagesOf } from "./plan-context";
 import { buildUserText, INSTRUCTIONS, PROMPT_HASH, PROMPT_LABEL, rawSchema, strictSchema, type PromptContext } from "./prompt";
@@ -21,6 +22,7 @@ import * as repo from "./repository";
 import { InterpretationOutput, JOURNAL_JOB_TYPE, PROMPT_NAME, PROMPT_VERSION } from "./types";
 
 export const DEFAULT_FIXTURE_SCENARIO = "journal_waterlogging";
+const DISPATCH_STAGE = "interpretation";
 const MAX_OUTPUT_TOKENS = 1500;
 /** Conservative per-photo input estimate for the budget reservation (photos are at most 1280 px on the long side). */
 const TOKENS_PER_IMAGE_ESTIMATE = 1600;
@@ -116,6 +118,17 @@ export async function runJournalAnalysis(
   }
 
   async function analyse(): Promise<AnalysisJobResult> {
+    // An open or uncertain marker from an earlier attempt means a paid call may have been sent and its result lost
+    // (crash, lease expiry). Never dispatch again and never reserve again: hold the old reservation as uncertain, leave
+    // the entry as the farmer reported it, and fail without retry.
+    const open = await unresolvedDispatches(pool, job.id);
+    if (open.length) {
+      for (const d of open) {
+        if (d.reservation_id) await deps.budget.markUncertain(d.reservation_id).catch(() => undefined);
+        await finishDispatch(pool, job.id, d.stage_key, "uncertain");
+      }
+      throw new AnalysisFailure("provider_outcome_uncertain", "failed", false);
+    }
     // Photos: owned originals' normalised derivatives. Quality is computed in code first and attached whatever the model says.
     const photos: { mediaId: string; data: Uint8Array; sha256: string }[] = [];
     for (const id of entry!.media_ids) {
@@ -177,6 +190,12 @@ export async function runJournalAnalysis(
       }
     }
 
+    // Committed marker BEFORE the paid call (own statement); a lost outcome is then visible to any re-claim of this job.
+    if (reservationId && !(await claimDispatch(pool, job.id, DISPATCH_STAGE, reservationId))) {
+      await deps.budget.markUncertain(reservationId).catch(() => undefined);
+      await finishRun("failed", { error: "provider_outcome_uncertain", estimated: estimate });
+      throw new AnalysisFailure("provider_outcome_uncertain", "failed", false);
+    }
     const outcome = await provider.call({ pass: "interpretation", model, instructions: INSTRUCTIONS, input, textFormat: { name: "journal_observation", schema: strictSchema() }, maxOutputTokens: MAX_OUTPUT_TOKENS, reasoningEffort: undefined });
     await ctx.heartbeat(0.7);
     if (!outcome.ok) {
@@ -185,6 +204,7 @@ export async function runJournalAnalysis(
         if (err.outcomeUncertain) await deps.budget.markUncertain(reservationId).catch(() => undefined);
         else await deps.budget.release(reservationId).catch(() => undefined);
       }
+      if (reservationId) await finishDispatch(pool, job.id, DISPATCH_STAGE, err.outcomeUncertain ? "uncertain" : "failed", err.requestId).catch(() => undefined);
       trace.add("provider_error", { provider: provider.provenance, model, detail: { code: err.code, retryable: err.retryable } });
       await finishRun("failed", { error: err.code, estimated: estimate });
       if (err.code === "provider_unavailable") throw new AnalysisFailure("provider_unavailable", "unavailable");
@@ -199,6 +219,8 @@ export async function runJournalAnalysis(
       settled = unknownUsage ? estimate : (deps.budget.estimate("meta", model, { inputTokens: r.usage.inputTokens, outputTokens: r.usage.outputTokens }).usd ?? 0);
       await deps.budget.settle(reservationId, settled, r.requestId, { images: photos.length, ...r.usage }, "estimated");
       trace.add("budget", { model, detail: { action: "settled", actualUsd: settled, basis: "estimated" } });
+      // Only after settlement: if settling fails the marker stays open and a re-claim treats the outcome as uncertain.
+      await finishDispatch(pool, job.id, DISPATCH_STAGE, "completed", r.requestId);
     }
 
     let output: InterpretationOutput;
