@@ -1,0 +1,116 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "candidates": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "cropId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:\\/-]*$"
+          },
+          "productId": {
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 200,
+                "pattern": "^[A-Za-z0-9][A-Za-z0-9._:\\/-]*$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "matchedAlias": {
+            "type": "string"
+          },
+          "aliasLanguage": {
+            "type": "string",
+            "pattern": "^[a-z]{2,3}(-[A-Za-z0-9]{2,8})*$"
+          },
+          "matchKind": {
+            "type": "string",
+            "enum": [
+              "exact",
+              "normalized",
+              "prefix"
+            ]
+          },
+          "products": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "productId": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 200,
+                  "pattern": "^[A-Za-z0-9][A-Za-z0-9._:\\/-]*$"
+                },
+                "productBasis": {
+                  "type": "string",
+                  "enum": [
+                    "fresh",
+                    "dry",
+                    "green",
+                    "grain",
+                    "paddy",
+                    "milled",
+                    "kapas",
+                    "lint",
+                    "seed",
+                    "tuber",
+                    "bulb",
+                    "rhizome",
+                    "pod",
+                    "kernel",
+                    "fruit",
+                    "whole",
+                    "split",
+                    "other"
+                  ]
+                }
+              },
+              "required": [
+                "productId",
+                "productBasis"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "cropId",
+          "productId",
+          "matchedAlias",
+          "aliasLanguage",
+          "matchKind",
+          "products"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "ambiguous": {
+      "type": "boolean"
+    },
+    "unresolvedReason": {
+      "type": [
+        "string",
+        "null"
+      ]
+    }
+  },
+  "required": [
+    "candidates",
+    "ambiguous",
+    "unresolvedReason"
+  ],
+  "additionalProperties": false,
+  "$id": "https://harvest-outlook.local/schema/1.0/tool.resolve_crop_identity.output.json",
+  "x-schemaVersion": "1.0"
+}

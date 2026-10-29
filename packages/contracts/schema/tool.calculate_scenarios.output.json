@@ -1,0 +1,484 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "resultId": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 200,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:\\/-]*$"
+    },
+    "result": {
+      "type": "object",
+      "properties": {
+        "schemaVersion": {
+          "type": "string",
+          "const": "1.0"
+        },
+        "methodVersion": {
+          "type": "string",
+          "minLength": 1
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "complete",
+            "incomplete",
+            "invalid"
+          ]
+        },
+        "evidenceState": {
+          "type": "string",
+          "const": "scenario"
+        },
+        "pricedBasis": {
+          "anyOf": [
+            {
+              "type": "string",
+              "enum": [
+                "fresh",
+                "dry",
+                "green",
+                "grain",
+                "paddy",
+                "milled",
+                "kapas",
+                "lint",
+                "seed",
+                "tuber",
+                "bulb",
+                "rhizome",
+                "pod",
+                "kernel",
+                "fruit",
+                "whole",
+                "split",
+                "other"
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "missingInputs": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "errors": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "code": {
+                "type": "string",
+                "minLength": 1
+              },
+              "message": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "required": [
+              "code",
+              "message"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "scenarios": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string",
+                "enum": [
+                  "low",
+                  "central",
+                  "high",
+                  "yield_shortfall_price_rise"
+                ]
+              },
+              "description": {
+                "type": "string",
+                "minLength": 1
+              },
+              "perHa": {
+                "type": "object",
+                "properties": {
+                  "marketableQuantityKg": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "periodId": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 200,
+                          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:\\/-]*$"
+                        },
+                        "kg": {
+                          "type": "string",
+                          "pattern": "^-?(0|[1-9]\\d*)(\\.\\d{1,6})?$"
+                        }
+                      },
+                      "required": [
+                        "periodId",
+                        "kg"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "marketableKgTotal": {
+                    "type": "string",
+                    "pattern": "^-?(0|[1-9]\\d*)(\\.\\d{1,6})?$"
+                  },
+                  "grossRevenueInr": {
+                    "type": "string",
+                    "pattern": "^-?(0|[1-9]\\d*)(\\.\\d{1,6})?$"
+                  },
+                  "cashProductionCostInr": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "pattern": "^-?(0|[1-9]\\d*)(\\.\\d{1,6})?$"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "harvestCostInr": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "pattern": "^-?(0|[1-9]\\d*)(\\.\\d{1,6})?$"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "saleAndTransportCostInr": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "pattern": "^-?(0|[1-9]\\d*)(\\.\\d{1,6})?$"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "processingCostInr": {
+                    "type": "string",
+                    "pattern": "^-?(0|[1-9]\\d*)(\\.\\d{1,6})?$"
+                  },
+                  "netCashReturnInr": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "pattern": "^-?(0|[1-9]\\d*)(\\.\\d{1,6})?$"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "economicReturnInr": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "pattern": "^-?(0|[1-9]\\d*)(\\.\\d{1,6})?$"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "breakEvenPriceInrPerKg": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "pattern": "^-?(0|[1-9]\\d*)(\\.\\d{1,6})?$"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "breakEvenMarketableYieldKgPerHa": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "pattern": "^-?(0|[1-9]\\d*)(\\.\\d{1,6})?$"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "notes": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "required": [
+                  "marketableQuantityKg",
+                  "marketableKgTotal",
+                  "grossRevenueInr",
+                  "cashProductionCostInr",
+                  "harvestCostInr",
+                  "saleAndTransportCostInr",
+                  "processingCostInr",
+                  "netCashReturnInr",
+                  "economicReturnInr",
+                  "breakEvenPriceInrPerKg",
+                  "breakEvenMarketableYieldKgPerHa",
+                  "notes"
+                ],
+                "additionalProperties": false
+              },
+              "total": {
+                "anyOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "marketableQuantityKg": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "periodId": {
+                              "type": "string",
+                              "minLength": 1,
+                              "maxLength": 200,
+                              "pattern": "^[A-Za-z0-9][A-Za-z0-9._:\\/-]*$"
+                            },
+                            "kg": {
+                              "type": "string",
+                              "pattern": "^-?(0|[1-9]\\d*)(\\.\\d{1,6})?$"
+                            }
+                          },
+                          "required": [
+                            "periodId",
+                            "kg"
+                          ],
+                          "additionalProperties": false
+                        }
+                      },
+                      "marketableKgTotal": {
+                        "type": "string",
+                        "pattern": "^-?(0|[1-9]\\d*)(\\.\\d{1,6})?$"
+                      },
+                      "grossRevenueInr": {
+                        "type": "string",
+                        "pattern": "^-?(0|[1-9]\\d*)(\\.\\d{1,6})?$"
+                      },
+                      "cashProductionCostInr": {
+                        "anyOf": [
+                          {
+                            "type": "string",
+                            "pattern": "^-?(0|[1-9]\\d*)(\\.\\d{1,6})?$"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "harvestCostInr": {
+                        "anyOf": [
+                          {
+                            "type": "string",
+                            "pattern": "^-?(0|[1-9]\\d*)(\\.\\d{1,6})?$"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "saleAndTransportCostInr": {
+                        "anyOf": [
+                          {
+                            "type": "string",
+                            "pattern": "^-?(0|[1-9]\\d*)(\\.\\d{1,6})?$"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "processingCostInr": {
+                        "type": "string",
+                        "pattern": "^-?(0|[1-9]\\d*)(\\.\\d{1,6})?$"
+                      },
+                      "netCashReturnInr": {
+                        "anyOf": [
+                          {
+                            "type": "string",
+                            "pattern": "^-?(0|[1-9]\\d*)(\\.\\d{1,6})?$"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "economicReturnInr": {
+                        "anyOf": [
+                          {
+                            "type": "string",
+                            "pattern": "^-?(0|[1-9]\\d*)(\\.\\d{1,6})?$"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "breakEvenPriceInrPerKg": {
+                        "anyOf": [
+                          {
+                            "type": "string",
+                            "pattern": "^-?(0|[1-9]\\d*)(\\.\\d{1,6})?$"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "breakEvenMarketableYieldKgPerHa": {
+                        "anyOf": [
+                          {
+                            "type": "string",
+                            "pattern": "^-?(0|[1-9]\\d*)(\\.\\d{1,6})?$"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "notes": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
+                      }
+                    },
+                    "required": [
+                      "marketableQuantityKg",
+                      "marketableKgTotal",
+                      "grossRevenueInr",
+                      "cashProductionCostInr",
+                      "harvestCostInr",
+                      "saleAndTransportCostInr",
+                      "processingCostInr",
+                      "netCashReturnInr",
+                      "economicReturnInr",
+                      "breakEvenPriceInrPerKg",
+                      "breakEvenMarketableYieldKgPerHa",
+                      "notes"
+                    ],
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            },
+            "required": [
+              "name",
+              "description",
+              "perHa",
+              "total"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "sensitivity": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "input": {
+                "type": "string",
+                "enum": [
+                  "yield",
+                  "price",
+                  "marketable_fraction",
+                  "cash_production_cost"
+                ]
+              },
+              "netCashAtLowInputInrPerHa": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "pattern": "^-?(0|[1-9]\\d*)(\\.\\d{1,6})?$"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "netCashAtHighInputInrPerHa": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "pattern": "^-?(0|[1-9]\\d*)(\\.\\d{1,6})?$"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            },
+            "required": [
+              "input",
+              "netCashAtLowInputInrPerHa",
+              "netCashAtHighInputInrPerHa"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "unpricedItems": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "assumptions": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "schemaVersion",
+        "methodVersion",
+        "status",
+        "evidenceState",
+        "pricedBasis",
+        "missingInputs",
+        "errors",
+        "scenarios",
+        "sensitivity",
+        "unpricedItems",
+        "assumptions"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "required": [
+    "resultId",
+    "result"
+  ],
+  "additionalProperties": false,
+  "$id": "https://harvest-outlook.local/schema/1.0/tool.calculate_scenarios.output.json",
+  "x-schemaVersion": "1.0"
+}

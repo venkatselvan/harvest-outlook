@@ -1,0 +1,127 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "schemaVersion": {
+      "type": "string",
+      "const": "1.0"
+    },
+    "id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 200,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:\\/-]*$"
+    },
+    "reservationId": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 200,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:\\/-]*$"
+    },
+    "provider": {
+      "type": "string",
+      "enum": [
+        "meta",
+        "elevenlabs"
+      ]
+    },
+    "modelId": {
+      "type": "string",
+      "minLength": 1
+    },
+    "operation": {
+      "type": "string",
+      "minLength": 1
+    },
+    "usage": {
+      "type": "object",
+      "properties": {
+        "inputTokens": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "outputTokens": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "images": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "audioSeconds": {
+          "type": "number",
+          "minimum": 0
+        },
+        "characters": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "requests": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        }
+      },
+      "additionalProperties": false
+    },
+    "estimatedUsd": {
+      "type": "string",
+      "pattern": "^-?(0|[1-9]\\d*)(\\.\\d{1,6})?$"
+    },
+    "billedUsd": {
+      "anyOf": [
+        {
+          "type": "string",
+          "pattern": "^-?(0|[1-9]\\d*)(\\.\\d{1,6})?$"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "costBasis": {
+      "type": "string",
+      "enum": [
+        "estimated",
+        "billed"
+      ]
+    },
+    "providerRequestId": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "priceTableVersion": {
+      "type": "string",
+      "minLength": 1
+    },
+    "recordedAt": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+    }
+  },
+  "required": [
+    "schemaVersion",
+    "id",
+    "reservationId",
+    "provider",
+    "modelId",
+    "operation",
+    "usage",
+    "estimatedUsd",
+    "billedUsd",
+    "costBasis",
+    "providerRequestId",
+    "priceTableVersion",
+    "recordedAt"
+  ],
+  "additionalProperties": false,
+  "$id": "https://harvest-outlook.local/schema/1.0/UsageLedgerEntry.json",
+  "x-schemaVersion": "1.0"
+}

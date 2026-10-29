@@ -1,0 +1,127 @@
+import { randomUUID } from "node:crypto";
+import { fileURLToPath } from "node:url";
+import { resolve } from "node:path";
+import type { Pool } from "../db/pool";
+import { withTransaction } from "../db/pool";
+
+export interface JobRow {
+  id: string;
+  owner_id: string | null;
+  type: string;
+  attempt: number;
+  max_attempts: number;
+  payload: unknown;
+}
+
+export type JobHandler = (job: JobRow, ctx: { heartbeat: (progress?: number) => Promise<void> }) => Promise<unknown>;
+
+export class RetryableError extends Error {
+  readonly retryable = true;
+}
+
+export const handlers: Record<string, JobHandler> = {
+  noop: async () => ({ ok: true }),
+};
+
+export const LEASE_SECONDS = 30;
+
+/** Claim one runnable job. Also reclaims jobs whose lease expired (abandoned work). */
+export async function claimJob(pool: Pool, workerId: string, leaseSeconds = LEASE_SECONDS): Promise<JobRow | null> {
+  return withTransaction(pool, async (c) => {
+    const picked = await c.query<{ id: string }>(
+      `SELECT id FROM jobs
+       WHERE (state = 'queued' AND run_after <= now())
+          OR (state = 'running' AND lease_expires_at < now())
+       ORDER BY run_after, created_at
+       FOR UPDATE SKIP LOCKED
+       LIMIT 1`,
+    );
+    const id = picked.rows[0]?.id;
+    if (!id) return null;
+    const r = await c.query<JobRow & { cancel_requested: boolean }>(
+      `UPDATE jobs SET state = 'running', attempt = attempt + 1, lease_owner = $2,
+         lease_expires_at = now() + make_interval(secs => $3), heartbeat_at = now()
+       WHERE id = $1
+       RETURNING id, owner_id, type, attempt, max_attempts, payload, cancel_requested`,
+      [id, workerId, leaseSeconds],
+    );
+    const job = r.rows[0]!;
+    if (job.cancel_requested) {
+      await c.query("UPDATE jobs SET state='cancelled', finished_at=now(), lease_owner=NULL, lease_expires_at=NULL WHERE id=$1", [id]);
+      return null;
+    }
+    return job;
+  });
+}
+
+export async function runJob(pool: Pool, job: JobRow, workerId: string, leaseSeconds = LEASE_SECONDS): Promise<"succeeded" | "failed" | "retry"> {
+  const heartbeat = async (progress?: number) => {
+    await pool.query(
+      `UPDATE jobs SET heartbeat_at = now(), lease_expires_at = now() + make_interval(secs => $3),
+         progress = COALESCE($4, progress)
+       WHERE id = $1 AND lease_owner = $2 AND state = 'running'`,
+      [job.id, workerId, leaseSeconds, progress ?? null],
+    );
+  };
+  const handler = handlers[job.type];
+  try {
+    if (!handler) throw Object.assign(new Error(`no handler for job type ${job.type}`), { retryable: false });
+    const result = await handler(job, { heartbeat });
+    const r = await pool.query(
+      `UPDATE jobs SET state='succeeded', result=$3, progress=1, finished_at=now(), lease_owner=NULL, lease_expires_at=NULL
+       WHERE id=$1 AND lease_owner=$2 AND state='running'`,
+      [job.id, workerId, JSON.stringify(result ?? null)],
+    );
+    return r.rowCount ? "succeeded" : "failed"; // lost lease or cancelled meanwhile: do not overwrite
+  } catch (e) {
+    const err = e as Error & { retryable?: boolean };
+    const retryable = err.retryable === true && job.attempt < job.max_attempts;
+    const backoff = Math.min(300, 2 ** job.attempt * 5);
+    await pool.query(
+      `UPDATE jobs SET
+         state = CASE WHEN $3 THEN 'queued' ELSE 'failed' END,
+         run_after = CASE WHEN $3 THEN now() + make_interval(secs => $5) ELSE run_after END,
+         retryable = $3, error = $4::jsonb,
+         finished_at = CASE WHEN $3 THEN NULL ELSE now() END,
+         lease_owner = NULL, lease_expires_at = NULL
+       WHERE id=$1 AND lease_owner=$2 AND state='running'`,
+      [job.id, workerId, retryable, JSON.stringify({ message: err.message, name: err.name }), backoff],
+    );
+    return retryable ? "retry" : "failed";
+  }
+}
+
+export async function pollOnce(pool: Pool, workerId: string): Promise<boolean> {
+  const job = await claimJob(pool, workerId);
+  if (!job) return false;
+  await runJob(pool, job, workerId);
+  return true;
+}
+
+async function main() {
+  await import("../env");
+  const { loadConfig } = await import("../config");
+  const { createPool } = await import("../db/pool");
+  const config = loadConfig();
+  const pool = createPool(config.DATABASE_URL);
+  const workerId = `worker-${randomUUID()}`;
+  let stopping = false;
+  const stop = () => {
+    stopping = true;
+  };
+  process.on("SIGINT", stop);
+  process.on("SIGTERM", stop);
+  console.log(JSON.stringify({ msg: "worker started", workerId, mode: config.RUNTIME_MODE }));
+  while (!stopping) {
+    const worked = await pollOnce(pool, workerId).catch((e) => {
+      console.error(JSON.stringify({ msg: "poll failed", error: (e as Error).message }));
+      return false;
+    });
+    if (!worked) await new Promise((r) => setTimeout(r, 1000));
+  }
+  await pool.end();
+}
+
+if (process.argv[1] && fileURLToPath(import.meta.url) === resolve(process.argv[1])) {
+  await main();
+}

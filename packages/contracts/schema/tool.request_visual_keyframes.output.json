@@ -1,0 +1,43 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "jobId": {
+      "anyOf": [
+        {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:\\/-]*$"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "deduplicated": {
+      "type": "boolean"
+    },
+    "allowedStageCount": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 9007199254740991
+    },
+    "budgetGate": {
+      "type": "string",
+      "enum": [
+        "reserved",
+        "denied"
+      ]
+    }
+  },
+  "required": [
+    "jobId",
+    "deduplicated",
+    "allowedStageCount",
+    "budgetGate"
+  ],
+  "additionalProperties": false,
+  "$id": "https://harvest-outlook.local/schema/1.0/tool.request_visual_keyframes.output.json",
+  "x-schemaVersion": "1.0"
+}

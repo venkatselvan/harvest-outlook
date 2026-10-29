@@ -1,0 +1,1334 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "schemaVersion": {
+      "type": "string",
+      "const": "1.0"
+    },
+    "id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 200,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:\\/-]*$"
+    },
+    "planId": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 200,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:\\/-]*$"
+    },
+    "planContentHash": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "taskType": {
+      "type": "string",
+      "enum": [
+        "prepare_land",
+        "plant",
+        "irrigate",
+        "scout",
+        "weed",
+        "nutrient",
+        "protect",
+        "harvest",
+        "sell",
+        "record_observation",
+        "other"
+      ]
+    },
+    "timing": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "type": "string",
+              "const": "window"
+            },
+            "window": {
+              "type": "object",
+              "properties": {
+                "start": {
+                  "type": "string",
+                  "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                },
+                "end": {
+                  "type": "string",
+                  "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                }
+              },
+              "required": [
+                "start",
+                "end"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "required": [
+            "kind",
+            "window"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "type": "string",
+              "const": "condition"
+            },
+            "condition": {
+              "$ref": "#/definitions/__schema0"
+            },
+            "description": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "required": [
+            "kind",
+            "condition",
+            "description"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "dependsOn": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 200,
+        "pattern": "^[A-Za-z0-9][A-Za-z0-9._:\\/-]*$"
+      }
+    },
+    "amount": {
+      "anyOf": [
+        {
+          "oneOf": [
+            {
+              "type": "object",
+              "properties": {
+                "schemaVersion": {
+                  "type": "string",
+                  "const": "1.0"
+                },
+                "evidenceState": {
+                  "type": "string",
+                  "enum": [
+                    "observed",
+                    "farmer_reported",
+                    "derived",
+                    "forecast",
+                    "scenario",
+                    "illustrative",
+                    "unavailable"
+                  ]
+                },
+                "scope": {
+                  "type": "object",
+                  "properties": {
+                    "level": {
+                      "type": "string",
+                      "enum": [
+                        "farm",
+                        "district",
+                        "state",
+                        "market",
+                        "region",
+                        "national"
+                      ]
+                    },
+                    "ids": {
+                      "minItems": 1,
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 200,
+                        "pattern": "^[A-Za-z0-9][A-Za-z0-9._:\\/-]*$"
+                      }
+                    },
+                    "boundaryVersion": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  },
+                  "required": [
+                    "level",
+                    "ids"
+                  ],
+                  "additionalProperties": false
+                },
+                "validFrom": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "validTo": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "issuedAt": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "format": "date-time",
+                      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "evidenceIds": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 200,
+                    "pattern": "^[A-Za-z0-9][A-Za-z0-9._:\\/-]*$"
+                  }
+                },
+                "assumptionIds": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 200,
+                    "pattern": "^[A-Za-z0-9][A-Za-z0-9._:\\/-]*$"
+                  }
+                },
+                "methodVersion": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "validationStatus": {
+                  "type": "string",
+                  "enum": [
+                    "validated",
+                    "unsupported",
+                    "pending",
+                    "rejected"
+                  ]
+                },
+                "missingReason": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "sourceUnit": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "kind": {
+                  "type": "string",
+                  "const": "quantity"
+                },
+                "value": {
+                  "anyOf": [
+                    {
+                      "anyOf": [
+                        {
+                          "type": "number"
+                        },
+                        {
+                          "type": "string",
+                          "pattern": "^-?(0|[1-9]\\d*)(\\.\\d{1,6})?$"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "unit": {
+                  "type": "string",
+                  "enum": [
+                    "ha",
+                    "acre",
+                    "kg",
+                    "quintal",
+                    "t",
+                    "INR",
+                    "INR/kg",
+                    "INR/quintal",
+                    "INR/ha",
+                    "mm",
+                    "L",
+                    "m3",
+                    "kg/ha",
+                    "kg/acre",
+                    "days",
+                    "celsius",
+                    "percent"
+                  ]
+                }
+              },
+              "required": [
+                "schemaVersion",
+                "evidenceState",
+                "scope",
+                "validFrom",
+                "validTo",
+                "issuedAt",
+                "evidenceIds",
+                "assumptionIds",
+                "methodVersion",
+                "validationStatus",
+                "missingReason",
+                "kind",
+                "value",
+                "unit"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "properties": {
+                "schemaVersion": {
+                  "type": "string",
+                  "const": "1.0"
+                },
+                "evidenceState": {
+                  "type": "string",
+                  "enum": [
+                    "observed",
+                    "farmer_reported",
+                    "derived",
+                    "forecast",
+                    "scenario",
+                    "illustrative",
+                    "unavailable"
+                  ]
+                },
+                "scope": {
+                  "type": "object",
+                  "properties": {
+                    "level": {
+                      "type": "string",
+                      "enum": [
+                        "farm",
+                        "district",
+                        "state",
+                        "market",
+                        "region",
+                        "national"
+                      ]
+                    },
+                    "ids": {
+                      "minItems": 1,
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 200,
+                        "pattern": "^[A-Za-z0-9][A-Za-z0-9._:\\/-]*$"
+                      }
+                    },
+                    "boundaryVersion": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  },
+                  "required": [
+                    "level",
+                    "ids"
+                  ],
+                  "additionalProperties": false
+                },
+                "validFrom": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "validTo": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "issuedAt": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "format": "date-time",
+                      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "evidenceIds": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 200,
+                    "pattern": "^[A-Za-z0-9][A-Za-z0-9._:\\/-]*$"
+                  }
+                },
+                "assumptionIds": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 200,
+                    "pattern": "^[A-Za-z0-9][A-Za-z0-9._:\\/-]*$"
+                  }
+                },
+                "methodVersion": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "validationStatus": {
+                  "type": "string",
+                  "enum": [
+                    "validated",
+                    "unsupported",
+                    "pending",
+                    "rejected"
+                  ]
+                },
+                "missingReason": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "sourceUnit": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "kind": {
+                  "type": "string",
+                  "const": "range"
+                },
+                "value": {
+                  "anyOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "low": {
+                          "anyOf": [
+                            {
+                              "type": "number"
+                            },
+                            {
+                              "type": "string",
+                              "pattern": "^-?(0|[1-9]\\d*)(\\.\\d{1,6})?$"
+                            }
+                          ]
+                        },
+                        "high": {
+                          "anyOf": [
+                            {
+                              "type": "number"
+                            },
+                            {
+                              "type": "string",
+                              "pattern": "^-?(0|[1-9]\\d*)(\\.\\d{1,6})?$"
+                            }
+                          ]
+                        }
+                      },
+                      "required": [
+                        "low",
+                        "high"
+                      ],
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "unit": {
+                  "type": "string",
+                  "enum": [
+                    "ha",
+                    "acre",
+                    "kg",
+                    "quintal",
+                    "t",
+                    "INR",
+                    "INR/kg",
+                    "INR/quintal",
+                    "INR/ha",
+                    "mm",
+                    "L",
+                    "m3",
+                    "kg/ha",
+                    "kg/acre",
+                    "days",
+                    "celsius",
+                    "percent"
+                  ]
+                }
+              },
+              "required": [
+                "schemaVersion",
+                "evidenceState",
+                "scope",
+                "validFrom",
+                "validTo",
+                "issuedAt",
+                "evidenceIds",
+                "assumptionIds",
+                "methodVersion",
+                "validationStatus",
+                "missingReason",
+                "kind",
+                "value",
+                "unit"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "properties": {
+                "schemaVersion": {
+                  "type": "string",
+                  "const": "1.0"
+                },
+                "evidenceState": {
+                  "type": "string",
+                  "enum": [
+                    "observed",
+                    "farmer_reported",
+                    "derived",
+                    "forecast",
+                    "scenario",
+                    "illustrative",
+                    "unavailable"
+                  ]
+                },
+                "scope": {
+                  "type": "object",
+                  "properties": {
+                    "level": {
+                      "type": "string",
+                      "enum": [
+                        "farm",
+                        "district",
+                        "state",
+                        "market",
+                        "region",
+                        "national"
+                      ]
+                    },
+                    "ids": {
+                      "minItems": 1,
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 200,
+                        "pattern": "^[A-Za-z0-9][A-Za-z0-9._:\\/-]*$"
+                      }
+                    },
+                    "boundaryVersion": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  },
+                  "required": [
+                    "level",
+                    "ids"
+                  ],
+                  "additionalProperties": false
+                },
+                "validFrom": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "validTo": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "issuedAt": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "format": "date-time",
+                      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "evidenceIds": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 200,
+                    "pattern": "^[A-Za-z0-9][A-Za-z0-9._:\\/-]*$"
+                  }
+                },
+                "assumptionIds": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 200,
+                    "pattern": "^[A-Za-z0-9][A-Za-z0-9._:\\/-]*$"
+                  }
+                },
+                "methodVersion": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "validationStatus": {
+                  "type": "string",
+                  "enum": [
+                    "validated",
+                    "unsupported",
+                    "pending",
+                    "rejected"
+                  ]
+                },
+                "missingReason": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "sourceUnit": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "kind": {
+                  "type": "string",
+                  "const": "category"
+                },
+                "value": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "unit": {
+                  "type": "null"
+                }
+              },
+              "required": [
+                "schemaVersion",
+                "evidenceState",
+                "scope",
+                "validFrom",
+                "validTo",
+                "issuedAt",
+                "evidenceIds",
+                "assumptionIds",
+                "methodVersion",
+                "validationStatus",
+                "missingReason",
+                "kind",
+                "value",
+                "unit"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "properties": {
+                "schemaVersion": {
+                  "type": "string",
+                  "const": "1.0"
+                },
+                "evidenceState": {
+                  "type": "string",
+                  "enum": [
+                    "observed",
+                    "farmer_reported",
+                    "derived",
+                    "forecast",
+                    "scenario",
+                    "illustrative",
+                    "unavailable"
+                  ]
+                },
+                "scope": {
+                  "type": "object",
+                  "properties": {
+                    "level": {
+                      "type": "string",
+                      "enum": [
+                        "farm",
+                        "district",
+                        "state",
+                        "market",
+                        "region",
+                        "national"
+                      ]
+                    },
+                    "ids": {
+                      "minItems": 1,
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 200,
+                        "pattern": "^[A-Za-z0-9][A-Za-z0-9._:\\/-]*$"
+                      }
+                    },
+                    "boundaryVersion": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  },
+                  "required": [
+                    "level",
+                    "ids"
+                  ],
+                  "additionalProperties": false
+                },
+                "validFrom": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "validTo": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "issuedAt": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "format": "date-time",
+                      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "evidenceIds": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 200,
+                    "pattern": "^[A-Za-z0-9][A-Za-z0-9._:\\/-]*$"
+                  }
+                },
+                "assumptionIds": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 200,
+                    "pattern": "^[A-Za-z0-9][A-Za-z0-9._:\\/-]*$"
+                  }
+                },
+                "methodVersion": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "validationStatus": {
+                  "type": "string",
+                  "enum": [
+                    "validated",
+                    "unsupported",
+                    "pending",
+                    "rejected"
+                  ]
+                },
+                "missingReason": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "sourceUnit": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "kind": {
+                  "type": "string",
+                  "const": "text"
+                },
+                "value": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "unit": {
+                  "type": "null"
+                }
+              },
+              "required": [
+                "schemaVersion",
+                "evidenceState",
+                "scope",
+                "validFrom",
+                "validTo",
+                "issuedAt",
+                "evidenceIds",
+                "assumptionIds",
+                "methodVersion",
+                "validationStatus",
+                "missingReason",
+                "kind",
+                "value",
+                "unit"
+              ],
+              "additionalProperties": false
+            }
+          ]
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "evidenceIds": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 200,
+        "pattern": "^[A-Za-z0-9][A-Za-z0-9._:\\/-]*$"
+      }
+    },
+    "reasonCode": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_]{1,80}$"
+    },
+    "state": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "due",
+        "done",
+        "skipped",
+        "cancelled"
+      ]
+    },
+    "completionEvidence": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "journalEntryIds": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 200,
+                "pattern": "^[A-Za-z0-9][A-Za-z0-9._:\\/-]*$"
+              }
+            },
+            "mediaIds": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 200,
+                "pattern": "^[A-Za-z0-9][A-Za-z0-9._:\\/-]*$"
+              }
+            }
+          },
+          "required": [
+            "journalEntryIds",
+            "mediaIds"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "mode": {
+      "type": "string",
+      "enum": [
+        "live",
+        "replay",
+        "synthetic"
+      ]
+    }
+  },
+  "required": [
+    "schemaVersion",
+    "id",
+    "planId",
+    "planContentHash",
+    "taskType",
+    "timing",
+    "dependsOn",
+    "amount",
+    "evidenceIds",
+    "reasonCode",
+    "state",
+    "completionEvidence",
+    "mode"
+  ],
+  "additionalProperties": false,
+  "definitions": {
+    "__schema0": {
+      "anyOf": [
+        {
+          "oneOf": [
+            {
+              "type": "object",
+              "properties": {
+                "field": {
+                  "type": "string",
+                  "enum": [
+                    "location.districtId",
+                    "location.stateId",
+                    "season",
+                    "planting.month",
+                    "planting.date",
+                    "irrigation.category",
+                    "soil.drainage",
+                    "soil.texture",
+                    "soil.ph",
+                    "water.capacityMmPerWeek",
+                    "farm.areaHa",
+                    "budget.inrPerHa",
+                    "labour.level",
+                    "rainfall.seasonalMm",
+                    "elevation.m"
+                  ]
+                },
+                "op": {
+                  "type": "string",
+                  "const": "eq"
+                },
+                "value": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    {
+                      "type": "number"
+                    }
+                  ]
+                }
+              },
+              "required": [
+                "field",
+                "op",
+                "value"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "properties": {
+                "field": {
+                  "type": "string",
+                  "enum": [
+                    "location.districtId",
+                    "location.stateId",
+                    "season",
+                    "planting.month",
+                    "planting.date",
+                    "irrigation.category",
+                    "soil.drainage",
+                    "soil.texture",
+                    "soil.ph",
+                    "water.capacityMmPerWeek",
+                    "farm.areaHa",
+                    "budget.inrPerHa",
+                    "labour.level",
+                    "rainfall.seasonalMm",
+                    "elevation.m"
+                  ]
+                },
+                "op": {
+                  "type": "string",
+                  "const": "in"
+                },
+                "value": {
+                  "minItems": 1,
+                  "type": "array",
+                  "items": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      {
+                        "type": "number"
+                      }
+                    ]
+                  }
+                }
+              },
+              "required": [
+                "field",
+                "op",
+                "value"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "properties": {
+                "field": {
+                  "type": "string",
+                  "enum": [
+                    "location.districtId",
+                    "location.stateId",
+                    "season",
+                    "planting.month",
+                    "planting.date",
+                    "irrigation.category",
+                    "soil.drainage",
+                    "soil.texture",
+                    "soil.ph",
+                    "water.capacityMmPerWeek",
+                    "farm.areaHa",
+                    "budget.inrPerHa",
+                    "labour.level",
+                    "rainfall.seasonalMm",
+                    "elevation.m"
+                  ]
+                },
+                "op": {
+                  "type": "string",
+                  "const": "gte"
+                },
+                "value": {
+                  "anyOf": [
+                    {
+                      "type": "number"
+                    },
+                    {
+                      "type": "string",
+                      "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                    }
+                  ]
+                }
+              },
+              "required": [
+                "field",
+                "op",
+                "value"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "properties": {
+                "field": {
+                  "type": "string",
+                  "enum": [
+                    "location.districtId",
+                    "location.stateId",
+                    "season",
+                    "planting.month",
+                    "planting.date",
+                    "irrigation.category",
+                    "soil.drainage",
+                    "soil.texture",
+                    "soil.ph",
+                    "water.capacityMmPerWeek",
+                    "farm.areaHa",
+                    "budget.inrPerHa",
+                    "labour.level",
+                    "rainfall.seasonalMm",
+                    "elevation.m"
+                  ]
+                },
+                "op": {
+                  "type": "string",
+                  "const": "lte"
+                },
+                "value": {
+                  "anyOf": [
+                    {
+                      "type": "number"
+                    },
+                    {
+                      "type": "string",
+                      "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                    }
+                  ]
+                }
+              },
+              "required": [
+                "field",
+                "op",
+                "value"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "properties": {
+                "field": {
+                  "type": "string",
+                  "enum": [
+                    "location.districtId",
+                    "location.stateId",
+                    "season",
+                    "planting.month",
+                    "planting.date",
+                    "irrigation.category",
+                    "soil.drainage",
+                    "soil.texture",
+                    "soil.ph",
+                    "water.capacityMmPerWeek",
+                    "farm.areaHa",
+                    "budget.inrPerHa",
+                    "labour.level",
+                    "rainfall.seasonalMm",
+                    "elevation.m"
+                  ]
+                },
+                "op": {
+                  "type": "string",
+                  "const": "between"
+                },
+                "value": {
+                  "type": "array",
+                  "items": [
+                    {
+                      "anyOf": [
+                        {
+                          "type": "number"
+                        },
+                        {
+                          "type": "string",
+                          "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                        }
+                      ]
+                    },
+                    {
+                      "anyOf": [
+                        {
+                          "type": "number"
+                        },
+                        {
+                          "type": "string",
+                          "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                        }
+                      ]
+                    }
+                  ],
+                  "additionalItems": false,
+                  "minItems": 2,
+                  "maxItems": 2
+                }
+              },
+              "required": [
+                "field",
+                "op",
+                "value"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "properties": {
+                "field": {
+                  "type": "string",
+                  "enum": [
+                    "location.districtId",
+                    "location.stateId",
+                    "season",
+                    "planting.month",
+                    "planting.date",
+                    "irrigation.category",
+                    "soil.drainage",
+                    "soil.texture",
+                    "soil.ph",
+                    "water.capacityMmPerWeek",
+                    "farm.areaHa",
+                    "budget.inrPerHa",
+                    "labour.level",
+                    "rainfall.seasonalMm",
+                    "elevation.m"
+                  ]
+                },
+                "op": {
+                  "type": "string",
+                  "const": "known"
+                },
+                "value": {
+                  "type": "boolean"
+                }
+              },
+              "required": [
+                "field",
+                "op",
+                "value"
+              ],
+              "additionalProperties": false
+            }
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "all": {
+              "minItems": 1,
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/__schema0"
+              }
+            }
+          },
+          "required": [
+            "all"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "any": {
+              "minItems": 1,
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/__schema0"
+              }
+            }
+          },
+          "required": [
+            "any"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "not": {
+              "$ref": "#/definitions/__schema0"
+            }
+          },
+          "required": [
+            "not"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    }
+  },
+  "$id": "https://harvest-outlook.local/schema/1.0/ActionTask.json",
+  "x-schemaVersion": "1.0"
+}

@@ -1,0 +1,39 @@
+{
+  "name": "@harvest/api",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "dev:worker": "tsx watch src/worker/main.ts",
+    "start": "tsx src/server.ts",
+    "worker": "tsx src/worker/main.ts",
+    "db:migrate": "tsx src/db/migrate.ts",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@fastify/cookie": "11.1.5",
+    "@fastify/cors": "11.3.1",
+    "@fastify/helmet": "13.2.0",
+    "@fastify/multipart": "10.1.6",
+    "@fastify/rate-limit": "11.2.1",
+    "@fastify/swagger": "9.9.2",
+    "@harvest/contracts": "workspace:*",
+    "@harvest/domain": "workspace:*",
+    "dotenv": "18.0.9",
+    "fastify": "5.12.7",
+    "fastify-type-provider-zod": "7.0.0",
+    "pg": "8.23.1",
+    "pino": "10.4.0",
+    "sharp": "0.35.5",
+    "zod": "4.6.7"
+  },
+  "devDependencies": {
+    "@types/node": "26.6.6",
+    "@types/pg": "8.23.1",
+    "tsx": "4.23.15",
+    "typescript": "7.0.2",
+    "vitest": "5.0.5"
+  }
+}

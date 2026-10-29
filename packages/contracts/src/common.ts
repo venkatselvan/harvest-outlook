@@ -1,0 +1,210 @@
+import { z } from 'zod';
+
+/**
+ * Every top-level serialized record carries this literal. Bump only with a
+ * migration note; Python analytics validates against the exported JSON Schema.
+ */
+export const SCHEMA_VERSION = '1.0' as const;
+export const SchemaVersion = z.literal(SCHEMA_VERSION);
+
+/** Server-controlled runtime mode (BUILD_SPEC 3). Never accepted from a client query. */
+export const Mode = z.enum(['live', 'replay', 'synthetic']);
+export type Mode = z.infer<typeof Mode>;
+
+/** PRD 4 product evidence states. Independent from ValidationStatus. */
+export const EvidenceState = z.enum([
+  'observed',
+  'farmer_reported',
+  'derived',
+  'forecast',
+  'scenario',
+  'illustrative',
+  'unavailable',
+]);
+export type EvidenceState = z.infer<typeof EvidenceState>;
+
+export const ValidationStatus = z.enum(['validated', 'unsupported', 'pending', 'rejected']);
+export type ValidationStatus = z.infer<typeof ValidationStatus>;
+
+/** Stable identifier: non-empty, no whitespace, bounded length. */
+export const Id = z
+  .string()
+  .min(1)
+  .max(200)
+  .regex(/^[A-Za-z0-9][A-Za-z0-9._:\/-]*$/, 'identifier must be non-empty and contain no whitespace');
+export type Id = z.infer<typeof Id>;
+
+/** snake_case machine reason code. */
+export const ReasonCode = z.string().regex(/^[a-z][a-z0-9_]{1,80}$/, 'reasonCode must be snake_case');
+
+/** Hex sha256 digest. */
+export const Sha256Hex = z.string().regex(/^[0-9a-f]{64}$/, 'expected lowercase hex sha256');
+
+function isValidCalendarDate(s: string): boolean {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s);
+  if (!m) return false;
+  const y = Number(m[1]);
+  const mo = Number(m[2]);
+  const d = Number(m[3]);
+  const dt = new Date(Date.UTC(y, mo - 1, d));
+  return dt.getUTCFullYear() === y && dt.getUTCMonth() === mo - 1 && dt.getUTCDate() === d;
+}
+
+/** Agricultural calendar date, ISO YYYY-MM-DD (timezone carried separately). */
+export const IsoDate = z
+  .string()
+  .regex(/^\d{4}-\d{2}-\d{2}$/, 'expected YYYY-MM-DD')
+  .refine(isValidCalendarDate, 'invalid calendar date');
+export type IsoDate = z.infer<typeof IsoDate>;
+
+/** Timestamp with explicit offset or Z (BUILD_SPEC 4: UTC with offsets in storage). */
+export const IsoDateTime = z.iso.datetime({ offset: true });
+export type IsoDateTime = z.infer<typeof IsoDateTime>;
+
+/** IANA timezone name, e.g. Asia/Kolkata. */
+export const TimeZone = z.string().regex(/^[A-Za-z_]+(\/[A-Za-z0-9_+-]+)*$/);
+
+/**
+ * Canonical units. Source units are preserved separately as free strings
+ * (`sourceUnit`) and are never inferred from magnitude.
+ */
+export const Unit = z.enum([
+  'ha',
+  'acre',
+  'kg',
+  'quintal',
+  't',
+  'INR',
+  'INR/kg',
+  'INR/quintal',
+  'INR/ha',
+  'mm',
+  'L',
+  'm3',
+  'kg/ha',
+  'kg/acre',
+  'days',
+  'celsius',
+  'percent',
+]);
+export type Unit = z.infer<typeof Unit>;
+
+/**
+ * Decimal string for currency and other exact quantities. JSON numbers are
+ * avoided for INR so that arithmetic stays decimal-safe across languages.
+ */
+export const DecimalString = z
+  .string()
+  .regex(/^-?(0|[1-9]\d*)(\.\d{1,6})?$/, 'expected a decimal string with at most 6 fractional digits');
+export type DecimalString = z.infer<typeof DecimalString>;
+
+/** A numeric input: JSON number or exact decimal string (preferred for INR). */
+export const NumericLike = z.union([z.number().finite(), DecimalString]);
+export type NumericLike = z.infer<typeof NumericLike>;
+
+export const SpatialLevel = z.enum(['farm', 'district', 'state', 'market', 'region', 'national']);
+export type SpatialLevel = z.infer<typeof SpatialLevel>;
+
+/** Spatial scope of a value or record. `ids` reference stable district/market/state IDs. */
+export const SpatialScope = z
+  .object({
+    level: SpatialLevel,
+    ids: z.array(Id).min(1),
+    boundaryVersion: z.string().min(1).optional(),
+  })
+  .strict();
+export type SpatialScope = z.infer<typeof SpatialScope>;
+
+/** GeoJSON point, WGS84, coordinate order [longitude, latitude]. */
+export const GeoPoint = z
+  .object({
+    type: z.literal('Point'),
+    coordinates: z.tuple([z.number().min(-180).max(180), z.number().min(-90).max(90)]),
+    accuracyM: z.number().nonnegative().nullable(),
+    basis: z.enum(['gps', 'geocoded', 'centroid_proxy', 'manual_pin', 'source_reported']),
+  })
+  .strict();
+export type GeoPoint = z.infer<typeof GeoPoint>;
+
+export const DateRange = z
+  .object({ start: IsoDate, end: IsoDate })
+  .strict()
+  .refine((r) => r.start <= r.end, { message: 'start must be on or before end' });
+export type DateRange = z.infer<typeof DateRange>;
+
+/** Structured API error codes (BUILD_SPEC 11). Stable; add only, never repurpose. */
+export const ApiErrorCode = z.enum([
+  'validation_failed',
+  'unauthenticated',
+  'forbidden',
+  'not_found',
+  'conflict',
+  'version_conflict',
+  'idempotency_mismatch',
+  'payload_too_large',
+  'unsupported_media_type',
+  'rate_limited',
+  'budget_exceeded',
+  'mode_mismatch',
+  'capability_unavailable',
+  'provider_unavailable',
+  'provider_error',
+  'job_cancelled',
+  'internal_error',
+]);
+export type ApiErrorCode = z.infer<typeof ApiErrorCode>;
+
+export const ApiError = z
+  .object({
+    code: ApiErrorCode,
+    message: z.string().min(1).max(2000),
+    retryable: z.boolean(),
+    details: z.record(z.string(), z.unknown()).optional(),
+  })
+  .strict();
+export type ApiError = z.infer<typeof ApiError>;
+
+export const ApiWarning = z
+  .object({
+    code: ReasonCode,
+    message: z.string().min(1).max(2000),
+  })
+  .strict();
+export type ApiWarning = z.infer<typeof ApiWarning>;
+
+/**
+ * Standard response envelope. When `error` is present `data` must be null.
+ * `asOf` is the server time the response represents; cached real responses
+ * keep their original issue time inside `data` and add a `cached_response` warning.
+ */
+export function apiEnvelope<T extends z.ZodType>(data: T) {
+  return z
+    .object({
+      schemaVersion: SchemaVersion,
+      requestId: Id,
+      mode: Mode,
+      asOf: IsoDateTime,
+      data: data.nullable(),
+      warnings: z.array(ApiWarning),
+      error: ApiError.optional(),
+    })
+    .strict()
+    .superRefine((envIn, ctx) => {
+      const env = envIn as unknown as { data: unknown; error?: unknown };
+      if (env.error !== undefined && env.data !== null) {
+        ctx.addIssue({ code: 'custom', path: ['data'], message: 'data must be null when error is set' });
+      }
+      if (env.error === undefined && env.data === null) {
+        ctx.addIssue({ code: 'custom', path: ['error'], message: 'error is required when data is null' });
+      }
+    });
+}
+export type ApiEnvelope<T> = {
+  schemaVersion: typeof SCHEMA_VERSION;
+  requestId: string;
+  mode: Mode;
+  asOf: string;
+  data: T | null;
+  warnings: ApiWarning[];
+  error?: ApiError;
+};

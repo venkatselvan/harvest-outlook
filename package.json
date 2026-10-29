@@ -1,0 +1,23 @@
+{
+  "name": "harvest-outlook",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Harvest Outlook: crop comparison, visual season planning and journal PWA for Indian farmers.",
+  "packageManager": "pnpm@10.33.0",
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "scripts": {
+    "build": "pnpm -r --if-present build",
+    "typecheck": "pnpm -r --if-present typecheck",
+    "test": "pnpm -r --if-present test",
+    "lint": "pnpm -r --if-present lint",
+    "dev": "pnpm --parallel --filter @harvest/api --filter @harvest/web run dev",
+    "db:migrate": "pnpm --filter @harvest/api run db:migrate",
+    "db:seed": "echo 'db:seed: no seed data yet (synthetic fixtures arrive with later tasks)'",
+    "test:e2e": "pnpm --filter @harvest/web exec playwright test",
+    "smoke:live": "echo 'smoke:live: not implemented; requires provider credentials and RUNTIME_MODE=live' && exit 1",
+    "audit:data": "echo 'audit:data: not implemented yet (data pipeline task)' && exit 1",
+    "analytics:test": "analytics/.venv/bin/python -m pytest analytics/tests -q"
+  }
+}

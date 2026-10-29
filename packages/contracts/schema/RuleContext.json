@@ -1,0 +1,331 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "location": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "districtId": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 200,
+                  "pattern": "^[A-Za-z0-9][A-Za-z0-9._:\\/-]*$"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "stateId": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 200,
+                  "pattern": "^[A-Za-z0-9][A-Za-z0-9._:\\/-]*$"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "season": {
+      "anyOf": [
+        {
+          "type": "string",
+          "enum": [
+            "kharif",
+            "rabi",
+            "zaid",
+            "perennial"
+          ]
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "planting": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "month": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 12
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "date": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "irrigation": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "category": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "rainfed",
+                    "supplemental",
+                    "irrigated"
+                  ]
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "soil": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "drainage": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "poor",
+                    "moderate",
+                    "good"
+                  ]
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "texture": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "sand",
+                    "loamy_sand",
+                    "sandy_loam",
+                    "loam",
+                    "silt_loam",
+                    "clay_loam",
+                    "silty_clay",
+                    "clay"
+                  ]
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "ph": {
+              "anyOf": [
+                {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 14
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "water": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "capacityMmPerWeek": {
+              "anyOf": [
+                {
+                  "type": "number",
+                  "minimum": 0
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "farm": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "areaHa": {
+              "anyOf": [
+                {
+                  "type": "number",
+                  "exclusiveMinimum": 0
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "budget": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "inrPerHa": {
+              "anyOf": [
+                {
+                  "type": "number",
+                  "minimum": 0
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "labour": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "level": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "low",
+                    "medium",
+                    "high"
+                  ]
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "rainfall": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "seasonalMm": {
+              "anyOf": [
+                {
+                  "type": "number",
+                  "minimum": 0
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "elevation": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "m": {
+              "type": [
+                "number",
+                "null"
+              ]
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "null"
+        }
+      ]
+    }
+  },
+  "additionalProperties": false,
+  "$id": "https://harvest-outlook.local/schema/1.0/RuleContext.json",
+  "x-schemaVersion": "1.0"
+}

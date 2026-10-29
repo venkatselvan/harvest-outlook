@@ -1,0 +1,38 @@
+# Local research and private material
+tmp/
+private/
+uploads/
+data/raw/
+data/private/
+runs/
+artifacts/private/
+
+# Credentials and machine state
+.env
+.env.*
+!.env.example
+!.env.*.example
+.DS_Store
+.claude/settings.local.json
+*.log
+
+# Generated application dependencies and outputs
+node_modules/
+dist/
+build/
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.mypy_cache/
+.turbo/
+coverage/
+playwright-report/
+test-results/
+
+# Local storage
+.data/
+*.egg-info/
+
+# Local copy of the specification handoff archive (contents already in repo)
+HarvestOutlook-Claude-Handoff.zip

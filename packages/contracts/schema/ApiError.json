@@ -1,0 +1,51 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "code": {
+      "type": "string",
+      "enum": [
+        "validation_failed",
+        "unauthenticated",
+        "forbidden",
+        "not_found",
+        "conflict",
+        "version_conflict",
+        "idempotency_mismatch",
+        "payload_too_large",
+        "unsupported_media_type",
+        "rate_limited",
+        "budget_exceeded",
+        "mode_mismatch",
+        "capability_unavailable",
+        "provider_unavailable",
+        "provider_error",
+        "job_cancelled",
+        "internal_error"
+      ]
+    },
+    "message": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 2000
+    },
+    "retryable": {
+      "type": "boolean"
+    },
+    "details": {
+      "type": "object",
+      "propertyNames": {
+        "type": "string"
+      },
+      "additionalProperties": {}
+    }
+  },
+  "required": [
+    "code",
+    "message",
+    "retryable"
+  ],
+  "additionalProperties": false,
+  "$id": "https://harvest-outlook.local/schema/1.0/ApiError.json",
+  "x-schemaVersion": "1.0"
+}

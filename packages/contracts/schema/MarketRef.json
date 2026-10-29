@@ -1,0 +1,162 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "schemaVersion": {
+      "type": "string",
+      "const": "1.0"
+    },
+    "id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 200,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:\\/-]*$"
+    },
+    "nativeName": {
+      "type": "string",
+      "minLength": 1
+    },
+    "districtId": {
+      "anyOf": [
+        {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:\\/-]*$"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "stateId": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 200,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:\\/-]*$"
+    },
+    "boundaryVersion": {
+      "type": "string",
+      "minLength": 1
+    },
+    "sourceCodes": {
+      "type": "object",
+      "propertyNames": {
+        "type": "string"
+      },
+      "additionalProperties": {
+        "type": "string"
+      }
+    },
+    "location": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "type": {
+              "type": "string",
+              "const": "Point"
+            },
+            "coordinates": {
+              "type": "array",
+              "items": [
+                {
+                  "type": "number",
+                  "minimum": -180,
+                  "maximum": 180
+                },
+                {
+                  "type": "number",
+                  "minimum": -90,
+                  "maximum": 90
+                }
+              ],
+              "additionalItems": false,
+              "minItems": 2,
+              "maxItems": 2
+            },
+            "accuracyM": {
+              "anyOf": [
+                {
+                  "type": "number",
+                  "minimum": 0
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "basis": {
+              "type": "string",
+              "enum": [
+                "gps",
+                "geocoded",
+                "centroid_proxy",
+                "manual_pin",
+                "source_reported"
+              ]
+            }
+          },
+          "required": [
+            "type",
+            "coordinates",
+            "accuracyM",
+            "basis"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "priceUnitsReported": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "ha",
+          "acre",
+          "kg",
+          "quintal",
+          "t",
+          "INR",
+          "INR/kg",
+          "INR/quintal",
+          "INR/ha",
+          "mm",
+          "L",
+          "m3",
+          "kg/ha",
+          "kg/acre",
+          "days",
+          "celsius",
+          "percent"
+        ]
+      }
+    },
+    "mode": {
+      "type": "string",
+      "enum": [
+        "live",
+        "replay",
+        "synthetic"
+      ]
+    }
+  },
+  "required": [
+    "schemaVersion",
+    "id",
+    "nativeName",
+    "districtId",
+    "stateId",
+    "boundaryVersion",
+    "sourceCodes",
+    "location",
+    "priceUnitsReported",
+    "mode"
+  ],
+  "additionalProperties": false,
+  "$id": "https://harvest-outlook.local/schema/1.0/MarketRef.json",
+  "x-schemaVersion": "1.0"
+}

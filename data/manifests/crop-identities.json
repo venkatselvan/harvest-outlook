@@ -1,0 +1,1128 @@
+{
+ "schemaVersion": 1,
+ "auditTask": "T01",
+ "status": "initial_draft",
+ "generatedBy": "scripts/audit/build_crop_identities.py",
+ "caveats": [
+  "Botanical names are standard taxonomy entered by the auditor, not extracted from a retrieved source.",
+  "agmarknetCommodityName left null: commodity/variety strings were not observed in any retrieved row.",
+  "Trade units marked 'unverified' are typical conventions, not measured from data."
+ ],
+ "crops": [
+  {
+   "cropId": "paddy",
+   "commonName": "Paddy / rice",
+   "group": "cereals",
+   "botanicalNames": [
+    "Oryza sativa L."
+   ],
+   "marketProducts": [
+    {
+     "productId": "paddy.unhusked",
+     "name": "Paddy (unmilled)",
+     "basis": "unhusked grain",
+     "typicalTradeUnit": "quintal (typical AGMARKNET; unverified)",
+     "agmarknetCommodityName": null,
+     "agmarknetMappingStatus": "unresolved",
+     "notes": ""
+    },
+    {
+     "productId": "rice.milled",
+     "name": "Milled rice",
+     "basis": "milled grain",
+     "typicalTradeUnit": "quintal (typical AGMARKNET; unverified)",
+     "agmarknetCommodityName": null,
+     "agmarknetMappingStatus": "unresolved",
+     "notes": "Not interchangeable with paddy; milling outturn needed for conversion"
+    }
+   ],
+   "agronomySourceCandidates": [
+    {
+     "url": "https://agritech.tnau.ac.in/agriculture/agri_seasonandvarieties_rice.html",
+     "httpStatus": 200,
+     "soft200": false,
+     "checkedAt": "2026-10-29T19:43:15+00:00"
+    },
+    {
+     "url": "https://www.icar-iirr.org/",
+     "httpStatus": 403,
+     "soft200": false,
+     "checkedAt": "2026-10-29T19:43:15+00:00"
+    }
+   ],
+   "agronomySourceStatus": "candidate_reachable",
+   "qualificationStatus": "draft_not_qualified",
+   "notes": "Reachability only; content, region and season scope not reviewed. Not counted toward the 25-crop target."
+  },
+  {
+   "cropId": "wheat",
+   "commonName": "Wheat",
+   "group": "cereals",
+   "botanicalNames": [
+    "Triticum aestivum L.",
+    "Triticum durum Desf."
+   ],
+   "marketProducts": [
+    {
+     "productId": "wheat.grain",
+     "name": "Wheat grain",
+     "basis": "grain",
+     "typicalTradeUnit": "quintal (typical AGMARKNET; unverified)",
+     "agmarknetCommodityName": null,
+     "agmarknetMappingStatus": "unresolved",
+     "notes": "Bread vs durum wheat may be separate varieties/grades"
+    }
+   ],
+   "agronomySourceCandidates": [
+    {
+     "url": "https://iiwbr.org.in/",
+     "httpStatus": 200,
+     "soft200": false,
+     "checkedAt": "2026-10-29T19:43:15+00:00"
+    },
+    {
+     "url": "https://iiwbr.icar.gov.in/",
+     "httpStatus": null,
+     "soft200": false,
+     "checkedAt": "2026-10-29T19:43:16+00:00"
+    },
+    {
+     "url": "https://vikaspedia.in/agriculture/crop-production/package-of-practices/cereals/wheat",
+     "httpStatus": 200,
+     "soft200": true,
+     "checkedAt": "2026-10-29T19:43:16+00:00"
+    }
+   ],
+   "agronomySourceStatus": "candidate_reachable",
+   "qualificationStatus": "draft_not_qualified",
+   "notes": "Reachability only; content, region and season scope not reviewed. Not counted toward the 25-crop target."
+  },
+  {
+   "cropId": "maize",
+   "commonName": "Maize",
+   "group": "cereals",
+   "botanicalNames": [
+    "Zea mays L."
+   ],
+   "marketProducts": [
+    {
+     "productId": "maize.grain",
+     "name": "Maize grain",
+     "basis": "dry grain",
+     "typicalTradeUnit": "quintal (typical AGMARKNET; unverified)",
+     "agmarknetCommodityName": null,
+     "agmarknetMappingStatus": "unresolved",
+     "notes": ""
+    },
+    {
+     "productId": "maize.green_cob",
+     "name": "Green maize cob",
+     "basis": "fresh cob",
+     "typicalTradeUnit": "count/kg (unverified)",
+     "agmarknetCommodityName": null,
+     "agmarknetMappingStatus": "unresolved",
+     "notes": "Distinct fresh product"
+    }
+   ],
+   "agronomySourceCandidates": [
+    {
+     "url": "https://agritech.tnau.ac.in/agriculture/millets_maize.html",
+     "httpStatus": 200,
+     "soft200": false,
+     "checkedAt": "2026-10-29T19:43:16+00:00"
+    },
+    {
+     "url": "https://agritech.tnau.ac.in/agriculture/agri_seasonandvarieties_maize.html",
+     "httpStatus": 404,
+     "soft200": false,
+     "checkedAt": "2026-10-29T19:43:16+00:00"
+    },
+    {
+     "url": "https://iimr.icar.gov.in/",
+     "httpStatus": null,
+     "soft200": false,
+     "checkedAt": "2026-10-29T19:43:16+00:00"
+    }
+   ],
+   "agronomySourceStatus": "candidate_reachable",
+   "qualificationStatus": "draft_not_qualified",
+   "notes": "Reachability only; content, region and season scope not reviewed. Not counted toward the 25-crop target."
+  },
+  {
+   "cropId": "sorghum",
+   "commonName": "Sorghum (jowar)",
+   "group": "cereals",
+   "botanicalNames": [
+    "Sorghum bicolor (L.) Moench"
+   ],
+   "marketProducts": [
+    {
+     "productId": "sorghum.grain",
+     "name": "Jowar grain",
+     "basis": "grain",
+     "typicalTradeUnit": "quintal (typical AGMARKNET; unverified)",
+     "agmarknetCommodityName": null,
+     "agmarknetMappingStatus": "unresolved",
+     "notes": "Fodder sorghum excluded"
+    }
+   ],
+   "agronomySourceCandidates": [
+    {
+     "url": "https://agritech.tnau.ac.in/agriculture/millets_sorghum.html",
+     "httpStatus": 200,
+     "soft200": false,
+     "checkedAt": "2026-10-29T19:43:16+00:00"
+    },
+    {
+     "url": "https://agritech.tnau.ac.in/agriculture/agri_seasonandvarieties_sorghum.html",
+     "httpStatus": 200,
+     "soft200": false,
+     "checkedAt": "2026-10-29T19:43:17+00:00"
+    },
+    {
+     "url": "https://www.millets.res.in/",
+     "httpStatus": 200,
+     "soft200": false,
+     "checkedAt": "2026-10-29T19:43:17+00:00"
+    }
+   ],
+   "agronomySourceStatus": "candidate_reachable",
+   "qualificationStatus": "draft_not_qualified",
+   "notes": "Reachability only; content, region and season scope not reviewed. Not counted toward the 25-crop target."
+  },
+  {
+   "cropId": "pearl_millet",
+   "commonName": "Pearl millet (bajra)",
+   "group": "cereals",
+   "botanicalNames": [
+    "Cenchrus americanus (L.) Morrone (syn. Pennisetum glaucum (L.) R.Br.)"
+   ],
+   "marketProducts": [
+    {
+     "productId": "pearl_millet.grain",
+     "name": "Bajra grain",
+     "basis": "grain",
+     "typicalTradeUnit": "quintal (typical AGMARKNET; unverified)",
+     "agmarknetCommodityName": null,
+     "agmarknetMappingStatus": "unresolved",
+     "notes": ""
+    }
+   ],
+   "agronomySourceCandidates": [
+    {
+     "url": "https://agritech.tnau.ac.in/agriculture/millets_cumbu.html",
+     "httpStatus": 200,
+     "soft200": false,
+     "checkedAt": "2026-10-29T19:43:17+00:00"
+    },
+    {
+     "url": "https://agritech.tnau.ac.in/agriculture/agri_seasonandvarieties_cumbu.html",
+     "httpStatus": 200,
+     "soft200": false,
+     "checkedAt": "2026-10-29T19:43:18+00:00"
+    }
+   ],
+   "agronomySourceStatus": "candidate_reachable",
+   "qualificationStatus": "draft_not_qualified",
+   "notes": "Reachability only; content, region and season scope not reviewed. Not counted toward the 25-crop target."
+  },
+  {
+   "cropId": "finger_millet",
+   "commonName": "Finger millet (ragi)",
+   "group": "cereals",
+   "botanicalNames": [
+    "Eleusine coracana (L.) Gaertn."
+   ],
+   "marketProducts": [
+    {
+     "productId": "finger_millet.grain",
+     "name": "Ragi grain",
+     "basis": "grain",
+     "typicalTradeUnit": "quintal (typical AGMARKNET; unverified)",
+     "agmarknetCommodityName": null,
+     "agmarknetMappingStatus": "unresolved",
+     "notes": ""
+    }
+   ],
+   "agronomySourceCandidates": [
+    {
+     "url": "https://agritech.tnau.ac.in/agriculture/millets_ragi.html",
+     "httpStatus": 200,
+     "soft200": false,
+     "checkedAt": "2026-10-29T19:43:18+00:00"
+    },
+    {
+     "url": "https://agritech.tnau.ac.in/agriculture/agri_seasonandvarieties_ragi.html",
+     "httpStatus": 200,
+     "soft200": false,
+     "checkedAt": "2026-10-29T19:43:18+00:00"
+    }
+   ],
+   "agronomySourceStatus": "candidate_reachable",
+   "qualificationStatus": "draft_not_qualified",
+   "notes": "Reachability only; content, region and season scope not reviewed. Not counted toward the 25-crop target."
+  },
+  {
+   "cropId": "chickpea",
+   "commonName": "Chickpea (Bengal gram)",
+   "group": "pulses",
+   "botanicalNames": [
+    "Cicer arietinum L."
+   ],
+   "marketProducts": [
+    {
+     "productId": "chickpea.whole",
+     "name": "Chickpea whole grain",
+     "basis": "whole seed",
+     "typicalTradeUnit": "quintal (typical AGMARKNET; unverified)",
+     "agmarknetCommodityName": null,
+     "agmarknetMappingStatus": "unresolved",
+     "notes": "Desi vs kabuli are distinct market types"
+    },
+    {
+     "productId": "chickpea.dal",
+     "name": "Chana dal",
+     "basis": "split dehusked",
+     "typicalTradeUnit": "quintal (typical AGMARKNET; unverified)",
+     "agmarknetCommodityName": null,
+     "agmarknetMappingStatus": "unresolved",
+     "notes": "Processed product"
+    }
+   ],
+   "agronomySourceCandidates": [
+    {
+     "url": "https://agritech.tnau.ac.in/agriculture/CropProduction/Pulses/pulses_bengalgram.html",
+     "httpStatus": 200,
+     "soft200": false,
+     "checkedAt": "2026-10-29T19:43:18+00:00"
+    },
+    {
+     "url": "https://agritech.tnau.ac.in/agriculture/agri_seasonandvarieties_bengalgram.html",
+     "httpStatus": 200,
+     "soft200": false,
+     "checkedAt": "2026-10-29T19:43:18+00:00"
+    },
+    {
+     "url": "https://iipr.icar.gov.in/",
+     "httpStatus": null,
+     "soft200": false,
+     "checkedAt": "2026-10-29T19:43:18+00:00"
+    }
+   ],
+   "agronomySourceStatus": "candidate_reachable",
+   "qualificationStatus": "draft_not_qualified",
+   "notes": "Reachability only; content, region and season scope not reviewed. Not counted toward the 25-crop target."
+  },
+  {
+   "cropId": "pigeon_pea",
+   "commonName": "Pigeon pea (red gram, tur/arhar)",
+   "group": "pulses",
+   "botanicalNames": [
+    "Cajanus cajan (L.) Millsp."
+   ],
+   "marketProducts": [
+    {
+     "productId": "pigeon_pea.whole",
+     "name": "Tur whole",
+     "basis": "whole seed",
+     "typicalTradeUnit": "quintal (typical AGMARKNET; unverified)",
+     "agmarknetCommodityName": null,
+     "agmarknetMappingStatus": "unresolved",
+     "notes": ""
+    },
+    {
+     "productId": "pigeon_pea.dal",
+     "name": "Tur dal",
+     "basis": "split dehusked",
+     "typicalTradeUnit": "quintal (typical AGMARKNET; unverified)",
+     "agmarknetCommodityName": null,
+     "agmarknetMappingStatus": "unresolved",
+     "notes": "Processed product"
+    }
+   ],
+   "agronomySourceCandidates": [
+    {
+     "url": "https://agritech.tnau.ac.in/agriculture/CropProduction/Pulses/pulses_redgram.html",
+     "httpStatus": 200,
+     "soft200": false,
+     "checkedAt": "2026-10-29T19:43:18+00:00"
+    },
+    {
+     "url": "https://agritech.tnau.ac.in/agriculture/agri_seasonandvarieties_redgram.html",
+     "httpStatus": 200,
+     "soft200": false,
+     "checkedAt": "2026-10-29T19:43:18+00:00"
+    }
+   ],
+   "agronomySourceStatus": "candidate_reachable",
+   "qualificationStatus": "draft_not_qualified",
+   "notes": "Reachability only; content, region and season scope not reviewed. Not counted toward the 25-crop target."
+  },
+  {
+   "cropId": "green_gram",
+   "commonName": "Green gram (moong)",
+   "group": "pulses",
+   "botanicalNames": [
+    "Vigna radiata (L.) R.Wilczek"
+   ],
+   "marketProducts": [
+    {
+     "productId": "green_gram.whole",
+     "name": "Moong whole",
+     "basis": "whole seed",
+     "typicalTradeUnit": "quintal (typical AGMARKNET; unverified)",
+     "agmarknetCommodityName": null,
+     "agmarknetMappingStatus": "unresolved",
+     "notes": ""
+    },
+    {
+     "productId": "green_gram.dal",
+     "name": "Moong dal",
+     "basis": "split",
+     "typicalTradeUnit": "quintal (typical AGMARKNET; unverified)",
+     "agmarknetCommodityName": null,
+     "agmarknetMappingStatus": "unresolved",
+     "notes": ""
+    }
+   ],
+   "agronomySourceCandidates": [
+    {
+     "url": "https://agritech.tnau.ac.in/agriculture/agri_seasonandvarieties_greengram.html",
+     "httpStatus": 404,
+     "soft200": false,
+     "checkedAt": "2026-10-29T19:43:19+00:00"
+    },
+    {
+     "url": "https://agritech.tnau.ac.in/agriculture/CropProduction/Pulses/agri_cropproduction_pulses%20_%20index_green%20gram.html",
+     "httpStatus": 200,
+     "soft200": false,
+     "checkedAt": "2026-10-29T19:43:19+00:00"
+    },
+    {
+     "url": "https://vikaspedia.in/agriculture/crop-production/package-of-practices/pulses/green-gram",
+     "httpStatus": 200,
+     "soft200": true,
+     "checkedAt": "2026-10-29T19:43:19+00:00"
+    }
+   ],
+   "agronomySourceStatus": "candidate_reachable",
+   "qualificationStatus": "draft_not_qualified",
+   "notes": "Reachability only; content, region and season scope not reviewed. Not counted toward the 25-crop target."
+  },
+  {
+   "cropId": "black_gram",
+   "commonName": "Black gram (urad)",
+   "group": "pulses",
+   "botanicalNames": [
+    "Vigna mungo (L.) Hepper"
+   ],
+   "marketProducts": [
+    {
+     "productId": "black_gram.whole",
+     "name": "Urad whole",
+     "basis": "whole seed",
+     "typicalTradeUnit": "quintal (typical AGMARKNET; unverified)",
+     "agmarknetCommodityName": null,
+     "agmarknetMappingStatus": "unresolved",
+     "notes": ""
+    },
+    {
+     "productId": "black_gram.dal",
+     "name": "Urad dal",
+     "basis": "split",
+     "typicalTradeUnit": "quintal (typical AGMARKNET; unverified)",
+     "agmarknetCommodityName": null,
+     "agmarknetMappingStatus": "unresolved",
+     "notes": ""
+    }
+   ],
+   "agronomySourceCandidates": [
+    {
+     "url": "https://agritech.tnau.ac.in/agriculture/agri_seasonandvarieties_blackgram1.html",
+     "httpStatus": 404,
+     "soft200": false,
+     "checkedAt": "2026-10-29T19:43:19+00:00"
+    },
+    {
+     "url": "https://agritech.tnau.ac.in/agriculture/CropProduction/Pulses/agri_cropproduction_pluses_blackgram_index.html",
+     "httpStatus": 200,
+     "soft200": false,
+     "checkedAt": "2026-10-29T19:43:19+00:00"
+    },
+    {
+     "url": "https://vikaspedia.in/agriculture/crop-production/package-of-practices/pulses/black-gram",
+     "httpStatus": 200,
+     "soft200": true,
+     "checkedAt": "2026-10-29T19:43:19+00:00"
+    }
+   ],
+   "agronomySourceStatus": "candidate_reachable",
+   "qualificationStatus": "draft_not_qualified",
+   "notes": "Reachability only; content, region and season scope not reviewed. Not counted toward the 25-crop target."
+  },
+  {
+   "cropId": "lentil",
+   "commonName": "Lentil (masur)",
+   "group": "pulses",
+   "botanicalNames": [
+    "Lens culinaris Medik."
+   ],
+   "marketProducts": [
+    {
+     "productId": "lentil.whole",
+     "name": "Masur whole",
+     "basis": "whole seed",
+     "typicalTradeUnit": "quintal (typical AGMARKNET; unverified)",
+     "agmarknetCommodityName": null,
+     "agmarknetMappingStatus": "unresolved",
+     "notes": ""
+    },
+    {
+     "productId": "lentil.dal",
+     "name": "Masur dal",
+     "basis": "split",
+     "typicalTradeUnit": "quintal (typical AGMARKNET; unverified)",
+     "agmarknetCommodityName": null,
+     "agmarknetMappingStatus": "unresolved",
+     "notes": ""
+    }
+   ],
+   "agronomySourceCandidates": [
+    {
+     "url": "https://iipr.icar.gov.in/",
+     "httpStatus": null,
+     "soft200": false,
+     "checkedAt": "2026-10-29T19:43:20+00:00"
+    },
+    {
+     "url": "https://vikaspedia.in/agriculture/crop-production/package-of-practices/pulses/lentil",
+     "httpStatus": 200,
+     "soft200": true,
+     "checkedAt": "2026-10-29T19:43:20+00:00"
+    }
+   ],
+   "agronomySourceStatus": "no_verified_source",
+   "qualificationStatus": "draft_not_qualified",
+   "notes": "Reachability only; content, region and season scope not reviewed. Not counted toward the 25-crop target."
+  },
+  {
+   "cropId": "groundnut",
+   "commonName": "Groundnut",
+   "group": "oilseeds",
+   "botanicalNames": [
+    "Arachis hypogaea L."
+   ],
+   "marketProducts": [
+    {
+     "productId": "groundnut.pods",
+     "name": "Groundnut pods (in shell)",
+     "basis": "pods",
+     "typicalTradeUnit": "quintal (typical AGMARKNET; unverified)",
+     "agmarknetCommodityName": null,
+     "agmarknetMappingStatus": "unresolved",
+     "notes": ""
+    },
+    {
+     "productId": "groundnut.kernel",
+     "name": "Groundnut kernels",
+     "basis": "shelled",
+     "typicalTradeUnit": "quintal (typical AGMARKNET; unverified)",
+     "agmarknetCommodityName": null,
+     "agmarknetMappingStatus": "unresolved",
+     "notes": "Shelling outturn needed for conversion"
+    }
+   ],
+   "agronomySourceCandidates": [
+    {
+     "url": "https://agritech.tnau.ac.in/agriculture/agri_cropproduction_oilseeds%20index%20ground%20nut.html",
+     "httpStatus": 200,
+     "soft200": false,
+     "checkedAt": "2026-10-29T19:43:21+00:00"
+    },
+    {
+     "url": "https://vikaspedia.in/agriculture/crop-production/package-of-practices/oilseeds/groundnut",
+     "httpStatus": 200,
+     "soft200": true,
+     "checkedAt": "2026-10-29T19:43:21+00:00"
+    },
+    {
+     "url": "https://agritech.tnau.ac.in/agriculture/CropProduction/Oilseeds/oilseeds_groundnut.html",
+     "httpStatus": 404,
+     "soft200": false,
+     "checkedAt": "2026-10-29T19:43:21+00:00"
+    },
+    {
+     "url": "https://agritech.tnau.ac.in/agriculture/agri_seasonandvarieties_groundnut.html",
+     "httpStatus": 404,
+     "soft200": false,
+     "checkedAt": "2026-10-29T19:43:21+00:00"
+    },
+    {
+     "url": "https://dgr.icar.gov.in/",
+     "httpStatus": null,
+     "soft200": false,
+     "checkedAt": "2026-10-29T19:43:21+00:00"
+    }
+   ],
+   "agronomySourceStatus": "candidate_reachable",
+   "qualificationStatus": "draft_not_qualified",
+   "notes": "Reachability only; content, region and season scope not reviewed. Not counted toward the 25-crop target."
+  },
+  {
+   "cropId": "soybean",
+   "commonName": "Soybean",
+   "group": "oilseeds",
+   "botanicalNames": [
+    "Glycine max (L.) Merr."
+   ],
+   "marketProducts": [
+    {
+     "productId": "soybean.seed",
+     "name": "Soybean seed",
+     "basis": "seed",
+     "typicalTradeUnit": "quintal (typical AGMARKNET; unverified)",
+     "agmarknetCommodityName": null,
+     "agmarknetMappingStatus": "unresolved",
+     "notes": ""
+    }
+   ],
+   "agronomySourceCandidates": [
+    {
+     "url": "https://agritech.tnau.ac.in/agriculture/CropProduction/Pulses/pulses_soybean.html",
+     "httpStatus": 200,
+     "soft200": false,
+     "checkedAt": "2026-10-29T19:43:21+00:00"
+    },
+    {
+     "url": "https://agritech.tnau.ac.in/agriculture/agri_seasonandvarieties_soybean.html",
+     "httpStatus": 200,
+     "soft200": false,
+     "checkedAt": "2026-10-29T19:43:22+00:00"
+    },
+    {
+     "url": "https://iisrindore.icar.gov.in/",
+     "httpStatus": null,
+     "soft200": false,
+     "checkedAt": "2026-10-29T19:43:22+00:00"
+    }
+   ],
+   "agronomySourceStatus": "candidate_reachable",
+   "qualificationStatus": "draft_not_qualified",
+   "notes": "Reachability only; content, region and season scope not reviewed. Not counted toward the 25-crop target."
+  },
+  {
+   "cropId": "mustard",
+   "commonName": "Rapeseed-mustard",
+   "group": "oilseeds",
+   "botanicalNames": [
+    "Brassica juncea (L.) Czern.",
+    "Brassica rapa L.",
+    "Brassica napus L."
+   ],
+   "marketProducts": [
+    {
+     "productId": "mustard.seed",
+     "name": "Mustard / rapeseed seed",
+     "basis": "seed",
+     "typicalTradeUnit": "quintal (typical AGMARKNET; unverified)",
+     "agmarknetCommodityName": null,
+     "agmarknetMappingStatus": "unresolved",
+     "notes": "Species mix; oil and cake are separate products"
+    }
+   ],
+   "agronomySourceCandidates": [
+    {
+     "url": "https://www.drmr.res.in/",
+     "httpStatus": 200,
+     "soft200": false,
+     "checkedAt": "2026-10-29T19:43:22+00:00"
+    },
+    {
+     "url": "https://vikaspedia.in/agriculture/crop-production/package-of-practices/oilseeds/rapeseed-mustard",
+     "httpStatus": 200,
+     "soft200": true,
+     "checkedAt": "2026-10-29T19:43:22+00:00"
+    }
+   ],
+   "agronomySourceStatus": "candidate_reachable",
+   "qualificationStatus": "draft_not_qualified",
+   "notes": "Reachability only; content, region and season scope not reviewed. Not counted toward the 25-crop target."
+  },
+  {
+   "cropId": "sesame",
+   "commonName": "Sesame (gingelly, til)",
+   "group": "oilseeds",
+   "botanicalNames": [
+    "Sesamum indicum L."
+   ],
+   "marketProducts": [
+    {
+     "productId": "sesame.seed",
+     "name": "Sesame seed",
+     "basis": "seed",
+     "typicalTradeUnit": "quintal (typical AGMARKNET; unverified)",
+     "agmarknetCommodityName": null,
+     "agmarknetMappingStatus": "unresolved",
+     "notes": "White/black seed may be separate varieties"
+    }
+   ],
+   "agronomySourceCandidates": [
+    {
+     "url": "https://agritech.tnau.ac.in/agriculture/CropProduction/Oilseeds/oilseeds_gingelly.html",
+     "httpStatus": 200,
+     "soft200": false,
+     "checkedAt": "2026-10-29T19:43:22+00:00"
+    },
+    {
+     "url": "https://agritech.tnau.ac.in/agriculture/agri_seasonandvarieties_gingelly.html",
+     "httpStatus": 200,
+     "soft200": false,
+     "checkedAt": "2026-10-29T19:43:23+00:00"
+    }
+   ],
+   "agronomySourceStatus": "candidate_reachable",
+   "qualificationStatus": "draft_not_qualified",
+   "notes": "Reachability only; content, region and season scope not reviewed. Not counted toward the 25-crop target."
+  },
+  {
+   "cropId": "sunflower",
+   "commonName": "Sunflower",
+   "group": "oilseeds",
+   "botanicalNames": [
+    "Helianthus annuus L."
+   ],
+   "marketProducts": [
+    {
+     "productId": "sunflower.seed",
+     "name": "Sunflower seed",
+     "basis": "seed",
+     "typicalTradeUnit": "quintal (typical AGMARKNET; unverified)",
+     "agmarknetCommodityName": null,
+     "agmarknetMappingStatus": "unresolved",
+     "notes": ""
+    }
+   ],
+   "agronomySourceCandidates": [
+    {
+     "url": "https://agritech.tnau.ac.in/agriculture/oilseeds_sunflower.html",
+     "httpStatus": 200,
+     "soft200": false,
+     "checkedAt": "2026-10-29T19:43:23+00:00"
+    },
+    {
+     "url": "https://agritech.tnau.ac.in/agriculture/agri_seasonandvarieties_sunflower.html",
+     "httpStatus": 200,
+     "soft200": false,
+     "checkedAt": "2026-10-29T19:43:23+00:00"
+    },
+    {
+     "url": "https://www.icar-iior.org.in/",
+     "httpStatus": 200,
+     "soft200": false,
+     "checkedAt": "2026-10-29T19:43:23+00:00"
+    }
+   ],
+   "agronomySourceStatus": "candidate_reachable",
+   "qualificationStatus": "draft_not_qualified",
+   "notes": "Reachability only; content, region and season scope not reviewed. Not counted toward the 25-crop target."
+  },
+  {
+   "cropId": "potato",
+   "commonName": "Potato",
+   "group": "vegetables",
+   "botanicalNames": [
+    "Solanum tuberosum L."
+   ],
+   "marketProducts": [
+    {
+     "productId": "potato.fresh",
+     "name": "Potato tubers",
+     "basis": "fresh",
+     "typicalTradeUnit": "quintal (typical AGMARKNET; unverified)",
+     "agmarknetCommodityName": null,
+     "agmarknetMappingStatus": "unresolved",
+     "notes": "Seed potato is a distinct product"
+    }
+   ],
+   "agronomySourceCandidates": [
+    {
+     "url": "https://agritech.tnau.ac.in/horticulture/horti_vegetables_potato.html",
+     "httpStatus": 200,
+     "soft200": false,
+     "checkedAt": "2026-10-29T19:43:23+00:00"
+    },
+    {
+     "url": "https://cpri.icar.gov.in/",
+     "httpStatus": null,
+     "soft200": false,
+     "checkedAt": "2026-10-29T19:43:23+00:00"
+    }
+   ],
+   "agronomySourceStatus": "candidate_reachable",
+   "qualificationStatus": "draft_not_qualified",
+   "notes": "Reachability only; content, region and season scope not reviewed. Not counted toward the 25-crop target."
+  },
+  {
+   "cropId": "onion",
+   "commonName": "Onion",
+   "group": "vegetables",
+   "botanicalNames": [
+    "Allium cepa L.",
+    "Allium cepa var. aggregatum G.Don (small/multiplier onion)"
+   ],
+   "marketProducts": [
+    {
+     "productId": "onion.big",
+     "name": "Big (Bellary) onion",
+     "basis": "fresh bulbs",
+     "typicalTradeUnit": "quintal (typical AGMARKNET; unverified)",
+     "agmarknetCommodityName": null,
+     "agmarknetMappingStatus": "unresolved",
+     "notes": ""
+    },
+    {
+     "productId": "onion.small",
+     "name": "Small / multiplier onion",
+     "basis": "fresh bulbs",
+     "typicalTradeUnit": "quintal (typical AGMARKNET; unverified)",
+     "agmarknetCommodityName": null,
+     "agmarknetMappingStatus": "unresolved",
+     "notes": "Different crop cycle and market; TNAU has separate pages"
+    }
+   ],
+   "agronomySourceCandidates": [
+    {
+     "url": "https://agritech.tnau.ac.in/horticulture/horti_vegetables_bellaryonion.html",
+     "httpStatus": 200,
+     "soft200": false,
+     "checkedAt": "2026-10-29T19:43:23+00:00"
+    },
+    {
+     "url": "https://agritech.tnau.ac.in/horticulture/horti_vegetables_small%20onion.html",
+     "httpStatus": 200,
+     "soft200": false,
+     "checkedAt": "2026-10-29T19:43:23+00:00"
+    },
+    {
+     "url": "https://dogr.icar.gov.in/",
+     "httpStatus": null,
+     "soft200": false,
+     "checkedAt": "2026-10-29T19:43:24+00:00"
+    }
+   ],
+   "agronomySourceStatus": "candidate_reachable",
+   "qualificationStatus": "draft_not_qualified",
+   "notes": "Reachability only; content, region and season scope not reviewed. Not counted toward the 25-crop target."
+  },
+  {
+   "cropId": "tomato",
+   "commonName": "Tomato",
+   "group": "vegetables",
+   "botanicalNames": [
+    "Solanum lycopersicum L."
+   ],
+   "marketProducts": [
+    {
+     "productId": "tomato.fresh",
+     "name": "Tomato",
+     "basis": "fresh",
+     "typicalTradeUnit": "quintal or crate (unverified)",
+     "agmarknetCommodityName": null,
+     "agmarknetMappingStatus": "unresolved",
+     "notes": "Highly perishable; grade matters"
+    }
+   ],
+   "agronomySourceCandidates": [
+    {
+     "url": "https://agritech.tnau.ac.in/horticulture/horti_vegetables_tomato_index.html",
+     "httpStatus": 200,
+     "soft200": false,
+     "checkedAt": "2026-10-29T19:43:24+00:00"
+    },
+    {
+     "url": "https://iivr.icar.gov.in/",
+     "httpStatus": null,
+     "soft200": false,
+     "checkedAt": "2026-10-29T19:43:24+00:00"
+    }
+   ],
+   "agronomySourceStatus": "candidate_reachable",
+   "qualificationStatus": "draft_not_qualified",
+   "notes": "Reachability only; content, region and season scope not reviewed. Not counted toward the 25-crop target."
+  },
+  {
+   "cropId": "brinjal",
+   "commonName": "Brinjal (eggplant)",
+   "group": "vegetables",
+   "botanicalNames": [
+    "Solanum melongena L."
+   ],
+   "marketProducts": [
+    {
+     "productId": "brinjal.fresh",
+     "name": "Brinjal",
+     "basis": "fresh",
+     "typicalTradeUnit": "quintal (typical AGMARKNET; unverified)",
+     "agmarknetCommodityName": null,
+     "agmarknetMappingStatus": "unresolved",
+     "notes": "Repeated pickings"
+    }
+   ],
+   "agronomySourceCandidates": [
+    {
+     "url": "https://agritech.tnau.ac.in/horticulture/horti_vegetables_brinjal_index.html",
+     "httpStatus": 200,
+     "soft200": false,
+     "checkedAt": "2026-10-29T19:43:24+00:00"
+    }
+   ],
+   "agronomySourceStatus": "candidate_reachable",
+   "qualificationStatus": "draft_not_qualified",
+   "notes": "Reachability only; content, region and season scope not reviewed. Not counted toward the 25-crop target."
+  },
+  {
+   "cropId": "okra",
+   "commonName": "Okra (bhindi, bhendi)",
+   "group": "vegetables",
+   "botanicalNames": [
+    "Abelmoschus esculentus (L.) Moench"
+   ],
+   "marketProducts": [
+    {
+     "productId": "okra.fresh",
+     "name": "Okra pods",
+     "basis": "fresh",
+     "typicalTradeUnit": "quintal (typical AGMARKNET; unverified)",
+     "agmarknetCommodityName": null,
+     "agmarknetMappingStatus": "unresolved",
+     "notes": "Repeated pickings"
+    }
+   ],
+   "agronomySourceCandidates": [
+    {
+     "url": "https://agritech.tnau.ac.in/horticulture/horti_vegetables_bhendi_index.html",
+     "httpStatus": 200,
+     "soft200": false,
+     "checkedAt": "2026-10-29T19:43:24+00:00"
+    }
+   ],
+   "agronomySourceStatus": "candidate_reachable",
+   "qualificationStatus": "draft_not_qualified",
+   "notes": "Reachability only; content, region and season scope not reviewed. Not counted toward the 25-crop target."
+  },
+  {
+   "cropId": "chilli",
+   "commonName": "Chilli",
+   "group": "spices",
+   "botanicalNames": [
+    "Capsicum annuum L.",
+    "Capsicum frutescens L."
+   ],
+   "marketProducts": [
+    {
+     "productId": "chilli.green",
+     "name": "Green chilli",
+     "basis": "fresh",
+     "typicalTradeUnit": "quintal (typical AGMARKNET; unverified)",
+     "agmarknetCommodityName": null,
+     "agmarknetMappingStatus": "unresolved",
+     "notes": "Repeated pickings"
+    },
+    {
+     "productId": "chilli.dry_red",
+     "name": "Dry red chilli",
+     "basis": "dried",
+     "typicalTradeUnit": "quintal (typical AGMARKNET; unverified)",
+     "agmarknetCommodityName": null,
+     "agmarknetMappingStatus": "unresolved",
+     "notes": "Distinct product; dry:fresh conversion needed"
+    }
+   ],
+   "agronomySourceCandidates": [
+    {
+     "url": "https://agritech.tnau.ac.in/horticulture/horti_vegetables_chilli_Yield_new.html",
+     "httpStatus": 200,
+     "soft200": false,
+     "checkedAt": "2026-10-29T19:43:24+00:00"
+    },
+    {
+     "url": "https://www.indianspices.com/sites/default/files/cultivation_practices-Chillli-1.pdf",
+     "httpStatus": 200,
+     "soft200": false,
+     "checkedAt": "2026-10-29T19:43:24+00:00"
+    }
+   ],
+   "agronomySourceStatus": "candidate_reachable",
+   "qualificationStatus": "draft_not_qualified",
+   "notes": "Reachability only; content, region and season scope not reviewed. Not counted toward the 25-crop target."
+  },
+  {
+   "cropId": "ginger",
+   "commonName": "Ginger",
+   "group": "spices",
+   "botanicalNames": [
+    "Zingiber officinale Roscoe"
+   ],
+   "marketProducts": [
+    {
+     "productId": "ginger.fresh",
+     "name": "Fresh (green) ginger rhizome",
+     "basis": "fresh",
+     "typicalTradeUnit": "quintal (typical AGMARKNET; unverified)",
+     "agmarknetCommodityName": null,
+     "agmarknetMappingStatus": "unresolved",
+     "notes": "Demo product for visual journey"
+    },
+    {
+     "productId": "ginger.dry",
+     "name": "Dry ginger (sonth)",
+     "basis": "dried, peeled/unpeeled",
+     "typicalTradeUnit": "quintal (typical AGMARKNET; unverified)",
+     "agmarknetCommodityName": null,
+     "agmarknetMappingStatus": "unresolved",
+     "notes": "Distinct product; IISR guide covers both uses"
+    },
+    {
+     "productId": "ginger.seed_rhizome",
+     "name": "Seed rhizome",
+     "basis": "fresh planting material",
+     "typicalTradeUnit": "kg",
+     "agmarknetCommodityName": null,
+     "agmarknetMappingStatus": "unresolved",
+     "notes": "Input cost, not a sale product"
+    }
+   ],
+   "agronomySourceCandidates": [
+    {
+     "url": "https://spices.res.in/products/spices/ginger.html",
+     "httpStatus": 200,
+     "soft200": false,
+     "checkedAt": "2026-10-29T19:43:25+00:00"
+    },
+    {
+     "url": "https://spices.res.in/storage/app/public/pdfs/GINGER/3ENG.pdf",
+     "httpStatus": 200,
+     "soft200": false,
+     "checkedAt": "2026-10-29T19:43:25+00:00"
+    },
+    {
+     "url": "https://www.indianspices.com/sites/default/files/cultivation_practices-ginger.pdf",
+     "httpStatus": 200,
+     "soft200": false,
+     "checkedAt": "2026-10-29T19:43:25+00:00"
+    }
+   ],
+   "agronomySourceStatus": "candidate_reachable",
+   "qualificationStatus": "draft_not_qualified",
+   "notes": "Reachability only; content, region and season scope not reviewed. Not counted toward the 25-crop target."
+  },
+  {
+   "cropId": "turmeric",
+   "commonName": "Turmeric",
+   "group": "spices",
+   "botanicalNames": [
+    "Curcuma longa L."
+   ],
+   "marketProducts": [
+    {
+     "productId": "turmeric.fresh",
+     "name": "Fresh turmeric rhizome",
+     "basis": "fresh",
+     "typicalTradeUnit": "quintal (typical AGMARKNET; unverified)",
+     "agmarknetCommodityName": null,
+     "agmarknetMappingStatus": "unresolved",
+     "notes": ""
+    },
+    {
+     "productId": "turmeric.cured",
+     "name": "Cured dried turmeric (finger/bulb)",
+     "basis": "boiled and dried",
+     "typicalTradeUnit": "quintal (typical AGMARKNET; unverified)",
+     "agmarknetCommodityName": null,
+     "agmarknetMappingStatus": "unresolved",
+     "notes": "Finger vs bulb grades differ"
+    }
+   ],
+   "agronomySourceCandidates": [
+    {
+     "url": "https://spices.res.in/products/spices/turmeric.html",
+     "httpStatus": 200,
+     "soft200": false,
+     "checkedAt": "2026-10-29T19:43:26+00:00"
+    },
+    {
+     "url": "https://www.indianspices.com/sites/default/files/cultivation_practices-TURMERIC-1.pdf",
+     "httpStatus": 200,
+     "soft200": false,
+     "checkedAt": "2026-10-29T19:43:26+00:00"
+    }
+   ],
+   "agronomySourceStatus": "candidate_reachable",
+   "qualificationStatus": "draft_not_qualified",
+   "notes": "Reachability only; content, region and season scope not reviewed. Not counted toward the 25-crop target."
+  },
+  {
+   "cropId": "cotton",
+   "commonName": "Cotton",
+   "group": "fibre",
+   "botanicalNames": [
+    "Gossypium hirsutum L.",
+    "Gossypium arboreum L.",
+    "Gossypium herbaceum L.",
+    "Gossypium barbadense L."
+   ],
+   "marketProducts": [
+    {
+     "productId": "cotton.kapas",
+     "name": "Kapas (seed cotton)",
+     "basis": "unginned",
+     "typicalTradeUnit": "quintal (typical AGMARKNET; unverified)",
+     "agmarknetCommodityName": null,
+     "agmarknetMappingStatus": "unresolved",
+     "notes": "Farmer sale product"
+    },
+    {
+     "productId": "cotton.lint",
+     "name": "Cotton lint",
+     "basis": "ginned",
+     "typicalTradeUnit": "bale of 170 kg (trade convention; unverified here)",
+     "agmarknetCommodityName": null,
+     "agmarknetMappingStatus": "unresolved",
+     "notes": "Not a farm-gate product; ginning outturn needed"
+    },
+    {
+     "productId": "cotton.seed",
+     "name": "Cottonseed",
+     "basis": "seed",
+     "typicalTradeUnit": "quintal (typical AGMARKNET; unverified)",
+     "agmarknetCommodityName": null,
+     "agmarknetMappingStatus": "unresolved",
+     "notes": ""
+    }
+   ],
+   "agronomySourceCandidates": [
+    {
+     "url": "https://agritech.tnau.ac.in/agriculture/agri_seasonandvarieties_cotton.html",
+     "httpStatus": 200,
+     "soft200": false,
+     "checkedAt": "2026-10-29T19:43:27+00:00"
+    },
+    {
+     "url": "https://agritech.tnau.ac.in/agriculture/agri_cropproduction_fibre_irrigatedcotton.html",
+     "httpStatus": 404,
+     "soft200": false,
+     "checkedAt": "2026-10-29T19:43:27+00:00"
+    },
+    {
+     "url": "https://cicr.org.in/",
+     "httpStatus": 200,
+     "soft200": false,
+     "checkedAt": "2026-10-29T19:43:28+00:00"
+    }
+   ],
+   "agronomySourceStatus": "candidate_reachable",
+   "qualificationStatus": "draft_not_qualified",
+   "notes": "Reachability only; content, region and season scope not reviewed. Not counted toward the 25-crop target."
+  }
+ ]
+}

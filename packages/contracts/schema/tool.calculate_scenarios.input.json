@@ -1,0 +1,931 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "planId": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 200,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:\\/-]*$"
+    },
+    "contextId": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 200,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:\\/-]*$"
+    },
+    "overrides": {
+      "type": "object",
+      "properties": {
+        "productId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:\\/-]*$"
+        },
+        "area": {
+          "anyOf": [
+            {
+              "type": "object",
+              "properties": {
+                "amount": {
+                  "anyOf": [
+                    {
+                      "type": "number"
+                    },
+                    {
+                      "type": "string",
+                      "pattern": "^-?(0|[1-9]\\d*)(\\.\\d{1,6})?$"
+                    }
+                  ]
+                },
+                "unit": {
+                  "type": "string",
+                  "enum": [
+                    "ha",
+                    "acre"
+                  ]
+                }
+              },
+              "required": [
+                "amount",
+                "unit"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "yield": {
+          "anyOf": [
+            {
+              "type": "object",
+              "properties": {
+                "productBasis": {
+                  "type": "string",
+                  "enum": [
+                    "fresh",
+                    "dry",
+                    "green",
+                    "grain",
+                    "paddy",
+                    "milled",
+                    "kapas",
+                    "lint",
+                    "seed",
+                    "tuber",
+                    "bulb",
+                    "rhizome",
+                    "pod",
+                    "kernel",
+                    "fruit",
+                    "whole",
+                    "split",
+                    "other"
+                  ]
+                },
+                "unit": {
+                  "type": "string",
+                  "enum": [
+                    "kg/ha",
+                    "kg/acre"
+                  ]
+                },
+                "amount": {
+                  "type": "object",
+                  "properties": {
+                    "low": {
+                      "anyOf": [
+                        {
+                          "type": "number"
+                        },
+                        {
+                          "type": "string",
+                          "pattern": "^-?(0|[1-9]\\d*)(\\.\\d{1,6})?$"
+                        }
+                      ]
+                    },
+                    "central": {
+                      "anyOf": [
+                        {
+                          "type": "number"
+                        },
+                        {
+                          "type": "string",
+                          "pattern": "^-?(0|[1-9]\\d*)(\\.\\d{1,6})?$"
+                        }
+                      ]
+                    },
+                    "high": {
+                      "anyOf": [
+                        {
+                          "type": "number"
+                        },
+                        {
+                          "type": "string",
+                          "pattern": "^-?(0|[1-9]\\d*)(\\.\\d{1,6})?$"
+                        }
+                      ]
+                    }
+                  },
+                  "required": [
+                    "low",
+                    "central",
+                    "high"
+                  ],
+                  "additionalProperties": false
+                },
+                "evidenceState": {
+                  "type": "string",
+                  "enum": [
+                    "observed",
+                    "farmer_reported",
+                    "derived",
+                    "forecast",
+                    "scenario",
+                    "illustrative",
+                    "unavailable"
+                  ]
+                },
+                "evidenceIds": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 200,
+                    "pattern": "^[A-Za-z0-9][A-Za-z0-9._:\\/-]*$"
+                  }
+                }
+              },
+              "required": [
+                "productBasis",
+                "unit",
+                "amount",
+                "evidenceState",
+                "evidenceIds"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "marketableFraction": {
+          "anyOf": [
+            {
+              "type": "object",
+              "properties": {
+                "low": {
+                  "anyOf": [
+                    {
+                      "type": "number"
+                    },
+                    {
+                      "type": "string",
+                      "pattern": "^-?(0|[1-9]\\d*)(\\.\\d{1,6})?$"
+                    }
+                  ]
+                },
+                "central": {
+                  "anyOf": [
+                    {
+                      "type": "number"
+                    },
+                    {
+                      "type": "string",
+                      "pattern": "^-?(0|[1-9]\\d*)(\\.\\d{1,6})?$"
+                    }
+                  ]
+                },
+                "high": {
+                  "anyOf": [
+                    {
+                      "type": "number"
+                    },
+                    {
+                      "type": "string",
+                      "pattern": "^-?(0|[1-9]\\d*)(\\.\\d{1,6})?$"
+                    }
+                  ]
+                }
+              },
+              "required": [
+                "low",
+                "central",
+                "high"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "harvests": {
+          "minItems": 1,
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "periodId": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 200,
+                "pattern": "^[A-Za-z0-9][A-Za-z0-9._:\\/-]*$"
+              },
+              "period": {
+                "type": "object",
+                "properties": {
+                  "start": {
+                    "type": "string",
+                    "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                  },
+                  "end": {
+                    "type": "string",
+                    "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                  }
+                },
+                "required": [
+                  "start",
+                  "end"
+                ],
+                "additionalProperties": false
+              },
+              "shareOfYield": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1
+              }
+            },
+            "required": [
+              "periodId",
+              "period",
+              "shareOfYield"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "prices": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "periodId": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 200,
+                "pattern": "^[A-Za-z0-9][A-Za-z0-9._:\\/-]*$"
+              },
+              "productBasis": {
+                "type": "string",
+                "enum": [
+                  "fresh",
+                  "dry",
+                  "green",
+                  "grain",
+                  "paddy",
+                  "milled",
+                  "kapas",
+                  "lint",
+                  "seed",
+                  "tuber",
+                  "bulb",
+                  "rhizome",
+                  "pod",
+                  "kernel",
+                  "fruit",
+                  "whole",
+                  "split",
+                  "other"
+                ]
+              },
+              "unit": {
+                "type": "string",
+                "enum": [
+                  "INR/kg",
+                  "INR/quintal"
+                ]
+              },
+              "amount": {
+                "type": "object",
+                "properties": {
+                  "low": {
+                    "anyOf": [
+                      {
+                        "type": "number"
+                      },
+                      {
+                        "type": "string",
+                        "pattern": "^-?(0|[1-9]\\d*)(\\.\\d{1,6})?$"
+                      }
+                    ]
+                  },
+                  "central": {
+                    "anyOf": [
+                      {
+                        "type": "number"
+                      },
+                      {
+                        "type": "string",
+                        "pattern": "^-?(0|[1-9]\\d*)(\\.\\d{1,6})?$"
+                      }
+                    ]
+                  },
+                  "high": {
+                    "anyOf": [
+                      {
+                        "type": "number"
+                      },
+                      {
+                        "type": "string",
+                        "pattern": "^-?(0|[1-9]\\d*)(\\.\\d{1,6})?$"
+                      }
+                    ]
+                  }
+                },
+                "required": [
+                  "low",
+                  "central",
+                  "high"
+                ],
+                "additionalProperties": false
+              },
+              "evidenceState": {
+                "type": "string",
+                "enum": [
+                  "observed",
+                  "farmer_reported",
+                  "derived",
+                  "forecast",
+                  "scenario",
+                  "illustrative",
+                  "unavailable"
+                ]
+              },
+              "marketId": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 200,
+                    "pattern": "^[A-Za-z0-9][A-Za-z0-9._:\\/-]*$"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "evidenceIds": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 200,
+                  "pattern": "^[A-Za-z0-9][A-Za-z0-9._:\\/-]*$"
+                }
+              }
+            },
+            "required": [
+              "periodId",
+              "productBasis",
+              "unit",
+              "amount",
+              "evidenceState",
+              "marketId",
+              "evidenceIds"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "conversion": {
+          "anyOf": [
+            {
+              "type": "object",
+              "properties": {
+                "fromBasis": {
+                  "type": "string",
+                  "enum": [
+                    "fresh",
+                    "dry",
+                    "green",
+                    "grain",
+                    "paddy",
+                    "milled",
+                    "kapas",
+                    "lint",
+                    "seed",
+                    "tuber",
+                    "bulb",
+                    "rhizome",
+                    "pod",
+                    "kernel",
+                    "fruit",
+                    "whole",
+                    "split",
+                    "other"
+                  ]
+                },
+                "toBasis": {
+                  "type": "string",
+                  "enum": [
+                    "fresh",
+                    "dry",
+                    "green",
+                    "grain",
+                    "paddy",
+                    "milled",
+                    "kapas",
+                    "lint",
+                    "seed",
+                    "tuber",
+                    "bulb",
+                    "rhizome",
+                    "pod",
+                    "kernel",
+                    "fruit",
+                    "whole",
+                    "split",
+                    "other"
+                  ]
+                },
+                "outputKgPerInputKg": {
+                  "type": "object",
+                  "properties": {
+                    "low": {
+                      "anyOf": [
+                        {
+                          "type": "number"
+                        },
+                        {
+                          "type": "string",
+                          "pattern": "^-?(0|[1-9]\\d*)(\\.\\d{1,6})?$"
+                        }
+                      ]
+                    },
+                    "central": {
+                      "anyOf": [
+                        {
+                          "type": "number"
+                        },
+                        {
+                          "type": "string",
+                          "pattern": "^-?(0|[1-9]\\d*)(\\.\\d{1,6})?$"
+                        }
+                      ]
+                    },
+                    "high": {
+                      "anyOf": [
+                        {
+                          "type": "number"
+                        },
+                        {
+                          "type": "string",
+                          "pattern": "^-?(0|[1-9]\\d*)(\\.\\d{1,6})?$"
+                        }
+                      ]
+                    }
+                  },
+                  "required": [
+                    "low",
+                    "central",
+                    "high"
+                  ],
+                  "additionalProperties": false
+                },
+                "processingCostInrPerOutputKg": {
+                  "type": "object",
+                  "properties": {
+                    "low": {
+                      "anyOf": [
+                        {
+                          "type": "number"
+                        },
+                        {
+                          "type": "string",
+                          "pattern": "^-?(0|[1-9]\\d*)(\\.\\d{1,6})?$"
+                        }
+                      ]
+                    },
+                    "central": {
+                      "anyOf": [
+                        {
+                          "type": "number"
+                        },
+                        {
+                          "type": "string",
+                          "pattern": "^-?(0|[1-9]\\d*)(\\.\\d{1,6})?$"
+                        }
+                      ]
+                    },
+                    "high": {
+                      "anyOf": [
+                        {
+                          "type": "number"
+                        },
+                        {
+                          "type": "string",
+                          "pattern": "^-?(0|[1-9]\\d*)(\\.\\d{1,6})?$"
+                        }
+                      ]
+                    }
+                  },
+                  "required": [
+                    "low",
+                    "central",
+                    "high"
+                  ],
+                  "additionalProperties": false
+                },
+                "evidenceIds": {
+                  "minItems": 1,
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 200,
+                    "pattern": "^[A-Za-z0-9][A-Za-z0-9._:\\/-]*$"
+                  }
+                }
+              },
+              "required": [
+                "fromBasis",
+                "toBasis",
+                "outputKgPerInputKg",
+                "processingCostInrPerOutputKg",
+                "evidenceIds"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "costs": {
+          "type": "object",
+          "properties": {
+            "cashProduction": {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "basis": {
+                      "type": "string",
+                      "enum": [
+                        "per_ha",
+                        "per_kg_marketable"
+                      ]
+                    },
+                    "amountInr": {
+                      "type": "object",
+                      "properties": {
+                        "low": {
+                          "anyOf": [
+                            {
+                              "type": "number"
+                            },
+                            {
+                              "type": "string",
+                              "pattern": "^-?(0|[1-9]\\d*)(\\.\\d{1,6})?$"
+                            }
+                          ]
+                        },
+                        "central": {
+                          "anyOf": [
+                            {
+                              "type": "number"
+                            },
+                            {
+                              "type": "string",
+                              "pattern": "^-?(0|[1-9]\\d*)(\\.\\d{1,6})?$"
+                            }
+                          ]
+                        },
+                        "high": {
+                          "anyOf": [
+                            {
+                              "type": "number"
+                            },
+                            {
+                              "type": "string",
+                              "pattern": "^-?(0|[1-9]\\d*)(\\.\\d{1,6})?$"
+                            }
+                          ]
+                        }
+                      },
+                      "required": [
+                        "low",
+                        "central",
+                        "high"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "evidenceIds": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 200,
+                        "pattern": "^[A-Za-z0-9][A-Za-z0-9._:\\/-]*$"
+                      }
+                    },
+                    "definition": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  },
+                  "required": [
+                    "basis",
+                    "amountInr",
+                    "evidenceIds",
+                    "definition"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "harvest": {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "basis": {
+                      "type": "string",
+                      "enum": [
+                        "per_ha",
+                        "per_kg_marketable"
+                      ]
+                    },
+                    "amountInr": {
+                      "type": "object",
+                      "properties": {
+                        "low": {
+                          "anyOf": [
+                            {
+                              "type": "number"
+                            },
+                            {
+                              "type": "string",
+                              "pattern": "^-?(0|[1-9]\\d*)(\\.\\d{1,6})?$"
+                            }
+                          ]
+                        },
+                        "central": {
+                          "anyOf": [
+                            {
+                              "type": "number"
+                            },
+                            {
+                              "type": "string",
+                              "pattern": "^-?(0|[1-9]\\d*)(\\.\\d{1,6})?$"
+                            }
+                          ]
+                        },
+                        "high": {
+                          "anyOf": [
+                            {
+                              "type": "number"
+                            },
+                            {
+                              "type": "string",
+                              "pattern": "^-?(0|[1-9]\\d*)(\\.\\d{1,6})?$"
+                            }
+                          ]
+                        }
+                      },
+                      "required": [
+                        "low",
+                        "central",
+                        "high"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "evidenceIds": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 200,
+                        "pattern": "^[A-Za-z0-9][A-Za-z0-9._:\\/-]*$"
+                      }
+                    },
+                    "definition": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  },
+                  "required": [
+                    "basis",
+                    "amountInr",
+                    "evidenceIds",
+                    "definition"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "saleAndTransport": {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "basis": {
+                      "type": "string",
+                      "enum": [
+                        "per_ha",
+                        "per_kg_marketable"
+                      ]
+                    },
+                    "amountInr": {
+                      "type": "object",
+                      "properties": {
+                        "low": {
+                          "anyOf": [
+                            {
+                              "type": "number"
+                            },
+                            {
+                              "type": "string",
+                              "pattern": "^-?(0|[1-9]\\d*)(\\.\\d{1,6})?$"
+                            }
+                          ]
+                        },
+                        "central": {
+                          "anyOf": [
+                            {
+                              "type": "number"
+                            },
+                            {
+                              "type": "string",
+                              "pattern": "^-?(0|[1-9]\\d*)(\\.\\d{1,6})?$"
+                            }
+                          ]
+                        },
+                        "high": {
+                          "anyOf": [
+                            {
+                              "type": "number"
+                            },
+                            {
+                              "type": "string",
+                              "pattern": "^-?(0|[1-9]\\d*)(\\.\\d{1,6})?$"
+                            }
+                          ]
+                        }
+                      },
+                      "required": [
+                        "low",
+                        "central",
+                        "high"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "evidenceIds": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 200,
+                        "pattern": "^[A-Za-z0-9][A-Za-z0-9._:\\/-]*$"
+                      }
+                    },
+                    "definition": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  },
+                  "required": [
+                    "basis",
+                    "amountInr",
+                    "evidenceIds",
+                    "definition"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "fullEconomic": {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "amountInrPerHa": {
+                      "type": "object",
+                      "properties": {
+                        "low": {
+                          "anyOf": [
+                            {
+                              "type": "number"
+                            },
+                            {
+                              "type": "string",
+                              "pattern": "^-?(0|[1-9]\\d*)(\\.\\d{1,6})?$"
+                            }
+                          ]
+                        },
+                        "central": {
+                          "anyOf": [
+                            {
+                              "type": "number"
+                            },
+                            {
+                              "type": "string",
+                              "pattern": "^-?(0|[1-9]\\d*)(\\.\\d{1,6})?$"
+                            }
+                          ]
+                        },
+                        "high": {
+                          "anyOf": [
+                            {
+                              "type": "number"
+                            },
+                            {
+                              "type": "string",
+                              "pattern": "^-?(0|[1-9]\\d*)(\\.\\d{1,6})?$"
+                            }
+                          ]
+                        }
+                      },
+                      "required": [
+                        "low",
+                        "central",
+                        "high"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "definition": {
+                      "type": "string",
+                      "enum": [
+                        "A2+FL",
+                        "C2",
+                        "C3",
+                        "farmer_defined",
+                        "other_documented"
+                      ]
+                    },
+                    "includesHarvest": {
+                      "type": "boolean"
+                    },
+                    "includesSaleAndTransport": {
+                      "type": "boolean"
+                    },
+                    "evidenceIds": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 200,
+                        "pattern": "^[A-Za-z0-9][A-Za-z0-9._:\\/-]*$"
+                      }
+                    }
+                  },
+                  "required": [
+                    "amountInrPerHa",
+                    "definition",
+                    "includesHarvest",
+                    "includesSaleAndTransport",
+                    "evidenceIds"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": [
+            "cashProduction",
+            "harvest",
+            "saleAndTransport",
+            "fullEconomic"
+          ],
+          "additionalProperties": false
+        },
+        "unpricedItems": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false,
+  "$id": "https://harvest-outlook.local/schema/1.0/tool.calculate_scenarios.input.json",
+  "x-schemaVersion": "1.0"
+}

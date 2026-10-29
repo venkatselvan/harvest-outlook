@@ -1,0 +1,2039 @@
+{
+ "schemaVersion": 1,
+ "auditTask": "T01",
+ "generatedBy": "scripts/audit/build_sources.py",
+ "records": [
+  {
+   "id": "MKT02-dgi-mandi-current",
+   "url": "https://api.data.gov.in/resource/9ef84268-d588-465a-a308-a864a43d0070",
+   "publisher": "Open Government Data Platform India / Directorate of Marketing and Inspection (AGMARKNET)",
+   "title": "Current Daily Price of Various Commodities from Various Markets (Mandi)",
+   "accessRoute": "api_key_required_free",
+   "licence": "unstated on retrieved artifacts; portal states GODL-India but licence page returned HTTP 403 to automated fetch (not verified verbatim)",
+   "retrievedAt": "2026-10-29T19:34:42+00:00",
+   "sha256": null,
+   "rowOrPageCount": null,
+   "coverage": {
+    "timeFrom": null,
+    "timeTo": null,
+    "geography": "All India (catalog metadata)",
+    "products": [
+     "all AGMARKNET commodities (unverified)"
+    ]
+   },
+   "availabilityPolicy": "Daily; title says 'Current' - history depth NOT verified. Resource UUID taken from portal backend metadata for catalog nid 86944 (data/raw/datagovin/catalog_86944_resources.json).",
+   "validation": "retrieval_failed",
+   "notes": "Keyless request returns HTTP 400 {\"error\": \"Authorization field missing\"}. Catalog metadata embeds a portal-published sample key in datafile_url; use of that key was denied by the session permission policy and was not attempted. Registration for a personal free key was not performed (out of scope). Field names, units (INR/quintal is typical but unverified here) and ginger rows NOT observed.",
+   "httpStatus": 400,
+   "rawArtifact": "data/raw/datagovin/api_probe_nokey.json"
+  },
+  {
+   "id": "MKT02-dgi-mandi-variety",
+   "url": "https://api.data.gov.in/resource/35985678-0d79-46b4-9ed6-6f13308a1d24",
+   "publisher": "Open Government Data Platform India / DMI",
+   "title": "Variety-wise Daily Market Prices Data of Commodity",
+   "accessRoute": "api_key_required_free",
+   "licence": "unstated on retrieved artifacts; portal states GODL-India but licence page returned HTTP 403 to automated fetch (not verified verbatim)",
+   "retrievedAt": "2026-10-29T19:35:29+00:00",
+   "sha256": "9ccfc1246ebb2451794305d6792ce24e55345dd01ea12c3e9d6567baf99a9d57",
+   "rowOrPageCount": null,
+   "coverage": {
+    "timeFrom": "2024-05-21",
+    "timeTo": null,
+    "geography": "All India (catalog metadata)",
+    "products": [
+     "variety-wise commodity prices (unverified)"
+    ]
+   },
+   "availabilityPolicy": "Catalog metadata: created 2024-05-21, data_time_period_from=to=2024-05-21, changed 2026-10-28. Whether the API holds accumulated history since 2024-05-21 is NOT verified.",
+   "validation": "not_attempted",
+   "notes": "Same key gate as 9ef84268. Most promising candidate for >1 season of history; must be measured once a key is available. sha256/retrievedAt refer to the metadata listing, not to price rows.",
+   "httpStatus": 200,
+   "rawArtifact": "data/raw/datagovin/catalog_86944_resources.json"
+  },
+  {
+   "id": "MKT02-dgi-catalog-86944",
+   "url": "https://www.data.gov.in/backend/dmspublic/v1/resources?filters[catalog_reference]=86944&offset=0&limit=10",
+   "publisher": "Open Government Data Platform India",
+   "title": "Resource listing for catalog 'Current daily price of various commodities from various markets (Mandi)' (nid 86944, uuid 6141ea17-a69d-4713-b600-0a43c8fd9a6c)",
+   "accessRoute": "open_download",
+   "licence": "unstated on retrieved artifacts; portal states GODL-India but licence page returned HTTP 403 to automated fetch (not verified verbatim)",
+   "retrievedAt": "2026-10-29T19:35:29+00:00",
+   "sha256": "9ccfc1246ebb2451794305d6792ce24e55345dd01ea12c3e9d6567baf99a9d57",
+   "rowOrPageCount": 2,
+   "coverage": {
+    "timeFrom": null,
+    "timeTo": null,
+    "geography": "All India",
+    "products": []
+   },
+   "availabilityPolicy": "Unauthenticated JSON endpoint used by the public catalog page itself.",
+   "validation": "retrieved_ok",
+   "notes": "2 resources listed. Response contains datafile_url strings embedding the portal's published sample API key; stored only in gitignored data/raw.",
+   "httpStatus": 200,
+   "rawArtifact": "data/raw/datagovin/catalog_86944_resources.json"
+  },
+  {
+   "id": "MKT02-dgi-xml-datafile",
+   "url": "https://www.data.gov.in/files/ogdpv2dms/s3fs-public/Date-Wise-Prices-all-Commodity.xml",
+   "publisher": "Open Government Data Platform India",
+   "title": "Date-Wise-Prices-all-Commodity.xml (legacy datafile of 9ef84268)",
+   "accessRoute": "interactive_only",
+   "licence": "unstated on retrieved artifacts; portal states GODL-India but licence page returned HTTP 403 to automated fetch (not verified verbatim)",
+   "retrievedAt": "2026-10-29T19:35:57+00:00",
+   "sha256": null,
+   "rowOrPageCount": null,
+   "coverage": {
+    "timeFrom": null,
+    "timeTo": null,
+    "geography": null,
+    "products": []
+   },
+   "availabilityPolicy": "unknown",
+   "validation": "retrieval_failed",
+   "notes": "Scripted GET -> HTTP 403; HEAD -> 405. Static data.gov.in datafiles (also tested: TN ginger production CSV) return 403 to scripted requests; likely require interactive download. Not bypassed.",
+   "httpStatus": 403,
+   "rawArtifact": null
+  },
+  {
+   "id": "AGR-dgi-tn-ginger-district",
+   "url": "https://data.gov.in/files/ogd20/ogdpv2dms/s3fs-public/datafile/production_of_ginger_in_2018_19.csv",
+   "publisher": "Open Government Data Platform India / Govt of Tamil Nadu",
+   "title": "Production of Ginger by Districts in Tamil Nadu 2018-19 (one of 15 TN ginger APY resources 2011-12..2018-19)",
+   "accessRoute": "interactive_only",
+   "licence": "unstated on retrieved artifacts; portal states GODL-India but licence page returned HTTP 403 to automated fetch (not verified verbatim)",
+   "retrievedAt": "2026-10-29T19:37:32+00:00",
+   "sha256": null,
+   "rowOrPageCount": null,
+   "coverage": {
+    "timeFrom": "2011-04-01",
+    "timeTo": "2019-03-31",
+    "geography": "Tamil Nadu districts",
+    "products": [
+     "ginger"
+    ]
+   },
+   "availabilityPolicy": "Static yearly files per catalog search (data/raw/datagovin/search_ginger.json)",
+   "validation": "retrieval_failed",
+   "notes": "HTTP 403 to scripted GET. Tamil Nadu is a minor ginger state; low priority.",
+   "httpStatus": 403,
+   "rawArtifact": "data/raw/datagovin/tn_ginger_production_2018_19.csv"
+  },
+  {
+   "id": "MKT01-agmarknet2",
+   "url": "https://agmarknet.gov.in/",
+   "publisher": "Directorate of Marketing and Inspection, MoA&FW",
+   "title": "Agmarknet 2.0 (React single-page app; legacy SearchCmmMkt.aspx now serves the same shell)",
+   "accessRoute": "interactive_only",
+   "licence": "unstated",
+   "retrievedAt": "2026-10-29T19:36:19+00:00",
+   "sha256": "792f9631536f4d4b597b957cc7f251d70ec908d1c411c7a5d465f36bd40edb45",
+   "rowOrPageCount": null,
+   "coverage": {
+    "timeFrom": null,
+    "timeTo": null,
+    "geography": "All India",
+    "products": []
+   },
+   "availabilityPolicy": "Report queries go to https://api.agmarknet.gov.in/v1/ ; the shipped JS attaches captcha/captcha_key to report requests (/captcha/generator, /captcha/verify; '/prices-and-a...' report calls).",
+   "validation": "not_attempted",
+   "notes": "CAPTCHA-gated interactive reports. Internal API not called; no CAPTCHA bypass. Manual human export by the user may be possible but its terms were not verified.",
+   "httpStatus": 200,
+   "rawArtifact": "data/raw/agmarknet/home.html"
+  },
+  {
+   "id": "MKT01-ceda-ashoka",
+   "url": "https://agmarknet.ceda.ashoka.edu.in/",
+   "publisher": "Centre for Economic Data and Analysis, Ashoka University (third party; source DMI)",
+   "title": "CEDA Agmarknet portal",
+   "accessRoute": "not_checked",
+   "licence": "unstated",
+   "retrievedAt": "2026-10-29T19:36:20+00:00",
+   "sha256": null,
+   "rowOrPageCount": null,
+   "coverage": {
+    "timeFrom": null,
+    "timeTo": null,
+    "geography": "All India; district aggregates shown",
+    "products": []
+   },
+   "availabilityPolicy": "Page shows 'Download Data' buttons; login/terms not stated on the page.",
+   "validation": "not_attempted",
+   "notes": "HTTP 200 to page request only. Third-party aggregation (district/monthly); not market-level primary data. Terms must be checked before any use.",
+   "httpStatus": 200,
+   "rawArtifact": null
+  },
+  {
+   "id": "MKT01-acrop-thirdparty",
+   "url": "https://acrop.app/prices/ginger/karnataka",
+   "publisher": "acrop.app (third party, states source data.gov.in/AGMARKNET)",
+   "title": "Ginger prices Karnataka (web search snippets only)",
+   "accessRoute": "not_checked",
+   "licence": "unstated",
+   "retrievedAt": null,
+   "sha256": null,
+   "rowOrPageCount": null,
+   "coverage": {
+    "timeFrom": "2026-05",
+    "timeTo": "2026-08",
+    "geography": "Karnataka APMCs",
+    "products": [
+     "Ginger (product not stated)"
+    ]
+   },
+   "availabilityPolicy": "n/a",
+   "validation": "not_attempted",
+   "notes": "Only used as weak evidence that Karnataka APMCs (Hassan, Belur, Holenarasipura, Mysore-Bandipalya, Bangalore, Ramanagara, Doddaballapur, Somvarpet, Chikkamagaluru) have reported ginger in 2026; levels inconsistent (INR 2,000 vs 10,000/quintal within one district) -> product/grade identity problem. Not a data source for the product.",
+   "httpStatus": null,
+   "rawArtifact": null
+  },
+  {
+   "id": "AGR01-des-apy-report",
+   "url": "https://data.desagri.gov.in/website/crops-apy-report-web",
+   "publisher": "Directorate of Economics and Statistics, MoA&FW",
+   "title": "Crops APY report",
+   "accessRoute": "interactive_only",
+   "licence": "unstated",
+   "retrievedAt": "2026-10-29T19:38:21+00:00",
+   "sha256": "900fdc1d2a5f12dfc4a8fc4d6f72d452a12d767604c6fdbb9f6f375d1adc6506",
+   "rowOrPageCount": null,
+   "coverage": {
+    "timeFrom": null,
+    "timeTo": null,
+    "geography": "State/district (form options)",
+    "products": []
+   },
+   "availabilityPolicy": "unknown",
+   "validation": "retrieved_ok",
+   "notes": "HTML form page retrieved (curl; Python requests fails: server sends incomplete certificate chain). Data via jQuery POST with session CSRF _token returning an HTML table; 'Excel' is client-side conversion. No documented export/API; no CAPTCHA seen. No APY rows retrieved.",
+   "httpStatus": 200,
+   "rawArtifact": "data/raw/desagri/apy_report.html"
+  },
+  {
+   "id": "AGR01-des-apy-query",
+   "url": "https://data.desagri.gov.in/website/apy-query-report-web",
+   "publisher": "Directorate of Economics and Statistics, MoA&FW",
+   "title": "APY query report",
+   "accessRoute": "interactive_only",
+   "licence": "unstated",
+   "retrievedAt": "2026-10-29T19:38:22+00:00",
+   "sha256": "08268ebe62a84918472f3a239891955e82d55379d2f7a9a80ef74ff181b65ac4",
+   "rowOrPageCount": null,
+   "coverage": {
+    "timeFrom": null,
+    "timeTo": null,
+    "geography": "State/district/crop/season/year form",
+    "products": []
+   },
+   "availabilityPolicy": "unknown",
+   "validation": "retrieved_ok",
+   "notes": "As above: form fields fltrstates[], fltrdistricts, crop, season, year range, report format scrview|exl; session token required. Manual export by a user is the lawful route; not automated.",
+   "httpStatus": 200,
+   "rawArtifact": "data/raw/desagri/apy_query.html"
+  },
+  {
+   "id": "AGR02-upag-calendar",
+   "url": "https://upag.gov.in/national-calendar",
+   "publisher": "UPAg, MoA&FW",
+   "title": "UPAg national crop calendar",
+   "accessRoute": "interactive_only",
+   "licence": "unstated",
+   "retrievedAt": "2026-10-29T19:37:45+00:00",
+   "sha256": "65dd57d80cfcbf021073e3bd8c9c786e09ad45931a4e9f88aa72273febb63cf1",
+   "rowOrPageCount": null,
+   "coverage": {
+    "timeFrom": null,
+    "timeTo": null,
+    "geography": null,
+    "products": []
+   },
+   "availabilityPolicy": "unknown",
+   "validation": "retrieved_ok",
+   "notes": "7 KB JS-only shell ('You need to enable JavaScript'); no calendar data in HTML. Content not inspected.",
+   "httpStatus": 200,
+   "rawArtifact": "data/raw/upag/national_calendar.html"
+  },
+  {
+   "id": "AGR02-upag-api",
+   "url": "https://data.upag.gov.in/api/v1/openapi.json",
+   "publisher": "UPAg, MoA&FW",
+   "title": "UPAg API Data Share OpenAPI 1.0.0",
+   "accessRoute": "blocked",
+   "licence": "unstated",
+   "retrievedAt": "2026-10-29T19:40:52+00:00",
+   "sha256": "3688b89384f9be7cc25cdb14c2b3858b949c8d291530b0da6fb19ee5237035c8",
+   "rowOrPageCount": 9,
+   "coverage": {
+    "timeFrom": null,
+    "timeTo": null,
+    "geography": null,
+    "products": [
+     "APY statewise/districtwise",
+     "crop production",
+     "crop master"
+    ]
+   },
+   "availabilityPolicy": "All data endpoints require OAuth2PasswordBearer (tokenUrl v1/upag/api-data-share/login). Credential issuance process unknown.",
+   "validation": "retrieved_ok",
+   "notes": "Spec retrieved (9 operations). No crop-calendar endpoint in the spec. Treated as blocked: credentials not available and not requested.",
+   "httpStatus": 200,
+   "rawArtifact": "data/raw/upag/openapi.json"
+  },
+  {
+   "id": "AGR03-crida-index",
+   "url": "https://www.icar-crida.res.in/Crop_Contingency_Plan.html",
+   "publisher": "ICAR-CRIDA",
+   "title": "District agriculture contingency plans index",
+   "accessRoute": "open_download",
+   "licence": "unstated",
+   "retrievedAt": "2026-10-29T19:37:47+00:00",
+   "sha256": "bcaef8fdc7448b646540d2e0893a0d6be80b71d0dd4160f7c98d2e2411a34139",
+   "rowOrPageCount": 648,
+   "coverage": {
+    "timeFrom": "2011",
+    "timeTo": null,
+    "geography": "India districts (2011-2016 plan dates seen)",
+    "products": []
+   },
+   "availabilityPolicy": "Static PDF links",
+   "validation": "retrieved_ok",
+   "notes": "648 PDF links on index. Karnataka: 29 links incl. Hassan, Shimoga, Kodagu, Mysore, Chikmagalur. Kerala plans dated 30-06-2011.",
+   "httpStatus": 200,
+   "rawArtifact": "data/raw/crida/index.html"
+  },
+  {
+   "id": "AGR03-crida-hassan",
+   "url": "https://www.icar-crida.res.in/CP-2012/statewiseplans/Karnataka%20(Pdf)/GKVK,%20Bangalore/KA28-Hassan%20%2004.10.2011.pdf",
+   "publisher": "ICAR-CRIDA / UAS GKVK Bangalore",
+   "title": "Agriculture contingency plan: Hassan (KA28), 04.10.2011",
+   "accessRoute": "open_download",
+   "licence": "unstated",
+   "retrievedAt": "2026-10-29T19:38:46+00:00",
+   "sha256": "8e1d6636773a5714c3110a7908815baf0e6dc2736ec77bf96dda5ea8322ddd6a",
+   "rowOrPageCount": 42,
+   "coverage": {
+    "timeFrom": "2011-10-04",
+    "timeTo": "2011-10-04",
+    "geography": "Hassan district, Karnataka",
+    "products": [
+     "ginger listed under spices"
+    ]
+   },
+   "availabilityPolicy": "Static PDF; plan date 2011 - currency must be reviewed",
+   "validation": "retrieved_ok",
+   "notes": "pypdf: 40/42 pages with text. Ginger appears in the horticulture spices table ('Ginger 13.8' under 'Total Area'; table header reads Area (`000 ha) -> 13.8 thousand ha; plausibility vs state totals is questionable (column alignment from pdftotext -layout); verify manually before use).",
+   "httpStatus": 200,
+   "rawArtifact": "data/raw/crida/KA28-Hassan-2011-10-04.pdf"
+  },
+  {
+   "id": "AGR04-iisr-ginger-page",
+   "url": "https://spices.res.in/products/spices/ginger.html",
+   "publisher": "ICAR-IISR Kozhikode",
+   "title": "Ginger resources page",
+   "accessRoute": "open_download",
+   "licence": "unstated",
+   "retrievedAt": "2026-10-29T19:37:49+00:00",
+   "sha256": "5997554516ab3cfd96a039b35d4c0d3a9611e912213216773634f7db29b921cd",
+   "rowOrPageCount": null,
+   "coverage": {
+    "timeFrom": null,
+    "timeTo": null,
+    "geography": "India",
+    "products": [
+     "ginger"
+    ]
+   },
+   "availabilityPolicy": "static",
+   "validation": "retrieved_ok",
+   "notes": "",
+   "httpStatus": 200,
+   "rawArtifact": "data/raw/iisr/ginger.html"
+  },
+  {
+   "id": "AGR04-iisr-ginger-guide",
+   "url": "https://spices.res.in/storage/app/public/pdfs/GINGER/3ENG.pdf",
+   "publisher": "ICAR-IISR Kozhikode",
+   "title": "Ginger (extension pamphlet, February 2025; Thankamani et al.)",
+   "accessRoute": "open_download",
+   "licence": "unstated",
+   "retrievedAt": "2026-10-29T19:37:50+00:00",
+   "sha256": "8dde754dc3defc1c116fd11e963b091870e463b99f7c601a040f1aae0f1fe65e",
+   "rowOrPageCount": 32,
+   "coverage": {
+    "timeFrom": "2025-02",
+    "timeTo": "2025-02",
+    "geography": "India (general; IISR Kerala perspective)",
+    "products": [
+     "fresh ginger",
+     "dry ginger"
+    ]
+   },
+   "availabilityPolicy": "static",
+   "validation": "retrieved_ok",
+   "notes": "pypdf: 28/32 pages with text, 42,193 chars; pdftotext also works. States 2022-23 national production 22.01 lakh t from 190,000 ha; MP, Karnataka, Orissa, Assam, Meghalaya, Arunachal, Gujarat = 65%. Do not redistribute (licence unstated).",
+   "httpStatus": 200,
+   "rawArtifact": "data/raw/iisr/ginger_3ENG.pdf"
+  },
+  {
+   "id": "AGR-spicesboard-statewise",
+   "url": "https://www.indianspices.com/sites/default/files/Major%20spice%20state%20wise%20area%20production%202024-25%20web.pdf",
+   "publisher": "Spices Board India",
+   "title": "Major spice / state-wise area and production of spices 2021-22..2025-26*",
+   "accessRoute": "open_download",
+   "licence": "unstated",
+   "retrievedAt": "2026-10-29T19:40:00+00:00",
+   "sha256": "2e9166ab2603f912ddc77d9d916ab92ec89ba53f85373aa529772d22c06dc828",
+   "rowOrPageCount": 4,
+   "coverage": {
+    "timeFrom": "2021-22",
+    "timeTo": "2025-26 (provisional *)",
+    "geography": "Major states",
+    "products": [
+     "ginger (form not stated in extracted text)",
+     "chilli",
+     "turmeric",
+     "pepper",
+     "cardamom"
+    ]
+   },
+   "availabilityPolicy": "Annual; 2024-25 marked 'f', 2025-26 '*'",
+   "validation": "retrieved_ok",
+   "notes": "Area ha, production tonnes. Ginger block (row-order inferred, needs manual check): 2024-25f MP 38,023 ha / 624,138 t; Karnataka 33,756 ha / 379,151 t; Odisha 20,925 ha / 269,513 t. Production basis (fresh vs dry) not stated in extracted text.",
+   "httpStatus": 200,
+   "rawArtifact": "data/raw/spicesboard/major_spice_statewise_area_production_2024-25.pdf"
+  },
+  {
+   "id": "WEA-openmeteo-archive",
+   "url": "https://archive-api.open-meteo.com/v1/archive",
+   "publisher": "Open-Meteo",
+   "title": "Historical Weather API (ERA5/ERA5-Land/IFS)",
+   "accessRoute": "open_download",
+   "licence": "CC BY 4.0 ('The data obtained through the API is provided under the terms of the CC-BY 4.0 licence'); free tier non-commercial only",
+   "retrievedAt": "2026-10-29T19:38:58+00:00",
+   "sha256": "c05a444b21fed64bf7d0b303ec2b8c93156e95d1d0a104357123b8b0e447812c",
+   "rowOrPageCount": 30,
+   "coverage": {
+    "timeFrom": "1940-01-01",
+    "timeTo": "present minus ~5 days (ERA5)",
+    "geography": "Global; sample Hassan 12.97N 76.09E, elev 954 m",
+    "products": [
+     "precipitation_sum",
+     "temperature_2m_max/min",
+     "et0_fao_evapotranspiration"
+    ]
+   },
+   "availabilityPolicy": "ERA5 daily update with 5-day delay; reanalysis is not a forecast available at the time",
+   "validation": "retrieved_ok",
+   "notes": "Sample 2026-09-01..30 daily, 30/30 non-null, rain 74.0 mm. Free tier: <10,000 calls/day, 5,000/h, 600/min; commercial use requires subscription.",
+   "httpStatus": 200,
+   "rawArtifact": "data/raw/openmeteo/archive_hassan_2026-09.json"
+  },
+  {
+   "id": "WEA-openmeteo-forecast",
+   "url": "https://api.open-meteo.com/v1/forecast",
+   "publisher": "Open-Meteo",
+   "title": "Forecast API",
+   "accessRoute": "open_download",
+   "licence": "CC BY 4.0; free tier non-commercial",
+   "retrievedAt": "2026-10-29T19:39:00+00:00",
+   "sha256": "6529c4ba7fb9f0f5ac30ec472120176fcf23034949c85388a0a6b03e02e5270e",
+   "rowOrPageCount": 16,
+   "coverage": {
+    "timeFrom": "2026-10-30",
+    "timeTo": "2026-11-14",
+    "geography": "Hassan sample",
+    "products": [
+     "precipitation_sum",
+     "temperature_2m_max/min"
+    ]
+   },
+   "availabilityPolicy": "Live; forecast_days=16 accepted",
+   "validation": "retrieved_ok",
+   "notes": "16 days returned, day 16 null (15/16 non-null).",
+   "httpStatus": 200,
+   "rawArtifact": "data/raw/openmeteo/forecast_hassan_16d.json"
+  },
+  {
+   "id": "WEA-openmeteo-historical-forecast",
+   "url": "https://historical-forecast-api.open-meteo.com/v1/forecast",
+   "publisher": "Open-Meteo",
+   "title": "Historical Forecast API",
+   "accessRoute": "open_download",
+   "licence": "CC BY 4.0; free tier non-commercial",
+   "retrievedAt": "2026-10-29T19:38:59+00:00",
+   "sha256": "eee1e0d307d13ea298b1cdecdb62e3eeffbac6b71c21ed5a20b706e04f9405c8",
+   "rowOrPageCount": 30,
+   "coverage": {
+    "timeFrom": "~2022 (model dependent, some 2021)",
+    "timeTo": null,
+    "geography": "Hassan sample 2024-05",
+    "products": [
+     "precipitation_sum"
+    ]
+   },
+   "availabilityPolicy": "Stitched series of each run's first hours - NOT an archive of what was forecast weeks ahead; unsuitable as a planting-time multi-week forecast",
+   "validation": "retrieved_ok",
+   "notes": "Sample 2024-05-01..30, rain 239.4 mm.",
+   "httpStatus": 200,
+   "rawArtifact": "data/raw/openmeteo/historical_forecast_hassan_2024-05.json"
+  },
+  {
+   "id": "WEA-openmeteo-previous-runs",
+   "url": "https://previous-runs-api.open-meteo.com/v1/forecast",
+   "publisher": "Open-Meteo",
+   "title": "Previous Runs API",
+   "accessRoute": "open_download",
+   "licence": "CC BY 4.0; free tier non-commercial",
+   "retrievedAt": "2026-10-29T19:39:01+00:00",
+   "sha256": "bc56e141384177f6fb2c78e5f0c8e816fd709cf7cd4f707f38b9de162ec6a8a0",
+   "rowOrPageCount": 72,
+   "coverage": {
+    "timeFrom": "2024-01 (GFS from 2021-03, JMA from 2018)",
+    "timeTo": null,
+    "geography": "Hassan sample 2024-06-01..03 hourly",
+    "products": [
+     "precipitation",
+     "precipitation_previous_day1",
+     "precipitation_previous_day5"
+    ]
+   },
+   "availabilityPolicy": "Fixed lead times 1..7 days only",
+   "validation": "retrieved_ok",
+   "notes": "Leakage-free forecasts at <=7 day lead can be reconstructed from 2024; nothing for seasonal (harvest-horizon) lead.",
+   "httpStatus": 200,
+   "rawArtifact": "data/raw/openmeteo/previous_runs_hassan_2024-06.json"
+  },
+  {
+   "id": "WEA01-imd-agromet",
+   "url": "https://mausam.imd.gov.in/responsive/agromet_adv_ser_national_past_en.php",
+   "publisher": "India Meteorological Department",
+   "title": "Agromet advisory national (past)",
+   "accessRoute": "open_download",
+   "licence": "unstated",
+   "retrievedAt": "2026-10-29T19:39:18+00:00",
+   "sha256": "dadbe5b75cfd92accefe12a71aa807ecf863e71a0c933f7035747b48ddfe78b9",
+   "rowOrPageCount": 31,
+   "coverage": {
+    "timeFrom": null,
+    "timeTo": null,
+    "geography": "National bulletins (PDF links)",
+    "products": []
+   },
+   "availabilityPolicy": "Bulletins; 31 PDF references on page",
+   "validation": "retrieved_ok",
+   "notes": "Advisory bulletins (PDF), not a gridded/station series API. No machine-readable district forecast endpoint identified.",
+   "httpStatus": 200,
+   "rawArtifact": "data/raw/imd/agromet_national_past.html"
+  },
+  {
+   "id": "WEA01-imd-gkms-sop",
+   "url": "https://mausam.imd.gov.in/imd_latest/contents/pdf/gkms_sop.pdf",
+   "publisher": "India Meteorological Department",
+   "title": "GKMS standard operating procedure",
+   "accessRoute": "open_download",
+   "licence": "unstated",
+   "retrievedAt": "2026-10-29T19:39:18+00:00",
+   "sha256": "0298a036a8bab0d7faa9ab9e6a461adf1ba556f30c7f51a2b8f29ebfeff5dba4",
+   "rowOrPageCount": 26,
+   "coverage": {
+    "timeFrom": "2021-08-31",
+    "timeTo": null,
+    "geography": "India",
+    "products": []
+   },
+   "availabilityPolicy": "static",
+   "validation": "retrieved_ok",
+   "notes": "District/block quantitative forecast up to 5 days; advisories issued Tuesday and Friday; ERFS extended range exists.",
+   "httpStatus": 200,
+   "rawArtifact": "data/raw/imd/gkms_sop.pdf"
+  },
+  {
+   "id": "AGRO-paddy-1",
+   "url": "https://agritech.tnau.ac.in/agriculture/agri_seasonandvarieties_rice.html",
+   "publisher": "agritech.tnau.ac.in",
+   "title": "Candidate agronomy source for paddy (status check only)",
+   "accessRoute": "open_download",
+   "licence": "unstated",
+   "retrievedAt": "2026-10-29T19:43:15+00:00",
+   "sha256": null,
+   "rowOrPageCount": null,
+   "coverage": {
+    "timeFrom": null,
+    "timeTo": null,
+    "geography": "unverified",
+    "products": [
+     "paddy"
+    ]
+   },
+   "availabilityPolicy": "unknown",
+   "validation": "retrieved_ok",
+   "httpStatus": 200,
+   "rawArtifact": null,
+   "notes": "HTTP 200 status only; content/scope not reviewed"
+  },
+  {
+   "id": "AGRO-paddy-2",
+   "url": "https://www.icar-iirr.org/",
+   "publisher": "www.icar-iirr.org",
+   "title": "Candidate agronomy source for paddy (status check only)",
+   "accessRoute": "not_checked",
+   "licence": "unstated",
+   "retrievedAt": "2026-10-29T19:43:15+00:00",
+   "sha256": null,
+   "rowOrPageCount": null,
+   "coverage": {
+    "timeFrom": null,
+    "timeTo": null,
+    "geography": "unverified",
+    "products": [
+     "paddy"
+    ]
+   },
+   "availabilityPolicy": "unknown",
+   "validation": "retrieval_failed",
+   "httpStatus": 403,
+   "rawArtifact": null,
+   "notes": "unreachable: 403"
+  },
+  {
+   "id": "AGRO-wheat-1",
+   "url": "https://iiwbr.org.in/",
+   "publisher": "iiwbr.org.in",
+   "title": "Candidate agronomy source for wheat (status check only)",
+   "accessRoute": "open_download",
+   "licence": "unstated",
+   "retrievedAt": "2026-10-29T19:43:15+00:00",
+   "sha256": null,
+   "rowOrPageCount": null,
+   "coverage": {
+    "timeFrom": null,
+    "timeTo": null,
+    "geography": "unverified",
+    "products": [
+     "wheat"
+    ]
+   },
+   "availabilityPolicy": "unknown",
+   "validation": "retrieved_ok",
+   "httpStatus": 200,
+   "rawArtifact": null,
+   "notes": "HTTP 200 status only; content/scope not reviewed"
+  },
+  {
+   "id": "AGRO-wheat-2",
+   "url": "https://iiwbr.icar.gov.in/",
+   "publisher": "iiwbr.icar.gov.in",
+   "title": "Candidate agronomy source for wheat (status check only)",
+   "accessRoute": "not_checked",
+   "licence": "unstated",
+   "retrievedAt": "2026-10-29T19:43:16+00:00",
+   "sha256": null,
+   "rowOrPageCount": null,
+   "coverage": {
+    "timeFrom": null,
+    "timeTo": null,
+    "geography": "unverified",
+    "products": [
+     "wheat"
+    ]
+   },
+   "availabilityPolicy": "unknown",
+   "validation": "retrieval_failed",
+   "httpStatus": null,
+   "rawArtifact": null,
+   "notes": "unreachable: ConnectionError: HTTPSConnectionPool(host='iiwbr.icar.gov.in', port=443): Max retries exceeded with url: / (Caused by NameResolutionError(\"HTTPSConnection(host='iiwbr.icar.gov.i"
+  },
+  {
+   "id": "AGRO-wheat-3",
+   "url": "https://vikaspedia.in/agriculture/crop-production/package-of-practices/cereals/wheat",
+   "publisher": "vikaspedia.in",
+   "title": "Candidate agronomy source for wheat (status check only)",
+   "accessRoute": "not_checked",
+   "licence": "unstated",
+   "retrievedAt": "2026-10-29T19:43:16+00:00",
+   "sha256": null,
+   "rowOrPageCount": null,
+   "coverage": {
+    "timeFrom": null,
+    "timeTo": null,
+    "geography": "unverified",
+    "products": [
+     "wheat"
+    ]
+   },
+   "availabilityPolicy": "unknown",
+   "validation": "retrieval_failed",
+   "httpStatus": 200,
+   "rawArtifact": null,
+   "notes": "soft-200 JS shell (nonexistent paths also 200); content unverified"
+  },
+  {
+   "id": "AGRO-maize-1",
+   "url": "https://agritech.tnau.ac.in/agriculture/millets_maize.html",
+   "publisher": "agritech.tnau.ac.in",
+   "title": "Candidate agronomy source for maize (status check only)",
+   "accessRoute": "open_download",
+   "licence": "unstated",
+   "retrievedAt": "2026-10-29T19:43:16+00:00",
+   "sha256": null,
+   "rowOrPageCount": null,
+   "coverage": {
+    "timeFrom": null,
+    "timeTo": null,
+    "geography": "unverified",
+    "products": [
+     "maize"
+    ]
+   },
+   "availabilityPolicy": "unknown",
+   "validation": "retrieved_ok",
+   "httpStatus": 200,
+   "rawArtifact": null,
+   "notes": "HTTP 200 status only; content/scope not reviewed"
+  },
+  {
+   "id": "AGRO-maize-2",
+   "url": "https://agritech.tnau.ac.in/agriculture/agri_seasonandvarieties_maize.html",
+   "publisher": "agritech.tnau.ac.in",
+   "title": "Candidate agronomy source for maize (status check only)",
+   "accessRoute": "not_checked",
+   "licence": "unstated",
+   "retrievedAt": "2026-10-29T19:43:16+00:00",
+   "sha256": null,
+   "rowOrPageCount": null,
+   "coverage": {
+    "timeFrom": null,
+    "timeTo": null,
+    "geography": "unverified",
+    "products": [
+     "maize"
+    ]
+   },
+   "availabilityPolicy": "unknown",
+   "validation": "retrieval_failed",
+   "httpStatus": 404,
+   "rawArtifact": null,
+   "notes": "unreachable: 404"
+  },
+  {
+   "id": "AGRO-maize-3",
+   "url": "https://iimr.icar.gov.in/",
+   "publisher": "iimr.icar.gov.in",
+   "title": "Candidate agronomy source for maize (status check only)",
+   "accessRoute": "not_checked",
+   "licence": "unstated",
+   "retrievedAt": "2026-10-29T19:43:16+00:00",
+   "sha256": null,
+   "rowOrPageCount": null,
+   "coverage": {
+    "timeFrom": null,
+    "timeTo": null,
+    "geography": "unverified",
+    "products": [
+     "maize"
+    ]
+   },
+   "availabilityPolicy": "unknown",
+   "validation": "retrieval_failed",
+   "httpStatus": null,
+   "rawArtifact": null,
+   "notes": "unreachable: ConnectionError: HTTPSConnectionPool(host='iimr.icar.gov.in', port=443): Max retries exceeded with url: / (Caused by NameResolutionError(\"HTTPSConnection(host='iimr.icar.gov.in'"
+  },
+  {
+   "id": "AGRO-sorghum-1",
+   "url": "https://agritech.tnau.ac.in/agriculture/millets_sorghum.html",
+   "publisher": "agritech.tnau.ac.in",
+   "title": "Candidate agronomy source for sorghum (status check only)",
+   "accessRoute": "open_download",
+   "licence": "unstated",
+   "retrievedAt": "2026-10-29T19:43:16+00:00",
+   "sha256": null,
+   "rowOrPageCount": null,
+   "coverage": {
+    "timeFrom": null,
+    "timeTo": null,
+    "geography": "unverified",
+    "products": [
+     "sorghum"
+    ]
+   },
+   "availabilityPolicy": "unknown",
+   "validation": "retrieved_ok",
+   "httpStatus": 200,
+   "rawArtifact": null,
+   "notes": "HTTP 200 status only; content/scope not reviewed"
+  },
+  {
+   "id": "AGRO-sorghum-2",
+   "url": "https://agritech.tnau.ac.in/agriculture/agri_seasonandvarieties_sorghum.html",
+   "publisher": "agritech.tnau.ac.in",
+   "title": "Candidate agronomy source for sorghum (status check only)",
+   "accessRoute": "open_download",
+   "licence": "unstated",
+   "retrievedAt": "2026-10-29T19:43:17+00:00",
+   "sha256": null,
+   "rowOrPageCount": null,
+   "coverage": {
+    "timeFrom": null,
+    "timeTo": null,
+    "geography": "unverified",
+    "products": [
+     "sorghum"
+    ]
+   },
+   "availabilityPolicy": "unknown",
+   "validation": "retrieved_ok",
+   "httpStatus": 200,
+   "rawArtifact": null,
+   "notes": "HTTP 200 status only; content/scope not reviewed"
+  },
+  {
+   "id": "AGRO-sorghum-3",
+   "url": "https://www.millets.res.in/",
+   "publisher": "www.millets.res.in",
+   "title": "Candidate agronomy source for sorghum (status check only)",
+   "accessRoute": "open_download",
+   "licence": "unstated",
+   "retrievedAt": "2026-10-29T19:43:17+00:00",
+   "sha256": null,
+   "rowOrPageCount": null,
+   "coverage": {
+    "timeFrom": null,
+    "timeTo": null,
+    "geography": "unverified",
+    "products": [
+     "sorghum"
+    ]
+   },
+   "availabilityPolicy": "unknown",
+   "validation": "retrieved_ok",
+   "httpStatus": 200,
+   "rawArtifact": null,
+   "notes": "HTTP 200 status only; content/scope not reviewed"
+  },
+  {
+   "id": "AGRO-pearl_millet-1",
+   "url": "https://agritech.tnau.ac.in/agriculture/millets_cumbu.html",
+   "publisher": "agritech.tnau.ac.in",
+   "title": "Candidate agronomy source for pearl_millet (status check only)",
+   "accessRoute": "open_download",
+   "licence": "unstated",
+   "retrievedAt": "2026-10-29T19:43:17+00:00",
+   "sha256": null,
+   "rowOrPageCount": null,
+   "coverage": {
+    "timeFrom": null,
+    "timeTo": null,
+    "geography": "unverified",
+    "products": [
+     "pearl_millet"
+    ]
+   },
+   "availabilityPolicy": "unknown",
+   "validation": "retrieved_ok",
+   "httpStatus": 200,
+   "rawArtifact": null,
+   "notes": "HTTP 200 status only; content/scope not reviewed"
+  },
+  {
+   "id": "AGRO-pearl_millet-2",
+   "url": "https://agritech.tnau.ac.in/agriculture/agri_seasonandvarieties_cumbu.html",
+   "publisher": "agritech.tnau.ac.in",
+   "title": "Candidate agronomy source for pearl_millet (status check only)",
+   "accessRoute": "open_download",
+   "licence": "unstated",
+   "retrievedAt": "2026-10-29T19:43:18+00:00",
+   "sha256": null,
+   "rowOrPageCount": null,
+   "coverage": {
+    "timeFrom": null,
+    "timeTo": null,
+    "geography": "unverified",
+    "products": [
+     "pearl_millet"
+    ]
+   },
+   "availabilityPolicy": "unknown",
+   "validation": "retrieved_ok",
+   "httpStatus": 200,
+   "rawArtifact": null,
+   "notes": "HTTP 200 status only; content/scope not reviewed"
+  },
+  {
+   "id": "AGRO-finger_millet-1",
+   "url": "https://agritech.tnau.ac.in/agriculture/millets_ragi.html",
+   "publisher": "agritech.tnau.ac.in",
+   "title": "Candidate agronomy source for finger_millet (status check only)",
+   "accessRoute": "open_download",
+   "licence": "unstated",
+   "retrievedAt": "2026-10-29T19:43:18+00:00",
+   "sha256": null,
+   "rowOrPageCount": null,
+   "coverage": {
+    "timeFrom": null,
+    "timeTo": null,
+    "geography": "unverified",
+    "products": [
+     "finger_millet"
+    ]
+   },
+   "availabilityPolicy": "unknown",
+   "validation": "retrieved_ok",
+   "httpStatus": 200,
+   "rawArtifact": null,
+   "notes": "HTTP 200 status only; content/scope not reviewed"
+  },
+  {
+   "id": "AGRO-finger_millet-2",
+   "url": "https://agritech.tnau.ac.in/agriculture/agri_seasonandvarieties_ragi.html",
+   "publisher": "agritech.tnau.ac.in",
+   "title": "Candidate agronomy source for finger_millet (status check only)",
+   "accessRoute": "open_download",
+   "licence": "unstated",
+   "retrievedAt": "2026-10-29T19:43:18+00:00",
+   "sha256": null,
+   "rowOrPageCount": null,
+   "coverage": {
+    "timeFrom": null,
+    "timeTo": null,
+    "geography": "unverified",
+    "products": [
+     "finger_millet"
+    ]
+   },
+   "availabilityPolicy": "unknown",
+   "validation": "retrieved_ok",
+   "httpStatus": 200,
+   "rawArtifact": null,
+   "notes": "HTTP 200 status only; content/scope not reviewed"
+  },
+  {
+   "id": "AGRO-chickpea-1",
+   "url": "https://agritech.tnau.ac.in/agriculture/CropProduction/Pulses/pulses_bengalgram.html",
+   "publisher": "agritech.tnau.ac.in",
+   "title": "Candidate agronomy source for chickpea (status check only)",
+   "accessRoute": "open_download",
+   "licence": "unstated",
+   "retrievedAt": "2026-10-29T19:43:18+00:00",
+   "sha256": null,
+   "rowOrPageCount": null,
+   "coverage": {
+    "timeFrom": null,
+    "timeTo": null,
+    "geography": "unverified",
+    "products": [
+     "chickpea"
+    ]
+   },
+   "availabilityPolicy": "unknown",
+   "validation": "retrieved_ok",
+   "httpStatus": 200,
+   "rawArtifact": null,
+   "notes": "HTTP 200 status only; content/scope not reviewed"
+  },
+  {
+   "id": "AGRO-chickpea-2",
+   "url": "https://agritech.tnau.ac.in/agriculture/agri_seasonandvarieties_bengalgram.html",
+   "publisher": "agritech.tnau.ac.in",
+   "title": "Candidate agronomy source for chickpea (status check only)",
+   "accessRoute": "open_download",
+   "licence": "unstated",
+   "retrievedAt": "2026-10-29T19:43:18+00:00",
+   "sha256": null,
+   "rowOrPageCount": null,
+   "coverage": {
+    "timeFrom": null,
+    "timeTo": null,
+    "geography": "unverified",
+    "products": [
+     "chickpea"
+    ]
+   },
+   "availabilityPolicy": "unknown",
+   "validation": "retrieved_ok",
+   "httpStatus": 200,
+   "rawArtifact": null,
+   "notes": "HTTP 200 status only; content/scope not reviewed"
+  },
+  {
+   "id": "AGRO-chickpea-3",
+   "url": "https://iipr.icar.gov.in/",
+   "publisher": "iipr.icar.gov.in",
+   "title": "Candidate agronomy source for chickpea (status check only)",
+   "accessRoute": "not_checked",
+   "licence": "unstated",
+   "retrievedAt": "2026-10-29T19:43:18+00:00",
+   "sha256": null,
+   "rowOrPageCount": null,
+   "coverage": {
+    "timeFrom": null,
+    "timeTo": null,
+    "geography": "unverified",
+    "products": [
+     "chickpea"
+    ]
+   },
+   "availabilityPolicy": "unknown",
+   "validation": "retrieval_failed",
+   "httpStatus": null,
+   "rawArtifact": null,
+   "notes": "unreachable: ConnectionError: HTTPSConnectionPool(host='iipr.icar.gov.in', port=443): Max retries exceeded with url: / (Caused by NameResolutionError(\"HTTPSConnection(host='iipr.icar.gov.in'"
+  },
+  {
+   "id": "AGRO-pigeon_pea-1",
+   "url": "https://agritech.tnau.ac.in/agriculture/CropProduction/Pulses/pulses_redgram.html",
+   "publisher": "agritech.tnau.ac.in",
+   "title": "Candidate agronomy source for pigeon_pea (status check only)",
+   "accessRoute": "open_download",
+   "licence": "unstated",
+   "retrievedAt": "2026-10-29T19:43:18+00:00",
+   "sha256": null,
+   "rowOrPageCount": null,
+   "coverage": {
+    "timeFrom": null,
+    "timeTo": null,
+    "geography": "unverified",
+    "products": [
+     "pigeon_pea"
+    ]
+   },
+   "availabilityPolicy": "unknown",
+   "validation": "retrieved_ok",
+   "httpStatus": 200,
+   "rawArtifact": null,
+   "notes": "HTTP 200 status only; content/scope not reviewed"
+  },
+  {
+   "id": "AGRO-pigeon_pea-2",
+   "url": "https://agritech.tnau.ac.in/agriculture/agri_seasonandvarieties_redgram.html",
+   "publisher": "agritech.tnau.ac.in",
+   "title": "Candidate agronomy source for pigeon_pea (status check only)",
+   "accessRoute": "open_download",
+   "licence": "unstated",
+   "retrievedAt": "2026-10-29T19:43:18+00:00",
+   "sha256": null,
+   "rowOrPageCount": null,
+   "coverage": {
+    "timeFrom": null,
+    "timeTo": null,
+    "geography": "unverified",
+    "products": [
+     "pigeon_pea"
+    ]
+   },
+   "availabilityPolicy": "unknown",
+   "validation": "retrieved_ok",
+   "httpStatus": 200,
+   "rawArtifact": null,
+   "notes": "HTTP 200 status only; content/scope not reviewed"
+  },
+  {
+   "id": "AGRO-green_gram-1",
+   "url": "https://agritech.tnau.ac.in/agriculture/agri_seasonandvarieties_greengram.html",
+   "publisher": "agritech.tnau.ac.in",
+   "title": "Candidate agronomy source for green_gram (status check only)",
+   "accessRoute": "not_checked",
+   "licence": "unstated",
+   "retrievedAt": "2026-10-29T19:43:19+00:00",
+   "sha256": null,
+   "rowOrPageCount": null,
+   "coverage": {
+    "timeFrom": null,
+    "timeTo": null,
+    "geography": "unverified",
+    "products": [
+     "green_gram"
+    ]
+   },
+   "availabilityPolicy": "unknown",
+   "validation": "retrieval_failed",
+   "httpStatus": 404,
+   "rawArtifact": null,
+   "notes": "unreachable: 404"
+  },
+  {
+   "id": "AGRO-green_gram-2",
+   "url": "https://agritech.tnau.ac.in/agriculture/CropProduction/Pulses/agri_cropproduction_pulses%20_%20index_green%20gram.html",
+   "publisher": "agritech.tnau.ac.in",
+   "title": "Candidate agronomy source for green_gram (status check only)",
+   "accessRoute": "open_download",
+   "licence": "unstated",
+   "retrievedAt": "2026-10-29T19:43:19+00:00",
+   "sha256": null,
+   "rowOrPageCount": null,
+   "coverage": {
+    "timeFrom": null,
+    "timeTo": null,
+    "geography": "unverified",
+    "products": [
+     "green_gram"
+    ]
+   },
+   "availabilityPolicy": "unknown",
+   "validation": "retrieved_ok",
+   "httpStatus": 200,
+   "rawArtifact": null,
+   "notes": "HTTP 200 status only; content/scope not reviewed"
+  },
+  {
+   "id": "AGRO-green_gram-3",
+   "url": "https://vikaspedia.in/agriculture/crop-production/package-of-practices/pulses/green-gram",
+   "publisher": "vikaspedia.in",
+   "title": "Candidate agronomy source for green_gram (status check only)",
+   "accessRoute": "not_checked",
+   "licence": "unstated",
+   "retrievedAt": "2026-10-29T19:43:19+00:00",
+   "sha256": null,
+   "rowOrPageCount": null,
+   "coverage": {
+    "timeFrom": null,
+    "timeTo": null,
+    "geography": "unverified",
+    "products": [
+     "green_gram"
+    ]
+   },
+   "availabilityPolicy": "unknown",
+   "validation": "retrieval_failed",
+   "httpStatus": 200,
+   "rawArtifact": null,
+   "notes": "soft-200 JS shell (nonexistent paths also 200); content unverified"
+  },
+  {
+   "id": "AGRO-black_gram-1",
+   "url": "https://agritech.tnau.ac.in/agriculture/agri_seasonandvarieties_blackgram1.html",
+   "publisher": "agritech.tnau.ac.in",
+   "title": "Candidate agronomy source for black_gram (status check only)",
+   "accessRoute": "not_checked",
+   "licence": "unstated",
+   "retrievedAt": "2026-10-29T19:43:19+00:00",
+   "sha256": null,
+   "rowOrPageCount": null,
+   "coverage": {
+    "timeFrom": null,
+    "timeTo": null,
+    "geography": "unverified",
+    "products": [
+     "black_gram"
+    ]
+   },
+   "availabilityPolicy": "unknown",
+   "validation": "retrieval_failed",
+   "httpStatus": 404,
+   "rawArtifact": null,
+   "notes": "unreachable: 404"
+  },
+  {
+   "id": "AGRO-black_gram-2",
+   "url": "https://agritech.tnau.ac.in/agriculture/CropProduction/Pulses/agri_cropproduction_pluses_blackgram_index.html",
+   "publisher": "agritech.tnau.ac.in",
+   "title": "Candidate agronomy source for black_gram (status check only)",
+   "accessRoute": "open_download",
+   "licence": "unstated",
+   "retrievedAt": "2026-10-29T19:43:19+00:00",
+   "sha256": null,
+   "rowOrPageCount": null,
+   "coverage": {
+    "timeFrom": null,
+    "timeTo": null,
+    "geography": "unverified",
+    "products": [
+     "black_gram"
+    ]
+   },
+   "availabilityPolicy": "unknown",
+   "validation": "retrieved_ok",
+   "httpStatus": 200,
+   "rawArtifact": null,
+   "notes": "HTTP 200 status only; content/scope not reviewed"
+  },
+  {
+   "id": "AGRO-black_gram-3",
+   "url": "https://vikaspedia.in/agriculture/crop-production/package-of-practices/pulses/black-gram",
+   "publisher": "vikaspedia.in",
+   "title": "Candidate agronomy source for black_gram (status check only)",
+   "accessRoute": "not_checked",
+   "licence": "unstated",
+   "retrievedAt": "2026-10-29T19:43:19+00:00",
+   "sha256": null,
+   "rowOrPageCount": null,
+   "coverage": {
+    "timeFrom": null,
+    "timeTo": null,
+    "geography": "unverified",
+    "products": [
+     "black_gram"
+    ]
+   },
+   "availabilityPolicy": "unknown",
+   "validation": "retrieval_failed",
+   "httpStatus": 200,
+   "rawArtifact": null,
+   "notes": "soft-200 JS shell (nonexistent paths also 200); content unverified"
+  },
+  {
+   "id": "AGRO-lentil-1",
+   "url": "https://iipr.icar.gov.in/",
+   "publisher": "iipr.icar.gov.in",
+   "title": "Candidate agronomy source for lentil (status check only)",
+   "accessRoute": "not_checked",
+   "licence": "unstated",
+   "retrievedAt": "2026-10-29T19:43:20+00:00",
+   "sha256": null,
+   "rowOrPageCount": null,
+   "coverage": {
+    "timeFrom": null,
+    "timeTo": null,
+    "geography": "unverified",
+    "products": [
+     "lentil"
+    ]
+   },
+   "availabilityPolicy": "unknown",
+   "validation": "retrieval_failed",
+   "httpStatus": null,
+   "rawArtifact": null,
+   "notes": "unreachable: ConnectionError: HTTPSConnectionPool(host='iipr.icar.gov.in', port=443): Max retries exceeded with url: / (Caused by NameResolutionError(\"HTTPSConnection(host='iipr.icar.gov.in'"
+  },
+  {
+   "id": "AGRO-lentil-2",
+   "url": "https://vikaspedia.in/agriculture/crop-production/package-of-practices/pulses/lentil",
+   "publisher": "vikaspedia.in",
+   "title": "Candidate agronomy source for lentil (status check only)",
+   "accessRoute": "not_checked",
+   "licence": "unstated",
+   "retrievedAt": "2026-10-29T19:43:20+00:00",
+   "sha256": null,
+   "rowOrPageCount": null,
+   "coverage": {
+    "timeFrom": null,
+    "timeTo": null,
+    "geography": "unverified",
+    "products": [
+     "lentil"
+    ]
+   },
+   "availabilityPolicy": "unknown",
+   "validation": "retrieval_failed",
+   "httpStatus": 200,
+   "rawArtifact": null,
+   "notes": "soft-200 JS shell (nonexistent paths also 200); content unverified"
+  },
+  {
+   "id": "AGRO-groundnut-1",
+   "url": "https://agritech.tnau.ac.in/agriculture/agri_cropproduction_oilseeds%20index%20ground%20nut.html",
+   "publisher": "agritech.tnau.ac.in",
+   "title": "Candidate agronomy source for groundnut (status check only)",
+   "accessRoute": "open_download",
+   "licence": "unstated",
+   "retrievedAt": "2026-10-29T19:43:21+00:00",
+   "sha256": null,
+   "rowOrPageCount": null,
+   "coverage": {
+    "timeFrom": null,
+    "timeTo": null,
+    "geography": "unverified",
+    "products": [
+     "groundnut"
+    ]
+   },
+   "availabilityPolicy": "unknown",
+   "validation": "retrieved_ok",
+   "httpStatus": 200,
+   "rawArtifact": null,
+   "notes": "HTTP 200 status only; content/scope not reviewed"
+  },
+  {
+   "id": "AGRO-groundnut-2",
+   "url": "https://vikaspedia.in/agriculture/crop-production/package-of-practices/oilseeds/groundnut",
+   "publisher": "vikaspedia.in",
+   "title": "Candidate agronomy source for groundnut (status check only)",
+   "accessRoute": "not_checked",
+   "licence": "unstated",
+   "retrievedAt": "2026-10-29T19:43:21+00:00",
+   "sha256": null,
+   "rowOrPageCount": null,
+   "coverage": {
+    "timeFrom": null,
+    "timeTo": null,
+    "geography": "unverified",
+    "products": [
+     "groundnut"
+    ]
+   },
+   "availabilityPolicy": "unknown",
+   "validation": "retrieval_failed",
+   "httpStatus": 200,
+   "rawArtifact": null,
+   "notes": "soft-200 JS shell (nonexistent paths also 200); content unverified"
+  },
+  {
+   "id": "AGRO-groundnut-3",
+   "url": "https://agritech.tnau.ac.in/agriculture/CropProduction/Oilseeds/oilseeds_groundnut.html",
+   "publisher": "agritech.tnau.ac.in",
+   "title": "Candidate agronomy source for groundnut (status check only)",
+   "accessRoute": "not_checked",
+   "licence": "unstated",
+   "retrievedAt": "2026-10-29T19:43:21+00:00",
+   "sha256": null,
+   "rowOrPageCount": null,
+   "coverage": {
+    "timeFrom": null,
+    "timeTo": null,
+    "geography": "unverified",
+    "products": [
+     "groundnut"
+    ]
+   },
+   "availabilityPolicy": "unknown",
+   "validation": "retrieval_failed",
+   "httpStatus": 404,
+   "rawArtifact": null,
+   "notes": "unreachable: 404"
+  },
+  {
+   "id": "AGRO-groundnut-4",
+   "url": "https://agritech.tnau.ac.in/agriculture/agri_seasonandvarieties_groundnut.html",
+   "publisher": "agritech.tnau.ac.in",
+   "title": "Candidate agronomy source for groundnut (status check only)",
+   "accessRoute": "not_checked",
+   "licence": "unstated",
+   "retrievedAt": "2026-10-29T19:43:21+00:00",
+   "sha256": null,
+   "rowOrPageCount": null,
+   "coverage": {
+    "timeFrom": null,
+    "timeTo": null,
+    "geography": "unverified",
+    "products": [
+     "groundnut"
+    ]
+   },
+   "availabilityPolicy": "unknown",
+   "validation": "retrieval_failed",
+   "httpStatus": 404,
+   "rawArtifact": null,
+   "notes": "unreachable: 404"
+  },
+  {
+   "id": "AGRO-groundnut-5",
+   "url": "https://dgr.icar.gov.in/",
+   "publisher": "dgr.icar.gov.in",
+   "title": "Candidate agronomy source for groundnut (status check only)",
+   "accessRoute": "not_checked",
+   "licence": "unstated",
+   "retrievedAt": "2026-10-29T19:43:21+00:00",
+   "sha256": null,
+   "rowOrPageCount": null,
+   "coverage": {
+    "timeFrom": null,
+    "timeTo": null,
+    "geography": "unverified",
+    "products": [
+     "groundnut"
+    ]
+   },
+   "availabilityPolicy": "unknown",
+   "validation": "retrieval_failed",
+   "httpStatus": null,
+   "rawArtifact": null,
+   "notes": "unreachable: ConnectionError: HTTPSConnectionPool(host='dgr.icar.gov.in', port=443): Max retries exceeded with url: / (Caused by NameResolutionError(\"HTTPSConnection(host='dgr.icar.gov.in', "
+  },
+  {
+   "id": "AGRO-soybean-1",
+   "url": "https://agritech.tnau.ac.in/agriculture/CropProduction/Pulses/pulses_soybean.html",
+   "publisher": "agritech.tnau.ac.in",
+   "title": "Candidate agronomy source for soybean (status check only)",
+   "accessRoute": "open_download",
+   "licence": "unstated",
+   "retrievedAt": "2026-10-29T19:43:21+00:00",
+   "sha256": null,
+   "rowOrPageCount": null,
+   "coverage": {
+    "timeFrom": null,
+    "timeTo": null,
+    "geography": "unverified",
+    "products": [
+     "soybean"
+    ]
+   },
+   "availabilityPolicy": "unknown",
+   "validation": "retrieved_ok",
+   "httpStatus": 200,
+   "rawArtifact": null,
+   "notes": "HTTP 200 status only; content/scope not reviewed"
+  },
+  {
+   "id": "AGRO-soybean-2",
+   "url": "https://agritech.tnau.ac.in/agriculture/agri_seasonandvarieties_soybean.html",
+   "publisher": "agritech.tnau.ac.in",
+   "title": "Candidate agronomy source for soybean (status check only)",
+   "accessRoute": "open_download",
+   "licence": "unstated",
+   "retrievedAt": "2026-10-29T19:43:22+00:00",
+   "sha256": null,
+   "rowOrPageCount": null,
+   "coverage": {
+    "timeFrom": null,
+    "timeTo": null,
+    "geography": "unverified",
+    "products": [
+     "soybean"
+    ]
+   },
+   "availabilityPolicy": "unknown",
+   "validation": "retrieved_ok",
+   "httpStatus": 200,
+   "rawArtifact": null,
+   "notes": "HTTP 200 status only; content/scope not reviewed"
+  },
+  {
+   "id": "AGRO-soybean-3",
+   "url": "https://iisrindore.icar.gov.in/",
+   "publisher": "iisrindore.icar.gov.in",
+   "title": "Candidate agronomy source for soybean (status check only)",
+   "accessRoute": "not_checked",
+   "licence": "unstated",
+   "retrievedAt": "2026-10-29T19:43:22+00:00",
+   "sha256": null,
+   "rowOrPageCount": null,
+   "coverage": {
+    "timeFrom": null,
+    "timeTo": null,
+    "geography": "unverified",
+    "products": [
+     "soybean"
+    ]
+   },
+   "availabilityPolicy": "unknown",
+   "validation": "retrieval_failed",
+   "httpStatus": null,
+   "rawArtifact": null,
+   "notes": "unreachable: ConnectionError: HTTPSConnectionPool(host='iisrindore.icar.gov.in', port=443): Max retries exceeded with url: / (Caused by NameResolutionError(\"HTTPSConnection(host='iisrindore."
+  },
+  {
+   "id": "AGRO-mustard-1",
+   "url": "https://www.drmr.res.in/",
+   "publisher": "www.drmr.res.in",
+   "title": "Candidate agronomy source for mustard (status check only)",
+   "accessRoute": "open_download",
+   "licence": "unstated",
+   "retrievedAt": "2026-10-29T19:43:22+00:00",
+   "sha256": null,
+   "rowOrPageCount": null,
+   "coverage": {
+    "timeFrom": null,
+    "timeTo": null,
+    "geography": "unverified",
+    "products": [
+     "mustard"
+    ]
+   },
+   "availabilityPolicy": "unknown",
+   "validation": "retrieved_ok",
+   "httpStatus": 200,
+   "rawArtifact": null,
+   "notes": "HTTP 200 status only; content/scope not reviewed"
+  },
+  {
+   "id": "AGRO-mustard-2",
+   "url": "https://vikaspedia.in/agriculture/crop-production/package-of-practices/oilseeds/rapeseed-mustard",
+   "publisher": "vikaspedia.in",
+   "title": "Candidate agronomy source for mustard (status check only)",
+   "accessRoute": "not_checked",
+   "licence": "unstated",
+   "retrievedAt": "2026-10-29T19:43:22+00:00",
+   "sha256": null,
+   "rowOrPageCount": null,
+   "coverage": {
+    "timeFrom": null,
+    "timeTo": null,
+    "geography": "unverified",
+    "products": [
+     "mustard"
+    ]
+   },
+   "availabilityPolicy": "unknown",
+   "validation": "retrieval_failed",
+   "httpStatus": 200,
+   "rawArtifact": null,
+   "notes": "soft-200 JS shell (nonexistent paths also 200); content unverified"
+  },
+  {
+   "id": "AGRO-sesame-1",
+   "url": "https://agritech.tnau.ac.in/agriculture/CropProduction/Oilseeds/oilseeds_gingelly.html",
+   "publisher": "agritech.tnau.ac.in",
+   "title": "Candidate agronomy source for sesame (status check only)",
+   "accessRoute": "open_download",
+   "licence": "unstated",
+   "retrievedAt": "2026-10-29T19:43:22+00:00",
+   "sha256": null,
+   "rowOrPageCount": null,
+   "coverage": {
+    "timeFrom": null,
+    "timeTo": null,
+    "geography": "unverified",
+    "products": [
+     "sesame"
+    ]
+   },
+   "availabilityPolicy": "unknown",
+   "validation": "retrieved_ok",
+   "httpStatus": 200,
+   "rawArtifact": null,
+   "notes": "HTTP 200 status only; content/scope not reviewed"
+  },
+  {
+   "id": "AGRO-sesame-2",
+   "url": "https://agritech.tnau.ac.in/agriculture/agri_seasonandvarieties_gingelly.html",
+   "publisher": "agritech.tnau.ac.in",
+   "title": "Candidate agronomy source for sesame (status check only)",
+   "accessRoute": "open_download",
+   "licence": "unstated",
+   "retrievedAt": "2026-10-29T19:43:23+00:00",
+   "sha256": null,
+   "rowOrPageCount": null,
+   "coverage": {
+    "timeFrom": null,
+    "timeTo": null,
+    "geography": "unverified",
+    "products": [
+     "sesame"
+    ]
+   },
+   "availabilityPolicy": "unknown",
+   "validation": "retrieved_ok",
+   "httpStatus": 200,
+   "rawArtifact": null,
+   "notes": "HTTP 200 status only; content/scope not reviewed"
+  },
+  {
+   "id": "AGRO-sunflower-1",
+   "url": "https://agritech.tnau.ac.in/agriculture/oilseeds_sunflower.html",
+   "publisher": "agritech.tnau.ac.in",
+   "title": "Candidate agronomy source for sunflower (status check only)",
+   "accessRoute": "open_download",
+   "licence": "unstated",
+   "retrievedAt": "2026-10-29T19:43:23+00:00",
+   "sha256": null,
+   "rowOrPageCount": null,
+   "coverage": {
+    "timeFrom": null,
+    "timeTo": null,
+    "geography": "unverified",
+    "products": [
+     "sunflower"
+    ]
+   },
+   "availabilityPolicy": "unknown",
+   "validation": "retrieved_ok",
+   "httpStatus": 200,
+   "rawArtifact": null,
+   "notes": "HTTP 200 status only; content/scope not reviewed"
+  },
+  {
+   "id": "AGRO-sunflower-2",
+   "url": "https://agritech.tnau.ac.in/agriculture/agri_seasonandvarieties_sunflower.html",
+   "publisher": "agritech.tnau.ac.in",
+   "title": "Candidate agronomy source for sunflower (status check only)",
+   "accessRoute": "open_download",
+   "licence": "unstated",
+   "retrievedAt": "2026-10-29T19:43:23+00:00",
+   "sha256": null,
+   "rowOrPageCount": null,
+   "coverage": {
+    "timeFrom": null,
+    "timeTo": null,
+    "geography": "unverified",
+    "products": [
+     "sunflower"
+    ]
+   },
+   "availabilityPolicy": "unknown",
+   "validation": "retrieved_ok",
+   "httpStatus": 200,
+   "rawArtifact": null,
+   "notes": "HTTP 200 status only; content/scope not reviewed"
+  },
+  {
+   "id": "AGRO-sunflower-3",
+   "url": "https://www.icar-iior.org.in/",
+   "publisher": "www.icar-iior.org.in",
+   "title": "Candidate agronomy source for sunflower (status check only)",
+   "accessRoute": "open_download",
+   "licence": "unstated",
+   "retrievedAt": "2026-10-29T19:43:23+00:00",
+   "sha256": null,
+   "rowOrPageCount": null,
+   "coverage": {
+    "timeFrom": null,
+    "timeTo": null,
+    "geography": "unverified",
+    "products": [
+     "sunflower"
+    ]
+   },
+   "availabilityPolicy": "unknown",
+   "validation": "retrieved_ok",
+   "httpStatus": 200,
+   "rawArtifact": null,
+   "notes": "HTTP 200 status only; content/scope not reviewed"
+  },
+  {
+   "id": "AGRO-potato-1",
+   "url": "https://agritech.tnau.ac.in/horticulture/horti_vegetables_potato.html",
+   "publisher": "agritech.tnau.ac.in",
+   "title": "Candidate agronomy source for potato (status check only)",
+   "accessRoute": "open_download",
+   "licence": "unstated",
+   "retrievedAt": "2026-10-29T19:43:23+00:00",
+   "sha256": null,
+   "rowOrPageCount": null,
+   "coverage": {
+    "timeFrom": null,
+    "timeTo": null,
+    "geography": "unverified",
+    "products": [
+     "potato"
+    ]
+   },
+   "availabilityPolicy": "unknown",
+   "validation": "retrieved_ok",
+   "httpStatus": 200,
+   "rawArtifact": null,
+   "notes": "HTTP 200 status only; content/scope not reviewed"
+  },
+  {
+   "id": "AGRO-potato-2",
+   "url": "https://cpri.icar.gov.in/",
+   "publisher": "cpri.icar.gov.in",
+   "title": "Candidate agronomy source for potato (status check only)",
+   "accessRoute": "not_checked",
+   "licence": "unstated",
+   "retrievedAt": "2026-10-29T19:43:23+00:00",
+   "sha256": null,
+   "rowOrPageCount": null,
+   "coverage": {
+    "timeFrom": null,
+    "timeTo": null,
+    "geography": "unverified",
+    "products": [
+     "potato"
+    ]
+   },
+   "availabilityPolicy": "unknown",
+   "validation": "retrieval_failed",
+   "httpStatus": null,
+   "rawArtifact": null,
+   "notes": "unreachable: ConnectionError: HTTPSConnectionPool(host='cpri.icar.gov.in', port=443): Max retries exceeded with url: / (Caused by NameResolutionError(\"HTTPSConnection(host='cpri.icar.gov.in'"
+  },
+  {
+   "id": "AGRO-onion-1",
+   "url": "https://agritech.tnau.ac.in/horticulture/horti_vegetables_bellaryonion.html",
+   "publisher": "agritech.tnau.ac.in",
+   "title": "Candidate agronomy source for onion (status check only)",
+   "accessRoute": "open_download",
+   "licence": "unstated",
+   "retrievedAt": "2026-10-29T19:43:23+00:00",
+   "sha256": null,
+   "rowOrPageCount": null,
+   "coverage": {
+    "timeFrom": null,
+    "timeTo": null,
+    "geography": "unverified",
+    "products": [
+     "onion"
+    ]
+   },
+   "availabilityPolicy": "unknown",
+   "validation": "retrieved_ok",
+   "httpStatus": 200,
+   "rawArtifact": null,
+   "notes": "HTTP 200 status only; content/scope not reviewed"
+  },
+  {
+   "id": "AGRO-onion-2",
+   "url": "https://agritech.tnau.ac.in/horticulture/horti_vegetables_small%20onion.html",
+   "publisher": "agritech.tnau.ac.in",
+   "title": "Candidate agronomy source for onion (status check only)",
+   "accessRoute": "open_download",
+   "licence": "unstated",
+   "retrievedAt": "2026-10-29T19:43:23+00:00",
+   "sha256": null,
+   "rowOrPageCount": null,
+   "coverage": {
+    "timeFrom": null,
+    "timeTo": null,
+    "geography": "unverified",
+    "products": [
+     "onion"
+    ]
+   },
+   "availabilityPolicy": "unknown",
+   "validation": "retrieved_ok",
+   "httpStatus": 200,
+   "rawArtifact": null,
+   "notes": "HTTP 200 status only; content/scope not reviewed"
+  },
+  {
+   "id": "AGRO-onion-3",
+   "url": "https://dogr.icar.gov.in/",
+   "publisher": "dogr.icar.gov.in",
+   "title": "Candidate agronomy source for onion (status check only)",
+   "accessRoute": "not_checked",
+   "licence": "unstated",
+   "retrievedAt": "2026-10-29T19:43:24+00:00",
+   "sha256": null,
+   "rowOrPageCount": null,
+   "coverage": {
+    "timeFrom": null,
+    "timeTo": null,
+    "geography": "unverified",
+    "products": [
+     "onion"
+    ]
+   },
+   "availabilityPolicy": "unknown",
+   "validation": "retrieval_failed",
+   "httpStatus": null,
+   "rawArtifact": null,
+   "notes": "unreachable: ConnectionError: HTTPSConnectionPool(host='dogr.icar.gov.in', port=443): Max retries exceeded with url: / (Caused by NameResolutionError(\"HTTPSConnection(host='dogr.icar.gov.in'"
+  },
+  {
+   "id": "AGRO-tomato-1",
+   "url": "https://agritech.tnau.ac.in/horticulture/horti_vegetables_tomato_index.html",
+   "publisher": "agritech.tnau.ac.in",
+   "title": "Candidate agronomy source for tomato (status check only)",
+   "accessRoute": "open_download",
+   "licence": "unstated",
+   "retrievedAt": "2026-10-29T19:43:24+00:00",
+   "sha256": null,
+   "rowOrPageCount": null,
+   "coverage": {
+    "timeFrom": null,
+    "timeTo": null,
+    "geography": "unverified",
+    "products": [
+     "tomato"
+    ]
+   },
+   "availabilityPolicy": "unknown",
+   "validation": "retrieved_ok",
+   "httpStatus": 200,
+   "rawArtifact": null,
+   "notes": "HTTP 200 status only; content/scope not reviewed"
+  },
+  {
+   "id": "AGRO-tomato-2",
+   "url": "https://iivr.icar.gov.in/",
+   "publisher": "iivr.icar.gov.in",
+   "title": "Candidate agronomy source for tomato (status check only)",
+   "accessRoute": "not_checked",
+   "licence": "unstated",
+   "retrievedAt": "2026-10-29T19:43:24+00:00",
+   "sha256": null,
+   "rowOrPageCount": null,
+   "coverage": {
+    "timeFrom": null,
+    "timeTo": null,
+    "geography": "unverified",
+    "products": [
+     "tomato"
+    ]
+   },
+   "availabilityPolicy": "unknown",
+   "validation": "retrieval_failed",
+   "httpStatus": null,
+   "rawArtifact": null,
+   "notes": "unreachable: ConnectionError: HTTPSConnectionPool(host='iivr.icar.gov.in', port=443): Max retries exceeded with url: / (Caused by NameResolutionError(\"HTTPSConnection(host='iivr.icar.gov.in'"
+  },
+  {
+   "id": "AGRO-brinjal-1",
+   "url": "https://agritech.tnau.ac.in/horticulture/horti_vegetables_brinjal_index.html",
+   "publisher": "agritech.tnau.ac.in",
+   "title": "Candidate agronomy source for brinjal (status check only)",
+   "accessRoute": "open_download",
+   "licence": "unstated",
+   "retrievedAt": "2026-10-29T19:43:24+00:00",
+   "sha256": null,
+   "rowOrPageCount": null,
+   "coverage": {
+    "timeFrom": null,
+    "timeTo": null,
+    "geography": "unverified",
+    "products": [
+     "brinjal"
+    ]
+   },
+   "availabilityPolicy": "unknown",
+   "validation": "retrieved_ok",
+   "httpStatus": 200,
+   "rawArtifact": null,
+   "notes": "HTTP 200 status only; content/scope not reviewed"
+  },
+  {
+   "id": "AGRO-okra-1",
+   "url": "https://agritech.tnau.ac.in/horticulture/horti_vegetables_bhendi_index.html",
+   "publisher": "agritech.tnau.ac.in",
+   "title": "Candidate agronomy source for okra (status check only)",
+   "accessRoute": "open_download",
+   "licence": "unstated",
+   "retrievedAt": "2026-10-29T19:43:24+00:00",
+   "sha256": null,
+   "rowOrPageCount": null,
+   "coverage": {
+    "timeFrom": null,
+    "timeTo": null,
+    "geography": "unverified",
+    "products": [
+     "okra"
+    ]
+   },
+   "availabilityPolicy": "unknown",
+   "validation": "retrieved_ok",
+   "httpStatus": 200,
+   "rawArtifact": null,
+   "notes": "HTTP 200 status only; content/scope not reviewed"
+  },
+  {
+   "id": "AGRO-chilli-1",
+   "url": "https://agritech.tnau.ac.in/horticulture/horti_vegetables_chilli_Yield_new.html",
+   "publisher": "agritech.tnau.ac.in",
+   "title": "Candidate agronomy source for chilli (status check only)",
+   "accessRoute": "open_download",
+   "licence": "unstated",
+   "retrievedAt": "2026-10-29T19:43:24+00:00",
+   "sha256": null,
+   "rowOrPageCount": null,
+   "coverage": {
+    "timeFrom": null,
+    "timeTo": null,
+    "geography": "unverified",
+    "products": [
+     "chilli"
+    ]
+   },
+   "availabilityPolicy": "unknown",
+   "validation": "retrieved_ok",
+   "httpStatus": 200,
+   "rawArtifact": null,
+   "notes": "HTTP 200 status only; content/scope not reviewed"
+  },
+  {
+   "id": "AGRO-chilli-2",
+   "url": "https://www.indianspices.com/sites/default/files/cultivation_practices-Chillli-1.pdf",
+   "publisher": "www.indianspices.com",
+   "title": "Candidate agronomy source for chilli (status check only)",
+   "accessRoute": "open_download",
+   "licence": "unstated",
+   "retrievedAt": "2026-10-29T19:43:24+00:00",
+   "sha256": null,
+   "rowOrPageCount": null,
+   "coverage": {
+    "timeFrom": null,
+    "timeTo": null,
+    "geography": "unverified",
+    "products": [
+     "chilli"
+    ]
+   },
+   "availabilityPolicy": "unknown",
+   "validation": "retrieved_ok",
+   "httpStatus": 200,
+   "rawArtifact": null,
+   "notes": "HTTP 200 status only; content/scope not reviewed"
+  },
+  {
+   "id": "AGRO-ginger-1",
+   "url": "https://spices.res.in/products/spices/ginger.html",
+   "publisher": "spices.res.in",
+   "title": "Candidate agronomy source for ginger (status check only)",
+   "accessRoute": "open_download",
+   "licence": "unstated",
+   "retrievedAt": "2026-10-29T19:43:25+00:00",
+   "sha256": null,
+   "rowOrPageCount": null,
+   "coverage": {
+    "timeFrom": null,
+    "timeTo": null,
+    "geography": "unverified",
+    "products": [
+     "ginger"
+    ]
+   },
+   "availabilityPolicy": "unknown",
+   "validation": "retrieved_ok",
+   "httpStatus": 200,
+   "rawArtifact": null,
+   "notes": "HTTP 200 status only; content/scope not reviewed"
+  },
+  {
+   "id": "AGRO-ginger-2",
+   "url": "https://spices.res.in/storage/app/public/pdfs/GINGER/3ENG.pdf",
+   "publisher": "spices.res.in",
+   "title": "Candidate agronomy source for ginger (status check only)",
+   "accessRoute": "open_download",
+   "licence": "unstated",
+   "retrievedAt": "2026-10-29T19:43:25+00:00",
+   "sha256": null,
+   "rowOrPageCount": null,
+   "coverage": {
+    "timeFrom": null,
+    "timeTo": null,
+    "geography": "unverified",
+    "products": [
+     "ginger"
+    ]
+   },
+   "availabilityPolicy": "unknown",
+   "validation": "retrieved_ok",
+   "httpStatus": 200,
+   "rawArtifact": null,
+   "notes": "HTTP 200 status only; content/scope not reviewed"
+  },
+  {
+   "id": "AGRO-ginger-3",
+   "url": "https://www.indianspices.com/sites/default/files/cultivation_practices-ginger.pdf",
+   "publisher": "www.indianspices.com",
+   "title": "Candidate agronomy source for ginger (status check only)",
+   "accessRoute": "open_download",
+   "licence": "unstated",
+   "retrievedAt": "2026-10-29T19:43:25+00:00",
+   "sha256": null,
+   "rowOrPageCount": null,
+   "coverage": {
+    "timeFrom": null,
+    "timeTo": null,
+    "geography": "unverified",
+    "products": [
+     "ginger"
+    ]
+   },
+   "availabilityPolicy": "unknown",
+   "validation": "retrieved_ok",
+   "httpStatus": 200,
+   "rawArtifact": null,
+   "notes": "HTTP 200 status only; content/scope not reviewed"
+  },
+  {
+   "id": "AGRO-turmeric-1",
+   "url": "https://spices.res.in/products/spices/turmeric.html",
+   "publisher": "spices.res.in",
+   "title": "Candidate agronomy source for turmeric (status check only)",
+   "accessRoute": "open_download",
+   "licence": "unstated",
+   "retrievedAt": "2026-10-29T19:43:26+00:00",
+   "sha256": null,
+   "rowOrPageCount": null,
+   "coverage": {
+    "timeFrom": null,
+    "timeTo": null,
+    "geography": "unverified",
+    "products": [
+     "turmeric"
+    ]
+   },
+   "availabilityPolicy": "unknown",
+   "validation": "retrieved_ok",
+   "httpStatus": 200,
+   "rawArtifact": null,
+   "notes": "HTTP 200 status only; content/scope not reviewed"
+  },
+  {
+   "id": "AGRO-turmeric-2",
+   "url": "https://www.indianspices.com/sites/default/files/cultivation_practices-TURMERIC-1.pdf",
+   "publisher": "www.indianspices.com",
+   "title": "Candidate agronomy source for turmeric (status check only)",
+   "accessRoute": "open_download",
+   "licence": "unstated",
+   "retrievedAt": "2026-10-29T19:43:26+00:00",
+   "sha256": null,
+   "rowOrPageCount": null,
+   "coverage": {
+    "timeFrom": null,
+    "timeTo": null,
+    "geography": "unverified",
+    "products": [
+     "turmeric"
+    ]
+   },
+   "availabilityPolicy": "unknown",
+   "validation": "retrieved_ok",
+   "httpStatus": 200,
+   "rawArtifact": null,
+   "notes": "HTTP 200 status only; content/scope not reviewed"
+  },
+  {
+   "id": "AGRO-cotton-1",
+   "url": "https://agritech.tnau.ac.in/agriculture/agri_seasonandvarieties_cotton.html",
+   "publisher": "agritech.tnau.ac.in",
+   "title": "Candidate agronomy source for cotton (status check only)",
+   "accessRoute": "open_download",
+   "licence": "unstated",
+   "retrievedAt": "2026-10-29T19:43:27+00:00",
+   "sha256": null,
+   "rowOrPageCount": null,
+   "coverage": {
+    "timeFrom": null,
+    "timeTo": null,
+    "geography": "unverified",
+    "products": [
+     "cotton"
+    ]
+   },
+   "availabilityPolicy": "unknown",
+   "validation": "retrieved_ok",
+   "httpStatus": 200,
+   "rawArtifact": null,
+   "notes": "HTTP 200 status only; content/scope not reviewed"
+  },
+  {
+   "id": "AGRO-cotton-2",
+   "url": "https://agritech.tnau.ac.in/agriculture/agri_cropproduction_fibre_irrigatedcotton.html",
+   "publisher": "agritech.tnau.ac.in",
+   "title": "Candidate agronomy source for cotton (status check only)",
+   "accessRoute": "not_checked",
+   "licence": "unstated",
+   "retrievedAt": "2026-10-29T19:43:27+00:00",
+   "sha256": null,
+   "rowOrPageCount": null,
+   "coverage": {
+    "timeFrom": null,
+    "timeTo": null,
+    "geography": "unverified",
+    "products": [
+     "cotton"
+    ]
+   },
+   "availabilityPolicy": "unknown",
+   "validation": "retrieval_failed",
+   "httpStatus": 404,
+   "rawArtifact": null,
+   "notes": "unreachable: 404"
+  },
+  {
+   "id": "AGRO-cotton-3",
+   "url": "https://cicr.org.in/",
+   "publisher": "cicr.org.in",
+   "title": "Candidate agronomy source for cotton (status check only)",
+   "accessRoute": "open_download",
+   "licence": "unstated",
+   "retrievedAt": "2026-10-29T19:43:28+00:00",
+   "sha256": null,
+   "rowOrPageCount": null,
+   "coverage": {
+    "timeFrom": null,
+    "timeTo": null,
+    "geography": "unverified",
+    "products": [
+     "cotton"
+    ]
+   },
+   "availabilityPolicy": "unknown",
+   "validation": "retrieved_ok",
+   "httpStatus": 200,
+   "rawArtifact": null,
+   "notes": "HTTP 200 status only; content/scope not reviewed"
+  }
+ ]
+}

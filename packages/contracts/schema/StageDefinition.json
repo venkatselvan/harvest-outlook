@@ -1,0 +1,294 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "schemaVersion": {
+      "type": "string",
+      "const": "1.0"
+    },
+    "id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 200,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:\\/-]*$"
+    },
+    "mode": {
+      "type": "string",
+      "enum": [
+        "live",
+        "replay",
+        "synthetic"
+      ]
+    },
+    "cropId": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 200,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:\\/-]*$"
+    },
+    "varietyId": {
+      "anyOf": [
+        {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:\\/-]*$"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "scope": {
+      "type": "object",
+      "properties": {
+        "level": {
+          "type": "string",
+          "enum": [
+            "farm",
+            "district",
+            "state",
+            "market",
+            "region",
+            "national"
+          ]
+        },
+        "ids": {
+          "minItems": 1,
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:\\/-]*$"
+          }
+        },
+        "boundaryVersion": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "level",
+        "ids"
+      ],
+      "additionalProperties": false
+    },
+    "seasons": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "kharif",
+          "rabi",
+          "zaid",
+          "perennial"
+        ]
+      }
+    },
+    "stageId": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 200,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:\\/-]*$"
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1
+    },
+    "order": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 9007199254740991
+    },
+    "startsAfter": {
+      "anyOf": [
+        {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:\\/-]*$"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "prerequisites": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 200,
+        "pattern": "^[A-Za-z0-9][A-Za-z0-9._:\\/-]*$"
+      }
+    },
+    "method": {
+      "type": "string",
+      "enum": [
+        "calendar_days",
+        "thermal_time"
+      ]
+    },
+    "durationDays": {
+      "type": "object",
+      "properties": {
+        "min": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "max": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        }
+      },
+      "required": [
+        "min",
+        "max"
+      ],
+      "additionalProperties": false
+    },
+    "thermal": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "baseTempC": {
+              "type": "number"
+            },
+            "gddMin": {
+              "type": "number",
+              "exclusiveMinimum": 0
+            },
+            "gddMax": {
+              "type": "number",
+              "exclusiveMinimum": 0
+            },
+            "validated": {
+              "type": "boolean",
+              "const": true
+            },
+            "evidenceIds": {
+              "minItems": 1,
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 200,
+                "pattern": "^[A-Za-z0-9][A-Za-z0-9._:\\/-]*$"
+              }
+            }
+          },
+          "required": [
+            "baseTempC",
+            "gddMin",
+            "gddMax",
+            "validated",
+            "evidenceIds"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "isHarvest": {
+      "type": "boolean"
+    },
+    "repeat": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "intervalDays": {
+              "type": "object",
+              "properties": {
+                "min": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 9007199254740991
+                },
+                "max": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 9007199254740991
+                }
+              },
+              "required": [
+                "min",
+                "max"
+              ],
+              "additionalProperties": false
+            },
+            "maxOccurrences": {
+              "type": "integer",
+              "minimum": 2,
+              "maximum": 9007199254740991
+            }
+          },
+          "required": [
+            "intervalDays",
+            "maxOccurrences"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "evidenceIds": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 200,
+        "pattern": "^[A-Za-z0-9][A-Za-z0-9._:\\/-]*$"
+      }
+    },
+    "limitations": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "reviewStatus": {
+      "type": "string",
+      "enum": [
+        "synthetic",
+        "candidate",
+        "approved",
+        "disabled"
+      ]
+    }
+  },
+  "required": [
+    "schemaVersion",
+    "id",
+    "mode",
+    "cropId",
+    "varietyId",
+    "scope",
+    "seasons",
+    "stageId",
+    "name",
+    "order",
+    "startsAfter",
+    "prerequisites",
+    "method",
+    "durationDays",
+    "thermal",
+    "isHarvest",
+    "repeat",
+    "evidenceIds",
+    "limitations",
+    "reviewStatus"
+  ],
+  "additionalProperties": false,
+  "$id": "https://harvest-outlook.local/schema/1.0/StageDefinition.json",
+  "x-schemaVersion": "1.0"
+}

@@ -1,0 +1,235 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "schemaVersion": {
+      "type": "string",
+      "const": "1.0"
+    },
+    "days": {
+      "minItems": 1,
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "date": {
+            "type": "string",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+          },
+          "et0Mm": {
+            "anyOf": [
+              {
+                "type": "number",
+                "minimum": 0
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "et0Source": {
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "rainMm": {
+            "anyOf": [
+              {
+                "type": "number",
+                "minimum": 0
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "rainState": {
+            "type": "string",
+            "enum": [
+              "observed",
+              "forecast",
+              "missing"
+            ]
+          }
+        },
+        "required": [
+          "date",
+          "et0Mm",
+          "et0Source",
+          "rainMm",
+          "rainState"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "stages": {
+      "minItems": 1,
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "stageId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:\\/-]*$"
+          },
+          "start": {
+            "type": "string",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+          },
+          "end": {
+            "type": "string",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+          },
+          "kc": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 2
+          },
+          "kcSource": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required": [
+          "stageId",
+          "start",
+          "end",
+          "kc",
+          "kcSource"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "rootZone": {
+      "type": "object",
+      "properties": {
+        "totalAvailableWaterMm": {
+          "anyOf": [
+            {
+              "type": "number",
+              "exclusiveMinimum": 0
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "depletionFraction": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "exclusiveMaximum": 1
+        },
+        "initialDepletionMm": {
+          "type": "number",
+          "minimum": 0
+        },
+        "basis": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "totalAvailableWaterMm",
+        "depletionFraction",
+        "initialDepletionMm",
+        "basis"
+      ],
+      "additionalProperties": false
+    },
+    "effectiveRain": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "method": {
+              "type": "string",
+              "const": "fixed_fraction"
+            },
+            "fraction": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            }
+          },
+          "required": [
+            "method",
+            "fraction"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "method": {
+              "type": "string",
+              "const": "usda_scs_monthly"
+            }
+          },
+          "required": [
+            "method"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "forecastRainPolicy": {
+      "type": "string",
+      "enum": [
+        "use_forecast",
+        "ignore_forecast"
+      ]
+    },
+    "irrigationEfficiency": {
+      "anyOf": [
+        {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 1
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "areaHa": {
+      "anyOf": [
+        {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "tawScenariosMm": {
+      "type": "array",
+      "items": {
+        "type": "number",
+        "exclusiveMinimum": 0
+      }
+    }
+  },
+  "required": [
+    "schemaVersion",
+    "days",
+    "stages",
+    "rootZone",
+    "effectiveRain",
+    "forecastRainPolicy",
+    "irrigationEfficiency",
+    "areaHa",
+    "tawScenariosMm"
+  ],
+  "additionalProperties": false,
+  "$id": "https://harvest-outlook.local/schema/1.0/WaterBalanceInput.json",
+  "x-schemaVersion": "1.0"
+}

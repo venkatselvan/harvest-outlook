@@ -1,0 +1,131 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "ruleId": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 200,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:\\/-]*$"
+    },
+    "ruleVersion": {
+      "type": "integer",
+      "exclusiveMinimum": 0,
+      "maximum": 9007199254740991
+    },
+    "cropId": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 200,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:\\/-]*$"
+    },
+    "truth": {
+      "type": "string",
+      "enum": [
+        "true",
+        "false",
+        "unknown"
+      ]
+    },
+    "effect": {
+      "anyOf": [
+        {
+          "type": "string",
+          "enum": [
+            "eligible",
+            "ineligible",
+            "requires_review",
+            "prefer",
+            "caution"
+          ]
+        },
+        {
+          "type": "string",
+          "const": "not_applicable"
+        }
+      ]
+    },
+    "reasons": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "reasonCode": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_]{1,80}$"
+          },
+          "source": {
+            "type": "string",
+            "enum": [
+              "rule",
+              "exception",
+              "unknown_condition",
+              "unresolved_exception",
+              "gate"
+            ]
+          },
+          "exceptionId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:\\/-]*$"
+          }
+        },
+        "required": [
+          "reasonCode",
+          "source"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "unknownFields": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "location.districtId",
+          "location.stateId",
+          "season",
+          "planting.month",
+          "planting.date",
+          "irrigation.category",
+          "soil.drainage",
+          "soil.texture",
+          "soil.ph",
+          "water.capacityMmPerWeek",
+          "farm.areaHa",
+          "budget.inrPerHa",
+          "labour.level",
+          "rainfall.seasonalMm",
+          "elevation.m"
+        ]
+      }
+    },
+    "appliedExceptionId": {
+      "anyOf": [
+        {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:\\/-]*$"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    }
+  },
+  "required": [
+    "ruleId",
+    "ruleVersion",
+    "cropId",
+    "truth",
+    "effect",
+    "reasons",
+    "unknownFields",
+    "appliedExceptionId"
+  ],
+  "additionalProperties": false,
+  "$id": "https://harvest-outlook.local/schema/1.0/RuleEvaluationResult.json",
+  "x-schemaVersion": "1.0"
+}
