@@ -2,7 +2,53 @@ import type { PoolClient } from "pg";
 import { withTransaction, type Pool } from "../db/pool";
 import type { StorageAdapter } from "../storage/types";
 import type { CreateFarmBody, FarmOut, PatchFarmBody } from "../routes/schemas/farms";
+import { canonicalStateId, districtDisplayName, resolveDistrict } from "../catalogue/districts";
 import { ApiError, notFound } from "./errors";
+
+type LocationInput = CreateFarmBody["location"];
+
+export interface ResolvedLocation {
+  stateCode: string | null;
+  districtCode: string | null;
+  districtName: string | null;
+  warnings: NonNullable<FarmOut["warnings"]>;
+}
+
+/**
+ * Only canonical registry ids are ever stored. A name that cannot be matched is kept as farmer-reported text with a
+ * null district code and a warning; an unknown state is a validation error.
+ */
+export function resolveLocation(l: LocationInput): ResolvedLocation {
+  const givenState = l.stateId ?? l.stateCode;
+  let stateId: string | null = null;
+  if (givenState !== undefined) {
+    stateId = canonicalStateId(givenState);
+    if (!stateId) throw new ApiError(400, "validation_error", `Unknown state "${givenState}"; use a registry id such as IN-KA`, { field: "location.stateId" });
+  }
+  // A legacy typed id ("typed:KA:hassan") is farmer text, never an id.
+  const typed = l.districtId ? /^typed:([A-Za-z]{2}):(.+)$/.exec(l.districtId) : null;
+  const idText = typed ? typed[2]!.replace(/-/g, " ") : l.districtId;
+  if (typed && !stateId) stateId = canonicalStateId(typed[1]);
+  const typedName = l.districtName ?? idText ?? null;
+  const byId = l.districtId && !typed ? resolveDistrict({ stateId, districtIdOrName: l.districtId }) : null;
+  const res = byId?.districtId ? byId : resolveDistrict({ stateId, districtIdOrName: typedName });
+  if (res.districtId && stateId && res.stateId && res.stateId !== stateId) {
+    throw new ApiError(400, "validation_error", `District ${res.districtId} is not in ${stateId}`, { field: "location.districtId" });
+  }
+  const warnings: ResolvedLocation["warnings"] = [];
+  if (!res.districtId) {
+    warnings.push({
+      code: "district_unresolved",
+      message: `"${typedName ?? ""}" could not be matched to the district list${stateId ? ` for ${stateId}` : ""}; it is kept as you wrote it and screening uses the state.`,
+    });
+  }
+  return {
+    stateCode: stateId ?? res.stateId,
+    districtCode: res.districtId,
+    districtName: l.districtName ?? (res.districtId ? districtDisplayName(res.districtId) : typedName),
+    warnings,
+  };
+}
 
 interface FarmRow {
   id: string;
@@ -97,14 +143,15 @@ const FACT_COLS = "id, fact_key, value, unit, basis, confirmed, source, recorded
 export async function createFarm(pool: Pool, ownerId: string, body: CreateFarmBody): Promise<FarmOut> {
   return withTransaction(pool, async (c) => {
     const { lat, lon, geo } = storedCoords(body.location);
+    const loc = resolveLocation(body.location);
     const f = await c.query<{ id: string }>(
       `INSERT INTO farms (owner_id, name, state_code, district_code, district_name, lat, lon, location_geojson, location_precision, area_hectares)
        VALUES ($1,$2,$3,$4,$5,$6,$7,$8::jsonb,$9,$10) RETURNING id`,
-      [ownerId, body.name, body.location.stateCode ?? null, body.location.districtId, body.location.districtName, lat, lon, geo, body.location.precision, body.areaHectares ?? null],
+      [ownerId, body.name, loc.stateCode, loc.districtCode, loc.districtName, lat, lon, geo, body.location.precision, body.areaHectares ?? null],
     );
     const id = f.rows[0]!.id;
     for (const [k, v] of Object.entries(body.facts ?? {})) await insertFact(c, ownerId, id, k, v, null);
-    return (await readFarm(c, ownerId, id, false))!;
+    return { ...(await readFarm(c, ownerId, id, false))!, ...(loc.warnings.length ? { warnings: loc.warnings } : {}) };
   });
 }
 
@@ -144,12 +191,15 @@ export async function patchFarm(pool: Pool, ownerId: string, id: string, body: P
     };
     if (body.name !== undefined) add("name", body.name);
     if (body.areaHectares !== undefined) add("area_hectares", body.areaHectares);
+    let warnings: ResolvedLocation["warnings"] = [];
     if (body.location) {
       const l = body.location;
       const { lat, lon, geo } = storedCoords(l);
-      add("district_code", l.districtId);
-      add("district_name", l.districtName);
-      add("state_code", l.stateCode ?? null);
+      const loc = resolveLocation(l);
+      warnings = loc.warnings;
+      add("district_code", loc.districtCode);
+      add("district_name", loc.districtName);
+      add("state_code", loc.stateCode);
       add("lat", lat);
       add("lon", lon);
       add("location_geojson", geo, "::jsonb");
@@ -160,7 +210,7 @@ export async function patchFarm(pool: Pool, ownerId: string, id: string, body: P
       const prev = await c.query<{ id: string }>("SELECT id FROM farm_facts WHERE farm_id=$1 AND fact_key=$2 AND superseded_by IS NULL FOR UPDATE", [id, k]);
       await appendFact(c, ownerId, id, k, v, prev.rows[0]?.id ?? null);
     }
-    return (await readFarm(c, ownerId, id, false))!;
+    return { ...(await readFarm(c, ownerId, id, false))!, ...(warnings.length ? { warnings } : {}) };
   });
 }
 

@@ -19,7 +19,7 @@ export async function seedFarmAndPlan(page: Page): Promise<{ farmId: string; pla
       headers: { ...h, "idempotency-key": "e2e-farm-" + rnd() },
       body: JSON.stringify({
         name: "Hassan farm",
-        location: { districtId: "typed:KA:hassan", districtName: "Hassan", stateCode: "KA", precision: "district" },
+        location: { districtId: "IN-KA-hassan", stateId: "IN-KA", precision: "district" },
         areaHectares: 1.2,
         facts: { irrigation_category: { value: "supplemental", basis: "farmer_reported", confirmed: true, source: "e2e" } },
       }),

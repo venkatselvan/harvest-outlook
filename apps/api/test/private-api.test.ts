@@ -126,7 +126,7 @@ describe("CSRF and origin", () => {
 
 describe("farms", () => {
   it("stores per-field provenance and appends superseding facts on PATCH", async () => {
-    const created = await a.call("POST", "/api/v1/farms", { payload: farmBody({ location: { districtId: "IN-KL-WAY", districtName: "Wayanad", lat: 11.6054321, lon: 76.0834567, precision: "approximate" } }) });
+    const created = await a.call("POST", "/api/v1/farms", { payload: farmBody({ location: { districtName: "Wayanad", stateId: "IN-KL", lat: 11.6054321, lon: 76.0834567, precision: "approximate" } }) });
     expect(created.statusCode).toBe(201);
     const farm = data(created);
     expect(farm.location).toMatchObject({ lat: 11.61, lon: 76.08, precision: "approximate" }); // coarsened
@@ -155,7 +155,7 @@ describe("farms", () => {
   });
 
   it("validates location precision and fact basis", async () => {
-    const coordsAsDistrict = await a.call("POST", "/api/v1/farms", { payload: farmBody({ location: { districtId: "d", districtName: "D", lat: 1, lon: 1, precision: "district" } }) });
+    const coordsAsDistrict = await a.call("POST", "/api/v1/farms", { payload: farmBody({ location: { districtId: "IN-KA-hassan", stateId: "IN-KA", lat: 1, lon: 1, precision: "district" } }) });
     expect(coordsAsDistrict.statusCode).toBe(400);
     const noDistrict = await a.call("POST", "/api/v1/farms", { payload: farmBody({ location: { precision: "district" } }) });
     expect(noDistrict.statusCode).toBe(400);

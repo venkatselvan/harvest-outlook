@@ -7,6 +7,13 @@ export const STATES: { code: string; name: string }[] = [
   ["UP", "Uttar Pradesh"], ["UK", "Uttarakhand"], ["WB", "West Bengal"],
 ].map(([code, name]) => ({ code: code!, name: name! }));
 
+/** Display name for a stored state id ("IN-KA") or a legacy bare code ("KA"). */
+export function stateLabel(code: string | null | undefined): string | null {
+  if (!code) return null;
+  const bare = code.replace(/^IN-/i, "").toUpperCase();
+  return STATES.find((s) => s.code === bare)?.name ?? null;
+}
+
 export const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 export const IRRIGATION_OPTIONS = [
   { value: "rainfed", label: "Rain only" },
@@ -18,8 +25,14 @@ export const IRRIGATION_OPTIONS = [
 export const HA_PER_ACRE = 0.40468564224;
 
 export interface FarmFormInput {
+  /** Free-text district; used when no registry district is selected (state without a list, "not listed", or no state). */
   district: string;
-  stateCode: string; // "" = not sure
+  /** Registry state id such as "IN-KA"; "" = not sure. */
+  stateId: string;
+  /** Registry district id picked from the list; "" = none picked. Never typed or derived client-side. */
+  districtId: string;
+  /** Display name of the picked district (for the farm title only). */
+  districtLabel?: string;
   startMonth: string; // "" = not decided; otherwise "1".."12"
   endMonth: string;
   irrigation: string; // rainfed|supplemental|irrigated|unknown
@@ -30,19 +43,13 @@ export interface FarmFormInput {
 
 export type FarmFormErrors = Partial<Record<"district" | "window" | "irrigation" | "area", string>>;
 
-const slug = (s: string) =>
-  s
-    .toLowerCase()
-    .normalize("NFKD")
-    .replace(/[^\p{L}\p{N}]+/gu, "-")
-    .replace(/^-+|-+$/g, "")
-    .slice(0, 40);
-
 export function validateFarmForm(f: FarmFormInput): FarmFormErrors {
   const e: FarmFormErrors = {};
-  if (!f.district.trim()) e.district = "Enter your district name.";
+  if (f.districtId) {
+    if (!f.stateId || !f.districtId.startsWith(`${f.stateId}-`)) e.district = "Choose the state again, then pick the district.";
+  } else if (!f.district.trim()) e.district = "Enter or choose your district.";
   else if (f.district.trim().length > 120) e.district = "District name is too long (120 characters at most).";
-  else if (!slug(f.district)) e.district = "District name needs letters or numbers.";
+  else if (!/[\p{L}\p{N}]/u.test(f.district)) e.district = "District name needs letters or numbers.";
   if ((f.startMonth === "") !== (f.endMonth === "")) e.window = "Choose both the first and last month, or choose \"Not decided\" for both.";
   if (!["rainfed", "supplemental", "irrigated", "unknown"].includes(f.irrigation)) e.irrigation = "Choose how the land is watered, or \"I don't know\".";
   if (f.areaKnown) {
@@ -55,7 +62,7 @@ export function validateFarmForm(f: FarmFormInput): FarmFormErrors {
 
 /** Builds the POST /farms body. Unknown answers are left out entirely (no fact is better than a made-up one). */
 export function buildFarmBody(f: FarmFormInput): Record<string, unknown> {
-  const district = f.district.trim();
+  const district = (f.districtId ? f.districtLabel?.trim() || "" : f.district.trim()) || "My";
   const facts: Record<string, unknown> = {};
   const reported = { basis: "farmer_reported", confirmed: true, source: "farm form" };
   if (f.startMonth !== "" && f.endMonth !== "") {
@@ -66,9 +73,9 @@ export function buildFarmBody(f: FarmFormInput): Record<string, unknown> {
   const body: Record<string, unknown> = {
     name: `${district} farm`.slice(0, 120),
     location: {
-      districtId: `typed:${f.stateCode || "xx"}:${slug(district)}`.slice(0, 64),
-      districtName: district,
-      ...(f.stateCode ? { stateCode: f.stateCode } : {}),
+      // A picked id comes from the registry list; otherwise only the farmer's text is sent and the server resolves it.
+      ...(f.districtId ? { districtId: f.districtId } : { districtName: f.district.trim() }),
+      ...(f.stateId ? { stateId: f.stateId } : {}),
       precision: "district",
     },
     facts,

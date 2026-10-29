@@ -9,7 +9,7 @@ import type { MediaInfo } from "../../features/photo-region/types";
 import { ApiError } from "../../lib/api";
 import { refreshCapabilities } from "../../lib/capabilities";
 import { FarmForm } from "./FarmForm";
-import { MONTHS, STATES } from "./formModel";
+import { MONTHS, stateLabel } from "./formModel";
 import type { Farm } from "./types";
 
 const SELECTED_KEY = "ho.selectedFarm";
@@ -38,7 +38,7 @@ async function loadFarms(): Promise<Farm[]> {
 
 function FarmSummary(props: { farm: Farm }) {
   const f = () => props.farm;
-  const state = () => STATES.find((s) => s.code === f().location.stateCode)?.name ?? "State not given";
+  const state = () => stateLabel(f().location.stateCode) ?? "State not given";
   const fact = (k: string) => f().facts[k]?.value;
   const window = () => {
     const a = Number(fact("planting_window_start_month"));
@@ -57,6 +57,11 @@ function FarmSummary(props: { farm: Farm }) {
   return (
     <div class="card" data-testid="farm-summary">
       <h2>{f().location.districtName ?? f().name}</h2>
+      <Show when={f().location.districtId === null}>
+        <p class="pr-help" role="status" data-testid="district-unresolved">
+          {f().warnings?.[0]?.message ?? "This district is kept as you wrote it; it is not matched to the district list, so checks use the state."}
+        </p>
+      </Show>
       <dl class="facts">
         <dt>State</dt><dd>{state()}</dd>
         <dt>Planting window</dt><dd>{window()}</dd>

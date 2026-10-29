@@ -19,14 +19,20 @@ export const factsInput = z.record(factKey, factInput).refine((o) => Object.keys
 
 export const locationInput = z
   .object({
-    districtId: z.string().trim().min(1).max(64),
-    districtName: z.string().trim().min(1).max(120),
+    /** Canonical registry id (IN-KA-hassan). Anything else is treated as farmer text and resolved by name. */
+    districtId: z.string().trim().min(1).max(64).optional(),
+    /** Free-text district as the farmer typed it; resolved against the registry within the state. */
+    districtName: z.string().trim().min(1).max(120).optional(),
+    /** Canonical state id (IN-KA); validated against the registry by the service. */
+    stateId: z.string().trim().min(1).max(16).optional(),
+    /** Legacy alias of stateId; a bare code ("KA") is canonicalised. */
     stateCode: z.string().trim().min(1).max(16).optional(),
     lat: z.number().min(-90).max(90).optional(),
     lon: z.number().min(-180).max(180).optional(),
     precision: z.enum(LOCATION_PRECISIONS).default("district"),
   })
   .superRefine((l, ctx) => {
+    if (l.districtId === undefined && l.districtName === undefined) ctx.addIssue({ code: "custom", message: "districtId or districtName is required", path: ["districtName"] });
     const has = l.lat !== undefined || l.lon !== undefined;
     if ((l.lat === undefined) !== (l.lon === undefined)) ctx.addIssue({ code: "custom", message: "lat and lon must be given together", path: ["lat"] });
     if (has && l.precision === "district") ctx.addIssue({ code: "custom", message: "coordinates require precision approximate or precise", path: ["precision"] });
@@ -60,6 +66,8 @@ export const factOut = z.object({
   recordedAt: z.string(),
 });
 
+export const farmWarning = z.object({ code: z.literal("district_unresolved"), message: z.string() });
+
 export const farmOut = z.object({
   id: z.string(),
   name: z.string(),
@@ -77,6 +85,8 @@ export const farmOut = z.object({
   factHistory: z.array(factOut.extend({ key: z.string(), superseded: z.boolean() })).optional(),
   createdAt: z.string(),
   updatedAt: z.string(),
+  /** Present on create/update only. */
+  warnings: z.array(farmWarning).optional(),
 });
 
 export const farmListOut = z.object({ farms: z.array(farmOut) });

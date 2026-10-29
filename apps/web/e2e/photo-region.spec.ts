@@ -33,7 +33,7 @@ async function createFarm(page: Page, district = "Wayanad") {
   await page.goto("/farm");
   await expect(page.getByRole("heading", { name: "My farm" })).toBeVisible();
   await page.getByLabel("District name").fill(district);
-  await page.getByLabel("State or union territory").selectOption("KL");
+  await page.getByLabel("State or union territory").selectOption("IN-KL");
   await page.getByLabel("From", { exact: true }).selectOption("6");
   await page.getByLabel("To", { exact: true }).selectOption("8");
   await page.getByLabel("How is the land watered?").selectOption("rainfed");

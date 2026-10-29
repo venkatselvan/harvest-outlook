@@ -22,7 +22,7 @@ async function seed(page: Page) {
           body: JSON.stringify({
             name: "Hassan farm",
             // Approximate coordinates inside the synthetic Hassan-like weather grid cell, so the plan finds the seeded synthetic weather.
-            location: { districtId: "typed:KA:hassan", districtName: "Hassan", stateCode: "KA", lat: 13.0033, lon: 76.1004, precision: "approximate" },
+            location: { districtId: "IN-KA-hassan", stateId: "IN-KA", lat: 13.0033, lon: 76.1004, precision: "approximate" },
             areaHectares: 1.2,
             facts: { irrigation_category: { value: "supplemental", basis: "farmer_reported", confirmed: true, source: "e2e" } },
           }),

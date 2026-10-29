@@ -126,7 +126,7 @@ export async function upload(c: Client, data: Buffer, opts: { farmId?: string; k
 
 export const farmBody = (over: Record<string, unknown> = {}) => ({
   name: "North plot",
-  location: { districtId: "IN-KL-WAY", districtName: "Wayanad", stateCode: "KL", precision: "district" },
+  location: { districtName: "Wayanad", stateId: "IN-KL", precision: "district" },
   areaHectares: 1.5,
   facts: {
     soil_ph: { value: 6.2, unit: "pH", basis: "farmer_reported", confirmed: false, source: "own strip test" },
