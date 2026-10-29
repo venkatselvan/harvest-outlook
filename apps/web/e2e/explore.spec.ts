@@ -61,7 +61,8 @@ test("Hassan, kharif May, rainfed: results, three cards, choose ginger", async (
 
   await ginger.getByRole("button", { name: "Choose this crop" }).click();
   await expect(page).toHaveURL(/\/farm\?cropId=ginger&productId=ginger-fresh$/);
-  const stored = JSON.parse(await page.getByTestId("selected-crop").innerText());
+  await expect(page.getByTestId("selected-crop")).toHaveText(/^Selected crop: .*ginger.*\(.*ginger.*\)$/i);
+  const stored = JSON.parse(await page.evaluate(() => sessionStorage.getItem("ho.selectedCrop") ?? "null"));
   expect(stored).toMatchObject({ cropId: "ginger", productId: "ginger-fresh" });
 });
 

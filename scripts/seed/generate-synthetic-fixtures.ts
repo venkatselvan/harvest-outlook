@@ -6,6 +6,7 @@
 import { writeFileSync, mkdirSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { generateSyntheticWeather } from "../../apps/api/src/ingest/fixtures";
 
 const out = resolve(dirname(fileURLToPath(import.meta.url)), "../../data/fixtures/synthetic");
 mkdirSync(out, { recursive: true });
@@ -58,27 +59,12 @@ const LABEL = "SYNTHETIC FIXTURE: invented numbers for development and demos; no
   writeFileSync(resolve(out, "market_synthetic_ginger_like.json"), JSON.stringify({ synthetic: true, sourceId: SOURCE, fixture: "market_synthetic_ginger_like", label: LABEL, seed, priceUnit: "INR/quintal (synthetic)", generator: "scripts/seed/generate-synthetic-fixtures.ts", records }, null, 1) + "\n");
 }
 
-// ---- weather: 60 observed days + one 10-day forecast vintage
+// ---- weather TEMPLATE: the seed (apps/api/src/ingest/fixtures.ts generateSyntheticWeather) regenerates every row relative to the
+// seed date, so the committed JSON is only a template (label, location, seed) plus a sample rendered for TEMPLATE_DATE.
 {
   const seed = 20260102;
-  const rnd = mulberry32(seed);
-  const units = { precipitation_sum: "mm", temperature_2m_max: "°C", temperature_2m_min: "°C", et0_fao_evapotranspiration: "mm", shortwave_radiation_sum: "MJ/m²" };
-  const day = (i: number) => {
-    const wet = rnd() < 0.3 + 0.2 * Math.sin((i / 60) * Math.PI);
-    const rain = wet ? Math.round(rnd() * 180) / 10 : 0;
-    const tmax = Math.round((27 + 3 * Math.sin(i / 9) - (rain > 5 ? 2 : 0) + (rnd() - 0.5) * 2) * 10) / 10;
-    return {
-      precipitation_sum: rain,
-      temperature_2m_max: tmax,
-      temperature_2m_min: Math.round((tmax - 8 + (rnd() - 0.5)) * 10) / 10,
-      et0_fao_evapotranspiration: Math.round((4.2 - (rain > 5 ? 1.2 : 0) + (rnd() - 0.5)) * 100) / 100,
-      shortwave_radiation_sum: Math.round((19 - (rain > 5 ? 5 : 0) + (rnd() - 0.5) * 3) * 100) / 100,
-    };
-  };
-  const records: Record<string, unknown>[] = [];
-  for (let i = 0; i < 60; i++) records.push({ synthetic: true, sourceId: SOURCE, kind: "observation", date: dayStr("2026-06-01", i), values: day(i), units });
-  const issuedAt = "2026-07-31T00:00:00Z";
-  for (let i = 0; i < 10; i++) records.push({ synthetic: true, sourceId: SOURCE, kind: "forecast", issuedAt, date: dayStr("2026-07-31", i), values: day(60 + i), units });
-  writeFileSync(resolve(out, "weather_synthetic_hassan_like.json"), JSON.stringify({ synthetic: true, sourceId: SOURCE, fixture: "weather_synthetic_hassan_like", label: LABEL, seed, location: { key: "synthetic:hassan-like", lat: 13.0033, lon: 76.1004 }, generator: "scripts/seed/generate-synthetic-fixtures.ts", records }, null, 1) + "\n");
+  const TEMPLATE_DATE = "2026-10-30";
+  const records = generateSyntheticWeather(TEMPLATE_DATE, seed);
+  writeFileSync(resolve(out, "weather_synthetic_hassan_like.json"), JSON.stringify({ synthetic: true, sourceId: SOURCE, fixture: "weather_synthetic_hassan_like", label: LABEL, generatedAtSeed: `Dates below are a sample rendered for ${TEMPLATE_DATE}. loadSyntheticFixtures ignores them and regenerates the rows relative to the seed date (today-120..today-1 with a gap at today-60..today-51, plus 3 forecast days from today).`, seed, location: { key: "synthetic:hassan-like", lat: 13.0033, lon: 76.1004 }, generator: "scripts/seed/generate-synthetic-fixtures.ts", records }, null, 1) + "\n");
 }
 console.log("wrote synthetic fixtures to", out);

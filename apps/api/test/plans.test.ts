@@ -79,8 +79,10 @@ class SyntheticWeather implements WeatherSource {
     }
     return { issuedAt: this.forecastIssuedAt, sourceId: "synthetic-fc", days };
   }
-  async getClimatology(_s: unknown, range: { start: string; end: string }): Promise<ClimatologyBundle | null> {
+  climOpts: Array<{ availableBy?: string } | undefined> = [];
+  async getClimatology(_s: unknown, range: { start: string; end: string }, opts?: { availableBy?: string }): Promise<ClimatologyBundle | null> {
     this.calls.clim++;
+    this.climOpts.push(opts);
     const days: DailyWeather[] = [];
     for (let d = range.start; d <= range.end; d = addDays(d, 1)) days.push(synthDay(d, "synthetic-clim", 6));
     return { years: { from: 1991, to: 2020 }, sourceId: "synthetic-clim", days };
@@ -541,6 +543,9 @@ describe("replay mode", () => {
     const ok = await svc.createPlan(createArgs(fx, owner, farm, "replay", { decisionCutoff: "2026-06-05T00:00:00+05:30" }));
     expect(ok.snapshot.decidedAt).toBe(new Date("2026-06-05T00:00:00+05:30").toISOString());
     expect(ok.snapshot.mode).toBe("replay");
+    // D31: replay climatology is requested with the decision cutoff as its availability bound.
+    expect(weather.climOpts.length).toBeGreaterThan(0);
+    for (const o of weather.climOpts) expect(o?.availableBy).toBe(new Date("2026-06-05T00:00:00+05:30").toISOString());
     const t = await svc.getTimeline(owner, ok.snapshot.id, {});
     expect(t.asOfDate).toBe("2026-06-05");
     // Synthetic-mode-only decisionCutoff is refused outside replay.

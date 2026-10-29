@@ -14,6 +14,23 @@ import type { Farm } from "./types";
 
 const SELECTED_KEY = "ho.selectedFarm";
 
+/** Label for the crop chosen in Explore: prefers the stored names when they match the query ids, else the ids themselves. */
+function selectedCropLabel(cropId: string, productId: string | null): string {
+  let cropName = cropId;
+  let productName = productId;
+  try {
+    const raw = sessionStorage.getItem("ho.selectedCrop");
+    const st = raw ? (JSON.parse(raw) as { cropId?: string; productId?: string; cropName?: string; productName?: string }) : null;
+    if (st && st.cropId === cropId && (productId === null || st.productId === productId)) {
+      cropName = st.cropName ?? cropName;
+      productName = st.productName ?? productName;
+    }
+  } catch {
+    /* storage unavailable or malformed: fall back to ids */
+  }
+  return productName ? `Selected crop: ${cropName} (${productName})` : `Selected crop: ${cropName}`;
+}
+
 async function loadFarms(): Promise<Farm[]> {
   const env = await apiRequest<{ farms: Farm[] }>("/api/v1/farms");
   return env.data!.farms;
@@ -110,6 +127,7 @@ export function FarmPage() {
   return (
     <section aria-labelledby="page-title">
       <h1 id="page-title" tabindex="-1">My farm</h1>
+      <Show when={query.cropId}>{(cropId) => <p class="muted" data-testid="selected-crop">{selectedCropLabel(cropId(), query.productId ?? null)}</p>}</Show>
       <Switch>
         <Match when={farms.error}>
           <div class="card">
@@ -151,6 +169,7 @@ export function FarmPage() {
               <PhotoSection farm={farm()} onRegion={setHasRegion} />
               <Show when={query.cropId}>
                 {(cropId) => (
+                  <>
                   <Show
                     when={hasRegion() || skipPhoto()}
                     fallback={
@@ -162,6 +181,7 @@ export function FarmPage() {
                   >
                     <CreatePlanStep farm={farm()} cropId={cropId()} productId={query.productId ?? null} />
                   </Show>
+                  </>
                 )}
               </Show>
             </>

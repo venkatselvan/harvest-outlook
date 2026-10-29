@@ -23,7 +23,8 @@ export const EvidenceState = z.enum([
 ]);
 export type EvidenceState = z.infer<typeof EvidenceState>;
 
-export const ValidationStatus = z.enum(['validated', 'unsupported', 'pending', 'rejected']);
+export const ValidationStatus = z.enum(['validated', 'grounded', 'unsupported', 'pending', 'rejected']);
+// 'grounded' (D28): excerpt machine-verified present on the cited page; meaning/scope review pending. Not 'validated'.
 export type ValidationStatus = z.infer<typeof ValidationStatus>;
 
 /** Stable identifier: non-empty, no whitespace, bounded length. */

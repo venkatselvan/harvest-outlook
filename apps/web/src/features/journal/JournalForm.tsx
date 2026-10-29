@@ -1,17 +1,22 @@
-import { For, Show, createSignal, onMount } from "solid-js";
+import { For, Show, createSignal, onCleanup, onMount } from "solid-js";
 import { PhotoUploader } from "../photo-region/PhotoUploader";
 import { newEntryId } from "../photo-region/http";
 import { normalizedUrl, type MediaInfo } from "../photo-region/types";
 import { ApiError } from "../../lib/api";
+import { ErrorState } from "../offline/ErrorState";
+import { SyncPanel } from "../offline/SyncPanel";
+import { flushJournalQueue, onFlushed, syncQueue } from "../../lib/sync/journal";
 import { VoiceInput } from "../speech/VoiceInput";
 import type { SpeechLang } from "../speech/speechMachine";
-import { submitDraft, type JournalEntry } from "./api";
+import type { JournalEntry } from "./api";
 import {
   ACTIVITIES,
   MAX_PHOTOS,
   QUANTITY_UNITS,
   clearDraft,
   draftIssues,
+  draftToBody,
+  idempotencyKeyFor,
   loadCurrentDraft,
   newDraft,
   saveDraft,
@@ -30,12 +35,25 @@ export function JournalForm(props: { farmId: string; stages: { stageId: string; 
   const [draft, setDraft] = createSignal<Draft>(newDraft(props.farmId, newEntryId("entry")));
   const [restored, setRestored] = createSignal(false);
   const [saving, setSaving] = createSignal(false);
-  const [error, setError] = createSignal<string | null>(null);
+  const [error, setError] = createSignal<{ code?: string; message: string } | null>(null);
+  const [queued, setQueued] = createSignal<string | null>(null);
   const [showIssues, setShowIssues] = createSignal(false);
   const [addingPhoto, setAddingPhoto] = createSignal(false);
   const [device, setDevice] = createSignal<"idle" | "saved" | "failed">("idle");
 
+  // Entries reach the server through the sync queue (also when it flushes in the background after a reconnect).
+  const stop = onFlushed((items) => {
+    for (const it of items) {
+      if (it.farmId !== props.farmId) continue;
+      void syncQueue.acknowledge(it.clientEntryId);
+      setQueued(null);
+      props.onSaved(it.serverEntry as JournalEntry);
+    }
+  });
+  onCleanup(stop);
+
   onMount(async () => {
+    void flushJournalQueue();
     try {
       const d = await loadCurrentDraft(props.store, props.farmId);
       if (d) {
@@ -67,20 +85,18 @@ export function JournalForm(props: { farmId: string; stages: { stageId: string; 
     setError(null);
     const sent = draft();
     try {
-      const entry = await submitDraft(sent);
+      // Write to the durable queue first; the queue owns the entry from here (the same clientEntryId and
+      // Idempotency-Key are used on every retry, so the server never creates a duplicate).
+      await syncQueue.enqueue({ clientEntryId: sent.clientEntryId, farmId: sent.farmId, body: draftToBody(sent), idempotencyKey: idempotencyKeyFor(sent) });
       await clearDraft(props.store, sent).catch(() => undefined);
       setDraft(newDraft(props.farmId, newEntryId("entry")));
       setRestored(false);
       setShowIssues(false);
-      props.onSaved(entry);
+      const online = typeof navigator === "undefined" || navigator.onLine !== false;
+      setQueued(online ? null : "Saved on this device. It will be sent when you are back online.");
+      if (online) await flushJournalQueue({ force: true });
     } catch (e) {
-      setError(
-        e instanceof ApiError && e.code === "network_error"
-          ? "Could not reach the server. Your entry is kept on this device. Try again when you are connected."
-          : e instanceof ApiError
-            ? e.message
-            : "Could not save the entry. Your draft is kept on this device.",
-      );
+      setError({ message: "Could not save the entry on this device. Your draft is still in the form.", ...(e instanceof ApiError ? { code: e.code } : {}) });
     } finally {
       setSaving(false);
     }
@@ -93,6 +109,8 @@ export function JournalForm(props: { farmId: string; stages: { stageId: string; 
   const removePhoto = (id: string) => update({ mediaIds: draft().mediaIds.filter((x) => x !== id) });
 
   return (
+    <>
+    <SyncPanel />
     <form class="card jr-form" onSubmit={submit} aria-labelledby="jr-form-title" noValidate>
       <h2 id="jr-form-title">New journal entry</h2>
       <Show when={restored()}>
@@ -172,12 +190,16 @@ export function JournalForm(props: { farmId: string; stages: { stageId: string; 
         </ul>
       </Show>
       <Show when={error()}>
-        <p role="alert" class="jr-error">{error()}</p>
+        {(e) => <ErrorState code={e().code} message={e().message} onRetry={() => void submit(new Event("submit"))} busy={saving()} />}
+      </Show>
+      <Show when={queued()}>
+        <p class="jr-note" role="status" data-testid="journal-queued">{queued()}</p>
       </Show>
       <button class="btn" type="submit" disabled={saving()}>{saving() ? "Saving…" : "Save entry"}</button>
       <p class="jr-small" role="status">
         {device() === "saved" ? "Draft saved on this device." : device() === "failed" ? "Could not save a draft on this device." : props.store.persistent === false ? "Drafts are not kept after a reload in this browser." : "Your draft is kept on this device until you save."}
       </p>
     </form>
+    </>
   );
 }

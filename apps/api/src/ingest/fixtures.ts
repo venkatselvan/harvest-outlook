@@ -50,6 +50,55 @@ const weatherFixture = z.object({
   records: z.array(weatherRecord).min(1),
 });
 
+function mulberry32(a: number) {
+  return () => {
+    a |= 0;
+    a = (a + 0x6d2b79f5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+const addDays = (iso: string, n: number) => new Date(Date.parse(`${iso}T00:00:00Z`) + n * 86_400_000).toISOString().slice(0, 10);
+
+export const SYNTHETIC_WEATHER_UNITS = { precipitation_sum: "mm", temperature_2m_max: "°C", temperature_2m_min: "°C", et0_fao_evapotranspiration: "mm", shortwave_radiation_sum: "MJ/m²" } as const;
+/** Current calendar date in India (the app's day boundary). */
+export const istDate = (d: Date = new Date()) => new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Kolkata" }).format(d);
+/** Observation window relative to the seed date: today-120 .. today-1 with a labelled gap, plus 3 forecast days from today. */
+export const SYNTHETIC_WEATHER_WINDOW = { observedDaysBack: 120, gapFromDaysBack: 60, gapToDaysBack: 51, forecastDays: 3 } as const;
+
+/**
+ * Deterministic synthetic weather relative to `today` (IST date, YYYY-MM-DD): same seed gives the same weather *shape* on any day,
+ * with dates shifted so the season explorer always shows observed, gap, forecast and scenario bands. Every number is invented.
+ * The gap (no stored observation for those dates) is intentional: the UI must show "No record", not fill it.
+ */
+export function generateSyntheticWeather(today: string, seed: number): z.infer<typeof weatherRecord>[] {
+  const rnd = mulberry32(seed);
+  const w = SYNTHETIC_WEATHER_WINDOW;
+  const day = (i: number) => {
+    const wet = rnd() < 0.3 + 0.2 * Math.sin((i / 60) * Math.PI);
+    const rain = wet ? Math.round(rnd() * 180) / 10 : 0;
+    const tmax = Math.round((27 + 3 * Math.sin(i / 9) - (rain > 5 ? 2 : 0) + (rnd() - 0.5) * 2) * 10) / 10;
+    return {
+      precipitation_sum: rain,
+      temperature_2m_max: tmax,
+      temperature_2m_min: Math.round((tmax - 8 + (rnd() - 0.5)) * 10) / 10,
+      et0_fao_evapotranspiration: Math.round((4.2 - (rain > 5 ? 1.2 : 0) + (rnd() - 0.5)) * 100) / 100,
+      shortwave_radiation_sum: Math.round((19 - (rain > 5 ? 5 : 0) + (rnd() - 0.5) * 3) * 100) / 100,
+    };
+  };
+  const units: Record<string, string> = { ...SYNTHETIC_WEATHER_UNITS };
+  const out: z.infer<typeof weatherRecord>[] = [];
+  for (let back = w.observedDaysBack; back >= 1; back--) {
+    const values = day(w.observedDaysBack - back); // always advance the PRNG so the gap does not shift later days
+    if (back <= w.gapFromDaysBack && back >= w.gapToDaysBack) continue;
+    out.push({ synthetic: true, sourceId: SYNTHETIC_SOURCE_ID, kind: "observation", date: addDays(today, -back), values, units });
+  }
+  const issuedAt = `${today}T00:00:00+05:30`; // start of the IST day, never in the future
+  for (let i = 0; i < w.forecastDays; i++) out.push({ synthetic: true, sourceId: SYNTHETIC_SOURCE_ID, kind: "forecast", issuedAt, date: addDays(today, i), values: day(w.observedDaysBack + i), units });
+  return out;
+}
+
 /** Fixtures are loadable only in synthetic runtime mode; any other mode throws before touching the database. */
 export function assertSyntheticMode(runtimeMode: string): void {
   if (runtimeMode !== "synthetic") {
@@ -63,7 +112,7 @@ export interface FixtureCounts {
   weatherForecasts: number;
 }
 
-export async function loadSyntheticFixtures(pool: Pool, runtimeMode: string, dir = FIXTURE_DIR): Promise<FixtureCounts> {
+export async function loadSyntheticFixtures(pool: Pool, runtimeMode: string, dir = FIXTURE_DIR, today: string = istDate()): Promise<FixtureCounts> {
   assertSyntheticMode(runtimeMode);
   const read = async (f: string) => JSON.parse(await readFile(resolve(dir, f), "utf8")) as unknown;
   const market = marketFixture.safeParse(await read("market_synthetic_ginger_like.json"));
@@ -101,7 +150,11 @@ export async function loadSyntheticFixtures(pool: Pool, runtimeMode: string, dir
   let obs = 0;
   let fc = 0;
   const loc = weather.data.location;
-  for (const r of weather.data.records) {
+  // Dates move with the seed date, so earlier synthetic weather rows would linger as stale bands: replace them (synthetic rows only).
+  await pool.query("DELETE FROM weather_observations WHERE is_synthetic AND location_key=$1", [loc.key]);
+  await pool.query("DELETE FROM weather_forecasts WHERE is_synthetic AND location_key=$1", [loc.key]);
+  // The committed weather JSON is a template (label, location, seed); the rows are generated here, relative to the seed date.
+  for (const r of generateSyntheticWeather(today, weather.data.seed)) {
     const meta = { synthetic: true, label: weather.data.label, units: r.units, seed: weather.data.seed, measurementKind: "synthetic" };
     // Same vintage rules as real rows (./vintage.ts): identical values add nothing, changed values add a vintage.
     if (r.kind === "observation") {

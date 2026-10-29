@@ -1,7 +1,57 @@
 import { createHash } from "node:crypto";
 import type { Pool } from "../db/pool";
 import { withTransaction } from "../db/pool";
-import { readCatalogueFiles, type CatalogueFiles } from "./files";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
+import { join } from "node:path";
+import { readCatalogueFiles, REPO_ROOT, type CatalogueFiles } from "./files";
+
+/** Same normalisation as scripts/catalogue/common.ts normaliseForMatch (excerpt-in-source check). */
+export function normaliseForMatch(s: string): string {
+  return s
+    .replace(/[\u00a0\u2007\u202f\u200b]/g, " ")
+    .replace(/[\u2010-\u2015\u2212]/g, "-")
+    .replace(/[\u2018\u2019]/g, "'")
+    .replace(/[\u201c\u201d]/g, '"')
+    .replace(/\s+/g, " ")
+    .trim()
+    .toLowerCase();
+}
+
+type Grounder = (e: { sourceUrl: string; contentHash: string; locator: { page?: number | undefined }; content: { kind: string; text?: string } }) => boolean;
+
+/**
+ * D28: 'grounded' = the excerpt is machine-verified present in the saved source text (catalogue: whole saved page text from data/raw/crops;
+ * ginger: the cited PDF page from data/raw/extract-cache) and <= 60 words. Meaning/scope review is still pending. Never produces 'validated'.
+ */
+export function makeGrounder(root = REPO_ROOT): Grounder {
+  const byUrl = new Map<string, string>();
+  const cropsDir = join(root, "data", "raw", "crops");
+  if (existsSync(cropsDir)) {
+    for (const f of readdirSync(cropsDir).filter((x) => x.endsWith(".meta.json"))) {
+      const meta = JSON.parse(readFileSync(join(cropsDir, f), "utf8")) as { key: string; url: string };
+      const txt = join(cropsDir, `${meta.key}.txt`);
+      if (existsSync(txt)) byUrl.set(meta.url, normaliseForMatch(readFileSync(txt, "utf8")));
+    }
+  }
+  const cacheDir = join(root, "data", "raw", "extract-cache");
+  const pagesByHash = new Map<string, Map<number, string>>();
+  if (existsSync(cacheDir)) {
+    for (const f of readdirSync(cacheDir).filter((x) => x.endsWith(".json"))) {
+      const d = JSON.parse(readFileSync(join(cacheDir, f), "utf8")) as { sha256: string; pages: { page: number; text: string }[] };
+      pagesByHash.set(d.sha256, new Map(d.pages.map((p) => [p.page, normaliseForMatch(p.text)])));
+    }
+  }
+  return (e) => {
+    if (e.content.kind !== "excerpt" || !e.content.text) return false;
+    const words = e.content.text.trim().split(/\s+/).length;
+    if (words > 60) return false;
+    const needle = normaliseForMatch(e.content.text);
+    const pages = pagesByHash.get(e.contentHash);
+    if (pages) return e.locator.page !== undefined && (pages.get(e.locator.page)?.includes(needle) ?? false);
+    const page = byUrl.get(e.sourceUrl);
+    return page !== undefined && page.includes(needle);
+  };
+}
 
 /** Deterministic UUID (v5-style, fixed namespace) so evidence ids are stable across reloads and databases. */
 const NS = Buffer.from("6ba7b8109dad11d180b400c04fd430c8", "hex");
@@ -41,6 +91,7 @@ export interface LoadCounts {
   sourceDocuments: number;
   evidence: number;
   evidenceValidated: number;
+  evidenceGrounded: number;
   evidencePending: number;
   droppedProductRefs: number;
   stages: number;
@@ -101,6 +152,8 @@ export async function loadCatalogueIntoDb(pool: Pool, files: CatalogueFiles = re
     const docs = new Set<string>();
     let dropped = 0;
     let validated = 0;
+    let grounded = 0;
+    const grounder = makeGrounder();
     for (const { record: e, sourceId } of files.evidence) {
       const doc = await db.query<{ id: string }>(
         `INSERT INTO source_documents (content_hash, title, publisher, url, licence, access_class, retrieved_at, metadata)
@@ -112,7 +165,10 @@ export async function loadCatalogueIntoDb(pool: Pool, files: CatalogueFiles = re
       docs.add(doc.rows[0]!.id);
       const prod = normaliseProductIds(e.productIds, knownProducts);
       dropped += prod.dropped.length;
-      if (e.validationStatus === "validated") validated++;
+      // Human-validated stays validated; a pending record whose excerpt passes the machine check becomes grounded.
+      const status = e.validationStatus === "pending" && grounder(e) ? "grounded" : e.validationStatus;
+      if (status === "validated") validated++;
+      if (status === "grounded") grounded++;
       await db.query(
         `INSERT INTO evidence_records (id, evidence_key, source_id, locator, excerpt, claim, mode, geography_level, geography_ids, crop_ids, product_ids, topics,
            effective_available_at, availability_basis, validation_status, record, catalogue_source_id)
@@ -126,7 +182,7 @@ export async function loadCatalogueIntoDb(pool: Pool, files: CatalogueFiles = re
           uuidFromKey(e.id), e.id, doc.rows[0]!.id, locatorText(e.locator), e.content.kind === "excerpt" ? e.content.text : null,
           JSON.stringify({ units: e.units, sourceUnits: e.sourceUnits, droppedProductIds: prod.dropped }),
           e.mode, e.geography.level, e.geography.ids, e.cropIds, prod.kept, topicOf(e.locator.section),
-          e.availability.effectiveAvailableAt, e.availability.basis, e.validationStatus, JSON.stringify(e), sourceId,
+          e.availability.effectiveAvailableAt, e.availability.basis, status, JSON.stringify(e), sourceId,
         ],
       );
     }
@@ -190,7 +246,8 @@ export async function loadCatalogueIntoDb(pool: Pool, files: CatalogueFiles = re
       sourceDocuments: docs.size,
       evidence: files.evidence.length,
       evidenceValidated: validated,
-      evidencePending: files.evidence.length - validated,
+      evidenceGrounded: grounded,
+      evidencePending: files.evidence.length - validated - grounded,
       droppedProductRefs: dropped,
       stages: files.stages.length,
       rules: ruleCount,

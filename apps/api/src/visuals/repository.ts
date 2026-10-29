@@ -187,13 +187,30 @@ export class PgVisualAssetSource implements VisualAssetSource {
     return (await listLatestPerStage(this.pool, ownerId, planId)).filter((r) => r.status === "ready");
   }
 
+  /** Journal photos of the plan's farm as dated observed assets (one per media object, oldest first). Drafts are excluded (only final, non-draft entries). */
+  private async journalPhotos(ownerId: string, planId: string): Promise<{ mediaId: string; date: string }[]> {
+    const r = await this.pool.query<{ media_id: string; entry_date: string }>(
+      `SELECT m.media_id::text AS media_id, to_char(e.entry_date,'YYYY-MM-DD') AS entry_date
+         FROM plans p
+         JOIN journal_entries e ON e.owner_id = p.owner_id AND e.farm_id = p.farm_id AND e.status = 'final' AND e.processing_status <> 'draft'
+         CROSS JOIN LATERAL unnest(e.media_ids) AS m(media_id)
+        WHERE p.id = $1 AND p.owner_id = $2
+        ORDER BY e.entry_date, m.media_id`,
+      [planId, ownerId],
+    );
+    return r.rows.map((x) => ({ mediaId: x.media_id, date: x.entry_date }));
+  }
+
   async getAssets(ownerId: string, planId: string): Promise<VisualAssetRef[]> {
-    return (await this.ready(ownerId, planId)).map((r) => ({ assetId: r.id, kind: "illustrative" as const, date: null, stageId: r.stage_key }));
+    const generated = (await this.ready(ownerId, planId)).map((r) => ({ assetId: r.id, kind: "illustrative" as const, date: null, stageId: r.stage_key }));
+    const photos = (await this.journalPhotos(ownerId, planId)).map((p) => ({ assetId: p.mediaId, kind: "observed_photo" as const, date: p.date, stageId: null }));
+    return [...generated, ...photos];
   }
 
   async version(ownerId: string, planId: string): Promise<string> {
     const rows = await this.ready(ownerId, planId);
-    if (rows.length === 0) return "none";
-    return payloadHash(rows.map((r) => [r.id, r.updated_at.toISOString(), r.qa?.passed ?? null]).sort()).slice(0, 32);
+    const photos = await this.journalPhotos(ownerId, planId);
+    if (rows.length === 0 && photos.length === 0) return "none";
+    return payloadHash([...rows.map((r) => [r.id, r.updated_at.toISOString(), r.qa?.passed ?? null]), ...photos.map((p) => ["photo", p.mediaId, p.date])].sort()).slice(0, 32);
   }
 }

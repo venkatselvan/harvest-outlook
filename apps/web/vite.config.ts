@@ -20,11 +20,28 @@ export default defineConfig({
         icons: [{ src: "/icon.svg", sizes: "any", type: "image/svg+xml", purpose: "any" }],
       },
       workbox: {
-        // App shell only. API responses and private media are never cached by the service worker.
+        // App shell plus two public, non-personal read endpoints (crop catalogue, capabilities) so Explore opens offline.
+        // Everything else under /api (plans, journal, farms, media, assistant, speech, session, jobs) is private and
+        // is NEVER cached by the service worker; private snapshots live in IndexedDB under an owner scope instead
+        // (src/features/plan-cache). The fixed `private` rule below is an allow-list, not a deny-list.
         globPatterns: ["**/*.{js,css,html,svg,webmanifest}"],
         navigateFallback: "/index.html",
         navigateFallbackDenylist: [/^\/api\//],
-        runtimeCaching: [],
+        runtimeCaching: [
+          {
+            // GET /api/v1/crops* and /api/v1/capabilities only. NetworkFirst with a short maxAge: fresh data when
+            // online, last good copy (at most one hour old) when not. Cleared on logout (features/offline/purge.ts).
+            urlPattern: ({ url, request }: { url: URL; request: Request }) =>
+              request.method === "GET" && (url.pathname === "/api/v1/capabilities" || url.pathname === "/api/v1/crops" || url.pathname.startsWith("/api/v1/crops/")),
+            handler: "NetworkFirst",
+            options: {
+              cacheName: "ho-api-public",
+              networkTimeoutSeconds: 4,
+              expiration: { maxEntries: 60, maxAgeSeconds: 60 * 60 },
+              cacheableResponse: { statuses: [200] },
+            },
+          },
+        ],
         cleanupOutdatedCaches: true,
       },
     }),

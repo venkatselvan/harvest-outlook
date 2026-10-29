@@ -5,10 +5,10 @@ import { expect, test, type Page } from "@playwright/test";
 /*
  * Journal journey at 360 px against the real API in SYNTHETIC mode (support/start-journal-api.ts).
  * The "AI" answer is the journal_waterlogging fixture, so nothing here shows a real model reading a real photo.
- * JOURNAL_PATH defaults to the e2e harness page; set it to /journal once routes/pages.tsx mounts JournalPage.
+ * JOURNAL_PATH defaults to the real /journal route; set it to /e2e/support/journal.html to use the harness page.
  */
 test.use({ viewport: { width: 360, height: 740 }, hasTouch: false });
-const JOURNAL_PATH = process.env.JOURNAL_PATH ?? "/e2e/support/journal.html";
+const JOURNAL_PATH = process.env.JOURNAL_PATH ?? "/journal";
 const ginger = JSON.parse(readFileSync(resolve(process.cwd(), "../../data/fixtures/synthetic/plan-ginger-basic.json"), "utf8"));
 
 async function makeJpeg(page: Page, w: number, h: number): Promise<Buffer> {

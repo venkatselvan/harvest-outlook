@@ -20,7 +20,8 @@ async function seed(page: Page) {
           headers: { ...h, "content-type": "application/json", "idempotency-key": "e2e-farm-" + Math.random().toString(36).slice(2) },
           body: JSON.stringify({
             name: "Hassan farm",
-            location: { districtId: "typed:KA:hassan", districtName: "Hassan", stateCode: "KA", precision: "district" },
+            // Approximate coordinates inside the synthetic Hassan-like weather grid cell, so the plan finds the seeded synthetic weather.
+            location: { districtId: "typed:KA:hassan", districtName: "Hassan", stateCode: "KA", lat: 13.0033, lon: 76.1004, precision: "approximate" },
             areaHectares: 1.2,
             facts: { irrigation_category: { value: "supplemental", basis: "farmer_reported", confirmed: true, source: "e2e" } },
           }),
@@ -50,7 +51,7 @@ test("create a ginger plan, slide through past/forecast/scenario dates without n
   const today = istToday();
   await page.goto("/farm?cropId=ginger&productId=ginger-fresh");
   await expect(page.getByTestId("create-plan")).toBeVisible();
-  await page.getByLabel("Planting date").fill(addDays(today, -30));
+  await page.getByLabel("Planting date").fill(addDays(today, -70)) // plan range must include the weather gap at today-60..today-51;
   await page.getByTestId("create-plan-submit").click();
   await page.waitForURL(/\/farm\/plan\//);
   await expect(page.getByTestId("plan-summary")).toBeVisible();
@@ -62,17 +63,16 @@ test("create a ginger plan, slide through past/forecast/scenario dates without n
   page.on("request", (r) => r.url().includes("/api/") && api.push(`${r.method()} ${r.url()}`));
   const date = page.locator("#se-date");
 
-  await date.fill(addDays(today, -25)); // before the observation window: a gap
+  await date.fill(addDays(today, -55)); // inside the labelled gap of the synthetic weather seed (today-60 .. today-51)
   await expect(page.getByTestId("weather-title")).toHaveText("No record");
   await date.fill(addDays(today, -3));
   await expect(page.getByTestId("weather-title")).toHaveText("Observed");
-  await date.fill(addDays(today, 3));
+  await date.fill(addDays(today, 1));
   await expect(page.getByTestId("weather-title")).toHaveText("Forecast");
   await expect(page.getByTestId("weather-lines")).toContainText("Issued");
-  await expect(page.getByTestId("weather-lines")).toContainText("Horizon: 3 days");
-  await date.fill(addDays(today, 120));
-  await expect(page.getByTestId("weather-title")).toHaveText("Seasonal scenario");
-  await expect(page.getByTestId("weather-lines")).toContainText("no daily rain prediction", { ignoreCase: true });
+  await expect(page.getByTestId("weather-lines")).toContainText(/Horizon: [1-3] days from issue/);
+  await date.fill(addDays(today, 60));
+  await expect(page.getByTestId("weather-title")).toHaveText("Unavailable"); // honest: the synthetic seed has no multi-year climatology, so no scenario is invented (D31/never substituted)
   await expect(page.getByTestId("weather-lines")).not.toContainText("Rain ");
 
   // Keyboard on the slider and a burst of input events.

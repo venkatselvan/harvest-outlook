@@ -50,7 +50,10 @@ describe("catalogue loader", () => {
 
   it("populates the agent-facing evidence columns, keeps validation_status as in the file, and tracks sources", async () => {
     expect(await n("SELECT count(*) c FROM evidence_records WHERE cardinality(geography_ids)=0 OR geography_level IS NULL OR excerpt IS NULL")).toBe(0);
-    expect(await n("SELECT count(*) c FROM evidence_records WHERE validation_status='validated'")).toBe(0); // files say pending
+    expect(await n("SELECT count(*) c FROM evidence_records WHERE validation_status='validated'")).toBe(0); // no human validation recorded
+    // D28: every curated excerpt passes the machine check against the saved source text -> grounded, never validated
+    expect(await n("SELECT count(*) c FROM evidence_records WHERE validation_status='grounded'")).toBe(185);
+    expect(await n("SELECT count(*) c FROM evidence_records WHERE validation_status='pending'")).toBe(0);
     expect(await n("SELECT count(*) c FROM evidence_records WHERE 'IN-TN'=ANY(geography_ids) AND 'okra'=ANY(crop_ids)")).toBeGreaterThan(0);
     expect(await n("SELECT count(*) c FROM evidence_records WHERE 'IN-KA-hassan'=ANY(geography_ids) OR 'IN-KA'=ANY(geography_ids)")).toBeGreaterThan(0);
     expect(await n("SELECT count(*) c FROM evidence_records WHERE array_length(topics,1) IS NOT NULL")).toBeGreaterThan(150); // records without a sluggable section keep empty topics
@@ -93,5 +96,17 @@ describe("loader helpers", () => {
     const f = readCatalogueFiles();
     const ev = new Set(f.evidence.map((e) => e.record.id));
     for (const s of f.ruleSets) for (const r of s.rules) for (const e of r.evidenceIds) expect(ev.has(e), `${r.id} -> ${e}`).toBe(true);
+  });
+});
+
+import { makeGrounder } from "../src/catalogue/load";
+describe("grounding check (D28)", () => {
+  const g = makeGrounder();
+  const base = { sourceUrl: "https://spices.res.in/storage/app/public/pdfs/GINGER/3ENG.pdf", contentHash: "8dde754dc3defc1c116fd11e963b091870e463b99f7c601a040f1aae0f1fe65e", locator: { page: 3 } };
+  const text = "states namely Madhya Pradesh, Karnataka, Orissa, Assam, Meghalaya, Arunachal Pradesh and Gujarat together contribute 65 percent to the country's total production.";
+  it("accepts an excerpt on its cited page and rejects it on another page or when altered", () => {
+    expect(g({ ...base, content: { kind: "excerpt", text } })).toBe(true);
+    expect(g({ ...base, locator: { page: 4 }, content: { kind: "excerpt", text } })).toBe(false);
+    expect(g({ ...base, content: { kind: "excerpt", text: text.replace("65 percent", "75 percent") } })).toBe(false);
   });
 });

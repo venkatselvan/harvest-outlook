@@ -1,0 +1,18 @@
+/* Functional styling only; visual polish is reserved for Astra (docs/UI_ISSUES.md). */
+.offline-banner-wrap:empty { display: none; }
+.offline-banner { margin: 0; padding: 8px 16px; font-size: 0.9rem; font-weight: 600; background: #eef0f2; color: #1f2933; border-bottom: 2px solid #52606d; overflow-wrap: anywhere; }
+.offline-banner.sync { background: #dbe8ff; color: #0b2a66; border-color: #2f5fb5; }
+.offline-banner.conflict { background: #fde0e0; color: #6b1010; border-color: #b53030; }
+.stale-label { margin: 0 0 8px; padding: 4px 8px; font-size: 0.85rem; font-weight: 600; background: #eef0f2; color: #1f2933; border-left: 4px solid #52606d; border-radius: 4px; }
+.offline-note { margin: 4px 0; font-size: 0.9rem; color: var(--muted); }
+.error-state { border: 2px solid #b53030; border-radius: 8px; padding: 8px 12px; margin: 8px 0; background: #fff5f5; color: #6b1010; }
+.error-state p { margin: 4px 0; overflow-wrap: anywhere; }
+.error-state-code { font-size: 0.85rem; }
+.sync-panel { margin: 0 0 12px; display: grid; gap: 8px; }
+.sync-item { border: 1px solid var(--border); border-radius: 8px; padding: 8px 12px; background: #fff; }
+.sync-item h3 { margin: 0 0 4px; font-size: 1rem; }
+.sync-item dl { display: grid; grid-template-columns: max-content 1fr; gap: 2px 12px; margin: 4px 0; }
+.sync-item dt { color: var(--muted); }
+.sync-item dd { margin: 0; overflow-wrap: anywhere; }
+.sync-compare { display: grid; grid-template-columns: 1fr; gap: 8px; }
+.sync-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }

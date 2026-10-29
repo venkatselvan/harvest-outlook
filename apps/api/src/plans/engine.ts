@@ -455,7 +455,8 @@ export class PlanService {
     const [observations, forecast, climatology] = await Promise.all([
       this.sources.weather.getDailyObservations(scope, range, { availableBy: asOfInstant }),
       this.sources.weather.getForecast(scope, { issuedAtOrBefore: asOfInstant }),
-      this.sources.weather.getClimatology(scope, range),
+      // D31: replay climatology may only use data available by the decision cutoff.
+      this.sources.weather.getClimatology(scope, range, mode === "replay" ? { availableBy: cutoff ?? asOfInstant } : undefined),
     ]);
     return composeWeather({ from, to, asOfDate: regionDate(asOfInstant), mode, cutoff, observations, forecast, climatology });
   }

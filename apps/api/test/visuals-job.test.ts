@@ -5,7 +5,6 @@ import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import sharp from "sharp";
 import type { Pool } from "../src/db/pool";
 import { Budget } from "../src/services/budget";
-import { registerVisualRoutes } from "../src/routes/visuals";
 import { runVisualKeyframes, registerVisualHandlers, type VisualJobDeps } from "../src/visuals/job";
 import { PgVisualAssetSource } from "../src/visuals/repository";
 import { VISUAL_JOB_TYPE } from "../src/visuals/labels";
@@ -93,7 +92,6 @@ const count = async (sql: string, args: unknown[] = []) => (await h.pool.query<{
 
 beforeAll(async () => {
   h = await setupHarness(live);
-  await h.app.register(registerVisualRoutes, { config: h.config, pool: h.pool, storage: h.storage });
   a = await login(h.app);
   b = await login(h.app);
   base = await sceneJpeg();
@@ -405,5 +403,30 @@ describe("VisualAssetSource for the plan timeline", () => {
     const res3 = await startJob(a, planW, { stageIds: ["maturation"] });
     await runVisualKeyframes(deps(live, vi.fn() as never), await jobRow(res3.json().data.jobId), hb);
     expect(await src.getAssets(ownerA, planW)).toEqual([]);
+  });
+});
+
+describe("VisualAssetSource journal photos", () => {
+  it("returns final journal photos as dated observed_photo refs, skips drafts, and changes version when one is added", async () => {
+    const src = new PgVisualAssetSource(h.pool);
+    const plan = await makePlan(a, ownerA);
+    const farmId = (await h.pool.query<{ farm_id: string }>("SELECT farm_id FROM plans WHERE id=$1", [plan])).rows[0]!.farm_id;
+    const entry = (status: string, date: string, media: string[]) =>
+      h.pool.query("INSERT INTO journal_entries (owner_id, farm_id, plan_id, status, entry_date, media_ids) VALUES ($1,$2,$3,$4,$5,$6::uuid[])", [ownerA, farmId, plan, status, date, media]);
+    const m1 = (await upload(a, await sceneJpeg(64, 48))).json().data.id as string;
+    expect(await src.getAssets(ownerA, plan)).toEqual([]);
+    expect(await src.version(ownerA, plan)).toBe("none");
+    await entry("draft", "2026-07-01", [m1]);
+    expect(await src.getAssets(ownerA, plan)).toEqual([]); // a draft entry's photo is not shown
+    await entry("final", "2026-07-02", [m1]);
+    expect(await src.getAssets(ownerA, plan)).toEqual([{ assetId: m1, kind: "observed_photo", date: "2026-07-02", stageId: null }]);
+    const v1 = await src.version(ownerA, plan);
+    expect(v1).not.toBe("none");
+    const m2 = (await upload(a, await sceneJpeg(64, 48))).json().data.id as string;
+    await entry("final", "2026-07-09", [m2]);
+    expect(await src.version(ownerA, plan)).not.toBe(v1);
+    expect((await src.getAssets(ownerA, plan)).map((r) => r.date)).toEqual(["2026-07-02", "2026-07-09"]);
+    // another owner never sees these photos through this plan
+    expect(await src.getAssets(randomUUID(), plan)).toEqual([]);
   });
 });
