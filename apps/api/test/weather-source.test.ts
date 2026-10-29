@@ -3,6 +3,7 @@ import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { createWeatherSource } from "../src/plans/adapters/weather-source";
+import { climatologyAssumptionId } from "../src/plans/weather";
 import { loadProviderConfig } from "../src/providers/config";
 import { SYNTHETIC_SOURCE_ID, ensureSource } from "../src/ingest/sources";
 import { setupHarness, type Harness } from "./helpers";
@@ -84,8 +85,29 @@ describe("weather source adapter", () => {
     const v2 = await src.dataVersion(scope, range, NOW.toISOString());
     expect(v2).not.toBe(v1);
     const c = await src.getClimatology(scope, range);
-    expect(c?.years).toEqual({ from: 2016, to: 2025 });
+    expect(c?.years).toEqual({ from: 2021, to: 2025 }); // only the five qualifying years inside the 10-year window are named
+    expect(c?.qualifyingYears).toEqual([2021, 2022, 2023, 2024, 2025]);
+    expect(climatologyAssumptionId(c!.years, c!.qualifyingYears)).toBe("climatology_2021-2025");
     expect(c?.days).toHaveLength(7);
     expect(c?.days[0]).toMatchObject({ rainMm: 2, et0Mm: 3, tMaxC: null });
+  });
+
+  it("non-contiguous qualifying years and partial years: label names only the years used", async () => {
+    const sid = await ensureSource(h.pool, SYNTHETIC_SOURCE_ID, { title: "s", publisher: "s", url: "local:x", licence: "synthetic" });
+    const src = createWeatherSource({ pool: h.pool, mode: "synthetic", now: () => NOW, climatologyYears: 10, climatologyEndYear: 2025 });
+    const seed = (from: string, to: string, rain: number) =>
+      h.pool.query(
+        `INSERT INTO weather_observations (location_key, lon, lat, observed_on, variables, source_id, is_synthetic, mode, available_at)
+         SELECT 'synthetic:c', 76.1, 13.0, d::date, jsonb_build_object('precipitation_sum', $4::numeric), $1, true, 'synthetic', now() - interval '1 day'
+           FROM generate_series($2::date, $3::date, interval '1 day') d ON CONFLICT DO NOTHING`,
+        [sid, from, to, rain],
+      );
+    for (const y of [2017, 2018, 2021, 2022, 2025]) await seed(`${y}-01-01`, `${y}-12-31`, 2);
+    await seed("2023-01-01", "2023-03-01", 900); // partial year (60 rows): excluded, must not skew normals
+    const c = await src.getClimatology(scope, range);
+    expect(c?.qualifyingYears).toEqual([2017, 2018, 2021, 2022, 2025]);
+    expect(c?.years).toEqual({ from: 2017, to: 2025 });
+    expect(climatologyAssumptionId(c!.years, c!.qualifyingYears)).toBe("climatology_5y_2017-2025");
+    expect(c?.days[0]?.rainMm).toBe(2);
   });
 });

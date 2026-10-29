@@ -214,20 +214,22 @@ export function createWeatherSource(o: WeatherSourceAdapterOptions): AttributedW
       return { issuedAt: (rows[0]!.issued_at as Date).toISOString(), sourceId, days };
     },
 
-    /** `opts.availableBy` (replay decision cutoff) overrides the default of the range start; the engine does not pass it yet (INT2 report). */
+    /** `opts.availableBy` is the replay decision cutoff; the plan engine passes it in replay mode (the default is the range start). Reference years named in the result are only those with >= 300 rows. */
     async getClimatology(scope, range, opts?: { availableBy?: string }): Promise<ClimatologyBundle | null> {
       const years = climatologyYears(range);
       const rows = await climatologyRows(scope, years, range, opts?.availableBy);
       const perYear = new Map<number, number>();
       for (const r of rows) perYear.set(Number(dateStr(r.observed_on).slice(0, 4)), (perYear.get(Number(dateStr(r.observed_on).slice(0, 4))) ?? 0) + 1);
-      const fullYears = [...perYear.values()].filter((n) => n >= MIN_ROWS_PER_CLIMATOLOGY_YEAR).length;
-      if (fullYears < MIN_CLIMATOLOGY_YEARS) {
+      const qualifying = [...perYear.entries()].filter(([, n]) => n >= MIN_ROWS_PER_CLIMATOLOGY_YEAR).map(([y]) => y).sort((a, b) => a - b);
+      if (qualifying.length < MIN_CLIMATOLOGY_YEARS) {
         if (rows.length === 0) await queueClimatologyBackfill(scope, years);
         return null; // scenario unavailable; never substituted
       }
       const byOrdinal = new Map<number, { rain: number[]; et0: number[]; tmax: number[]; tmin: number[] }>();
       let sourceId = "";
+      const qset = new Set(qualifying);
       for (const r of rows) {
+        if (!qset.has(Number(dateStr(r.observed_on).slice(0, 4)))) continue; // partial years are neither used nor named
         const v = (r.variables ?? {}) as Record<string, unknown>;
         const o2 = ordinal(dateStr(r.observed_on));
         const slot = byOrdinal.get(o2) ?? { rain: [], et0: [], tmax: [], tmin: [] };
@@ -251,7 +253,7 @@ export function createWeatherSource(o: WeatherSourceAdapterOptions): AttributedW
         const d: DailyWeather = { date, rainMm: window(ord, "rain"), et0Mm: window(ord, "et0"), tMaxC: window(ord, "tmax"), tMinC: window(ord, "tmin"), sourceId: src };
         if (d.rainMm !== null || d.et0Mm !== null || d.tMaxC !== null || d.tMinC !== null) days.push(d);
       }
-      return { years, sourceId: src, days };
+      return { years: { from: qualifying[0]!, to: qualifying[qualifying.length - 1]! }, qualifyingYears: qualifying, sourceId: src, days };
     },
 
     /** Cheap token: counts and newest availability of what the reads above would see. No network, no ingest. */

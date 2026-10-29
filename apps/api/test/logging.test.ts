@@ -1,17 +1,19 @@
 import { Writable } from "node:stream";
 import Fastify from "fastify";
 import { describe, expect, it } from "vitest";
-import { clientFingerprint, REDACT_PATHS, reqSerializer } from "../src/security/logging";
+import { clientFingerprint, makeReqSerializer, REDACT_PATHS } from "../src/security/logging";
 
 const IPV4 = /\b\d{1,3}(?:\.\d{1,3}){3}\b/;
 const IPV6 = /\b(?:[0-9a-f]{1,4}:){2,7}[0-9a-f]{0,4}\b|::1\b/i;
+
+const KEY = "explicit-test-secret-".repeat(2);
 
 describe("F9: request logs never contain a raw client IP", () => {
   it("default request/response log lines carry no IPv4 or IPv6 literal, only a short keyed fingerprint", async () => {
     const lines: string[] = [];
     const stream = new Writable({ write: (chunk, _e, cb) => (lines.push(String(chunk)), cb()) });
     // Same logger options as buildServer in src/server.ts.
-    const app = Fastify({ logger: { level: "info", stream, redact: { paths: REDACT_PATHS, censor: "[redacted]" }, serializers: { req: reqSerializer } }, trustProxy: true });
+    const app = Fastify({ logger: { level: "info", stream, redact: { paths: REDACT_PATHS, censor: "[redacted]" }, serializers: { req: makeReqSerializer(KEY) } }, trustProxy: true });
     app.get("/ping", async () => ({ ok: true }));
     await app.inject({ method: "GET", url: "/ping?lat=12.3&x=1", remoteAddress: "203.0.113.77", headers: { "x-forwarded-for": "198.51.100.9, 203.0.113.77" } });
     await app.inject({ method: "GET", url: "/ping", remoteAddress: "2001:db8::1234" });
@@ -25,6 +27,9 @@ describe("F9: request logs never contain a raw client IP", () => {
     expect(text).toContain("[redacted]"); // location-like query still redacted
     const client = JSON.parse(lines[0]!).req.client as string;
     expect(client).toMatch(/^[0-9a-f]{12}$/);
+    const clients = lines.map((l) => JSON.parse(l).req?.client).filter(Boolean);
+    expect(clients).toContain(clientFingerprint("2001:db8::1234", KEY)); // keyed by the explicit secret, not the environment
+    expect(clients).not.toContain(clientFingerprint("2001:db8::1234", "another-secret-".repeat(3)));
   });
 
   it("the fingerprint is stable per IP and key, differs between IPs and keys", () => {

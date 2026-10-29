@@ -51,11 +51,13 @@ export interface ComposedWeather {
   days: ComposedWeatherDay[];
   forecastIssuedAt: string | null;
   forecastHorizonEnd: string | null;
-  climatology: { assumptionId: string; years: { from: number; to: number }; sourceId: string } | null;
+  climatology: { assumptionId: string; years: { from: number; to: number }; qualifyingYears?: number[]; sourceId: string } | null;
   counts: Record<WeatherDayState, number>;
 }
 
-export function climatologyAssumptionId(years: { from: number; to: number }): string {
+/** `climatology_<from>-<to>` when the qualifying years are contiguous; else `climatology_<n>y_<first>-<last>`. */
+export function climatologyAssumptionId(years: { from: number; to: number }, qualifyingYears?: number[]): string {
+  if (qualifyingYears && qualifyingYears.length !== years.to - years.from + 1) return `climatology_${qualifyingYears.length}y_${years.from}-${years.to}`;
   return `climatology_${years.from}-${years.to}`;
 }
 
@@ -91,7 +93,7 @@ export function composeWeather(args: {
   const fc = new Map((forecast?.days ?? []).filter((d) => d.date >= asOfDate).map((d) => [d.date, d]));
   const fcEnd = forecast && forecast.days.length ? forecast.days.map((d) => d.date).sort().at(-1)! : null;
   const clim = new Map((climatology?.days ?? []).map((d) => [d.date, d]));
-  const climAssumption = climatology ? climatologyAssumptionId(climatology.years) : null;
+  const climAssumption = climatology ? climatologyAssumptionId(climatology.years, climatology.qualifyingYears) : null;
   const issueDate = forecast ? regionDate(forecast.issuedAt) : null;
   const counts: Record<WeatherDayState, number> = { observed: 0, forecast: 0, scenario: 0, unavailable: 0 };
   const blank = { rainMm: null, et0Mm: null, tMaxC: null, tMinC: null, sourceId: null, issuedAt: null, horizonDays: null, assumptionId: null };
@@ -121,7 +123,7 @@ export function composeWeather(args: {
     days,
     forecastIssuedAt: forecast?.issuedAt ?? null,
     forecastHorizonEnd: fcEnd,
-    climatology: climatology && climAssumption ? { assumptionId: climAssumption, years: climatology.years, sourceId: climatology.sourceId } : null,
+    climatology: climatology && climAssumption ? { assumptionId: climAssumption, years: climatology.years, ...(climatology.qualifyingYears ? { qualifyingYears: climatology.qualifyingYears } : {}), sourceId: climatology.sourceId } : null,
     counts,
   };
 }

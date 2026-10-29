@@ -36,6 +36,8 @@ export interface ForecastBundle {
 export interface ClimatologyBundle {
   /** Inclusive reference years used to compute the daily normals. */
   years: { from: number; to: number };
+  /** Calendar years that actually met the row threshold, ascending; `years` spans only these (first..last). */
+  qualifyingYears?: number[];
   sourceId: string;
   /** Normals mapped onto the requested calendar dates. */
   days: DailyWeather[];

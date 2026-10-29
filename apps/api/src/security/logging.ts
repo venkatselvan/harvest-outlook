@@ -13,16 +13,20 @@ export function clientFingerprint(ip: string | undefined, key: string | Buffer =
 }
 
 /**
- * Request serializer: method, path and a keyed client fingerprint only, with location-like query values redacted.
+ * Request serializer factory: method, path and a keyed client fingerprint only, with location-like query values redacted.
  * Replacing the serializer also removes Fastify's default `hostname` and `remoteAddress`; raw IPs are never logged.
+ * `secret` is the validated config SESSION_SECRET; without one the per-process random key is used.
  */
-export function reqSerializer(req: FastifyRequest) {
-  return {
+export function makeReqSerializer(secret?: string | Buffer) {
+  return (req: FastifyRequest) => ({
     method: req.method,
     url: req.url.replace(SENSITIVE_QUERY, "$1[redacted]"),
-    client: clientFingerprint(req.ip),
-  };
+    client: clientFingerprint(req.ip, secret || logKey()),
+  });
 }
+
+/** Serializer keyed from the environment (fallback only; the server passes its validated config secret). */
+export const reqSerializer = makeReqSerializer();
 
 /** Defence in depth for any object accidentally logged with coordinates, cookies or file bytes. */
 export const REDACT_PATHS = [

@@ -22,7 +22,7 @@ import { FsStorage } from "./storage/fs";
 import type { StorageAdapter } from "./storage/types";
 import { Budget } from "./services/budget";
 import { ApiError } from "./services/errors";
-import { REDACT_PATHS, reqSerializer } from "./security/logging";
+import { REDACT_PATHS, makeReqSerializer } from "./security/logging";
 import { ToolSchemas } from "@harvest/contracts";
 import { allBindings } from "./agent/bindings";
 import { createWeatherSource } from "./plans/adapters/weather-source";
@@ -116,7 +116,7 @@ export async function buildServer(config: Config, pool: Pool, deps: ServerDeps =
     logger: {
       level: config.LOG_LEVEL,
       redact: { paths: REDACT_PATHS, censor: "[redacted]" },
-      serializers: { req: reqSerializer },
+      serializers: { req: makeReqSerializer(config.SESSION_SECRET) },
     },
     trustProxy: config.TRUST_PROXY,
     genReqId: (req) => {
