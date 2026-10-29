@@ -465,7 +465,7 @@ describe("implemented tool handlers", () => {
     const ok = await run("get_farm_context", { farmId: farm.id });
     expect(ok.status).toBe("ok");
     const out = (ok as { output: { farm: { location: { value: { districtId: string; point: unknown } }; soil: { ph: { value: number; basis: string; confirmed: boolean } }; water: { category: { value: string } }; area: { value: { amount: number; unit: string } } } } }).output.farm;
-    expect(out.location.value).toMatchObject({ districtId: "IN-KA-HAS", point: null });
+    expect(out.location.value).toMatchObject({ districtId: "IN-KA-hassan", point: null });
     expect(out.soil.ph).toMatchObject({ value: 6.4, basis: "lab_test", confirmed: true });
     expect(out.water.category.value).toBe("rainfed");
     expect(out.area.value).toEqual({ amount: 0.81, unit: "ha" });

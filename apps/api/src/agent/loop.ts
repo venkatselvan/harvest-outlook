@@ -12,7 +12,7 @@ import type { AgentLimits } from "./limits";
 import { INTERPRETATION_INSTRUCTIONS, PROMPT_HASH, PROMPT_LABEL, PROMPT_NAME, PROMPT_VERSION, SYNTHESIS_INSTRUCTIONS, TOOL_INSTRUCTIONS } from "./prompts";
 import type { AgentPass, ProviderFailure, TextModelProvider, TextRequest, TextResult } from "./provider";
 import { AgentClaimEvidenceRef, ProposedProfile, attachClaimExtras, splitClaimExtras } from "./schemas";
-import { TEMPLATE_LIMITATION, templateBlock, templateLanguage } from "./templates";
+import { TEMPLATE_LIMITATION, WITHHELD_LIMITATION, templateBlock, templateLanguage } from "./templates";
 import type { ToolContext, ToolRegistry } from "./tools/registry";
 import { AgentTrace, redactForTrace } from "./trace";
 
@@ -61,6 +61,8 @@ export interface AgentRunResult {
   proposedFacts: StructuredAssistantOutput["proposedFacts"];
   clarifications: StructuredAssistantOutput["clarifications"];
   limitations: string[];
+  /** F13: server-authored withheld/templated notices in the turn language, appended to the spoken text. */
+  spokenNotices: string[];
   incomplete?: { reasons: string[] } | undefined;
   gateStatus: GateResult["status"] | null;
   /** What the gate removed (claims, limitations, clarifications, blocks) and which blocks were templated. */
@@ -533,10 +535,17 @@ export async function runAgentTurn(deps: AgentDeps, input: AgentTurnInput): Prom
   if (provider.provenance === "synthetic_fixture") limitations.push("Synthetic fixture response: not produced by a live model and not based on real data.");
   for (const t of unboundUsed) limitations.push(`The ${t} capability is not available yet, so no result from it is included.`);
   if (final) limitations.push(...final.gate.approvedLimitations);
+  // F13 (review R4 #8): server-authored notices about withheld/templated content, in the turn language; the
+  // route appends them to the spoken (approved) text so audio never omits them.
+  const spokenNotices: string[] = [];
+  if (templateUsed) spokenNotices.push(TEMPLATE_LIMITATION[templateLanguage(input.language)]);
   if (templateUsed) limitations.push(TEMPLATE_LIMITATION[templateLanguage(input.language)]);
   if (final && final.gate.report.groundedEvidenceIds.length > 0) limitations.push("Some cited evidence is a machine-grounded excerpt; human review of its meaning and scope is pending.");
   const incomplete = status === "approved" ? undefined : (final?.gate.incomplete ?? (stop ? { reasons: [stop.code] } : useGate?.incomplete ?? { reasons: ["no_verified_answer"] }));
-  if (incomplete && status !== "approved") limitations.push("Part of the answer was withheld because it could not be verified.");
+  if (incomplete && status !== "approved") {
+    limitations.push(WITHHELD_LIMITATION.en);
+    spokenNotices.push(WITHHELD_LIMITATION[templateLanguage(input.language)]);
+  }
 
   // Only one clarification is asked per turn; the trimmed ones are recorded as removed (F8).
   const approvedClarifications = final?.gate.approvedClarifications ?? [];
@@ -563,6 +572,7 @@ export async function runAgentTurn(deps: AgentDeps, input: AgentTurnInput): Prom
     proposedFacts: proposedFactsFromProfile(profile, input.farmId),
     clarifications: approvedClarifications.slice(0, 1),
     limitations: [...new Set(limitations)],
+    spokenNotices: [...new Set(spokenNotices)],
     incomplete,
     gateStatus: useGate?.status ?? null,
     gateReport,

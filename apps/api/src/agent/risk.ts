@@ -167,6 +167,12 @@ const ASSERTED_DIAGNOSIS_EN = new RegExp(
     `\\bthere\\s+(?:is|are)\\s+[^.\\n]{0,25}${D}[^.\\n]{0,10}\\b(?:in|on|affecting)\\s+(?:the|your)\\s+(?:field|crop|plants?|farm|beds?|rhizomes?)`,
     `^\\s*[\\p{L} ]{0,25}${D}\\s+(?:in|on)\\s+(?:the|your)\\s+(?:field|crop|plants?|farm|beds?)\\s*[.!]?\\s*$`,
     `\\b(?:caused\\s+by|due\\s+to|because\\s+of|result\\s+of|a\\s+(?:clear\\s+)?(?:sign|symptom|case)\\s+of)\\b[^.\\n]{0,40}${D}`,
+    // F13 (review R4 #4): implied diagnosis. A disease noun as the subject of a progressive/perfect verb ("the rot
+    // has reached the rhizomes", "rot is spreading"), or an observation that shows/indicates/means a disease.
+    `${D}[^.\\n]{0,25}?\\b(?:has|have|had)\\s+(?:already\\s+)?(?:reached|spread|affected|infected|attacked|damaged|destroyed|killed|entered|taken\\s+hold|set\\s+in|started|begun|appeared)\\b`,
+    `${D}[^.\\n]{0,25}?\\b(?:is|are|was|were)\\s+(?:now\\s+|already\\s+)?(?:spreading|attacking|affecting|infecting|damaging|destroying|killing|entering|moving|reaching|present|active|visible|developing|setting\\s+in)\\b`,
+    `${D}\\s+(?:spreads?|attacks?|affects?|infects?|kills?)\\s+(?:the|your|this|these|its)\\b`,
+    `\\b(?:shows?|showing|indicates?|indicating|means|meaning|confirms?|proves?|signals?|reveals?|points\\s+to)\\s+(?:that\\s+)?(?:(?:the|a|an|your|this|some)\\s+)?(?:[\\p{L}-]+\\s+){0,2}?${D}`,
   ].join("|"),
   "iu",
 );
@@ -269,8 +275,35 @@ export function isApplicationContext(sentence: string): boolean {
   return VERB_RE.test(sentence) && CHEM_RE.test(sentence);
 }
 
+/** True when the text contains any application verb or chemical/input noun (en/hi/ta/romanised). */
+export function hasApplicationWords(text: string): boolean {
+  const t = prep(text);
+  return VERB_RE.test(t) || CHEM_RE.test(t);
+}
+
+/**
+ * F13 (review R4 #4): an input instruction without a number is still a dose instruction. A clause with an
+ * application verb and a chemical/input noun, or a chemical noun with a strength/frequency modifier ("double
+ * the dose", "mix it stronger"), is chemical_dosage unless the clause is a referral to an officer/label.
+ */
+const DOSE_MODIFIER_RE = termRe({
+  en: ["doses?", "dosages?", "strength", "stronger", "weaker", "concentrat\\w*", "double[ds]?", "triple[ds]?", "twice", "half[\\s-]strength", "more\\s+often", "less\\s+often", "every\\s+(?:few|couple\\s+of|other)\\s+days", "until\\s+it\\s+stops", "heavier", "lighter"],
+  indic: ["दोगुना", "दुगना", "दुगुना", "ज़्यादा", "ज्यादा", "कम मात्रा", "मात्रा", "இரட்டிப்பு", "அதிகமாக", "அளவு"],
+});
+const REFERRAL_RE = termRe({
+  en: ["consult(?:ing)?", "ask(?:ing)?", "check\\s+with", "advice", "advise[sd]?", "officers?", "extension", "kvk", "krishi\\s+vigyan", "label", "expert", "agronomist"],
+  indic: ["सलाह", "अधिकारी", "विशेषज्ञ", "அலுவலர", "அணுக", "நிபுணர", "ஆலோசனை"],
+});
+export function detectInputInstruction(text: string): RiskHit | null {
+  for (const c of clauses(prep(text))) {
+    if (!CHEM_RE.test(c) || REFERRAL_RE.test(c)) continue;
+    if (VERB_RE.test(c) || DOSE_MODIFIER_RE.test(c)) return { code: "chemical_dosage", message: "chemical or input application instruction stated in prose" };
+  }
+  return null;
+}
+
 export function detectDosage(text: string): RiskHit | null {
-  return dosageMentions(text).length > 0 ? { code: "chemical_dosage", message: "chemical or input dosage amount stated in prose" } : null;
+  return dosageMentions(text).length > 0 ? { code: "chemical_dosage", message: "chemical or input dosage amount stated in prose" } : detectInputInstruction(text);
 }
 
 // ------------------------------------------------------------------ yield from canopy / photo

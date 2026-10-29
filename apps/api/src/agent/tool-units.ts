@@ -58,6 +58,32 @@ export const TOOL_UNIT_MAP: Partial<Record<ToolName, UnitRule[]>> = {
   ],
 };
 
+/**
+ * F13 (review R4 #7): where a unit-bearing record may sit, per tool. The record's own pointer (the object that
+ * holds `unit`) must match one of these patterns exactly; a {value, unit} object anywhere else in a stored
+ * result is refused. Only server-computed or catalogue-derived records are listed. Deliberately absent:
+ * interpret_observation proposals and propose_plan_revision changes/diffs (model-proposed values), and every
+ * tool not listed (no unit records accepted). Audit (F13): get_market_outlook echoes `marketIds` strings only;
+ * screen_crops filters by the requested cropIds but its ValueRecords are built from the catalogue (kind
+ * "category", no unit); no handler copies a model-supplied {value, unit} object into its result.
+ */
+export const UNIT_RECORD_OWNERS: Partial<Record<ToolName, string[]>> = {
+  get_farm_context: ["/farm/area/value"],
+  screen_crops: ["/results/*/dimensions/*/value"],
+  get_market_outlook: ["/references/*"],
+};
+
+/** Map pointers that hold a marketable/yield quantity (kg/ha, kg): shown as yields, never as an input dose. */
+const YIELD_POINTERS: Partial<Record<ToolName, string[]>> = {
+  calculate_scenarios: [
+    "/result/scenarios/*/{perHa|total}/marketableKgTotal",
+    "/result/scenarios/*/{perHa|total}/marketableQuantityKg/*/kg",
+    "/result/scenarios/*/{perHa|total}/breakEvenMarketableYieldKgPerHa",
+  ],
+};
+
+const matches = (patternSegs: string[], segs: string[]) => patternSegs.length === segs.length && patternSegs.every((s, i) => s === "*" || s === segs[i]);
+
 function expand(pattern: string): string[] {
   const m = /\{([^}]+)\}/.exec(pattern);
   if (!m) return [pattern];
@@ -70,6 +96,15 @@ const COMPILED: Partial<Record<string, { segs: string[]; unit: UnitRule["unit"] 
 /** All expanded map pointers per tool (for the contract drift test). */
 export function mappedPointers(): Record<string, string[]> {
   return Object.fromEntries(Object.entries(COMPILED).map(([t, rs]) => [t, rs!.map((r) => `/${r.segs.join("/")}`)]));
+}
+
+const OWNERS_COMPILED: Partial<Record<string, string[][]>> = Object.fromEntries(Object.entries(UNIT_RECORD_OWNERS).map(([t, ps]) => [t, ps!.flatMap(expand).map((p) => p.slice(1).split("/"))]));
+const YIELD_COMPILED: Partial<Record<string, string[][]>> = Object.fromEntries(Object.entries(YIELD_POINTERS).map(([t, ps]) => [t, ps!.flatMap(expand).map((p) => p.slice(1).split("/"))]));
+
+/** True when `pointer` is a mapped yield/marketable-quantity field of the tool's stored output (F13). */
+export function isYieldPointer(toolName: string, pointer: string): boolean {
+  const segs = segments(pointer);
+  return !!segs && (YIELD_COMPILED[toolName] ?? []).some((p) => matches(p, segs));
 }
 
 const segments = (pointer: string): string[] | null => (pointer.startsWith("/") ? pointer.slice(1).split("/").map((k) => k.replace(/~1/g, "/").replace(/~0/g, "~")) : null);
@@ -99,7 +134,10 @@ export function unitAtPointer(toolName: string, result: unknown, pointer: string
     const below = segs.slice(n - k);
     const shapeOk = k === 1 ? ["value", "amount"].includes(below[0]!) : ["value", "amount"].includes(below[0]!) && ["low", "central", "high"].includes(below[1]!);
     if (!shapeOk) continue;
-    const owner = walk(result, segs.slice(0, n - k));
+    const ownerSegs = segs.slice(0, n - k);
+    // F13: a unit record is accepted only at an allowlisted location for this tool.
+    if (!(OWNERS_COMPILED[toolName] ?? []).some((p) => matches(p, ownerSegs))) continue;
+    const owner = walk(result, ownerSegs);
     if (!owner.found || typeof owner.value !== "object" || owner.value === null || Array.isArray(owner.value)) continue;
     const o = owner.value as Record<string, unknown>;
     if (!Object.prototype.hasOwnProperty.call(o, "unit")) continue;

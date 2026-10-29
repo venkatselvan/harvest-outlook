@@ -13,7 +13,8 @@ const ctx = (o: Partial<GateContext> = {}): GateContext => ({ ownerId: OWNER, mo
 const q = (value: number | string, unit: string) => ({ kind: "quantity", value, unit });
 const tr = (id: string, result: unknown, toolName = "calculate_scenarios"): StoredToolResult => ({ id, ownerId: OWNER, agentRunId: RUN, runMode: "synthetic", toolName, status: "ok", result });
 const legacy = tr("t1", { areaAcre: 2, count: 3, pct: 5, netInr: "200000" });
-const rec = tr("t2", { area: q(2, "acre"), rate: q(2, "kg/acre"), rain: q(12, "mm"), count: { kind: "category", value: "3", unit: null } });
+// F13: unit records only count at allowlisted locations (get_market_outlook /references/*), so the records live there.
+const rec = tr("t2", { references: [q(2, "acre"), q(2, "kg/acre"), q(12, "mm"), { kind: "category", value: "3", unit: null }] }, "get_market_outlook");
 const ev = (id: string, o: Partial<EvidenceFact> = {}): EvidenceFact => ({ id, mode: "synthetic", validationStatus: "validated", geographyLevel: "district", geographyIds: ["IN-KA-HAS"], cropIds: [GINGER_ID], effectiveAvailableAt: "2026-01-01T00:00:00.000Z", availabilityBasis: "verified_publication", ...o });
 const facts = (e: EvidenceFact[] = []): GateFacts => ({ toolResults: new Map([["t1", legacy], ["t2", rec]]), evidence: new Map(e.map((x) => [x.id, x])), knownCropIds: new Set([GINGER_ID]), productForms: new Map([["ginger-fresh", "fresh"], ["ginger-dry", "dry"]]) });
 const ref = (id: string, p: string, unit: string, sourceUnit = unit, tid = "t2") => ({ id, toolResultId: tid, jsonPointer: p, presentation: { unit, sourceUnit, rounding: { mode: "decimals", digits: 0 }, intervalLabel: "none" } });
@@ -69,21 +70,23 @@ describe("F8 R3a #1: every previously approved probe string is now withheld", ()
 
 describe("F8 R3a #2: units come from the tool output", () => {
   it("derives units from unit-bearing records and the server map; refuses unitless fields", () => {
-    expect(unitAtPointer("x", rec.result, "/area/value")).toEqual({ unit: "acre", basis: "unit_record" });
-    expect(unitAtPointer("x", { y: { unit: "INR/kg", amount: { low: 1, central: 2, high: 3 } } }, "/y/amount/central")?.unit).toBe("INR/kg");
-    expect(unitAtPointer("x", rec.result, "/count/value")).toBeNull();
+    expect(unitAtPointer("get_market_outlook", rec.result, "/references/0/value")).toEqual({ unit: "acre", basis: "unit_record" });
+    expect(unitAtPointer("get_market_outlook", { references: [{ unit: "INR/kg", amount: { low: 1, central: 2, high: 3 } }] }, "/references/0/amount/central")?.unit).toBe("INR/kg");
+    // F13: the same record outside the allowlist (or under an unlisted tool) is refused.
+    expect(unitAtPointer("x", { y: { unit: "INR/kg", amount: { low: 1, central: 2, high: 3 } } }, "/y/amount/central")).toBeNull();
+    expect(unitAtPointer("get_market_outlook", rec.result, "/references/3/value")).toBeNull();
     expect(unitAtPointer("calculate_scenarios", legacy.result, "/count")).toBeNull();
     expect(unitAtPointer("calculate_scenarios", { result: { scenarios: [{ total: { netCashReturnInr: "5" } }] } }, "/result/scenarios/0/total/netCashReturnInr")?.unit).toBe("INR");
     expect(unitAtPointer("calculate_water_balance", { result: { runs: [{ grossLitresPerHa: 5 }] } }, "/result/runs/0/grossLitresPerHa")).toBeNull();
   });
   it("count displayed as acres is blocked; ValueRecord with unit allowed; sourceUnit mismatch blocked", () => {
     expect(codes(one("Your farm is 3 acres.", [ref("n1", "/count", "acre", "acre", "t1")]))).toContain("numeric_ref_unit_unknown");
-    expect(one("Your farm is 2 acres.", [ref("n1", "/area/value", "acre")]).status).toBe("approved");
-    expect(one("Your farm is 0.81 ha.", [{ ...ref("n1", "/area/value", "ha", "acre"), presentation: { unit: "ha", sourceUnit: "acre", rounding: { mode: "decimals", digits: 2 }, intervalLabel: "none" } }]).status).toBe("approved");
-    expect(codes(one("Your farm is 2 ha.", [ref("n1", "/area/value", "ha", "ha")]))).toContain("numeric_ref_unit_mismatch");
+    expect(one("Your farm is 2 acres.", [ref("n1", "/references/0/value", "acre")]).status).toBe("approved");
+    expect(one("Your farm is 0.81 ha.", [{ ...ref("n1", "/references/0/value", "ha", "acre"), presentation: { unit: "ha", sourceUnit: "acre", rounding: { mode: "decimals", digits: 2 }, intervalLabel: "none" } }]).status).toBe("approved");
+    expect(codes(one("Your farm is 2 ha.", [ref("n1", "/references/0/value", "ha", "ha")]))).toContain("numeric_ref_unit_mismatch");
   });
   it("acceptable: a ref-backed, evidence-backed kg/acre rate passes", () => {
-    const r = evaluateGate(out({ answerBlocks: [blk("Apply 2 kg per acre of urea at district level.", ["n1"], ["c1"])], numericRefs: [ref("n1", "/rate/value", "kg/acre")], claimEvidenceRefs: [{ claimId: "c1", text: "Urea rate", evidenceIds: ["e1"] }] }), ctx(), facts([ev("e1")]));
+    const r = evaluateGate(out({ answerBlocks: [blk("Apply 2 kg per acre of urea at district level.", ["n1"], ["c1"])], numericRefs: [ref("n1", "/references/1/value", "kg/acre")], claimEvidenceRefs: [{ claimId: "c1", text: "Urea rate", evidenceIds: ["e1"] }] }), ctx(), facts([ev("e1")]));
     expect(r.status).toBe("approved");
   });
 });

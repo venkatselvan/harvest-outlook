@@ -92,9 +92,9 @@ describe("POST /api/v1/assistant/turns (synthetic mode)", () => {
   });
 
   it("an owned farm is accepted and scopes evidence to its district", async () => {
-    await seedEvidence(h.pool, { id: EVIDENCE_ID });
+    await seedEvidence(h.pool, { id: EVIDENCE_ID, geographyIds: ["IN-KA-hassan"] }); // farms store canonical registry ids (F12)
     const { client } = await appWith({}, { fixtureScenario: "tool_calling" });
-    const farm = (await client.call("POST", "/api/v1/farms", { payload: farmBody({ location: { districtId: "IN-KA-HAS", districtName: "Hassan", stateCode: "KA", precision: "district" } }) })).json().data;
+    const farm = (await client.call("POST", "/api/v1/farms", { payload: farmBody({ location: { districtId: "IN-KA-hassan", stateId: "IN-KA", precision: "district" } }) })).json().data;
     const res = await post(client, body({ farmId: farm.id }));
     expect(res.statusCode).toBe(200);
     expect(res.json().data.claimEvidenceRefs[0].evidenceIds).toEqual([EVIDENCE_ID]);
@@ -179,5 +179,48 @@ describe("live mode", () => {
     const res = await post(client, body());
     expect(res.statusCode).toBe(429);
     expect(res.json().error.code).toBe("budget_exceeded");
+  });
+});
+
+// ---------------------------------------------------------------- F13: gate removals at the route level
+class Scripted implements TextModelProvider {
+  readonly kind = "fixture" as const;
+  readonly provenance = "synthetic_fixture" as const;
+  readonly billable = false;
+  private n = 0;
+  constructor(private readonly answer: object, private readonly lang: string) {}
+  async call(req: Parameters<TextModelProvider["call"]>[0]): ReturnType<TextModelProvider["call"]> {
+    const text = req.pass === "interpretation" ? JSON.stringify({ intent: "plan_question", language: this.lang, cropMentions: [], facts: [], needsEscalation: false, clarificationQuestion: null }) : req.pass === "tool_round" ? "no tools" : JSON.stringify(this.answer);
+    return { ok: true, result: { provenance: "synthetic_fixture", responseId: `sc_${++this.n}`, requestId: `sc_${this.n}`, model: req.model, outputText: text, functionCalls: [], usage: { inputTokens: 0, outputTokens: 0, cachedInputTokens: 0 }, latencyMs: 0, retries: 0 } };
+  }
+}
+
+describe("F13: route-level gate removals and spoken notices", () => {
+  it.each([
+    ["en", "Please confirm your water source.", "Mix the fungicide stronger this time.", "Drench the beds with the fungicide."],
+    ["hi", "कृपया पानी के स्रोत की पुष्टि करें।", "दो गज की दूरी पर पौधे लगाएं।", "हर पौधे में खाद डालें।"],
+  ] as const)("%s: removed content is reported and the spoken text carries the withheld/template notices", async (lang, safe, unsafe, badLimitation) => {
+    const { TEMPLATE_LIMITATION, WITHHELD_LIMITATION } = await import("../src/agent/templates");
+    const answer = {
+      schemaVersion: "1.0", intent: "plan_question", language: lang, proposedFacts: [], clarifications: [], toolRequests: [],
+      answerBlocks: [{ id: "b1", kind: "text", text: safe, numericRefIds: [], claimIds: [] }, { id: "b2", kind: "text", text: unsafe, numericRefIds: [], claimIds: [] }],
+      numericRefs: [], claimEvidenceRefs: [], proposedPlanChange: null, limitations: [badLimitation],
+    };
+    const { client } = await appWith({}, { providerFactory: () => new Scripted(answer, lang) });
+    const res = await post(client, body({ language: lang, text: lang === "hi" ? "पौधे कैसे लगाएं?" : "How do I plant?" }));
+    expect(res.statusCode).toBe(200);
+    const j = res.json();
+    expect(j.data.status).toBe("partial");
+    const removed = j.data.gateReport.removed as { field: string; id: string | null; index: number; codes: string[] }[];
+    expect(removed).toEqual(expect.arrayContaining([expect.objectContaining({ field: "answerBlock", id: "b2" }), expect.objectContaining({ field: "limitation", id: null, index: 0 })]));
+    expect(JSON.stringify(j.data.answerBlocks)).not.toContain(unsafe);
+    expect(j.data.limitations).not.toContain(badLimitation);
+    const blockText = j.data.answerBlocks.map((b: { text: string }) => b.text).join("\n\n");
+    const notices = [...(j.data.gateReport.templateSubstituted.length > 0 ? [TEMPLATE_LIMITATION[lang]] : []), WITHHELD_LIMITATION[lang]];
+    expect(j.data.approvedText).toBe([blockText, ...notices].join("\n\n"));
+    const { isApprovedText } = await import("../src/speech/approved");
+    const ownerId = (await h.pool.query("SELECT owner_id FROM agent_runs WHERE id=$1", [j.data.traceId])).rows[0].owner_id;
+    expect(await isApprovedText(h.pool, ownerId, j.data.approvedText, j.data.approvedTextHash)).toBe(true);
+    expect(await isApprovedText(h.pool, ownerId, blockText, j.data.approvedTextHash)).toBe(false);
   });
 });

@@ -26,11 +26,17 @@ const ctx = (over: Partial<GateContext> = {}): GateContext => ({
 // F8: units come from the stored tool output. Legacy flat fixtures are wrapped as {value, unit} records
 // (the unit is fixed here, never taken from the ref) and refs to those keys point at ".../value".
 const FIXTURE_UNITS: Record<string, string> = { netInr: "INR", areaAcre: "acre", areaHa: "ha", yieldQuintal: "quintal", rainMm: "mm", rain: "mm", price: "INR/quintal", yieldQ: "quintal", v: "mm" };
-const withUnits = (r: Record<string, unknown>): Record<string, unknown> =>
-  Object.fromEntries(Object.entries(r).map(([k, v]) => (k in FIXTURE_UNITS && (typeof v === "number" || typeof v === "string") ? [k, { kind: "quantity", value: v, unit: FIXTURE_UNITS[k] }] : [k, v])));
-const unitPointer = (p: string) => (/^\/[A-Za-z]+$/.test(p) && p.slice(1) in FIXTURE_UNITS ? `${p}/value` : p);
-const tr: StoredToolResult = { id: "t1", ownerId: OWNER, agentRunId: RUN, runMode: "synthetic", toolName: "calculate_scenarios", status: "ok", result: withUnits({ areaAcre: 2, areaHa: 0.81, rain: 40, netInr: "200000", price: "2050", yieldQ: 25 }) };
-const wx: StoredToolResult = { ...tr, id: "t2", toolName: "get_weather_forecast", result: withUnits({ rainMm: 12.4 }) };
+// F13: unit records are accepted only at allowlisted locations per tool (tool-units.ts UNIT_RECORD_OWNERS), so the
+// fixture records live under get_market_outlook "/references/<i>" (index = FIXTURE_UNITS key order); other keys stay at the root.
+const UNIT_KEYS = Object.keys(FIXTURE_UNITS);
+const withUnits = (r: Record<string, unknown>): Record<string, unknown> => ({
+  ...Object.fromEntries(Object.entries(r).filter(([k, v]) => !(k in FIXTURE_UNITS && (typeof v === "number" || typeof v === "string")))),
+  references: UNIT_KEYS.map((k) => (typeof r[k] === "number" || typeof r[k] === "string" ? { kind: "quantity", value: r[k], unit: FIXTURE_UNITS[k] } : { kind: "category", value: "absent", unit: null })),
+});
+const unitPointer = (p: string) => (/^\/[A-Za-z]+$/.test(p) && p.slice(1) in FIXTURE_UNITS ? `/references/${UNIT_KEYS.indexOf(p.slice(1))}/value` : p);
+const FIXTURE_TOOL = "get_market_outlook";
+const tr: StoredToolResult = { id: "t1", ownerId: OWNER, agentRunId: RUN, runMode: "synthetic", toolName: FIXTURE_TOOL, status: "ok", result: withUnits({ areaAcre: 2, areaHa: 0.81, rain: 40, netInr: "200000", price: "2050", yieldQ: 25 }) };
+const wx: StoredToolResult = { ...tr, id: "t2", toolName: FIXTURE_TOOL, result: withUnits({ rainMm: 12.4 }) };
 const ev = (id: string, over: Partial<EvidenceFact> = {}): EvidenceFact => ({ id, mode: "synthetic", validationStatus: "validated", geographyLevel: "district", geographyIds: ["IN-KA-HAS"], cropIds: [GINGER_ID], effectiveAvailableAt: "2026-01-01T00:00:00.000Z", availabilityBasis: "verified_publication", ...over });
 const facts = (e: EvidenceFact[] = [], knownCropIds: string[] = [GINGER_ID]): GateFacts => ({ toolResults: new Map([["t1", tr], ["t2", wx]]), evidence: new Map(e.map((x) => [x.id, x])), knownCropIds: new Set(knownCropIds) });
 const ref = (id: string, p: string, unit: string, sourceUnit = unit, digits = 0, toolResultId = "t1") => ({ id, toolResultId, jsonPointer: unitPointer(p), presentation: { unit, sourceUnit, rounding: { mode: "decimals", digits }, intervalLabel: "none" } });

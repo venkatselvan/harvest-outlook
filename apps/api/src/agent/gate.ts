@@ -3,10 +3,11 @@ import { Mode, StructuredAssistantOutput, type Unit } from "@harvest/contracts";
 import { Decimal, convertDecimal } from "@harvest/domain";
 import type { Pool } from "../db/pool";
 import { CERTAINTY, CHEMICAL_NOUNS, DISEASE, DOSAGE_VERBS, GRANULARITY_LABEL, GUARANTEE, INDIC_SCRIPT, MONTH_NAMES_INDIC, PRODUCT_FORM_WORDS, ROMAN_CHEMICAL_NOUNS, ROMAN_DOSAGE_VERBS, UNIT_TERMS, termRe, termSource } from "./lexicon";
-import { MONTH_RE, contextWord, normalizeDigits, numberTokens, proseNumbers, unitAdjacent, unitAt, type NumberToken } from "./numbers";
-import { detectHighRisk, dosageMentions, isApplicationContext, nativeLexiconHits, type RiskCode } from "./risk";
+import { MONTH_RE, compatNormalise, contextWord, numberTokens, proseNumbers, unitAdjacent, unitAt, unsupportedNumberChar, type NumberToken } from "./numbers";
+import { farmPlaces, isRegistryPlace, placeRegistry, placesNamedIn } from "./place-names";
+import { detectHighRisk, dosageMentions, hasApplicationWords, isApplicationContext, nativeLexiconHits, type RiskCode } from "./risk";
 import { PROFILE_FIELDS, splitClaimExtras, type ClaimGranularity, type ClaimScopeExtras } from "./schemas";
-import { unitAtPointer } from "./tool-units";
+import { isYieldPointer, unitAtPointer } from "./tool-units";
 
 export { proseNumbers };
 
@@ -96,6 +97,11 @@ export interface GateFacts {
   knownCropIds?: Set<string>;
   /** Catalogue product id -> product basis (fresh, dry ...). Missing = form unverifiable (fail closed). */
   productForms?: Map<string, string>;
+  /**
+   * F13: catalogue crop id -> names and aliases (all languages). Used to detect evidence-cited text that names
+   * a crop outside the claim's crops. Missing/empty = no crop-name check possible (recorded as a limitation).
+   */
+  cropNames?: Map<string, string[]>;
 }
 
 export interface GateIssue {
@@ -271,6 +277,8 @@ interface Presented {
   id: string;
   value: Decimal;
   unit: Unit;
+  /** F13: the ref points at a mapped yield/marketable-quantity field (a kg/ha there is a yield, not a dose). */
+  yieldField?: boolean;
 }
 interface FarmerToken {
   value: Decimal;
@@ -291,6 +299,9 @@ function checkText(
   const issues: { code: string; message: string }[] = [];
   const native = isNativeText(ctx.language, text);
   if (UNSUPPORTED_SCRIPT.test(text)) issues.push({ code: "unsupported_script", message: `${o.label}: text in a script other than Latin, Devanagari or Tamil cannot be verified` });
+  // F13: a numeric character that does not normalise to an ASCII digit cannot be verified (fail closed).
+  const oddNumber = unsupportedNumberChar(text);
+  if (oddNumber !== null) issues.push({ code: "unsupported_number", message: `${o.label}: a number written with an unsupported numeral character (U+${oddNumber.codePointAt(0)!.toString(16).toUpperCase().padStart(4, "0")}) cannot be verified; use ASCII digits with a numericRef` });
 
   const { text: normText, tokens } = numberTokens(text, { englishDates: !native });
   const sentenceAt = (pos: number) => {
@@ -347,15 +358,56 @@ export function productFormsIn(text: string): string[] {
   return FORM_RES.filter(([, re]) => re.test(t)).map(([b]) => b);
 }
 
+// ---------------------------------------------------------------- claim text scope (F13)
+const escRe = (x: string) => x.replace(/[.*+?^${}()|[\]\\]/g, "\\$&").replace(/\s+/g, "\\s+");
+const cropNameRe = (name: string) => new RegExp(`(?<![\\p{L}\\p{M}\\p{N}_])${escRe(name.normalize("NFC"))}(?:s|es)?(?![\\p{L}\\p{M}\\p{N}_])`, "giu");
+const toStateId = (s: string) => (/^IN-/i.test(s) ? s.toUpperCase() : `IN-${s.toUpperCase()}`);
+
+/**
+ * F13 (review R4 #3): evidence-cited text must not name a catalogue crop outside the claim's crops, or a
+ * district/state other than the farm's own (the farm's state name is allowed). A crop name inside a longer
+ * in-scope name ("pea" inside "pigeon pea") is not counted. When the farm district id does not resolve in the
+ * registry, other districts of the farm's own state cannot be told apart and are not flagged (documented gap).
+ */
+export function textScopeProblems(texts: string[], claimCrops: string[], cropNames: Map<string, string[]> | undefined, geo: { districtIds: string[]; stateIds: string[] }): string[] {
+  const out: string[] = [];
+  const t = texts.map((x) => x.normalize("NFC")).join("\n");
+  if (cropNames && cropNames.size > 0) {
+    const spans: [number, number][] = [];
+    for (const id of claimCrops) for (const n of cropNames.get(id) ?? []) for (const m of t.matchAll(cropNameRe(n))) spans.push([m.index!, m.index! + m[0].length]);
+    for (const [id, names] of cropNames) {
+      if (claimCrops.includes(id)) continue;
+      for (const n of names)
+        for (const m of t.matchAll(cropNameRe(n))) {
+          const a = m.index!;
+          const b = a + m[0].length;
+          if (!spans.some(([x, y]) => x <= a && b <= y)) out.push(`crop "${m[0]}"`);
+        }
+    }
+  }
+  const farm = farmPlaces(geo.districtIds, geo.stateIds);
+  const reg = placeRegistry();
+  const districtResolved = reg.some((p) => p.level === "district" && farm.has(p.id));
+  const states = new Set([...geo.stateIds.map(toStateId), ...[...farm].filter((id) => /^IN-[A-Z]{2}$/i.test(id)).map((x) => x.toUpperCase())]);
+  for (const p of placesNamedIn(t)) {
+    if (farm.has(p.id)) continue;
+    const area = reg.find((r) => r.id === p.id)!;
+    const ok = area.level === "state" ? states.has(area.id.toUpperCase()) : !districtResolved && states.has(area.stateId.toUpperCase());
+    if (!ok) out.push(`place "${p.name}"`);
+  }
+  return [...new Set(out)];
+}
+
 // ---------------------------------------------------------------- clarification options
 const OPTION_UNSAFE_RE = new RegExp(
   [DOSAGE_VERBS, CHEMICAL_NOUNS, DISEASE, GUARANTEE, CERTAINTY, ROMAN_DOSAGE_VERBS, ROMAN_CHEMICAL_NOUNS].map(termSource).join("|"),
   "iu",
 );
-const YES_NO = termRe({
-  en: ["yes", "no", "not\\s+sure", "(?:i\\s+)?don'?t\\s+know", "unknown", "maybe", "none", "haan", "haa", "nahi", "nahin", "pata\\s+nahi", "aamaa?", "illai", "theriyadhu", "theriyathu"],
-  indic: ["हाँ$", "हां$", "जी हाँ", "नहीं$", "पता नहीं", "मालूम नहीं", "ஆம்$", "ஆமாம்$", "இல்லை$", "தெரியாது$"],
-});
+/** F13 (review R4 #5): a yes/no/not-sure option must be exactly one of these (whole option, optional end punctuation). */
+const YES_NO = new RegExp(
+  `^(?:${["yes", "no", "not\\s+sure", "(?:i\\s+)?don'?t\\s+know", "unknown", "maybe", "none", "haan", "haa", "han", "ji\\s+haan", "nahi", "nahin", "pata\\s+nahi", "aamaa?", "aam", "illai", "illa", "theriyadhu", "theriyathu", "हाँ", "हां", "जी हाँ", "जी हां", "जी", "नहीं", "जी नहीं", "पता नहीं", "मालूम नहीं", "शायद", "ஆம்", "ஆமாம்", "இல்லை", "தெரியாது", "தெரியவில்லை"].map((x) => x.normalize("NFC")).join("|")})\\s*[.!?।]?$`,
+  "iu",
+);
 const FIELD_VOCAB: Record<string, string[]> = {
   irrigation: ["rain[\\s-]?fed", "irrigated", "(?:partly|partially)\\s+irrigated", "drip", "sprinkler", "flood", "furrow", "bore\\s?well", "open\\s+well", "well", "canal", "tank", "river", "pond", "rain\\s+only", "no\\s+irrigation", "limited", "adequate", "plenty", "assured", "protective"],
   water_availability: ["low", "medium", "moderate", "high", "scarce", "limited", "adequate", "enough", "plenty", "assured", "seasonal", "year[\\s-]round", "rain\\s+only"],
@@ -368,23 +420,23 @@ const MONTH_OPT = new RegExp(`^(?:early|mid|late|end\\s+of|start\\s+of)?\\s*${MO
 const MONTH_INDIC = termRe({ indic: MONTH_NAMES_INDIC });
 const QTY_UNIT = [UNIT_TERMS.acre!, UNIT_TERMS.ha!, UNIT_TERMS.months!, UNIT_TERMS.weeks!, UNIT_TERMS.days!, { en: ["years?", "yrs?", "lakhs?", "thousands?", "rupees?", "rs\\.?", "inr", "cents?", "guntas?", "bighas?"], indic: ["साल", "वर्ष", "லட்ச", "ஆயிர", "ஆண்டு", "வருட"] }].map(termSource).join("|");
 const NUMBER_OPT = new RegExp(`^(?:about|around|approx\\.?|under|over|less\\s+than|more\\s+than|up\\s*to|below|above|<|>)?\\s*(?:₹|rs\\.?|inr)?\\s*\\d[\\d,.]*(?:\\s*(?:-|–|to)\\s*(?:₹|rs\\.?)?\\s*\\d[\\d,.]*)?\\s*(?:(?:${QTY_UNIT})\\s*){0,2}(?:or\\s+(?:more|less))?$`, "iu");
-const PLACE_OPT = /^[\p{L}\p{M}][\p{L}\p{M} .'-]{0,30}$/u;
 
 /**
  * F8 (review R3a #5): a clarification option is a short profile value, never an instruction. Returns an
  * issue code, or null when the option is acceptable for the field.
  */
 export function clarificationOptionProblem(field: string, option: string): string | null {
-  const t = normalizeDigits(option.normalize("NFC")).trim();
+  const t = compatNormalise(option).trim();
   const words = t.split(/\s+/u).filter(Boolean);
   if (t.length === 0 || t.length > 40 || words.length > 6) return "clarification_option_not_value";
   if (OPTION_UNSAFE_RE.test(t)) return "clarification_option_unsafe";
-  if (YES_NO.test(t) && words.length <= 3) return null;
+  if (YES_NO.test(t)) return null;
   if (NUMBER_OPT.test(t) && ["area", "budget", "experience", "water_availability", "labour"].includes(field)) return null;
   if ((MONTH_OPT.test(t) || (MONTH_INDIC.test(t) && words.length <= 4)) && field === "planting_window") return null;
   const vocab = FIELD_VOCAB[field];
   if (vocab && new RegExp(`^(?:${vocab.join("|")})(?:\\s+(?:soil|irrigation|labou?r|water))?$`, "iu").test(t)) return null;
-  if ((field === "district" || field === "state") && PLACE_OPT.test(t) && words.length <= 3) return null;
+  // F13: district/state options must be registry names (data/curated/districts.json), case-insensitive.
+  if ((field === "district" || field === "state") && isRegistryPlace(t, field)) return null;
   return "clarification_option_not_value";
 }
 
@@ -477,7 +529,8 @@ export function evaluateGate(raw: unknown, ctxIn: GateContext, facts: GateFacts)
         refProblem.set(r.id, { code: "unit_conversion_not_permitted", message: `numericRef ${r.id}: ${r.presentation.sourceUnit} to ${r.presentation.unit} is not a permitted conversion` });
       }
     }
-    const presentedOf = (ids: string[]): Presented[] => ids.filter((id) => refPresented.has(id)).map((id) => ({ id, value: refPresented.get(id)!, unit: refById.get(id)!.presentation.unit }));
+    const presentedOf = (ids: string[]): Presented[] =>
+      ids.filter((id) => refPresented.has(id)).map((id) => ({ id, value: refPresented.get(id)!, unit: refById.get(id)!.presentation.unit, yieldField: isYieldPointer(refTool.get(id) ?? "", refById.get(id)!.jsonPointer) }));
 
     // Step 4: claim evidence resolution, crop scope, granularity, and the claim text itself.
     const claimProblem = new Map<string, { code: string; message: string }[]>();
@@ -519,6 +572,9 @@ export function evaluateGate(raw: unknown, ctxIn: GateContext, facts: GateFacts)
           else if (forms.some((f) => !productBases.includes(f))) probs.push({ code: "claim_product_form_mismatch", message: `claim ${c.claimId}: the text names ${forms.join(", ")} but the claim's products are ${[...new Set(productBases)].join(", ")}` });
         }
       }
+      // F13: the cited text may only name the claim's crops and the farm's own district/state.
+      const outOfScope = textScopeProblems(citingTexts, crops, facts.cropNames, geo);
+      if (outOfScope.length > 0) probs.push({ code: "claim_text_scope_mismatch", message: `claim ${c.claimId}: the text names ${outOfScope.join(", ")}, which the claim's crops and the farm's geography do not cover` });
       const granularity = ex.granularity ?? defaultGranularity;
       claimGranularity.set(c.claimId, { granularity, declaredCoarser: ex.granularity !== undefined && GRANULARITY_RANK[ex.granularity] > GRANULARITY_RANK[defaultGranularity] });
       if (probs.length === 0) {
@@ -570,7 +626,12 @@ export function evaluateGate(raw: unknown, ctxIn: GateContext, facts: GateFacts)
         farmer,
         supported,
         // Only evidence-backed, reference-backed mass-per-area input rates may pass; never ml/g-per-litre doses.
-        dosageAllowed: (ms) => ms.length > 0 && claimsOk && ms.every((d) => d.rate !== null && presented.some((pv) => pv.value.equals(new Decimal(d.value)) && pv.unit === d.rate)),
+        dosageAllowed: (ms) =>
+          ms.length > 0 &&
+          ((claimsOk && ms.every((d) => d.rate !== null && presented.some((pv) => pv.value.equals(new Decimal(d.value)) && pv.unit === d.rate))) ||
+            // F13 (review R4 #6): a kg/ha or kg/acre figure from a mapped yield field is a yield, not a dose,
+            // provided the text has no application verb or input noun ("apply 8000 kg/ha urea" stays blocked).
+            (ms.every((d) => d.rate !== null && presented.some((pv) => pv.yieldField && pv.value.equals(new Decimal(d.value)) && pv.unit === d.rate)) && !hasApplicationWords(b.text))),
       });
       for (const i of t.issues) addBlockIssue(b.id, i.code, i.message);
       if (blockIssues.has(b.id)) {
@@ -664,7 +725,12 @@ export async function loadGateFacts(pool: Pool, raw: unknown, scopeProductIds: s
   const tr = [...trIds].filter((x) => UUID.test(x));
   const ev = [...evIds].filter((x) => UUID.test(x));
   const crops = [...cropIds].filter((x) => UUID.test(x));
-  const facts: GateFacts = { toolResults: new Map(), evidence: new Map(), knownCropIds: new Set(), productForms: new Map() };
+  const facts: GateFacts = { toolResults: new Map(), evidence: new Map(), knownCropIds: new Set(), productForms: new Map(), cropNames: new Map() };
+  if (evIds.size > 0 || Array.isArray(o.claimEvidenceRefs)) {
+    // F13: every catalogue crop's names/aliases (small table) for the claim text-scope check.
+    const r = await pool.query<{ id: string; slug: string; names: unknown }>("SELECT id, slug, names FROM crop_identities");
+    for (const row of r.rows) facts.cropNames!.set(row.id, cropNameList(row.slug, row.names));
+  }
   if (tr.length > 0) {
     const r = await pool.query<{ id: string; owner_id: string; agent_run_id: string; mode: string; tool_name: string; status: string; result: unknown }>(
       `SELECT t.id, t.owner_id, t.agent_run_id, a.mode, t.tool_name, t.status, t.result
@@ -701,6 +767,24 @@ export async function loadGateFacts(pool: Pool, raw: unknown, scopeProductIds: s
     for (const row of r.rows) facts.productForms!.set(row.slug, row.form);
   }
   return facts;
+}
+
+/** Crop names from crop_identities.names ({en: "x"} or {en: [{text}], hi: [...]}) plus the slug. */
+export function cropNameList(slug: string, names: unknown): string[] {
+  const out = new Set<string>();
+  const add = (x: string) => {
+    for (const part of x.replace(/\([^)]*\)/g, " ").split("/")) {
+      const p = part.trim().replace(/\s+/g, " ");
+      if (p.length >= 3) out.add(p.normalize("NFC"));
+    }
+  };
+  if (!slug.startsWith("synthetic")) add(slug.replace(/-/g, " "));
+  if (typeof names === "object" && names !== null)
+    for (const v of Object.values(names as Record<string, unknown>)) {
+      if (typeof v === "string") add(v);
+      else if (Array.isArray(v)) for (const item of v) typeof item === "string" ? add(item) : typeof (item as { text?: unknown })?.text === "string" && add((item as { text: string }).text);
+    }
+  return [...out];
 }
 
 export async function runOutputGate(pool: Pool, raw: unknown, ctx: GateContext): Promise<GateResult> {

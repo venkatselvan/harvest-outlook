@@ -61,9 +61,18 @@ export const UNIT_TERMS: Record<string, TermList> = {
   spoon: {
     en: ["spoons?", "spoonfuls?", "teaspoons?", "tablespoons?", "tsp", "tbsp", "caps?", "capfuls?", "packets?", "sachets?", "bottles?", "bags?", "drops?", "handfuls?",
       // Containers that measure an input amount (F8): "two tanks", "a pump of" ...; romanised Hindi/Tamil too.
-      "tanks?", "tankfuls?", "pumps?", "drums?", "buckets?", "knapsacks?", "sprayers?", "kattas?", "bori", "boriyan", "chammach", "tanki", "mootai", "moottai"],
-    indic: ["चम्मच", "ढक्कन", "पैकेट", "बोरी", "बोरे", "बूंद", "बूँद", "मुट्ठी", "टंकी", "पंप", "कट्टा", "कट्टे", "ஸ்பூன்", "கரண்டி", "மூடி", "பாக்கெட்", "மூட்டை", "சொட்டு", "கைப்பிடி", "டேங்க", "தொட்டி"],
+      "tanks?", "tankfuls?", "pumps?", "drums?", "buckets?", "knapsacks?", "sprayers?", "kattas?", "bori", "boriyan", "chammach", "tanki", "mootai", "moottai",
+      // F13: traditional mass/volume measures (ser, padi, marakkal).
+      "seers?", "sers?", "padi", "marakkal"],
+    indic: ["चम्मच", "ढक्कन", "पैकेट", "बोरी", "बोरे", "बूंद", "बूँद", "मुट्ठी", "टंकी", "पंप", "कट्टा", "कट्टे", "ஸ்பூன்", "கரண்டி", "மூடி", "பாக்கெட்", "மூட்டை", "சொட்டு", "கைப்பிடி", "டேங்க", "தொட்டி",
+      "सेर$", "படி$", "மரக்கால்"],
   },
+  /**
+   * F13: traditional area and length units. Not contract units (no numericRef can present them), so a number
+   * stated with one is always withheld; listed so ambiguous number words before them count as numbers.
+   */
+  trad_area: { en: ["gaj", "bighas?", "biga", "gunth?as?", "gunte", "cents?", "kuzhi", "katth?as?", "marla"], indic: ["गज$", "बीघा", "बीघे", "गुंठा", "गुंठे", "कट्ठा", "कट्ठे", "குழி", "சென்ட்", "செண்ட்"] },
+  length: { en: ["feet", "foot", "ft", "inch(?:es)?", "adi", "yards?", "gaj"], indic: ["फुट", "फ़ुट", "फीट", "फ़ीट", "इंच", "अडी$", "அடி$", "அங்குலம்", "அங்குல"] },
 };
 
 /** Currency marks and words (INR). Prefix forms are checked before a number, word forms after it. */
@@ -147,6 +156,23 @@ export const ROMAN_MULTIPLIERS: [TermList, number][] = [
 /** Single words that are also ordinary words ("one", "दो" = give, "ஒரு" = a, "ஆறு" = river): numbers only before a unit/multiplier. */
 export const AMBIGUOUS_NUMBER_WORDS = new Set(["one", "एक", "दो", "ஒரு", "இரு", "ஆறு", "கால்", ...Object.keys(ROMAN_NUMBER_WORDS)].map((s) => s.normalize("NFC")));
 
+/**
+ * F13 (review R4 #2): in Devanagari/Tamil text EVERY number word counts as a number (एक, दो, ஒரு ... included),
+ * unless one of these narrow idioms matches right after it. Each entry: [word, regex source tested against
+ * the text that follows the word]. The list is deliberately short; anything not listed is a number.
+ * - दो at the end of a clause is the verb "give" (Hindi is verb-final: "पानी दो।").
+ * - एक साथ (together), एक दूसरे (each other), एक तरह (a kind of): not quantities.
+ * - ஒரு before வேளை (perhaps), வேளாண் / அலுவலர் / நிபுணர் (an agricultural officer/expert, used in referrals).
+ */
+export const NATIVE_NUMBER_IDIOMS: [string, string][] = [
+  ["दो", "^\\s*(?:$|[।.!?,;:\\n])"],
+  ["एक", "^\\s*(?:साथ|दूसरे|दूसरा|दूसरी|तरह)(?![\\p{L}\\p{M}])"],
+  ["ஒரு", "^\\s*(?:வேளை|வேளாண்|அலுவலர|நிபுணர)"],
+].map(([w, r]) => [w!.normalize("NFC"), r!.normalize("NFC")] as [string, string]);
+
+/** F13: plural/magnitude multiplier words used alone ("earn lakhs") are a vague quantity that needs a reference. */
+export const LONE_MAGNITUDE_EXCLUDE = new Set(["dozen", "dozens", "दर्जन", "டஜன்"].map((s) => s.normalize("NFC")));
+
 /** Multipliers that scale the preceding number. */
 export const MULTIPLIERS: [TermList, number][] = [
   [{ en: ["hundreds?"], indic: ["सौ$", "நூறு", "நூற்று", "நூற"] }, 100],
@@ -192,8 +218,9 @@ export const MULTIPLY_GAIN: TermList = {
   indic: ["दोगुना", "दोगुनी", "दुगना", "दुगनी", "दुगुना", "तिगुना", "तिगुनी", "गुना", "இரட்டிப்பு", "இருமடங்கு", "மும்மடங்கு", "மடங்கு"],
 };
 export const MONEY: TermList = {
-  en: ["profits?", "income", "returns?", "earn(?:ings?)?", "money", "revenue", "margins?", "rich", "wealthy"],
-  indic: ["मुनाफ", "लाभ", "कमाई", "आय$", "आमदनी", "फायदा", "फ़ायदा", "லாப", "வருமான", "வருவாய", "சம்பாத்திய", "சம்பாதி"],
+  // F13: prices/rates too, so "prices will double" is a multiplied-outcome claim.
+  en: ["profits?", "income", "returns?", "earn(?:s|ed|ing|ings?)?", "money", "revenue", "margins?", "rich", "wealthy", "prices?", "rates?"],
+  indic: ["मुनाफ", "लाभ", "कमाई", "आय$", "आमदनी", "फायदा", "फ़ायदा", "दाम", "भाव", "कीमत", "லாப", "வருமான", "வருவாய", "சம்பாத்திய", "சம்பாதி", "விலை"],
 };
 export const DISEASE: TermList = {
   en: ["disease", "diseases", "infection", "infected", "blight", "wilt", "rot", "rust", "virus", "viral", "mildew", "fung(?:us|al|i)", "bacterial", "mites?", "borers?", "aphids?", "nematodes?", "deficiency", "toxicity", "smut", "canker", "mosaic", "blast", "leaf\\s+spot", "pests?"],
@@ -219,6 +246,10 @@ export const LOSS: TermList = {
  * form. Keys are contract ProductBasis values.
  */
 const FORM_CROPS = "(?:ginger|turmeric|rhizomes?|chill?i(?:es|s)?|chilly|chillies|tomato(?:es)?|potato(?:es)?|okra|brinjals?|produce|form|product)";
+/** F13: crop/pulse words that make a bare form word ("whole", "split", "seed") a product form. */
+const FORM_GOODS = "(?:(?:bengal|red|green|black)\\s+gram|gram|pigeon\\s*peas?|chick\\s*peas?|lentils?|arhar|tur|toor|masoor|masur|urad|moong|mung|pulses?|groundnuts?|peanuts?|soy(?:a)?beans?|mustard|rapeseed|sesame|gingelly|sunflower|onions?|potato(?:es)?|maize|corn|wheat|paddy|rice|sorghum|jowar|millets?|bajra|ragi|cotton|okra|tomato(?:es)?|brinjals?|chill?i(?:es|s)?|ginger|turmeric|grains?|seeds?|kernels?|pods?)";
+/** F13: market words after a form noun ("pod prices", "seed rate" is NOT one: only price/market words). */
+const FORM_MARKET = "(?:prices?|rates?\\s+in\\s+the\\s+market|markets?|arrivals?|trade|traders?|sales?|demand|mandi)";
 export const PRODUCT_FORM_WORDS: Record<string, TermList> = {
   fresh: { en: [`fresh\\s+${FORM_CROPS}`, "green\\s+ginger"], indic: ["ताज़ा अदरक", "ताजा अदरक", "ताज़ी अदरक", "ताजी अदरक", "हरी अदरक", "ताज़ी हल्दी", "ताजी हल्दी", "பச்சை இஞ்சி", "புதிய இஞ்சி"] },
   dry: { en: [`(?:dry|dried)\\s+${FORM_CROPS}`, "sonth", "sukku", "chukku"], indic: ["सूखी अदरक", "सूखा अदरक", "सूखी हल्दी", "सूखी मिर्च", "सोंठ", "சுக்கு", "உலர்ந்த இஞ்சி", "உலர் இஞ்சி", "காய்ந்த மிளகாய்", "வர மிளகாய்"] },
@@ -226,6 +257,20 @@ export const PRODUCT_FORM_WORDS: Record<string, TermList> = {
   milled: { en: ["milled(?:\\s+rice)?", "polished\\s+rice"], indic: [] },
   kapas: { en: ["kapas", "seed\\s+cotton"], indic: ["कपास"] },
   lint: { en: ["lint", "ginned\\s+cotton"], indic: [] },
+  // F13 (review R4 #3): every remaining ProductBasis. Bare agronomy uses ("seed rate", "whole field",
+  // "split application", "pod borer", "rhizome development") are deliberately NOT matched: a form word counts
+  // when it qualifies a crop/good ("split pigeon pea", "groundnut kernels") or precedes a market word.
+  paddy: { en: ["unmilled\\s+(?:rice|paddy)", "paddy\\s+(?:grain|\\(unmilled\\))", "rough\\s+rice"], indic: [] },
+  grain: { en: [`${FORM_GOODS}\\s+grains?`, `grains?\\s+${FORM_MARKET}`, "food\\s+grains?", "foodgrains?"], indic: ["अनाज"] },
+  seed: { en: [`${FORM_GOODS}\\s+seeds?\\s+${FORM_MARKET}`, `seeds?\\s+${FORM_MARKET}`, "oil\\s*seeds?"], indic: ["तिलहन"] },
+  tuber: { en: [`${FORM_GOODS}\\s+tubers?`, `tubers?\\s+${FORM_MARKET}`], indic: [] },
+  bulb: { en: [`${FORM_GOODS}\\s+bulbs?`, `bulbs?\\s+${FORM_MARKET}`], indic: [] },
+  rhizome: { en: [`rhizomes?\\s+${FORM_MARKET}`], indic: [] },
+  pod: { en: [`${FORM_GOODS}\\s+(?:in\\s+)?(?:pods?|shells?)(?!\\s+borers?)`, `pods?\\s+${FORM_MARKET}`, "in[\\s-]shell"], indic: [] },
+  kernel: { en: [`${FORM_GOODS}\\s+kernels?`, `kernels?\\s+${FORM_MARKET}`, "shelled\\s+groundnuts?"], indic: [] },
+  fruit: { en: [`${FORM_GOODS}\\s+fruits?(?!\\s+borers?)`, `fruits?\\s+${FORM_MARKET}`], indic: [] },
+  whole: { en: [`whole\\s+${FORM_GOODS}`, `whole\\s+(?:seeds?|dal|pulses?)`], indic: ["साबुत"] },
+  split: { en: [`split\\s+${FORM_GOODS}`, "dal", "dhal", "daal", "paruppu"], indic: ["दाल", "பருப்பு"] },
 };
 export const RAIN_FUTURE_VERB: TermList = {
   en: ["will\\s+(?:rain|pour|receive|get)", "it\\s+will\\s+rain", "expect(?:ed)?", "forecast\\s+to", "going\\s+to\\s+rain"],

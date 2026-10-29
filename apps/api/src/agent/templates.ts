@@ -136,3 +136,10 @@ export const TEMPLATE_LIMITATION: Record<TemplateLanguage, string> = {
   hi: "कुछ कथनों को एप्लिकेशन द्वारा लिखे गए मानक शब्दों से बदला गया है क्योंकि उत्पन्न पाठ की पुष्टि नहीं हो सकी।",
   ta: "உருவாக்கப்பட்ட உரையைச் சரிபார்க்க முடியாததால் சில வாக்கியங்கள் பயன்பாட்டின் நிலையான சொற்களால் மாற்றப்பட்டன.",
 };
+
+/** F13: notice that part of the generated answer was withheld (server-authored; also appended to spoken text). */
+export const WITHHELD_LIMITATION: Record<TemplateLanguage, string> = {
+  en: "Part of the answer was withheld because it could not be verified.",
+  hi: "उत्तर का कुछ हिस्सा रोक दिया गया क्योंकि उसकी पुष्टि नहीं हो सकी।",
+  ta: "சரிபார்க்க முடியாததால் பதிலின் ஒரு பகுதி நிறுத்தி வைக்கப்பட்டது.",
+};

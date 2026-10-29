@@ -7,7 +7,10 @@ import {
   HI_FRACTION_WORDS,
   HI_MODIFIERS,
   HI_NUMBER_WORDS,
+  INDIC_SCRIPT,
+  LONE_MAGNITUDE_EXCLUDE,
   MULTIPLIERS,
+  NATIVE_NUMBER_IDIOMS,
   ROMAN_NUMBER_WORDS,
   TA_COLLOQUIAL_STEMS,
   TA_EXACT_WORDS,
@@ -32,6 +35,28 @@ export function normalizeDigits(s: string): string {
     const base = bases.find((b) => cp >= b)!;
     return String(cp - base);
   });
+}
+
+/**
+ * F13 (review R4 #1): compatibility normalisation before digit handling. NFKC maps full-width, superscript,
+ * subscript, circled and mathematical-alphanumeric digits to ASCII and vulgar fractions to "1⁄2" (U+2044
+ * FRACTION SLASH), which is then folded into a decimal ("½" -> 0.5). NFKC is a superset of NFC, so Devanagari
+ * and Tamil text is unchanged by it.
+ */
+export function compatNormalise(s: string): string {
+  return normalizeDigits(s.normalize("NFKC")).replace(/(\d+)\s*\u2044\s*(\d+)/gu, (m, a: string, b: string) => (/^0+$/.test(b) ? ` ${a} ${b} ` : ` ${new Decimal(a).div(b).toSignificantDigits(6).toString()} `));
+}
+
+/**
+ * F13: a numeric character that is still not an ASCII digit after compatibility normalisation (Thai, Myanmar,
+ * Tibetan, Tamil ௰/௱/௲, Roman-numeral or other numeric symbols ...). The gate fails closed on these.
+ */
+export function unsupportedNumberChar(text: string): string | null {
+  // Each numeric character must normalise to ASCII digits (a vulgar fraction to a decimal). Characters that NFKC
+  // maps to letters or ideographs (Roman numerals Ⅻ -> "XII", ㊁ -> "二") are unsupported, as is anything left over.
+  for (const m of text.normalize("NFC").matchAll(/\p{N}/gu)) if (!/^[\s0-9.]+$/u.test(compatNormalise(m[0]))) return m[0];
+  const rest = /(?![0-9])\p{N}|\u2044/u.exec(compatNormalise(text));
+  return rest ? rest[0] : null;
 }
 
 export const MONTH_RE = "(jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|june?|july?|aug(?:ust)?|sep(?:t(?:ember)?)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)";
@@ -126,10 +151,22 @@ export function wordsToDigits(text: string): string {
     const onlyMult = vals.every((v) => v.kind === "mult");
     const runWords = text.slice(first.index, end).toLowerCase().normalize("NFC").split(/[^\p{L}\p{M}]+/u).filter(Boolean);
     const romanised = runWords.some((w) => own(ROMAN_NUMBER_WORDS, w));
-    const ambiguous = (single && AMBIGUOUS_NUMBER_WORDS.has(first[0].toLowerCase().normalize("NFC"))) || romanised;
+    const firstNorm = first[0].toLowerCase().normalize("NFC");
+    // F13: Devanagari/Tamil number words always count, except for the documented idioms (lexicon.ts).
+    const indicWord = INDIC_SCRIPT.test(first[0]);
     const rest = text.slice(end);
+    const idiom = single && indicWord && NATIVE_NUMBER_IDIOMS.some(([w, r]) => w === firstNorm && new RegExp(r, "u").test(rest));
+    const ambiguous = (single && !indicWord && AMBIGUOUS_NUMBER_WORDS.has(firstNorm)) || romanised;
     const articled = onlyMult && /(?:^|[^\p{L}\p{M}])(?:a|an)\s+$/iu.test(text.slice(0, first.index));
-    if ((onlyMult && !articled) || (ambiguous && !ANY_UNIT_RE.test(rest) && !ANY_MULT_RE.test(rest))) {
+    if (onlyMult && !articled) {
+      // A multiplier after digits ("2.5 lakh") is folded by the digit pass. F13: a lone magnitude word ("earn
+      // lakhs", "हज़ारों", "லட்சங்கள்") is a vague quantity that needs a reference.
+      const afterDigits = /\d[\d,.]*\s*$/u.test(text.slice(0, first.index));
+      if (!afterDigits && !runWords.every((w) => LONE_MAGNITUDE_EXCLUDE.has(w))) out.push(text.slice(cursor, first.index), ` ${VAGUE_QUANTITY} `), (cursor = end);
+      i = j + 1;
+      continue;
+    }
+    if (idiom || (ambiguous && !ANY_UNIT_RE.test(rest) && !ANY_MULT_RE.test(rest))) {
       i = j + 1;
       continue;
     }
@@ -201,7 +238,7 @@ export interface NormalisedText {
 
 /** The normalisation pipeline; `englishDates` strips month-name dates, clock times and list ordinals. */
 export function normaliseForChecks(input: string, o: { englishDates: boolean }): string {
-  let t = normalizeDigits(input.normalize("NFC"));
+  let t = compatNormalise(input);
   t = t.replace(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/gi, " ");
   if (o.englishDates) {
     t = stripDates(t);
