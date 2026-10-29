@@ -2,7 +2,13 @@ name: ci
 on:
   push:
   pull_request:
+  workflow_dispatch:
 
+# Mirrors the commands verified in a fresh clone (docs/BUILD_STATUS.md section 4).
+# data/raw/ (saved source pages) is gitignored, so a CI checkout does not have it. Two things need it and are therefore not run here:
+#   - apps/api/test/catalogue-load.test.ts (2 of its 10 tests read the saved source text), excluded below
+#   - pnpm catalogue:validate (reads data/raw/crops)
+# Run both locally. No secrets are used; everything runs in RUNTIME_MODE=synthetic.
 jobs:
   check:
     runs-on: ubuntu-latest
@@ -31,9 +37,45 @@ jobs:
           python-version: "3.12"
       - run: pnpm install --frozen-lockfile
       - run: pnpm -r typecheck
-      - run: pnpm -r test
+      - name: Unit tests (contracts, domain, web)
+        run: pnpm -r --filter '!@harvest/api' test
+      - name: API tests (needs the postgres service; files run serially per vitest config)
+        run: pnpm --filter @harvest/api exec vitest run --exclude test/catalogue-load.test.ts
       - run: pnpm --filter @harvest/web build
       - name: Python analytics tests
         run: |
           python -m pip install -e 'analytics[dev]'
           python -m pytest analytics/tests -q
+
+  # Optional, manual: Playwright against the real API in synthetic mode (not run on push). Not yet verified on GitHub runners;
+  # the same command passed locally (32/32). Needs a database with migrations and the seed applied.
+  e2e:
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: harvest
+          POSTGRES_PASSWORD: harvest_ci
+          POSTGRES_DB: harvest_outlook_dev
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U harvest" --health-interval 5s --health-timeout 3s --health-retries 10
+    env:
+      CI: "true"
+      RUNTIME_MODE: synthetic
+      DATABASE_URL: postgres://harvest:harvest_ci@localhost:5432/harvest_outlook_dev
+      SESSION_SECRET: ci-only-session-secret-not-a-credential-0123456789
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm db:migrate
+      - run: pnpm db:seed
+      - run: pnpm --filter @harvest/web exec playwright install --with-deps chromium
+      - run: pnpm test:e2e
