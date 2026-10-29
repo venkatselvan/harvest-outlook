@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import sharp from "sharp";
+import type { PoolClient } from "pg";
 import { z } from "zod";
 import type { Config } from "../config";
 import type { Pool } from "../db/pool";
@@ -9,12 +10,15 @@ import { readContent } from "../services/media";
 import type { StorageAdapter } from "../storage/types";
 import { loadBriefs, type VisualBrief } from "./brief";
 import { buildContext, type VisualContext } from "./context";
+import { claimDispatch, finishDispatch, unresolvedDispatches } from "./dispatch";
 import { MAX_KEYFRAMES, MAX_SENT_SIDE, STABLE_SCHEMATIC_REASONS, VISUAL_JOB_TYPE, type SchematicReason } from "./labels";
 import { editImage, MuseImageError } from "./muse-image";
 import { evaluateScene } from "./qa";
 import { adoptReusable, findByCacheKeys, toOut, upsertAsset, type AssetRow, type UpsertAsset, type VisualAssetOut } from "./repository";
 
 export const PROVIDER = "meta";
+/** Stage failure_reason when a previous attempt may have called the provider and the outcome was lost. Shown as failed; a new request may retry. */
+export const UNCERTAIN_REASON = "uncertain_needs_review";
 
 export const keyframesPayload = z
   .object({
@@ -37,6 +41,8 @@ export interface VisualJobDeps {
   /** Injected in tests; defaults to global fetch. */
   fetchImpl?: typeof fetch;
   sleep?: (ms: number) => Promise<void>;
+  /** Max wait for another job that is generating the same stage before skipping it. Default 10 minutes. */
+  stageLockWaitMs?: number;
 }
 
 export interface KeyframesResult {
@@ -44,6 +50,8 @@ export interface KeyframesResult {
   mode: "live" | "replay" | "synthetic";
   providerCalls: number;
   cancelled: boolean;
+  /** Stages whose provider outcome is unknown (a previous attempt may have called the provider): never re-dispatched by this job. */
+  uncertainStages: string[];
   assets: VisualAssetOut[];
   /** Estimated = reserved worst case; settled = images actually returned x unit price. Both null when no budget was touched. */
   cost: { reservedUsd: number; settledUsd: number; images: number; outcome: "settled" | "released" | "uncertain" } | null;
@@ -87,15 +95,6 @@ export async function runVisualKeyframes(
   // Free reuse first: keyframes this owner already generated for another plan with identical inputs.
   await adoptReusable(pool, ownerId, v.planId, keys, job.id);
   const existing = new Map((await findByCacheKeys(pool, ownerId, v.planId, keys)).map((r) => [r.cache_key, r]));
-  const todo = v.selected.filter((s) => !isCacheHit(existing.get(v.assetKeys.get(s.stageId)!)));
-  const finish = async (extra: Pick<KeyframesResult, "providerCalls" | "cancelled" | "cost">): Promise<KeyframesResult> => {
-    const rows = await findByCacheKeys(pool, ownerId, v.planId, keys);
-    const byKey = new Map(rows.map((r) => [r.cache_key, r]));
-    const assets = v.selected.map((s) => byKey.get(v.assetKeys.get(s.stageId)!)).filter((r): r is AssetRow => !!r).map(toOut);
-    return { cacheHit: todo.length === 0, mode: v.effectiveMode, assets, ...extra };
-  };
-  // Cache hit: zero provider calls, zero budget, same rows.
-  if (todo.length === 0) return finish({ providerCalls: 0, cancelled: false, cost: null });
 
   const base = (stageId: string, cacheKey: string): Omit<UpsertAsset, "kind" | "status" | "provider" | "providerRequestId" | "qa" | "storageKey" | "width" | "height" | "failureReason" | "id"> & { id: string } => {
     const bs = v.brief?.stages.find((b) => b.stageId === stageId);
@@ -121,8 +120,36 @@ export async function runVisualKeyframes(
   const writeFailed = (stageId: string, cacheKey: string, reason: string, requestId: string | null = null) =>
     upsertAsset(pool, { ...base(stageId, cacheKey), kind: "illustrative", status: "failed", provider: PROVIDER, providerRequestId: requestId, qa: null, storageKey: null, width: null, height: null, failureReason: reason });
 
+  // A marker left by an earlier attempt without an outcome means a paid call may have been sent and its result lost
+  // (crash, lease expiry). Never dispatch that stage again from this job: hold the reservation as uncertain and flag it.
+  const blocked = new Set<string>();
+  for (const d of await unresolvedDispatches(pool, job.id)) {
+    const key = v.assetKeys.get(d.stage_key);
+    if (d.outcome === null && isCacheHit(key ? existing.get(key) : undefined)) {
+      await finishDispatch(pool, job.id, d.stage_key, "completed"); // the asset was stored; only the marker update was lost
+      continue;
+    }
+    if (d.outcome === null) {
+      if (d.reservation_id) await budget.markUncertain(d.reservation_id).catch(() => undefined);
+      await finishDispatch(pool, job.id, d.stage_key, "uncertain");
+    }
+    blocked.add(d.stage_key);
+    if (key) await writeFailed(d.stage_key, key, UNCERTAIN_REASON);
+  }
+  const uncertainStages = [...blocked];
+
+  const todo = v.selected.filter((s) => !blocked.has(s.stageId) && !isCacheHit(existing.get(v.assetKeys.get(s.stageId)!)));
+  const finish = async (extra: Pick<KeyframesResult, "providerCalls" | "cancelled" | "cost">): Promise<KeyframesResult> => {
+    const rows = await findByCacheKeys(pool, ownerId, v.planId, keys);
+    const byKey = new Map(rows.map((r) => [r.cache_key, r]));
+    const assets = v.selected.map((s) => byKey.get(v.assetKeys.get(s.stageId)!)).filter((r): r is AssetRow => !!r).map(toOut);
+    return { cacheHit: todo.length === 0 && blocked.size === 0, mode: v.effectiveMode, uncertainStages, assets, ...extra };
+  };
+  // Cache hit: zero provider calls, zero budget, same rows.
+  if (todo.length === 0) return finish({ providerCalls: 0, cancelled: false, cost: null });
+
   // Stages without a source-backed brief never reach the image model: the brief is the only biology source.
-  const gen = [];
+  const gen: typeof v.selected = [];
   const gate = gateReason(v, config);
   for (const s of todo) {
     const key = v.assetKeys.get(s.stageId)!;
@@ -157,6 +184,65 @@ export async function runVisualKeyframes(
   let unknown = false;
   let cancelled = false;
   let lastRequestId: string | null = null;
+
+  /** Generates one stage; the caller holds the stage lock. Returns without a provider call when the stage was produced elsewhere. */
+  const generateStage = async (s: (typeof gen)[number], cacheKey: string): Promise<void> => {
+    // Another job may have produced this exact stage while we waited for the lock: adopt it, no call, no spend.
+    await adoptReusable(pool, ownerId, v.planId, [cacheKey], job.id);
+    const [fresh] = await findByCacheKeys(pool, ownerId, v.planId, [cacheKey]);
+    if (isCacheHit(fresh)) return;
+    if (fresh) existing.set(cacheKey, fresh);
+    const prompt = v.brief!.stages.find((b) => b.stageId === s.stageId)!.promptTemplate;
+    const b = base(s.stageId, cacheKey);
+    // Committed marker BEFORE the paid call; a lost outcome is then visible to any re-claim of this job.
+    if (!(await claimDispatch(pool, job.id, s.stageId, reservationId))) {
+      blocked.add(s.stageId);
+      uncertainStages.push(s.stageId);
+      return;
+    }
+    let outcome: "completed" | "failed" | "uncertain" = "uncertain";
+    try {
+      calls++;
+      const res = await editImage({
+        baseUrl: config.META_BASE_URL,
+        apiKey: config.MODEL_API_KEY!,
+        model,
+        prompt,
+        imageDataUrl,
+        size,
+        ...(deps.fetchImpl ? { fetchImpl: deps.fetchImpl } : {}),
+        ...(deps.sleep ? { sleep: deps.sleep } : {}),
+      });
+      billed++; // the provider returned an image: billable even if we cannot use it
+      outcome = "completed";
+      lastRequestId = res.requestId;
+      let png: { data: Buffer; info: { width: number; height: number } };
+      try {
+        png = await sharp(res.png, { failOn: "error" }).png().toBuffer({ resolveWithObject: true });
+      } catch {
+        await writeFailed(s.stageId, cacheKey, "output_undecodable", res.requestId);
+        return;
+      }
+      const qa = await evaluateScene({ base: sentImg.data, output: png.data, polygon: v.polygon });
+      const storageKey = `visuals/${b.id}/keyframe.png`;
+      await storage.put({ ownerId, key: storageKey }, png.data);
+      const row = await upsertAsset(pool, { ...b, kind: "illustrative", status: "ready", provider: PROVIDER, providerRequestId: res.requestId, qa, storageKey, width: png.info.width, height: png.info.height, failureReason: null });
+      if (!row) await storage.delete({ ownerId, key: storageKey }).catch(() => undefined); // a concurrent job already stored this key
+    } catch (e) {
+      if (e instanceof MuseImageError) {
+        if (e.outcomeUnknown) unknown = true;
+        else outcome = "failed";
+        if (e.opts.requestId) lastRequestId = e.opts.requestId;
+        await writeFailed(s.stageId, cacheKey, `provider_${e.kind}`, e.opts.requestId ?? null).catch(() => undefined);
+      } else {
+        await writeFailed(s.stageId, cacheKey, "internal_error").catch(() => undefined);
+      }
+    } finally {
+      // Not reached when the process dies mid-call: that is what leaves the marker open.
+      await finishDispatch(pool, job.id, s.stageId, outcome, lastRequestId).catch(() => undefined);
+    }
+  };
+
   try {
     for (let i = 0; i < gen.length; i++) {
       const s = gen[i]!;
@@ -166,42 +252,32 @@ export async function runVisualKeyframes(
         cancelled = true;
         break;
       }
-      const prompt = v.brief!.stages.find((b) => b.stageId === s.stageId)!.promptTemplate;
-      const b = base(s.stageId, cacheKey);
-      try {
-        calls++;
-        const res = await editImage({
-          baseUrl: config.META_BASE_URL,
-          apiKey: config.MODEL_API_KEY!,
-          model,
-          prompt,
-          imageDataUrl,
-          size,
-          ...(deps.fetchImpl ? { fetchImpl: deps.fetchImpl } : {}),
-          ...(deps.sleep ? { sleep: deps.sleep } : {}),
-        });
-        billed++; // the provider returned an image: billable even if we cannot use it
-        lastRequestId = res.requestId;
-        let png: { data: Buffer; info: { width: number; height: number } };
+      // One provider call per cache key at a time across jobs: a session-level advisory lock on a dedicated connection.
+      // Polled with try-lock so a waiting job never pins a pool connection while the holder needs one.
+      const lockKey = `visuals:${cacheKey}:${s.stageId}`;
+      const deadline = Date.now() + (deps.stageLockWaitMs ?? 600_000);
+      let held: PoolClient | null = null;
+      while (!held && Date.now() < deadline) {
+        const c = await pool.connect();
+        let got = false;
         try {
-          png = await sharp(res.png, { failOn: "error" }).png().toBuffer({ resolveWithObject: true });
-        } catch {
-          await writeFailed(s.stageId, cacheKey, "output_undecodable", res.requestId);
-          continue;
+          got = (await c.query<{ ok: boolean }>("SELECT pg_try_advisory_lock(hashtextextended($1, 0)) AS ok", [lockKey])).rows[0]!.ok;
+        } catch (e) {
+          c.release(true);
+          throw e;
         }
-        const qa = await evaluateScene({ base: sentImg.data, output: png.data, polygon: v.polygon });
-        const storageKey = `visuals/${b.id}/keyframe.png`;
-        await storage.put({ ownerId, key: storageKey }, png.data);
-        const row = await upsertAsset(pool, { ...b, kind: "illustrative", status: "ready", provider: PROVIDER, providerRequestId: res.requestId, qa, storageKey, width: png.info.width, height: png.info.height, failureReason: null });
-        if (!row) await storage.delete({ ownerId, key: storageKey }).catch(() => undefined); // a concurrent job already stored this key
-      } catch (e) {
-        if (e instanceof MuseImageError) {
-          if (e.outcomeUnknown) unknown = true;
-          if (e.opts.requestId) lastRequestId = e.opts.requestId;
-          await writeFailed(s.stageId, cacheKey, `provider_${e.kind}`, e.opts.requestId ?? null).catch(() => undefined);
-        } else {
-          await writeFailed(s.stageId, cacheKey, "internal_error").catch(() => undefined);
+        if (got) held = c;
+        else {
+          c.release();
+          await new Promise((r) => setTimeout(r, 50));
+          await ctx.heartbeat().catch(() => undefined);
         }
+      }
+      if (!held) continue; // another job has been generating this stage for the whole wait; it owns the result
+      try {
+        await generateStage(s, cacheKey);
+      } finally {
+        await held.query("SELECT pg_advisory_unlock(hashtextextended($1, 0))", [lockKey]).then(() => held!.release(), () => held!.release(true));
       }
       await ctx.heartbeat(0.1 + (0.85 * (i + 1)) / gen.length);
     }

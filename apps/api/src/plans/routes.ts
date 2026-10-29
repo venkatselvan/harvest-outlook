@@ -1,13 +1,16 @@
 import type { FastifyInstance, FastifyRequest, onRequestHookHandler } from "fastify";
 import type { ZodTypeProvider } from "fastify-type-provider-zod";
 import { z } from "zod";
-import { Assumption, Id, IsoDateTime, NamedInput, PlanSnapshot, Sha256Hex, StageDefinition, VersionRef } from "@harvest/contracts";
+import { Assumption, Id, IrrigationCategory, IsoDate, IsoDateTime, NamedInput, PlanSnapshot, Sha256Hex, StageDefinition, VersionRef } from "@harvest/contracts";
 import type { Config } from "../config";
+import type { Pool } from "../db/pool";
 import { envelope } from "../envelope";
 import { envelopeSchema, uuidParam } from "../routes/schemas/common";
 import { parseIdempotencyKey } from "../services/idempotency";
 import type { PlanService } from "./engine";
 import { regionDate } from "./weather";
+import { resolvePlanInputs } from "./catalogue-resolver";
+import { PlanError } from "./errors";
 import type { IdempotencyHook } from "./sources";
 import { OUTPUT_KINDS, PlanChange, PlanParameters, TimelineQuery } from "./types";
 
@@ -20,9 +23,37 @@ export interface PlanRouteDeps {
   onRequest?: onRequestHookHandler;
   /** Idempotency storage for POST /plans (T04: `{ run: (o, e) => runIdempotent(pool, o, e) }`). Without it the key is validated but not stored. */
   idempotency?: IdempotencyHook;
+  /**
+   * Database used to resolve stage definitions, task templates and rule versions server-side (T12). When omitted the
+   * service's own pool is used. Without either, the crop/product/date body shape returns 500 `resolver_unavailable`.
+   */
+  pool?: Pool;
+  /** Catalogue data root override for tests. */
+  dataRoot?: string;
 }
 
-export const CreatePlanBody = z
+/**
+ * Preferred body (T12): the client names a crop, product, date and farm facts. Stage definitions, task templates and
+ * rule versions are resolved on the server from the catalogue by crop and the farm's region.
+ */
+export const CreateResolvedPlanBody = z
+  .object({
+    farmId: z.uuid(),
+    cropId: Id,
+    productId: Id,
+    plantingDate: IsoDate,
+    areaHa: z.number().positive().max(100000).optional(),
+    irrigationCategory: IrrigationCategory.optional(),
+    assumedPriceInrPerKg: z.number().nonnegative().max(1_000_000).optional(),
+    /** View default only (early|late stage timing); both timelines are always available from GET /timeline. Not stored in the snapshot. */
+    scenarioId: z.enum(["early", "late"]).optional(),
+    /** Replay only. */
+    decisionCutoff: IsoDateTime.optional(),
+  })
+  .strict();
+
+/** Legacy body: client-supplied stage definitions and templates. Accepted in synthetic mode only (tests); rejected in live and replay. */
+export const CreateLegacyPlanBody = z
   .object({
     farmId: z.uuid(),
     cropId: Id,
@@ -38,6 +69,8 @@ export const CreatePlanBody = z
     decisionCutoff: IsoDateTime.optional(),
   })
   .strict();
+
+export const CreatePlanBody = z.union([CreateResolvedPlanBody, CreateLegacyPlanBody]);
 
 export const RevisePlanBody = z
   .object({ expectedParentContentHash: Sha256Hex, changes: z.array(PlanChange).min(1).max(20) })
@@ -133,23 +166,39 @@ export async function registerPlanRoutes(app: FastifyInstance, deps: PlanRouteDe
       async (req, reply) => {
         const ownerId = await deps.resolveOwner(req);
         const key = parseIdempotencyKey(req.headers["idempotency-key"]);
+        const body = req.body;
+        const legacy = "stageDefinitions" in body;
+        if (legacy && mode !== "synthetic") {
+          throw new PlanError(422, "client_stage_definitions_rejected", "Stage definitions, task templates and parameters are resolved on the server; send cropId, productId, farmId and plantingDate only.");
+        }
         const exec = async () => {
-          const b = req.body;
-          const view = await deps.service.createPlan({
-            ownerId,
-            mode,
-            farmId: b.farmId,
-            cropId: b.cropId,
-            productId: b.productId,
-            confirmedInputs: b.confirmedInputs,
-            assumptions: b.assumptions,
-            ruleVersions: b.ruleVersions,
-            stageDefinitions: b.stageDefinitions,
-            parameters: b.parameters,
-            sourceSnapshotId: b.sourceSnapshotId ?? `${mode}:unpinned:${regionDate(new Date())}`,
-            decisionCutoff: b.decisionCutoff ?? null,
-          });
-          return { status: view.deduplicated ? 200 : 201, body: envelope(req.id, mode, view, view.deduplicated ? ["deduplicated_existing_plan"] : []) };
+          let warnings: string[] = [];
+          let args: Parameters<PlanService["createPlan"]>[0];
+          if (legacy) {
+            const b = body;
+            args = {
+              ownerId,
+              mode,
+              farmId: b.farmId,
+              cropId: b.cropId,
+              productId: b.productId,
+              confirmedInputs: b.confirmedInputs,
+              assumptions: b.assumptions,
+              ruleVersions: b.ruleVersions,
+              stageDefinitions: b.stageDefinitions,
+              parameters: b.parameters,
+              sourceSnapshotId: b.sourceSnapshotId ?? `${mode}:unpinned:${regionDate(new Date())}`,
+              decisionCutoff: b.decisionCutoff ?? null,
+            };
+          } else {
+            const pool = deps.pool ?? (deps.service as unknown as { pool?: Pool }).pool;
+            if (!pool) throw new PlanError(500, "resolver_unavailable", "Plan resolution is not wired to a database");
+            const res = await resolvePlanInputs(pool, mode, { ownerId, ...body }, deps.dataRoot);
+            warnings = res.info.limitations;
+            args = { ownerId, mode, ...res.args };
+          }
+          const view = await deps.service.createPlan(args);
+          return { status: view.deduplicated ? 200 : 201, body: envelope(req.id, mode, view, [...(view.deduplicated ? ["deduplicated_existing_plan"] : []), ...warnings]) };
         };
         const out = deps.idempotency ? await deps.idempotency.run({ ownerId, key, route: "POST /api/v1/plans", hashInput: req.body }, exec) : { ...(await exec()), replay: false };
         if (out.replay) reply.header("idempotent-replay", "true");

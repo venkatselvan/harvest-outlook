@@ -5,6 +5,7 @@ import { scopedQuery, READABLE_ROW_MODES } from "../../ingest/scope";
 import { pgCache } from "../../ingest/cache";
 import { storeArchive, storeForecast } from "../../ingest/weather-store";
 import { enqueue } from "../../services/jobs";
+import { normalizeIngestPayload } from "../../worker/handlers/ingest";
 import { loadProviderConfig, type ProviderConfig } from "../../providers/config";
 import { fetchDailyArchive, fetchForecast, OPENMETEO_ATTRIBUTION, roundCoord } from "../../providers/openmeteo/client";
 import type { FetchLike } from "../../ingest/http";
@@ -172,11 +173,11 @@ export function createWeatherSource(o: WeatherSourceAdapterOptions): AttributedW
     return { from: to - climYears + 1, to };
   }
 
-  async function climatologyRows(scope: WeatherScope, years: { from: number; to: number }, range: DateRange): Promise<Row[]> {
+  async function climatologyRows(scope: WeatherScope, years: { from: number; to: number }, range: DateRange, availableBy?: string): Promise<Row[]> {
     if (!scope.point) return [];
     const key = await nearestKey("weather_observations", scope.point);
     if (!key) return [];
-    return q.weatherObservations(pool, { locationKey: key, from: `${years.from}-01-01`, to: `${years.to}-12-31`, ...(mode === "replay" ? { availableBy: new Date(`${range.start}T00:00:00Z`) } : {}) });
+    return q.weatherObservations(pool, { locationKey: key, from: `${years.from}-01-01`, to: `${years.to}-12-31`, ...(mode === "replay" ? { availableBy: new Date(availableBy ?? `${range.start}T00:00:00Z`) } : {}) });
   }
 
   /** Queues one archive job per missing year (bounded, deduplicated by key) so normals appear on a later read. */
@@ -185,7 +186,7 @@ export function createWeatherSource(o: WeatherSourceAdapterOptions): AttributedW
     const p = scope.point;
     await bounded("climatology", p, async () => {
       for (let y = years.from; y <= years.to; y++) {
-        await enqueue(pool, "ingest.weather_archive", { lat: roundCoord(p.lat), lon: roundCoord(p.lon), start: `${y}-01-01`, end: `${y}-12-31` }, null, `clim:${roundCoord(p.lat)},${roundCoord(p.lon)}:${y}`).catch(() => undefined);
+        await enqueue(pool, "ingest.weather_archive", normalizeIngestPayload("ingest.weather_archive", { lat: p.lat, lon: p.lon, start: `${y}-01-01`, end: `${y}-12-31` }), null, `clim:${roundCoord(p.lat)},${roundCoord(p.lon)}:${y}`).catch(() => undefined);
       }
     });
   }
@@ -213,9 +214,10 @@ export function createWeatherSource(o: WeatherSourceAdapterOptions): AttributedW
       return { issuedAt: (rows[0]!.issued_at as Date).toISOString(), sourceId, days };
     },
 
-    async getClimatology(scope, range): Promise<ClimatologyBundle | null> {
+    /** `opts.availableBy` (replay decision cutoff) overrides the default of the range start; the engine does not pass it yet (INT2 report). */
+    async getClimatology(scope, range, opts?: { availableBy?: string }): Promise<ClimatologyBundle | null> {
       const years = climatologyYears(range);
-      const rows = await climatologyRows(scope, years, range);
+      const rows = await climatologyRows(scope, years, range, opts?.availableBy);
       const perYear = new Map<number, number>();
       for (const r of rows) perYear.set(Number(dateStr(r.observed_on).slice(0, 4)), (perYear.get(Number(dateStr(r.observed_on).slice(0, 4))) ?? 0) + 1);
       const fullYears = [...perYear.values()].filter((n) => n >= MIN_ROWS_PER_CLIMATOLOGY_YEAR).length;

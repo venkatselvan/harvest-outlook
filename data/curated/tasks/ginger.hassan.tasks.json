@@ -1,0 +1,404 @@
+{
+  "schemaVersion": "1.0",
+  "cropId": "ginger",
+  "regionKey": "hassan",
+  "evidenceFile": "data/curated/evidence/ginger.hassan.evidence.json",
+  "templateSet": {
+    "id": "task-templates.ginger.hassan",
+    "version": 1
+  },
+  "note": "Task templates derived from the cited ICAR-IISR guide and CRIDA contingency evidence. No amounts, doses or chemical prescriptions. Window offsets marked task_window_planning_offsets are planning assumptions, not source values. Review status: candidate.",
+  "assumptions": [
+    {
+      "id": "task_window_planning_offsets",
+      "description": "Task windows are placed relative to the inferred stage windows using planning offsets chosen for usability (for example a one-week window to act). The offsets are not source values; the guide gives no task dates other than those in the sourced-offset assumptions.",
+      "value": null,
+      "evidenceIds": []
+    },
+    {
+      "id": "mulch_weed_at_45_and_90_dap",
+      "description": "The guide states mulching is repeated at 45 and 90 days after planting, immediately after weeding. Offsets of 45 and 90 days follow the guide.",
+      "value": null,
+      "evidenceIds": [
+        "ev.ginger.iisr2025.p14.mulching-repeat"
+      ]
+    },
+    {
+      "id": "first_irrigation_at_planting",
+      "description": "The guide states the first irrigation should be done immediately after planting.",
+      "value": null,
+      "evidenceIds": [
+        "ev.ginger.iisr2025.p14.irrigation-interval"
+      ]
+    },
+    {
+      "id": "irrigation_stop_one_month_before_harvest",
+      "description": "The guide states irrigation is stopped one month before harvest. The window is the 30 days before the harvest stage begins.",
+      "value": null,
+      "evidenceIds": [
+        "ev.ginger.iisr2025.p25.irrigation-stop"
+      ]
+    },
+    {
+      "id": "heavy_rain_threshold_mm",
+      "description": "Named planning assumption: daily rain at or above this amount prompts a drainage inspection. The threshold is not a source value; the sources only say continuous heavy rain can cause water logging and that drainage channels are needed. The farmer can change it.",
+      "value": {
+        "schemaVersion": "1.0",
+        "kind": "quantity",
+        "value": 50,
+        "unit": "mm",
+        "evidenceState": "scenario",
+        "scope": {
+          "level": "district",
+          "ids": [
+            "IN-KA-hassan"
+          ]
+        },
+        "validFrom": null,
+        "validTo": null,
+        "issuedAt": null,
+        "evidenceIds": [],
+        "assumptionIds": [],
+        "methodVersion": null,
+        "validationStatus": "pending",
+        "missingReason": null
+      },
+      "evidenceIds": []
+    }
+  ],
+  "taskTemplates": [
+    {
+      "id": "prepare_beds",
+      "stageId": "sprouting_vegetative",
+      "taskType": "prepare_land",
+      "description": "Prepare beds on well-drained soil and provide drainage channels before planting.",
+      "anchor": "stage_start",
+      "startOffsetDays": -14,
+      "endOffsetDays": -1,
+      "offsetBasis": {
+        "kind": "assumption",
+        "assumptionId": "task_window_planning_offsets"
+      },
+      "reasonCode": "well_drained_soil_and_drainage_channels",
+      "evidenceIds": [
+        "ev.ginger.iisr2025.p3.soil-well-drained",
+        "ev.ginger.iisr2025.p15.drainage-channels"
+      ],
+      "dependsOn": [],
+      "irrigation": [],
+      "amount": null,
+      "trigger": null
+    },
+    {
+      "id": "plant_seed_pieces",
+      "stageId": "sprouting_vegetative",
+      "taskType": "plant",
+      "description": "Plant seed rhizome pieces (the guide describes pieces of 2.5-5.0 cm with one or two good buds) and record the planting date in the app.",
+      "anchor": "stage_start",
+      "startOffsetDays": 0,
+      "endOffsetDays": 0,
+      "offsetBasis": {
+        "kind": "assumption",
+        "assumptionId": "task_window_planning_offsets"
+      },
+      "reasonCode": "plant_seed_rhizome_pieces",
+      "evidenceIds": [
+        "ev.ginger.iisr2025.p10.seed-piece"
+      ],
+      "dependsOn": [
+        "prepare_beds"
+      ],
+      "irrigation": [],
+      "amount": null,
+      "trigger": null
+    },
+    {
+      "id": "first_irrigation",
+      "stageId": "sprouting_vegetative",
+      "taskType": "irrigate",
+      "description": "Give the first irrigation right after planting if you irrigate.",
+      "anchor": "stage_start",
+      "startOffsetDays": 0,
+      "endOffsetDays": 0,
+      "offsetBasis": {
+        "kind": "assumption",
+        "assumptionId": "first_irrigation_at_planting"
+      },
+      "reasonCode": "first_irrigation_after_planting",
+      "evidenceIds": [
+        "ev.ginger.iisr2025.p14.irrigation-interval"
+      ],
+      "dependsOn": [
+        "plant_seed_pieces"
+      ],
+      "irrigation": [
+        "irrigated",
+        "supplemental"
+      ],
+      "amount": null,
+      "trigger": null
+    },
+    {
+      "id": "weed_mulch_45_dap",
+      "stageId": "sprouting_vegetative",
+      "taskType": "weed",
+      "description": "Weed, then mulch the beds with green leaves or organic waste (the guide repeats mulching at 45 and 90 days after planting).",
+      "anchor": "stage_start",
+      "startOffsetDays": 45,
+      "endOffsetDays": 45,
+      "offsetBasis": {
+        "kind": "assumption",
+        "assumptionId": "mulch_weed_at_45_and_90_dap"
+      },
+      "reasonCode": "mulch_after_weeding_45_dap",
+      "evidenceIds": [
+        "ev.ginger.iisr2025.p14.mulching-repeat",
+        "ev.ginger.iisr2025.p14.mulching-purpose"
+      ],
+      "dependsOn": [
+        "plant_seed_pieces"
+      ],
+      "irrigation": [],
+      "amount": null,
+      "trigger": null
+    },
+    {
+      "id": "scout_soft_rot_sprouts",
+      "stageId": "sprouting_vegetative",
+      "taskType": "scout",
+      "description": "Look over young sprouts for light yellowing of the margins of lower leaves, which the guide lists as a soft rot symptom. If you see it, take a clear photo and ask your local agriculture officer; this app does not diagnose.",
+      "anchor": "stage_span",
+      "startOffsetDays": 0,
+      "endOffsetDays": 0,
+      "offsetBasis": {
+        "kind": "assumption",
+        "assumptionId": "task_window_planning_offsets"
+      },
+      "reasonCode": "scout_soft_rot_symptoms",
+      "evidenceIds": [
+        "ev.ginger.iisr2025.p15.soft-rot-monsoon-moisture",
+        "ev.ginger.iisr2025.p16.soft-rot-foliar-symptom"
+      ],
+      "dependsOn": [
+        "plant_seed_pieces"
+      ],
+      "irrigation": [],
+      "amount": null,
+      "trigger": null
+    },
+    {
+      "id": "inspect_drainage_vegetative",
+      "stageId": "sprouting_vegetative",
+      "taskType": "scout",
+      "description": "Inspect drainage channels and standing water after heavy rain.",
+      "anchor": "stage_span",
+      "startOffsetDays": 0,
+      "endOffsetDays": 0,
+      "offsetBasis": {
+        "kind": "assumption",
+        "assumptionId": "task_window_planning_offsets"
+      },
+      "reasonCode": "inspect_drainage_after_heavy_rain",
+      "evidenceIds": [
+        "ev.ginger.iisr2025.p15.drainage-channels",
+        "ev.ginger.iisr2025.p16.soft-rot-drainage",
+        "ev.ginger.crida2011.p29.waterlogging-contingency"
+      ],
+      "dependsOn": [
+        "prepare_beds"
+      ],
+      "irrigation": [],
+      "amount": null,
+      "trigger": {
+        "type": "daily_rain_gte",
+        "thresholdAssumptionId": "heavy_rain_threshold_mm"
+      }
+    },
+    {
+      "id": "weed_mulch_90_dap",
+      "stageId": "rhizome_initiation",
+      "taskType": "weed",
+      "description": "Weed, then mulch the beds again (the guide repeats mulching at 45 and 90 days after planting).",
+      "anchor": "stage_start",
+      "startOffsetDays": 0,
+      "endOffsetDays": 0,
+      "offsetBasis": {
+        "kind": "assumption",
+        "assumptionId": "mulch_weed_at_45_and_90_dap"
+      },
+      "reasonCode": "mulch_after_weeding_90_dap",
+      "evidenceIds": [
+        "ev.ginger.iisr2025.p14.mulching-repeat"
+      ],
+      "dependsOn": [],
+      "irrigation": [],
+      "amount": null,
+      "trigger": null
+    },
+    {
+      "id": "check_moisture_rhizome_initiation",
+      "stageId": "rhizome_initiation",
+      "taskType": "irrigate",
+      "description": "Check soil moisture before irrigating: rhizome initiation (about 90 days after planting) is a critical stage for irrigation in the guide.",
+      "anchor": "stage_start",
+      "startOffsetDays": 0,
+      "endOffsetDays": 7,
+      "offsetBasis": {
+        "kind": "assumption",
+        "assumptionId": "task_window_planning_offsets"
+      },
+      "reasonCode": "critical_stage_irrigation_rhizome_initiation",
+      "evidenceIds": [
+        "ev.ginger.iisr2025.p14.critical-stages"
+      ],
+      "dependsOn": [],
+      "irrigation": [
+        "irrigated",
+        "supplemental"
+      ],
+      "amount": null,
+      "trigger": null
+    },
+    {
+      "id": "inspect_drainage_initiation",
+      "stageId": "rhizome_initiation",
+      "taskType": "scout",
+      "description": "Inspect drainage channels and standing water after heavy rain.",
+      "anchor": "stage_span",
+      "startOffsetDays": 0,
+      "endOffsetDays": 0,
+      "offsetBasis": {
+        "kind": "assumption",
+        "assumptionId": "task_window_planning_offsets"
+      },
+      "reasonCode": "inspect_drainage_after_heavy_rain",
+      "evidenceIds": [
+        "ev.ginger.iisr2025.p15.drainage-channels",
+        "ev.ginger.iisr2025.p16.soft-rot-drainage",
+        "ev.ginger.crida2011.p29.waterlogging-contingency"
+      ],
+      "dependsOn": [],
+      "irrigation": [],
+      "amount": null,
+      "trigger": {
+        "type": "daily_rain_gte",
+        "thresholdAssumptionId": "heavy_rain_threshold_mm"
+      }
+    },
+    {
+      "id": "photo_checkpoint_rhizome_initiation",
+      "stageId": "rhizome_initiation",
+      "taskType": "record_observation",
+      "description": "Add a dated photo of the planting area. The plan's stage windows are calendar estimates, and a dated photo lets you confirm or correct the stage.",
+      "anchor": "stage_start",
+      "startOffsetDays": 0,
+      "endOffsetDays": 7,
+      "offsetBasis": {
+        "kind": "assumption",
+        "assumptionId": "task_window_planning_offsets"
+      },
+      "reasonCode": "confirm_stage_with_photo",
+      "evidenceIds": [],
+      "dependsOn": [],
+      "irrigation": [],
+      "amount": null,
+      "trigger": null
+    },
+    {
+      "id": "check_moisture_rhizome_development",
+      "stageId": "rhizome_development",
+      "taskType": "irrigate",
+      "description": "Check soil moisture before irrigating: rhizome development (about 135 days after planting) is a critical stage for irrigation in the guide.",
+      "anchor": "stage_start",
+      "startOffsetDays": 0,
+      "endOffsetDays": 7,
+      "offsetBasis": {
+        "kind": "assumption",
+        "assumptionId": "task_window_planning_offsets"
+      },
+      "reasonCode": "critical_stage_irrigation_rhizome_development",
+      "evidenceIds": [
+        "ev.ginger.iisr2025.p14.critical-stages"
+      ],
+      "dependsOn": [],
+      "irrigation": [
+        "irrigated",
+        "supplemental"
+      ],
+      "amount": null,
+      "trigger": null
+    },
+    {
+      "id": "inspect_drainage_development",
+      "stageId": "rhizome_development",
+      "taskType": "scout",
+      "description": "Inspect drainage channels and standing water after heavy rain.",
+      "anchor": "stage_span",
+      "startOffsetDays": 0,
+      "endOffsetDays": 0,
+      "offsetBasis": {
+        "kind": "assumption",
+        "assumptionId": "task_window_planning_offsets"
+      },
+      "reasonCode": "inspect_drainage_after_heavy_rain",
+      "evidenceIds": [
+        "ev.ginger.iisr2025.p15.drainage-channels",
+        "ev.ginger.iisr2025.p16.soft-rot-drainage",
+        "ev.ginger.crida2011.p29.waterlogging-contingency"
+      ],
+      "dependsOn": [],
+      "irrigation": [],
+      "amount": null,
+      "trigger": {
+        "type": "daily_rain_gte",
+        "thresholdAssumptionId": "heavy_rain_threshold_mm"
+      }
+    },
+    {
+      "id": "stop_irrigation_before_harvest",
+      "stageId": "maturation",
+      "taskType": "irrigate",
+      "description": "Stop irrigating about one month before harvest, per the guide.",
+      "anchor": "stage_end",
+      "startOffsetDays": -30,
+      "endOffsetDays": -30,
+      "offsetBasis": {
+        "kind": "assumption",
+        "assumptionId": "irrigation_stop_one_month_before_harvest"
+      },
+      "reasonCode": "stop_irrigation_one_month_before_harvest",
+      "evidenceIds": [
+        "ev.ginger.iisr2025.p25.irrigation-stop"
+      ],
+      "dependsOn": [],
+      "irrigation": [
+        "irrigated",
+        "supplemental"
+      ],
+      "amount": null,
+      "trigger": null
+    },
+    {
+      "id": "harvest_when_mature",
+      "stageId": "harvest_full_maturity",
+      "taskType": "harvest",
+      "description": "Check maturity and harvest. For dry ginger the guide says harvest at full maturity, when the leaves turn yellow and start drying; harvest for vegetable use can start after 180 days depending on demand.",
+      "anchor": "stage_span",
+      "startOffsetDays": 0,
+      "endOffsetDays": 0,
+      "offsetBasis": {
+        "kind": "assumption",
+        "assumptionId": "task_window_planning_offsets"
+      },
+      "reasonCode": "harvest_at_maturity",
+      "evidenceIds": [
+        "ev.ginger.iisr2025.p25.maturity-days",
+        "ev.ginger.iisr2025.p25.harvest-indicator-dry"
+      ],
+      "dependsOn": [],
+      "irrigation": [],
+      "amount": null,
+      "trigger": null
+    }
+  ]
+}

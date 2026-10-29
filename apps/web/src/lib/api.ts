@@ -13,7 +13,7 @@ export interface Envelope<T> {
   mode: RuntimeMode;
   asOf: string;
   data: T | null;
-  warnings: string[];
+  warnings: { code: string; message: string }[];
   error: ApiErrorBody | null;
 }
 

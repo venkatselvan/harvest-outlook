@@ -23,6 +23,9 @@
     "audit:data": "pnpm --filter @harvest/scripts exec tsx catalogue/validate.ts && echo \"See docs/DATA_AUDIT.md and docs/CROP_CATALOGUE.md\"",
     "analytics:test": "analytics/.venv/bin/python -m pytest analytics/tests -q",
     "catalogue:validate": "pnpm --filter @harvest/scripts exec tsx catalogue/validate.ts",
-    "catalogue:build": "pnpm --filter @harvest/scripts exec tsx catalogue/build.ts"
+    "catalogue:build": "pnpm --filter @harvest/scripts exec tsx catalogue/build.ts",
+    "catalogue:derive-rules": "pnpm --filter @harvest/scripts exec tsx catalogue/derive-rules.ts",
+    "catalogue:districts": "pnpm --filter @harvest/scripts exec tsx catalogue/build-districts.ts",
+    "catalogue:load": "pnpm --filter @harvest/scripts exec tsx catalogue/load-db.ts"
   }
 }

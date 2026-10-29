@@ -194,7 +194,7 @@ export const ToolSchemas = {
       })
       .strict(),
     output: z
-      .object({ jobId: Id.nullable(), budgetGate: z.enum(['reserved', 'denied']), manualFallbackAvailable: z.literal(true) })
+      .object({ jobId: Id.nullable(), budgetGate: z.enum(['reserved', 'checked', 'denied']), manualFallbackAvailable: z.literal(true) })
       .strict(),
   },
   request_visual_keyframes: {

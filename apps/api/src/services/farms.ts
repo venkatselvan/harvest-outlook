@@ -219,12 +219,15 @@ export async function deleteFarm(
          OR payload->>'mediaId' = ANY($3::text[]) OR payload->>'farmId' = $1::text)`,
       [id, ownerId, mediaIds],
     );
-    // Agent runs: linked by farm_id (0011) or by the journal facts they proposed. tool_results cascade from agent_runs.
-    await c.query(
-      `DELETE FROM agent_runs WHERE owner_id = $2 AND (farm_id = $1 OR id IN (
-         SELECT agent_run_id FROM journal_facts WHERE agent_run_id IS NOT NULL AND entry_id IN (SELECT id FROM journal_entries WHERE farm_id = $1 AND owner_id = $2)))`,
-      [id, ownerId],
-    );
+    // Agent runs: linked by farm_id (0011) or by the journal facts they proposed. Collected now, deleted after the journal
+    // rows (journal_facts.agent_run_id is ON DELETE SET NULL and the immutable-fact trigger refuses that update).
+    const runIds = (
+      await c.query<{ id: string }>(
+        `SELECT id FROM agent_runs WHERE owner_id = $2 AND (farm_id = $1 OR id IN (
+           SELECT agent_run_id FROM journal_facts WHERE agent_run_id IS NOT NULL AND entry_id IN (SELECT id FROM journal_entries WHERE farm_id = $1 AND owner_id = $2)))`,
+        [id, ownerId],
+      )
+    ).rows.map((r) => r.id);
     // Stored idempotent responses embed the farm (coordinates, names): remove them by link, by media link and by content.
     await c.query(
       `DELETE FROM idempotency_keys WHERE owner_id = $2 AND (farm_id = $1 OR media_id = ANY($3::uuid[]) OR response::text LIKE '%' || $1::text || '%')`,
@@ -236,9 +239,11 @@ export async function deleteFarm(
     await c.query(`DELETE FROM actions WHERE farm_id = $1 AND owner_id = $2`, [id, ownerId]);
     await c.query(`DELETE FROM journal_task_completions WHERE farm_id = $1 AND owner_id = $2`, [id, ownerId]);
     await c.query(`DELETE FROM journal_revisions WHERE farm_id = $1 AND owner_id = $2`, [id, ownerId]);
-    await c.query(`DELETE FROM journal_analyses WHERE entry_id IN (SELECT id FROM journal_entries WHERE farm_id = $1 AND owner_id = $2)`, [id, ownerId]);
+    // Facts first: journal_facts.analysis_id is ON DELETE SET NULL and the immutable-fact trigger refuses that update.
     await c.query(`DELETE FROM journal_facts WHERE entry_id IN (SELECT id FROM journal_entries WHERE farm_id = $1 AND owner_id = $2)`, [id, ownerId]);
+    await c.query(`DELETE FROM journal_analyses WHERE entry_id IN (SELECT id FROM journal_entries WHERE farm_id = $1 AND owner_id = $2)`, [id, ownerId]);
     await c.query(`DELETE FROM journal_entries WHERE farm_id = $1 AND owner_id = $2`, [id, ownerId]);
+    await c.query(`DELETE FROM agent_runs WHERE id = ANY($1::uuid[]) AND owner_id = $2`, [runIds, ownerId]);
     await c.query(`DELETE FROM plans WHERE farm_id = $1 AND owner_id = $2`, [id, ownerId]);
     await c.query(`DELETE FROM farm_facts WHERE farm_id = $1 AND owner_id = $2`, [id, ownerId]);
     await c.query(`DELETE FROM media_objects WHERE id = ANY($1::uuid[]) AND owner_id = $2`, [mediaIds, ownerId]);

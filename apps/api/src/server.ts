@@ -26,7 +26,10 @@ import { REDACT_PATHS, reqSerializer } from "./security/logging";
 import { ToolSchemas } from "@harvest/contracts";
 import { allBindings } from "./agent/bindings";
 import { createWeatherSource } from "./plans/adapters/weather-source";
-import { defaultSources, PlanService, type PlanSources } from "./plans";
+import { defaultSources, PlanService, unavailableOutlookSource, type PlanSources } from "./plans";
+import { PgVisualAssetSource } from "./visuals";
+import { JournalService, journalTaskCompletionSource } from "./journal";
+import { CatalogueStore } from "./catalogue/snapshot";
 import { registerRoutes, type RouteDeps } from "./routes";
 import { createSpeechProvider, speechConfigFor } from "./routes/speech";
 import { resolveSession } from "./security/session";
@@ -90,9 +93,21 @@ export async function buildServer(config: Config, pool: Pool, deps: ServerDeps =
     climatologyEndYear: config.WEATHER_CLIMATOLOGY_END_YEAR,
     ...(deps.weatherFetch ? { fetchImpl: deps.weatherFetch } : {}),
   });
-  // INT2: bind T06b market outlook and T11 visual-asset sources here via `sources`.
-  const plans = new PlanService({ pool, mode: config.RUNTIME_MODE, sources: { ...defaultSources(), weather, ...deps.sources } });
-  const toolBindings = allBindings({ pool, plans, budget, segmentModel: config.META_SEGMENT_MODEL });
+  const plans = new PlanService({
+    pool,
+    mode: config.RUNTIME_MODE,
+    sources: {
+      ...defaultSources(),
+      weather,
+      visuals: new PgVisualAssetSource(pool),
+      completions: journalTaskCompletionSource(pool),
+      outlook: unavailableOutlookSource("price_access_key_gated"),
+      ...deps.sources,
+    },
+  });
+  const journal = new JournalService({ pool, mode: config.RUNTIME_MODE, plans });
+  const catalogue = new CatalogueStore(pool);
+  const toolBindings = allBindings({ pool, plans, budget, segmentModel: config.META_SEGMENT_MODEL, int2: { config, catalogue }, journal });
   const boundTools = Object.keys(toolBindings);
   const toolNames = Object.keys(ToolSchemas);
   const speechConfig = deps.speech?.speech ?? speechConfigFor(config);
@@ -129,7 +144,7 @@ export async function buildServer(config: Config, pool: Pool, deps: ServerDeps =
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
   });
   await app.register(cookie, { secret: config.SESSION_SECRET });
-  await app.register(rateLimit, { global: true, max: 120, timeWindow: "1 minute" });
+  await app.register(rateLimit, { global: true, max: Number(process.env.RATE_LIMIT_MAX) > 0 ? Number(process.env.RATE_LIMIT_MAX) : 120, timeWindow: "1 minute" });
   await app.register(multipart, { limits: { fileSize: config.MAX_UPLOAD_IMAGE_BYTES, files: 1, fields: 10 } });
 
   app.addHook("onSend", async (req, reply) => {
@@ -211,6 +226,8 @@ export async function buildServer(config: Config, pool: Pool, deps: ServerDeps =
     storage,
     budget,
     plans,
+    journal,
+    catalogue,
     toolBindings,
     assistant: deps.assistant,
     speech: { ...deps.speech, speech: speechConfig, provider: speechProvider },

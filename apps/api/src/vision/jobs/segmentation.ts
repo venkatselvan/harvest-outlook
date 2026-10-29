@@ -11,6 +11,7 @@ import { interpretSamText } from "../sam/interpret";
 import { samOptionsFromEnv, type SamOptions } from "../sam/options";
 import { buildPromptText } from "../sam/prompt";
 import { planSentImage } from "../sam/transform";
+import { claimDispatch, finishDispatch, unresolvedDispatches } from "../../visuals/dispatch";
 
 export const SEGMENT_JOB_TYPE = "vision.segment";
 export const SAM_LABEL = "AI suggestion — illustrative outline, confirm or correct";
@@ -63,6 +64,11 @@ interface MinimalCtx {
   heartbeat: (progress?: number) => Promise<void>;
 }
 
+const DISPATCH_STAGE = "segment";
+
+/** Non-retryable failure for a job whose paid call may already have been sent. The message is the stable error code; the UI falls back to manual outlining. */
+export const OUTCOME_UNCERTAIN = "provider_outcome_uncertain";
+
 class RetryableSamError extends Error {
   readonly retryable = true;
 }
@@ -92,6 +98,19 @@ export async function runSegmentation(
   const { mediaId, prompt, sessionId } = parsed.data;
   const ownerId = job.owner_id;
 
+  // A marker left by an earlier attempt without an outcome: the call may have been sent and its result lost (crash or lease
+  // expiry between dispatch and settle). Never call again from this job; keep the worst case reserved and let the farmer outline manually.
+  const open = await unresolvedDispatches(pool, job.id);
+  if (open.length > 0) {
+    for (const d of open) {
+      if (d.outcome === null) {
+        if (d.reservation_id) await budget.markUncertain(d.reservation_id).catch(() => undefined);
+        await finishDispatch(pool, job.id, d.stage_key, "uncertain");
+      }
+    }
+    throw Object.assign(new Error(OUTCOME_UNCERTAIN), { retryable: false, code: OUTCOME_UNCERTAIN });
+  }
+
   const media = await getMedia(pool, ownerId, mediaId);
   if (!media) throw Object.assign(new Error("media not found for owner"), { retryable: false });
   const content = await readContent(pool, storage, ownerId, mediaId, "normalized");
@@ -115,21 +134,33 @@ export async function runSegmentation(
     throw e;
   }
 
+  // Committed marker BEFORE the paid call.
+  if (!(await claimDispatch(pool, job.id, DISPATCH_STAGE, reservationId))) {
+    await budget.markUncertain(reservationId).catch(() => undefined);
+    throw Object.assign(new Error(OUTCOME_UNCERTAIN), { retryable: false, code: OUTCOME_UNCERTAIN });
+  }
   let call;
   try {
     call = await callSam({ baseUrl: config.META_BASE_URL, apiKey: config.MODEL_API_KEY, model, text, imageDataUrl, options, ...(deps.fetchImpl ? { fetchImpl: deps.fetchImpl } : {}) });
   } catch (e) {
     if (e instanceof SamHttpError) {
-      if (e.outcomeUnknown) await budget.markUncertain(reservationId).catch(() => undefined);
-      else await budget.release(reservationId).catch(() => undefined);
+      if (e.outcomeUnknown) {
+        await budget.markUncertain(reservationId).catch(() => undefined);
+        await finishDispatch(pool, job.id, DISPATCH_STAGE, "uncertain").catch(() => undefined);
+      } else {
+        await budget.release(reservationId).catch(() => undefined);
+        await finishDispatch(pool, job.id, DISPATCH_STAGE, "failed").catch(() => undefined);
+      }
       // Outcome unknown: never auto-retry an expensive call; the farmer can request again.
       const err = e.retryable && !e.outcomeUnknown ? new RetryableSamError(e.message) : Object.assign(new Error(e.message), { retryable: false });
       throw err;
     }
     await budget.markUncertain(reservationId).catch(() => undefined);
+    await finishDispatch(pool, job.id, DISPATCH_STAGE, "uncertain").catch(() => undefined);
     throw Object.assign(new Error("segmentation failed"), { retryable: false });
   }
   await budget.settle(reservationId, estimate, call.providerRequestId, { images: 1, providerUsage: call.usage ?? null }, "estimated");
+  await finishDispatch(pool, job.id, DISPATCH_STAGE, "completed", call.providerRequestId);
   await ctx.heartbeat(0.8);
 
   const interp = interpretSamText(call.text, plan, options);

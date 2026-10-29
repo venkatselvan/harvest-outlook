@@ -5,9 +5,9 @@ import type { Pool } from "../db/pool";
 import { envelope } from "../envelope";
 import { privateRouteGuard } from "../security/guards";
 import { requireAuth } from "../security/session";
-import { notFound } from "../services/errors";
-import { parseIdempotencyKey } from "../services/idempotency";
-import { enqueue, type JobRecord } from "../services/jobs";
+import { ApiError, notFound } from "../services/errors";
+import { parseIdempotencyKey, runIdempotent } from "../services/idempotency";
+import { enqueue, getJob, type JobRecord } from "../services/jobs";
 import { buildContext, loadPlanStages } from "../visuals/context";
 import { ILLUSTRATIVE_LABEL, SCHEMATIC_LABEL, VISUAL_JOB_TYPE } from "../visuals/labels";
 import { loadBriefs, type VisualBrief } from "../visuals/brief";
@@ -53,23 +53,41 @@ export async function registerVisualRoutes(app: FastifyInstance, deps: VisualRou
     async (req, reply) => {
       const { ownerId, sessionId } = requireAuth(req);
       const idem = parseIdempotencyKey(req.headers["idempotency-key"]);
-      const v = await buildContext({ pool, config, briefs: await briefsP }, ownerId, { planId: req.params.id, ...req.body });
-      const keys = [...v.assetKeys.values()];
-      await adoptReusable(pool, ownerId, v.planId, keys, null);
-      const rows = await findByCacheKeys(pool, ownerId, v.planId, keys);
-      const byKey = new Map(rows.map((x) => [x.cache_key, x]));
-      const allCached = v.selected.every((s) => {
-        const row = byKey.get(v.assetKeys.get(s.stageId)!);
-        return !!row && (row.status === "ready" || (row.status === "schematic" && STABLE_SCHEMATIC_REASONS.has(row.failure_reason ?? "")));
-      });
-      if (allCached) {
-        return reply.code(200).send(envelope(req.id, config.RUNTIME_MODE, { jobId: null, state: "cached" as const, cached: true, deduplicated: true, assets: rows.map(toOut), label: ILLUSTRATIVE_LABEL }));
-      }
-      const payload = { planId: req.params.id, mediaId: req.body.mediaId, regionVersion: req.body.regionVersion, ...(req.body.stageIds ? { stageIds: req.body.stageIds } : {}), sessionId };
-      const base = idem ?? `vk:${v.jobKey.slice(0, 48)}`;
-      let out = await enqueue(pool, VISUAL_JOB_TYPE, payload, ownerId, base);
-      for (let n = 1; !out.created && !reusable(out.job) && n <= 20; n++) out = await enqueue(pool, VISUAL_JOB_TYPE, payload, ownerId, `${base}:r${n}`);
-      return reply.code(202).send(envelope(req.id, config.RUNTIME_MODE, { jobId: out.job.id, state: out.job.state, cached: false, deduplicated: !out.created, label: ILLUSTRATIVE_LABEL }));
+      const exec = async () => {
+        const v = await buildContext({ pool, config, briefs: await briefsP }, ownerId, { planId: req.params.id, ...req.body });
+        const keys = [...v.assetKeys.values()];
+        await adoptReusable(pool, ownerId, v.planId, keys, null);
+        const rows = await findByCacheKeys(pool, ownerId, v.planId, keys);
+        const byKey = new Map(rows.map((x) => [x.cache_key, x]));
+        const allCached = v.selected.every((s) => {
+          const row = byKey.get(v.assetKeys.get(s.stageId)!);
+          return !!row && (row.status === "ready" || (row.status === "schematic" && STABLE_SCHEMATIC_REASONS.has(row.failure_reason ?? "")));
+        });
+        if (allCached) {
+          return { status: 200, body: envelope(req.id, config.RUNTIME_MODE, { jobId: null, state: "cached" as const, cached: true, deduplicated: true, assets: rows.map(toOut), label: ILLUSTRATIVE_LABEL }) };
+        }
+        const payload = { planId: req.params.id, mediaId: req.body.mediaId, regionVersion: req.body.regionVersion, ...(req.body.stageIds ? { stageIds: req.body.stageIds } : {}), sessionId };
+        // Always the content-derived key: a client Idempotency-Key only replays this HTTP response (runIdempotent below), it
+        // never creates a second paid job for content that is already queued or running.
+        const base = `vk:${v.jobKey.slice(0, 48)}`;
+        const enqueueOne = async (key: string) => {
+          try {
+            return await enqueue(pool, VISUAL_JOB_TYPE, payload, ownerId, key);
+          } catch (e) {
+            // Same content requested from another session: the job is the same, only the budget session differs.
+            if (!(e instanceof ApiError) || e.code !== "idempotency_payload_mismatch") throw e;
+            const ex = await pool.query<{ id: string }>("SELECT id FROM jobs WHERE owner_id=$1 AND idempotency_key=$2", [ownerId, key]);
+            const job = ex.rows[0] ? await getJob(pool, ownerId, ex.rows[0].id) : null;
+            if (!job) throw e;
+            return { job, created: false };
+          }
+        };
+        let out = await enqueueOne(base);
+        for (let n = 1; !out.created && !reusable(out.job) && n <= 20; n++) out = await enqueueOne(`${base}:r${n}`);
+        return { status: 202, body: envelope(req.id, config.RUNTIME_MODE, { jobId: out.job.id, state: out.job.state, cached: false, deduplicated: !out.created, label: ILLUSTRATIVE_LABEL }) };
+      };
+      const out = await runIdempotent(pool, { ownerId, key: idem, route: "POST /api/v1/plans/:id/visuals", hashInput: { planId: req.params.id, ...req.body }, resourceRefs: { mediaId: req.body.mediaId } }, exec);
+      return reply.code(out.status === 200 ? 200 : 202).send(out.body as never);
     },
   );
 

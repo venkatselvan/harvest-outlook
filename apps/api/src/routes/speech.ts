@@ -15,7 +15,7 @@ import { FIXTURE_LABEL, FixtureProvider } from "../speech/fixture";
 import { normaliseLanguage, SPEECH_LANGUAGES, type SpeechLanguage } from "../speech/languages";
 import { stripMarkdown } from "../speech/markdown";
 import type { SpeechProvider } from "../speech/provider";
-import { logSpeechUsage } from "../speech/usage";
+import { logSpeechUsage, ttsCapExceeded, ttsLimitsFromEnv, type TtsLimits } from "../speech/usage";
 import { envelopeSchema } from "./schemas/common";
 import { statusOut, synthesisBody, transcriptionOut, transcriptionQuery } from "./schemas/speech";
 
@@ -27,6 +27,8 @@ export interface SpeechRouteDeps {
   /** Tests inject a provider; production derives it from config (live key + RUNTIME_MODE=live, else fixture). */
   provider?: SpeechProvider;
   fetchImpl?: typeof fetch;
+  /** Per-owner TTS caps; defaults to SPEECH_TTS_DAILY_CHARS (20000) and 5 syntheses of one text per hour. */
+  ttsLimits?: TtsLimits;
 }
 
 const MULTIPART_OVERHEAD = 64 * 1024;
@@ -54,6 +56,7 @@ async function speechRoutes(app: FastifyInstance, deps: SpeechRouteDeps) {
   const { config, pool } = deps;
   const speech = deps.speech ?? speechConfigFor(config);
   const provider = deps.provider ?? createSpeechProvider(config, speech, deps.fetchImpl);
+  const ttsLimits = deps.ttsLimits ?? ttsLimitsFromEnv();
   app.addHook("onRequest", privateRouteGuard(config, pool));
   const r = app.withTypeProvider<ZodTypeProvider>();
   const limit = { rateLimit: { max: 20, timeWindow: "1 minute" } };
@@ -189,8 +192,8 @@ async function speechRoutes(app: FastifyInstance, deps: SpeechRouteDeps) {
       schema: {
         tags: ["speech"],
         description:
-          "Speaks an approved answer. The text must hash to approvedTextHash, a hash the assistant route recorded for this session (403 otherwise). " +
-          "Markdown is stripped before synthesis. Returns audio bytes (Cache-Control: private, no-store).",
+          "Speaks an approved answer. The text must hash to approvedTextHash, a hash the assistant route recorded for this owner (60-minute window; 403 otherwise). " +
+          "Markdown is stripped before synthesis. Per owner: a daily character cap and at most 5 syntheses of the same text per hour (429 rate_limited). Returns audio bytes (Cache-Control: private, no-store).",
         body: synthesisBody,
       },
     },
@@ -205,6 +208,12 @@ async function speechRoutes(app: FastifyInstance, deps: SpeechRouteDeps) {
       const voice = voiceId ?? speech.voiceId;
       if (provider.live && !voice) throw new ApiError(424, "provider_unavailable", "Speech unavailable (no voice configured); read the text instead");
 
+      if (provider.name === "elevenlabs") {
+        const capped = await ttsCapExceeded(pool, ownerId, approvedTextHash.toLowerCase(), spoken.length, ttsLimits);
+        if (capped) {
+          throw new ApiError(429, "rate_limited", capped === "same_text" ? "This answer has already been spoken several times this hour; read the text instead" : "The daily speech limit was reached; read the text instead", { limit: capped });
+        }
+      }
       const abort = new AbortController();
       reply.raw.on("close", () => {
         if (!reply.raw.writableFinished) abort.abort();
@@ -220,6 +229,7 @@ async function speechRoutes(app: FastifyInstance, deps: SpeechRouteDeps) {
           amount: res.characters,
           providerRequestId: res.requestId,
           language,
+          approvedTextHash: approvedTextHash.toLowerCase(),
         });
       }
       req.log.info({ speech: { kind: "tts", language, characters: res.characters, bytes: res.audio.length } }, "synthesis complete");

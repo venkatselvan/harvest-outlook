@@ -1,12 +1,9 @@
 import { SkeletonPage } from "../components/SkeletonPage";
 
-export const Explore = () => (
-  <SkeletonPage title="Explore" description="Compare crops for your location and season. Placeholder: crop comparison arrives in a later task." />
-);
+export { ExplorePage as Explore } from "./explore";
 export { FarmPage as Farm } from "./farm/FarmPage";
-export const Journal = () => (
-  <SkeletonPage title="Journal" description="Photos, voice and notes for your growing season. Placeholder." />
-);
+export { JournalPage as Journal } from "./journal";
+export { PlanPage as Plan } from "./plan";
 export const Ask = () => (
   <SkeletonPage title="Ask" description="Ask questions about your plan, in English, Tamil or Hindi. Placeholder." />
 );

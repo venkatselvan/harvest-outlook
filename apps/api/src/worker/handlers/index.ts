@@ -5,6 +5,11 @@ import type { Budget } from "../../services/budget";
 import type { StorageAdapter } from "../../storage/types";
 import { samOptionsFromEnv } from "../../vision/sam/options";
 import { registerSegmentationHandler } from "../../vision/jobs/segmentation";
+import { registerVisualHandlers } from "../../visuals";
+import { PlanService, unavailableOutlookSource } from "../../plans";
+import { journalTaskCompletionSource, registerJournalHandlers } from "../../journal";
+import { PgVisualAssetSource } from "../../visuals";
+import { createWeatherSource } from "../../plans/adapters/weather-source";
 import type { JobHandler } from "../main";
 import { createIngestHandlers } from "./ingest";
 
@@ -27,5 +32,17 @@ export function registerWorkerHandlers(registry: Record<string, JobHandler>, dep
   const { config, pool, storage, budget } = deps;
   // T10: vision.segment. Returns status 'unavailable' without any network call in synthetic/replay mode or without a credential.
   registerSegmentationHandler(registry, { pool, config, storage, budget, options: samOptionsFromEnv(samEnvFromConfig(config)), ...(deps.fetchImpl ? { fetchImpl: deps.fetchImpl } : {}) });
-  // INT2: register T11 visual handlers here (e.g. visuals.keyframes) once src/visuals/** exposes registerVisualHandlers.
+  registerVisualHandlers(registry, { pool, config, storage, budget });
+  // T13: journal.analysis. The worker needs its own PlanService to validate proposals against the plan.
+  const plans = new PlanService({
+    pool,
+    mode: config.RUNTIME_MODE,
+    sources: {
+      weather: createWeatherSource({ pool, mode: config.RUNTIME_MODE, climatologyYears: config.WEATHER_CLIMATOLOGY_YEARS, climatologyEndYear: config.WEATHER_CLIMATOLOGY_END_YEAR, autoIngest: false }),
+      visuals: new PgVisualAssetSource(pool),
+      completions: journalTaskCompletionSource(pool),
+      outlook: unavailableOutlookSource("price_access_key_gated"),
+    },
+  });
+  registerJournalHandlers(registry as never, { pool, config, storage, budget, plans, ...(deps.fetchImpl ? { fetchImpl: deps.fetchImpl } : {}) });
 }

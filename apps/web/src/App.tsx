@@ -2,7 +2,7 @@ import type { ParentProps } from "solid-js";
 import { Navigate, Route, Router } from "@solidjs/router";
 import { BottomNav } from "./components/BottomNav";
 import { ModeBanner } from "./components/ModeBanner";
-import { Ask, Explore, Farm, Journal } from "./routes/pages";
+import { Ask, Explore, Farm, Journal, Plan } from "./routes/pages";
 
 function Layout(props: ParentProps) {
   return (
@@ -24,6 +24,7 @@ export function App() {
       <Route path="/" component={() => <Navigate href="/explore" />} />
       <Route path="/explore" component={Explore} />
       <Route path="/farm" component={Farm} />
+      <Route path="/farm/plan/:planId" component={Plan} />
       <Route path="/journal" component={Journal} />
       <Route path="/ask" component={Ask} />
       <Route path="*" component={() => <Navigate href="/explore" />} />

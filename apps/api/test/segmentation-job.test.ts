@@ -130,6 +130,36 @@ describe("segmentation job: provider call", () => {
     expect(f).toHaveBeenCalledTimes(1);
     expect((await h.pool.query("SELECT state FROM usage_reservations WHERE job_id=$1", [j.id])).rows).toEqual([{ state: "uncertain" }]);
   });
+  it("a crash between dispatch and settle: the re-claimed job makes zero provider calls, fails as provider_outcome_uncertain and keeps the reservation uncertain", async () => {
+    const j = await newJob(c);
+    const f1 = vi.fn(async () => jsonRes(okText()));
+    const d1 = deps(live, f1 as unknown as typeof fetch);
+    d1.budget.settle = async () => {
+      throw new Error("process died before settle");
+    };
+    await expect(runSegmentation(d1, j, hb)).rejects.toThrow("process died");
+    expect(f1).toHaveBeenCalledTimes(1);
+    expect((await h.pool.query("SELECT outcome FROM job_dispatches WHERE job_id=$1", [j.id])).rows).toEqual([{ outcome: null }]);
+
+    const f2 = vi.fn(async () => jsonRes(okText()));
+    await expect(runSegmentation(deps(live, f2 as unknown as typeof fetch), j, hb)).rejects.toMatchObject({ message: "provider_outcome_uncertain", retryable: false });
+    expect(f2).not.toHaveBeenCalled();
+    expect((await h.pool.query("SELECT state FROM usage_reservations WHERE job_id=$1", [j.id])).rows).toEqual([{ state: "uncertain" }]);
+    // Still blocked on a third claim, and no extra reservation was made.
+    await expect(runSegmentation(deps(live, f2 as unknown as typeof fetch), j, hb)).rejects.toMatchObject({ message: "provider_outcome_uncertain" });
+    expect(f2).not.toHaveBeenCalled();
+    expect((await h.pool.query("SELECT count(*)::int AS n FROM usage_reservations WHERE job_id=$1", [j.id])).rows[0].n).toBe(1);
+  });
+  it("a definitive provider failure leaves a failed marker so a retryable 503 can be re-dispatched by the same job", async () => {
+    const j = await newJob(c);
+    const f503 = vi.fn(async () => new Response("down", { status: 503 }));
+    await expect(runSegmentation(deps(live, f503 as unknown as typeof fetch), j, hb)).rejects.toMatchObject({ retryable: true });
+    const f = vi.fn(async () => jsonRes(okText()));
+    const out = await runSegmentation(deps(live, f as unknown as typeof fetch), j, hb);
+    expect(out.status).toBe("ok");
+    expect(f).toHaveBeenCalledTimes(1);
+    expect((await h.pool.query("SELECT outcome FROM job_dispatches WHERE job_id=$1", [j.id])).rows).toEqual([{ outcome: "completed" }]);
+  });
   it("a cross-owner job cannot read another owner's media", async () => {
     const other = await login(h.app);
     const job = await newJob(c);

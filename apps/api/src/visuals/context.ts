@@ -51,6 +51,10 @@ export function selectStages(all: StageDef[], stageIds?: string[]): StageDef[] {
 
 export interface KeyInputs {
   mediaSha: string;
+  /** The photo row itself: two uploads of identical bytes are different photos with their own confirmed regions. */
+  mediaId: string;
+  /** Canonical hash of the confirmed region polygon; the version number alone does not identify the geometry. */
+  polygonHash: string;
   regionVersion: number;
   cropId: string;
   stageDefsHash: string;
@@ -68,6 +72,9 @@ export interface KeyInputs {
 export const jobCacheKey = (planId: string, k: KeyInputs, stageIds: string[]): string => payloadHash({ planId, ...k, stageIds: [...stageIds].sort() });
 /** Per-asset key; also bound to the stage's own prompt template so editing one prompt invalidates only that stage. */
 export const assetCacheKey = (k: KeyInputs, stageId: string, promptTemplateHash: string | null): string => payloadHash({ ...k, stageId, promptTemplateHash });
+
+/** Canonical polygon hash: coordinates rounded to 1e-6 so float noise cannot split a key, ring order kept. */
+export const polygonHash = (polygon: [number, number][]): string => payloadHash(polygon.map(([x, y]) => [Number(x.toFixed(6)), Number(y.toFixed(6))]));
 
 export interface VisualContext extends PlanStages {
   selected: StageDef[];
@@ -105,6 +112,8 @@ export async function buildContext(
   const mode = effectiveMode(plan.mode, deps.config.RUNTIME_MODE);
   const keyInputs: KeyInputs = {
     mediaSha: media.sha256,
+    mediaId: media.id,
+    polygonHash: polygonHash(media.region.polygon),
     regionVersion: media.region.version,
     cropId: plan.cropId,
     stageDefsHash: stageDefinitionsHash(plan.stages),

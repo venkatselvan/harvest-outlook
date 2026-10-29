@@ -68,7 +68,9 @@ describe("capabilities (D-T04-1)", () => {
     expect(bogus.budget).toEqual({ exhausted: false });
     expect(anon.speech).toEqual({ available: false, qualified: false });
     expect(anon.tools.bound).toEqual(expect.arrayContaining(["get_farm_context", "calculate_scenarios", "calculate_water_balance", "request_segmentation", "get_job_status"]));
-    expect(anon.tools.unbound).toEqual(expect.arrayContaining(["screen_crops", "request_visual_keyframes"]));
+    // INT2: every contract tool has a bound handler.
+    expect(anon.tools.unbound).toEqual([]);
+    expect(anon.tools.bound).toEqual(expect.arrayContaining(["screen_crops", "request_visual_keyframes", "get_market_outlook", "interpret_observation", "propose_plan_revision"]));
     expect([...anon.tools.bound, ...anon.tools.unbound].sort()).toEqual([...new Set([...anon.tools.bound, ...anon.tools.unbound])].sort());
   });
 });
@@ -81,7 +83,7 @@ describe("synthetic journey: farm -> photo -> region -> plan -> timeline -> revi
 
   it("creates a Hassan-like farm and uploads a photo", async () => {
     const farm = await c.call("POST", "/api/v1/farms", {
-      payload: { name: "Hassan plot (synthetic)", location: { districtId: "IN-KA-HAS", districtName: "Hassan", stateCode: "KA", lat: 13.0, lon: 76.1, precision: "approximate" }, areaHectares: 0.5, facts: { irrigation: { value: "drip", basis: "farmer_reported", confirmed: true } } },
+      payload: { name: "Hassan plot (synthetic)", location: { districtId: "IN-KA-hassan", districtName: "Hassan", stateCode: "KA", lat: 13.0, lon: 76.1, precision: "approximate" }, areaHectares: 0.5, facts: { irrigation: { value: "drip", basis: "farmer_reported", confirmed: true } } },
       headers: json,
     });
     expect(farm.statusCode).toBe(201);
@@ -211,8 +213,72 @@ describe("synthetic journey: farm -> photo -> region -> plan -> timeline -> revi
     // No price source exists in synthetic mode, so there is no priced economics result to hand the model.
     expect(await bindings.calculate_scenarios!({ planId: plan.snapshot.id }, ctx(owner))).toEqual({ status: "unavailable", reason: "economics_unavailable" });
     const seg = await bindings.request_segmentation!({ mediaId, prompt: { kind: "box", x0: 0.1, y0: 0.1, x1: 0.9, y1: 0.9 } }, ctx(owner));
-    expect(seg).toMatchObject({ budgetGate: "reserved", manualFallbackAvailable: true });
+    expect(seg).toMatchObject({ budgetGate: "checked", manualFallbackAvailable: true });
     expect(seg.jobId).toMatch(/^[0-9a-f-]{36}$/);
+  });
+
+  it("crop comparison for the Hassan farm: ginger-fresh requires review with open conditions and the Hassan caution; the same screening is reachable through the screen_crops tool", async () => {
+    const { loadCatalogueIntoDb } = await import("../src/catalogue/load");
+    await loadCatalogueIntoDb(h.pool);
+    const res = await c.call("POST", "/api/v1/crop-comparisons", { payload: { farmId, planting: { month: 5 }, irrigation: "unknown", cropIds: ["ginger"] }, headers: json });
+    expect(res.statusCode, res.body.slice(0, 300)).toBe(200);
+    const item = res.json().data.items.find((i: any) => i.productId === "ginger-fresh");
+    expect(item.outcome).toBe("requires_review");
+    expect(item.screening.unresolvedConditions.length).toBeGreaterThan(0);
+    expect(JSON.stringify(item.screening.reasons)).toMatch(/hassan/i);
+    const { createToolBindings } = await import("../src/agent/bindings");
+    expect(createToolBindings).toBeTypeOf("function");
+    const { allBindings } = await import("../src/agent/bindings");
+    const { PlanService, defaultSources } = await import("../src/plans");
+    const { Budget } = await import("../src/services/budget");
+    const { CatalogueStore } = await import("../src/catalogue/snapshot");
+    const { JournalService } = await import("../src/journal");
+    const ps = new PlanService({ pool: h.pool, mode: "synthetic", sources: defaultSources() });
+    const b = allBindings({ pool: h.pool, plans: ps, budget: Budget.fromConfig(h.pool, h.config), segmentModel: h.config.META_SEGMENT_MODEL, int2: { config: h.config, catalogue: new CatalogueStore(h.pool) }, journal: new JournalService({ pool: h.pool, mode: "synthetic", plans: ps }) });
+    const owner = (await h.pool.query("SELECT owner_id FROM farms WHERE id=$1", [farmId])).rows[0].owner_id as string;
+    const stranger = (await h.pool.query("INSERT INTO owners DEFAULT VALUES RETURNING id")).rows[0].id as string;
+    const ctx = (ownerId: string) => ({ ownerId, mode: "synthetic" as const, requestId: "req-int2", pool: h.pool, agentRunId: "run-int2", asOf: new Date().toISOString() });
+    const out = await b.screen_crops!({ contextId: farmId, cropIds: ["ginger"] }, ctx(owner));
+    expect(out.results[0]).toMatchObject({ cropId: "ginger", outcome: "requires_review" });
+    await expect(b.screen_crops!({ contextId: farmId }, ctx(stranger))).rejects.toMatchObject({ statusCode: 404 });
+    const mk = await b.get_market_outlook!({ productId: "ginger-fresh", marketIds: ["hassan-apmc"], issueDate: today, harvestWindows: [{ start: addDays(today, 100), end: addDays(today, 120) }] }, ctx(owner));
+    expect(mk.forecasts).toEqual([]);
+    expect(mk.missing[0]!.reason).toMatch(/price_access_key_gated.*unverified/);
+    const seg = await b.request_segmentation!({ mediaId, prompt: { kind: "concept", text: "field" } }, ctx(owner));
+    expect(seg.budgetGate).toBe("checked");
+    const vk = await b.request_visual_keyframes!({ planId: plan.snapshot.id, briefId: "ginger", stageIds: [PLAN_FIXTURE.stageDefinitions[0].stageId] }, ctx(owner));
+    expect(vk.jobId).toMatch(/^[0-9a-f-]{36}$/);
+    const vk2 = await b.request_visual_keyframes!({ planId: plan.snapshot.id, briefId: "ginger", stageIds: [PLAN_FIXTURE.stageDefinitions[0].stageId] }, ctx(owner));
+    expect(vk2).toMatchObject({ jobId: vk.jobId, deduplicated: true });
+    await expect(b.request_visual_keyframes!({ planId: plan.snapshot.id, briefId: "ginger", stageIds: [PLAN_FIXTURE.stageDefinitions[0].stageId] }, ctx(stranger))).rejects.toMatchObject({ statusCode: 404 });
+  });
+
+  it("journal entry -> analysis job (fixture) -> proposal -> confirm -> revision shows in the journal timeline", async () => {
+    const e = await c.call("POST", "/api/v1/journal", { payload: { clientEntryId: `entry-int2-${Date.now()}`, farmId, observedOn: today, note: "Heavy rain last night. Water standing near the lower rows.", language: "en", mediaIds: [mediaId], activity: "observation" }, headers: json });
+    expect(e.statusCode, e.body.slice(0, 300)).toBe(201);
+    const entryId = e.json().data.entry.id as string;
+    const q = await c.call("POST", `/api/v1/journal/${entryId}/analysis`);
+    expect(q.statusCode, q.body.slice(0, 300)).toBe(202);
+    const { handlers, pollOnce } = await import("../src/worker/main");
+    const { registerWorkerHandlers } = await import("../src/worker/handlers");
+    const { Budget } = await import("../src/services/budget");
+    registerWorkerHandlers(handlers, { config: h.config, pool: h.pool, storage: h.storage, budget: Budget.fromConfig(h.pool, h.config) });
+    // Drain: other queued jobs (segmentation/visual keyframes from earlier steps) may run first.
+    for (let i = 0; i < 10 && (await pollOnce(h.pool, "int2-worker")); i++);
+    const full = (await c.call("GET", `/api/v1/journal/${entryId}`)).json().data.entry;
+    const proposed = full.facts.filter((f: any) => f.kind === "proposed");
+    expect(proposed.length).toBeGreaterThan(0);
+    expect(proposed.every((f: any) => f.requiresConfirmation !== false)).toBe(true);
+    const stage = proposed.find((f: any) => f.field === "observed_stage");
+    expect(stage).toBeTruthy();
+    const cur = (await c.call("GET", `/api/v1/plans/${plan.snapshot.id}`)).json().data;
+    const farmJournal = (await c.call("GET", `/api/v1/farms/${farmId}/journal`)).json().data;
+    const hash = farmJournal.currentPlan?.contentHash ?? cur.snapshot.contentHash;
+    const r = await c.call("POST", `/api/v1/journal/${entryId}/confirmations`, { payload: { expectedVersion: full.version, accept: [stage.id], expectedPlanContentHash: hash }, headers: json });
+    expect(r.statusCode, r.body.slice(0, 400)).toBe(200);
+    const tl = (await c.call("GET", `/api/v1/farms/${farmId}/journal`)).json().data;
+    expect(tl.revisions.length).toBeGreaterThan(0);
+    expect(tl.revisions.at(-1).changeSummary.changes.some((x: any) => x.type === "observed_stage")).toBe(true);
   });
 
   it("deleting the farm removes it (second delete is 404) and its plans are no longer readable", async () => {

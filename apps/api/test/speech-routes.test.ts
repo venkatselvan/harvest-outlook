@@ -15,6 +15,7 @@ const MP3 = new Uint8Array([0xff, 0xfb, 0x90, 0x00, 9, 9, 9, 9]);
 let h: Harness;
 let live: FastifyInstance;
 let fixtureApp: FastifyInstance;
+let capped: FastifyInstance;
 let liveCalls: Call[];
 let sttBody: unknown = fx("stt-response-en.json");
 let ttsStatus = 200;
@@ -33,11 +34,13 @@ beforeAll(async () => {
   const m = mockFetch((c) => (c.url.includes("speech-to-text") ? json(sttBody, 200, { "request-id": "stt_req" }) : new Response(ttsStatus === 200 ? MP3 : "x", { status: ttsStatus, headers: { "request-id": "tts_req" } })));
   liveCalls = m.calls;
   live = await buildServer(h.config, h.pool, { storage: h.storage, speech: { config: { ...h.config, RUNTIME_MODE: "live" }, speech: speechCfg(), provider: new ElevenLabsProvider(speechCfg(), m.fetch) } });
+  capped = await buildServer(h.config, h.pool, { storage: h.storage, speech: { config: { ...h.config, RUNTIME_MODE: "live" }, speech: speechCfg(), provider: new ElevenLabsProvider(speechCfg(), m.fetch), ttsLimits: { dailyChars: 60, sameTextPerHour: 5 } } });
   fixtureApp = await buildServer(h.config, h.pool, { storage: h.storage, speech: { config: h.config, speech: speechCfg({ apiKey: undefined }), provider: new FixtureProvider() } });
 });
 afterAll(async () => {
   await live.close();
   await fixtureApp.close();
+  await capped.close();
   await h.close();
 });
 
@@ -228,5 +231,44 @@ describe("POST /speech/synthesis", () => {
     const owner = (await h.pool.query("SELECT owner_id FROM sessions ORDER BY created_at DESC LIMIT 1")).rows[0].owner_id as string;
     const hash = await recordApprovedText(h.pool, owner, "```\nonly code\n```");
     expect((await tts(c, { text: "```\nonly code\n```", language: "en", approvedTextHash: hash })).statusCode).toBe(400);
+  });
+});
+
+describe("TTS caps (F10)", () => {
+  const ownerOf = async () => (await h.pool.query("SELECT owner_id FROM sessions ORDER BY created_at DESC LIMIT 1")).rows[0].owner_id as string;
+
+  it("the same approved text is spoken at most 5 times per hour, then 429 with no provider call", async () => {
+    const c = await login(live);
+    const owner = await ownerOf();
+    const text = "Water lightly after planting.";
+    const hash = await recordApprovedText(h.pool, owner, text);
+    liveCalls.length = 0;
+    for (let i = 0; i < 5; i++) expect((await tts(c, { text, language: "en", approvedTextHash: hash })).statusCode).toBe(200);
+    const sixth = await tts(c, { text, language: "en", approvedTextHash: hash });
+    expect(sixth.statusCode).toBe(429);
+    expect(sixth.json().error.code).toBe("rate_limited");
+    expect(liveCalls).toHaveLength(5);
+    // A different approved text is unaffected.
+    const other = await recordApprovedText(h.pool, owner, "Another answer.");
+    expect((await tts(c, { text: "Another answer.", language: "en", approvedTextHash: other })).statusCode).toBe(200);
+  });
+
+  it("enforces a per-owner daily character cap from the ledger, and counts owners separately", async () => {
+    const c = await login(capped);
+    const owner = await ownerOf();
+    const t1 = "a".repeat(40) + " first";
+    const t2 = "b".repeat(40) + " second";
+    const h1 = await recordApprovedText(h.pool, owner, t1);
+    const h2 = await recordApprovedText(h.pool, owner, t2);
+    liveCalls.length = 0;
+    expect((await tts(c, { text: t1, language: "en", approvedTextHash: h1 })).statusCode).toBe(200); // 46 of 60
+    const over = await tts(c, { text: t2, language: "en", approvedTextHash: h2 }); // 46 + 47 > 60
+    expect(over.statusCode).toBe(429);
+    expect(over.json().error.details).toMatchObject({ limit: "daily_chars" });
+    expect(liveCalls).toHaveLength(1);
+    const d = await login(capped);
+    const ownerD = await ownerOf();
+    const hd = await recordApprovedText(h.pool, ownerD, t2);
+    expect((await tts(d, { text: t2, language: "en", approvedTextHash: hd })).statusCode).toBe(200);
   });
 });

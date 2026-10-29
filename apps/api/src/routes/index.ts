@@ -10,6 +10,11 @@ import { requireAuth } from "../security/session";
 import type { Budget } from "../services/budget";
 import { runIdempotent } from "../services/idempotency";
 import type { StorageAdapter } from "../storage/types";
+import type { JournalService } from "../journal";
+import { registerJournalRoutes } from "./journal";
+import { registerCropRoutes } from "./crops";
+import { registerVisualRoutes } from "./visuals";
+import type { CatalogueStore } from "../catalogue/snapshot";
 import { farmRoutes } from "./farms";
 import { jobRoutes } from "./jobs";
 import { mediaRoutes } from "./media";
@@ -25,6 +30,8 @@ export interface RouteDeps {
   /** The single Budget instance for the whole app (limits and price table are shared). */
   budget: Budget;
   plans: PlanService;
+  journal: JournalService;
+  catalogue?: Pick<CatalogueStore, "get"> | undefined;
   /** Merged over the T09 bindings by the assistant plugin. */
   toolBindings: ToolBindings;
   /** Test/override hooks; production passes none. */
@@ -46,6 +53,7 @@ export async function registerRoutes(app: FastifyInstance, deps: RouteDeps): Pro
   await registerPlanRoutes(app, {
     config,
     service: deps.plans,
+    pool,
     resolveOwner: (req) => requireAuth(req).ownerId,
     onRequest: privateRouteGuard(config, pool),
     idempotency: { run: (o, exec) => runIdempotent(pool, o, exec) },
@@ -63,5 +71,14 @@ export async function registerRoutes(app: FastifyInstance, deps: RouteDeps): Pro
   await app.register(registerVisionRoutes, { config, pool, storage: deps.storage });
   await registerSpeechRoutes(app, { config, pool, ...deps.speech });
 
-  // INT2: crops/explore routes (T06b routes/crops.ts) and visuals routes (T11 routes/visuals.ts) register here.
+  await registerCropRoutes(app, { config, pool, ...(deps.catalogue ? { store: deps.catalogue } : {}) });
+  await app.register(registerVisualRoutes, { config, pool, storage: deps.storage });
+  await registerJournalRoutes(app, {
+    config,
+    service: deps.journal,
+    resolveOwner: (req) => requireAuth(req).ownerId,
+    onRequest: privateRouteGuard(config, pool),
+    resolveSession: (req) => requireAuth(req).sessionId,
+    idempotency: { run: (o, e) => runIdempotent(pool, o, e) },
+  });
 }
