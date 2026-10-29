@@ -2,8 +2,8 @@ import { z } from "zod";
 import { Mode, StructuredAssistantOutput, type Unit } from "@harvest/contracts";
 import { Decimal, convertDecimal } from "@harvest/domain";
 import type { Pool } from "../db/pool";
-import { CERTAINTY, CHEMICAL_NOUNS, DISEASE, DOSAGE_VERBS, GRANULARITY_LABEL, GUARANTEE, INDIC_SCRIPT, MONTH_NAMES_INDIC, PRODUCT_FORM_WORDS, ROMAN_CHEMICAL_NOUNS, ROMAN_DOSAGE_VERBS, UNIT_TERMS, termRe, termSource } from "./lexicon";
-import { MONTH_RE, compatNormalise, contextWord, numberTokens, proseNumbers, unitAdjacent, unitAt, unsupportedNumberChar, type NumberToken } from "./numbers";
+import { CERTAINTY, CHEMICAL_NOUNS, DISEASE, DOSAGE_VERBS, DRY_CROP_EN, DRY_NOT_PRODUCT_EN, DRY_SUBJECT_NOT_PRODUCT_EN, DRY_WORD_EN, GRANULARITY_LABEL, GUARANTEE, INDIC_SCRIPT, MONTH_NAMES_INDIC, PRODUCT_FORM_WORDS, ROMAN_CHEMICAL_NOUNS, ROMAN_DOSAGE_VERBS, UNIT_TERMS, termRe, termSource } from "./lexicon";
+import { MONTH_RE, compatNormalise, contextWord, latinWordBeforeQuantity, numberTokens, proseNumbers, unitAdjacent, unitAt, unsupportedNumberChar, unsupportedNumberWord, type NumberToken } from "./numbers";
 import { farmPlaces, isRegistryPlace, placeRegistry, placesNamedIn } from "./place-names";
 import { detectHighRisk, dosageMentions, hasApplicationWords, isApplicationContext, nativeLexiconHits, type RiskCode } from "./risk";
 import { PROFILE_FIELDS, splitClaimExtras, type ClaimGranularity, type ClaimScopeExtras } from "./schemas";
@@ -273,12 +273,16 @@ export function evidenceCoversScope(e: EvidenceFact, ctx: Ctx, scope: { cropIds:
 }
 
 // ---------------------------------------------------------------- text checks
+/** F14: tools whose stored output is a rain forecast or rain scenario (water balance runs carry forecast rain). */
+const isForecastTool = (tool: string) => tool === "calculate_water_balance" || /forecast|weather/i.test(tool);
 interface Presented {
   id: string;
   value: Decimal;
   unit: Unit;
   /** F13: the ref points at a mapped yield/marketable-quantity field (a kg/ha there is a yield, not a dose). */
   yieldField?: boolean;
+  /** F14: the ref comes from the water-balance (rain forecast/scenario) tool or a forecast/weather tool. */
+  forecast?: boolean;
 }
 interface FarmerToken {
   value: Decimal;
@@ -294,7 +298,7 @@ interface TextCheck {
 function checkText(
   text: string,
   ctx: Ctx,
-  o: { label: string; presented: Presented[]; requireDisplayed: boolean; farmer: FarmerToken[]; supported: boolean; dosageAllowed?: (m: ReturnType<typeof dosageMentions>) => boolean },
+  o: { label: string; presented: Presented[]; requireDisplayed: boolean; farmer: FarmerToken[]; supported: boolean; dosageAllowed?: (m: ReturnType<typeof dosageMentions>) => boolean; forecastBacked?: boolean },
 ): TextCheck {
   const issues: { code: string; message: string }[] = [];
   const native = isNativeText(ctx.language, text);
@@ -302,6 +306,9 @@ function checkText(
   // F13: a numeric character that does not normalise to an ASCII digit cannot be verified (fail closed).
   const oddNumber = unsupportedNumberChar(text);
   if (oddNumber !== null) issues.push({ code: "unsupported_number", message: `${o.label}: a number written with an unsupported numeral character (U+${oddNumber.codePointAt(0)!.toString(16).toUpperCase().padStart(4, "0")}) cannot be verified; use ASCII digits with a numericRef` });
+  // F14: unreadable Tamil compound numerals, ASCII Roman numerals and letter homoglyphs used as quantities.
+  const oddWord = oddNumber === null ? unsupportedNumberWord(text) : null;
+  if (oddWord !== null) issues.push({ code: "unsupported_number", message: `${o.label}: "${oddWord}" is written like a number that cannot be verified; use ASCII digits with a numericRef` });
 
   const { text: normText, tokens } = numberTokens(text, { englishDates: !native });
   const sentenceAt = (pos: number) => {
@@ -333,10 +340,17 @@ function checkText(
     });
     break; // one item per text keeps the correction request bounded
   }
+  // F14 (review R5 #4): in a hi/ta turn a Latin word right before a unit/multiplier is an unlisted romanised number.
+  if (/^(hi|ta)(-|$)/i.test(ctx.language) && !issues.some((i) => i.code === "prose_number_without_ref")) {
+    const w = latinWordBeforeQuantity(normText);
+    if (w !== null) issues.push({ code: "prose_number_without_ref", message: `${o.label}: "${w}" stands where a number should be (before a unit); state the number with a numericRef` });
+  }
 
   const risks: RiskCode[] = [];
   for (const h of detectHighRisk(text, { asOf: new Date(ctx.asOf), rainHorizonDays: ctx.rainHorizonDays, allowConfidencePercent: ctx.allowConfidencePercent })) {
     if (h.code === "chemical_dosage" && o.dosageAllowed?.(dosageMentions(text))) continue;
+    // F14: a seasonal rain statement passes only with a forecast-tool reference or a verified evidence claim.
+    if (h.code === "future_rain_unsourced" && (o.forecastBacked === true || o.presented.some((p) => p.forecast))) continue;
     risks.push(h.code);
     issues.push({ code: h.code, message: `${o.label}: ${h.message}` });
   }
@@ -353,9 +367,30 @@ const labelRe = (g: "state" | "region" | "national") => termRe(GRANULARITY_LABEL
 // ---------------------------------------------------------------- product forms
 const FORM_RES = Object.entries(PRODUCT_FORM_WORDS).map(([basis, list]) => [basis, termRe(list)] as const);
 /** Product bases named in a text ("dry ginger" -> dry). */
+const DRY_CROP_RE = new RegExp(`\\b${DRY_CROP_EN}\\b`, "iu");
+const DRY_WORD_RE = new RegExp(`\\b${DRY_WORD_EN}\\b`, "giu");
+const DRY_NOT_AFTER = new RegExp(`^\\s+(?:(?:the|your|a|this|that)\\s+)?${DRY_NOT_PRODUCT_EN}\\b`, "iu");
+const DRY_NOT_BEFORE = new RegExp(`\\b${DRY_SUBJECT_NOT_PRODUCT_EN}\\s+(?:(?:to|is|are|will|must|should|can|has|have|get|gets|stay|stays|remain|remains|become|becomes|turn|turns|be|been)\\s+){0,2}$`, "iu");
+/**
+ * F14: English heuristic. A sentence that names a crop and a drying word is about the dry product, unless every
+ * drying word qualifies weather/soil/land ("dry spell", "drying the field", "the beds dry out").
+ */
+function englishDryProduct(text: string): boolean {
+  for (const sentence of text.split(/(?<=[.!?])\s+|\n+/u)) {
+    if (!DRY_CROP_RE.test(sentence)) continue;
+    for (const m of sentence.matchAll(DRY_WORD_RE)) {
+      const after = sentence.slice(m.index! + m[0].length);
+      const before = sentence.slice(0, m.index);
+      if (!DRY_NOT_AFTER.test(after) && !DRY_NOT_BEFORE.test(before)) return true;
+    }
+  }
+  return false;
+}
 export function productFormsIn(text: string): string[] {
   const t = text.normalize("NFC");
-  return FORM_RES.filter(([, re]) => re.test(t)).map(([b]) => b);
+  const forms = FORM_RES.filter(([, re]) => re.test(t)).map(([b]) => b);
+  if (!forms.includes("dry") && englishDryProduct(t)) forms.push("dry");
+  return forms;
 }
 
 // ---------------------------------------------------------------- claim text scope (F13)
@@ -530,7 +565,7 @@ export function evaluateGate(raw: unknown, ctxIn: GateContext, facts: GateFacts)
       }
     }
     const presentedOf = (ids: string[]): Presented[] =>
-      ids.filter((id) => refPresented.has(id)).map((id) => ({ id, value: refPresented.get(id)!, unit: refById.get(id)!.presentation.unit, yieldField: isYieldPointer(refTool.get(id) ?? "", refById.get(id)!.jsonPointer) }));
+      ids.filter((id) => refPresented.has(id)).map((id) => ({ id, value: refPresented.get(id)!, unit: refById.get(id)!.presentation.unit, yieldField: isYieldPointer(refTool.get(id) ?? "", refById.get(id)!.jsonPointer), forecast: isForecastTool(refTool.get(id) ?? "") }));
 
     // Step 4: claim evidence resolution, crop scope, granularity, and the claim text itself.
     const claimProblem = new Map<string, { code: string; message: string }[]>();
@@ -591,7 +626,7 @@ export function evaluateGate(raw: unknown, ctxIn: GateContext, facts: GateFacts)
       }
       // The claim text is model-written prose: it gets the full number and high-risk checks.
       const citing = out.answerBlocks.filter((b) => b.claimIds.includes(c.claimId));
-      const t = checkText(c.text, ctx, { label: `claim ${c.claimId}`, presented: presentedOf(citing.flatMap((b) => b.numericRefIds)), requireDisplayed: false, farmer, supported: probs.length === 0 });
+      const t = checkText(c.text, ctx, { label: `claim ${c.claimId}`, presented: presentedOf(citing.flatMap((b) => b.numericRefIds)), requireDisplayed: false, farmer, supported: probs.length === 0, forecastBacked: probs.length === 0 });
       probs.push(...t.issues);
       if (probs.length > 0) {
         claimProblem.set(c.claimId, probs);
@@ -622,6 +657,7 @@ export function evaluateGate(raw: unknown, ctxIn: GateContext, facts: GateFacts)
       const t = checkText(b.text, ctx, {
         label: `block ${b.id}`,
         presented,
+        forecastBacked: claimsOk,
         requireDisplayed: true,
         farmer,
         supported,

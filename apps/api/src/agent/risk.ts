@@ -26,6 +26,7 @@ import {
   NEGATION_EN,
   PER,
   RAIN,
+  SEASONAL_RAIN,
   ROMAN_CHEMICAL_NOUNS,
   ROMAN_DOSAGE_VERBS,
   UNIT_TERMS,
@@ -39,6 +40,7 @@ export { normalizeDigits, stripDates };
 
 export type RiskCode =
   | "future_daily_rain_beyond_horizon"
+  | "future_rain_unsourced"
   | "diagnosis_certainty"
   | "chemical_dosage"
   | "yield_from_canopy"
@@ -146,6 +148,33 @@ export function detectFutureRain(text: string, asOf: Date, horizonDays: number):
       relativeDays(s).some((d) => d > horizonDays) ||
       weekdayDays(s, asOf).some((d) => d > horizonDays);
     if (beyond) return { code: "future_daily_rain_beyond_horizon", message: `exact rain stated beyond the ${horizonDays}-day forecast horizon` };
+  }
+  return null;
+}
+
+// ------------------------------------------------------------------ seasonal rain outlook (F14)
+const SR = Object.fromEntries(Object.entries(SEASONAL_RAIN).map(([k, v]) => [k, termRe(v)])) as Record<keyof typeof SEASONAL_RAIN, RegExp>;
+const MONSOON_QUALIFIED = new RegExp(`${termSource(SEASONAL_RAIN.monsoonQualifier)}[^.!?।\\n]{0,40}${termSource(SEASONAL_RAIN.monsoon)}|${termSource(SEASONAL_RAIN.monsoon)}[^.!?।\\n]{0,40}${termSource(SEASONAL_RAIN.monsoonQualifier)}`, "iu");
+const CONDITIONAL_BEFORE = new RegExp(`${termSource(SEASONAL_RAIN.conditionalBefore)}\\s+(?:[^\\s]+\\s+){0,3}$`, "iu");
+/** Tamil conditional verb after the rain word ("பருவமழை தாமதமானால்", "மழை பெய்தால்"). */
+const TA_CONDITIONAL_AFTER = /^[\p{L}\p{M}]*(?:\s+[\p{L}\p{M}]+){0,3}?\s+[\p{L}\p{M}]*(?:ால்|என்றால்)(?![\p{L}\p{M}])/u;
+
+/**
+ * F14 (review R5 #5): an unsourced seasonal rain outlook ("The monsoon will fail this year"). Per sentence: a
+ * rain/monsoon word, not inside a conditional, with a modal-future occurrence verb, or with a seasonal marker (this
+ * year, next season, arrive, fail; early/late only next to a monsoon word) and no past-tense or general-statement
+ * marker. The gate lets it through only with a forecast-tool reference or a verified evidence claim.
+ */
+export function detectSeasonalRain(text: string): RiskHit | null {
+  for (const s of sentences(text.normalize("NFC"))) {
+    const rain = RAIN_RE.exec(s);
+    if (!rain) continue;
+    if (CONDITIONAL_BEFORE.test(s.slice(0, rain.index)) || TA_CONDITIONAL_AFTER.test(s.slice(rain.index + rain[0].length))) continue;
+    const modal = SR.modalFuture.test(s);
+    const seasonal = SR.seasonal.test(s) || MONSOON_QUALIFIED.test(s);
+    if (modal || (seasonal && !SR.past.test(s) && !SR.general.test(s))) {
+      return { code: "future_rain_unsourced", message: "a seasonal or future rain statement without a forecast reference or verified evidence" };
+    }
   }
   return null;
 }
@@ -353,7 +382,7 @@ export function detectConfidencePercent(text: string): RiskHit | null {
 }
 
 export function detectHighRisk(text: string, o: { asOf: Date; rainHorizonDays: number; allowConfidencePercent: boolean }): RiskHit[] {
-  const hits = [detectFutureRain(text, o.asOf, o.rainHorizonDays), detectDiagnosisCertainty(text), detectDosage(text), detectCanopyYield(text), detectGuaranteedProfit(text), o.allowConfidencePercent ? null : detectConfidencePercent(text)];
+  const hits = [detectFutureRain(text, o.asOf, o.rainHorizonDays), detectSeasonalRain(text), detectDiagnosisCertainty(text), detectDosage(text), detectCanopyYield(text), detectGuaranteedProfit(text), o.allowConfidencePercent ? null : detectConfidencePercent(text)];
   return hits.filter((h): h is RiskHit => h !== null);
 }
 

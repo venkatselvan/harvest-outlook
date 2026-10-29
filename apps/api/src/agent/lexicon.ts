@@ -112,15 +112,30 @@ const HI_LIST = [
 ];
 export const HI_NUMBER_WORDS: Record<string, number> = Object.fromEntries(HI_LIST.flatMap((w, i) => w.split("|").map((v) => [v.normalize("NFC"), i + 1])));
 
-/** Tamil numerals as word stems (matched at the start of a word because of agglutination). */
-export const TA_NUMBER_STEMS: [string, number][] = [
-  ["பதினொன்", 11], ["பன்னிரண்", 12], ["பதின்மூன்", 13], ["பதினான்", 14], ["பதினைந்", 15], ["பதினாறு", 16], ["பதினேழு", 17], ["பதினெட்டு", 18], ["பத்தொன்பது", 19],
-  ["இருபத்", 20], ["இருபது", 20], ["முப்பத்", 30], ["முப்பது", 30], ["நாற்பத்", 40], ["நாற்பது", 40], ["ஐம்பத்", 50], ["ஐம்பது", 50],
-  ["அறுபத்", 60], ["அறுபது", 60], ["எழுபத்", 70], ["எழுபது", 70], ["எண்பத்", 80], ["எண்பது", 80], ["தொண்ணூற்", 90], ["தொண்ணூறு", 90],
-  ["இருநூ", 200], ["முந்நூ", 300], ["நானூ", 400], ["ஐந்நூ", 500], ["அறுநூ", 600], ["எழுநூ", 700], ["எண்ணூ", 800], ["தொள்ளாயிர", 900],
-  ["ஒன்று", 1], ["இரண்டு", 2], ["மூன்று", 3], ["நான்கு", 4], ["நாலு", 4], ["ஐந்து", 5], ["அஞ்சு", 5], ["ஆறு", 6], ["ஏழு", 7], ["எட்டு", 8], ["ஒன்பது", 9], ["பத்து", 10],
-  ["ஒரு", 1],
-].map(([s, v]) => [(s as string).normalize("NFC"), v as number] as [string, number]).sort((a, b) => b[0].length - a[0].length);
+
+/**
+ * F14 (review R5 #1): Tamil numerals for the compound parser in numbers.ts. Full forms are complete words (a
+ * case ending may follow the final -உ); combining stems end in a virama and join the next numeral with sandhi
+ * (இருபத் + ஐந்து -> இருபத்தைந்து, இருநூற் + ஐம்பது -> இருநூற்றைம்பது). `exact` forms are also ordinary words
+ * (ஆறு river, ஒரு "a") and count only as whole words or inside a compound.
+ */
+export const TA_FULL: { form: string; value: number; exact?: boolean }[] = (
+  [
+    ["ஒன்று", 1], ["இரண்டு", 2], ["ரெண்டு", 2], ["மூன்று", 3], ["மூணு", 3], ["நான்கு", 4], ["நாலு", 4], ["ஐந்து", 5], ["அஞ்சு", 5], ["ஆறு", 6, true], ["ஏழு", 7, true], ["எட்டு", 8, true], ["ஒன்பது", 9], ["பத்து", 10], ["ஒரு", 1, true],
+    ["பதினொன்று", 11], ["பதினொரு", 11], ["பன்னிரண்டு", 12], ["பன்னிரெண்டு", 12], ["பதின்மூன்று", 13], ["பதிமூன்று", 13], ["பதினான்கு", 14], ["பதினாலு", 14], ["பதினைந்து", 15], ["பதினஞ்சு", 15],
+    ["பதினாறு", 16], ["பதினேழு", 17], ["பதினெட்டு", 18], ["பத்தொன்பது", 19],
+    ["இருபது", 20], ["முப்பது", 30], ["நாற்பது", 40], ["ஐம்பது", 50], ["அறுபது", 60], ["எழுபது", 70], ["எண்பது", 80], ["தொண்ணூறு", 90],
+    ["இருநூறு", 200], ["முந்நூறு", 300], ["முன்னூறு", 300], ["நானூறு", 400], ["நாநூறு", 400], ["ஐந்நூறு", 500], ["ஐநூறு", 500], ["அறுநூறு", 600], ["எழுநூறு", 700], ["எண்ணூறு", 800], ["தொள்ளாயிரம்", 900],
+  ] as [string, number, boolean?][]
+).map(([f, v, e]) => ({ form: f.normalize("NFC"), value: v, exact: e === true }));
+/** Combining stems: [stem ending in a virama, value, place]. The stem's last consonant is repeated before the next numeral. */
+export const TA_COMBINING: { stem: string; value: number; place: number }[] = (
+  [
+    ["இருபத்", 20, 10], ["முப்பத்", 30, 10], ["நாற்பத்", 40, 10], ["ஐம்பத்", 50, 10], ["அறுபத்", 60, 10], ["எழுபத்", 70, 10], ["எண்பத்", 80, 10], ["தொண்ணூற்", 90, 10],
+    ["நூற்", 100, 100], ["இருநூற்", 200, 100], ["முந்நூற்", 300, 100], ["முன்னூற்", 300, 100], ["நானூற்", 400, 100], ["நாநூற்", 400, 100], ["ஐந்நூற்", 500, 100], ["ஐநூற்", 500, 100],
+    ["அறுநூற்", 600, 100], ["எழுநூற்", 700, 100], ["எண்ணூற்", 800, 100], ["தொள்ளாயிரத்", 900, 100], ["ஆயிரத்", 1000, 1000],
+  ] as [string, number, number][]
+).map(([s, v, p]) => ({ stem: s.normalize("NFC"), value: v, place: p }));
 
 /**
  * Fractional and colloquial Hindi/Tamil number words (F8). Values are the conventional ones (सवा = 1.25,
@@ -135,8 +150,6 @@ export const HI_MODIFIERS: Record<string, number> = Object.fromEntries(([["स�
 export const TA_EXACT_WORDS: Record<string, number> = Object.fromEntries(
   ([["அரை", 0.5], ["கால்", 0.25], ["முக்கால்", 0.75], ["ஒன்னு", 1], ["ஒண்ணு", 1]] as const).map(([w, v]) => [w.normalize("NFC"), v]),
 );
-/** Colloquial Tamil numerals matched as word stems. */
-export const TA_COLLOQUIAL_STEMS: [string, number][] = ([["ரெண்டு", 2], ["மூணு", 3], ["நாலு", 4], ["அஞ்சு", 5]] as const).map(([w, v]) => [w.normalize("NFC"), v] as [string, number]);
 /**
  * Romanised Hindi/Tamil number words (F8). Many are also English or ordinary words ("do", "teen", "das",
  * "oru"), so every one of them counts as a number only before a unit or multiplier word.
@@ -146,6 +159,10 @@ export const ROMAN_NUMBER_WORDS: Record<string, number> = {
   aadha: 0.5, adha: 0.5, aadhi: 0.5, aadhe: 0.5, dhai: 2.5, dhaai: 2.5, adhai: 2.5, sawa: 1.25, sava: 1.25, dedh: 1.5, dedhh: 1.5, pauna: 0.75, paune: 0.75,
   onnu: 1, onru: 1, oru: 1, rendu: 2, randu: 2, irandu: 2, moonu: 3, munu: 3, moondru: 3, naalu: 4, nalu: 4, anju: 5, ainthu: 5, aaru: 6, pathu: 10,
   arai: 0.5, ara: 0.5, kaal: 0.25, mukkaal: 0.75,
+  // F14 (review R5 #4): 11-30 in common romanisations, and Tamil tens.
+  gyarah: 11, barah: 12, terah: 13, chaudah: 14, pandrah: 15, solah: 16, satrah: 17, atharah: 18, unnees: 19,
+  ikkees: 21, ikkis: 21, bais: 22, teis: 23, chaubees: 24, chaubis: 24, pachchees: 25, pachees: 25, pachis: 25, chhabbees: 26, sattaees: 27, atthaees: 28, untees: 29, tees: 30,
+  padhinonnu: 11, irupathu: 20, muppathu: 30,
 };
 /** Romanised multipliers (Latin script). */
 export const ROMAN_MULTIPLIERS: [TermList, number][] = [
@@ -168,6 +185,9 @@ export const NATIVE_NUMBER_IDIOMS: [string, string][] = [
   ["दो", "^\\s*(?:$|[।.!?,;:\\n])"],
   ["एक", "^\\s*(?:साथ|दूसरे|दूसरा|दूसरी|तरह)(?![\\p{L}\\p{M}])"],
   ["ஒரு", "^\\s*(?:வேளை|வேளாண்|அலுவலர|நிபுணர)"],
+  // F14: "एक सवाल" (a question), "एक बार" (once), "ஒரு கேள்வி" (a question), "ஒரு முறை" (once).
+  ["एक", "^\\s*(?:सवाल|बार)(?![\\p{L}\\p{M}])"],
+  ["ஒரு", "^\\s*(?:கேள்வி|முறை)"],
 ].map(([w, r]) => [w!.normalize("NFC"), r!.normalize("NFC")] as [string, string]);
 
 /** F13: plural/magnitude multiplier words used alone ("earn lakhs") are a vague quantity that needs a reference. */
@@ -233,8 +253,8 @@ export const HEDGE: TermList = {
 };
 export const NEGATION_EN = /\b(no|not|cannot|can't|cant|never|without|isn't|aren't|don't|doesn't|won't|nor|neither)\b/iu;
 export const RAIN: TermList = {
-  en: ["rain", "rainfall", "rains", "raining", "rainy", "shower", "showers", "precipitation", "downpours?", "drizzle", "storms?", "thunderstorms?", "cyclones?", "cloudburst", "wet\\s+spell", "baarish", "barish", "mazhai", "malai"],
-  indic: ["बारिश", "वर्षा", "बरसात", "मॉनसून", "आंधी", "तूफान", "तूफ़ान", "मझை", "மழை", "புயல்", "இடிமழை"],
+  en: ["rain", "rainfall", "rains", "raining", "rainy", "shower", "showers", "precipitation", "downpours?", "drizzle", "storms?", "thunderstorms?", "cyclones?", "cloudburst", "wet\\s+spell", "baarish", "barish", "mazhai", "malai", "monsoons?", "mansoon"],
+  indic: ["बारिश", "वर्षा", "बरसात", "मॉनसून", "मानसून", "பருவமழை", "आंधी", "तूफान", "तूफ़ान", "मझை", "மழை", "புயல்", "இடிமழை"],
 };
 /** Loss/failure words: a guarantee about these is a guaranteed-outcome claim (F8). */
 export const LOSS: TermList = {
@@ -252,7 +272,8 @@ const FORM_GOODS = "(?:(?:bengal|red|green|black)\\s+gram|gram|pigeon\\s*peas?|c
 const FORM_MARKET = "(?:prices?|rates?\\s+in\\s+the\\s+market|markets?|arrivals?|trade|traders?|sales?|demand|mandi)";
 export const PRODUCT_FORM_WORDS: Record<string, TermList> = {
   fresh: { en: [`fresh\\s+${FORM_CROPS}`, "green\\s+ginger"], indic: ["ताज़ा अदरक", "ताजा अदरक", "ताज़ी अदरक", "ताजी अदरक", "हरी अदरक", "ताज़ी हल्दी", "ताजी हल्दी", "பச்சை இஞ்சி", "புதிய இஞ்சி"] },
-  dry: { en: [`(?:dry|dried)\\s+${FORM_CROPS}`, "sonth", "sukku", "chukku"], indic: ["सूखी अदरक", "सूखा अदरक", "सूखी हल्दी", "सूखी मिर्च", "सोंठ", "சுக்கு", "உலர்ந்த இஞ்சி", "உலர் இஞ்சி", "காய்ந்த மிளகாய்", "வர மிளகாய்"] },
+  // F14 (review R5 #4b): any inflection of सूखा / காய்ந்த / உலர்ந்த before a crop word.
+  dry: { raw: ["(?<![\\p{L}\\p{M}\\p{N}_])सूख[ाीे]\\s+(?:अदरक|हल्दी|मिर्च)", "(?<![\\p{L}\\p{M}\\p{N}_])(?:காய்ந்த|உலர்ந்த|உலர்)\\s*(?:இஞ்சி|மஞ்சள்|மிளகாய்)"], en: [`(?:dry|dried)\\s+${FORM_CROPS}`, "sonth", "sukku", "chukku"], indic: ["सूखी अदरक", "सूखा अदरक", "सूखी हल्दी", "सूखी मिर्च", "सोंठ", "சுக்கு", "உலர்ந்த இஞ்சி", "உலர் இஞ்சி", "காய்ந்த மிளகாய்", "வர மிளகாய்"] },
   green: { en: ["green\\s+(?:chill?i(?:es|s)?|chilly|chillies|pepper)"], indic: ["हरी मिर्च", "பச்சை மிளகாய்"] },
   milled: { en: ["milled(?:\\s+rice)?", "polished\\s+rice"], indic: [] },
   kapas: { en: ["kapas", "seed\\s+cotton"], indic: ["कपास"] },
@@ -272,10 +293,52 @@ export const PRODUCT_FORM_WORDS: Record<string, TermList> = {
   whole: { en: [`whole\\s+${FORM_GOODS}`, `whole\\s+(?:seeds?|dal|pulses?)`], indic: ["साबुत"] },
   split: { en: [`split\\s+${FORM_GOODS}`, "dal", "dhal", "daal", "paruppu"], indic: ["दाल", "பருப்பு"] },
 };
+/**
+ * F14 (review R5 #4b): English sentence-level dry-product heuristic. A sentence that names a crop and a drying word
+ * ("Ginger sold after drying fetches more", "sun-dried ginger") is about the dry product. A drying word that
+ * qualifies weather, soil or land ("dry spell", "drying the field", "let the beds dry") is not: see gate.ts.
+ */
+export const DRY_CROP_EN = "(?:ginger|turmeric|rhizomes?|chill?i(?:es|s)?|chilly|chillies|haldi|adrak)";
+export const DRY_WORD_EN = "(?:sun[\\s-]?)?(?:dry|dried|drying|dries|dryer|dehydrated)";
+export const DRY_NOT_PRODUCT_EN = "(?:spells?|weather|season|seasons|days?|weeks?|months?|periods?|conditions|soils?|fields?|land|beds?|ground|out|up|winds?|air|climate|years?)";
+export const DRY_SUBJECT_NOT_PRODUCT_EN = "(?:soils?|fields?|land|beds?|ground|weather|air|surface|furrows?|plots?)";
+
 export const RAIN_FUTURE_VERB: TermList = {
   en: ["will\\s+(?:rain|pour|receive|get)", "it\\s+will\\s+rain", "expect(?:ed)?", "forecast\\s+to", "going\\s+to\\s+rain"],
   indic: ["होगी", "होगा", "पड़ेगी", "पड़ेगा", "गिरेगी", "आएगी", "आयेगी", "बरसेगा", "பெய்யும்", "பொழியும்", "வரும்"],
 };
+/**
+ * F14 (review R5 #5): seasonal rain outlook wording. A rain/monsoon sentence with a modal future, or with a seasonal
+ * marker and no past-tense/general-statement marker, is a forecast; without a forecast reference or a verified
+ * evidence claim it is withheld (`future_rain_unsourced`). Conditionals ("if the monsoon is late") are not forecasts.
+ */
+export const SEASONAL_RAIN = {
+  // English modal future counts only before an occurrence verb ("will arrive", "will fail", "will be heavy", "it will
+  // rain"); "heavy rain will cause rot" is general advice, not an outlook.
+  modalFuture: {
+    en: [`(?:will|won[’']?t|wo\\s*n[’']t|shall|going\\s+to|(?:is|are)\\s+(?:expected|likely|set|forecast|predicted|projected)\\s+to|expected\\s+to|likely\\s+to|predicted\\s+to|bound\\s+to)\\s+(?:(?:not|be|also|probably|surely|definitely|again)\\s+)?(?:arrive|come|fail|start|begin|set\\s+in|be|rain|pour|fall|hit|lash|continue|stop|remain|withdraw|reach|bring|occur|happen|get|receive|return|break|cease|increase|decrease|intensify|weaken|subside|pick\\s+up|let\\s+up|hold\\s+off|stay|turn|go|last|end|arrive|lessen|improve|recover)`],
+    indic: ["होगी", "होगा", "होंगे", "पड़ेगी", "पड़ेगा", "गिरेगी", "गिरेगा", "आएगी", "आयेगी", "आएगा", "आयेगा", "बरसेगा", "बरसेगी", "रहेगा", "रहेगी", "रहेंगे", "जाएगा", "जाएगी",
+      "பெய்யும்", "பொழியும்", "வரும்$", "தொடங்கும்", "பொய்க்கும்", "குறையும்", "அதிகரிக்கும்", "இருக்கும்", "தாமதமாகும்"],
+  } as TermList,
+  seasonal: {
+    en: ["this\\s+(?:year|season|kharif|rabi|monsoon|summer|winter)", "next\\s+(?:year|season|month)", "coming\\s+(?:season|year|months|weeks)", "upcoming", "soon", "arrives?", "fails?", "withdraws?", "sets?\\s+in"],
+    indic: ["अगले", "अगली", "अगला", "इस साल", "इस वर्ष", "इस बार", "इस सीजन", "इस सीज़न", "इस मौसम", "आने वाले", "जल्दी", "देर से",
+      "இந்த ஆண்டு", "இந்த வருட", "இந்த பருவ", "இந்த சீசன", "அடுத்த", "முன்கூட்டியே", "தாமதமா"],
+  } as TermList,
+  /** early/late/weak ... count as seasonal only next to a monsoon/onset word (generic "late rains cause rot" is not a forecast). */
+  monsoonQualifier: { en: ["early", "late", "delayed", "weak", "strong", "deficient", "excess(?:ive)?", "normal", "above[\\s-]normal", "below[\\s-]normal", "good", "poor", "heavy"] } as TermList,
+  monsoon: { en: ["monsoons?", "mansoon", "onset"], indic: ["मानसून", "मॉनसून", "பருவமழை"] } as TermList,
+  past: {
+    en: ["last\\s+(?:year|season|month|week|kharif|rabi|monsoon)", "was", "were", "had", "did", "arrived", "failed", "came", "fell", "received", "recorded", "used\\s+to", "has", "have", "ago", "in\\s+(?:19|20)\\d\\d"],
+    indic: ["पिछले", "पिछली", "पिछला", "था$", "थी$", "थे$", "हुई$", "हुआ$", "आया$", "आई$", "கடந்த", "இருந்தது", "பெய்தது", "வந்தது", "பொய்த்தது", "ஆனது"],
+  } as TermList,
+  general: {
+    en: ["usually", "normally", "typically", "generally", "on\\s+average", "in\\s+a\\s+normal\\s+year", "every\\s+year", "each\\s+year", "historically"],
+    indic: ["आमतौर", "सामान्यतः", "सामान्यत:", "हर साल", "பொதுவாக", "வழக்கமாக", "ஒவ்வொரு ஆண்டும்"],
+  } as TermList,
+  conditionalBefore: { en: ["if", "unless", "in\\s+case", "whether", "when", "once", "until", "before", "after", "should"], indic: ["अगर", "यदि", "जब"] } as TermList,
+};
+
 export const RELATIVE_TIME: TermList = {
   en: ["tomorrow", "next\\s+(?:week|month|fortnight)", "in\\s+\\d+\\s+(?:days?|weeks?|months?)"],
   indic: ["कल$", "परसों", "अगले", "अगली", "अगला", "आने वाले", "நாளை", "அடுத்த", "வரும் வார", "வரும் மாத"],

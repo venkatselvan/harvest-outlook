@@ -12,9 +12,9 @@ import {
   MULTIPLIERS,
   NATIVE_NUMBER_IDIOMS,
   ROMAN_NUMBER_WORDS,
-  TA_COLLOQUIAL_STEMS,
+  TA_COMBINING,
   TA_EXACT_WORDS,
-  TA_NUMBER_STEMS,
+  TA_FULL,
   UNIT_TERMS,
   termSource,
 } from "./lexicon";
@@ -59,6 +59,64 @@ export function unsupportedNumberChar(text: string): string | null {
   return rest ? rest[0] : null;
 }
 
+const ROMAN_VALID = /^M{0,3}(?:CM|CD|D?C{0,3})(?:XC|XL|L?X{0,3})(?:IX|IV|V?I{0,3})$/u;
+/** A unit, currency word or multiplier right after, or a currency mark right before. */
+const quantityAdjacent = (before: string, after: string) => ANY_UNIT_RE.test(after) || ANY_MULT_RE.test(after) || CUR_PREFIX_END.test(before);
+
+/**
+ * F14 (review R5 #1-#3): number-like words the gate cannot read, so it fails closed (`unsupported_number`):
+ * - a Tamil word that starts like a compound numeral but has letters left that are not a numeral or case ending;
+ * - an ASCII Roman numeral (XX, XV, IV ...) used as a quantity: next to a unit, currency or multiplier word
+ *   (a Roman-looking unit right after digits, "200 L tank", is a unit, not a numeral);
+ * - letter homoglyphs for digits (lOOO, lO, 5OO): a token of l/I/O/o and digits that mixes letters with digits,
+ *   or is all l/I/O/o letters of length >= 2, next to a unit, currency or multiplier ("lo" alone is a word).
+ * Returns the offending word or null.
+ */
+export function unsupportedNumberWord(text: string): string | null {
+  const t = compatNormalise(text).normalize("NFC");
+  for (const m of t.matchAll(/[\p{L}\p{M}]+/gu)) if (tamilNumberValue(m[0]) === "unsupported") return m[0];
+  for (const m of t.matchAll(/(?<![\p{L}\p{M}\p{N}_°'’])[IVXLCDM]{1,7}(?![\p{L}\p{M}\p{N}_'’])/gu)) {
+    if (!ROMAN_VALID.test(m[0])) continue;
+    const before = t.slice(0, m.index);
+    if (/\d[\d,.]*\s*$/u.test(before)) continue;
+    if (quantityAdjacent(before, t.slice(m.index! + m[0].length))) return m[0];
+  }
+  for (const m of t.matchAll(/(?<![\p{L}\p{M}\p{N}_])[lIOo0-9](?:[lIOo0-9]|[,.](?=[lIOo0-9]))*(?![\p{L}\p{M}\p{N}_])/gu)) {
+    const letters = m[0].replace(/[^lIOo]/g, "").length;
+    const digits = m[0].replace(/[^0-9]/g, "").length;
+    if (letters === 0 || (digits === 0 && letters < 2)) continue;
+    if (quantityAdjacent(t.slice(0, m.index), t.slice(m.index! + m[0].length))) return m[0];
+  }
+  return null;
+}
+
+/**
+ * F14 (review R5 #4): words a hi/ta turn may put before a unit or multiplier without stating a number (articles,
+ * prepositions, possessives, Hindi/Tamil postpositions in Latin script). Any OTHER Latin word right before a unit
+ * or multiplier is read as an unlisted romanised number word ("ikkees kilo", "pachchees bigha") and needs a
+ * reference. The list is a reviewed allowlist, not a number lexicon.
+ */
+const LATIN_BEFORE_UNIT_OK = new Set([
+  "per", "each", "every", "the", "a", "an", "of", "in", "on", "with",
+  "and", "or", "to", "for", "from", "by", "at", "your", "my", "our", "their", "this", "that", "these", "those",
+  "har", "prati", "ke", "ki", "ka", "se", "mein", "me", "par", "pe", "aapke", "aapki", "aapka", "apne", "apni", "apna",
+]);
+/** First Latin word that stands where a number should be (before a unit/multiplier) in hi/ta-turn text, or null. */
+export function latinWordBeforeQuantity(normText: string): string | null {
+  for (const m of normText.matchAll(/(?<![\p{L}\p{M}\p{N}_])[A-Za-z]+(?![\p{L}\p{M}\p{N}_])/gu)) {
+    const w = m[0].toLowerCase();
+    if (LATIN_BEFORE_UNIT_OK.has(w)) continue;
+    const self = normText.slice(m.index!);
+    // The word itself is a unit, currency or multiplier word ("kilo per", "rupaye kilo").
+    const own = [ANY_UNIT_RE.exec(self), ANY_MULT_RE.exec(self), CUR_PREFIX_START.exec(self)].some((x) => x !== null && x[0].trim().length >= m[0].length);
+    if (own) continue;
+    const after = normText.slice(m.index! + m[0].length);
+    if (!/^\s+\S/u.test(after)) continue;
+    if (ANY_UNIT_RE.test(after) || ANY_MULT_RE.test(after)) return m[0];
+  }
+  return null;
+}
+
 export const MONTH_RE = "(jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|june?|july?|aug(?:ust)?|sep(?:t(?:ember)?)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)";
 export const DATE_PATTERNS = {
   iso: /\b(\d{4})-(\d{2})-(\d{2})\b/g,
@@ -84,11 +142,101 @@ const MULT_RES = MULTIPLIERS.map(([t, v]) => [new RegExp(`^\\s*${termSource(t)}`
 const ANY_UNIT_RE = new RegExp(`^\\s*(?:${Object.values(UNIT_TERMS).map(termSource).join("|")}|${termSource(CURRENCY_WORD)})`, "iu");
 const ANY_MULT_RE = new RegExp(`^\\s*(?:${MULTIPLIERS.map(([t]) => termSource(t)).join("|")})`, "iu");
 
-/** Tamil stems that are also ordinary words or prefixes of ordinary words: whole-word match only. */
-const TA_EXACT = new Set(["ஒரு", "ஆறு", "ஏழு", "எட்டு"].map((x) => x.normalize("NFC")));
+// ------------------------------------------------------------------ Tamil compound numerals (F14)
+/** Tamil vowel sign -> independent vowel (sandhi: இருபத் + ஐந்து is written இருபத்தைந்து). */
+const TA_SIGN: Record<string, string> = { "\u0BBE": "ஆ", "\u0BBF": "இ", "\u0BC0": "ஈ", "\u0BC1": "உ", "\u0BC2": "ஊ", "\u0BC6": "எ", "\u0BC7": "ஏ", "\u0BC8": "ஐ", "\u0BCA": "ஒ", "\u0BCB": "ஓ", "\u0BCC": "ஔ" };
+const TA_CONSONANT = /^[\u0B95-\u0BB9]$/u;
+/** Case endings accepted after a numeral that is already part of a compound (remainder after the final consonant). */
+const TA_CASE_IN_COMPOUND = new Set(["ு", "ி", "ை", "ில்", "ிலும்", "ின்", "ிற்கு", "ால்", "ாக", "ாவது", "ாம்", "ும்", "ுக்கு", "ுக்கும்", "ுடன்", "ோடு"].map((x) => x.normalize("NFC")));
+/** Fraction suffixes after a numeral's final consonant: இரண்டரை 2.5, இரண்டேகால் 2.25, இரண்டேமுக்கால் 2.75. */
+const TA_FRACTION: [string, number][] = [["ரை", 0.5], ["ேகால்", 0.25], ["ேமுக்கால்", 0.75]];
+/** Thousand sandhi heads with an irregular first part (ஓராயிரம் 1000, ஈராயிரம், மூவாயிரம், ஐயாயிரம்). */
+const TA_THOUSAND_LEFT: Record<string, number> = { "ஓர": 1, "ஈர": 2, "மூவ": 3, "ஐய": 5 };
+const TA_FULL_SORTED = [...TA_FULL].sort((a, b) => b.form.length - a.form.length);
+const TA_COMBINING_SORTED = [...TA_COMBINING].sort((a, b) => b.stem.length - a.stem.length);
+type TaValue = number | null | "unsupported";
+
+/**
+ * The text after a combining stem's virama (it starts with the repeated consonant x). `inCompound` values must
+ * stay below `place`. Returns the added value, or "unsupported" when letters remain that are not a numeral or a
+ * case ending (fail closed: the reviewer's இருபத்தைந்து must never read as 20).
+ */
+function taContinuation(r: string, x: string, place: number): TaValue {
+  if (!r.startsWith(x)) return "unsupported";
+  const r2 = r.slice(x.length);
+  if (r2 === "" || TA_CASE_IN_COMPOUND.has(r2)) return 0;
+  const readings: string[] = [];
+  // Vowel sandhi: இருபத் + இரண்டு -> இருபத்திரண்டு, + ஐந்து -> இருபத்தைந்து.
+  if (TA_SIGN[r2[0]!]) readings.push(TA_SIGN[r2[0]!]! + r2.slice(1));
+  else if (TA_CONSONANT.test(r2[0]!)) readings.push("அ" + r2); // inherent vowel: நூற் + அறுபது -> நூற்றறுபது
+  if (r2.startsWith("ு") || r2.startsWith("ி")) {
+    // Linking vowel before a consonant-initial numeral (இருபத்துமூன்று); gemination before a hard consonant: நூற்றுப்பத்து.
+    let next = r2.slice(1);
+    if (next.length >= 3 && next[1] === "்" && next[0] === next[2]) next = next.slice(2);
+    readings.push(next);
+  }
+  for (const next of readings) {
+    const sub = taValue(next, place, true);
+    if (typeof sub === "number") return sub;
+  }
+  return "unsupported";
+}
+
+/**
+ * Value of one Tamil word as a numeral. null = not a numeral; "unsupported" = it starts like a compound numeral
+ * but the rest cannot be read (fail closed). `below` bounds a numeral inside a compound; `strict` (inside a
+ * compound) rejects unknown endings instead of ignoring them.
+ */
+function taValue(w: string, below = Infinity, strict = false): TaValue {
+  // Thousand sandhi: இருபத்தைந்தாயிரம் = இருபத்தைந்து x 1000, ஐயாயிரம் = 5000, then an optional combining tail.
+  const ti = w.indexOf("ாயிர");
+  if (!strict && ti > 0 && !w.startsWith("தொள்ளாயிர")) {
+    const leftRaw = w.slice(0, ti);
+    const left = TA_THOUSAND_LEFT[leftRaw] ?? taValue(`${leftRaw}ு`, 1000, true);
+    if (typeof left !== "number") return left === null ? null : "unsupported";
+    const tail = w.slice(ti + 4);
+    if (tail === "ம்" || tail === "ம" || tail === "") return left * 1000;
+    if (!tail.startsWith("த்")) return "unsupported";
+    const add = taContinuation(tail.slice(2), "த", 1000);
+    return typeof add === "number" ? left * 1000 + add : "unsupported";
+  }
+  for (const c of TA_COMBINING_SORTED) {
+    if (!w.startsWith(c.stem)) continue;
+    if (c.value >= below) return "unsupported";
+    const x = c.stem.slice(-2, -1);
+    const add = taContinuation(w.slice(c.stem.length), x, c.place);
+    // A standalone hundred/thousand word (நூற்று, ஆயிரத்து) is left to the multiplier pass.
+    if (add === 0 && !strict && (c.value === 100 || c.value === 1000)) return null;
+    return typeof add === "number" ? c.value + add : "unsupported";
+  }
+  for (const f of TA_FULL_SORTED) {
+    const base = f.form.endsWith("ு") ? f.form.slice(0, -1) : f.form;
+    if (!w.startsWith(base)) continue;
+    if (f.value >= below) continue;
+    const r = w.slice(base.length);
+    if (w === f.form) return f.value;
+    for (const [suffix, add] of TA_FRACTION) if (r === suffix) return f.value + add;
+    if (strict) {
+      if (TA_CASE_IN_COMPOUND.has(r) || (f.form.endsWith("ு") && r.startsWith("ு") && TA_CASE_IN_COMPOUND.has(r.slice(1)))) return f.value;
+      continue;
+    }
+    if (f.exact || !f.form.endsWith("ு") || !r.startsWith("ு")) continue;
+    // A full form followed by a case ending (இருபதுக்கு) keeps its value; a glued lakh/crore scales it.
+    if (r.startsWith("ுலட்ச")) return f.value * 100000;
+    if (r.startsWith("ுகோடி")) return f.value * 10000000;
+    return f.value;
+  }
+  return strict ? "unsupported" : null;
+}
+
+/** F14: Tamil numeral value of a word (exported for tests). */
+export function tamilNumberValue(word: string): TaValue {
+  const w = word.normalize("NFC");
+  return /\p{Script=Tamil}/u.test(w) ? taValue(w) : null;
+}
 
 const own = (o: Record<string, number>, k: string) => Object.prototype.hasOwnProperty.call(o, k);
-function numberWordValue(word: string): { value: number; kind: "unit" | "mult" } | null {
+function numberWordValue(word: string): { value: number; kind: "unit" | "mult"; unsupported?: boolean } | null {
   const w = word.toLowerCase().normalize("NFC");
   if (own(EN_NUMBER_WORDS, w)) return { value: EN_NUMBER_WORDS[w]!, kind: "unit" };
   if (own(HI_NUMBER_WORDS, w)) return { value: HI_NUMBER_WORDS[w]!, kind: "unit" };
@@ -96,12 +244,13 @@ function numberWordValue(word: string): { value: number; kind: "unit" | "mult" }
   if (own(HI_MODIFIERS, w)) return { value: 0, kind: "unit" };
   if (own(TA_EXACT_WORDS, w)) return { value: TA_EXACT_WORDS[w]!, kind: "unit" };
   if (own(ROMAN_NUMBER_WORDS, w)) return { value: ROMAN_NUMBER_WORDS[w]!, kind: "unit" };
-  for (const [stem, v] of TA_COLLOQUIAL_STEMS) if (w.startsWith(stem)) return { value: v, kind: "unit" };
   for (const [re, v] of MULT_RES) {
     const m = re.exec(w);
     if (m && m[0].trim().length === w.length) return { value: v, kind: "mult" };
   }
-  for (const [stem, v] of TA_NUMBER_STEMS) if (TA_EXACT.has(stem) ? w === stem : w.startsWith(stem)) return { value: v, kind: "unit" };
+  const ta = tamilNumberValue(w);
+  if (ta === "unsupported") return { value: 0, kind: "unit", unsupported: true };
+  if (ta !== null) return { value: ta, kind: "unit" };
   for (const [re, v] of MULT_RES) if (re.test(w)) return { value: v, kind: "mult" };
   return null;
 }
@@ -132,7 +281,7 @@ export function wordsToDigits(text: string): string {
         const after = words[j + 2]!;
         const ap = after[0].split("-").map(numberWordValue);
         if (ap.every((x) => x !== null) && /^[\s-]*$/u.test(text.slice(next.index! + next[0].length, after.index))) {
-          vals = [...vals, ...(ap as { value: number; kind: "unit" | "mult" }[])];
+          vals = [...vals, ...(ap as NonNullable<ReturnType<typeof numberWordValue>>[])];
           end = after.index! + after[0].length;
           j += 2;
           continue;
@@ -141,7 +290,7 @@ export function wordsToDigits(text: string): string {
       }
       const np = next[0].split("-").map(numberWordValue);
       if (!np.every((x) => x !== null)) break;
-      vals = [...vals, ...(np as { value: number; kind: "unit" | "mult" }[])];
+      vals = [...vals, ...(np as NonNullable<ReturnType<typeof numberWordValue>>[])];
       end = next.index! + next[0].length;
       j++;
     }
@@ -166,7 +315,10 @@ export function wordsToDigits(text: string): string {
       i = j + 1;
       continue;
     }
-    if (idiom || (ambiguous && !ANY_UNIT_RE.test(rest) && !ANY_MULT_RE.test(rest))) {
+    // F14: "two options/choices/ways" (English) counts alternatives, not a quantity, unless a unit/currency/multiplier follows.
+    const choice = single && !indicWord && (firstNorm === "two" || firstNorm === "three") && /^\s+(?:options?|choices?|ways?)(?![\p{L}\p{M}\p{N}])/u.exec(rest);
+    const alternatives = choice ? !ANY_UNIT_RE.test(rest.slice(choice[0].length)) && !ANY_MULT_RE.test(rest.slice(choice[0].length)) : false;
+    if (idiom || alternatives || (ambiguous && !ANY_UNIT_RE.test(rest) && !ANY_MULT_RE.test(rest))) {
       i = j + 1;
       continue;
     }
@@ -179,6 +331,13 @@ export function wordsToDigits(text: string): string {
         i = j + 1;
         continue;
       }
+    }
+    // F14: a Tamil word that starts like a compound numeral but cannot be read is a number that needs a reference.
+    if (vals.some((v) => v.unsupported)) {
+      out.push(text.slice(cursor, first.index), ` ${VAGUE_QUANTITY} `);
+      cursor = end;
+      i = j + 1;
+      continue;
     }
     let total = 0;
     let current = 0;
@@ -294,6 +453,7 @@ const startRe = (src: string) => new RegExp(`^[\\s(:-]*${src}`, "iu");
 const endRe = (src: string) => new RegExp(`${src}[\\s.]*$`, "iu");
 const UNIT_START: Record<string, RegExp> = Object.fromEntries(Object.entries(UNIT_TERMS).map(([k, v]) => [k, startRe(termSource(v))]));
 const CUR_PREFIX_END = endRe(termSource(CURRENCY_PREFIX));
+const CUR_PREFIX_START = new RegExp(`^${termSource(CURRENCY_PREFIX)}`, "iu");
 const CUR_WORD_START = startRe(termSource(CURRENCY_WORD));
 const within = (key: string) => new RegExp(termSource(UNIT_TERMS[key]!), "iu");
 

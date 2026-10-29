@@ -36,6 +36,11 @@ const RISK_TEMPLATES: Record<RiskCode, Record<TemplateLanguage, string>> = {
     hi: "पूर्वानुमान सीमा से आगे की सटीक जानकारी उपलब्ध नहीं है; यह पूर्वानुमान है, माप नहीं।",
     ta: "முன்னறிவிப்பு எல்லைக்கு அப்பால் துல்லியமான தகவல் இல்லை; இது முன்னறிவிப்பு, அளவீடு அல்ல.",
   },
+  future_rain_unsourced: {
+    en: "Seasonal rainfall is a forecast or scenario, not a measurement; see the weather panel for the dated outlook.",
+    hi: "मौसमी वर्षा एक पूर्वानुमान या परिदृश्य है, माप नहीं; तारीख़ वाले पूर्वानुमान के लिए मौसम पैनल देखें।",
+    ta: "பருவ மழை ஒரு முன்னறிவிப்பு அல்லது சூழ்நிலை மட்டுமே, அளவீடு அல்ல; தேதியிட்ட முன்னறிவிப்புக்கு வானிலைப் பகுதியைப் பார்க்கவும்.",
+  },
   yield_from_canopy: {
     en: "Field yield cannot be estimated from a photo.",
     hi: "फोटो से खेत की उपज का अनुमान नहीं लगाया जा सकता।",
