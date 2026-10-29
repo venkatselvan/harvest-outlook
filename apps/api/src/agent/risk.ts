@@ -41,6 +41,7 @@ export { normalizeDigits, stripDates };
 export type RiskCode =
   | "future_daily_rain_beyond_horizon"
   | "future_rain_unsourced"
+  | "weather_claim_unsourced"
   | "diagnosis_certainty"
   | "chemical_dosage"
   | "yield_from_canopy"
@@ -159,21 +160,36 @@ const CONDITIONAL_BEFORE = new RegExp(`${termSource(SEASONAL_RAIN.conditionalBef
 /** Tamil conditional verb after the rain word ("பருவமழை தாமதமானால்", "மழை பெய்தால்"). */
 const TA_CONDITIONAL_AFTER = /^[\p{L}\p{M}]*(?:\s+[\p{L}\p{M}]+){0,3}?\s+[\p{L}\p{M}]*(?:ால்|என்றால்)(?![\p{L}\p{M}])/u;
 
+const OUTLOOK_RE = new RegExp(`${termSource(RAIN)}|${termSource(SEASONAL_RAIN.outlookNoun)}`, "iu");
+
 /**
  * F14 (review R5 #5): an unsourced seasonal rain outlook ("The monsoon will fail this year"). Per sentence: a
- * rain/monsoon word, not inside a conditional, with a modal-future occurrence verb, or with a seasonal marker (this
- * year, next season, arrive, fail; early/late only next to a monsoon word) and no past-tense or general-statement
- * marker. The gate lets it through only with a forecast-tool reference or a verified evidence claim.
+ * rain/monsoon word (F16: or an outlook noun such as drought, wet year, deficient rainfall, सूखा, வறட்சி), not inside
+ * a conditional, with a modal-future occurrence verb, or with a seasonal marker (this year, next season, arrive, fail,
+ * lies ahead; early/late only next to a monsoon word) and no past-tense or general-statement marker. The gate lets it
+ * through only with a forecast-tool reference or a verified evidence claim.
+ *
+ * F16 (review R6 F-1): forecast vocabulary (forecast, predicted, outlook, expect, coming, ahead, likely, set to,
+ * संभावना, முன்னறிவிப்பு ...) overrides the past markers, and has/have is a past marker only before an occurrence
+ * participle (lexicon.ts). F16 (F-2): a present-perfect occurrence with a seasonal marker and no explicit past-time
+ * marker ("The monsoon has arrived early this year", "मानसून जल्दी आ गया है") is a claim about the current season
+ * and returns `weather_claim_unsourced`; "has arrived late in past years" is historical and passes.
  */
 export function detectSeasonalRain(text: string): RiskHit | null {
   for (const s of sentences(text.normalize("NFC"))) {
-    const rain = RAIN_RE.exec(s);
+    const rain = OUTLOOK_RE.exec(s);
     if (!rain) continue;
     if (CONDITIONAL_BEFORE.test(s.slice(0, rain.index)) || TA_CONDITIONAL_AFTER.test(s.slice(rain.index + rain[0].length))) continue;
     const modal = SR.modalFuture.test(s);
     const seasonal = SR.seasonal.test(s) || MONSOON_QUALIFIED.test(s);
-    if (modal || (seasonal && !SR.past.test(s) && !SR.general.test(s))) {
+    const forecast = SR.forecast.test(s);
+    const past = SR.past.test(s) && !forecast;
+    const general = SR.general.test(s);
+    if (modal || (seasonal && !past && !general)) {
       return { code: "future_rain_unsourced", message: "a seasonal or future rain statement without a forecast reference or verified evidence" };
+    }
+    if ((seasonal || SR.currentPeriod.test(s)) && !general && SR.presentPerfect.test(s) && !SR.pastTime.test(s)) {
+      return { code: "weather_claim_unsourced", message: "a current-season weather statement without a weather-tool reference or verified evidence" };
     }
   }
   return null;

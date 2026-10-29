@@ -41,6 +41,11 @@ const RISK_TEMPLATES: Record<RiskCode, Record<TemplateLanguage, string>> = {
     hi: "मौसमी वर्षा एक पूर्वानुमान या परिदृश्य है, माप नहीं; तारीख़ वाले पूर्वानुमान के लिए मौसम पैनल देखें।",
     ta: "பருவ மழை ஒரு முன்னறிவிப்பு அல்லது சூழ்நிலை மட்டுமே, அளவீடு அல்ல; தேதியிட்ட முன்னறிவிப்புக்கு வானிலைப் பகுதியைப் பார்க்கவும்.",
   },
+  weather_claim_unsourced: {
+    en: "Current-season rainfall is shown in the weather panel from dated records; this sentence could not be verified.",
+    hi: "मौजूदा मौसम की वर्षा तारीख़ वाले रिकॉर्ड से मौसम पैनल में दिखाई जाती है; इस वाक्य की पुष्टि नहीं हो सकी।",
+    ta: "நடப்புப் பருவத்தின் மழை அளவு தேதியிட்ட பதிவுகளிலிருந்து வானிலைப் பகுதியில் காட்டப்படுகிறது; இந்த வாக்கியத்தை உறுதிப்படுத்த முடியவில்லை.",
+  },
   yield_from_canopy: {
     en: "Field yield cannot be estimated from a photo.",
     hi: "फोटो से खेत की उपज का अनुमान नहीं लगाया जा सकता।",

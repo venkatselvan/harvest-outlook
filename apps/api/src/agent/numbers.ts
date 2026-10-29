@@ -81,13 +81,44 @@ export function unsupportedNumberWord(text: string): string | null {
     if (/\d[\d,.]*\s*$/u.test(before)) continue;
     if (quantityAdjacent(before, t.slice(m.index! + m[0].length))) return m[0];
   }
-  for (const m of t.matchAll(/(?<![\p{L}\p{M}\p{N}_])[lIOo0-9](?:[lIOo0-9]|[,.](?=[lIOo0-9]))*(?![\p{L}\p{M}\p{N}_])/gu)) {
-    const letters = m[0].replace(/[^lIOo]/g, "").length;
+  // F16 (review R6 F-4): lowercase Roman numerals (xx, iv, xxv) used as a quantity, unless the word is itself a unit.
+  for (const m of t.matchAll(/(?<![\p{L}\p{M}\p{N}_°'’])[ivxlcdm]{1,7}(?![\p{L}\p{M}\p{N}_'’])/gu)) {
+    if (!ROMAN_VALID.test(m[0].toUpperCase()) || SHORT_WORD_OK.has(m[0]) || ownQuantityWord(t.slice(m.index!), m[0])) continue;
+    const before = t.slice(0, m.index);
+    if (/\d[\d,.]*\s*$/u.test(before)) continue;
+    if (quantityAdjacent(before, t.slice(m.index! + m[0].length))) return m[0];
+  }
+  // F16: B/S/Z/G join l/I/O/o as letter-for-digit homoglyphs (Rs BOO, S00, Z0).
+  for (const m of t.matchAll(/(?<![\p{L}\p{M}\p{N}_])[lIOoBSZG0-9](?:[lIOoBSZG0-9]|[,.](?=[lIOoBSZG0-9]))*(?![\p{L}\p{M}\p{N}_])/gu)) {
+    const letters = m[0].replace(/[^lIOoBSZG]/g, "").length;
     const digits = m[0].replace(/[^0-9]/g, "").length;
     if (letters === 0 || (digits === 0 && letters < 2)) continue;
     if (quantityAdjacent(t.slice(0, m.index), t.slice(m.index! + m[0].length))) return m[0];
   }
+  // F16 (review R6 F-4): a single capital letter or an all-letter word of at most 3 letters right after a currency mark
+  // or right before a mass/volume/area/currency unit stands where a number should be ("Harvest about B kg"). Real unit
+  // abbreviations, function words and number words (converted to digits later and checked there) are allowed.
+  for (const m of t.matchAll(/(?<![\p{L}\p{M}\p{N}_'’])[A-Za-z]{1,3}(?![\p{L}\p{M}\p{N}_'’])/gu)) {
+    const w = m[0];
+    const lw = w.toLowerCase();
+    if (SHORT_WORD_OK.has(lw) || own(EN_NUMBER_WORDS, lw) || own(ROMAN_NUMBER_WORDS, lw) || ownQuantityWord(t.slice(m.index!), w)) continue;
+    const before = t.slice(0, m.index);
+    if (/\d[\d,.]*\s*$/u.test(before)) continue; // "200 L tank": a unit after digits
+    if (CUR_PREFIX_END.test(before) || SHORT_QTY_UNIT_RE.test(t.slice(m.index! + w.length))) return w;
+  }
   return null;
+}
+
+/**
+ * F16: words allowed right before a unit or right after a currency mark: real unit abbreviations and short function
+ * words ("a kg of seed" is read by the quantity-word rule; "the kg figure", "per kg", "in kg"). Reviewed allowlist.
+ */
+const SHORT_WORD_OK = new Set(["kg", "kgs", "mm", "ha", "cm", "ml", "l", "g", "t", "m", "per", "a", "an", "of", "the", "in", "to", "or", "and", "by", "at", "on", "for", "its", "our", "my", "few", "any", "all", "no", "not", "how", "net", "is", "are", "was", "as", "be", "rs", "inr", "qtl", "har", "ke", "ki", "ka", "se", "me", "pe"]);
+/** Units for the short-word rule: mass, volume, area, length and currency (not days/weeks/months/%/°C, which follow ordinary words). */
+const SHORT_QTY_UNIT_RE = new RegExp(`^\\s*(?:${Object.entries(UNIT_TERMS).filter(([k]) => !["days", "weeks", "months", "celsius", "percent"].includes(k)).map(([, v]) => termSource(v)).join("|")}|${termSource(CURRENCY_WORD)})`, "iu");
+/** The word is itself a unit, currency or multiplier word ("mm", "cc", "Rs"). */
+function ownQuantityWord(self: string, word: string): boolean {
+  return [ANY_UNIT_RE.exec(self), ANY_MULT_RE.exec(self), CUR_PREFIX_START.exec(self)].some((x) => x !== null && x[0].trim().length >= word.length);
 }
 
 /**

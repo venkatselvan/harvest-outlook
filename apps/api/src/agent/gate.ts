@@ -349,8 +349,9 @@ function checkText(
   const risks: RiskCode[] = [];
   for (const h of detectHighRisk(text, { asOf: new Date(ctx.asOf), rainHorizonDays: ctx.rainHorizonDays, allowConfidencePercent: ctx.allowConfidencePercent })) {
     if (h.code === "chemical_dosage" && o.dosageAllowed?.(dosageMentions(text))) continue;
-    // F14: a seasonal rain statement passes only with a forecast-tool reference or a verified evidence claim.
-    if (h.code === "future_rain_unsourced" && (o.forecastBacked === true || o.presented.some((p) => p.forecast))) continue;
+    // F14: a seasonal rain statement passes only with a forecast-tool reference or a verified evidence claim (F16: so does
+    // a current-season present-perfect weather statement, `weather_claim_unsourced`).
+    if ((h.code === "future_rain_unsourced" || h.code === "weather_claim_unsourced") && (o.forecastBacked === true || o.presented.some((p) => p.forecast))) continue;
     risks.push(h.code);
     issues.push({ code: h.code, message: `${o.label}: ${h.message}` });
   }

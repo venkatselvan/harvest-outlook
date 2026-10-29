@@ -188,6 +188,8 @@ export const NATIVE_NUMBER_IDIOMS: [string, string][] = [
   // F14: "एक सवाल" (a question), "एक बार" (once), "ஒரு கேள்வி" (a question), "ஒரு முறை" (once).
   ["एक", "^\\s*(?:सवाल|बार)(?![\\p{L}\\p{M}])"],
   ["ஒரு", "^\\s*(?:கேள்வி|முறை)"],
+  // F16 (review R6): "ஒரு ஹெக்டேருக்கு" (per hectare), "ஒரு ஏக்கருக்கு" (per acre) is a rate denominator, not a quantity.
+  ["ஒரு", "^\\s*(?:ஹெக்டேருக்கு|ஹெக்டேருக்கும்|ஹெக்டேர்க்கு|ஏக்கருக்கு|ஏக்கருக்கும்)(?![\\p{L}\\p{M}])"],
 ].map(([w, r]) => [w!.normalize("NFC"), r!.normalize("NFC")] as [string, string]);
 
 /** F13: plural/magnitude multiplier words used alone ("earn lakhs") are a vague quantity that needs a reference. */
@@ -312,6 +314,14 @@ export const RAIN_FUTURE_VERB: TermList = {
  * marker and no past-tense/general-statement marker, is a forecast; without a forecast reference or a verified
  * evidence claim it is withheld (`future_rain_unsourced`). Conditionals ("if the monsoon is late") are not forecasts.
  */
+const PP_PARTICIPLE = "(?:already\\s+|just\\s+|now\\s+)?(?:arrived|failed|come|fallen|ended|withdrawn|started|begun|set\\s+in|stopped|receded|weakened|strengthened|picked\\s+up|been\\s+(?!forecast|predicted|projected|expected|likely|set\\b|seen\\s+as)[a-z]+)";
+const PRESENT_PERFECT_EN = `(?:has|have)\\s+${PP_PARTICIPLE}`;
+/** F16: contracted present perfect ("the monsoon's arrived", "we've been ..."); raw because the apostrophe follows a letter. */
+const PRESENT_PERFECT_EN_CONTRACTED = `[’'](?:s|ve)\\s+${PP_PARTICIPLE}(?![\\p{L}\\p{M}\\p{N}_])`;
+/** F16: Hindi present perfect of an occurrence verb ("आ गया है", "शुरू हो गई है", "आ चुका है"). */
+const PRESENT_PERFECT_HI = ["गया है", "गई है", "गयी है", "गए हैं", "गये हैं", "चुका है", "चुकी है", "चुके हैं"];
+/** F16: Tamil present perfect ("வந்துவிட்டது", "தொடங்கியுள்ளது", "தொடங்கியிருக்கிறது"). */
+const PRESENT_PERFECT_TA = "[\\p{L}\\p{M}]*(?:விட்டது|ுள்ளது|ியிருக்கிறது)(?![\\p{L}\\p{M}])";
 export const SEASONAL_RAIN = {
   // English modal future counts only before an occurrence verb ("will arrive", "will fail", "will be heavy", "it will
   // rain"); "heavy rain will cause rot" is general advice, not an outlook.
@@ -321,7 +331,9 @@ export const SEASONAL_RAIN = {
       "பெய்யும்", "பொழியும்", "வரும்$", "தொடங்கும்", "பொய்க்கும்", "குறையும்", "அதிகரிக்கும்", "இருக்கும்", "தாமதமாகும்"],
   } as TermList,
   seasonal: {
-    en: ["this\\s+(?:year|season|kharif|rabi|monsoon|summer|winter)", "next\\s+(?:year|season|month)", "coming\\s+(?:season|year|months|weeks)", "upcoming", "soon", "arrives?", "fails?", "withdraws?", "sets?\\s+in"],
+    en: ["this\\s+(?:year|season|kharif|rabi|monsoon|summer|winter)", "next\\s+(?:year|season|month)", "coming\\s+(?:season|year|months|weeks)", "upcoming", "soon", "arrives?", "fails?", "withdraws?", "sets?\\s+in",
+      // F16 (review R6 F-3): "lies ahead", "is ahead", "ahead this/next ..." ("plan ahead" alone is not an outlook).
+      "lie[sd]?\\s+ahead", "lying\\s+ahead", "(?:is|are)\\s+ahead", "ahead\\s+(?:this|next|in\\s+the\\s+coming)"],
     indic: ["अगले", "अगली", "अगला", "इस साल", "इस वर्ष", "इस बार", "इस सीजन", "इस सीज़न", "इस मौसम", "आने वाले", "जल्दी", "देर से",
       "இந்த ஆண்டு", "இந்த வருட", "இந்த பருவ", "இந்த சீசன", "அடுத்த", "முன்கூட்டியே", "தாமதமா"],
   } as TermList,
@@ -329,8 +341,41 @@ export const SEASONAL_RAIN = {
   monsoonQualifier: { en: ["early", "late", "delayed", "weak", "strong", "deficient", "excess(?:ive)?", "normal", "above[\\s-]normal", "below[\\s-]normal", "good", "poor", "heavy"] } as TermList,
   monsoon: { en: ["monsoons?", "mansoon", "onset"], indic: ["मानसून", "मॉनसून", "பருவமழை"] } as TermList,
   past: {
-    en: ["last\\s+(?:year|season|month|week|kharif|rabi|monsoon)", "was", "were", "had", "did", "arrived", "failed", "came", "fell", "received", "recorded", "used\\s+to", "has", "have", "ago", "in\\s+(?:19|20)\\d\\d"],
-    indic: ["पिछले", "पिछली", "पिछला", "था$", "थी$", "थे$", "हुई$", "हुआ$", "आया$", "आई$", "கடந்த", "இருந்தது", "பெய்தது", "வந்தது", "பொய்த்தது", "ஆனது"],
+    // F16 (review R6 F-1): has/have count as past only before a past participle of an occurrence verb, never before
+    // "been forecast/predicted/projected/expected" ("The monsoon has been forecast to fail" is an outlook).
+    en: ["last\\s+(?:year|season|month|week|kharif|rabi|monsoon)", "was", "were", "had", "did", "arrived", "failed", "came", "fell", "received", "recorded", "used\\s+to", PRESENT_PERFECT_EN, "ago", "in\\s+(?:19|20)\\d\\d"],
+    indic: ["पिछले", "पिछली", "पिछला", "था$", "थी$", "थे$", "हुई$", "हुआ$", "आया$", "आई$", ...PRESENT_PERFECT_HI, "கடந்த", "இருந்தது", "பெய்தது", "வந்தது", "பொய்த்தது", "ஆனது"],
+    raw: [PRESENT_PERFECT_TA, PRESENT_PERFECT_EN_CONTRACTED],
+  } as TermList,
+  /**
+   * F16 (review R6 F-1): forecast vocabulary. It overrides the past markers above: "We have a weak monsoon coming this
+   * year" and "This year's monsoon outlook has a weak signal, so expect less rain" are outlooks, not observations.
+   */
+  forecast: {
+    en: ["forecasts?", "forecasted", "forecasters?", "forecasting", "predict(?:s|ed|ing|ions?)?", "projected", "projections?", "outlooks?", "expect(?:s|ed|ing)?", "coming", "ahead", "likely", "set\\s+to", "in\\s+store", "on\\s+the\\s+way"],
+    indic: ["संभावना", "सम्भावना", "पूर्वानुमान", "अनुमान", "आने वाल", "उम्मीद", "முன்னறிவிப்ப", "எதிர்பார்க்க", "வாய்ப்பு"],
+  } as TermList,
+  /**
+   * F16 (review R6 F-2): present-perfect occurrence ("has arrived", "आ गया है", "வந்துவிட்டது"). Without an explicit
+   * past-time marker (below) it reads as an observation about the current season, which needs a weather-tool reference
+   * or a verified claim (`weather_claim_unsourced`).
+   */
+  presentPerfect: { en: [PRESENT_PERFECT_EN], indic: PRESENT_PERFECT_HI, raw: [PRESENT_PERFECT_TA, PRESENT_PERFECT_EN_CONTRACTED] } as TermList,
+  /** F16: current-period markers that make a present perfect a current-season claim even without a seasonal marker. */
+  currentPeriod: { en: ["so\\s+far", "till\\s+now", "until\\s+now", "to\\s+date", "this\\s+(?:week|month)"], indic: ["अब तक", "अभी तक", "இதுவரை"] } as TermList,
+  /** F16: a past-time marker that makes a present perfect historical ("has arrived late in past years"). */
+  pastTime: {
+    en: ["last\\s+(?:year|season|month|week|kharif|rabi|monsoon)", "(?:past|previous|earlier|recent)\\s+(?:years?|seasons?|decades?)", "(?:many|several)\\s+(?:years|seasons|times)", "ago", "in\\s+(?:19|20)\\d\\d", "since\\s+(?:19|20)\\d\\d"],
+    indic: ["पिछले", "पिछली", "पिछला", "कई साल", "कई बार", "கடந்த", "முந்தைய", "பல ஆண்டு"],
+  } as TermList,
+  /**
+   * F16 (review R6 F-3): outlook nouns that are rain outlooks without a rain/monsoon word ("A wet year lies ahead",
+   * "A drought is ahead this season"). Hindi सूखा is not counted before a crop word (सूखा अदरक is dry ginger).
+   */
+  outlookNoun: {
+    en: ["droughts?", "drought[\\s-]like", "(?:wet|dry|drought)\\s+years?", "(?:deficient|excess(?:ive)?|below[\\s-]normal|above[\\s-]normal|scanty|surplus)\\s+(?:rain(?:fall|s)?|precipitation|monsoon)"],
+    indic: ["अकाल", "अनावृष्टि", "अतिवृष्टि", "வறட்சி", "குறைவான மழை", "அதிக மழை"],
+    raw: ["(?<![\\p{L}\\p{M}\\p{N}_])सूख(?:ा|े|ाग्रस्त)(?![\\p{L}\\p{M}])(?!\\s+(?:अदरक|हल्दी|मिर्च))"],
   } as TermList,
   general: {
     en: ["usually", "normally", "typically", "generally", "on\\s+average", "in\\s+a\\s+normal\\s+year", "every\\s+year", "each\\s+year", "historically"],
