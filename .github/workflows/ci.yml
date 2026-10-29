@@ -5,10 +5,9 @@ on:
   workflow_dispatch:
 
 # Mirrors the commands verified in a fresh clone (docs/BUILD_STATUS.md section 4).
-# data/raw/ (saved source pages) is gitignored, so a CI checkout does not have it. Two things need it and are therefore not run here:
-#   - apps/api/test/catalogue-load.test.ts (2 of its 10 tests read the saved source text), excluded below
-#   - pnpm catalogue:validate (reads data/raw/crops)
-# Run both locally. No secrets are used; everything runs in RUNTIME_MODE=synthetic.
+# data/raw/ (saved source pages) is gitignored, so a CI checkout does not have it. The two checks that read it
+# (apps/api/test/catalogue-load.test.ts grounding tests, pnpm catalogue:validate excerpt check) skip with a visible message
+# when it is absent; they run in full wherever data/raw/ exists. No secrets are used; everything runs in RUNTIME_MODE=synthetic.
 jobs:
   check:
     runs-on: ubuntu-latest
@@ -40,7 +39,9 @@ jobs:
       - name: Unit tests (contracts, domain, web)
         run: pnpm -r --filter '!@harvest/api' test
       - name: API tests (needs the postgres service; files run serially per vitest config)
-        run: pnpm --filter @harvest/api exec vitest run --exclude test/catalogue-load.test.ts
+        run: pnpm --filter @harvest/api exec vitest run
+      - name: Catalogue validation (excerpt check skips without data/raw)
+        run: pnpm catalogue:validate
       - run: pnpm --filter @harvest/web build
       - name: Python analytics tests
         run: |

@@ -6,6 +6,8 @@ import { CoverageRecord, CropIdentity, CropProduct, EvidenceRecord, EVIDENCE_DIR
 import { CropProfile } from './profile-schema.ts';
 import { SOURCES } from './sources.ts';
 
+// data/raw/ (saved source pages) is gitignored; without it the excerpt-in-source check is skipped, everything else still runs.
+const rawAvailable = existsSync(RAW_DIR);
 const errors: string[] = [];
 const err = (m: string) => errors.push(m);
 
@@ -29,6 +31,7 @@ const evidence = new Map<string, any>();
 let exOk = 0, exTotal = 0;
 const textCache = new Map<string, string>();
 const srcText = (url: string) => {
+  if (!rawAvailable) return null;
   const s = SOURCES.find((x) => x.url === url)!; if (!s) return null;
   if (!textCache.has(s.key)) textCache.set(s.key, normaliseForMatch(readFileSync(join(RAW_DIR, `${s.key}.txt`), 'utf8')));
   return textCache.get(s.key)!;
@@ -40,6 +43,7 @@ for (const f of readdirSync(EVIDENCE_DIR).filter((x) => x.endsWith('.json'))) {
     exTotal++;
     const t = srcText(e.sourceUrl);
     const words = e.content.text.trim().split(/\s+/).length;
+    if (!rawAvailable) continue;
     if (t && t.includes(normaliseForMatch(e.content.text)) && words <= 60) exOk++; else err(`excerpt check failed: ${e.id}`);
   }
 }
@@ -79,7 +83,8 @@ if (identities.size !== 25 || profileFiles.length !== 25) err(`expected 25 crops
 console.log('crop | qualified | missing | contexts | coverage');
 for (const r of rows.sort((a, b) => a[0].localeCompare(b[0]))) console.log(r.join(' | '));
 console.log(`\nqualified ${qualified}/${profileFiles.length}; identities ${identities.size}; products ${productIds.size}; coverage rows ${cov.records.length}; evidence ${evidence.size}`);
-console.log(`excerpt check ${exOk}/${exTotal} pass`);
-console.log(`botanical name found on a saved page: ${botanicalHits.filter((x) => x.endsWith('on-page')).length}/${botanicalHits.length}; unsourced -> ${botanicalHits.filter((x) => x.endsWith('unsourced')).map((x) => x.split(':')[0]).join(', ')}`);
+if (rawAvailable) console.log(`excerpt check ${exOk}/${exTotal} pass`);
+else console.log(`excerpt check skipped: data/raw/crops not present (private source pages; see RUN_LOCAL.md); grounding count: skipped (${exTotal} excerpts not checked)`);
+if (rawAvailable) console.log(`botanical name found on a saved page: ${botanicalHits.filter((x) => x.endsWith('on-page')).length}/${botanicalHits.length}; unsourced -> ${botanicalHits.filter((x) => x.endsWith('unsourced')).map((x) => x.split(':')[0]).join(', ')}`);
 if (errors.length) { console.log(`\nERRORS (${errors.length}):\n` + errors.join('\n')); process.exit(1); }
 console.log('validation OK');

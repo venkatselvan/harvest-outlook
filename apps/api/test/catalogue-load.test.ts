@@ -1,9 +1,17 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { existsSync, mkdtempSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { createPool, type Pool } from "../src/db/pool";
 import { migrate } from "../src/db/migrate";
 import { loadCatalogueIntoDb, normaliseProductIds, uuidFromKey, topicOf } from "../src/catalogue/load";
-import { readCatalogueFiles } from "../src/catalogue/files";
+import { readCatalogueFiles, REPO_ROOT } from "../src/catalogue/files";
 import { CAT_DB } from "./catalogue-helpers";
+
+// data/raw/ (saved source pages) is gitignored; grounding checks need it and skip, loudly, when it is absent (docs/RUN_LOCAL.md).
+const rawAvailable = existsSync(join(REPO_ROOT, "data", "raw", "crops"));
+const SKIP = "SKIPPED: data/raw/crops not present (private source pages, gitignored; see docs/RUN_LOCAL.md)";
+if (!rawAvailable) console.warn(`[catalogue-load] ${SKIP}`);
 
 let pool: Pool;
 const n = async (sql: string) => Number((await pool.query<{ c: string }>(sql)).rows[0]!.c);
@@ -51,9 +59,6 @@ describe("catalogue loader", () => {
   it("populates the agent-facing evidence columns, keeps validation_status as in the file, and tracks sources", async () => {
     expect(await n("SELECT count(*) c FROM evidence_records WHERE cardinality(geography_ids)=0 OR geography_level IS NULL OR excerpt IS NULL")).toBe(0);
     expect(await n("SELECT count(*) c FROM evidence_records WHERE validation_status='validated'")).toBe(0); // no human validation recorded
-    // D28: every curated excerpt passes the machine check against the saved source text -> grounded, never validated
-    expect(await n("SELECT count(*) c FROM evidence_records WHERE validation_status='grounded'")).toBe(185);
-    expect(await n("SELECT count(*) c FROM evidence_records WHERE validation_status='pending'")).toBe(0);
     expect(await n("SELECT count(*) c FROM evidence_records WHERE 'IN-TN'=ANY(geography_ids) AND 'okra'=ANY(crop_ids)")).toBeGreaterThan(0);
     expect(await n("SELECT count(*) c FROM evidence_records WHERE 'IN-KA-hassan'=ANY(geography_ids) OR 'IN-KA'=ANY(geography_ids)")).toBeGreaterThan(0);
     expect(await n("SELECT count(*) c FROM evidence_records WHERE array_length(topics,1) IS NOT NULL")).toBeGreaterThan(150); // records without a sluggable section keep empty topics
@@ -61,6 +66,12 @@ describe("catalogue loader", () => {
     // T05b used dotted product ids; they are mapped onto catalogue ids
     expect(await n("SELECT count(*) c FROM evidence_records WHERE 'ginger.fresh'=ANY(product_ids)")).toBe(0);
     expect(await n("SELECT count(*) c FROM evidence_records WHERE 'ginger-fresh'=ANY(product_ids)")).toBeGreaterThan(0);
+  });
+
+  // D28: every curated excerpt passes the machine check against the saved source text -> grounded, never validated
+  it.skipIf(!rawAvailable)(`grounds every curated excerpt against the saved source text (${SKIP})`, async () => {
+    expect(await n("SELECT count(*) c FROM evidence_records WHERE validation_status='grounded'")).toBe(185);
+    expect(await n("SELECT count(*) c FROM evidence_records WHERE validation_status='pending'")).toBe(0);
   });
 
   it("stores names in the shape resolve_crop_identity reads and keeps products distinct", async () => {
@@ -104,9 +115,29 @@ describe("grounding check (D28)", () => {
   const g = makeGrounder();
   const base = { sourceUrl: "https://spices.res.in/storage/app/public/pdfs/GINGER/3ENG.pdf", contentHash: "8dde754dc3defc1c116fd11e963b091870e463b99f7c601a040f1aae0f1fe65e", locator: { page: 3 } };
   const text = "states namely Madhya Pradesh, Karnataka, Orissa, Assam, Meghalaya, Arunachal Pradesh and Gujarat together contribute 65 percent to the country's total production.";
-  it("accepts an excerpt on its cited page and rejects it on another page or when altered", () => {
+  it.skipIf(!rawAvailable)(`accepts an excerpt on its cited page and rejects it on another page or when altered (${SKIP})`, () => {
     expect(g({ ...base, content: { kind: "excerpt", text } })).toBe(true);
     expect(g({ ...base, locator: { page: 4 }, content: { kind: "excerpt", text } })).toBe(false);
     expect(g({ ...base, content: { kind: "excerpt", text: text.replace("65 percent", "75 percent") } })).toBe(false);
+  });
+});
+
+describe("without saved source pages", () => {
+  it("never grounds or validates: every pending record stays pending", async () => {
+    const empty = mkdtempSync(join(tmpdir(), "harvest-noraw-"));
+    try {
+      // A grounder over an empty raw dir accepts nothing.
+      const g = makeGrounder(empty);
+      expect(g({ sourceUrl: "https://spices.res.in/storage/app/public/pdfs/GINGER/3ENG.pdf", contentHash: "x", locator: { page: 3 }, content: { kind: "excerpt", text: "anything" } })).toBe(false);
+      const counts = await loadCatalogueIntoDb(pool, readCatalogueFiles(), empty);
+      expect(counts.evidenceGrounded).toBe(0);
+      expect(counts.evidenceValidated).toBe(0);
+      expect(counts.evidencePending).toBe(counts.evidence);
+      expect(await n("SELECT count(*) c FROM evidence_records WHERE validation_status IN ('grounded','validated')")).toBe(0);
+      expect(await n("SELECT count(*) c FROM evidence_records WHERE validation_status='pending'")).toBe(counts.evidence);
+    } finally {
+      rmSync(empty, { recursive: true, force: true });
+      await loadCatalogueIntoDb(pool); // restore the real status for any later file sharing this database
+    }
   });
 });

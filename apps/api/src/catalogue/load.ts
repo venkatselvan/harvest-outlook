@@ -139,7 +139,7 @@ export function validateCatalogue(files: Pick<CatalogueFiles, "ruleSets" | "stag
 }
 
 /** Idempotent upsert of the whole catalogue. Public reference data: mode-agnostic, no farmer data. */
-export async function loadCatalogueIntoDb(pool: Pool, files: CatalogueFiles = readCatalogueFiles()): Promise<LoadCounts> {
+export async function loadCatalogueIntoDb(pool: Pool, files: CatalogueFiles = readCatalogueFiles(), rawRoot: string = REPO_ROOT): Promise<LoadCounts> {
   // Fail loudly before writing anything.
   const validation = validateCatalogue(files);
   if (validation.unknownRegionIds.length > 0 || validation.knownInHardRules.length > 0) throw new CatalogueValidationError(validation);
@@ -192,7 +192,7 @@ export async function loadCatalogueIntoDb(pool: Pool, files: CatalogueFiles = re
     let dropped = 0;
     let validated = 0;
     let grounded = 0;
-    const grounder = makeGrounder();
+    const grounder = makeGrounder(rawRoot);
     for (const { record: e, sourceId } of files.evidence) {
       const doc = await db.query<{ id: string }>(
         `INSERT INTO source_documents (content_hash, title, publisher, url, licence, access_class, retrieved_at, metadata)
