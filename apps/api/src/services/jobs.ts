@@ -75,7 +75,7 @@ export async function enqueue(
     [ownerId, type, JSON.stringify(payload ?? {}), hash, idempotencyKey ?? null],
   );
   if (ins.rows[0]) return { job: toJobRecord(ins.rows[0]), created: true };
-  const ex = await db.query<JobDbRow>(`SELECT ${COLS} FROM jobs WHERE owner_id = $1 AND idempotency_key = $2`, [ownerId, idempotencyKey]);
+  const ex = await db.query<JobDbRow>(`SELECT ${COLS} FROM jobs WHERE owner_id IS NOT DISTINCT FROM $1 AND idempotency_key = $2`, [ownerId, idempotencyKey]);
   const row = ex.rows[0];
   if (!row) throw new ApiError(409, "job_conflict", "Job could not be created; retry");
   if (row.payload_hash !== hash) throw new ApiError(422, "idempotency_payload_mismatch", "Idempotency-Key was already used with a different payload");

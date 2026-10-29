@@ -3,6 +3,7 @@ import { z } from "zod";
 const positiveInt = (def: number) => z.coerce.number().int().positive().default(def);
 const positiveNum = (def: number) => z.coerce.number().positive().default(def);
 const optionalString = z.string().trim().min(1).optional();
+const boolString = (def: "true" | "false") => z.enum(["true", "false"]).default(def).transform((v) => v === "true");
 
 export const configSchema = z.object({
   DATABASE_URL: z.string().min(1),
@@ -29,9 +30,18 @@ export const configSchema = z.object({
   BUDGET_DEMO_RESERVE_USD: positiveNum(30),
   BUDGET_PER_SESSION_USD: positiveNum(3),
   BUDGET_PER_OWNER_DAY_USD: positiveNum(10),
+  /** Daily cap per client IP (salted hash), across all guest sessions from that IP. */
+  BUDGET_PER_IP_DAY_USD: positiveNum(15),
   /** Optional JSON object merged over the default price table (see services/pricing.ts). */
   PRICE_TABLE_JSON: optionalString,
   SESSION_TTL_DAYS: positiveInt(30),
+  /** auto: Secure in production, otherwise Secure unless the origin is localhost. Secure cookies use the __Host- prefix. */
+  COOKIE_SECURE: z.enum(["auto", "true", "false"]).default("auto"),
+  NODE_ENV: z.string().optional(),
+  /** Idempotency keys and their stored responses are purged after this many hours. */
+  IDEMPOTENCY_TTL_HOURS: positiveInt(24),
+  /** Worker job lease; handlers are heartbeated every third of it. */
+  JOB_LEASE_SECONDS: positiveInt(30),
   SESSION_CREATE_PER_HOUR: positiveInt(20),
   /** Non-browser tools (curl) send no Origin/Referer; accepted only when explicitly enabled. */
   ALLOW_MISSING_ORIGIN: z.enum(["true", "false"]).default("false").transform((v) => v === "true"),
@@ -39,6 +49,31 @@ export const configSchema = z.object({
   TRUST_PROXY: z.enum(["true", "false"]).default("false").transform((v) => v === "true"),
   MAX_UPLOAD_IMAGE_BYTES: positiveInt(10485760),
   MAX_VOICE_SECONDS: positiveInt(60),
+  /** Assistant loop ceilings (docs/AGENT_RUNTIME.md). Defaults match agent/limits.ts DEFAULT_LIMITS. */
+  AGENT_MAX_TOOL_ROUNDS: positiveInt(6),
+  AGENT_MAX_TOOL_CALLS: positiveInt(12),
+  /** Clamped to 1 by the loop. */
+  AGENT_MAX_WONDER_ESCALATIONS: z.coerce.number().int().nonnegative().default(1),
+  AGENT_MAX_REPAIR_ATTEMPTS: z.coerce.number().int().nonnegative().default(2),
+  AGENT_WONDER_ENABLED: boolString("false"),
+  AGENT_MAX_OUTPUT_TOKENS: positiveInt(3000),
+  AGENT_INTERPRETATION_MAX_OUTPUT_TOKENS: positiveInt(1200),
+  AGENT_REASONING_EFFORT: z.enum(["minimal", "low", "medium", "high", "max"]).optional(),
+  AGENT_RAIN_HORIZON_DAYS: positiveInt(7),
+  ASSISTANT_TURNS_PER_MINUTE: positiveInt(20),
+  /** Synthetic mode only: which recorded fixture scenario the FixtureProvider replays. Never a client input. */
+  AGENT_FIXTURE_SCENARIO: z.string().trim().min(1).default("profile_extraction"),
+  /** SAM adapter flags (docs/PHOTO_REGION.md). Several parameter placements are UNVERIFIED against the live API. */
+  SAM_STREAM: boolString("true"),
+  SAM_MASK_ENCODING: z.enum(["onebit", "lossless", "none"]).default("onebit"),
+  SAM_INCLUDE_CONFIDENCE: boolString("true"),
+  SAM_BASE85_VARIANT: z.enum(["auto", "ascii85", "z85", "rfc1924"]).default("auto"),
+  SAM_BIT_ORDER: z.enum(["msb", "lsb"]).default("msb"),
+  SAM_MAX_IMAGE_SIDE: z.coerce.number().int().min(128).max(1024).default(1024),
+  SAM_TIMEOUT_MS: positiveInt(45_000),
+  /** Weather adapter: number of complete past years used for daily climatology and an optional explicit last year. */
+  WEATHER_CLIMATOLOGY_YEARS: z.coerce.number().int().min(5).max(30).default(10),
+  WEATHER_CLIMATOLOGY_END_YEAR: z.coerce.number().int().min(1950).max(2100).optional(),
   PORT: positiveInt(8787),
   HOST: z.string().default("127.0.0.1"),
   LOG_LEVEL: z.enum(["fatal", "error", "warn", "info", "debug", "trace", "silent"]).default("info"),
@@ -68,6 +103,35 @@ export function loadConfig(env: Record<string, string | undefined> = process.env
     throw new ConfigError(["STORAGE_DRIVER=s3 is not implemented yet; use fs"]);
   }
   return c;
+}
+
+/** The agent-limit env keys as a string map, so agent/limits.ts parses from the already-validated config. */
+export function agentEnvFromConfig(c: Config): Record<string, string | undefined> {
+  return {
+    AGENT_MAX_TOOL_ROUNDS: String(c.AGENT_MAX_TOOL_ROUNDS),
+    AGENT_MAX_TOOL_CALLS: String(c.AGENT_MAX_TOOL_CALLS),
+    AGENT_MAX_WONDER_ESCALATIONS: String(c.AGENT_MAX_WONDER_ESCALATIONS),
+    AGENT_MAX_REPAIR_ATTEMPTS: String(c.AGENT_MAX_REPAIR_ATTEMPTS),
+    AGENT_WONDER_ENABLED: String(c.AGENT_WONDER_ENABLED),
+    AGENT_MAX_OUTPUT_TOKENS: String(c.AGENT_MAX_OUTPUT_TOKENS),
+    AGENT_INTERPRETATION_MAX_OUTPUT_TOKENS: String(c.AGENT_INTERPRETATION_MAX_OUTPUT_TOKENS),
+    AGENT_REASONING_EFFORT: c.AGENT_REASONING_EFFORT,
+    AGENT_RAIN_HORIZON_DAYS: String(c.AGENT_RAIN_HORIZON_DAYS),
+    ASSISTANT_TURNS_PER_MINUTE: String(c.ASSISTANT_TURNS_PER_MINUTE),
+  };
+}
+
+/** SAM flags as the env map `samOptionsFromEnv` expects. */
+export function samEnvFromConfig(c: Config): Record<string, string | undefined> {
+  return {
+    SAM_STREAM: String(c.SAM_STREAM),
+    SAM_MASK_ENCODING: c.SAM_MASK_ENCODING,
+    SAM_INCLUDE_CONFIDENCE: String(c.SAM_INCLUDE_CONFIDENCE),
+    SAM_BASE85_VARIANT: c.SAM_BASE85_VARIANT,
+    SAM_BIT_ORDER: c.SAM_BIT_ORDER,
+    SAM_MAX_IMAGE_SIDE: String(c.SAM_MAX_IMAGE_SIDE),
+    SAM_TIMEOUT_MS: String(c.SAM_TIMEOUT_MS),
+  };
 }
 
 /** Log-safe view: secrets replaced by booleans. */

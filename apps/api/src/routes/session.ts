@@ -3,7 +3,7 @@ import type { ZodTypeProvider } from "fastify-type-provider-zod";
 import type { Config } from "../config";
 import type { Pool } from "../db/pool";
 import { checkOrigin } from "../security/guards";
-import { clearSessionCookies, createSession, resolveSession, revokeSession, setSessionCookies } from "../security/session";
+import { clearSessionCookies, createSession, resolveSession, revokeSession, rotateSession, setSessionCookies } from "../security/session";
 import { deriveCsrf } from "../security/tokens";
 import { envelope } from "../envelope";
 import { checkCsrf } from "../security/guards";
@@ -39,19 +39,20 @@ export async function sessionRoutes(app: FastifyInstance, opts: { config: Config
       config: { rateLimit: { max: config.SESSION_CREATE_PER_HOUR, timeWindow: "1 hour" } },
       schema: {
         tags: ["session"],
-        description: "Creates a device guest workspace (owner + session) and sets ho_session (HttpOnly) and ho_csrf cookies. An existing valid session is reused rather than creating another owner.",
+        description: "Creates a device guest workspace (owner + session) and sets ho_session (HttpOnly) and ho_csrf cookies. An existing valid session is reused (same owner) with its token rotated, rather than creating another owner.",
         response: { 200: envelopeSchema(sessionOut), 201: envelopeSchema(sessionOut) },
       },
     },
     async (req, reply) => {
       checkOrigin(req, config);
-      const existing = await resolveSession(pool, config, req, reply);
-      if (existing) {
-        const { csrf, expiresAt } = setSessionCookies(reply, req, config, existing.sessionToken);
+      const existing = await resolveSession(pool, config, req);
+      const rotated = existing ? await rotateSession(pool, config, existing) : null;
+      if (rotated) {
+        const { csrf, expiresAt } = setSessionCookies(reply, req, config, rotated);
         return envelope(req.id, config.RUNTIME_MODE, { authenticated: true, scope: "device_guest" as const, expiresAt: expiresAt.toISOString(), csrfToken: csrf, reused: true, caveat: GUEST_CAVEAT });
       }
       const ua = req.headers["user-agent"];
-      const { token } = await createSession(pool, config, typeof ua === "string" ? ua : undefined);
+      const { token } = await createSession(pool, config, typeof ua === "string" ? ua : undefined, req.ip);
       const { csrf, expiresAt } = setSessionCookies(reply, req, config, token);
       reply.code(201);
       return envelope(req.id, config.RUNTIME_MODE, { authenticated: true, scope: "device_guest" as const, expiresAt: expiresAt.toISOString(), csrfToken: csrf, reused: false, caveat: GUEST_CAVEAT });
@@ -67,7 +68,7 @@ export async function sessionRoutes(app: FastifyInstance, opts: { config: Config
       if (!auth) throw new ApiError(401, "unauthenticated", "A guest session is required");
       checkCsrf(req, config, auth.sessionToken);
       await revokeSession(pool, auth.sessionId);
-      clearSessionCookies(reply, req);
+      clearSessionCookies(reply, req, config);
       return envelope(req.id, config.RUNTIME_MODE, { revoked: true });
     },
   );

@@ -1,0 +1,664 @@
+{
+ "synthetic": true,
+ "note": "synthetic: true. Captured once from the real POST /api/v1/crop-comparisons in RUNTIME_MODE=synthetic against the seeded catalogue on 2026-10-30. Catalogue content is T06b output (rules/evidence pending review); prices are a farmer assumption in the second fixture, never a market observation.",
+ "request": {
+  "location": {
+   "stateId": "IN-TN"
+  },
+  "planting": {
+   "month": 6
+  },
+  "irrigation": "supplemental",
+  "area": {
+   "amount": 2,
+   "unit": "acre"
+  },
+  "cropIds": [
+   "finger-millet",
+   "chilli"
+  ],
+  "assumedPrices": "finger-millet-grain 30 (25-36) INR/kg"
+ },
+ "response": {
+  "schemaVersion": "1.0",
+  "requestId": "39a4877d-cf0d-49af-9bc6-2500d7726a32",
+  "mode": "synthetic",
+  "asOf": "2026-10-29T20:30:57.537Z",
+  "data": {
+   "asOf": "2026-10-29T20:30:57.534Z",
+   "mode": "synthetic",
+   "input": {
+    "location": {
+     "stateId": "IN-TN",
+     "districtId": null
+    },
+    "planting": {
+     "month": 6,
+     "date": null
+    },
+    "irrigation": "supplemental",
+    "area": {
+     "amount": 2,
+     "unit": "acre"
+    },
+    "excludedCropIds": [],
+    "assumedPrices": [
+     {
+      "productId": "finger-millet-grain",
+      "amountInrPerKg": 30,
+      "lowInrPerKg": 25,
+      "highInrPerKg": 36
+     }
+    ],
+    "cropIds": [
+     "finger-millet",
+     "chilli"
+    ],
+    "resolvedContext": {
+     "location": {
+      "stateId": "IN-TN",
+      "districtId": null
+     },
+     "planting": {
+      "month": 6,
+      "date": null
+     },
+     "irrigation": {
+      "category": "supplemental"
+     },
+     "farm": {
+      "areaHa": 0.80937128448
+     }
+    }
+   },
+   "rulePolicy": {
+    "executed": [
+     "approved",
+     "candidate (synthetic mode only)"
+    ],
+    "candidateRulesExecuted": true
+   },
+   "dimensionKeys": [
+    "waterFit",
+    "timeToFirstIncome",
+    "harvestWindows",
+    "evidenceQuality",
+    "marketAccess",
+    "economics"
+   ],
+   "unsupportedDimensions": [
+    {
+     "key": "budgetFit",
+     "missingReason": "no_sourced_cost_of_cultivation_in_catalogue"
+    },
+    {
+     "key": "labourIntensity",
+     "missingReason": "no_sourced_labour_class_in_catalogue"
+    }
+   ],
+   "weightsUsed": {
+    "waterFit": 1,
+    "timeToFirstIncome": 1,
+    "harvestWindows": 1,
+    "evidenceQuality": 1,
+    "marketAccess": 1,
+    "economics": 1
+   },
+   "rankingBasis": "Screening outcome first, then number of known dimensions, then a weighted mean over known water-fit, time and evidence-quality values (tie-break only; not shown as a score). Unknown dimensions are never scored as zero.",
+   "items": [
+    {
+     "rank": 1,
+     "cropId": "finger-millet",
+     "productId": "finger-millet-grain",
+     "cropName": "Finger millet",
+     "productName": "Finger millet grain",
+     "productBasis": "grain",
+     "group": "cereals",
+     "localNames": [
+      "Ragi",
+      "Marua"
+     ],
+     "outcome": "requires_review",
+     "screening": {
+      "reasons": [
+       {
+        "ruleId": "rule.cat.finger-millet.as.planting-outside-window",
+        "effect": "requires_review",
+        "truth": "unknown",
+        "reasonCodes": [
+         "planting_outside_sourced_window"
+        ],
+        "appliedExceptionId": null,
+        "reviewStatus": "approved",
+        "reviewer": "mechanical_derivation",
+        "regionIds": [
+         "IN-AS"
+        ],
+        "evidenceIds": [
+         "cat.finger-millet.asw"
+        ],
+        "unknownFields": [
+         "location.districtId"
+        ]
+       }
+      ],
+      "unknownFields": [
+       "location.districtId"
+      ],
+      "appliedRuleIds": [
+       "rule.cat.finger-millet.as.planting-outside-window"
+      ],
+      "evidenceIds": [
+       "cat.finger-millet.asw"
+      ],
+      "candidateRuleIds": [],
+      "noApplicableRule": false
+     },
+     "context": {
+      "contextId": "finger-millet.TN.rainfed",
+      "regionIds": [
+       "IN-TN"
+      ],
+      "season": "kharif",
+      "irrigation": "rainfed",
+      "regionMatch": "state_or_region",
+      "plantingMonthInWindow": true
+     },
+     "referenceContexts": [],
+     "season": "kharif",
+     "plantingWindow": {
+      "fromMonth": 6,
+      "toMonth": 7,
+      "evidenceIds": [
+       "cat.finger-millet.rf"
+      ]
+     },
+     "repeatedPicking": false,
+     "harvestPattern": "single",
+     "dimensions": {
+      "waterFit": {
+       "status": "known",
+       "value": {
+        "fit": "partial",
+        "sourceContextIrrigation": "rainfed",
+        "farmerIrrigation": "supplemental"
+       },
+       "basis": "source_context_irrigation_not_water_requirement",
+       "missingReason": null,
+       "evidenceIds": [
+        "cat.finger-millet.rf"
+       ]
+      },
+      "timeToFirstIncome": {
+       "status": "known",
+       "value": {
+        "minDays": 95,
+        "maxDays": 110,
+        "note": "Crop duration to harvest; first picking of a repeated-picking crop can come earlier."
+       },
+       "basis": "crop_duration_in_sourced_context",
+       "missingReason": null,
+       "evidenceIds": [
+        "cat.finger-millet.dur"
+       ]
+      },
+      "harvestWindows": {
+       "status": "known",
+       "value": {
+        "earliest": "2027-09-04",
+        "latest": "2027-09-19",
+        "repeatedPicking": false,
+        "plantingDate": "2027-06-01",
+        "plantingDateBasis": "first_of_month_assumed",
+        "note": "Harvest opens at the earliest date; it may continue after the latest date."
+       },
+       "basis": "crop_duration_in_sourced_context",
+       "missingReason": null,
+       "evidenceIds": [
+        "cat.finger-millet.dur"
+       ]
+      },
+      "evidenceQuality": {
+       "status": "known",
+       "value": {
+        "sourcedRequirements": 4,
+        "of": 5,
+        "evidenceRecords": 3,
+        "validationPending": true,
+        "regionalContext": true
+       },
+       "basis": "count_of_sourced_requirements_in_context",
+       "missingReason": null,
+       "evidenceIds": [
+        "cat.finger-millet.rf",
+        "cat.finger-millet.dur",
+        "cat.finger-millet.yld"
+       ]
+      },
+      "marketAccess": {
+       "status": "unavailable",
+       "value": null,
+       "basis": null,
+       "missingReason": "price_access_key_gated",
+       "evidenceIds": []
+      },
+      "economics": {
+       "status": "known",
+       "value": {
+        "scenarios": [
+         {
+          "name": "low",
+          "grossHarvestValueInrPerHa": "57500.00",
+          "marketableKgPerHa": "2300.000",
+          "totalGrossInr": "46538.85"
+         },
+         {
+          "name": "central",
+          "grossHarvestValueInrPerHa": "81000.00",
+          "marketableKgPerHa": "2700.000",
+          "totalGrossInr": "65559.07"
+         },
+         {
+          "name": "high",
+          "grossHarvestValueInrPerHa": "111600.00",
+          "marketableKgPerHa": "3100.000",
+          "totalGrossInr": "90325.84"
+         },
+         {
+          "name": "yield_shortfall_price_rise",
+          "grossHarvestValueInrPerHa": "82800.00",
+          "marketableKgPerHa": "2300.000",
+          "totalGrossInr": "67015.94"
+         }
+        ],
+        "netReturn": "unavailable_costs_not_sourced",
+        "status": "incomplete",
+        "missingInputs": [
+         "costs.cashProduction",
+         "costs.harvest",
+         "costs.saleAndTransport"
+        ],
+        "assumptions": [
+         "Low/high scenarios are bounding combinations, not probabilities; no probability of loss is computed.",
+         "Break-even price is a uniform INR/kg across harvest periods.",
+         "Processing (product conversion) cost is treated as outside cost-of-cultivation definitions.",
+         "Marketable fraction assumed 1 (no harvest or grading loss); this is an assumption, not a sourced value.",
+         "Price is the farmer's own assumption, not a market observation."
+        ],
+        "methodVersion": "economics-scenarios/1"
+       },
+       "basis": "farmer_assumed_price_times_source_yield_reference",
+       "missingReason": null,
+       "evidenceIds": [
+        "cat.finger-millet.yld"
+       ]
+      }
+     },
+     "completeness": {
+      "known": 5,
+      "total": 6
+     },
+     "yieldReference": {
+      "minKgPerHa": 2300,
+      "maxKgPerHa": 3100,
+      "basis": "regional_reference",
+      "productId": "finger-millet-grain",
+      "appliesToProduct": true,
+      "label": "Source-backed regional or varietal reference, not a farm yield",
+      "evidenceIds": [
+       "cat.finger-millet.yld"
+      ]
+     },
+     "costBasis": {
+      "state": "unavailable",
+      "label": "Cost of cultivation: not sourced in the catalogue"
+     },
+     "priceReference": {
+      "state": "unavailable",
+      "label": "Unavailable — price access pending",
+      "missingReason": "price_access_key_gated"
+     },
+     "downside": {
+      "computable": true,
+      "text": "Low scenario: 2300 kg/ha at INR 25/kg gives a gross harvest value of INR 57500.00 per ha before any cost. Costs are not sourced, so net return is not computed."
+     },
+     "mostConsequentialMissingInput": {
+      "field": "location.districtId",
+      "why": "A district can carry a regional exception to a state-wide rule."
+     },
+     "evidenceCoverage": {
+      "sourcedRequirements": 4,
+      "evidenceRecords": 3,
+      "validationPending": true
+     }
+    },
+    {
+     "rank": 2,
+     "cropId": "chilli",
+     "productId": "chilli-dry",
+     "cropName": "Chilli",
+     "productName": "Dry red chilli",
+     "productBasis": "dry",
+     "group": "spices",
+     "localNames": [],
+     "outcome": "requires_review",
+     "screening": {
+      "reasons": [
+       {
+        "ruleId": "rule.cat.chilli.tn.planting-outside-window",
+        "effect": "requires_review",
+        "truth": "true",
+        "reasonCodes": [
+         "planting_outside_sourced_window"
+        ],
+        "appliedExceptionId": null,
+        "reviewStatus": "approved",
+        "reviewer": "mechanical_derivation",
+        "regionIds": [
+         "IN-TN"
+        ],
+        "evidenceIds": [
+         "cat.chilli.sow"
+        ],
+        "unknownFields": []
+       }
+      ],
+      "unknownFields": [],
+      "appliedRuleIds": [
+       "rule.cat.chilli.tn.planting-outside-window"
+      ],
+      "evidenceIds": [
+       "cat.chilli.sow"
+      ],
+      "candidateRuleIds": [],
+      "noApplicableRule": false
+     },
+     "context": {
+      "contextId": "chilli.TN.main",
+      "regionIds": [
+       "IN-TN"
+      ],
+      "season": "rabi",
+      "irrigation": "unspecified",
+      "regionMatch": "state_or_region",
+      "plantingMonthInWindow": false
+     },
+     "referenceContexts": [],
+     "season": "rabi",
+     "plantingWindow": {
+      "fromMonth": 1,
+      "toMonth": 2,
+      "evidenceIds": [
+       "cat.chilli.sow"
+      ]
+     },
+     "repeatedPicking": true,
+     "harvestPattern": "repeated_picking",
+     "dimensions": {
+      "waterFit": {
+       "status": "unknown",
+       "value": null,
+       "basis": null,
+       "missingReason": "source_does_not_state_irrigation_condition",
+       "evidenceIds": []
+      },
+      "timeToFirstIncome": {
+       "status": "unknown",
+       "value": null,
+       "basis": null,
+       "missingReason": "no_sourced_duration_in_context",
+       "evidenceIds": []
+      },
+      "harvestWindows": {
+       "status": "unknown",
+       "value": null,
+       "basis": null,
+       "missingReason": "duration_unknown",
+       "evidenceIds": []
+      },
+      "evidenceQuality": {
+       "status": "known",
+       "value": {
+        "sourcedRequirements": 3,
+        "of": 5,
+        "evidenceRecords": 3,
+        "validationPending": true,
+        "regionalContext": true
+       },
+       "basis": "count_of_sourced_requirements_in_context",
+       "missingReason": null,
+       "evidenceIds": [
+        "cat.chilli.sow",
+        "cat.chilli.soil",
+        "cat.chilli.yld"
+       ]
+      },
+      "marketAccess": {
+       "status": "unavailable",
+       "value": null,
+       "basis": null,
+       "missingReason": "price_access_key_gated",
+       "evidenceIds": []
+      },
+      "economics": {
+       "status": "unknown",
+       "value": null,
+       "basis": null,
+       "missingReason": "no_price_supplied_and_price_access_pending",
+       "evidenceIds": []
+      }
+     },
+     "completeness": {
+      "known": 1,
+      "total": 6
+     },
+     "yieldReference": {
+      "minKgPerHa": 2000,
+      "maxKgPerHa": 3000,
+      "basis": "regional_reference",
+      "productId": "chilli-dry",
+      "appliesToProduct": true,
+      "label": "Source-backed regional or varietal reference, not a farm yield",
+      "evidenceIds": [
+       "cat.chilli.yld"
+      ]
+     },
+     "costBasis": {
+      "state": "unavailable",
+      "label": "Cost of cultivation: not sourced in the catalogue"
+     },
+     "priceReference": {
+      "state": "unavailable",
+      "label": "Unavailable — price access pending",
+      "missingReason": "price_access_key_gated"
+     },
+     "downside": {
+      "computable": false,
+      "text": "A downside scenario needs a price. Source yield reference spans 2000-3000 kg/ha; no price series is available, and no price was supplied."
+     },
+     "mostConsequentialMissingInput": {
+      "field": "assumed_price",
+      "why": "No price access is available; supplying your own assumed price enables a gross harvest value range."
+     },
+     "evidenceCoverage": {
+      "sourcedRequirements": 3,
+      "evidenceRecords": 3,
+      "validationPending": true
+     }
+    },
+    {
+     "rank": 3,
+     "cropId": "chilli",
+     "productId": "chilli-green",
+     "cropName": "Chilli",
+     "productName": "Green chilli (fresh)",
+     "productBasis": "green",
+     "group": "spices",
+     "localNames": [],
+     "outcome": "requires_review",
+     "screening": {
+      "reasons": [
+       {
+        "ruleId": "rule.cat.chilli.tn.planting-outside-window",
+        "effect": "requires_review",
+        "truth": "true",
+        "reasonCodes": [
+         "planting_outside_sourced_window"
+        ],
+        "appliedExceptionId": null,
+        "reviewStatus": "approved",
+        "reviewer": "mechanical_derivation",
+        "regionIds": [
+         "IN-TN"
+        ],
+        "evidenceIds": [
+         "cat.chilli.sow"
+        ],
+        "unknownFields": []
+       }
+      ],
+      "unknownFields": [],
+      "appliedRuleIds": [
+       "rule.cat.chilli.tn.planting-outside-window"
+      ],
+      "evidenceIds": [
+       "cat.chilli.sow"
+      ],
+      "candidateRuleIds": [],
+      "noApplicableRule": false
+     },
+     "context": {
+      "contextId": "chilli.TN.main",
+      "regionIds": [
+       "IN-TN"
+      ],
+      "season": "rabi",
+      "irrigation": "unspecified",
+      "regionMatch": "state_or_region",
+      "plantingMonthInWindow": false
+     },
+     "referenceContexts": [],
+     "season": "rabi",
+     "plantingWindow": {
+      "fromMonth": 1,
+      "toMonth": 2,
+      "evidenceIds": [
+       "cat.chilli.sow"
+      ]
+     },
+     "repeatedPicking": true,
+     "harvestPattern": "repeated_picking",
+     "dimensions": {
+      "waterFit": {
+       "status": "unknown",
+       "value": null,
+       "basis": null,
+       "missingReason": "source_does_not_state_irrigation_condition",
+       "evidenceIds": []
+      },
+      "timeToFirstIncome": {
+       "status": "unknown",
+       "value": null,
+       "basis": null,
+       "missingReason": "no_sourced_duration_in_context",
+       "evidenceIds": []
+      },
+      "harvestWindows": {
+       "status": "unknown",
+       "value": null,
+       "basis": null,
+       "missingReason": "duration_unknown",
+       "evidenceIds": []
+      },
+      "evidenceQuality": {
+       "status": "known",
+       "value": {
+        "sourcedRequirements": 3,
+        "of": 5,
+        "evidenceRecords": 3,
+        "validationPending": true,
+        "regionalContext": true
+       },
+       "basis": "count_of_sourced_requirements_in_context",
+       "missingReason": null,
+       "evidenceIds": [
+        "cat.chilli.sow",
+        "cat.chilli.soil",
+        "cat.chilli.yld"
+       ]
+      },
+      "marketAccess": {
+       "status": "unavailable",
+       "value": null,
+       "basis": null,
+       "missingReason": "price_access_key_gated",
+       "evidenceIds": []
+      },
+      "economics": {
+       "status": "unknown",
+       "value": null,
+       "basis": null,
+       "missingReason": "yield_basis_differs_from_product_conversion_not_sourced",
+       "evidenceIds": []
+      }
+     },
+     "completeness": {
+      "known": 1,
+      "total": 6
+     },
+     "yieldReference": {
+      "minKgPerHa": 2000,
+      "maxKgPerHa": 3000,
+      "basis": "regional_reference",
+      "productId": "chilli-dry",
+      "appliesToProduct": false,
+      "label": "Reference is for chilli-dry; not applied to chilli-green (no sourced conversion)",
+      "evidenceIds": [
+       "cat.chilli.yld"
+      ]
+     },
+     "costBasis": {
+      "state": "unavailable",
+      "label": "Cost of cultivation: not sourced in the catalogue"
+     },
+     "priceReference": {
+      "state": "unavailable",
+      "label": "Unavailable — price access pending",
+      "missingReason": "price_access_key_gated"
+     },
+     "downside": {
+      "computable": false,
+      "text": "A downside scenario is not computable: no yield reference for this product in the matching context."
+     },
+     "mostConsequentialMissingInput": {
+      "field": "assumed_price",
+      "why": "No price access is available; supplying your own assumed price enables a gross harvest value range."
+     },
+     "evidenceCoverage": {
+      "sourcedRequirements": 3,
+      "evidenceRecords": 3,
+      "validationPending": true
+     }
+    }
+   ],
+   "counts": {
+    "eligible": 0,
+    "requires_review": 3,
+    "unknown": 0,
+    "ineligible": 0,
+    "excluded_by_farmer": 0
+   }
+  },
+  "warnings": [
+   {
+    "code": "synthetic_mode_candidate_unreviewed_rule",
+    "message": "synthetic_mode: candidate (unreviewed) rules are executed and marked in the result"
+   },
+   {
+    "code": "price_access_key_gated_no_price_referenc",
+    "message": "price_access_key_gated: no price reference is available; no price is inferred"
+   }
+  ],
+  "error": null
+ }
+}

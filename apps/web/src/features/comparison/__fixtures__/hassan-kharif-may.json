@@ -1,0 +1,4607 @@
+{
+ "synthetic": true,
+ "note": "synthetic: true. Captured once from the real POST /api/v1/crop-comparisons in RUNTIME_MODE=synthetic against the seeded catalogue on 2026-10-30. Catalogue content is T06b output (rules/evidence pending review); prices are a farmer assumption in the second fixture, never a market observation.",
+ "request": {
+  "location": {
+   "stateId": "IN-KA",
+   "districtId": "IN-KA-hassan"
+  },
+  "planting": {
+   "month": 5
+  },
+  "irrigation": "rainfed"
+ },
+ "response": {
+  "schemaVersion": "1.0",
+  "requestId": "5bbc460f-f285-48d1-9b01-795a664e9c20",
+  "mode": "synthetic",
+  "asOf": "2026-10-29T20:30:33.504Z",
+  "data": {
+   "asOf": "2026-10-29T20:30:33.495Z",
+   "mode": "synthetic",
+   "input": {
+    "location": {
+     "stateId": "IN-KA",
+     "districtId": "IN-KA-hassan"
+    },
+    "planting": {
+     "month": 5,
+     "date": null
+    },
+    "irrigation": "rainfed",
+    "excludedCropIds": [],
+    "assumedPrices": [],
+    "resolvedContext": {
+     "location": {
+      "stateId": "IN-KA",
+      "districtId": "IN-KA-hassan"
+     },
+     "planting": {
+      "month": 5,
+      "date": null
+     },
+     "irrigation": {
+      "category": "rainfed"
+     }
+    }
+   },
+   "rulePolicy": {
+    "executed": [
+     "approved",
+     "candidate (synthetic mode only)"
+    ],
+    "candidateRulesExecuted": true
+   },
+   "dimensionKeys": [
+    "waterFit",
+    "timeToFirstIncome",
+    "harvestWindows",
+    "evidenceQuality",
+    "marketAccess",
+    "economics"
+   ],
+   "unsupportedDimensions": [
+    {
+     "key": "budgetFit",
+     "missingReason": "no_sourced_cost_of_cultivation_in_catalogue"
+    },
+    {
+     "key": "labourIntensity",
+     "missingReason": "no_sourced_labour_class_in_catalogue"
+    }
+   ],
+   "weightsUsed": {
+    "waterFit": 1,
+    "timeToFirstIncome": 1,
+    "harvestWindows": 1,
+    "evidenceQuality": 1,
+    "marketAccess": 1,
+    "economics": 1
+   },
+   "rankingBasis": "Screening outcome first, then number of known dimensions, then a weighted mean over known water-fit, time and evidence-quality values (tie-break only; not shown as a score). Unknown dimensions are never scored as zero.",
+   "items": [
+    {
+     "rank": 1,
+     "cropId": "turmeric",
+     "productId": "turmeric-dry",
+     "cropName": "Turmeric",
+     "productName": "Dry (cured) turmeric",
+     "productBasis": "dry",
+     "group": "spices",
+     "localNames": [],
+     "outcome": "eligible",
+     "screening": {
+      "reasons": [
+       {
+        "ruleId": "rule.cat.turmeric.in.planting-in-window",
+        "effect": "eligible",
+        "truth": "true",
+        "reasonCodes": [
+         "planting_in_sourced_window"
+        ],
+        "appliedExceptionId": null,
+        "reviewStatus": "approved",
+        "reviewer": "mechanical_derivation",
+        "regionIds": [
+         "IN"
+        ],
+        "evidenceIds": [
+         "cat.turmeric.sow"
+        ],
+        "unknownFields": []
+       }
+      ],
+      "unknownFields": [],
+      "appliedRuleIds": [
+       "rule.cat.turmeric.in.planting-in-window"
+      ],
+      "evidenceIds": [
+       "cat.turmeric.sow"
+      ],
+      "candidateRuleIds": [],
+      "noApplicableRule": false
+     },
+     "context": {
+      "contextId": "turmeric.IN.kharif",
+      "regionIds": [
+       "IN"
+      ],
+      "season": "kharif",
+      "irrigation": "any",
+      "regionMatch": "national",
+      "plantingMonthInWindow": true
+     },
+     "referenceContexts": [],
+     "season": "kharif",
+     "plantingWindow": {
+      "fromMonth": 4,
+      "toMonth": 5,
+      "evidenceIds": [
+       "cat.turmeric.sow"
+      ]
+     },
+     "repeatedPicking": false,
+     "harvestPattern": "single",
+     "dimensions": {
+      "waterFit": {
+       "status": "unknown",
+       "value": null,
+       "basis": null,
+       "missingReason": "source_does_not_state_irrigation_condition",
+       "evidenceIds": []
+      },
+      "timeToFirstIncome": {
+       "status": "known",
+       "value": {
+        "minDays": 180,
+        "maxDays": 270,
+        "note": "Crop duration to harvest; first picking of a repeated-picking crop can come earlier."
+       },
+       "basis": "crop_duration_in_sourced_context",
+       "missingReason": null,
+       "evidenceIds": [
+        "cat.turmeric.d6",
+        "cat.turmeric.d9"
+       ]
+      },
+      "harvestWindows": {
+       "status": "known",
+       "value": {
+        "earliest": "2027-10-28",
+        "latest": "2028-01-26",
+        "repeatedPicking": false,
+        "plantingDate": "2027-05-01",
+        "plantingDateBasis": "first_of_month_assumed",
+        "note": "Harvest opens at the earliest date; it may continue after the latest date."
+       },
+       "basis": "crop_duration_in_sourced_context",
+       "missingReason": null,
+       "evidenceIds": [
+        "cat.turmeric.d6",
+        "cat.turmeric.d9"
+       ]
+      },
+      "evidenceQuality": {
+       "status": "known",
+       "value": {
+        "sourcedRequirements": 4,
+        "of": 5,
+        "evidenceRecords": 5,
+        "validationPending": true,
+        "regionalContext": true
+       },
+       "basis": "count_of_sourced_requirements_in_context",
+       "missingReason": null,
+       "evidenceIds": [
+        "cat.turmeric.sow",
+        "cat.turmeric.d6",
+        "cat.turmeric.d9",
+        "cat.turmeric.soil",
+        "cat.turmeric.irr"
+       ]
+      },
+      "marketAccess": {
+       "status": "unavailable",
+       "value": null,
+       "basis": null,
+       "missingReason": "price_access_key_gated",
+       "evidenceIds": []
+      },
+      "economics": {
+       "status": "unknown",
+       "value": null,
+       "basis": null,
+       "missingReason": "no_sourced_yield_reference",
+       "evidenceIds": []
+      }
+     },
+     "completeness": {
+      "known": 3,
+      "total": 6
+     },
+     "yieldReference": null,
+     "costBasis": {
+      "state": "unavailable",
+      "label": "Cost of cultivation: not sourced in the catalogue"
+     },
+     "priceReference": {
+      "state": "unavailable",
+      "label": "Unavailable — price access pending",
+      "missingReason": "price_access_key_gated"
+     },
+     "downside": {
+      "computable": false,
+      "text": "A downside scenario is not computable: no yield reference for this product in the matching context."
+     },
+     "mostConsequentialMissingInput": {
+      "field": "assumed_price",
+      "why": "No price access is available; supplying your own assumed price enables a gross harvest value range."
+     },
+     "evidenceCoverage": {
+      "sourcedRequirements": 4,
+      "evidenceRecords": 5,
+      "validationPending": true
+     }
+    },
+    {
+     "rank": 2,
+     "cropId": "turmeric",
+     "productId": "turmeric-fresh",
+     "cropName": "Turmeric",
+     "productName": "Fresh turmeric rhizome",
+     "productBasis": "fresh",
+     "group": "spices",
+     "localNames": [],
+     "outcome": "eligible",
+     "screening": {
+      "reasons": [
+       {
+        "ruleId": "rule.cat.turmeric.in.planting-in-window",
+        "effect": "eligible",
+        "truth": "true",
+        "reasonCodes": [
+         "planting_in_sourced_window"
+        ],
+        "appliedExceptionId": null,
+        "reviewStatus": "approved",
+        "reviewer": "mechanical_derivation",
+        "regionIds": [
+         "IN"
+        ],
+        "evidenceIds": [
+         "cat.turmeric.sow"
+        ],
+        "unknownFields": []
+       }
+      ],
+      "unknownFields": [],
+      "appliedRuleIds": [
+       "rule.cat.turmeric.in.planting-in-window"
+      ],
+      "evidenceIds": [
+       "cat.turmeric.sow"
+      ],
+      "candidateRuleIds": [],
+      "noApplicableRule": false
+     },
+     "context": {
+      "contextId": "turmeric.IN.kharif",
+      "regionIds": [
+       "IN"
+      ],
+      "season": "kharif",
+      "irrigation": "any",
+      "regionMatch": "national",
+      "plantingMonthInWindow": true
+     },
+     "referenceContexts": [],
+     "season": "kharif",
+     "plantingWindow": {
+      "fromMonth": 4,
+      "toMonth": 5,
+      "evidenceIds": [
+       "cat.turmeric.sow"
+      ]
+     },
+     "repeatedPicking": false,
+     "harvestPattern": "single",
+     "dimensions": {
+      "waterFit": {
+       "status": "unknown",
+       "value": null,
+       "basis": null,
+       "missingReason": "source_does_not_state_irrigation_condition",
+       "evidenceIds": []
+      },
+      "timeToFirstIncome": {
+       "status": "known",
+       "value": {
+        "minDays": 180,
+        "maxDays": 270,
+        "note": "Crop duration to harvest; first picking of a repeated-picking crop can come earlier."
+       },
+       "basis": "crop_duration_in_sourced_context",
+       "missingReason": null,
+       "evidenceIds": [
+        "cat.turmeric.d6",
+        "cat.turmeric.d9"
+       ]
+      },
+      "harvestWindows": {
+       "status": "known",
+       "value": {
+        "earliest": "2027-10-28",
+        "latest": "2028-01-26",
+        "repeatedPicking": false,
+        "plantingDate": "2027-05-01",
+        "plantingDateBasis": "first_of_month_assumed",
+        "note": "Harvest opens at the earliest date; it may continue after the latest date."
+       },
+       "basis": "crop_duration_in_sourced_context",
+       "missingReason": null,
+       "evidenceIds": [
+        "cat.turmeric.d6",
+        "cat.turmeric.d9"
+       ]
+      },
+      "evidenceQuality": {
+       "status": "known",
+       "value": {
+        "sourcedRequirements": 4,
+        "of": 5,
+        "evidenceRecords": 5,
+        "validationPending": true,
+        "regionalContext": true
+       },
+       "basis": "count_of_sourced_requirements_in_context",
+       "missingReason": null,
+       "evidenceIds": [
+        "cat.turmeric.sow",
+        "cat.turmeric.d6",
+        "cat.turmeric.d9",
+        "cat.turmeric.soil",
+        "cat.turmeric.irr"
+       ]
+      },
+      "marketAccess": {
+       "status": "unavailable",
+       "value": null,
+       "basis": null,
+       "missingReason": "price_access_key_gated",
+       "evidenceIds": []
+      },
+      "economics": {
+       "status": "unknown",
+       "value": null,
+       "basis": null,
+       "missingReason": "no_sourced_yield_reference",
+       "evidenceIds": []
+      }
+     },
+     "completeness": {
+      "known": 3,
+      "total": 6
+     },
+     "yieldReference": null,
+     "costBasis": {
+      "state": "unavailable",
+      "label": "Cost of cultivation: not sourced in the catalogue"
+     },
+     "priceReference": {
+      "state": "unavailable",
+      "label": "Unavailable — price access pending",
+      "missingReason": "price_access_key_gated"
+     },
+     "downside": {
+      "computable": false,
+      "text": "A downside scenario is not computable: no yield reference for this product in the matching context."
+     },
+     "mostConsequentialMissingInput": {
+      "field": "assumed_price",
+      "why": "No price access is available; supplying your own assumed price enables a gross harvest value range."
+     },
+     "evidenceCoverage": {
+      "sourcedRequirements": 4,
+      "evidenceRecords": 5,
+      "validationPending": true
+     }
+    },
+    {
+     "rank": 3,
+     "cropId": "sorghum",
+     "productId": "sorghum-grain",
+     "cropName": "Sorghum",
+     "productName": "Sorghum grain",
+     "productBasis": "grain",
+     "group": "cereals",
+     "localNames": [],
+     "outcome": "eligible",
+     "screening": {
+      "reasons": [
+       {
+        "ruleId": "rule.cat.sorghum.in.planting-in-window",
+        "effect": "eligible",
+        "truth": "true",
+        "reasonCodes": [
+         "planting_in_sourced_window"
+        ],
+        "appliedExceptionId": null,
+        "reviewStatus": "approved",
+        "reviewer": "mechanical_derivation",
+        "regionIds": [
+         "IN"
+        ],
+        "evidenceIds": [
+         "cat.sorghum.kh"
+        ],
+        "unknownFields": []
+       }
+      ],
+      "unknownFields": [],
+      "appliedRuleIds": [
+       "rule.cat.sorghum.in.planting-in-window"
+      ],
+      "evidenceIds": [
+       "cat.sorghum.kh"
+      ],
+      "candidateRuleIds": [],
+      "noApplicableRule": false
+     },
+     "context": {
+      "contextId": "sorghum.IN.kharif",
+      "regionIds": [
+       "IN"
+      ],
+      "season": "kharif",
+      "irrigation": "unspecified",
+      "regionMatch": "national",
+      "plantingMonthInWindow": true
+     },
+     "referenceContexts": [],
+     "season": "kharif",
+     "plantingWindow": {
+      "fromMonth": 5,
+      "toMonth": 7,
+      "evidenceIds": [
+       "cat.sorghum.kh"
+      ]
+     },
+     "repeatedPicking": false,
+     "harvestPattern": "single",
+     "dimensions": {
+      "waterFit": {
+       "status": "unknown",
+       "value": null,
+       "basis": null,
+       "missingReason": "source_does_not_state_irrigation_condition",
+       "evidenceIds": []
+      },
+      "timeToFirstIncome": {
+       "status": "unknown",
+       "value": null,
+       "basis": null,
+       "missingReason": "no_sourced_duration_in_context",
+       "evidenceIds": []
+      },
+      "harvestWindows": {
+       "status": "unknown",
+       "value": null,
+       "basis": null,
+       "missingReason": "duration_unknown",
+       "evidenceIds": []
+      },
+      "evidenceQuality": {
+       "status": "known",
+       "value": {
+        "sourcedRequirements": 1,
+        "of": 5,
+        "evidenceRecords": 1,
+        "validationPending": true,
+        "regionalContext": true
+       },
+       "basis": "count_of_sourced_requirements_in_context",
+       "missingReason": null,
+       "evidenceIds": [
+        "cat.sorghum.kh"
+       ]
+      },
+      "marketAccess": {
+       "status": "unavailable",
+       "value": null,
+       "basis": null,
+       "missingReason": "price_access_key_gated",
+       "evidenceIds": []
+      },
+      "economics": {
+       "status": "unknown",
+       "value": null,
+       "basis": null,
+       "missingReason": "no_sourced_yield_reference",
+       "evidenceIds": []
+      }
+     },
+     "completeness": {
+      "known": 1,
+      "total": 6
+     },
+     "yieldReference": null,
+     "costBasis": {
+      "state": "unavailable",
+      "label": "Cost of cultivation: not sourced in the catalogue"
+     },
+     "priceReference": {
+      "state": "unavailable",
+      "label": "Unavailable — price access pending",
+      "missingReason": "price_access_key_gated"
+     },
+     "downside": {
+      "computable": false,
+      "text": "A downside scenario is not computable: no yield reference for this product in the matching context."
+     },
+     "mostConsequentialMissingInput": {
+      "field": "assumed_price",
+      "why": "No price access is available; supplying your own assumed price enables a gross harvest value range."
+     },
+     "evidenceCoverage": {
+      "sourcedRequirements": 1,
+      "evidenceRecords": 1,
+      "validationPending": true
+     }
+    },
+    {
+     "rank": 4,
+     "cropId": "ginger",
+     "productId": "ginger-dry",
+     "cropName": "Ginger",
+     "productName": "Dry ginger",
+     "productBasis": "dry",
+     "group": "spices",
+     "localNames": [],
+     "outcome": "unknown",
+     "screening": {
+      "reasons": [],
+      "unknownFields": [],
+      "appliedRuleIds": [],
+      "evidenceIds": [],
+      "candidateRuleIds": [],
+      "noApplicableRule": true
+     },
+     "context": null,
+     "referenceContexts": [
+      {
+       "contextId": "ginger.WESTCOAST.kharif",
+       "regionIds": [
+        "IN-region-west-coast"
+       ],
+       "season": "kharif",
+       "note": "Sourced for another region; not applied to this location."
+      }
+     ],
+     "season": null,
+     "plantingWindow": null,
+     "repeatedPicking": null,
+     "harvestPattern": null,
+     "dimensions": {
+      "waterFit": {
+       "status": "unknown",
+       "value": null,
+       "basis": null,
+       "missingReason": "no_sourced_context_for_region",
+       "evidenceIds": []
+      },
+      "timeToFirstIncome": {
+       "status": "known",
+       "value": {
+        "minDays": 210,
+        "maxDays": 240,
+        "note": "Crop duration to harvest; first picking of a repeated-picking crop can come earlier."
+       },
+       "basis": "stage_definitions_sum_to_harvest_open",
+       "missingReason": null,
+       "evidenceIds": [
+        "ev.ginger.iisr2025.p14.critical-stages",
+        "ev.ginger.iisr2025.p3.rainfall-pattern",
+        "ev.ginger.iisr2025.p15.soft-rot-monsoon-moisture",
+        "ev.ginger.iisr2025.p14.mulching-repeat",
+        "ev.ginger.iisr2025.p25.maturity-days",
+        "ev.ginger.iisr2025.p25.irrigation-stop",
+        "ev.ginger.iisr2025.p25.end-use-dry",
+        "ev.ginger.iisr2025.p25.harvest-indicator-dry",
+        "ev.ginger.iisr2025.p25.late-harvest"
+       ]
+      },
+      "harvestWindows": {
+       "status": "known",
+       "value": {
+        "earliest": "2027-11-27",
+        "latest": "2027-12-27",
+        "repeatedPicking": null,
+        "plantingDate": "2027-05-01",
+        "plantingDateBasis": "first_of_month_assumed",
+        "note": "Harvest opens at the earliest date; it may continue after the latest date."
+       },
+       "basis": "stage_definitions_sum_to_harvest_open",
+       "missingReason": null,
+       "evidenceIds": [
+        "ev.ginger.iisr2025.p14.critical-stages",
+        "ev.ginger.iisr2025.p3.rainfall-pattern",
+        "ev.ginger.iisr2025.p15.soft-rot-monsoon-moisture",
+        "ev.ginger.iisr2025.p14.mulching-repeat",
+        "ev.ginger.iisr2025.p25.maturity-days",
+        "ev.ginger.iisr2025.p25.irrigation-stop",
+        "ev.ginger.iisr2025.p25.end-use-dry",
+        "ev.ginger.iisr2025.p25.harvest-indicator-dry",
+        "ev.ginger.iisr2025.p25.late-harvest"
+       ]
+      },
+      "evidenceQuality": {
+       "status": "known",
+       "value": {
+        "sourcedRequirements": 0,
+        "of": 5,
+        "evidenceRecords": 0,
+        "validationPending": true,
+        "regionalContext": false
+       },
+       "basis": "count_of_sourced_requirements_in_context",
+       "missingReason": null,
+       "evidenceIds": []
+      },
+      "marketAccess": {
+       "status": "unavailable",
+       "value": null,
+       "basis": null,
+       "missingReason": "price_access_key_gated",
+       "evidenceIds": []
+      },
+      "economics": {
+       "status": "unknown",
+       "value": null,
+       "basis": null,
+       "missingReason": "no_sourced_yield_reference",
+       "evidenceIds": []
+      }
+     },
+     "completeness": {
+      "known": 3,
+      "total": 6
+     },
+     "yieldReference": null,
+     "costBasis": {
+      "state": "unavailable",
+      "label": "Cost of cultivation: not sourced in the catalogue"
+     },
+     "priceReference": {
+      "state": "unavailable",
+      "label": "Unavailable — price access pending",
+      "missingReason": "price_access_key_gated"
+     },
+     "downside": {
+      "computable": false,
+      "text": "A downside scenario is not computable: no yield reference for this product in the matching context."
+     },
+     "mostConsequentialMissingInput": {
+      "field": "regional_context",
+      "why": "No sourced planting context covers this state; the crop cannot be screened locally."
+     },
+     "evidenceCoverage": {
+      "sourcedRequirements": 0,
+      "evidenceRecords": 0,
+      "validationPending": false
+     }
+    },
+    {
+     "rank": 5,
+     "cropId": "ginger",
+     "productId": "ginger-fresh",
+     "cropName": "Ginger",
+     "productName": "Fresh ginger rhizome",
+     "productBasis": "fresh",
+     "group": "spices",
+     "localNames": [],
+     "outcome": "unknown",
+     "screening": {
+      "reasons": [],
+      "unknownFields": [],
+      "appliedRuleIds": [],
+      "evidenceIds": [],
+      "candidateRuleIds": [],
+      "noApplicableRule": true
+     },
+     "context": null,
+     "referenceContexts": [
+      {
+       "contextId": "ginger.WESTCOAST.kharif",
+       "regionIds": [
+        "IN-region-west-coast"
+       ],
+       "season": "kharif",
+       "note": "Sourced for another region; not applied to this location."
+      }
+     ],
+     "season": null,
+     "plantingWindow": null,
+     "repeatedPicking": null,
+     "harvestPattern": null,
+     "dimensions": {
+      "waterFit": {
+       "status": "unknown",
+       "value": null,
+       "basis": null,
+       "missingReason": "no_sourced_context_for_region",
+       "evidenceIds": []
+      },
+      "timeToFirstIncome": {
+       "status": "known",
+       "value": {
+        "minDays": 210,
+        "maxDays": 240,
+        "note": "Crop duration to harvest; first picking of a repeated-picking crop can come earlier."
+       },
+       "basis": "stage_definitions_sum_to_harvest_open",
+       "missingReason": null,
+       "evidenceIds": [
+        "ev.ginger.iisr2025.p14.critical-stages",
+        "ev.ginger.iisr2025.p3.rainfall-pattern",
+        "ev.ginger.iisr2025.p15.soft-rot-monsoon-moisture",
+        "ev.ginger.iisr2025.p14.mulching-repeat",
+        "ev.ginger.iisr2025.p25.maturity-days",
+        "ev.ginger.iisr2025.p25.irrigation-stop",
+        "ev.ginger.iisr2025.p25.end-use-dry",
+        "ev.ginger.iisr2025.p25.harvest-indicator-dry",
+        "ev.ginger.iisr2025.p25.late-harvest"
+       ]
+      },
+      "harvestWindows": {
+       "status": "known",
+       "value": {
+        "earliest": "2027-11-27",
+        "latest": "2027-12-27",
+        "repeatedPicking": null,
+        "plantingDate": "2027-05-01",
+        "plantingDateBasis": "first_of_month_assumed",
+        "note": "Harvest opens at the earliest date; it may continue after the latest date."
+       },
+       "basis": "stage_definitions_sum_to_harvest_open",
+       "missingReason": null,
+       "evidenceIds": [
+        "ev.ginger.iisr2025.p14.critical-stages",
+        "ev.ginger.iisr2025.p3.rainfall-pattern",
+        "ev.ginger.iisr2025.p15.soft-rot-monsoon-moisture",
+        "ev.ginger.iisr2025.p14.mulching-repeat",
+        "ev.ginger.iisr2025.p25.maturity-days",
+        "ev.ginger.iisr2025.p25.irrigation-stop",
+        "ev.ginger.iisr2025.p25.end-use-dry",
+        "ev.ginger.iisr2025.p25.harvest-indicator-dry",
+        "ev.ginger.iisr2025.p25.late-harvest"
+       ]
+      },
+      "evidenceQuality": {
+       "status": "known",
+       "value": {
+        "sourcedRequirements": 0,
+        "of": 5,
+        "evidenceRecords": 0,
+        "validationPending": true,
+        "regionalContext": false
+       },
+       "basis": "count_of_sourced_requirements_in_context",
+       "missingReason": null,
+       "evidenceIds": []
+      },
+      "marketAccess": {
+       "status": "unavailable",
+       "value": null,
+       "basis": null,
+       "missingReason": "price_access_key_gated",
+       "evidenceIds": []
+      },
+      "economics": {
+       "status": "unknown",
+       "value": null,
+       "basis": null,
+       "missingReason": "no_sourced_yield_reference",
+       "evidenceIds": []
+      }
+     },
+     "completeness": {
+      "known": 3,
+      "total": 6
+     },
+     "yieldReference": null,
+     "costBasis": {
+      "state": "unavailable",
+      "label": "Cost of cultivation: not sourced in the catalogue"
+     },
+     "priceReference": {
+      "state": "unavailable",
+      "label": "Unavailable — price access pending",
+      "missingReason": "price_access_key_gated"
+     },
+     "downside": {
+      "computable": false,
+      "text": "A downside scenario is not computable: no yield reference for this product in the matching context."
+     },
+     "mostConsequentialMissingInput": {
+      "field": "regional_context",
+      "why": "No sourced planting context covers this state; the crop cannot be screened locally."
+     },
+     "evidenceCoverage": {
+      "sourcedRequirements": 0,
+      "evidenceRecords": 0,
+      "validationPending": false
+     }
+    },
+    {
+     "rank": 6,
+     "cropId": "black-gram",
+     "productId": "black-gram-split",
+     "cropName": "Black gram",
+     "productName": "Black gram split (dal)",
+     "productBasis": "split",
+     "group": "pulses",
+     "localNames": [],
+     "outcome": "unknown",
+     "screening": {
+      "reasons": [],
+      "unknownFields": [],
+      "appliedRuleIds": [],
+      "evidenceIds": [],
+      "candidateRuleIds": [],
+      "noApplicableRule": true
+     },
+     "context": null,
+     "referenceContexts": [
+      {
+       "contextId": "black-gram.AS.kharif",
+       "regionIds": [
+        "IN-AS"
+       ],
+       "season": "kharif",
+       "note": "Sourced for another region; not applied to this location."
+      }
+     ],
+     "season": null,
+     "plantingWindow": null,
+     "repeatedPicking": null,
+     "harvestPattern": null,
+     "dimensions": {
+      "waterFit": {
+       "status": "unknown",
+       "value": null,
+       "basis": null,
+       "missingReason": "no_sourced_context_for_region",
+       "evidenceIds": []
+      },
+      "timeToFirstIncome": {
+       "status": "unknown",
+       "value": null,
+       "basis": null,
+       "missingReason": "no_sourced_context_for_region",
+       "evidenceIds": []
+      },
+      "harvestWindows": {
+       "status": "unknown",
+       "value": null,
+       "basis": null,
+       "missingReason": "duration_unknown",
+       "evidenceIds": []
+      },
+      "evidenceQuality": {
+       "status": "known",
+       "value": {
+        "sourcedRequirements": 0,
+        "of": 5,
+        "evidenceRecords": 0,
+        "validationPending": true,
+        "regionalContext": false
+       },
+       "basis": "count_of_sourced_requirements_in_context",
+       "missingReason": null,
+       "evidenceIds": []
+      },
+      "marketAccess": {
+       "status": "unavailable",
+       "value": null,
+       "basis": null,
+       "missingReason": "price_access_key_gated",
+       "evidenceIds": []
+      },
+      "economics": {
+       "status": "unknown",
+       "value": null,
+       "basis": null,
+       "missingReason": "no_sourced_yield_reference",
+       "evidenceIds": []
+      }
+     },
+     "completeness": {
+      "known": 1,
+      "total": 6
+     },
+     "yieldReference": null,
+     "costBasis": {
+      "state": "unavailable",
+      "label": "Cost of cultivation: not sourced in the catalogue"
+     },
+     "priceReference": {
+      "state": "unavailable",
+      "label": "Unavailable — price access pending",
+      "missingReason": "price_access_key_gated"
+     },
+     "downside": {
+      "computable": false,
+      "text": "A downside scenario is not computable: no yield reference for this product in the matching context."
+     },
+     "mostConsequentialMissingInput": {
+      "field": "regional_context",
+      "why": "No sourced planting context covers this state; the crop cannot be screened locally."
+     },
+     "evidenceCoverage": {
+      "sourcedRequirements": 0,
+      "evidenceRecords": 0,
+      "validationPending": false
+     }
+    },
+    {
+     "rank": 7,
+     "cropId": "black-gram",
+     "productId": "black-gram-whole",
+     "cropName": "Black gram",
+     "productName": "Black gram whole seed",
+     "productBasis": "whole",
+     "group": "pulses",
+     "localNames": [],
+     "outcome": "unknown",
+     "screening": {
+      "reasons": [],
+      "unknownFields": [],
+      "appliedRuleIds": [],
+      "evidenceIds": [],
+      "candidateRuleIds": [],
+      "noApplicableRule": true
+     },
+     "context": null,
+     "referenceContexts": [
+      {
+       "contextId": "black-gram.AS.kharif",
+       "regionIds": [
+        "IN-AS"
+       ],
+       "season": "kharif",
+       "note": "Sourced for another region; not applied to this location."
+      }
+     ],
+     "season": null,
+     "plantingWindow": null,
+     "repeatedPicking": null,
+     "harvestPattern": null,
+     "dimensions": {
+      "waterFit": {
+       "status": "unknown",
+       "value": null,
+       "basis": null,
+       "missingReason": "no_sourced_context_for_region",
+       "evidenceIds": []
+      },
+      "timeToFirstIncome": {
+       "status": "unknown",
+       "value": null,
+       "basis": null,
+       "missingReason": "no_sourced_context_for_region",
+       "evidenceIds": []
+      },
+      "harvestWindows": {
+       "status": "unknown",
+       "value": null,
+       "basis": null,
+       "missingReason": "duration_unknown",
+       "evidenceIds": []
+      },
+      "evidenceQuality": {
+       "status": "known",
+       "value": {
+        "sourcedRequirements": 0,
+        "of": 5,
+        "evidenceRecords": 0,
+        "validationPending": true,
+        "regionalContext": false
+       },
+       "basis": "count_of_sourced_requirements_in_context",
+       "missingReason": null,
+       "evidenceIds": []
+      },
+      "marketAccess": {
+       "status": "unavailable",
+       "value": null,
+       "basis": null,
+       "missingReason": "price_access_key_gated",
+       "evidenceIds": []
+      },
+      "economics": {
+       "status": "unknown",
+       "value": null,
+       "basis": null,
+       "missingReason": "no_sourced_yield_reference",
+       "evidenceIds": []
+      }
+     },
+     "completeness": {
+      "known": 1,
+      "total": 6
+     },
+     "yieldReference": null,
+     "costBasis": {
+      "state": "unavailable",
+      "label": "Cost of cultivation: not sourced in the catalogue"
+     },
+     "priceReference": {
+      "state": "unavailable",
+      "label": "Unavailable — price access pending",
+      "missingReason": "price_access_key_gated"
+     },
+     "downside": {
+      "computable": false,
+      "text": "A downside scenario is not computable: no yield reference for this product in the matching context."
+     },
+     "mostConsequentialMissingInput": {
+      "field": "regional_context",
+      "why": "No sourced planting context covers this state; the crop cannot be screened locally."
+     },
+     "evidenceCoverage": {
+      "sourcedRequirements": 0,
+      "evidenceRecords": 0,
+      "validationPending": false
+     }
+    },
+    {
+     "rank": 8,
+     "cropId": "brinjal",
+     "productId": "brinjal-fresh",
+     "cropName": "Brinjal",
+     "productName": "Brinjal fruit (fresh)",
+     "productBasis": "fresh",
+     "group": "vegetables",
+     "localNames": [],
+     "outcome": "unknown",
+     "screening": {
+      "reasons": [],
+      "unknownFields": [],
+      "appliedRuleIds": [],
+      "evidenceIds": [],
+      "candidateRuleIds": [],
+      "noApplicableRule": true
+     },
+     "context": null,
+     "referenceContexts": [
+      {
+       "contextId": "brinjal.TN.main",
+       "regionIds": [
+        "IN-TN"
+       ],
+       "season": "rabi",
+       "note": "Sourced for another region; not applied to this location."
+      },
+      {
+       "contextId": "brinjal.AS.winter",
+       "regionIds": [
+        "IN-AS"
+       ],
+       "season": "rabi",
+       "note": "Sourced for another region; not applied to this location."
+      }
+     ],
+     "season": null,
+     "plantingWindow": null,
+     "repeatedPicking": null,
+     "harvestPattern": null,
+     "dimensions": {
+      "waterFit": {
+       "status": "unknown",
+       "value": null,
+       "basis": null,
+       "missingReason": "no_sourced_context_for_region",
+       "evidenceIds": []
+      },
+      "timeToFirstIncome": {
+       "status": "unknown",
+       "value": null,
+       "basis": null,
+       "missingReason": "no_sourced_context_for_region",
+       "evidenceIds": []
+      },
+      "harvestWindows": {
+       "status": "unknown",
+       "value": null,
+       "basis": null,
+       "missingReason": "duration_unknown",
+       "evidenceIds": []
+      },
+      "evidenceQuality": {
+       "status": "known",
+       "value": {
+        "sourcedRequirements": 0,
+        "of": 5,
+        "evidenceRecords": 0,
+        "validationPending": true,
+        "regionalContext": false
+       },
+       "basis": "count_of_sourced_requirements_in_context",
+       "missingReason": null,
+       "evidenceIds": []
+      },
+      "marketAccess": {
+       "status": "unavailable",
+       "value": null,
+       "basis": null,
+       "missingReason": "price_access_key_gated",
+       "evidenceIds": []
+      },
+      "economics": {
+       "status": "unknown",
+       "value": null,
+       "basis": null,
+       "missingReason": "no_sourced_yield_reference",
+       "evidenceIds": []
+      }
+     },
+     "completeness": {
+      "known": 1,
+      "total": 6
+     },
+     "yieldReference": null,
+     "costBasis": {
+      "state": "unavailable",
+      "label": "Cost of cultivation: not sourced in the catalogue"
+     },
+     "priceReference": {
+      "state": "unavailable",
+      "label": "Unavailable — price access pending",
+      "missingReason": "price_access_key_gated"
+     },
+     "downside": {
+      "computable": false,
+      "text": "A downside scenario is not computable: no yield reference for this product in the matching context."
+     },
+     "mostConsequentialMissingInput": {
+      "field": "regional_context",
+      "why": "No sourced planting context covers this state; the crop cannot be screened locally."
+     },
+     "evidenceCoverage": {
+      "sourcedRequirements": 0,
+      "evidenceRecords": 0,
+      "validationPending": false
+     }
+    },
+    {
+     "rank": 9,
+     "cropId": "chickpea",
+     "productId": "chickpea-split",
+     "cropName": "Chickpea",
+     "productName": "Chickpea split (dal)",
+     "productBasis": "split",
+     "group": "pulses",
+     "localNames": [
+      "Bengal gram"
+     ],
+     "outcome": "unknown",
+     "screening": {
+      "reasons": [],
+      "unknownFields": [],
+      "appliedRuleIds": [],
+      "evidenceIds": [],
+      "candidateRuleIds": [],
+      "noApplicableRule": true
+     },
+     "context": null,
+     "referenceContexts": [
+      {
+       "contextId": "chickpea.TN.rainfed",
+       "regionIds": [
+        "IN-TN"
+       ],
+       "season": "rabi",
+       "note": "Sourced for another region; not applied to this location."
+      }
+     ],
+     "season": null,
+     "plantingWindow": null,
+     "repeatedPicking": null,
+     "harvestPattern": null,
+     "dimensions": {
+      "waterFit": {
+       "status": "unknown",
+       "value": null,
+       "basis": null,
+       "missingReason": "no_sourced_context_for_region",
+       "evidenceIds": []
+      },
+      "timeToFirstIncome": {
+       "status": "unknown",
+       "value": null,
+       "basis": null,
+       "missingReason": "no_sourced_context_for_region",
+       "evidenceIds": []
+      },
+      "harvestWindows": {
+       "status": "unknown",
+       "value": null,
+       "basis": null,
+       "missingReason": "duration_unknown",
+       "evidenceIds": []
+      },
+      "evidenceQuality": {
+       "status": "known",
+       "value": {
+        "sourcedRequirements": 0,
+        "of": 5,
+        "evidenceRecords": 0,
+        "validationPending": true,
+        "regionalContext": false
+       },
+       "basis": "count_of_sourced_requirements_in_context",
+       "missingReason": null,
+       "evidenceIds": []
+      },
+      "marketAccess": {
+       "status": "unavailable",
+       "value": null,
+       "basis": null,
+       "missingReason": "price_access_key_gated",
+       "evidenceIds": []
+      },
+      "economics": {
+       "status": "unknown",
+       "value": null,
+       "basis": null,
+       "missingReason": "no_sourced_yield_reference",
+       "evidenceIds": []
+      }
+     },
+     "completeness": {
+      "known": 1,
+      "total": 6
+     },
+     "yieldReference": null,
+     "costBasis": {
+      "state": "unavailable",
+      "label": "Cost of cultivation: not sourced in the catalogue"
+     },
+     "priceReference": {
+      "state": "unavailable",
+      "label": "Unavailable — price access pending",
+      "missingReason": "price_access_key_gated"
+     },
+     "downside": {
+      "computable": false,
+      "text": "A downside scenario is not computable: no yield reference for this product in the matching context."
+     },
+     "mostConsequentialMissingInput": {
+      "field": "regional_context",
+      "why": "No sourced planting context covers this state; the crop cannot be screened locally."
+     },
+     "evidenceCoverage": {
+      "sourcedRequirements": 0,
+      "evidenceRecords": 0,
+      "validationPending": false
+     }
+    },
+    {
+     "rank": 10,
+     "cropId": "chickpea",
+     "productId": "chickpea-whole",
+     "cropName": "Chickpea",
+     "productName": "Chickpea whole seed",
+     "productBasis": "whole",
+     "group": "pulses",
+     "localNames": [
+      "Bengal gram"
+     ],
+     "outcome": "unknown",
+     "screening": {
+      "reasons": [],
+      "unknownFields": [],
+      "appliedRuleIds": [],
+      "evidenceIds": [],
+      "candidateRuleIds": [],
+      "noApplicableRule": true
+     },
+     "context": null,
+     "referenceContexts": [
+      {
+       "contextId": "chickpea.TN.rainfed",
+       "regionIds": [
+        "IN-TN"
+       ],
+       "season": "rabi",
+       "note": "Sourced for another region; not applied to this location."
+      }
+     ],
+     "season": null,
+     "plantingWindow": null,
+     "repeatedPicking": null,
+     "harvestPattern": null,
+     "dimensions": {
+      "waterFit": {
+       "status": "unknown",
+       "value": null,
+       "basis": null,
+       "missingReason": "no_sourced_context_for_region",
+       "evidenceIds": []
+      },
+      "timeToFirstIncome": {
+       "status": "unknown",
+       "value": null,
+       "basis": null,
+       "missingReason": "no_sourced_context_for_region",
+       "evidenceIds": []
+      },
+      "harvestWindows": {
+       "status": "unknown",
+       "value": null,
+       "basis": null,
+       "missingReason": "duration_unknown",
+       "evidenceIds": []
+      },
+      "evidenceQuality": {
+       "status": "known",
+       "value": {
+        "sourcedRequirements": 0,
+        "of": 5,
+        "evidenceRecords": 0,
+        "validationPending": true,
+        "regionalContext": false
+       },
+       "basis": "count_of_sourced_requirements_in_context",
+       "missingReason": null,
+       "evidenceIds": []
+      },
+      "marketAccess": {
+       "status": "unavailable",
+       "value": null,
+       "basis": null,
+       "missingReason": "price_access_key_gated",
+       "evidenceIds": []
+      },
+      "economics": {
+       "status": "unknown",
+       "value": null,
+       "basis": null,
+       "missingReason": "no_sourced_yield_reference",
+       "evidenceIds": []
+      }
+     },
+     "completeness": {
+      "known": 1,
+      "total": 6
+     },
+     "yieldReference": null,
+     "costBasis": {
+      "state": "unavailable",
+      "label": "Cost of cultivation: not sourced in the catalogue"
+     },
+     "priceReference": {
+      "state": "unavailable",
+      "label": "Unavailable — price access pending",
+      "missingReason": "price_access_key_gated"
+     },
+     "downside": {
+      "computable": false,
+      "text": "A downside scenario is not computable: no yield reference for this product in the matching context."
+     },
+     "mostConsequentialMissingInput": {
+      "field": "regional_context",
+      "why": "No sourced planting context covers this state; the crop cannot be screened locally."
+     },
+     "evidenceCoverage": {
+      "sourcedRequirements": 0,
+      "evidenceRecords": 0,
+      "validationPending": false
+     }
+    },
+    {
+     "rank": 11,
+     "cropId": "chilli",
+     "productId": "chilli-dry",
+     "cropName": "Chilli",
+     "productName": "Dry red chilli",
+     "productBasis": "dry",
+     "group": "spices",
+     "localNames": [],
+     "outcome": "unknown",
+     "screening": {
+      "reasons": [],
+      "unknownFields": [],
+      "appliedRuleIds": [],
+      "evidenceIds": [],
+      "candidateRuleIds": [],
+      "noApplicableRule": true
+     },
+     "context": null,
+     "referenceContexts": [
+      {
+       "contextId": "chilli.TN.main",
+       "regionIds": [
+        "IN-TN"
+       ],
+       "season": "rabi",
+       "note": "Sourced for another region; not applied to this location."
+      }
+     ],
+     "season": null,
+     "plantingWindow": null,
+     "repeatedPicking": null,
+     "harvestPattern": null,
+     "dimensions": {
+      "waterFit": {
+       "status": "unknown",
+       "value": null,
+       "basis": null,
+       "missingReason": "no_sourced_context_for_region",
+       "evidenceIds": []
+      },
+      "timeToFirstIncome": {
+       "status": "unknown",
+       "value": null,
+       "basis": null,
+       "missingReason": "no_sourced_context_for_region",
+       "evidenceIds": []
+      },
+      "harvestWindows": {
+       "status": "unknown",
+       "value": null,
+       "basis": null,
+       "missingReason": "duration_unknown",
+       "evidenceIds": []
+      },
+      "evidenceQuality": {
+       "status": "known",
+       "value": {
+        "sourcedRequirements": 0,
+        "of": 5,
+        "evidenceRecords": 0,
+        "validationPending": true,
+        "regionalContext": false
+       },
+       "basis": "count_of_sourced_requirements_in_context",
+       "missingReason": null,
+       "evidenceIds": []
+      },
+      "marketAccess": {
+       "status": "unavailable",
+       "value": null,
+       "basis": null,
+       "missingReason": "price_access_key_gated",
+       "evidenceIds": []
+      },
+      "economics": {
+       "status": "unknown",
+       "value": null,
+       "basis": null,
+       "missingReason": "no_sourced_yield_reference",
+       "evidenceIds": []
+      }
+     },
+     "completeness": {
+      "known": 1,
+      "total": 6
+     },
+     "yieldReference": null,
+     "costBasis": {
+      "state": "unavailable",
+      "label": "Cost of cultivation: not sourced in the catalogue"
+     },
+     "priceReference": {
+      "state": "unavailable",
+      "label": "Unavailable — price access pending",
+      "missingReason": "price_access_key_gated"
+     },
+     "downside": {
+      "computable": false,
+      "text": "A downside scenario is not computable: no yield reference for this product in the matching context."
+     },
+     "mostConsequentialMissingInput": {
+      "field": "regional_context",
+      "why": "No sourced planting context covers this state; the crop cannot be screened locally."
+     },
+     "evidenceCoverage": {
+      "sourcedRequirements": 0,
+      "evidenceRecords": 0,
+      "validationPending": false
+     }
+    },
+    {
+     "rank": 12,
+     "cropId": "chilli",
+     "productId": "chilli-green",
+     "cropName": "Chilli",
+     "productName": "Green chilli (fresh)",
+     "productBasis": "green",
+     "group": "spices",
+     "localNames": [],
+     "outcome": "unknown",
+     "screening": {
+      "reasons": [],
+      "unknownFields": [],
+      "appliedRuleIds": [],
+      "evidenceIds": [],
+      "candidateRuleIds": [],
+      "noApplicableRule": true
+     },
+     "context": null,
+     "referenceContexts": [
+      {
+       "contextId": "chilli.TN.main",
+       "regionIds": [
+        "IN-TN"
+       ],
+       "season": "rabi",
+       "note": "Sourced for another region; not applied to this location."
+      }
+     ],
+     "season": null,
+     "plantingWindow": null,
+     "repeatedPicking": null,
+     "harvestPattern": null,
+     "dimensions": {
+      "waterFit": {
+       "status": "unknown",
+       "value": null,
+       "basis": null,
+       "missingReason": "no_sourced_context_for_region",
+       "evidenceIds": []
+      },
+      "timeToFirstIncome": {
+       "status": "unknown",
+       "value": null,
+       "basis": null,
+       "missingReason": "no_sourced_context_for_region",
+       "evidenceIds": []
+      },
+      "harvestWindows": {
+       "status": "unknown",
+       "value": null,
+       "basis": null,
+       "missingReason": "duration_unknown",
+       "evidenceIds": []
+      },
+      "evidenceQuality": {
+       "status": "known",
+       "value": {
+        "sourcedRequirements": 0,
+        "of": 5,
+        "evidenceRecords": 0,
+        "validationPending": true,
+        "regionalContext": false
+       },
+       "basis": "count_of_sourced_requirements_in_context",
+       "missingReason": null,
+       "evidenceIds": []
+      },
+      "marketAccess": {
+       "status": "unavailable",
+       "value": null,
+       "basis": null,
+       "missingReason": "price_access_key_gated",
+       "evidenceIds": []
+      },
+      "economics": {
+       "status": "unknown",
+       "value": null,
+       "basis": null,
+       "missingReason": "no_sourced_yield_reference",
+       "evidenceIds": []
+      }
+     },
+     "completeness": {
+      "known": 1,
+      "total": 6
+     },
+     "yieldReference": null,
+     "costBasis": {
+      "state": "unavailable",
+      "label": "Cost of cultivation: not sourced in the catalogue"
+     },
+     "priceReference": {
+      "state": "unavailable",
+      "label": "Unavailable — price access pending",
+      "missingReason": "price_access_key_gated"
+     },
+     "downside": {
+      "computable": false,
+      "text": "A downside scenario is not computable: no yield reference for this product in the matching context."
+     },
+     "mostConsequentialMissingInput": {
+      "field": "regional_context",
+      "why": "No sourced planting context covers this state; the crop cannot be screened locally."
+     },
+     "evidenceCoverage": {
+      "sourcedRequirements": 0,
+      "evidenceRecords": 0,
+      "validationPending": false
+     }
+    },
+    {
+     "rank": 13,
+     "cropId": "cotton",
+     "productId": "cotton-kapas",
+     "cropName": "Cotton",
+     "productName": "Cotton kapas (seed cotton)",
+     "productBasis": "kapas",
+     "group": "fibre",
+     "localNames": [],
+     "outcome": "unknown",
+     "screening": {
+      "reasons": [],
+      "unknownFields": [],
+      "appliedRuleIds": [],
+      "evidenceIds": [],
+      "candidateRuleIds": [],
+      "noApplicableRule": true
+     },
+     "context": null,
+     "referenceContexts": [
+      {
+       "contextId": "cotton.TN.winter-irrigated",
+       "regionIds": [
+        "IN-TN"
+       ],
+       "season": "rabi",
+       "note": "Sourced for another region; not applied to this location."
+      },
+      {
+       "contextId": "cotton.TN.winter-rainfed",
+       "regionIds": [
+        "IN-TN"
+       ],
+       "season": "rabi",
+       "note": "Sourced for another region; not applied to this location."
+      },
+      {
+       "contextId": "cotton.TN.summer-irrigated",
+       "regionIds": [
+        "IN-TN"
+       ],
+       "season": "zaid",
+       "note": "Sourced for another region; not applied to this location."
+      },
+      {
+       "contextId": "cotton.AS.kharif",
+       "regionIds": [
+        "IN-AS"
+       ],
+       "season": "kharif",
+       "note": "Sourced for another region; not applied to this location."
+      }
+     ],
+     "season": null,
+     "plantingWindow": null,
+     "repeatedPicking": null,
+     "harvestPattern": null,
+     "dimensions": {
+      "waterFit": {
+       "status": "unknown",
+       "value": null,
+       "basis": null,
+       "missingReason": "no_sourced_context_for_region",
+       "evidenceIds": []
+      },
+      "timeToFirstIncome": {
+       "status": "unknown",
+       "value": null,
+       "basis": null,
+       "missingReason": "no_sourced_context_for_region",
+       "evidenceIds": []
+      },
+      "harvestWindows": {
+       "status": "unknown",
+       "value": null,
+       "basis": null,
+       "missingReason": "duration_unknown",
+       "evidenceIds": []
+      },
+      "evidenceQuality": {
+       "status": "known",
+       "value": {
+        "sourcedRequirements": 0,
+        "of": 5,
+        "evidenceRecords": 0,
+        "validationPending": true,
+        "regionalContext": false
+       },
+       "basis": "count_of_sourced_requirements_in_context",
+       "missingReason": null,
+       "evidenceIds": []
+      },
+      "marketAccess": {
+       "status": "unavailable",
+       "value": null,
+       "basis": null,
+       "missingReason": "price_access_key_gated",
+       "evidenceIds": []
+      },
+      "economics": {
+       "status": "unknown",
+       "value": null,
+       "basis": null,
+       "missingReason": "no_sourced_yield_reference",
+       "evidenceIds": []
+      }
+     },
+     "completeness": {
+      "known": 1,
+      "total": 6
+     },
+     "yieldReference": null,
+     "costBasis": {
+      "state": "unavailable",
+      "label": "Cost of cultivation: not sourced in the catalogue"
+     },
+     "priceReference": {
+      "state": "unavailable",
+      "label": "Unavailable — price access pending",
+      "missingReason": "price_access_key_gated"
+     },
+     "downside": {
+      "computable": false,
+      "text": "A downside scenario is not computable: no yield reference for this product in the matching context."
+     },
+     "mostConsequentialMissingInput": {
+      "field": "regional_context",
+      "why": "No sourced planting context covers this state; the crop cannot be screened locally."
+     },
+     "evidenceCoverage": {
+      "sourcedRequirements": 0,
+      "evidenceRecords": 0,
+      "validationPending": false
+     }
+    },
+    {
+     "rank": 14,
+     "cropId": "cotton",
+     "productId": "cotton-lint",
+     "cropName": "Cotton",
+     "productName": "Cotton lint (ginned)",
+     "productBasis": "lint",
+     "group": "fibre",
+     "localNames": [],
+     "outcome": "unknown",
+     "screening": {
+      "reasons": [],
+      "unknownFields": [],
+      "appliedRuleIds": [],
+      "evidenceIds": [],
+      "candidateRuleIds": [],
+      "noApplicableRule": true
+     },
+     "context": null,
+     "referenceContexts": [
+      {
+       "contextId": "cotton.TN.winter-irrigated",
+       "regionIds": [
+        "IN-TN"
+       ],
+       "season": "rabi",
+       "note": "Sourced for another region; not applied to this location."
+      },
+      {
+       "contextId": "cotton.TN.winter-rainfed",
+       "regionIds": [
+        "IN-TN"
+       ],
+       "season": "rabi",
+       "note": "Sourced for another region; not applied to this location."
+      },
+      {
+       "contextId": "cotton.TN.summer-irrigated",
+       "regionIds": [
+        "IN-TN"
+       ],
+       "season": "zaid",
+       "note": "Sourced for another region; not applied to this location."
+      },
+      {
+       "contextId": "cotton.AS.kharif",
+       "regionIds": [
+        "IN-AS"
+       ],
+       "season": "kharif",
+       "note": "Sourced for another region; not applied to this location."
+      }
+     ],
+     "season": null,
+     "plantingWindow": null,
+     "repeatedPicking": null,
+     "harvestPattern": null,
+     "dimensions": {
+      "waterFit": {
+       "status": "unknown",
+       "value": null,
+       "basis": null,
+       "missingReason": "no_sourced_context_for_region",
+       "evidenceIds": []
+      },
+      "timeToFirstIncome": {
+       "status": "unknown",
+       "value": null,
+       "basis": null,
+       "missingReason": "no_sourced_context_for_region",
+       "evidenceIds": []
+      },
+      "harvestWindows": {
+       "status": "unknown",
+       "value": null,
+       "basis": null,
+       "missingReason": "duration_unknown",
+       "evidenceIds": []
+      },
+      "evidenceQuality": {
+       "status": "known",
+       "value": {
+        "sourcedRequirements": 0,
+        "of": 5,
+        "evidenceRecords": 0,
+        "validationPending": true,
+        "regionalContext": false
+       },
+       "basis": "count_of_sourced_requirements_in_context",
+       "missingReason": null,
+       "evidenceIds": []
+      },
+      "marketAccess": {
+       "status": "unavailable",
+       "value": null,
+       "basis": null,
+       "missingReason": "price_access_key_gated",
+       "evidenceIds": []
+      },
+      "economics": {
+       "status": "unknown",
+       "value": null,
+       "basis": null,
+       "missingReason": "no_sourced_yield_reference",
+       "evidenceIds": []
+      }
+     },
+     "completeness": {
+      "known": 1,
+      "total": 6
+     },
+     "yieldReference": null,
+     "costBasis": {
+      "state": "unavailable",
+      "label": "Cost of cultivation: not sourced in the catalogue"
+     },
+     "priceReference": {
+      "state": "unavailable",
+      "label": "Unavailable — price access pending",
+      "missingReason": "price_access_key_gated"
+     },
+     "downside": {
+      "computable": false,
+      "text": "A downside scenario is not computable: no yield reference for this product in the matching context."
+     },
+     "mostConsequentialMissingInput": {
+      "field": "regional_context",
+      "why": "No sourced planting context covers this state; the crop cannot be screened locally."
+     },
+     "evidenceCoverage": {
+      "sourcedRequirements": 0,
+      "evidenceRecords": 0,
+      "validationPending": false
+     }
+    },
+    {
+     "rank": 15,
+     "cropId": "finger-millet",
+     "productId": "finger-millet-grain",
+     "cropName": "Finger millet",
+     "productName": "Finger millet grain",
+     "productBasis": "grain",
+     "group": "cereals",
+     "localNames": [
+      "Ragi",
+      "Marua"
+     ],
+     "outcome": "unknown",
+     "screening": {
+      "reasons": [],
+      "unknownFields": [],
+      "appliedRuleIds": [],
+      "evidenceIds": [],
+      "candidateRuleIds": [],
+      "noApplicableRule": true
+     },
+     "context": null,
+     "referenceContexts": [
+      {
+       "contextId": "finger-millet.TN.irrigated",
+       "regionIds": [
+        "IN-TN"
+       ],
+       "season": "rabi",
+       "note": "Sourced for another region; not applied to this location."
+      },
+      {
+       "contextId": "finger-millet.TN.rainfed",
+       "regionIds": [
+        "IN-TN"
+       ],
+       "season": "kharif",
+       "note": "Sourced for another region; not applied to this location."
+      },
+      {
+       "contextId": "finger-millet.AS.kharif",
+       "regionIds": [
+        "IN-AS"
+       ],
+       "season": "kharif",
+       "note": "Sourced for another region; not applied to this location."
+      }
+     ],
+     "season": null,
+     "plantingWindow": null,
+     "repeatedPicking": null,
+     "harvestPattern": null,
+     "dimensions": {
+      "waterFit": {
+       "status": "unknown",
+       "value": null,
+       "basis": null,
+       "missingReason": "no_sourced_context_for_region",
+       "evidenceIds": []
+      },
+      "timeToFirstIncome": {
+       "status": "unknown",
+       "value": null,
+       "basis": null,
+       "missingReason": "no_sourced_context_for_region",
+       "evidenceIds": []
+      },
+      "harvestWindows": {
+       "status": "unknown",
+       "value": null,
+       "basis": null,
+       "missingReason": "duration_unknown",
+       "evidenceIds": []
+      },
+      "evidenceQuality": {
+       "status": "known",
+       "value": {
+        "sourcedRequirements": 0,
+        "of": 5,
+        "evidenceRecords": 0,
+        "validationPending": true,
+        "regionalContext": false
+       },
+       "basis": "count_of_sourced_requirements_in_context",
+       "missingReason": null,
+       "evidenceIds": []
+      },
+      "marketAccess": {
+       "status": "unavailable",
+       "value": null,
+       "basis": null,
+       "missingReason": "price_access_key_gated",
+       "evidenceIds": []
+      },
+      "economics": {
+       "status": "unknown",
+       "value": null,
+       "basis": null,
+       "missingReason": "no_sourced_yield_reference",
+       "evidenceIds": []
+      }
+     },
+     "completeness": {
+      "known": 1,
+      "total": 6
+     },
+     "yieldReference": null,
+     "costBasis": {
+      "state": "unavailable",
+      "label": "Cost of cultivation: not sourced in the catalogue"
+     },
+     "priceReference": {
+      "state": "unavailable",
+      "label": "Unavailable — price access pending",
+      "missingReason": "price_access_key_gated"
+     },
+     "downside": {
+      "computable": false,
+      "text": "A downside scenario is not computable: no yield reference for this product in the matching context."
+     },
+     "mostConsequentialMissingInput": {
+      "field": "regional_context",
+      "why": "No sourced planting context covers this state; the crop cannot be screened locally."
+     },
+     "evidenceCoverage": {
+      "sourcedRequirements": 0,
+      "evidenceRecords": 0,
+      "validationPending": false
+     }
+    },
+    {
+     "rank": 16,
+     "cropId": "green-gram",
+     "productId": "green-gram-split",
+     "cropName": "Green gram",
+     "productName": "Green gram split (dal)",
+     "productBasis": "split",
+     "group": "pulses",
+     "localNames": [],
+     "outcome": "unknown",
+     "screening": {
+      "reasons": [],
+      "unknownFields": [],
+      "appliedRuleIds": [],
+      "evidenceIds": [],
+      "candidateRuleIds": [],
+      "noApplicableRule": true
+     },
+     "context": null,
+     "referenceContexts": [
+      {
+       "contextId": "green-gram.AS.kharif",
+       "regionIds": [
+        "IN-AS"
+       ],
+       "season": "kharif",
+       "note": "Sourced for another region; not applied to this location."
+      }
+     ],
+     "season": null,
+     "plantingWindow": null,
+     "repeatedPicking": null,
+     "harvestPattern": null,
+     "dimensions": {
+      "waterFit": {
+       "status": "unknown",
+       "value": null,
+       "basis": null,
+       "missingReason": "no_sourced_context_for_region",
+       "evidenceIds": []
+      },
+      "timeToFirstIncome": {
+       "status": "unknown",
+       "value": null,
+       "basis": null,
+       "missingReason": "no_sourced_context_for_region",
+       "evidenceIds": []
+      },
+      "harvestWindows": {
+       "status": "unknown",
+       "value": null,
+       "basis": null,
+       "missingReason": "duration_unknown",
+       "evidenceIds": []
+      },
+      "evidenceQuality": {
+       "status": "known",
+       "value": {
+        "sourcedRequirements": 0,
+        "of": 5,
+        "evidenceRecords": 0,
+        "validationPending": true,
+        "regionalContext": false
+       },
+       "basis": "count_of_sourced_requirements_in_context",
+       "missingReason": null,
+       "evidenceIds": []
+      },
+      "marketAccess": {
+       "status": "unavailable",
+       "value": null,
+       "basis": null,
+       "missingReason": "price_access_key_gated",
+       "evidenceIds": []
+      },
+      "economics": {
+       "status": "unknown",
+       "value": null,
+       "basis": null,
+       "missingReason": "no_sourced_yield_reference",
+       "evidenceIds": []
+      }
+     },
+     "completeness": {
+      "known": 1,
+      "total": 6
+     },
+     "yieldReference": null,
+     "costBasis": {
+      "state": "unavailable",
+      "label": "Cost of cultivation: not sourced in the catalogue"
+     },
+     "priceReference": {
+      "state": "unavailable",
+      "label": "Unavailable — price access pending",
+      "missingReason": "price_access_key_gated"
+     },
+     "downside": {
+      "computable": false,
+      "text": "A downside scenario is not computable: no yield reference for this product in the matching context."
+     },
+     "mostConsequentialMissingInput": {
+      "field": "regional_context",
+      "why": "No sourced planting context covers this state; the crop cannot be screened locally."
+     },
+     "evidenceCoverage": {
+      "sourcedRequirements": 0,
+      "evidenceRecords": 0,
+      "validationPending": false
+     }
+    },
+    {
+     "rank": 17,
+     "cropId": "green-gram",
+     "productId": "green-gram-whole",
+     "cropName": "Green gram",
+     "productName": "Green gram whole seed",
+     "productBasis": "whole",
+     "group": "pulses",
+     "localNames": [],
+     "outcome": "unknown",
+     "screening": {
+      "reasons": [],
+      "unknownFields": [],
+      "appliedRuleIds": [],
+      "evidenceIds": [],
+      "candidateRuleIds": [],
+      "noApplicableRule": true
+     },
+     "context": null,
+     "referenceContexts": [
+      {
+       "contextId": "green-gram.AS.kharif",
+       "regionIds": [
+        "IN-AS"
+       ],
+       "season": "kharif",
+       "note": "Sourced for another region; not applied to this location."
+      }
+     ],
+     "season": null,
+     "plantingWindow": null,
+     "repeatedPicking": null,
+     "harvestPattern": null,
+     "dimensions": {
+      "waterFit": {
+       "status": "unknown",
+       "value": null,
+       "basis": null,
+       "missingReason": "no_sourced_context_for_region",
+       "evidenceIds": []
+      },
+      "timeToFirstIncome": {
+       "status": "unknown",
+       "value": null,
+       "basis": null,
+       "missingReason": "no_sourced_context_for_region",
+       "evidenceIds": []
+      },
+      "harvestWindows": {
+       "status": "unknown",
+       "value": null,
+       "basis": null,
+       "missingReason": "duration_unknown",
+       "evidenceIds": []
+      },
+      "evidenceQuality": {
+       "status": "known",
+       "value": {
+        "sourcedRequirements": 0,
+        "of": 5,
+        "evidenceRecords": 0,
+        "validationPending": true,
+        "regionalContext": false
+       },
+       "basis": "count_of_sourced_requirements_in_context",
+       "missingReason": null,
+       "evidenceIds": []
+      },
+      "marketAccess": {
+       "status": "unavailable",
+       "value": null,
+       "basis": null,
+       "missingReason": "price_access_key_gated",
+       "evidenceIds": []
+      },
+      "economics": {
+       "status": "unknown",
+       "value": null,
+       "basis": null,
+       "missingReason": "no_sourced_yield_reference",
+       "evidenceIds": []
+      }
+     },
+     "completeness": {
+      "known": 1,
+      "total": 6
+     },
+     "yieldReference": null,
+     "costBasis": {
+      "state": "unavailable",
+      "label": "Cost of cultivation: not sourced in the catalogue"
+     },
+     "priceReference": {
+      "state": "unavailable",
+      "label": "Unavailable — price access pending",
+      "missingReason": "price_access_key_gated"
+     },
+     "downside": {
+      "computable": false,
+      "text": "A downside scenario is not computable: no yield reference for this product in the matching context."
+     },
+     "mostConsequentialMissingInput": {
+      "field": "regional_context",
+      "why": "No sourced planting context covers this state; the crop cannot be screened locally."
+     },
+     "evidenceCoverage": {
+      "sourcedRequirements": 0,
+      "evidenceRecords": 0,
+      "validationPending": false
+     }
+    },
+    {
+     "rank": 18,
+     "cropId": "groundnut",
+     "productId": "groundnut-kernel",
+     "cropName": "Groundnut",
+     "productName": "Groundnut kernel (shelled)",
+     "productBasis": "kernel",
+     "group": "oilseeds",
+     "localNames": [],
+     "outcome": "unknown",
+     "screening": {
+      "reasons": [],
+      "unknownFields": [],
+      "appliedRuleIds": [],
+      "evidenceIds": [],
+      "candidateRuleIds": [],
+      "noApplicableRule": true
+     },
+     "context": null,
+     "referenceContexts": [
+      {
+       "contextId": "groundnut.AS.kharif",
+       "regionIds": [
+        "IN-AS"
+       ],
+       "season": "kharif",
+       "note": "Sourced for another region; not applied to this location."
+      },
+      {
+       "contextId": "groundnut.AS.rabi",
+       "regionIds": [
+        "IN-AS"
+       ],
+       "season": "rabi",
+       "note": "Sourced for another region; not applied to this location."
+      }
+     ],
+     "season": null,
+     "plantingWindow": null,
+     "repeatedPicking": null,
+     "harvestPattern": null,
+     "dimensions": {
+      "waterFit": {
+       "status": "unknown",
+       "value": null,
+       "basis": null,
+       "missingReason": "no_sourced_context_for_region",
+       "evidenceIds": []
+      },
+      "timeToFirstIncome": {
+       "status": "unknown",
+       "value": null,
+       "basis": null,
+       "missingReason": "no_sourced_context_for_region",
+       "evidenceIds": []
+      },
+      "harvestWindows": {
+       "status": "unknown",
+       "value": null,
+       "basis": null,
+       "missingReason": "duration_unknown",
+       "evidenceIds": []
+      },
+      "evidenceQuality": {
+       "status": "known",
+       "value": {
+        "sourcedRequirements": 0,
+        "of": 5,
+        "evidenceRecords": 0,
+        "validationPending": true,
+        "regionalContext": false
+       },
+       "basis": "count_of_sourced_requirements_in_context",
+       "missingReason": null,
+       "evidenceIds": []
+      },
+      "marketAccess": {
+       "status": "unavailable",
+       "value": null,
+       "basis": null,
+       "missingReason": "price_access_key_gated",
+       "evidenceIds": []
+      },
+      "economics": {
+       "status": "unknown",
+       "value": null,
+       "basis": null,
+       "missingReason": "no_sourced_yield_reference",
+       "evidenceIds": []
+      }
+     },
+     "completeness": {
+      "known": 1,
+      "total": 6
+     },
+     "yieldReference": null,
+     "costBasis": {
+      "state": "unavailable",
+      "label": "Cost of cultivation: not sourced in the catalogue"
+     },
+     "priceReference": {
+      "state": "unavailable",
+      "label": "Unavailable — price access pending",
+      "missingReason": "price_access_key_gated"
+     },
+     "downside": {
+      "computable": false,
+      "text": "A downside scenario is not computable: no yield reference for this product in the matching context."
+     },
+     "mostConsequentialMissingInput": {
+      "field": "regional_context",
+      "why": "No sourced planting context covers this state; the crop cannot be screened locally."
+     },
+     "evidenceCoverage": {
+      "sourcedRequirements": 0,
+      "evidenceRecords": 0,
+      "validationPending": false
+     }
+    },
+    {
+     "rank": 19,
+     "cropId": "groundnut",
+     "productId": "groundnut-pod",
+     "cropName": "Groundnut",
+     "productName": "Groundnut in shell (pods)",
+     "productBasis": "pod",
+     "group": "oilseeds",
+     "localNames": [],
+     "outcome": "unknown",
+     "screening": {
+      "reasons": [],
+      "unknownFields": [],
+      "appliedRuleIds": [],
+      "evidenceIds": [],
+      "candidateRuleIds": [],
+      "noApplicableRule": true
+     },
+     "context": null,
+     "referenceContexts": [
+      {
+       "contextId": "groundnut.AS.kharif",
+       "regionIds": [
+        "IN-AS"
+       ],
+       "season": "kharif",
+       "note": "Sourced for another region; not applied to this location."
+      },
+      {
+       "contextId": "groundnut.AS.rabi",
+       "regionIds": [
+        "IN-AS"
+       ],
+       "season": "rabi",
+       "note": "Sourced for another region; not applied to this location."
+      }
+     ],
+     "season": null,
+     "plantingWindow": null,
+     "repeatedPicking": null,
+     "harvestPattern": null,
+     "dimensions": {
+      "waterFit": {
+       "status": "unknown",
+       "value": null,
+       "basis": null,
+       "missingReason": "no_sourced_context_for_region",
+       "evidenceIds": []
+      },
+      "timeToFirstIncome": {
+       "status": "unknown",
+       "value": null,
+       "basis": null,
+       "missingReason": "no_sourced_context_for_region",
+       "evidenceIds": []
+      },
+      "harvestWindows": {
+       "status": "unknown",
+       "value": null,
+       "basis": null,
+       "missingReason": "duration_unknown",
+       "evidenceIds": []
+      },
+      "evidenceQuality": {
+       "status": "known",
+       "value": {
+        "sourcedRequirements": 0,
+        "of": 5,
+        "evidenceRecords": 0,
+        "validationPending": true,
+        "regionalContext": false
+       },
+       "basis": "count_of_sourced_requirements_in_context",
+       "missingReason": null,
+       "evidenceIds": []
+      },
+      "marketAccess": {
+       "status": "unavailable",
+       "value": null,
+       "basis": null,
+       "missingReason": "price_access_key_gated",
+       "evidenceIds": []
+      },
+      "economics": {
+       "status": "unknown",
+       "value": null,
+       "basis": null,
+       "missingReason": "no_sourced_yield_reference",
+       "evidenceIds": []
+      }
+     },
+     "completeness": {
+      "known": 1,
+      "total": 6
+     },
+     "yieldReference": null,
+     "costBasis": {
+      "state": "unavailable",
+      "label": "Cost of cultivation: not sourced in the catalogue"
+     },
+     "priceReference": {
+      "state": "unavailable",
+      "label": "Unavailable — price access pending",
+      "missingReason": "price_access_key_gated"
+     },
+     "downside": {
+      "computable": false,
+      "text": "A downside scenario is not computable: no yield reference for this product in the matching context."
+     },
+     "mostConsequentialMissingInput": {
+      "field": "regional_context",
+      "why": "No sourced planting context covers this state; the crop cannot be screened locally."
+     },
+     "evidenceCoverage": {
+      "sourcedRequirements": 0,
+      "evidenceRecords": 0,
+      "validationPending": false
+     }
+    },
+    {
+     "rank": 20,
+     "cropId": "lentil",
+     "productId": "lentil-split",
+     "cropName": "Lentil",
+     "productName": "Lentil split (dal)",
+     "productBasis": "split",
+     "group": "pulses",
+     "localNames": [
+      "Masur"
+     ],
+     "outcome": "unknown",
+     "screening": {
+      "reasons": [],
+      "unknownFields": [],
+      "appliedRuleIds": [],
+      "evidenceIds": [],
+      "candidateRuleIds": [],
+      "noApplicableRule": true
+     },
+     "context": null,
+     "referenceContexts": [
+      {
+       "contextId": "lentil.AS.rabi",
+       "regionIds": [
+        "IN-AS"
+       ],
+       "season": "rabi",
+       "note": "Sourced for another region; not applied to this location."
+      }
+     ],
+     "season": null,
+     "plantingWindow": null,
+     "repeatedPicking": null,
+     "harvestPattern": null,
+     "dimensions": {
+      "waterFit": {
+       "status": "unknown",
+       "value": null,
+       "basis": null,
+       "missingReason": "no_sourced_context_for_region",
+       "evidenceIds": []
+      },
+      "timeToFirstIncome": {
+       "status": "unknown",
+       "value": null,
+       "basis": null,
+       "missingReason": "no_sourced_context_for_region",
+       "evidenceIds": []
+      },
+      "harvestWindows": {
+       "status": "unknown",
+       "value": null,
+       "basis": null,
+       "missingReason": "duration_unknown",
+       "evidenceIds": []
+      },
+      "evidenceQuality": {
+       "status": "known",
+       "value": {
+        "sourcedRequirements": 0,
+        "of": 5,
+        "evidenceRecords": 0,
+        "validationPending": true,
+        "regionalContext": false
+       },
+       "basis": "count_of_sourced_requirements_in_context",
+       "missingReason": null,
+       "evidenceIds": []
+      },
+      "marketAccess": {
+       "status": "unavailable",
+       "value": null,
+       "basis": null,
+       "missingReason": "price_access_key_gated",
+       "evidenceIds": []
+      },
+      "economics": {
+       "status": "unknown",
+       "value": null,
+       "basis": null,
+       "missingReason": "no_sourced_yield_reference",
+       "evidenceIds": []
+      }
+     },
+     "completeness": {
+      "known": 1,
+      "total": 6
+     },
+     "yieldReference": null,
+     "costBasis": {
+      "state": "unavailable",
+      "label": "Cost of cultivation: not sourced in the catalogue"
+     },
+     "priceReference": {
+      "state": "unavailable",
+      "label": "Unavailable — price access pending",
+      "missingReason": "price_access_key_gated"
+     },
+     "downside": {
+      "computable": false,
+      "text": "A downside scenario is not computable: no yield reference for this product in the matching context."
+     },
+     "mostConsequentialMissingInput": {
+      "field": "regional_context",
+      "why": "No sourced planting context covers this state; the crop cannot be screened locally."
+     },
+     "evidenceCoverage": {
+      "sourcedRequirements": 0,
+      "evidenceRecords": 0,
+      "validationPending": false
+     }
+    },
+    {
+     "rank": 21,
+     "cropId": "lentil",
+     "productId": "lentil-whole",
+     "cropName": "Lentil",
+     "productName": "Lentil whole seed",
+     "productBasis": "whole",
+     "group": "pulses",
+     "localNames": [
+      "Masur"
+     ],
+     "outcome": "unknown",
+     "screening": {
+      "reasons": [],
+      "unknownFields": [],
+      "appliedRuleIds": [],
+      "evidenceIds": [],
+      "candidateRuleIds": [],
+      "noApplicableRule": true
+     },
+     "context": null,
+     "referenceContexts": [
+      {
+       "contextId": "lentil.AS.rabi",
+       "regionIds": [
+        "IN-AS"
+       ],
+       "season": "rabi",
+       "note": "Sourced for another region; not applied to this location."
+      }
+     ],
+     "season": null,
+     "plantingWindow": null,
+     "repeatedPicking": null,
+     "harvestPattern": null,
+     "dimensions": {
+      "waterFit": {
+       "status": "unknown",
+       "value": null,
+       "basis": null,
+       "missingReason": "no_sourced_context_for_region",
+       "evidenceIds": []
+      },
+      "timeToFirstIncome": {
+       "status": "unknown",
+       "value": null,
+       "basis": null,
+       "missingReason": "no_sourced_context_for_region",
+       "evidenceIds": []
+      },
+      "harvestWindows": {
+       "status": "unknown",
+       "value": null,
+       "basis": null,
+       "missingReason": "duration_unknown",
+       "evidenceIds": []
+      },
+      "evidenceQuality": {
+       "status": "known",
+       "value": {
+        "sourcedRequirements": 0,
+        "of": 5,
+        "evidenceRecords": 0,
+        "validationPending": true,
+        "regionalContext": false
+       },
+       "basis": "count_of_sourced_requirements_in_context",
+       "missingReason": null,
+       "evidenceIds": []
+      },
+      "marketAccess": {
+       "status": "unavailable",
+       "value": null,
+       "basis": null,
+       "missingReason": "price_access_key_gated",
+       "evidenceIds": []
+      },
+      "economics": {
+       "status": "unknown",
+       "value": null,
+       "basis": null,
+       "missingReason": "no_sourced_yield_reference",
+       "evidenceIds": []
+      }
+     },
+     "completeness": {
+      "known": 1,
+      "total": 6
+     },
+     "yieldReference": null,
+     "costBasis": {
+      "state": "unavailable",
+      "label": "Cost of cultivation: not sourced in the catalogue"
+     },
+     "priceReference": {
+      "state": "unavailable",
+      "label": "Unavailable — price access pending",
+      "missingReason": "price_access_key_gated"
+     },
+     "downside": {
+      "computable": false,
+      "text": "A downside scenario is not computable: no yield reference for this product in the matching context."
+     },
+     "mostConsequentialMissingInput": {
+      "field": "regional_context",
+      "why": "No sourced planting context covers this state; the crop cannot be screened locally."
+     },
+     "evidenceCoverage": {
+      "sourcedRequirements": 0,
+      "evidenceRecords": 0,
+      "validationPending": false
+     }
+    },
+    {
+     "rank": 22,
+     "cropId": "maize",
+     "productId": "maize-grain",
+     "cropName": "Maize",
+     "productName": "Maize grain",
+     "productBasis": "grain",
+     "group": "cereals",
+     "localNames": [],
+     "outcome": "unknown",
+     "screening": {
+      "reasons": [],
+      "unknownFields": [],
+      "appliedRuleIds": [],
+      "evidenceIds": [],
+      "candidateRuleIds": [],
+      "noApplicableRule": true
+     },
+     "context": null,
+     "referenceContexts": [
+      {
+       "contextId": "maize.TN.adipattam",
+       "regionIds": [
+        "IN-TN"
+       ],
+       "season": "kharif",
+       "note": "Sourced for another region; not applied to this location."
+      },
+      {
+       "contextId": "maize.AS.spring",
+       "regionIds": [
+        "IN-AS"
+       ],
+       "season": "zaid",
+       "note": "Sourced for another region; not applied to this location."
+      },
+      {
+       "contextId": "maize.AS.rabi",
+       "regionIds": [
+        "IN-AS"
+       ],
+       "season": "rabi",
+       "note": "Sourced for another region; not applied to this location."
+      }
+     ],
+     "season": null,
+     "plantingWindow": null,
+     "repeatedPicking": null,
+     "harvestPattern": null,
+     "dimensions": {
+      "waterFit": {
+       "status": "unknown",
+       "value": null,
+       "basis": null,
+       "missingReason": "no_sourced_context_for_region",
+       "evidenceIds": []
+      },
+      "timeToFirstIncome": {
+       "status": "unknown",
+       "value": null,
+       "basis": null,
+       "missingReason": "no_sourced_context_for_region",
+       "evidenceIds": []
+      },
+      "harvestWindows": {
+       "status": "unknown",
+       "value": null,
+       "basis": null,
+       "missingReason": "duration_unknown",
+       "evidenceIds": []
+      },
+      "evidenceQuality": {
+       "status": "known",
+       "value": {
+        "sourcedRequirements": 0,
+        "of": 5,
+        "evidenceRecords": 0,
+        "validationPending": true,
+        "regionalContext": false
+       },
+       "basis": "count_of_sourced_requirements_in_context",
+       "missingReason": null,
+       "evidenceIds": []
+      },
+      "marketAccess": {
+       "status": "unavailable",
+       "value": null,
+       "basis": null,
+       "missingReason": "price_access_key_gated",
+       "evidenceIds": []
+      },
+      "economics": {
+       "status": "unknown",
+       "value": null,
+       "basis": null,
+       "missingReason": "no_sourced_yield_reference",
+       "evidenceIds": []
+      }
+     },
+     "completeness": {
+      "known": 1,
+      "total": 6
+     },
+     "yieldReference": null,
+     "costBasis": {
+      "state": "unavailable",
+      "label": "Cost of cultivation: not sourced in the catalogue"
+     },
+     "priceReference": {
+      "state": "unavailable",
+      "label": "Unavailable — price access pending",
+      "missingReason": "price_access_key_gated"
+     },
+     "downside": {
+      "computable": false,
+      "text": "A downside scenario is not computable: no yield reference for this product in the matching context."
+     },
+     "mostConsequentialMissingInput": {
+      "field": "regional_context",
+      "why": "No sourced planting context covers this state; the crop cannot be screened locally."
+     },
+     "evidenceCoverage": {
+      "sourcedRequirements": 0,
+      "evidenceRecords": 0,
+      "validationPending": false
+     }
+    },
+    {
+     "rank": 23,
+     "cropId": "okra",
+     "productId": "okra-fresh",
+     "cropName": "Okra",
+     "productName": "Okra pods (fresh)",
+     "productBasis": "pod",
+     "group": "vegetables",
+     "localNames": [
+      "Bhendi"
+     ],
+     "outcome": "unknown",
+     "screening": {
+      "reasons": [],
+      "unknownFields": [],
+      "appliedRuleIds": [],
+      "evidenceIds": [],
+      "candidateRuleIds": [],
+      "noApplicableRule": true
+     },
+     "context": null,
+     "referenceContexts": [
+      {
+       "contextId": "okra.TN.main",
+       "regionIds": [
+        "IN-TN"
+       ],
+       "season": "kharif",
+       "note": "Sourced for another region; not applied to this location."
+      }
+     ],
+     "season": null,
+     "plantingWindow": null,
+     "repeatedPicking": null,
+     "harvestPattern": null,
+     "dimensions": {
+      "waterFit": {
+       "status": "unknown",
+       "value": null,
+       "basis": null,
+       "missingReason": "no_sourced_context_for_region",
+       "evidenceIds": []
+      },
+      "timeToFirstIncome": {
+       "status": "unknown",
+       "value": null,
+       "basis": null,
+       "missingReason": "no_sourced_context_for_region",
+       "evidenceIds": []
+      },
+      "harvestWindows": {
+       "status": "unknown",
+       "value": null,
+       "basis": null,
+       "missingReason": "duration_unknown",
+       "evidenceIds": []
+      },
+      "evidenceQuality": {
+       "status": "known",
+       "value": {
+        "sourcedRequirements": 0,
+        "of": 5,
+        "evidenceRecords": 0,
+        "validationPending": true,
+        "regionalContext": false
+       },
+       "basis": "count_of_sourced_requirements_in_context",
+       "missingReason": null,
+       "evidenceIds": []
+      },
+      "marketAccess": {
+       "status": "unavailable",
+       "value": null,
+       "basis": null,
+       "missingReason": "price_access_key_gated",
+       "evidenceIds": []
+      },
+      "economics": {
+       "status": "unknown",
+       "value": null,
+       "basis": null,
+       "missingReason": "no_sourced_yield_reference",
+       "evidenceIds": []
+      }
+     },
+     "completeness": {
+      "known": 1,
+      "total": 6
+     },
+     "yieldReference": null,
+     "costBasis": {
+      "state": "unavailable",
+      "label": "Cost of cultivation: not sourced in the catalogue"
+     },
+     "priceReference": {
+      "state": "unavailable",
+      "label": "Unavailable — price access pending",
+      "missingReason": "price_access_key_gated"
+     },
+     "downside": {
+      "computable": false,
+      "text": "A downside scenario is not computable: no yield reference for this product in the matching context."
+     },
+     "mostConsequentialMissingInput": {
+      "field": "regional_context",
+      "why": "No sourced planting context covers this state; the crop cannot be screened locally."
+     },
+     "evidenceCoverage": {
+      "sourcedRequirements": 0,
+      "evidenceRecords": 0,
+      "validationPending": false
+     }
+    },
+    {
+     "rank": 24,
+     "cropId": "onion",
+     "productId": "onion-bulb",
+     "cropName": "Onion",
+     "productName": "Onion bulbs (fresh)",
+     "productBasis": "bulb",
+     "group": "vegetables",
+     "localNames": [],
+     "outcome": "unknown",
+     "screening": {
+      "reasons": [],
+      "unknownFields": [],
+      "appliedRuleIds": [],
+      "evidenceIds": [],
+      "candidateRuleIds": [],
+      "noApplicableRule": true
+     },
+     "context": null,
+     "referenceContexts": [
+      {
+       "contextId": "onion.TN.bellary",
+       "regionIds": [
+        "IN-TN"
+       ],
+       "season": "kharif",
+       "note": "Sourced for another region; not applied to this location."
+      },
+      {
+       "contextId": "onion.TN.small",
+       "regionIds": [
+        "IN-TN"
+       ],
+       "season": "rabi",
+       "note": "Sourced for another region; not applied to this location."
+      },
+      {
+       "contextId": "onion.MH-GJ.kharif",
+       "regionIds": [
+        "IN-MH",
+        "IN-GJ"
+       ],
+       "season": "kharif",
+       "note": "Sourced for another region; not applied to this location."
+      },
+      {
+       "contextId": "onion.NORTH.rabi",
+       "regionIds": [
+        "IN-RJ",
+        "IN-HR",
+        "IN-PB",
+        "IN-UP",
+        "IN-BR"
+       ],
+       "season": "rabi",
+       "note": "Sourced for another region; not applied to this location."
+      }
+     ],
+     "season": null,
+     "plantingWindow": null,
+     "repeatedPicking": null,
+     "harvestPattern": null,
+     "dimensions": {
+      "waterFit": {
+       "status": "unknown",
+       "value": null,
+       "basis": null,
+       "missingReason": "no_sourced_context_for_region",
+       "evidenceIds": []
+      },
+      "timeToFirstIncome": {
+       "status": "unknown",
+       "value": null,
+       "basis": null,
+       "missingReason": "no_sourced_context_for_region",
+       "evidenceIds": []
+      },
+      "harvestWindows": {
+       "status": "unknown",
+       "value": null,
+       "basis": null,
+       "missingReason": "duration_unknown",
+       "evidenceIds": []
+      },
+      "evidenceQuality": {
+       "status": "known",
+       "value": {
+        "sourcedRequirements": 0,
+        "of": 5,
+        "evidenceRecords": 0,
+        "validationPending": true,
+        "regionalContext": false
+       },
+       "basis": "count_of_sourced_requirements_in_context",
+       "missingReason": null,
+       "evidenceIds": []
+      },
+      "marketAccess": {
+       "status": "unavailable",
+       "value": null,
+       "basis": null,
+       "missingReason": "price_access_key_gated",
+       "evidenceIds": []
+      },
+      "economics": {
+       "status": "unknown",
+       "value": null,
+       "basis": null,
+       "missingReason": "no_sourced_yield_reference",
+       "evidenceIds": []
+      }
+     },
+     "completeness": {
+      "known": 1,
+      "total": 6
+     },
+     "yieldReference": null,
+     "costBasis": {
+      "state": "unavailable",
+      "label": "Cost of cultivation: not sourced in the catalogue"
+     },
+     "priceReference": {
+      "state": "unavailable",
+      "label": "Unavailable — price access pending",
+      "missingReason": "price_access_key_gated"
+     },
+     "downside": {
+      "computable": false,
+      "text": "A downside scenario is not computable: no yield reference for this product in the matching context."
+     },
+     "mostConsequentialMissingInput": {
+      "field": "regional_context",
+      "why": "No sourced planting context covers this state; the crop cannot be screened locally."
+     },
+     "evidenceCoverage": {
+      "sourcedRequirements": 0,
+      "evidenceRecords": 0,
+      "validationPending": false
+     }
+    },
+    {
+     "rank": 25,
+     "cropId": "paddy",
+     "productId": "paddy-grain",
+     "cropName": "Paddy / rice",
+     "productName": "Paddy (unmilled)",
+     "productBasis": "paddy",
+     "group": "cereals",
+     "localNames": [],
+     "outcome": "unknown",
+     "screening": {
+      "reasons": [],
+      "unknownFields": [],
+      "appliedRuleIds": [],
+      "evidenceIds": [],
+      "candidateRuleIds": [],
+      "noApplicableRule": true
+     },
+     "context": null,
+     "referenceContexts": [
+      {
+       "contextId": "paddy.TN.kuruvai",
+       "regionIds": [
+        "IN-TN"
+       ],
+       "season": "kharif",
+       "note": "Sourced for another region; not applied to this location."
+      },
+      {
+       "contextId": "paddy.TN.samba",
+       "regionIds": [
+        "IN-TN"
+       ],
+       "season": "kharif",
+       "note": "Sourced for another region; not applied to this location."
+      },
+      {
+       "contextId": "paddy.TN.thaladi",
+       "regionIds": [
+        "IN-TN"
+       ],
+       "season": "rabi",
+       "note": "Sourced for another region; not applied to this location."
+      },
+      {
+       "contextId": "paddy.TN.navarai",
+       "regionIds": [
+        "IN-TN"
+       ],
+       "season": "rabi",
+       "note": "Sourced for another region; not applied to this location."
+      },
+      {
+       "contextId": "paddy.AS.sali",
+       "regionIds": [
+        "IN-AS"
+       ],
+       "season": "kharif",
+       "note": "Sourced for another region; not applied to this location."
+      }
+     ],
+     "season": null,
+     "plantingWindow": null,
+     "repeatedPicking": null,
+     "harvestPattern": null,
+     "dimensions": {
+      "waterFit": {
+       "status": "unknown",
+       "value": null,
+       "basis": null,
+       "missingReason": "no_sourced_context_for_region",
+       "evidenceIds": []
+      },
+      "timeToFirstIncome": {
+       "status": "unknown",
+       "value": null,
+       "basis": null,
+       "missingReason": "no_sourced_context_for_region",
+       "evidenceIds": []
+      },
+      "harvestWindows": {
+       "status": "unknown",
+       "value": null,
+       "basis": null,
+       "missingReason": "duration_unknown",
+       "evidenceIds": []
+      },
+      "evidenceQuality": {
+       "status": "known",
+       "value": {
+        "sourcedRequirements": 0,
+        "of": 5,
+        "evidenceRecords": 0,
+        "validationPending": true,
+        "regionalContext": false
+       },
+       "basis": "count_of_sourced_requirements_in_context",
+       "missingReason": null,
+       "evidenceIds": []
+      },
+      "marketAccess": {
+       "status": "unavailable",
+       "value": null,
+       "basis": null,
+       "missingReason": "price_access_key_gated",
+       "evidenceIds": []
+      },
+      "economics": {
+       "status": "unknown",
+       "value": null,
+       "basis": null,
+       "missingReason": "no_sourced_yield_reference",
+       "evidenceIds": []
+      }
+     },
+     "completeness": {
+      "known": 1,
+      "total": 6
+     },
+     "yieldReference": null,
+     "costBasis": {
+      "state": "unavailable",
+      "label": "Cost of cultivation: not sourced in the catalogue"
+     },
+     "priceReference": {
+      "state": "unavailable",
+      "label": "Unavailable — price access pending",
+      "missingReason": "price_access_key_gated"
+     },
+     "downside": {
+      "computable": false,
+      "text": "A downside scenario is not computable: no yield reference for this product in the matching context."
+     },
+     "mostConsequentialMissingInput": {
+      "field": "regional_context",
+      "why": "No sourced planting context covers this state; the crop cannot be screened locally."
+     },
+     "evidenceCoverage": {
+      "sourcedRequirements": 0,
+      "evidenceRecords": 0,
+      "validationPending": false
+     }
+    },
+    {
+     "rank": 26,
+     "cropId": "paddy",
+     "productId": "paddy-milled-rice",
+     "cropName": "Paddy / rice",
+     "productName": "Milled rice",
+     "productBasis": "milled",
+     "group": "cereals",
+     "localNames": [],
+     "outcome": "unknown",
+     "screening": {
+      "reasons": [],
+      "unknownFields": [],
+      "appliedRuleIds": [],
+      "evidenceIds": [],
+      "candidateRuleIds": [],
+      "noApplicableRule": true
+     },
+     "context": null,
+     "referenceContexts": [
+      {
+       "contextId": "paddy.TN.kuruvai",
+       "regionIds": [
+        "IN-TN"
+       ],
+       "season": "kharif",
+       "note": "Sourced for another region; not applied to this location."
+      },
+      {
+       "contextId": "paddy.TN.samba",
+       "regionIds": [
+        "IN-TN"
+       ],
+       "season": "kharif",
+       "note": "Sourced for another region; not applied to this location."
+      },
+      {
+       "contextId": "paddy.TN.thaladi",
+       "regionIds": [
+        "IN-TN"
+       ],
+       "season": "rabi",
+       "note": "Sourced for another region; not applied to this location."
+      },
+      {
+       "contextId": "paddy.TN.navarai",
+       "regionIds": [
+        "IN-TN"
+       ],
+       "season": "rabi",
+       "note": "Sourced for another region; not applied to this location."
+      },
+      {
+       "contextId": "paddy.AS.sali",
+       "regionIds": [
+        "IN-AS"
+       ],
+       "season": "kharif",
+       "note": "Sourced for another region; not applied to this location."
+      }
+     ],
+     "season": null,
+     "plantingWindow": null,
+     "repeatedPicking": null,
+     "harvestPattern": null,
+     "dimensions": {
+      "waterFit": {
+       "status": "unknown",
+       "value": null,
+       "basis": null,
+       "missingReason": "no_sourced_context_for_region",
+       "evidenceIds": []
+      },
+      "timeToFirstIncome": {
+       "status": "unknown",
+       "value": null,
+       "basis": null,
+       "missingReason": "no_sourced_context_for_region",
+       "evidenceIds": []
+      },
+      "harvestWindows": {
+       "status": "unknown",
+       "value": null,
+       "basis": null,
+       "missingReason": "duration_unknown",
+       "evidenceIds": []
+      },
+      "evidenceQuality": {
+       "status": "known",
+       "value": {
+        "sourcedRequirements": 0,
+        "of": 5,
+        "evidenceRecords": 0,
+        "validationPending": true,
+        "regionalContext": false
+       },
+       "basis": "count_of_sourced_requirements_in_context",
+       "missingReason": null,
+       "evidenceIds": []
+      },
+      "marketAccess": {
+       "status": "unavailable",
+       "value": null,
+       "basis": null,
+       "missingReason": "price_access_key_gated",
+       "evidenceIds": []
+      },
+      "economics": {
+       "status": "unknown",
+       "value": null,
+       "basis": null,
+       "missingReason": "no_sourced_yield_reference",
+       "evidenceIds": []
+      }
+     },
+     "completeness": {
+      "known": 1,
+      "total": 6
+     },
+     "yieldReference": null,
+     "costBasis": {
+      "state": "unavailable",
+      "label": "Cost of cultivation: not sourced in the catalogue"
+     },
+     "priceReference": {
+      "state": "unavailable",
+      "label": "Unavailable — price access pending",
+      "missingReason": "price_access_key_gated"
+     },
+     "downside": {
+      "computable": false,
+      "text": "A downside scenario is not computable: no yield reference for this product in the matching context."
+     },
+     "mostConsequentialMissingInput": {
+      "field": "regional_context",
+      "why": "No sourced planting context covers this state; the crop cannot be screened locally."
+     },
+     "evidenceCoverage": {
+      "sourcedRequirements": 0,
+      "evidenceRecords": 0,
+      "validationPending": false
+     }
+    },
+    {
+     "rank": 27,
+     "cropId": "pearl-millet",
+     "productId": "pearl-millet-grain",
+     "cropName": "Pearl millet",
+     "productName": "Pearl millet grain",
+     "productBasis": "grain",
+     "group": "cereals",
+     "localNames": [
+      "Cumbu"
+     ],
+     "outcome": "unknown",
+     "screening": {
+      "reasons": [],
+      "unknownFields": [],
+      "appliedRuleIds": [],
+      "evidenceIds": [],
+      "candidateRuleIds": [],
+      "noApplicableRule": true
+     },
+     "context": null,
+     "referenceContexts": [
+      {
+       "contextId": "pearl-millet.TN.irrigated",
+       "regionIds": [
+        "IN-TN"
+       ],
+       "season": "zaid",
+       "note": "Sourced for another region; not applied to this location."
+      },
+      {
+       "contextId": "pearl-millet.TN.rainfed",
+       "regionIds": [
+        "IN-TN"
+       ],
+       "season": "kharif",
+       "note": "Sourced for another region; not applied to this location."
+      }
+     ],
+     "season": null,
+     "plantingWindow": null,
+     "repeatedPicking": null,
+     "harvestPattern": null,
+     "dimensions": {
+      "waterFit": {
+       "status": "unknown",
+       "value": null,
+       "basis": null,
+       "missingReason": "no_sourced_context_for_region",
+       "evidenceIds": []
+      },
+      "timeToFirstIncome": {
+       "status": "unknown",
+       "value": null,
+       "basis": null,
+       "missingReason": "no_sourced_context_for_region",
+       "evidenceIds": []
+      },
+      "harvestWindows": {
+       "status": "unknown",
+       "value": null,
+       "basis": null,
+       "missingReason": "duration_unknown",
+       "evidenceIds": []
+      },
+      "evidenceQuality": {
+       "status": "known",
+       "value": {
+        "sourcedRequirements": 0,
+        "of": 5,
+        "evidenceRecords": 0,
+        "validationPending": true,
+        "regionalContext": false
+       },
+       "basis": "count_of_sourced_requirements_in_context",
+       "missingReason": null,
+       "evidenceIds": []
+      },
+      "marketAccess": {
+       "status": "unavailable",
+       "value": null,
+       "basis": null,
+       "missingReason": "price_access_key_gated",
+       "evidenceIds": []
+      },
+      "economics": {
+       "status": "unknown",
+       "value": null,
+       "basis": null,
+       "missingReason": "no_sourced_yield_reference",
+       "evidenceIds": []
+      }
+     },
+     "completeness": {
+      "known": 1,
+      "total": 6
+     },
+     "yieldReference": null,
+     "costBasis": {
+      "state": "unavailable",
+      "label": "Cost of cultivation: not sourced in the catalogue"
+     },
+     "priceReference": {
+      "state": "unavailable",
+      "label": "Unavailable — price access pending",
+      "missingReason": "price_access_key_gated"
+     },
+     "downside": {
+      "computable": false,
+      "text": "A downside scenario is not computable: no yield reference for this product in the matching context."
+     },
+     "mostConsequentialMissingInput": {
+      "field": "regional_context",
+      "why": "No sourced planting context covers this state; the crop cannot be screened locally."
+     },
+     "evidenceCoverage": {
+      "sourcedRequirements": 0,
+      "evidenceRecords": 0,
+      "validationPending": false
+     }
+    },
+    {
+     "rank": 28,
+     "cropId": "pigeon-pea",
+     "productId": "pigeon-pea-split",
+     "cropName": "Pigeon pea",
+     "productName": "Pigeon pea split (dal)",
+     "productBasis": "split",
+     "group": "pulses",
+     "localNames": [
+      "Red gram",
+      "Arhar"
+     ],
+     "outcome": "unknown",
+     "screening": {
+      "reasons": [],
+      "unknownFields": [],
+      "appliedRuleIds": [],
+      "evidenceIds": [],
+      "candidateRuleIds": [],
+      "noApplicableRule": true
+     },
+     "context": null,
+     "referenceContexts": [
+      {
+       "contextId": "pigeon-pea.TN.vaigasi",
+       "regionIds": [
+        "IN-TN"
+       ],
+       "season": "kharif",
+       "note": "Sourced for another region; not applied to this location."
+      },
+      {
+       "contextId": "pigeon-pea.AS.kharif",
+       "regionIds": [
+        "IN-AS"
+       ],
+       "season": "kharif",
+       "note": "Sourced for another region; not applied to this location."
+      }
+     ],
+     "season": null,
+     "plantingWindow": null,
+     "repeatedPicking": null,
+     "harvestPattern": null,
+     "dimensions": {
+      "waterFit": {
+       "status": "unknown",
+       "value": null,
+       "basis": null,
+       "missingReason": "no_sourced_context_for_region",
+       "evidenceIds": []
+      },
+      "timeToFirstIncome": {
+       "status": "unknown",
+       "value": null,
+       "basis": null,
+       "missingReason": "no_sourced_context_for_region",
+       "evidenceIds": []
+      },
+      "harvestWindows": {
+       "status": "unknown",
+       "value": null,
+       "basis": null,
+       "missingReason": "duration_unknown",
+       "evidenceIds": []
+      },
+      "evidenceQuality": {
+       "status": "known",
+       "value": {
+        "sourcedRequirements": 0,
+        "of": 5,
+        "evidenceRecords": 0,
+        "validationPending": true,
+        "regionalContext": false
+       },
+       "basis": "count_of_sourced_requirements_in_context",
+       "missingReason": null,
+       "evidenceIds": []
+      },
+      "marketAccess": {
+       "status": "unavailable",
+       "value": null,
+       "basis": null,
+       "missingReason": "price_access_key_gated",
+       "evidenceIds": []
+      },
+      "economics": {
+       "status": "unknown",
+       "value": null,
+       "basis": null,
+       "missingReason": "no_sourced_yield_reference",
+       "evidenceIds": []
+      }
+     },
+     "completeness": {
+      "known": 1,
+      "total": 6
+     },
+     "yieldReference": null,
+     "costBasis": {
+      "state": "unavailable",
+      "label": "Cost of cultivation: not sourced in the catalogue"
+     },
+     "priceReference": {
+      "state": "unavailable",
+      "label": "Unavailable — price access pending",
+      "missingReason": "price_access_key_gated"
+     },
+     "downside": {
+      "computable": false,
+      "text": "A downside scenario is not computable: no yield reference for this product in the matching context."
+     },
+     "mostConsequentialMissingInput": {
+      "field": "regional_context",
+      "why": "No sourced planting context covers this state; the crop cannot be screened locally."
+     },
+     "evidenceCoverage": {
+      "sourcedRequirements": 0,
+      "evidenceRecords": 0,
+      "validationPending": false
+     }
+    },
+    {
+     "rank": 29,
+     "cropId": "pigeon-pea",
+     "productId": "pigeon-pea-whole",
+     "cropName": "Pigeon pea",
+     "productName": "Pigeon pea whole seed",
+     "productBasis": "whole",
+     "group": "pulses",
+     "localNames": [
+      "Red gram",
+      "Arhar"
+     ],
+     "outcome": "unknown",
+     "screening": {
+      "reasons": [],
+      "unknownFields": [],
+      "appliedRuleIds": [],
+      "evidenceIds": [],
+      "candidateRuleIds": [],
+      "noApplicableRule": true
+     },
+     "context": null,
+     "referenceContexts": [
+      {
+       "contextId": "pigeon-pea.TN.vaigasi",
+       "regionIds": [
+        "IN-TN"
+       ],
+       "season": "kharif",
+       "note": "Sourced for another region; not applied to this location."
+      },
+      {
+       "contextId": "pigeon-pea.AS.kharif",
+       "regionIds": [
+        "IN-AS"
+       ],
+       "season": "kharif",
+       "note": "Sourced for another region; not applied to this location."
+      }
+     ],
+     "season": null,
+     "plantingWindow": null,
+     "repeatedPicking": null,
+     "harvestPattern": null,
+     "dimensions": {
+      "waterFit": {
+       "status": "unknown",
+       "value": null,
+       "basis": null,
+       "missingReason": "no_sourced_context_for_region",
+       "evidenceIds": []
+      },
+      "timeToFirstIncome": {
+       "status": "unknown",
+       "value": null,
+       "basis": null,
+       "missingReason": "no_sourced_context_for_region",
+       "evidenceIds": []
+      },
+      "harvestWindows": {
+       "status": "unknown",
+       "value": null,
+       "basis": null,
+       "missingReason": "duration_unknown",
+       "evidenceIds": []
+      },
+      "evidenceQuality": {
+       "status": "known",
+       "value": {
+        "sourcedRequirements": 0,
+        "of": 5,
+        "evidenceRecords": 0,
+        "validationPending": true,
+        "regionalContext": false
+       },
+       "basis": "count_of_sourced_requirements_in_context",
+       "missingReason": null,
+       "evidenceIds": []
+      },
+      "marketAccess": {
+       "status": "unavailable",
+       "value": null,
+       "basis": null,
+       "missingReason": "price_access_key_gated",
+       "evidenceIds": []
+      },
+      "economics": {
+       "status": "unknown",
+       "value": null,
+       "basis": null,
+       "missingReason": "no_sourced_yield_reference",
+       "evidenceIds": []
+      }
+     },
+     "completeness": {
+      "known": 1,
+      "total": 6
+     },
+     "yieldReference": null,
+     "costBasis": {
+      "state": "unavailable",
+      "label": "Cost of cultivation: not sourced in the catalogue"
+     },
+     "priceReference": {
+      "state": "unavailable",
+      "label": "Unavailable — price access pending",
+      "missingReason": "price_access_key_gated"
+     },
+     "downside": {
+      "computable": false,
+      "text": "A downside scenario is not computable: no yield reference for this product in the matching context."
+     },
+     "mostConsequentialMissingInput": {
+      "field": "regional_context",
+      "why": "No sourced planting context covers this state; the crop cannot be screened locally."
+     },
+     "evidenceCoverage": {
+      "sourcedRequirements": 0,
+      "evidenceRecords": 0,
+      "validationPending": false
+     }
+    },
+    {
+     "rank": 30,
+     "cropId": "potato",
+     "productId": "potato-fresh",
+     "cropName": "Potato",
+     "productName": "Potato tubers (fresh)",
+     "productBasis": "fresh",
+     "group": "vegetables",
+     "localNames": [],
+     "outcome": "unknown",
+     "screening": {
+      "reasons": [],
+      "unknownFields": [],
+      "appliedRuleIds": [],
+      "evidenceIds": [],
+      "candidateRuleIds": [],
+      "noApplicableRule": true
+     },
+     "context": null,
+     "referenceContexts": [
+      {
+       "contextId": "potato.TN.plains",
+       "regionIds": [
+        "IN-TN"
+       ],
+       "season": "rabi",
+       "note": "Sourced for another region; not applied to this location."
+      },
+      {
+       "contextId": "potato.AS.rainfed",
+       "regionIds": [
+        "IN-AS"
+       ],
+       "season": "rabi",
+       "note": "Sourced for another region; not applied to this location."
+      },
+      {
+       "contextId": "potato.AS.irrigated",
+       "regionIds": [
+        "IN-AS"
+       ],
+       "season": "rabi",
+       "note": "Sourced for another region; not applied to this location."
+      }
+     ],
+     "season": null,
+     "plantingWindow": null,
+     "repeatedPicking": null,
+     "harvestPattern": null,
+     "dimensions": {
+      "waterFit": {
+       "status": "unknown",
+       "value": null,
+       "basis": null,
+       "missingReason": "no_sourced_context_for_region",
+       "evidenceIds": []
+      },
+      "timeToFirstIncome": {
+       "status": "unknown",
+       "value": null,
+       "basis": null,
+       "missingReason": "no_sourced_context_for_region",
+       "evidenceIds": []
+      },
+      "harvestWindows": {
+       "status": "unknown",
+       "value": null,
+       "basis": null,
+       "missingReason": "duration_unknown",
+       "evidenceIds": []
+      },
+      "evidenceQuality": {
+       "status": "known",
+       "value": {
+        "sourcedRequirements": 0,
+        "of": 5,
+        "evidenceRecords": 0,
+        "validationPending": true,
+        "regionalContext": false
+       },
+       "basis": "count_of_sourced_requirements_in_context",
+       "missingReason": null,
+       "evidenceIds": []
+      },
+      "marketAccess": {
+       "status": "unavailable",
+       "value": null,
+       "basis": null,
+       "missingReason": "price_access_key_gated",
+       "evidenceIds": []
+      },
+      "economics": {
+       "status": "unknown",
+       "value": null,
+       "basis": null,
+       "missingReason": "no_sourced_yield_reference",
+       "evidenceIds": []
+      }
+     },
+     "completeness": {
+      "known": 1,
+      "total": 6
+     },
+     "yieldReference": null,
+     "costBasis": {
+      "state": "unavailable",
+      "label": "Cost of cultivation: not sourced in the catalogue"
+     },
+     "priceReference": {
+      "state": "unavailable",
+      "label": "Unavailable — price access pending",
+      "missingReason": "price_access_key_gated"
+     },
+     "downside": {
+      "computable": false,
+      "text": "A downside scenario is not computable: no yield reference for this product in the matching context."
+     },
+     "mostConsequentialMissingInput": {
+      "field": "regional_context",
+      "why": "No sourced planting context covers this state; the crop cannot be screened locally."
+     },
+     "evidenceCoverage": {
+      "sourcedRequirements": 0,
+      "evidenceRecords": 0,
+      "validationPending": false
+     }
+    },
+    {
+     "rank": 31,
+     "cropId": "mustard",
+     "productId": "mustard-seed",
+     "cropName": "Rapeseed-mustard",
+     "productName": "Rapeseed-mustard seed",
+     "productBasis": "seed",
+     "group": "oilseeds",
+     "localNames": [
+      "Toria"
+     ],
+     "outcome": "unknown",
+     "screening": {
+      "reasons": [],
+      "unknownFields": [],
+      "appliedRuleIds": [],
+      "evidenceIds": [],
+      "candidateRuleIds": [],
+      "noApplicableRule": true
+     },
+     "context": null,
+     "referenceContexts": [
+      {
+       "contextId": "mustard.AS.rabi",
+       "regionIds": [
+        "IN-AS"
+       ],
+       "season": "rabi",
+       "note": "Sourced for another region; not applied to this location."
+      }
+     ],
+     "season": null,
+     "plantingWindow": null,
+     "repeatedPicking": null,
+     "harvestPattern": null,
+     "dimensions": {
+      "waterFit": {
+       "status": "unknown",
+       "value": null,
+       "basis": null,
+       "missingReason": "no_sourced_context_for_region",
+       "evidenceIds": []
+      },
+      "timeToFirstIncome": {
+       "status": "unknown",
+       "value": null,
+       "basis": null,
+       "missingReason": "no_sourced_context_for_region",
+       "evidenceIds": []
+      },
+      "harvestWindows": {
+       "status": "unknown",
+       "value": null,
+       "basis": null,
+       "missingReason": "duration_unknown",
+       "evidenceIds": []
+      },
+      "evidenceQuality": {
+       "status": "known",
+       "value": {
+        "sourcedRequirements": 0,
+        "of": 5,
+        "evidenceRecords": 0,
+        "validationPending": true,
+        "regionalContext": false
+       },
+       "basis": "count_of_sourced_requirements_in_context",
+       "missingReason": null,
+       "evidenceIds": []
+      },
+      "marketAccess": {
+       "status": "unavailable",
+       "value": null,
+       "basis": null,
+       "missingReason": "price_access_key_gated",
+       "evidenceIds": []
+      },
+      "economics": {
+       "status": "unknown",
+       "value": null,
+       "basis": null,
+       "missingReason": "no_sourced_yield_reference",
+       "evidenceIds": []
+      }
+     },
+     "completeness": {
+      "known": 1,
+      "total": 6
+     },
+     "yieldReference": null,
+     "costBasis": {
+      "state": "unavailable",
+      "label": "Cost of cultivation: not sourced in the catalogue"
+     },
+     "priceReference": {
+      "state": "unavailable",
+      "label": "Unavailable — price access pending",
+      "missingReason": "price_access_key_gated"
+     },
+     "downside": {
+      "computable": false,
+      "text": "A downside scenario is not computable: no yield reference for this product in the matching context."
+     },
+     "mostConsequentialMissingInput": {
+      "field": "regional_context",
+      "why": "No sourced planting context covers this state; the crop cannot be screened locally."
+     },
+     "evidenceCoverage": {
+      "sourcedRequirements": 0,
+      "evidenceRecords": 0,
+      "validationPending": false
+     }
+    },
+    {
+     "rank": 32,
+     "cropId": "sesame",
+     "productId": "sesame-seed",
+     "cropName": "Sesame",
+     "productName": "Sesame seed",
+     "productBasis": "seed",
+     "group": "oilseeds",
+     "localNames": [
+      "Gingelly"
+     ],
+     "outcome": "unknown",
+     "screening": {
+      "reasons": [],
+      "unknownFields": [],
+      "appliedRuleIds": [],
+      "evidenceIds": [],
+      "candidateRuleIds": [],
+      "noApplicableRule": true
+     },
+     "context": null,
+     "referenceContexts": [
+      {
+       "contextId": "sesame.TN.irrigated",
+       "regionIds": [
+        "IN-TN"
+       ],
+       "season": "zaid",
+       "note": "Sourced for another region; not applied to this location."
+      },
+      {
+       "contextId": "sesame.TN.rainfed",
+       "regionIds": [
+        "IN-TN"
+       ],
+       "season": "kharif",
+       "note": "Sourced for another region; not applied to this location."
+      },
+      {
+       "contextId": "sesame.AS.kharif",
+       "regionIds": [
+        "IN-AS"
+       ],
+       "season": "kharif",
+       "note": "Sourced for another region; not applied to this location."
+      }
+     ],
+     "season": null,
+     "plantingWindow": null,
+     "repeatedPicking": null,
+     "harvestPattern": null,
+     "dimensions": {
+      "waterFit": {
+       "status": "unknown",
+       "value": null,
+       "basis": null,
+       "missingReason": "no_sourced_context_for_region",
+       "evidenceIds": []
+      },
+      "timeToFirstIncome": {
+       "status": "unknown",
+       "value": null,
+       "basis": null,
+       "missingReason": "no_sourced_context_for_region",
+       "evidenceIds": []
+      },
+      "harvestWindows": {
+       "status": "unknown",
+       "value": null,
+       "basis": null,
+       "missingReason": "duration_unknown",
+       "evidenceIds": []
+      },
+      "evidenceQuality": {
+       "status": "known",
+       "value": {
+        "sourcedRequirements": 0,
+        "of": 5,
+        "evidenceRecords": 0,
+        "validationPending": true,
+        "regionalContext": false
+       },
+       "basis": "count_of_sourced_requirements_in_context",
+       "missingReason": null,
+       "evidenceIds": []
+      },
+      "marketAccess": {
+       "status": "unavailable",
+       "value": null,
+       "basis": null,
+       "missingReason": "price_access_key_gated",
+       "evidenceIds": []
+      },
+      "economics": {
+       "status": "unknown",
+       "value": null,
+       "basis": null,
+       "missingReason": "no_sourced_yield_reference",
+       "evidenceIds": []
+      }
+     },
+     "completeness": {
+      "known": 1,
+      "total": 6
+     },
+     "yieldReference": null,
+     "costBasis": {
+      "state": "unavailable",
+      "label": "Cost of cultivation: not sourced in the catalogue"
+     },
+     "priceReference": {
+      "state": "unavailable",
+      "label": "Unavailable — price access pending",
+      "missingReason": "price_access_key_gated"
+     },
+     "downside": {
+      "computable": false,
+      "text": "A downside scenario is not computable: no yield reference for this product in the matching context."
+     },
+     "mostConsequentialMissingInput": {
+      "field": "regional_context",
+      "why": "No sourced planting context covers this state; the crop cannot be screened locally."
+     },
+     "evidenceCoverage": {
+      "sourcedRequirements": 0,
+      "evidenceRecords": 0,
+      "validationPending": false
+     }
+    },
+    {
+     "rank": 33,
+     "cropId": "soybean",
+     "productId": "soybean-seed",
+     "cropName": "Soybean",
+     "productName": "Soybean seed",
+     "productBasis": "seed",
+     "group": "oilseeds",
+     "localNames": [],
+     "outcome": "unknown",
+     "screening": {
+      "reasons": [],
+      "unknownFields": [],
+      "appliedRuleIds": [],
+      "evidenceIds": [],
+      "candidateRuleIds": [],
+      "noApplicableRule": true
+     },
+     "context": null,
+     "referenceContexts": [
+      {
+       "contextId": "soybean.TN.multi",
+       "regionIds": [
+        "IN-TN"
+       ],
+       "season": "kharif",
+       "note": "Sourced for another region; not applied to this location."
+      },
+      {
+       "contextId": "soybean.AS.kharif",
+       "regionIds": [
+        "IN-AS"
+       ],
+       "season": "kharif",
+       "note": "Sourced for another region; not applied to this location."
+      },
+      {
+       "contextId": "soybean.AS.rabi",
+       "regionIds": [
+        "IN-AS"
+       ],
+       "season": "rabi",
+       "note": "Sourced for another region; not applied to this location."
+      }
+     ],
+     "season": null,
+     "plantingWindow": null,
+     "repeatedPicking": null,
+     "harvestPattern": null,
+     "dimensions": {
+      "waterFit": {
+       "status": "unknown",
+       "value": null,
+       "basis": null,
+       "missingReason": "no_sourced_context_for_region",
+       "evidenceIds": []
+      },
+      "timeToFirstIncome": {
+       "status": "unknown",
+       "value": null,
+       "basis": null,
+       "missingReason": "no_sourced_context_for_region",
+       "evidenceIds": []
+      },
+      "harvestWindows": {
+       "status": "unknown",
+       "value": null,
+       "basis": null,
+       "missingReason": "duration_unknown",
+       "evidenceIds": []
+      },
+      "evidenceQuality": {
+       "status": "known",
+       "value": {
+        "sourcedRequirements": 0,
+        "of": 5,
+        "evidenceRecords": 0,
+        "validationPending": true,
+        "regionalContext": false
+       },
+       "basis": "count_of_sourced_requirements_in_context",
+       "missingReason": null,
+       "evidenceIds": []
+      },
+      "marketAccess": {
+       "status": "unavailable",
+       "value": null,
+       "basis": null,
+       "missingReason": "price_access_key_gated",
+       "evidenceIds": []
+      },
+      "economics": {
+       "status": "unknown",
+       "value": null,
+       "basis": null,
+       "missingReason": "no_sourced_yield_reference",
+       "evidenceIds": []
+      }
+     },
+     "completeness": {
+      "known": 1,
+      "total": 6
+     },
+     "yieldReference": null,
+     "costBasis": {
+      "state": "unavailable",
+      "label": "Cost of cultivation: not sourced in the catalogue"
+     },
+     "priceReference": {
+      "state": "unavailable",
+      "label": "Unavailable — price access pending",
+      "missingReason": "price_access_key_gated"
+     },
+     "downside": {
+      "computable": false,
+      "text": "A downside scenario is not computable: no yield reference for this product in the matching context."
+     },
+     "mostConsequentialMissingInput": {
+      "field": "regional_context",
+      "why": "No sourced planting context covers this state; the crop cannot be screened locally."
+     },
+     "evidenceCoverage": {
+      "sourcedRequirements": 0,
+      "evidenceRecords": 0,
+      "validationPending": false
+     }
+    },
+    {
+     "rank": 34,
+     "cropId": "sunflower",
+     "productId": "sunflower-seed",
+     "cropName": "Sunflower",
+     "productName": "Sunflower seed",
+     "productBasis": "seed",
+     "group": "oilseeds",
+     "localNames": [],
+     "outcome": "unknown",
+     "screening": {
+      "reasons": [],
+      "unknownFields": [],
+      "appliedRuleIds": [],
+      "evidenceIds": [],
+      "candidateRuleIds": [],
+      "noApplicableRule": true
+     },
+     "context": null,
+     "referenceContexts": [
+      {
+       "contextId": "sunflower.TN.rainfed",
+       "regionIds": [
+        "IN-TN"
+       ],
+       "season": "rabi",
+       "note": "Sourced for another region; not applied to this location."
+      },
+      {
+       "contextId": "sunflower.TN.irrigated",
+       "regionIds": [
+        "IN-TN"
+       ],
+       "season": "kharif",
+       "note": "Sourced for another region; not applied to this location."
+      }
+     ],
+     "season": null,
+     "plantingWindow": null,
+     "repeatedPicking": null,
+     "harvestPattern": null,
+     "dimensions": {
+      "waterFit": {
+       "status": "unknown",
+       "value": null,
+       "basis": null,
+       "missingReason": "no_sourced_context_for_region",
+       "evidenceIds": []
+      },
+      "timeToFirstIncome": {
+       "status": "unknown",
+       "value": null,
+       "basis": null,
+       "missingReason": "no_sourced_context_for_region",
+       "evidenceIds": []
+      },
+      "harvestWindows": {
+       "status": "unknown",
+       "value": null,
+       "basis": null,
+       "missingReason": "duration_unknown",
+       "evidenceIds": []
+      },
+      "evidenceQuality": {
+       "status": "known",
+       "value": {
+        "sourcedRequirements": 0,
+        "of": 5,
+        "evidenceRecords": 0,
+        "validationPending": true,
+        "regionalContext": false
+       },
+       "basis": "count_of_sourced_requirements_in_context",
+       "missingReason": null,
+       "evidenceIds": []
+      },
+      "marketAccess": {
+       "status": "unavailable",
+       "value": null,
+       "basis": null,
+       "missingReason": "price_access_key_gated",
+       "evidenceIds": []
+      },
+      "economics": {
+       "status": "unknown",
+       "value": null,
+       "basis": null,
+       "missingReason": "no_sourced_yield_reference",
+       "evidenceIds": []
+      }
+     },
+     "completeness": {
+      "known": 1,
+      "total": 6
+     },
+     "yieldReference": null,
+     "costBasis": {
+      "state": "unavailable",
+      "label": "Cost of cultivation: not sourced in the catalogue"
+     },
+     "priceReference": {
+      "state": "unavailable",
+      "label": "Unavailable — price access pending",
+      "missingReason": "price_access_key_gated"
+     },
+     "downside": {
+      "computable": false,
+      "text": "A downside scenario is not computable: no yield reference for this product in the matching context."
+     },
+     "mostConsequentialMissingInput": {
+      "field": "regional_context",
+      "why": "No sourced planting context covers this state; the crop cannot be screened locally."
+     },
+     "evidenceCoverage": {
+      "sourcedRequirements": 0,
+      "evidenceRecords": 0,
+      "validationPending": false
+     }
+    },
+    {
+     "rank": 35,
+     "cropId": "tomato",
+     "productId": "tomato-fresh",
+     "cropName": "Tomato",
+     "productName": "Tomato fruit (fresh)",
+     "productBasis": "fresh",
+     "group": "vegetables",
+     "localNames": [],
+     "outcome": "unknown",
+     "screening": {
+      "reasons": [],
+      "unknownFields": [],
+      "appliedRuleIds": [],
+      "evidenceIds": [],
+      "candidateRuleIds": [],
+      "noApplicableRule": true
+     },
+     "context": null,
+     "referenceContexts": [
+      {
+       "contextId": "tomato.TN.main",
+       "regionIds": [
+        "IN-TN"
+       ],
+       "season": "kharif",
+       "note": "Sourced for another region; not applied to this location."
+      },
+      {
+       "contextId": "tomato.AS.rabi",
+       "regionIds": [
+        "IN-AS"
+       ],
+       "season": "rabi",
+       "note": "Sourced for another region; not applied to this location."
+      }
+     ],
+     "season": null,
+     "plantingWindow": null,
+     "repeatedPicking": null,
+     "harvestPattern": null,
+     "dimensions": {
+      "waterFit": {
+       "status": "unknown",
+       "value": null,
+       "basis": null,
+       "missingReason": "no_sourced_context_for_region",
+       "evidenceIds": []
+      },
+      "timeToFirstIncome": {
+       "status": "unknown",
+       "value": null,
+       "basis": null,
+       "missingReason": "no_sourced_context_for_region",
+       "evidenceIds": []
+      },
+      "harvestWindows": {
+       "status": "unknown",
+       "value": null,
+       "basis": null,
+       "missingReason": "duration_unknown",
+       "evidenceIds": []
+      },
+      "evidenceQuality": {
+       "status": "known",
+       "value": {
+        "sourcedRequirements": 0,
+        "of": 5,
+        "evidenceRecords": 0,
+        "validationPending": true,
+        "regionalContext": false
+       },
+       "basis": "count_of_sourced_requirements_in_context",
+       "missingReason": null,
+       "evidenceIds": []
+      },
+      "marketAccess": {
+       "status": "unavailable",
+       "value": null,
+       "basis": null,
+       "missingReason": "price_access_key_gated",
+       "evidenceIds": []
+      },
+      "economics": {
+       "status": "unknown",
+       "value": null,
+       "basis": null,
+       "missingReason": "no_sourced_yield_reference",
+       "evidenceIds": []
+      }
+     },
+     "completeness": {
+      "known": 1,
+      "total": 6
+     },
+     "yieldReference": null,
+     "costBasis": {
+      "state": "unavailable",
+      "label": "Cost of cultivation: not sourced in the catalogue"
+     },
+     "priceReference": {
+      "state": "unavailable",
+      "label": "Unavailable — price access pending",
+      "missingReason": "price_access_key_gated"
+     },
+     "downside": {
+      "computable": false,
+      "text": "A downside scenario is not computable: no yield reference for this product in the matching context."
+     },
+     "mostConsequentialMissingInput": {
+      "field": "regional_context",
+      "why": "No sourced planting context covers this state; the crop cannot be screened locally."
+     },
+     "evidenceCoverage": {
+      "sourcedRequirements": 0,
+      "evidenceRecords": 0,
+      "validationPending": false
+     }
+    },
+    {
+     "rank": 36,
+     "cropId": "wheat",
+     "productId": "wheat-grain",
+     "cropName": "Wheat",
+     "productName": "Wheat grain",
+     "productBasis": "grain",
+     "group": "cereals",
+     "localNames": [],
+     "outcome": "unknown",
+     "screening": {
+      "reasons": [],
+      "unknownFields": [],
+      "appliedRuleIds": [],
+      "evidenceIds": [],
+      "candidateRuleIds": [],
+      "noApplicableRule": true
+     },
+     "context": null,
+     "referenceContexts": [
+      {
+       "contextId": "wheat.AS.rabi",
+       "regionIds": [
+        "IN-AS"
+       ],
+       "season": "rabi",
+       "note": "Sourced for another region; not applied to this location."
+      }
+     ],
+     "season": null,
+     "plantingWindow": null,
+     "repeatedPicking": null,
+     "harvestPattern": null,
+     "dimensions": {
+      "waterFit": {
+       "status": "unknown",
+       "value": null,
+       "basis": null,
+       "missingReason": "no_sourced_context_for_region",
+       "evidenceIds": []
+      },
+      "timeToFirstIncome": {
+       "status": "unknown",
+       "value": null,
+       "basis": null,
+       "missingReason": "no_sourced_context_for_region",
+       "evidenceIds": []
+      },
+      "harvestWindows": {
+       "status": "unknown",
+       "value": null,
+       "basis": null,
+       "missingReason": "duration_unknown",
+       "evidenceIds": []
+      },
+      "evidenceQuality": {
+       "status": "known",
+       "value": {
+        "sourcedRequirements": 0,
+        "of": 5,
+        "evidenceRecords": 0,
+        "validationPending": true,
+        "regionalContext": false
+       },
+       "basis": "count_of_sourced_requirements_in_context",
+       "missingReason": null,
+       "evidenceIds": []
+      },
+      "marketAccess": {
+       "status": "unavailable",
+       "value": null,
+       "basis": null,
+       "missingReason": "price_access_key_gated",
+       "evidenceIds": []
+      },
+      "economics": {
+       "status": "unknown",
+       "value": null,
+       "basis": null,
+       "missingReason": "no_sourced_yield_reference",
+       "evidenceIds": []
+      }
+     },
+     "completeness": {
+      "known": 1,
+      "total": 6
+     },
+     "yieldReference": null,
+     "costBasis": {
+      "state": "unavailable",
+      "label": "Cost of cultivation: not sourced in the catalogue"
+     },
+     "priceReference": {
+      "state": "unavailable",
+      "label": "Unavailable — price access pending",
+      "missingReason": "price_access_key_gated"
+     },
+     "downside": {
+      "computable": false,
+      "text": "A downside scenario is not computable: no yield reference for this product in the matching context."
+     },
+     "mostConsequentialMissingInput": {
+      "field": "regional_context",
+      "why": "No sourced planting context covers this state; the crop cannot be screened locally."
+     },
+     "evidenceCoverage": {
+      "sourcedRequirements": 0,
+      "evidenceRecords": 0,
+      "validationPending": false
+     }
+    }
+   ],
+   "counts": {
+    "eligible": 3,
+    "requires_review": 0,
+    "unknown": 33,
+    "ineligible": 0,
+    "excluded_by_farmer": 0
+   }
+  },
+  "warnings": [
+   {
+    "code": "synthetic_mode_candidate_unreviewed_rule",
+    "message": "synthetic_mode: candidate (unreviewed) rules are executed and marked in the result"
+   },
+   {
+    "code": "price_access_key_gated_no_price_referenc",
+    "message": "price_access_key_gated: no price reference is available; no price is inferred"
+   }
+  ],
+  "error": null
+ }
+}

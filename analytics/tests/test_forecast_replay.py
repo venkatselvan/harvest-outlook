@@ -124,3 +124,29 @@ def test_targets_must_follow_cutoff_and_horizon_limit_is_reported():
     out = run_replay(request(2022, horizonWeeks=35), obs, wx, mode="synthetic")
     assert out["exclusionReport"]["targetsBeyondHorizon"]
     assert max(t["horizonWeeks"] for t in out["target"]["weeks"]) <= 35
+
+
+def test_baseline_a_abstains_on_stale_last_quote():
+    """Review finding M2: data stopping 2021-05 with cutoff 2022-05-01 must not yield A forecasts from a ~49-week-old quote."""
+    c = case()
+    c["observations"] = [r for r in c["observations"] if r["observedOn"] < "2021-05-15"]
+    out = run_replay(request(2022, modelConfig={"candidates": []}), observations_frame(c["observations"]), mode="synthetic")
+    a = [p for p in out["predictions"] if p["modelId"] == "A_last_value"]
+    assert a and all(p["abstained"] and p["abstainReason"] == "stale_last_quote" for p in a)
+    summary = out["scores"]["perModel"]["A_last_value"]
+    assert summary["nAbstained"] == len(a) and summary["abstainReasons"] == {"stale_last_quote": len(a)}
+    info = [f for f in out["fittedModels"] if f["modelId"] == "A_last_value"]
+    assert all(f["status"] == "stale_last_quote" and f["lastQuoteAgeDays"] > 3 * 7 for f in info)
+
+
+def test_baseline_a_quote_within_stale_limit_still_predicts():
+    c = case()
+    # Drop only the last 2 weeks before the cutoff: the last quote is within maxStaleWeeks=3 of the origin week.
+    c["observations"] = [r for r in c["observations"] if not ("2022-04-11" <= r["observedOn"] <= "2022-05-01")]
+    out = run_replay(request(2022, modelConfig={"candidates": []}), observations_frame(c["observations"]), mode="synthetic")
+    a = [p for p in out["predictions"] if p["modelId"] == "A_last_value"]
+    assert not any(p["abstainReason"] == "stale_last_quote" for p in a)
+    assert any(not p["abstained"] for p in a)
+    # Tightening the limit to 0 weeks makes the same quote stale.
+    out0 = run_replay(request(2022, modelConfig={"candidates": [], "maxStaleWeeks": 0}), observations_frame(c["observations"]), mode="synthetic")
+    assert all(p["abstainReason"] == "stale_last_quote" for p in out0["predictions"] if p["modelId"] == "A_last_value")

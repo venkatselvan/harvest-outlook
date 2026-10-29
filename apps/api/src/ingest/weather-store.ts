@@ -1,6 +1,7 @@
 import type { Pool } from "../db/pool";
 import type { WeatherDayRow, WeatherSeries } from "../providers/openmeteo/client";
 import { ensureSource, OPENMETEO_SOURCES } from "./sources";
+import { emptyVintageCounts, insertVintage, tally, type VintageCounts } from "./vintage";
 
 /** Stable location key from the GRID cell actually used by the provider (Open-Meteo snaps coordinates). */
 export function locationKey(provider: string, gridLat: number, gridLon: number): string {
@@ -30,56 +31,57 @@ function metaOf(r: WeatherDayRow, series: WeatherSeries) {
   };
 }
 
-export interface StoreCounts {
+export interface StoreCounts extends VintageCounts {
   rows: number;
-  inserted: number;
-  updated: number;
   locationKey: string;
 }
 
-/** Observed (reanalysis) days -> weather_observations. Re-fetches update values and stamp revised_at when they differ. */
+/**
+ * Observed (reanalysis) days -> weather_observations, vintage-preserving (see ./vintage.ts).
+ * A re-fetch with changed values adds a new vintage with its own available_at; nothing is overwritten.
+ */
 export async function storeArchive(pool: Pool, series: WeatherSeries): Promise<StoreCounts> {
   const sourceId = await ensureSource(pool, OPENMETEO_SOURCES.archive.manifestId, OPENMETEO_SOURCES.archive.fallback);
-  let inserted = 0;
-  let updated = 0;
+  const counts = emptyVintageCounts();
   const first = series.rows[0]!;
   const key = locationKey(first.provider, first.gridLat, first.gridLon);
   for (const r of series.rows) {
-    const res = await pool.query<{ inserted: boolean }>(
-      `INSERT INTO weather_observations
-         (location_key, lon, lat, observed_on, variables, source_id, is_synthetic, mode, evidence_state, measurement_kind, available_at, meta)
-       VALUES ($1,$2,$3,$4,$5::jsonb,$6,false,'live','observed',$7,$8,$9::jsonb)
-       ON CONFLICT (location_key, observed_on, source_id) DO UPDATE SET
-         variables = EXCLUDED.variables,
-         revised_at = CASE WHEN weather_observations.variables IS DISTINCT FROM EXCLUDED.variables THEN now() ELSE weather_observations.revised_at END,
-         meta = EXCLUDED.meta
-         -- available_at is deliberately not overwritten: it records first availability
-       RETURNING (xmax = 0) AS inserted`,
-      [key, r.gridLon, r.gridLat, r.validDate, JSON.stringify(r.values), sourceId, r.measurementKind, r.availableAt, JSON.stringify(metaOf(r, series))],
-    );
-    res.rows[0]!.inserted ? inserted++ : updated++;
+    const o = await insertVintage(pool, {
+      table: "weather_observations",
+      identity: { location_key: key, observed_on: r.validDate, source_id: sourceId },
+      values: { variables: JSON.stringify(r.values) },
+      other: {
+        lon: r.gridLon, lat: r.gridLat, is_synthetic: false, mode: "live", evidence_state: "observed",
+        measurement_kind: r.measurementKind, available_at: r.availableAt, meta: JSON.stringify(metaOf(r, series)),
+      },
+      hasRevisedAt: true,
+    });
+    tally(counts, o);
   }
-  return { rows: series.rows.length, inserted, updated, locationKey: key };
+  return { rows: series.rows.length, ...counts, locationKey: key };
 }
 
-/** Forecast days -> weather_forecasts. issued_at is the fetch time, so each vintage is retained separately. */
+/**
+ * Forecast days -> weather_forecasts. issued_at is part of the identity, so each issue is retained; a
+ * re-fetch of the same issue with different values becomes a new vintage of that issue.
+ */
 export async function storeForecast(pool: Pool, series: WeatherSeries): Promise<StoreCounts> {
   const sourceId = await ensureSource(pool, OPENMETEO_SOURCES.forecast.manifestId, OPENMETEO_SOURCES.forecast.fallback);
-  let inserted = 0;
-  let updated = 0;
+  const counts = emptyVintageCounts();
   const first = series.rows[0]!;
   const key = locationKey(first.provider, first.gridLat, first.gridLon);
   for (const r of series.rows) {
     if (!r.issueTime) throw new Error("forecast row without issue time");
-    const res = await pool.query<{ inserted: boolean }>(
-      `INSERT INTO weather_forecasts
-         (location_key, lon, lat, issued_at, valid_on, variables, source_id, is_synthetic, mode, evidence_state, available_at, horizon_days, meta)
-       VALUES ($1,$2,$3,$4,$5,$6::jsonb,$7,false,'live','forecast',$8,$9,$10::jsonb)
-       ON CONFLICT (location_key, issued_at, valid_on, source_id) DO UPDATE SET meta = EXCLUDED.meta
-       RETURNING (xmax = 0) AS inserted`,
-      [key, r.gridLon, r.gridLat, r.issueTime, r.validDate, JSON.stringify(r.values), sourceId, r.availableAt, r.horizonDays, JSON.stringify(metaOf(r, series))],
-    );
-    res.rows[0]!.inserted ? inserted++ : updated++;
+    const o = await insertVintage(pool, {
+      table: "weather_forecasts",
+      identity: { location_key: key, issued_at: r.issueTime, valid_on: r.validDate, source_id: sourceId },
+      values: { variables: JSON.stringify(r.values) },
+      other: {
+        lon: r.gridLon, lat: r.gridLat, is_synthetic: false, mode: "live", evidence_state: "forecast",
+        available_at: r.availableAt, horizon_days: r.horizonDays, meta: JSON.stringify(metaOf(r, series)),
+      },
+    });
+    tally(counts, o);
   }
-  return { rows: series.rows.length, inserted, updated, locationKey: key };
+  return { rows: series.rows.length, ...counts, locationKey: key };
 }

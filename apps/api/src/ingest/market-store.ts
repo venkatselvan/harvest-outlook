@@ -1,9 +1,10 @@
 import type { Pool } from "../db/pool";
 import type { MandiRow } from "../providers/datagovin/normalize";
+import { emptyVintageCounts, insertVintage, tally, type VintageCounts } from "./vintage";
 
-export interface MarketStoreCounts {
-  inserted: number;
-  updated: number;
+export interface MarketStoreCounts extends VintageCounts {
+  /** Stored rows whose commodity mapping is unverified (validation_status='unverified_mapping'; hidden from default reads). */
+  storedUnverifiedMapping: number;
   skippedNoProduct: number;
   skippedUnmapped: number;
   unresolvedProductSlugs: string[];
@@ -12,16 +13,21 @@ export interface MarketStoreCounts {
 export interface MarketStoreOptions {
   sourceId: string;
   mode: "live" | "replay" | "synthetic";
-  /** First availability: the fetch time (live) or load time (fixtures). Not overwritten on re-ingest. */
+  /** Availability of THIS fetch: the fetch time (live) or load time (fixtures). A changed value becomes a new vintage with this time. */
   availableAt: Date;
 }
 
 /**
  * Rows whose commodity maps to a product slug missing from crop_products are skipped and counted:
- * this code never invents catalogue entries. Re-ingest updates prices and keeps the first available_at.
+ * this code never invents catalogue entries. Re-ingest is vintage-preserving (./vintage.ts): a changed
+ * price/arrivals/unit adds a new vintage; identical values add nothing. Rows from an unverified
+ * commodity mapping are stored with validation_status='unverified_mapping' and are excluded from
+ * default reads (scope.ts). validation_status is identity-level curation: it is set on all vintages of
+ * the identity on every ingest (e.g. after a mapping is verified); source values are never rewritten.
+ * `flags` stay per vintage as recorded by normalisation at ingest time.
  */
 export async function storeMarketRows(pool: Pool, rows: MandiRow[], opts: MarketStoreOptions): Promise<MarketStoreCounts> {
-  const counts: MarketStoreCounts = { inserted: 0, updated: 0, skippedNoProduct: 0, skippedUnmapped: 0, unresolvedProductSlugs: [] };
+  const counts: MarketStoreCounts = { ...emptyVintageCounts(), storedUnverifiedMapping: 0, skippedNoProduct: 0, skippedUnmapped: 0, unresolvedProductSlugs: [] };
   const slugs = [...new Set(rows.map((r) => r.productSlug).filter((s): s is string => !!s))];
   const products = new Map<string, string>();
   if (slugs.length) {
@@ -41,25 +47,25 @@ export async function storeMarketRows(pool: Pool, rows: MandiRow[], opts: Market
       unresolved.add(r.productSlug);
       continue;
     }
-    const res = await pool.query<{ inserted: boolean }>(
-      `INSERT INTO market_observations
-         (market_id, product_id, observed_on, source_id, price_min, price_modal, price_max, arrivals, unit, is_synthetic, mode,
-          evidence_state, market_name, state_name, district_name, variety, grade, variety_key, grade_key,
-          price_min_inr_per_kg, price_modal_inr_per_kg, price_max_inr_per_kg, arrivals_unit, flags, raw, available_at)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24::jsonb,$25::jsonb,$26)
-       ON CONFLICT (market_id, product_id, observed_on, source_id, variety_key, grade_key) DO UPDATE SET
-         price_min=EXCLUDED.price_min, price_modal=EXCLUDED.price_modal, price_max=EXCLUDED.price_max, arrivals=EXCLUDED.arrivals,
-         price_min_inr_per_kg=EXCLUDED.price_min_inr_per_kg, price_modal_inr_per_kg=EXCLUDED.price_modal_inr_per_kg,
-         price_max_inr_per_kg=EXCLUDED.price_max_inr_per_kg, arrivals_unit=EXCLUDED.arrivals_unit,
-         flags=EXCLUDED.flags, raw=EXCLUDED.raw
-       RETURNING (xmax = 0) AS inserted`,
-      [
-        r.marketId, productId, r.observedOn, opts.sourceId, r.priceMin, r.priceModal, r.priceMax, r.arrivals, r.sourceUnit, synthetic, opts.mode,
-        synthetic ? "illustrative" : "observed", r.marketName, r.state, r.district, r.variety, r.grade, (r.variety ?? "").toLowerCase(), (r.grade ?? "").toLowerCase(),
-        r.priceMinPerKg, r.priceModalPerKg, r.priceMaxPerKg, r.arrivalsUnit, JSON.stringify(r.flags), JSON.stringify(r.raw), opts.availableAt,
-      ],
-    );
-    res.rows[0]!.inserted ? counts.inserted++ : counts.updated++;
+    const validation = r.mappingVerified ? "valid" : "unverified_mapping";
+    const o = await insertVintage(pool, {
+      table: "market_observations",
+      identity: {
+        market_id: r.marketId, product_id: productId, observed_on: r.observedOn, source_id: opts.sourceId,
+        variety_key: (r.variety ?? "").toLowerCase(), grade_key: (r.grade ?? "").toLowerCase(),
+      },
+      values: { price_min: r.priceMin, price_modal: r.priceModal, price_max: r.priceMax, arrivals: r.arrivals, unit: r.sourceUnit, arrivals_unit: r.arrivalsUnit },
+      other: {
+        is_synthetic: synthetic, mode: opts.mode, evidence_state: synthetic ? "illustrative" : "observed",
+        market_name: r.marketName, state_name: r.state, district_name: r.district, variety: r.variety, grade: r.grade,
+        price_min_inr_per_kg: r.priceMinPerKg, price_modal_inr_per_kg: r.priceModalPerKg, price_max_inr_per_kg: r.priceMaxPerKg,
+        flags: JSON.stringify(r.flags), raw: JSON.stringify(r.raw), available_at: opts.availableAt,
+      },
+      hasRevisedAt: true,
+      curation: { validation_status: validation },
+    });
+    tally(counts, o);
+    if (o !== "unchanged" && validation !== "valid") counts.storedUnverifiedMapping++;
   }
   counts.unresolvedProductSlugs = [...unresolved].sort();
   return counts;

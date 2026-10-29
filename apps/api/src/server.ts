@@ -23,7 +23,14 @@ import type { StorageAdapter } from "./storage/types";
 import { Budget } from "./services/budget";
 import { ApiError } from "./services/errors";
 import { REDACT_PATHS, reqSerializer } from "./security/logging";
-import { registerRoutes } from "./routes";
+import { ToolSchemas } from "@harvest/contracts";
+import { allBindings } from "./agent/bindings";
+import { createWeatherSource } from "./plans/adapters/weather-source";
+import { defaultSources, PlanService, type PlanSources } from "./plans";
+import { registerRoutes, type RouteDeps } from "./routes";
+import { createSpeechProvider, speechConfigFor } from "./routes/speech";
+import { resolveSession } from "./security/session";
+import type { FetchLike } from "./ingest/http";
 import { envelopeSchema, MODES } from "./routes/schemas/common";
 
 export const LANGUAGES = ["en", "ta", "hi"] as const;
@@ -43,26 +50,53 @@ const capabilitiesData = z.object({
   languages: z.array(z.string()),
   database: z.object({ reachable: z.boolean(), postgis: z.boolean() }),
   limits: z.object({ maxUploadImageBytes: z.number(), maxVoiceSeconds: z.number() }),
-  /** Sanitised spend summary; null when the budget table is unavailable. */
+  /**
+   * Spend summary; null when the budget table is unavailable. Dollar figures are only included when the request
+   * carries a valid session cookie (D-T04-1); anonymous callers see `exhausted` only.
+   */
   budget: z
     .object({
-      currency: z.literal("USD"),
-      devAllocationUsd: z.number(),
-      remainingDevUsd: z.number(),
-      demoReserveUsd: z.number(),
       exhausted: z.boolean(),
+      currency: z.literal("USD").optional(),
+      devAllocationUsd: z.number().optional(),
+      remainingDevUsd: z.number().optional(),
+      demoReserveUsd: z.number().optional(),
     })
     .nullable(),
+  speech: z.object({ available: z.boolean(), qualified: z.literal(false) }),
+  /** Assistant tools with a bound handler vs. contract-only placeholders (answered `tool_not_bound`). */
+  tools: z.object({ bound: z.array(z.string()), unbound: z.array(z.string()) }),
 });
 
 export interface ServerDeps {
   storage?: StorageAdapter;
   budget?: Budget;
+  /** Override individual plan data sources (tests; INT2 binds outlook/visuals/completions). */
+  sources?: Partial<PlanSources>;
+  /** Passed to the assistant/speech plugins (tests inject providers; production passes none). */
+  assistant?: RouteDeps["assistant"];
+  speech?: RouteDeps["speech"];
+  /** fetch used by the weather adapter's bounded live ingest (tests). */
+  weatherFetch?: FetchLike;
 }
 
 export async function buildServer(config: Config, pool: Pool, deps: ServerDeps = {}): Promise<FastifyInstance> {
   const storage = deps.storage ?? new FsStorage(config.STORAGE_FS_ROOT);
   const budget = deps.budget ?? Budget.fromConfig(pool, config);
+  const weather = createWeatherSource({
+    pool,
+    mode: config.RUNTIME_MODE,
+    climatologyYears: config.WEATHER_CLIMATOLOGY_YEARS,
+    climatologyEndYear: config.WEATHER_CLIMATOLOGY_END_YEAR,
+    ...(deps.weatherFetch ? { fetchImpl: deps.weatherFetch } : {}),
+  });
+  // INT2: bind T06b market outlook and T11 visual-asset sources here via `sources`.
+  const plans = new PlanService({ pool, mode: config.RUNTIME_MODE, sources: { ...defaultSources(), weather, ...deps.sources } });
+  const toolBindings = allBindings({ pool, plans, budget, segmentModel: config.META_SEGMENT_MODEL });
+  const boundTools = Object.keys(toolBindings);
+  const toolNames = Object.keys(ToolSchemas);
+  const speechConfig = deps.speech?.speech ?? speechConfigFor(config);
+  const speechProvider = deps.speech?.provider ?? createSpeechProvider(config, speechConfig);
   const app = Fastify({
     logger: {
       level: config.LOG_LEVEL,
@@ -139,7 +173,9 @@ export async function buildServer(config: Config, pool: Pool, deps: ServerDeps =
     { schema: { tags: ["system"], response: { 200: envelopeSchema(capabilitiesData) } } },
     async (req) => {
       const db = await databaseStatus(pool);
-      const budgetSummary = db.reachable ? await budget.summary().catch(() => null) : null;
+      const summary = db.reachable ? await budget.summary().catch(() => null) : null;
+      const session = summary ? await resolveSession(pool, config, req).catch(() => null) : null;
+      const budgetSummary = summary ? (session ? summary : { exhausted: summary.exhausted }) : null;
       const warnings: string[] = [];
       if (config.RUNTIME_MODE === "synthetic") warnings.push("Synthetic mode: fixtures, not real data.");
       if (config.RUNTIME_MODE === "live" && !config.MODEL_API_KEY) warnings.push("Live mode without a Meta credential: model features unavailable.");
@@ -161,13 +197,24 @@ export async function buildServer(config: Config, pool: Pool, deps: ServerDeps =
           database: db,
           limits: { maxUploadImageBytes: config.MAX_UPLOAD_IMAGE_BYTES, maxVoiceSeconds: config.MAX_VOICE_SECONDS },
           budget: budgetSummary,
+          speech: { available: speechProvider.live, qualified: false as const },
+          tools: { bound: toolNames.filter((n) => boundTools.includes(n)), unbound: toolNames.filter((n) => !boundTools.includes(n)) },
         },
         warnings,
       );
     },
   );
 
-  await registerRoutes(app, { config, pool, storage });
+  await registerRoutes(app, {
+    config,
+    pool,
+    storage,
+    budget,
+    plans,
+    toolBindings,
+    assistant: deps.assistant,
+    speech: { ...deps.speech, speech: speechConfig, provider: speechProvider },
+  });
   await budget.init().catch((e) => app.log.warn({ err: { type: (e as Error).name } }, "budget_state not initialised (database unavailable or unmigrated)"));
 
   app.get("/api/v1/openapi.json", { schema: { hide: true } }, async () => app.swagger());

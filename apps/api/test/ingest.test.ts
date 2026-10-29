@@ -153,9 +153,10 @@ describe("mode-scoped reads", () => {
     );
     for (const mode of ["live", "replay"] as const) {
       const q = scopedQuery(mode);
-      const w = await q.weatherObservations(pool);
-      const f = await q.weatherForecasts(pool);
-      const m = await q.marketObservations(pool);
+      const availableBy = mode === "replay" ? new Date() : undefined; // replay reads require a cutoff
+      const w = await q.weatherObservations(pool, { availableBy });
+      const f = await q.weatherForecasts(pool, { availableBy });
+      const m = await q.marketObservations(pool, { availableBy });
       expect(w.length).toBe(7);
       expect(f.length).toBe(3);
       expect(m.length).toBe(1);
@@ -186,7 +187,7 @@ describe("weather storage", () => {
   ifDb("observations keep units, grid cell, dataset kind and first availability; re-ingest is idempotent and records revisions", async () => {
     await pool.query("DELETE FROM weather_observations WHERE NOT is_synthetic");
     const first = await storeArchive(pool, series("archive"));
-    expect(first).toMatchObject({ rows: 7, inserted: 7, updated: 0, locationKey: "open-meteo:12.970,76.091" });
+    expect(first).toMatchObject({ rows: 7, inserted: 7, revisions: 0, unchanged: 0, locationKey: "open-meteo:12.970,76.091" });
     const r1 = (await pool.query("SELECT * FROM weather_observations WHERE observed_on='2026-10-15' AND NOT is_synthetic")).rows[0];
     expect(r1.measurement_kind).toBe("reanalysis");
     expect(r1.evidence_state).toBe("observed");
@@ -198,18 +199,26 @@ describe("weather storage", () => {
     const firstAvail = r1.available_at;
 
     const again = await storeArchive(pool, series("archive"));
-    expect(again).toMatchObject({ inserted: 0, updated: 7 });
+    expect(again).toMatchObject({ inserted: 0, revisions: 0, unchanged: 7 });
     expect(await count("weather_observations", "NOT is_synthetic")).toBe(7);
 
     const revised = series("archive", (b) => (b.daily.precipitation_sum[0] = 2.5));
     revised.rows.forEach((r) => (r.availableAt = "2026-11-02T00:00:00.000Z"));
-    await storeArchive(pool, revised);
-    const r2 = (await pool.query("SELECT * FROM weather_observations WHERE observed_on='2026-10-15' AND NOT is_synthetic")).rows[0];
-    expect(r2.variables.precipitation_sum).toBe(2.5);
-    expect(r2.revised_at).not.toBeNull();
-    expect(r2.available_at.getTime()).toBe(firstAvail.getTime()); // first availability preserved
-    const untouched = (await pool.query("SELECT revised_at FROM weather_observations WHERE observed_on='2026-10-16' AND NOT is_synthetic")).rows[0];
-    expect(untouched.revised_at).toBeNull();
+    expect(await storeArchive(pool, revised)).toMatchObject({ inserted: 0, revisions: 1, unchanged: 6 });
+    // vintages: the original row is untouched, the revision is a new row pointing at it
+    const vs = (await pool.query("SELECT * FROM weather_observations WHERE observed_on='2026-10-15' AND NOT is_synthetic ORDER BY vintage_seq")).rows;
+    expect(vs).toHaveLength(2);
+    expect(vs[0].variables.precipitation_sum).toBe(1.4);
+    expect(vs[0].available_at.getTime()).toBe(firstAvail.getTime());
+    expect(vs[0].revised_at).toBeNull();
+    expect(vs[1].variables.precipitation_sum).toBe(2.5);
+    expect(vs[1].revision_of).toBe(vs[0].id);
+    expect(vs[1].vintage_seq).toBe(2);
+    expect(vs[1].available_at.toISOString()).toBe("2026-11-02T00:00:00.000Z");
+    expect(vs[1].revised_at.toISOString()).toBe("2026-11-02T00:00:00.000Z");
+    const untouched = (await pool.query("SELECT revised_at FROM weather_observations WHERE observed_on='2026-10-16' AND NOT is_synthetic")).rows;
+    expect(untouched).toHaveLength(1);
+    expect(untouched[0].revised_at).toBeNull();
   });
 
   ifDb("forecasts keep issue time, horizon and vintages", async () => {
@@ -296,12 +305,14 @@ describe("ingest job handlers", () => {
     const payload = { resourceId: "9ef84268-d588-465a-a308-a864a43d0070", commodity: "Ginger(Green)", from: "2026-10-10", to: "2026-10-12" };
     const a = await mkCtx("ingest.market_prices", payload);
     const r: any = await h(a.job, a.ctx);
-    expect(r.counts).toMatchObject({ recordsRead: 5, normalized: 4, duplicatesIgnored: 1, outsideWindow: 1, inserted: 2, skippedNoProduct: 1 });
+    expect(r.counts).toMatchObject({ recordsRead: 5, normalized: 4, duplicatesIgnored: 1, outsideWindow: 1, inserted: 2, revisions: 0, unchanged: 0, skippedNoProduct: 1 });
     expect(r.counts.unresolvedProductSlugs).toEqual(["ginger-dry"]);
     expect(JSON.stringify(r)).not.toContain("k-test-key-123");
     const stored = (await pool.query("SELECT * FROM market_observations WHERE mode='live' AND market_id LIKE 'agmarknet:%' ORDER BY observed_on")).rows;
     expect(stored).toHaveLength(2);
     expect(stored[0].flags).toContain("commodity_mapping_unverified");
+    expect(stored[0].validation_status).toBe("unverified_mapping");
+    expect(r.counts.storedUnverifiedMapping).toBe(2);
     expect(stored[0].unit).toBe("INR/quintal");
     expect(Number(stored[0].price_modal_inr_per_kg)).toBe(65);
 

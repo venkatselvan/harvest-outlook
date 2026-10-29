@@ -196,18 +196,58 @@ export async function deleteFarm(
     const f = await c.query("SELECT id FROM farms WHERE id=$1 AND owner_id=$2 AND deleted_at IS NULL FOR UPDATE", [id, ownerId]);
     if (!f.rows[0]) throw notFound("Farm");
     await c.query("SET LOCAL harvest.allow_plan_delete = 'on'");
+    await c.query("SET LOCAL harvest.allow_journal_delete = 'on'"); // journal rows are immutable (0010) except through this procedure
     const media = await c.query<{ id: string; storage_key: string }>("SELECT id, storage_key FROM media_objects WHERE farm_id=$1 AND owner_id=$2", [id, ownerId]);
     const plans = "(SELECT id FROM plans WHERE farm_id = $1 AND owner_id = $2)";
+    // Generated keyframes are stored objects too; collect their keys (and any generated media rows) before the rows go.
+    const assets = await c.query<{ storage_key: string }>(
+      `SELECT storage_key FROM visual_assets WHERE plan_id IN ${plans} AND owner_id = $2 AND storage_key IS NOT NULL`,
+      [id, ownerId],
+    );
+    const assetMedia = await c.query<{ id: string; storage_key: string }>(
+      `SELECT m.id, m.storage_key FROM media_objects m JOIN visual_assets v ON v.media_id = m.id
+       WHERE v.plan_id IN ${plans} AND v.owner_id = $2 AND m.owner_id = $2 AND m.farm_id IS DISTINCT FROM $1`,
+      [id, ownerId],
+    );
+    const mediaIds = [...media.rows, ...assetMedia.rows].map((m) => m.id);
+    // Jobs are tied to the farm through their payload (planId / mediaId) or through the visual asset they produce.
+    await c.query(
+      `DELETE FROM jobs WHERE owner_id = $2 AND (
+         id IN (SELECT job_id FROM visual_assets WHERE plan_id IN ${plans} AND owner_id = $2 AND job_id IS NOT NULL)
+         OR id IN (SELECT job_id FROM journal_analyses WHERE job_id IS NOT NULL AND owner_id = $2 AND entry_id IN (SELECT id FROM journal_entries WHERE farm_id = $1 AND owner_id = $2))
+         OR payload->>'planId' IN (SELECT id::text FROM plans WHERE farm_id = $1 AND owner_id = $2)
+         OR payload->>'mediaId' = ANY($3::text[]) OR payload->>'farmId' = $1::text)`,
+      [id, ownerId, mediaIds],
+    );
+    // Agent runs: linked by farm_id (0011) or by the journal facts they proposed. tool_results cascade from agent_runs.
+    await c.query(
+      `DELETE FROM agent_runs WHERE owner_id = $2 AND (farm_id = $1 OR id IN (
+         SELECT agent_run_id FROM journal_facts WHERE agent_run_id IS NOT NULL AND entry_id IN (SELECT id FROM journal_entries WHERE farm_id = $1 AND owner_id = $2)))`,
+      [id, ownerId],
+    );
+    // Stored idempotent responses embed the farm (coordinates, names): remove them by link, by media link and by content.
+    await c.query(
+      `DELETE FROM idempotency_keys WHERE owner_id = $2 AND (farm_id = $1 OR media_id = ANY($3::uuid[]) OR response::text LIKE '%' || $1::text || '%')`,
+      [id, ownerId, mediaIds],
+    );
     await c.query(`DELETE FROM visual_assets WHERE plan_id IN ${plans} AND owner_id = $2`, [id, ownerId]);
+    await c.query(`DELETE FROM plan_timelines WHERE plan_id IN ${plans} AND owner_id = $2`, [id, ownerId]);
     await c.query(`DELETE FROM plan_outputs WHERE plan_id IN ${plans} AND owner_id = $2`, [id, ownerId]);
     await c.query(`DELETE FROM actions WHERE farm_id = $1 AND owner_id = $2`, [id, ownerId]);
+    await c.query(`DELETE FROM journal_task_completions WHERE farm_id = $1 AND owner_id = $2`, [id, ownerId]);
+    await c.query(`DELETE FROM journal_revisions WHERE farm_id = $1 AND owner_id = $2`, [id, ownerId]);
+    await c.query(`DELETE FROM journal_analyses WHERE entry_id IN (SELECT id FROM journal_entries WHERE farm_id = $1 AND owner_id = $2)`, [id, ownerId]);
     await c.query(`DELETE FROM journal_facts WHERE entry_id IN (SELECT id FROM journal_entries WHERE farm_id = $1 AND owner_id = $2)`, [id, ownerId]);
     await c.query(`DELETE FROM journal_entries WHERE farm_id = $1 AND owner_id = $2`, [id, ownerId]);
     await c.query(`DELETE FROM plans WHERE farm_id = $1 AND owner_id = $2`, [id, ownerId]);
     await c.query(`DELETE FROM farm_facts WHERE farm_id = $1 AND owner_id = $2`, [id, ownerId]);
-    await c.query(`DELETE FROM media_objects WHERE farm_id = $1 AND owner_id = $2`, [id, ownerId]);
+    await c.query(`DELETE FROM media_objects WHERE id = ANY($1::uuid[]) AND owner_id = $2`, [mediaIds, ownerId]);
     await c.query(`DELETE FROM farms WHERE id = $1 AND owner_id = $2`, [id, ownerId]);
-    return media.rows;
+    // Keyframes can be shared with other plans through reuse; only delete keys nothing else references any more.
+    const still = await c.query<{ storage_key: string }>("SELECT DISTINCT storage_key FROM visual_assets WHERE owner_id = $1 AND storage_key IS NOT NULL", [ownerId]);
+    const shared = new Set(still.rows.map((r) => r.storage_key));
+    const assetKeys = [...new Set(assets.rows.map((a) => a.storage_key))].filter((k) => !shared.has(k));
+    return [...media.rows, ...assetMedia.rows, ...assetKeys.map((k) => ({ id: "visual_asset", storage_key: k }))];
   });
   let failed = 0;
   for (const m of keys) {
@@ -218,5 +258,5 @@ export async function deleteFarm(
       log.warn({ mediaId: m.id, err: (e as Error).name }, "storage delete failed after farm deletion; object orphaned");
     }
   }
-  return { mediaObjectsRemoved: keys.length, storageObjectsFailed: failed };
+  return { mediaObjectsRemoved: keys.filter((k) => k.id !== "visual_asset").length, storageObjectsFailed: failed };
 }

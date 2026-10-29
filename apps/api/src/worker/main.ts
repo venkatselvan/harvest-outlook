@@ -3,7 +3,8 @@ import { fileURLToPath } from "node:url";
 import { resolve } from "node:path";
 import type { Pool } from "../db/pool";
 import { withTransaction } from "../db/pool";
-import { ingestHandlers } from "./handlers";
+import { purgeExpiredIdempotencyKeys } from "../services/idempotency";
+import { ingestHandlers, registerWorkerHandlers } from "./handlers";
 
 export interface JobRow {
   id: string;
@@ -37,6 +38,12 @@ export const LEASE_SECONDS = 30;
 /** Claim one runnable job. Also reclaims jobs whose lease expired (abandoned work). */
 export async function claimJob(pool: Pool, workerId: string, leaseSeconds = LEASE_SECONDS): Promise<JobRow | null> {
   return withTransaction(pool, async (c) => {
+    // An expired lease on a job that has used all its attempts is a crash loop: fail it instead of re-running.
+    await c.query(
+      `UPDATE jobs SET state = 'failed', retryable = false, finished_at = now(), lease_owner = NULL, lease_expires_at = NULL,
+         error = jsonb_build_object('code', 'lease_expired_max_attempts', 'message', 'lease expired after the maximum number of attempts')
+       WHERE state = 'running' AND lease_expires_at < now() AND attempt >= max_attempts`,
+    );
     const picked = await c.query<{ id: string }>(
       `SELECT id FROM jobs
        WHERE (state = 'queued' AND run_after <= now())
@@ -73,6 +80,9 @@ export async function runJob(pool: Pool, job: JobRow, workerId: string, leaseSec
     );
   };
   const handler = handlers[job.type];
+  // Keep the lease alive while the handler runs (e.g. a long provider call) so no second worker re-executes it.
+  const timer = setInterval(() => void heartbeat().catch(() => undefined), Math.max(50, (leaseSeconds * 1000) / 3));
+  timer.unref?.();
   try {
     if (!handler) throw Object.assign(new Error(`no handler for job type ${job.type}`), { retryable: false });
     const isCancelled = async () => {
@@ -101,13 +111,15 @@ export async function runJob(pool: Pool, job: JobRow, workerId: string, leaseSec
       [job.id, workerId, retryable, JSON.stringify({ message: err.message, name: err.name }), backoff],
     );
     return retryable ? "retry" : "failed";
+  } finally {
+    clearInterval(timer);
   }
 }
 
-export async function pollOnce(pool: Pool, workerId: string): Promise<boolean> {
-  const job = await claimJob(pool, workerId);
+export async function pollOnce(pool: Pool, workerId: string, leaseSeconds = LEASE_SECONDS): Promise<boolean> {
+  const job = await claimJob(pool, workerId, leaseSeconds);
   if (!job) return false;
-  await runJob(pool, job, workerId);
+  await runJob(pool, job, workerId, leaseSeconds);
   return true;
 }
 
@@ -117,6 +129,9 @@ async function main() {
   const { createPool } = await import("../db/pool");
   const config = loadConfig();
   const pool = createPool(config.DATABASE_URL);
+  const { FsStorage } = await import("../storage/fs");
+  const { Budget } = await import("../services/budget");
+  registerWorkerHandlers(handlers, { config, pool, storage: new FsStorage(config.STORAGE_FS_ROOT), budget: Budget.fromConfig(pool, config) });
   const workerId = `worker-${randomUUID()}`;
   let stopping = false;
   const stop = () => {
@@ -125,8 +140,14 @@ async function main() {
   process.on("SIGINT", stop);
   process.on("SIGTERM", stop);
   console.log(JSON.stringify({ msg: "worker started", workerId, mode: config.RUNTIME_MODE }));
+  const PURGE_EVERY_MS = 10 * 60_000;
+  let lastPurge = 0;
   while (!stopping) {
-    const worked = await pollOnce(pool, workerId).catch((e) => {
+    if (Date.now() - lastPurge >= PURGE_EVERY_MS) {
+      lastPurge = Date.now();
+      await purgeExpiredIdempotencyKeys(pool, config.IDEMPOTENCY_TTL_HOURS).catch((e) => console.error(JSON.stringify({ msg: "idempotency purge failed", error: (e as Error).message })));
+    }
+    const worked = await pollOnce(pool, workerId, config.JOB_LEASE_SECONDS).catch((e) => {
       console.error(JSON.stringify({ msg: "poll failed", error: (e as Error).message }));
       return false;
     });

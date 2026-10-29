@@ -10,7 +10,7 @@ import { storeArchive, storeForecast } from "../../ingest/weather-store";
 import { fetchMandiPrices } from "../../providers/datagovin/client";
 import { normalizeMandiRecords } from "../../providers/datagovin/normalize";
 import { loadProviderConfig, type ProviderConfig } from "../../providers/config";
-import { fetchDailyArchive, fetchForecast, type Unavailable } from "../../providers/openmeteo/client";
+import { fetchDailyArchive, fetchForecast, roundCoord, type Unavailable } from "../../providers/openmeteo/client";
 import type { JobRow } from "../main";
 
 /** Context supplied by runJob (see worker/main.ts). */
@@ -43,6 +43,26 @@ export const marketPayload = z
     to: isoDate.optional(),
   })
   .strict();
+
+/**
+ * Privacy normalisation of ingest payloads (review finding L4). Weather payloads keep coordinates only at
+ * 0.01 degree (~1.1 km; the provider request is rounded the same way in openmeteo/client.ts) and never keep
+ * farmId. Enqueuers should call this before enqueue; the handler also rewrites the stored jobs.payload to
+ * this form before any provider call, so raw coordinates/farmId do not persist past the first run attempt.
+ * Throws IngestError(invalid_payload) for malformed payloads.
+ */
+export function normalizeIngestPayload(type: string, payload: unknown): Record<string, unknown> {
+  if (type === "ingest.weather_archive") {
+    const { farmId: _drop, ...p } = parsePayload(archivePayload, payload);
+    return { ...p, lat: roundCoord(p.lat), lon: roundCoord(p.lon) };
+  }
+  if (type === "ingest.weather_forecast") {
+    const p = parsePayload(forecastPayload, payload);
+    return { ...p, lat: roundCoord(p.lat), lon: roundCoord(p.lon) };
+  }
+  if (type === "ingest.market_prices") return parsePayload(marketPayload, payload);
+  throw new IngestError(`unknown ingest job type ${type}`, false, "invalid_payload");
+}
 
 const TRANSIENT = new Set(["network_error", "timeout", "rate_limited", "http_error"]);
 
@@ -77,16 +97,19 @@ export function createIngestHandlers(deps: IngestDeps = {}): Record<string, Inge
     ctx: IngestContext,
     type: string,
     provider: string,
-    body: (runId: string, config: ProviderConfig) => Promise<{ counts: unknown; detail: unknown; status?: "succeeded" | "cancelled" }>,
+    body: (runId: string, config: ProviderConfig, payload: Record<string, unknown>) => Promise<{ counts: unknown; detail: unknown; status?: "succeeded" | "cancelled" }>,
   ) => {
     const config = cfg();
     const mode = guardMode(config);
-    const hash = payloadHash(job.payload);
+    const payload = normalizeIngestPayload(type, job.payload);
+    // Scrub the stored payload (raw coordinates, farmId) before any provider call or run record.
+    await ctx.pool.query("UPDATE jobs SET payload = $2::jsonb WHERE id = $1 AND payload IS DISTINCT FROM $2::jsonb", [job.id, JSON.stringify(payload)]);
+    const hash = payloadHash(payload);
     const reused = await reuse(ctx, type, hash);
     if (reused) return reused;
     const runId = await startRun(ctx.pool, { jobId: job.id, jobType: type, hash, provider, mode });
     try {
-      const out = await body(runId, config);
+      const out = await body(runId, config, payload);
       await finishRun(ctx.pool, runId, out.status ?? "succeeded", out.counts, out.detail);
       return { reused: false, ingestRunId: runId, status: out.status ?? "succeeded", counts: out.counts, detail: out.detail };
     } catch (e) {
@@ -99,8 +122,8 @@ export function createIngestHandlers(deps: IngestDeps = {}): Record<string, Inge
 
   return {
     "ingest.weather_archive": (job, ctx) =>
-      wrap(job, ctx, "ingest.weather_archive", "open-meteo", async (runId, config) => {
-        const p = parsePayload(archivePayload, job.payload);
+      wrap(job, ctx, "ingest.weather_archive", "open-meteo", async (runId, config, payload) => {
+        const p = parsePayload(archivePayload, payload);
         await ctx.heartbeat(0.1);
         const res = await fetchDailyArchive({ lat: p.lat, lon: p.lon, start: p.start, end: p.end }, openMeteoDeps(ctx, config));
         if (res.status !== "ok") return failUnavailable(ctx, runId, res as Unavailable);
@@ -112,8 +135,8 @@ export function createIngestHandlers(deps: IngestDeps = {}): Record<string, Inge
       }),
 
     "ingest.weather_forecast": (job, ctx) =>
-      wrap(job, ctx, "ingest.weather_forecast", "open-meteo", async (runId, config) => {
-        const p = parsePayload(forecastPayload, job.payload);
+      wrap(job, ctx, "ingest.weather_forecast", "open-meteo", async (runId, config, payload) => {
+        const p = parsePayload(forecastPayload, payload);
         await ctx.heartbeat(0.1);
         const res = await fetchForecast({ lat: p.lat, lon: p.lon, days: p.days }, openMeteoDeps(ctx, config));
         if (res.status !== "ok") return failUnavailable(ctx, runId, res as Unavailable);
@@ -124,8 +147,8 @@ export function createIngestHandlers(deps: IngestDeps = {}): Record<string, Inge
       }),
 
     "ingest.market_prices": (job, ctx) =>
-      wrap(job, ctx, "ingest.market_prices", "data.gov.in", async (runId, config) => {
-        const p = parsePayload(marketPayload, job.payload);
+      wrap(job, ctx, "ingest.market_prices", "data.gov.in", async (runId, config, payload) => {
+        const p = parsePayload(marketPayload, payload);
         const info = MANDI_RESOURCES[p.resourceId];
         const res = await fetchMandiPrices(
           { resourceId: p.resourceId, filters: { commodity: p.commodity, state: p.state } },

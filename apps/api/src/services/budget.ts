@@ -1,10 +1,11 @@
+import { createHmac } from "node:crypto";
 import type { PoolClient } from "pg";
 import type { Config } from "../config";
 import { withTransaction, type Pool } from "../db/pool";
 import { ApiError } from "./errors";
 import { estimateCost, fromMicro, loadPriceTable, toMicro, type CostEstimate, type PriceTable, type UsageEstimateInput } from "./pricing";
 
-export type BudgetLimit = "session" | "owner_day" | "global";
+export type BudgetLimit = "session" | "owner_day" | "ip_day" | "global";
 
 export interface ReserveInput {
   ownerId: string | null;
@@ -15,6 +16,14 @@ export interface ReserveInput {
   estimate: number;
   requestId?: string;
   jobId?: string;
+  /** Salted client-IP hash override; normally resolved from the session row (sessions.ip_hash). */
+  ipHash?: string | null;
+}
+
+/** Salted, one-way client-IP key for the per-IP daily cap. Raw IPs are never stored. */
+export function hashClientIp(ip: string | undefined, secret: string): string | null {
+  if (!ip) return null;
+  return createHmac("sha256", secret).update(`budget-ip:${ip}`).digest("hex");
 }
 
 export interface BudgetSummary {
@@ -23,6 +32,9 @@ export interface BudgetSummary {
   remainingDevUsd: number;
   demoReserveUsd: number;
   exhausted: boolean;
+  /** Settlements whose actual cost exceeded the reserved estimate. */
+  overrunCount: number;
+  overrunUsd: number;
 }
 
 interface StateRow {
@@ -37,7 +49,7 @@ export class Budget {
   readonly prices: PriceTable;
   constructor(
     private readonly pool: Pool,
-    private readonly limits: { totalUsd: number; devAllocationUsd: number; demoReserveUsd: number; perSessionUsd: number; perOwnerDayUsd: number },
+    private readonly limits: { totalUsd: number; devAllocationUsd: number; demoReserveUsd: number; perSessionUsd: number; perOwnerDayUsd: number; perIpDayUsd?: number },
     prices?: PriceTable,
   ) {
     this.prices = prices ?? loadPriceTable();
@@ -52,6 +64,7 @@ export class Budget {
         demoReserveUsd: c.BUDGET_DEMO_RESERVE_USD,
         perSessionUsd: c.BUDGET_PER_SESSION_USD,
         perOwnerDayUsd: c.BUDGET_PER_OWNER_DAY_USD,
+        perIpDayUsd: c.BUDGET_PER_IP_DAY_USD,
       },
       loadPriceTable(c.PRICE_TABLE_JSON),
     );
@@ -108,6 +121,15 @@ export class Budget {
         );
         if (toMicro(r.rows[0]!.s) + est > toMicro(this.limits.perOwnerDayUsd)) throw this.exceeded("owner_day");
       }
+      const ipHash = input.ipHash !== undefined ? input.ipHash : input.sessionId ? (await c.query<{ ip_hash: string | null }>("SELECT ip_hash FROM sessions WHERE id = $1", [input.sessionId])).rows[0]?.ip_hash ?? null : null;
+      if (ipHash) {
+        const r = await c.query<{ s: string }>(
+          `SELECT ${SPEND_SQL_U} AS s FROM usage_reservations u JOIN sessions se ON se.id = u.session_id
+           WHERE se.ip_hash = $1 AND u.created_at >= (date_trunc('day', now() AT TIME ZONE 'UTC') AT TIME ZONE 'UTC')`,
+          [ipHash],
+        );
+        if (toMicro(r.rows[0]!.s) + est > toMicro(this.limits.perIpDayUsd ?? DEFAULT_PER_IP_DAY_USD)) throw this.exceeded("ip_day");
+      }
       if (toMicro(st.reserved_usd) + toMicro(st.settled_usd) + est > toMicro(st.dev_allocation_usd)) throw this.exceeded("global");
       const ins = await c.query<{ id: string }>(
         `INSERT INTO usage_reservations (owner_id, session_id, job_id, request_id, provider, model, estimated_usd)
@@ -120,7 +142,7 @@ export class Budget {
   }
 
   private exceeded(limit: BudgetLimit): ApiError {
-    const label = { session: "per-session", owner_day: "per-owner daily", global: "global development" }[limit];
+    const label = { session: "per-session", owner_day: "per-owner daily", ip_day: "per-network daily", global: "global development" }[limit];
     return new ApiError(429, "budget_exceeded", `The ${label} spending limit would be exceeded`, { limit });
   }
 
@@ -148,19 +170,23 @@ export class Budget {
       if (r.state === "settled") return;
       if (r.state === "released") throw new ApiError(409, "reservation_state_conflict", "Reservation already released");
       const actual = fromMicro(toMicro(actualUsd));
+      const overrun = fromMicro(Math.max(0, toMicro(actualUsd) - toMicro(r.estimated_usd)));
       await c.query(
-        "UPDATE usage_reservations SET state='settled', settled_usd=$2, provider_request_id=$3 WHERE id=$1",
-        [reservationId, actual, providerRequestId],
+        "UPDATE usage_reservations SET state='settled', settled_usd=$2, provider_request_id=$3, overrun_usd=$4 WHERE id=$1",
+        [reservationId, actual, providerRequestId, overrun],
       );
       await c.query("UPDATE budget_state SET reserved_usd = reserved_usd - $1::numeric, settled_usd = settled_usd + $2::numeric WHERE id = 1", [
         r.estimated_usd,
         actual,
       ]);
       await c.query(
-        `INSERT INTO usage_ledger (owner_id, reservation_id, request_id, provider_request_id, provider, model, estimated_usd, settled_usd, cost_basis, usage)
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10::jsonb)`,
-        [r.owner_id, reservationId, r.request_id, providerRequestId, r.provider, r.model, r.estimated_usd, actual, costBasis, JSON.stringify(usage ?? {})],
+        `INSERT INTO usage_ledger (owner_id, reservation_id, request_id, provider_request_id, provider, model, estimated_usd, settled_usd, cost_basis, usage, overrun_usd)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10::jsonb,$11)`,
+        [r.owner_id, reservationId, r.request_id, providerRequestId, r.provider, r.model, r.estimated_usd, actual, costBasis, JSON.stringify(usage ?? {}), overrun],
       );
+      if (toMicro(overrun) > 0) {
+        console.warn(JSON.stringify({ level: "warn", msg: "budget overrun: settled cost exceeded the reservation", reservationId, provider: r.provider, estimatedUsd: Number(r.estimated_usd), actualUsd: actualUsd, overrunUsd: Number(overrun) }));
+      }
     });
   }
 
@@ -192,16 +218,22 @@ export class Budget {
     const s = r.rows[0];
     if (!s) return null;
     const dev = toMicro(s.dev_allocation_usd);
+    // Remaining is clamped at 0 so an overshoot (settled > allocation) reads as exhausted immediately.
     const remaining = Math.max(0, dev - toMicro(s.reserved_usd) - toMicro(s.settled_usd));
+    const o = await this.pool.query<{ n: string; u: string }>("SELECT count(*) FILTER (WHERE overrun_usd > 0) AS n, COALESCE(SUM(overrun_usd), 0) AS u FROM usage_reservations");
     return {
       currency: "USD",
       devAllocationUsd: dev / 1_000_000,
       remainingDevUsd: remaining / 1_000_000,
       demoReserveUsd: toMicro(s.demo_reserve_usd) / 1_000_000,
       exhausted: remaining === 0,
+      overrunCount: Number(o.rows[0]!.n),
+      overrunUsd: toMicro(o.rows[0]!.u) / 1_000_000,
     };
   }
 }
 
 /** Spend counted against per-session/per-owner limits: settled actual, else the live estimate. */
 const SPEND_SQL = `COALESCE(SUM(CASE state WHEN 'settled' THEN COALESCE(settled_usd, estimated_usd) WHEN 'released' THEN 0 ELSE estimated_usd END), 0)`;
+const SPEND_SQL_U = `COALESCE(SUM(CASE u.state WHEN 'settled' THEN COALESCE(u.settled_usd, u.estimated_usd) WHEN 'released' THEN 0 ELSE u.estimated_usd END), 0)`;
+const DEFAULT_PER_IP_DAY_USD = 15;

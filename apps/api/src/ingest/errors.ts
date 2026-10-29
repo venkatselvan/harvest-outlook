@@ -9,3 +9,11 @@ export class IngestError extends Error {
     this.name = "IngestError";
   }
 }
+
+/** A replay-mode read was attempted without an availability cutoff (BUILD_SPEC 8.2: every replay input obeys availableAt <= cutoff). */
+export class ReplayCutoffRequiredError extends IngestError {
+  constructor(what: string) {
+    super(`replay read of ${what} requires availableBy (decision cutoff)`, false, "replay_cutoff_required");
+    this.name = "ReplayCutoffRequiredError";
+  }
+}

@@ -6,6 +6,7 @@ import type { Pool } from "../db/pool";
 import { normalizeMandiRecords } from "../providers/datagovin/normalize";
 import { storeMarketRows } from "./market-store";
 import { ensureSource, SYNTHETIC_SOURCE_ID } from "./sources";
+import { insertVintage } from "./vintage";
 
 const here = dirname(fileURLToPath(import.meta.url));
 export const FIXTURE_DIR = resolve(here, "../../../../data/fixtures/synthetic");
@@ -57,7 +58,7 @@ export function assertSyntheticMode(runtimeMode: string): void {
 }
 
 export interface FixtureCounts {
-  market: { inserted: number; updated: number; rejected: number };
+  market: { inserted: number; revisions: number; unchanged: number; rejected: number };
   weatherObservations: number;
   weatherForecasts: number;
 }
@@ -102,24 +103,26 @@ export async function loadSyntheticFixtures(pool: Pool, runtimeMode: string, dir
   const loc = weather.data.location;
   for (const r of weather.data.records) {
     const meta = { synthetic: true, label: weather.data.label, units: r.units, seed: weather.data.seed, measurementKind: "synthetic" };
+    // Same vintage rules as real rows (./vintage.ts): identical values add nothing, changed values add a vintage.
     if (r.kind === "observation") {
-      await pool.query(
-        `INSERT INTO weather_observations (location_key, lon, lat, observed_on, variables, source_id, is_synthetic, mode, evidence_state, measurement_kind, available_at, meta)
-         VALUES ($1,$2,$3,$4,$5::jsonb,$6,true,'synthetic','illustrative','synthetic',$7,$8::jsonb)
-         ON CONFLICT (location_key, observed_on, source_id) DO UPDATE SET variables=EXCLUDED.variables, meta=EXCLUDED.meta`,
-        [loc.key, loc.lon, loc.lat, r.date, JSON.stringify(r.values), sourceId, now, JSON.stringify(meta)],
-      );
+      await insertVintage(pool, {
+        table: "weather_observations",
+        identity: { location_key: loc.key, observed_on: r.date, source_id: sourceId },
+        values: { variables: JSON.stringify(r.values) },
+        other: { lon: loc.lon, lat: loc.lat, is_synthetic: true, mode: "synthetic", evidence_state: "illustrative", measurement_kind: "synthetic", available_at: now, meta: JSON.stringify(meta) },
+        hasRevisedAt: true,
+      });
       obs++;
     } else {
       if (!r.issuedAt) throw new SyntheticFixtureError("synthetic forecast record needs issuedAt");
-      await pool.query(
-        `INSERT INTO weather_forecasts (location_key, lon, lat, issued_at, valid_on, variables, source_id, is_synthetic, mode, evidence_state, available_at, horizon_days, meta)
-         VALUES ($1,$2,$3,$4,$5,$6::jsonb,$7,true,'synthetic','illustrative',$8,NULL,$9::jsonb)
-         ON CONFLICT (location_key, issued_at, valid_on, source_id) DO UPDATE SET variables=EXCLUDED.variables, meta=EXCLUDED.meta`,
-        [loc.key, loc.lon, loc.lat, r.issuedAt, r.date, JSON.stringify(r.values), sourceId, now, JSON.stringify(meta)],
-      );
+      await insertVintage(pool, {
+        table: "weather_forecasts",
+        identity: { location_key: loc.key, issued_at: r.issuedAt, valid_on: r.date, source_id: sourceId },
+        values: { variables: JSON.stringify(r.values) },
+        other: { lon: loc.lon, lat: loc.lat, is_synthetic: true, mode: "synthetic", evidence_state: "illustrative", available_at: now, horizon_days: null, meta: JSON.stringify(meta) },
+      });
       fc++;
     }
   }
-  return { market: { inserted: stored.inserted, updated: stored.updated, rejected: report.rejected.length }, weatherObservations: obs, weatherForecasts: fc };
+  return { market: { inserted: stored.inserted, revisions: stored.revisions, unchanged: stored.unchanged, rejected: report.rejected.length }, weatherObservations: obs, weatherForecasts: fc };
 }

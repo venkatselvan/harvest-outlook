@@ -1,0 +1,5 @@
+.explore { display: grid; gap: 16px; }
+.explore-intro { margin: 0; color: var(--muted); }
+.explore-results { display: grid; gap: 12px; outline: none; }
+.explore-status { margin: 0; font-weight: 600; }
+.explore-warnings { margin: 0; padding: 8px 12px 8px 28px; background: #fff3cd; color: #5c4400; border-radius: 8px; font-size: 0.9rem; }

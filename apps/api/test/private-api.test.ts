@@ -60,9 +60,12 @@ describe("sessions and cookies", () => {
     expect(again.statusCode).toBe(200);
     expect(data(again).reused).toBe(true);
     expect(Number((await h.pool.query("SELECT count(*) FROM owners")).rows[0].count)).toBe(before);
-    const del = await c.call("DELETE", "/api/v1/session");
+    // The token is rotated on reuse; continue with the new cookies.
+    const ck = Object.fromEntries(again.cookies.map((x) => [x.name, x.value]));
+    const rotated = { ...c, cookie: `ho_session=${ck.ho_session}; ho_csrf=${ck.ho_csrf}`, csrf: ck.ho_csrf! };
+    const del = await c.call("DELETE", "/api/v1/session", { cookie: rotated.cookie, csrf: rotated.csrf });
     expect(del.statusCode).toBe(200);
-    const after = await c.call("GET", "/api/v1/farms");
+    const after = await c.call("GET", "/api/v1/farms", { cookie: rotated.cookie });
     expect(after.statusCode).toBe(401);
     expect(after.json().error.code).toBe("unauthenticated");
   });
@@ -428,11 +431,13 @@ describe("jobs", () => {
 });
 
 describe("capabilities budget block", () => {
-  it("exposes remaining dev allocation and reserve, nothing per-user", async () => {
-    const res = await h.app.inject({ url: "/api/v1/capabilities" });
-    expect(data(res).budget).toEqual({ currency: "USD", devAllocationUsd: 120, remainingDevUsd: 120, demoReserveUsd: 30, exhausted: false });
+  it("anonymous callers see only exhausted; a valid session adds the figures, nothing per-user", async () => {
+    const anon = await h.app.inject({ url: "/api/v1/capabilities" });
+    expect(data(anon).budget).toEqual({ exhausted: false });
+    const c = await login(h.app);
+    expect(data(await c.call("GET", "/api/v1/capabilities")).budget).toEqual({ currency: "USD", devAllocationUsd: 120, remainingDevUsd: 120, demoReserveUsd: 30, exhausted: false });
     await h.pool.query("UPDATE budget_state SET reserved_usd = 20, settled_usd = 5.5");
-    expect(data(await h.app.inject({ url: "/api/v1/capabilities" })).budget.remainingDevUsd).toBeCloseTo(94.5, 6);
+    expect(data(await c.call("GET", "/api/v1/capabilities")).budget.remainingDevUsd).toBeCloseTo(94.5, 6);
   });
 });
 

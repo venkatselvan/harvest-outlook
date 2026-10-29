@@ -8,6 +8,38 @@ const STALE_IN_FLIGHT = "5 minutes";
 export interface StoredResponse {
   status: number;
   body: unknown;
+  /** Resources the stored response describes; lets farm/media deletion purge the row. Derived from the body when omitted. */
+  refs?: ResourceRefs;
+}
+
+export interface ResourceRefs {
+  farmId?: string | null;
+  mediaId?: string | null;
+}
+
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const uuidOrNull = (v: unknown): string | null => (typeof v === "string" && UUID_RE.test(v) ? v : null);
+
+/**
+ * Resource links for a stored response. Explicit refs win. Otherwise: POST /farms stores the farm in
+ * `data.id`; POST /media stores the media in `data.id` and its farm in `data.farmId`; every other route
+ * (plans, journal, visuals) is linked through a `data.farmId` / `data.mediaId` field when present.
+ * Farm deletion additionally purges rows whose response text contains the farm id.
+ */
+export function deriveRefs(route: string, hashInput: unknown, body: unknown, explicit?: ResourceRefs): { farmId: string | null; mediaId: string | null } {
+  const data = ((body as { data?: unknown } | null)?.data ?? {}) as Record<string, unknown>;
+  const input = (hashInput ?? {}) as Record<string, unknown>;
+  let farmId = uuidOrNull(explicit?.farmId) ?? uuidOrNull(data.farmId) ?? uuidOrNull(input.farmId);
+  let mediaId = uuidOrNull(explicit?.mediaId) ?? uuidOrNull(data.mediaId);
+  if (route === "POST /api/v1/farms") farmId = farmId ?? uuidOrNull(data.id);
+  if (route === "POST /api/v1/media") mediaId = mediaId ?? uuidOrNull(data.id);
+  return { farmId, mediaId };
+}
+
+/** Deletes idempotency rows older than the TTL (stored responses can contain private farm data). */
+export async function purgeExpiredIdempotencyKeys(pool: Pool, ttlHours: number): Promise<number> {
+  const r = await pool.query("DELETE FROM idempotency_keys WHERE created_at < now() - make_interval(hours => $1::int)", [Math.max(1, Math.floor(ttlHours))]);
+  return r.rowCount ?? 0;
 }
 
 export function parseIdempotencyKey(header: unknown): string | undefined {
@@ -25,7 +57,7 @@ export function parseIdempotencyKey(header: unknown): string | undefined {
  */
 export async function runIdempotent(
   pool: Pool,
-  opts: { ownerId: string; key: string | undefined; route: string; hashInput: unknown },
+  opts: { ownerId: string; key: string | undefined; route: string; hashInput: unknown; resourceRefs?: ResourceRefs },
   exec: () => Promise<StoredResponse>,
 ): Promise<StoredResponse & { replay: boolean }> {
   if (!opts.key) return { ...(await exec()), replay: false };
@@ -41,11 +73,18 @@ export async function runIdempotent(
       try {
         const out = await exec();
         if (out.status >= 200 && out.status < 300) {
-          await pool.query("UPDATE idempotency_keys SET status_code=$2, response=$3::jsonb WHERE id=$1", [id, out.status, JSON.stringify(out.body)]);
+          const refs = deriveRefs(opts.route, opts.hashInput, out.body, { ...opts.resourceRefs, ...out.refs });
+          await pool.query("UPDATE idempotency_keys SET status_code=$2, response=$3::jsonb, farm_id=$4, media_id=$5 WHERE id=$1", [
+            id,
+            out.status,
+            JSON.stringify(out.body),
+            refs.farmId,
+            refs.mediaId,
+          ]);
         } else {
           await pool.query("DELETE FROM idempotency_keys WHERE id=$1", [id]);
         }
-        return { ...out, replay: false };
+        return { status: out.status, body: out.body, replay: false };
       } catch (e) {
         await pool.query("DELETE FROM idempotency_keys WHERE id=$1", [id]).catch(() => undefined);
         throw e;

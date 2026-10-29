@@ -79,6 +79,9 @@
               "irrigated"
             ]
           }
+        },
+        "productSpecific": {
+          "type": "boolean"
         }
       },
       "required": [

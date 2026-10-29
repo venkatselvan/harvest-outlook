@@ -41,6 +41,8 @@ BASE_LIMITATIONS = [
     "Seasonal lags use 52 weeks; years with ISO week 53 shift the alignment by one week.",
     "Quantiles come from empirical log residuals (training pairs for A/B, inner temporal calibration split for C); small residual samples make interval coverage noisy. Sample counts are reported per horizon.",
     "Mandi min/max are quotation ranges, not prediction interval endpoints; a modal price is a wholesale reference, not a farm-gate price.",
+    "Selection on the evaluation set: the C anchor (seasonal_reference) and the C quantile scheme (median-centred inner-calibration residuals) were chosen on the same synthetic series used to report C_base vs C_snaive. Those comparisons are therefore optimistic for C_base. This is a model-selection caveat on synthetic data, not a breach of a real-data holdout (no real data has been evaluated). A pre-registered holdout policy (fixed seasons, fixed model and quantile choices) is required before any real-data evaluation.",
+    "Baseline A abstains with stale_last_quote when its last valid quote was observed before (origin week - maxStaleWeeks); such targets are counted under abstentions, not scored.",
     "Numerical replay depends on no LLM. Any LLM explanation of a replay must receive only the frozen evidence bundle; a pretrained model may still know historical events.",
 ]
 

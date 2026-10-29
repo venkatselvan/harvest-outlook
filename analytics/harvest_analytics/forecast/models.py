@@ -104,11 +104,21 @@ def finalize(model_id: str, market: str, week: pd.Timestamp, h: int, q10: float,
 def baseline_a(ctx: MarketContext, targets: list[tuple[pd.Timestamp, int]], cfg: dict[str, Any], stale: int) -> tuple[list[dict], dict]:
     mid = "A_last_value"
     info = {"modelId": mid, "marketId": ctx.market_id, "kind": "baseline_last_value",
-            "point": "last valid daily modal quote with availableAt <= cutoff",
+            "point": "last valid daily modal quote with availableAt <= cutoff; abstains (stale_last_quote) if it was observed before originWeek - maxStaleWeeks",
             "lastQuote": ctx.last_quote, "lastQuoteDate": ctx.last_quote_date}
     if ctx.last_quote is None:
         return [abstain(mid, ctx.market_id, w, h, "no_valid_quote_before_cutoff") for w, h in targets], info
     L, o, s = ctx.L, ctx.origin_pos, ctx.train_start_pos
+    # Staleness: the same maxStaleWeeks limit that bounds forward-filling bounds the point forecast. A last
+    # quote observed before (origin week start - maxStaleWeeks weeks) is too old to carry forward.
+    origin_week = ctx.week_at(o)
+    stale_limit = origin_week - pd.Timedelta(weeks=stale)
+    last_day = pd.Timestamp(ctx.last_quote_date)
+    info["lastQuoteAgeDays"] = int((origin_week - last_day).days)
+    info["staleLimitDate"] = stale_limit.date().isoformat()
+    if last_day < stale_limit:
+        info["status"] = "stale_last_quote"
+        return [abstain(mid, ctx.market_id, w, h, "stale_last_quote") for w, h in targets], info
     lv = _ffill(L, stale)
     preds, npairs = [], {}
     for w, h in targets:
