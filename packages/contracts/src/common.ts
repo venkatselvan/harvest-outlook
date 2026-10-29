@@ -86,6 +86,10 @@ export const Unit = z.enum([
   'days',
   'celsius',
   'percent',
+  'm',
+  'cm',
+  'g',
+  'months',
 ]);
 export type Unit = z.infer<typeof Unit>;
 
@@ -151,6 +155,44 @@ export const ApiErrorCode = z.enum([
   'provider_error',
   'job_cancelled',
   'internal_error',
+  'replay_leakage',
+  'idempotency_payload_mismatch',
+  'csrf_invalid',
+  'approved_text_mismatch',
+  'validation_error',
+  'bad_request',
+  'origin_not_allowed',
+  'origin_required',
+  'file_required',
+  'invalid_image',
+  'image_too_large',
+  'audio_required',
+  'audio_too_long',
+  'audio_too_short',
+  'client_cancelled',
+  'degenerate_region',
+  'farm_context_invalid',
+  'idempotency_in_progress',
+  'invalid_actual',
+  'invalid_estimate',
+  'invalid_idempotency_key',
+  'invalid_usage_estimate',
+  'job_conflict',
+  'job_finished',
+  'orientation_not_applied',
+  'plan_has_no_stages',
+  'provider_auth_failed',
+  'provider_bad_response',
+  'provider_rate_limited',
+  'provider_rejected_input',
+  'region_required',
+  'region_version_mismatch',
+  'reservation_not_found',
+  'reservation_state_conflict',
+  'too_many_stages',
+  'transform_mismatch',
+  'unknown_stage',
+  'unpriced_model',
 ]);
 export type ApiErrorCode = z.infer<typeof ApiErrorCode>;
 
@@ -186,15 +228,15 @@ export function apiEnvelope<T extends z.ZodType>(data: T) {
       asOf: IsoDateTime,
       data: data.nullable(),
       warnings: z.array(ApiWarning),
-      error: ApiError.optional(),
+      error: ApiError.nullable(),
     })
     .strict()
     .superRefine((envIn, ctx) => {
-      const env = envIn as unknown as { data: unknown; error?: unknown };
-      if (env.error !== undefined && env.data !== null) {
+      const env = envIn as unknown as { data: unknown; error: unknown };
+      if (env.error !== null && env.data !== null) {
         ctx.addIssue({ code: 'custom', path: ['data'], message: 'data must be null when error is set' });
       }
-      if (env.error === undefined && env.data === null) {
+      if (env.error === null && env.data === null) {
         ctx.addIssue({ code: 'custom', path: ['error'], message: 'error is required when data is null' });
       }
     });
@@ -206,5 +248,5 @@ export type ApiEnvelope<T> = {
   asOf: string;
   data: T | null;
   warnings: ApiWarning[];
-  error?: ApiError;
+  error: ApiError | null;
 };

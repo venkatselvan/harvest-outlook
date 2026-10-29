@@ -35,7 +35,7 @@ describe("api server", () => {
     const body = res.json();
     expect(body.data.providers).toEqual({ meta: true, elevenlabs: false });
     expect(body.data.languages).toEqual(["en", "ta", "hi"]);
-    expect(body.warnings.join(" ")).toMatch(/Synthetic/);
+    expect(body.warnings.map((w: { message: string }) => w.message).join(" ")).toMatch(/Synthetic/);
     expect(res.body).not.toContain("sk-secret-123");
     expect(res.body).not.toContain("k".repeat(32));
   });

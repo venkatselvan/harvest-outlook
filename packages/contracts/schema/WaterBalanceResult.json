@@ -185,6 +185,7 @@
                   "enum": [
                     "observed",
                     "forecast",
+                    "climatology",
                     "missing"
                   ]
                 },

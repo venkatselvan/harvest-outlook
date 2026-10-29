@@ -3,7 +3,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import sharp from "sharp";
 import type { FastifyInstance, LightMyRequestResponse } from "fastify";
-import { buildServer } from "../src/server";
+import { buildServer, type ServerDeps } from "../src/server";
 import { loadConfig, type Config } from "../src/config";
 import { createPool, type Pool } from "../src/db/pool";
 import { migrate } from "../src/db/migrate";
@@ -30,7 +30,7 @@ export interface Harness {
   config: Config;
   app: FastifyInstance;
   close: () => Promise<void>;
-  make: (over?: Record<string, string>) => Promise<FastifyInstance>;
+  make: (over?: Record<string, string>, deps?: Omit<ServerDeps, "storage">) => Promise<FastifyInstance>;
 }
 
 /** Wipes the test database, migrates, and builds an app with a temp filesystem storage root. */
@@ -42,8 +42,8 @@ export async function setupHarness(over: Record<string, string> = {}): Promise<H
   const storage = new FsStorage(storageRoot);
   const config = testConfig(over);
   const apps: FastifyInstance[] = [];
-  const make = async (o: Record<string, string> = {}) => {
-    const a = await buildServer(testConfig({ ...over, ...o }), pool, { storage });
+  const make = async (o: Record<string, string> = {}, deps: Omit<ServerDeps, "storage"> = {}) => {
+    const a = await buildServer(testConfig({ ...over, ...o }), pool, { storage, ...deps });
     apps.push(a);
     return a;
   };

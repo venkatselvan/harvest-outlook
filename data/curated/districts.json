@@ -1,0 +1,2045 @@
+{
+ "schemaVersion": "1.0",
+ "generatedBy": "scripts/catalogue/build-districts.ts",
+ "note": "District lists exist only for Karnataka, Tamil Nadu and Assam; other states are state-level only. Tamil/Hindi names are given only where confident; absent = not provided.",
+ "counts": {
+  "states": 28,
+  "districts": 104,
+  "byState": {
+   "IN-KA": 31,
+   "IN-TN": 38,
+   "IN-AS": 35
+  }
+ },
+ "areas": [
+  {
+   "id": "IN-AP",
+   "level": "state",
+   "stateId": "IN-AP",
+   "names": {
+    "en": "Andhra Pradesh",
+    "hi": "आंध्र प्रदेश",
+    "ta": "ஆந்திரப் பிரதேசம்"
+   },
+   "source": "iso_3166_2_in_state_code",
+   "note": "State code per ISO 3166-2:IN; name is the commonly used English name.",
+   "validationStatus": "pending"
+  },
+  {
+   "id": "IN-AR",
+   "level": "state",
+   "stateId": "IN-AR",
+   "names": {
+    "en": "Arunachal Pradesh"
+   },
+   "source": "iso_3166_2_in_state_code",
+   "note": "State code per ISO 3166-2:IN; name is the commonly used English name.",
+   "validationStatus": "pending"
+  },
+  {
+   "id": "IN-AS",
+   "level": "state",
+   "stateId": "IN-AS",
+   "names": {
+    "en": "Assam",
+    "hi": "असम",
+    "ta": "அசாம்"
+   },
+   "source": "iso_3166_2_in_state_code",
+   "note": "State code per ISO 3166-2:IN; name is the commonly used English name.",
+   "validationStatus": "pending"
+  },
+  {
+   "id": "IN-BR",
+   "level": "state",
+   "stateId": "IN-BR",
+   "names": {
+    "en": "Bihar",
+    "hi": "बिहार",
+    "ta": "பிகார்"
+   },
+   "source": "iso_3166_2_in_state_code",
+   "note": "State code per ISO 3166-2:IN; name is the commonly used English name.",
+   "validationStatus": "pending"
+  },
+  {
+   "id": "IN-CG",
+   "level": "state",
+   "stateId": "IN-CG",
+   "names": {
+    "en": "Chhattisgarh"
+   },
+   "source": "iso_3166_2_in_state_code",
+   "note": "State code per ISO 3166-2:IN; name is the commonly used English name.",
+   "validationStatus": "pending"
+  },
+  {
+   "id": "IN-GA",
+   "level": "state",
+   "stateId": "IN-GA",
+   "names": {
+    "en": "Goa"
+   },
+   "source": "iso_3166_2_in_state_code",
+   "note": "State code per ISO 3166-2:IN; name is the commonly used English name.",
+   "validationStatus": "pending"
+  },
+  {
+   "id": "IN-GJ",
+   "level": "state",
+   "stateId": "IN-GJ",
+   "names": {
+    "en": "Gujarat",
+    "hi": "गुजरात",
+    "ta": "குஜராத்"
+   },
+   "source": "iso_3166_2_in_state_code",
+   "note": "State code per ISO 3166-2:IN; name is the commonly used English name.",
+   "validationStatus": "pending"
+  },
+  {
+   "id": "IN-HR",
+   "level": "state",
+   "stateId": "IN-HR",
+   "names": {
+    "en": "Haryana",
+    "hi": "हरियाणा",
+    "ta": "ஹரியானா"
+   },
+   "source": "iso_3166_2_in_state_code",
+   "note": "State code per ISO 3166-2:IN; name is the commonly used English name.",
+   "validationStatus": "pending"
+  },
+  {
+   "id": "IN-HP",
+   "level": "state",
+   "stateId": "IN-HP",
+   "names": {
+    "en": "Himachal Pradesh"
+   },
+   "source": "iso_3166_2_in_state_code",
+   "note": "State code per ISO 3166-2:IN; name is the commonly used English name.",
+   "validationStatus": "pending"
+  },
+  {
+   "id": "IN-JH",
+   "level": "state",
+   "stateId": "IN-JH",
+   "names": {
+    "en": "Jharkhand"
+   },
+   "source": "iso_3166_2_in_state_code",
+   "note": "State code per ISO 3166-2:IN; name is the commonly used English name.",
+   "validationStatus": "pending"
+  },
+  {
+   "id": "IN-KA",
+   "level": "state",
+   "stateId": "IN-KA",
+   "names": {
+    "en": "Karnataka",
+    "hi": "कर्नाटक",
+    "ta": "கர்நாடகா"
+   },
+   "source": "iso_3166_2_in_state_code",
+   "note": "State code per ISO 3166-2:IN; name is the commonly used English name.",
+   "validationStatus": "pending"
+  },
+  {
+   "id": "IN-KL",
+   "level": "state",
+   "stateId": "IN-KL",
+   "names": {
+    "en": "Kerala",
+    "hi": "केरल",
+    "ta": "கேரளா"
+   },
+   "source": "iso_3166_2_in_state_code",
+   "note": "State code per ISO 3166-2:IN; name is the commonly used English name.",
+   "validationStatus": "pending"
+  },
+  {
+   "id": "IN-MP",
+   "level": "state",
+   "stateId": "IN-MP",
+   "names": {
+    "en": "Madhya Pradesh",
+    "hi": "मध्य प्रदेश",
+    "ta": "மத்தியப் பிரதேசம்"
+   },
+   "source": "iso_3166_2_in_state_code",
+   "note": "State code per ISO 3166-2:IN; name is the commonly used English name.",
+   "validationStatus": "pending"
+  },
+  {
+   "id": "IN-MH",
+   "level": "state",
+   "stateId": "IN-MH",
+   "names": {
+    "en": "Maharashtra",
+    "hi": "महाराष्ट्र",
+    "ta": "மகாராஷ்டிரா"
+   },
+   "source": "iso_3166_2_in_state_code",
+   "note": "State code per ISO 3166-2:IN; name is the commonly used English name.",
+   "validationStatus": "pending"
+  },
+  {
+   "id": "IN-MN",
+   "level": "state",
+   "stateId": "IN-MN",
+   "names": {
+    "en": "Manipur"
+   },
+   "source": "iso_3166_2_in_state_code",
+   "note": "State code per ISO 3166-2:IN; name is the commonly used English name.",
+   "validationStatus": "pending"
+  },
+  {
+   "id": "IN-ML",
+   "level": "state",
+   "stateId": "IN-ML",
+   "names": {
+    "en": "Meghalaya"
+   },
+   "source": "iso_3166_2_in_state_code",
+   "note": "State code per ISO 3166-2:IN; name is the commonly used English name.",
+   "validationStatus": "pending"
+  },
+  {
+   "id": "IN-MZ",
+   "level": "state",
+   "stateId": "IN-MZ",
+   "names": {
+    "en": "Mizoram"
+   },
+   "source": "iso_3166_2_in_state_code",
+   "note": "State code per ISO 3166-2:IN; name is the commonly used English name.",
+   "validationStatus": "pending"
+  },
+  {
+   "id": "IN-NL",
+   "level": "state",
+   "stateId": "IN-NL",
+   "names": {
+    "en": "Nagaland"
+   },
+   "source": "iso_3166_2_in_state_code",
+   "note": "State code per ISO 3166-2:IN; name is the commonly used English name.",
+   "validationStatus": "pending"
+  },
+  {
+   "id": "IN-OD",
+   "level": "state",
+   "stateId": "IN-OD",
+   "names": {
+    "en": "Odisha",
+    "hi": "ओडिशा",
+    "ta": "ஒடிசா"
+   },
+   "source": "iso_3166_2_in_state_code",
+   "note": "State code per ISO 3166-2:IN; name is the commonly used English name.",
+   "validationStatus": "pending"
+  },
+  {
+   "id": "IN-PB",
+   "level": "state",
+   "stateId": "IN-PB",
+   "names": {
+    "en": "Punjab",
+    "hi": "पंजाब",
+    "ta": "பஞ்சாப்"
+   },
+   "source": "iso_3166_2_in_state_code",
+   "note": "State code per ISO 3166-2:IN; name is the commonly used English name.",
+   "validationStatus": "pending"
+  },
+  {
+   "id": "IN-RJ",
+   "level": "state",
+   "stateId": "IN-RJ",
+   "names": {
+    "en": "Rajasthan",
+    "hi": "राजस्थान",
+    "ta": "ராஜஸ்தான்"
+   },
+   "source": "iso_3166_2_in_state_code",
+   "note": "State code per ISO 3166-2:IN; name is the commonly used English name.",
+   "validationStatus": "pending"
+  },
+  {
+   "id": "IN-SK",
+   "level": "state",
+   "stateId": "IN-SK",
+   "names": {
+    "en": "Sikkim"
+   },
+   "source": "iso_3166_2_in_state_code",
+   "note": "State code per ISO 3166-2:IN; name is the commonly used English name.",
+   "validationStatus": "pending"
+  },
+  {
+   "id": "IN-TN",
+   "level": "state",
+   "stateId": "IN-TN",
+   "names": {
+    "en": "Tamil Nadu",
+    "hi": "तमिलनाडु",
+    "ta": "தமிழ்நாடு"
+   },
+   "source": "iso_3166_2_in_state_code",
+   "note": "State code per ISO 3166-2:IN; name is the commonly used English name.",
+   "validationStatus": "pending"
+  },
+  {
+   "id": "IN-TS",
+   "level": "state",
+   "stateId": "IN-TS",
+   "names": {
+    "en": "Telangana",
+    "hi": "तेलंगाना",
+    "ta": "தெலங்கானா"
+   },
+   "source": "iso_3166_2_in_state_code",
+   "note": "State code per ISO 3166-2:IN; name is the commonly used English name.",
+   "validationStatus": "pending"
+  },
+  {
+   "id": "IN-TR",
+   "level": "state",
+   "stateId": "IN-TR",
+   "names": {
+    "en": "Tripura"
+   },
+   "source": "iso_3166_2_in_state_code",
+   "note": "State code per ISO 3166-2:IN; name is the commonly used English name.",
+   "validationStatus": "pending"
+  },
+  {
+   "id": "IN-UP",
+   "level": "state",
+   "stateId": "IN-UP",
+   "names": {
+    "en": "Uttar Pradesh",
+    "hi": "उत्तर प्रदेश",
+    "ta": "உத்தரப் பிரதேசம்"
+   },
+   "source": "iso_3166_2_in_state_code",
+   "note": "State code per ISO 3166-2:IN; name is the commonly used English name.",
+   "validationStatus": "pending"
+  },
+  {
+   "id": "IN-UK",
+   "level": "state",
+   "stateId": "IN-UK",
+   "names": {
+    "en": "Uttarakhand"
+   },
+   "source": "iso_3166_2_in_state_code",
+   "note": "State code per ISO 3166-2:IN; name is the commonly used English name.",
+   "validationStatus": "pending"
+  },
+  {
+   "id": "IN-WB",
+   "level": "state",
+   "stateId": "IN-WB",
+   "names": {
+    "en": "West Bengal",
+    "hi": "पश्चिम बंगाल",
+    "ta": "மேற்கு வங்காளம்"
+   },
+   "source": "iso_3166_2_in_state_code",
+   "note": "State code per ISO 3166-2:IN; name is the commonly used English name.",
+   "validationStatus": "pending"
+  },
+  {
+   "id": "IN-TN-ariyalur",
+   "level": "district",
+   "stateId": "IN-TN",
+   "names": {
+    "en": "Ariyalur"
+   },
+   "source": {
+    "sourceId": "tn-gov-districts",
+    "sourceUrl": "https://www.tn.gov.in/district_list.php",
+    "publisher": "Government of Tamil Nadu (tn.gov.in)",
+    "contentHash": "de6e94d7d48dbea9995869666274402ae4559a93dce77b3e13e42a7ec19c8f72",
+    "fetchedAt": "2026-10-29T20:21:56.896Z"
+   },
+   "validationStatus": "pending"
+  },
+  {
+   "id": "IN-TN-chengalpattu",
+   "level": "district",
+   "stateId": "IN-TN",
+   "names": {
+    "en": "Chengalpattu"
+   },
+   "source": {
+    "sourceId": "tn-gov-districts",
+    "sourceUrl": "https://www.tn.gov.in/district_list.php",
+    "publisher": "Government of Tamil Nadu (tn.gov.in)",
+    "contentHash": "de6e94d7d48dbea9995869666274402ae4559a93dce77b3e13e42a7ec19c8f72",
+    "fetchedAt": "2026-10-29T20:21:56.896Z"
+   },
+   "validationStatus": "pending"
+  },
+  {
+   "id": "IN-TN-chennai",
+   "level": "district",
+   "stateId": "IN-TN",
+   "names": {
+    "en": "Chennai"
+   },
+   "source": {
+    "sourceId": "tn-gov-districts",
+    "sourceUrl": "https://www.tn.gov.in/district_list.php",
+    "publisher": "Government of Tamil Nadu (tn.gov.in)",
+    "contentHash": "de6e94d7d48dbea9995869666274402ae4559a93dce77b3e13e42a7ec19c8f72",
+    "fetchedAt": "2026-10-29T20:21:56.896Z"
+   },
+   "validationStatus": "pending"
+  },
+  {
+   "id": "IN-TN-coimbatore",
+   "level": "district",
+   "stateId": "IN-TN",
+   "names": {
+    "en": "Coimbatore"
+   },
+   "source": {
+    "sourceId": "tn-gov-districts",
+    "sourceUrl": "https://www.tn.gov.in/district_list.php",
+    "publisher": "Government of Tamil Nadu (tn.gov.in)",
+    "contentHash": "de6e94d7d48dbea9995869666274402ae4559a93dce77b3e13e42a7ec19c8f72",
+    "fetchedAt": "2026-10-29T20:21:56.896Z"
+   },
+   "validationStatus": "pending"
+  },
+  {
+   "id": "IN-TN-cuddalore",
+   "level": "district",
+   "stateId": "IN-TN",
+   "names": {
+    "en": "Cuddalore"
+   },
+   "source": {
+    "sourceId": "tn-gov-districts",
+    "sourceUrl": "https://www.tn.gov.in/district_list.php",
+    "publisher": "Government of Tamil Nadu (tn.gov.in)",
+    "contentHash": "de6e94d7d48dbea9995869666274402ae4559a93dce77b3e13e42a7ec19c8f72",
+    "fetchedAt": "2026-10-29T20:21:56.896Z"
+   },
+   "validationStatus": "pending"
+  },
+  {
+   "id": "IN-TN-dharmapuri",
+   "level": "district",
+   "stateId": "IN-TN",
+   "names": {
+    "en": "Dharmapuri"
+   },
+   "source": {
+    "sourceId": "tn-gov-districts",
+    "sourceUrl": "https://www.tn.gov.in/district_list.php",
+    "publisher": "Government of Tamil Nadu (tn.gov.in)",
+    "contentHash": "de6e94d7d48dbea9995869666274402ae4559a93dce77b3e13e42a7ec19c8f72",
+    "fetchedAt": "2026-10-29T20:21:56.896Z"
+   },
+   "validationStatus": "pending"
+  },
+  {
+   "id": "IN-TN-dindigul",
+   "level": "district",
+   "stateId": "IN-TN",
+   "names": {
+    "en": "Dindigul"
+   },
+   "source": {
+    "sourceId": "tn-gov-districts",
+    "sourceUrl": "https://www.tn.gov.in/district_list.php",
+    "publisher": "Government of Tamil Nadu (tn.gov.in)",
+    "contentHash": "de6e94d7d48dbea9995869666274402ae4559a93dce77b3e13e42a7ec19c8f72",
+    "fetchedAt": "2026-10-29T20:21:56.896Z"
+   },
+   "validationStatus": "pending"
+  },
+  {
+   "id": "IN-TN-erode",
+   "level": "district",
+   "stateId": "IN-TN",
+   "names": {
+    "en": "Erode"
+   },
+   "source": {
+    "sourceId": "tn-gov-districts",
+    "sourceUrl": "https://www.tn.gov.in/district_list.php",
+    "publisher": "Government of Tamil Nadu (tn.gov.in)",
+    "contentHash": "de6e94d7d48dbea9995869666274402ae4559a93dce77b3e13e42a7ec19c8f72",
+    "fetchedAt": "2026-10-29T20:21:56.896Z"
+   },
+   "validationStatus": "pending"
+  },
+  {
+   "id": "IN-TN-kallakurichi",
+   "level": "district",
+   "stateId": "IN-TN",
+   "names": {
+    "en": "Kallakurichi"
+   },
+   "source": {
+    "sourceId": "tn-gov-districts",
+    "sourceUrl": "https://www.tn.gov.in/district_list.php",
+    "publisher": "Government of Tamil Nadu (tn.gov.in)",
+    "contentHash": "de6e94d7d48dbea9995869666274402ae4559a93dce77b3e13e42a7ec19c8f72",
+    "fetchedAt": "2026-10-29T20:21:56.896Z"
+   },
+   "validationStatus": "pending"
+  },
+  {
+   "id": "IN-TN-kancheepuram",
+   "level": "district",
+   "stateId": "IN-TN",
+   "names": {
+    "en": "Kancheepuram"
+   },
+   "source": {
+    "sourceId": "tn-gov-districts",
+    "sourceUrl": "https://www.tn.gov.in/district_list.php",
+    "publisher": "Government of Tamil Nadu (tn.gov.in)",
+    "contentHash": "de6e94d7d48dbea9995869666274402ae4559a93dce77b3e13e42a7ec19c8f72",
+    "fetchedAt": "2026-10-29T20:21:56.896Z"
+   },
+   "validationStatus": "pending"
+  },
+  {
+   "id": "IN-TN-kanniyakumari",
+   "level": "district",
+   "stateId": "IN-TN",
+   "names": {
+    "en": "Kanniyakumari"
+   },
+   "source": {
+    "sourceId": "tn-gov-districts",
+    "sourceUrl": "https://www.tn.gov.in/district_list.php",
+    "publisher": "Government of Tamil Nadu (tn.gov.in)",
+    "contentHash": "de6e94d7d48dbea9995869666274402ae4559a93dce77b3e13e42a7ec19c8f72",
+    "fetchedAt": "2026-10-29T20:21:56.896Z"
+   },
+   "validationStatus": "pending"
+  },
+  {
+   "id": "IN-TN-karur",
+   "level": "district",
+   "stateId": "IN-TN",
+   "names": {
+    "en": "Karur"
+   },
+   "source": {
+    "sourceId": "tn-gov-districts",
+    "sourceUrl": "https://www.tn.gov.in/district_list.php",
+    "publisher": "Government of Tamil Nadu (tn.gov.in)",
+    "contentHash": "de6e94d7d48dbea9995869666274402ae4559a93dce77b3e13e42a7ec19c8f72",
+    "fetchedAt": "2026-10-29T20:21:56.896Z"
+   },
+   "validationStatus": "pending"
+  },
+  {
+   "id": "IN-TN-krishnagiri",
+   "level": "district",
+   "stateId": "IN-TN",
+   "names": {
+    "en": "Krishnagiri"
+   },
+   "source": {
+    "sourceId": "tn-gov-districts",
+    "sourceUrl": "https://www.tn.gov.in/district_list.php",
+    "publisher": "Government of Tamil Nadu (tn.gov.in)",
+    "contentHash": "de6e94d7d48dbea9995869666274402ae4559a93dce77b3e13e42a7ec19c8f72",
+    "fetchedAt": "2026-10-29T20:21:56.896Z"
+   },
+   "validationStatus": "pending"
+  },
+  {
+   "id": "IN-TN-madurai",
+   "level": "district",
+   "stateId": "IN-TN",
+   "names": {
+    "en": "Madurai"
+   },
+   "source": {
+    "sourceId": "tn-gov-districts",
+    "sourceUrl": "https://www.tn.gov.in/district_list.php",
+    "publisher": "Government of Tamil Nadu (tn.gov.in)",
+    "contentHash": "de6e94d7d48dbea9995869666274402ae4559a93dce77b3e13e42a7ec19c8f72",
+    "fetchedAt": "2026-10-29T20:21:56.896Z"
+   },
+   "validationStatus": "pending"
+  },
+  {
+   "id": "IN-TN-mayiladuthurai",
+   "level": "district",
+   "stateId": "IN-TN",
+   "names": {
+    "en": "Mayiladuthurai"
+   },
+   "source": {
+    "sourceId": "tn-gov-districts",
+    "sourceUrl": "https://www.tn.gov.in/district_list.php",
+    "publisher": "Government of Tamil Nadu (tn.gov.in)",
+    "contentHash": "de6e94d7d48dbea9995869666274402ae4559a93dce77b3e13e42a7ec19c8f72",
+    "fetchedAt": "2026-10-29T20:21:56.896Z"
+   },
+   "validationStatus": "pending"
+  },
+  {
+   "id": "IN-TN-nagapattinam",
+   "level": "district",
+   "stateId": "IN-TN",
+   "names": {
+    "en": "Nagapattinam"
+   },
+   "source": {
+    "sourceId": "tn-gov-districts",
+    "sourceUrl": "https://www.tn.gov.in/district_list.php",
+    "publisher": "Government of Tamil Nadu (tn.gov.in)",
+    "contentHash": "de6e94d7d48dbea9995869666274402ae4559a93dce77b3e13e42a7ec19c8f72",
+    "fetchedAt": "2026-10-29T20:21:56.896Z"
+   },
+   "validationStatus": "pending"
+  },
+  {
+   "id": "IN-TN-namakkal",
+   "level": "district",
+   "stateId": "IN-TN",
+   "names": {
+    "en": "Namakkal"
+   },
+   "source": {
+    "sourceId": "tn-gov-districts",
+    "sourceUrl": "https://www.tn.gov.in/district_list.php",
+    "publisher": "Government of Tamil Nadu (tn.gov.in)",
+    "contentHash": "de6e94d7d48dbea9995869666274402ae4559a93dce77b3e13e42a7ec19c8f72",
+    "fetchedAt": "2026-10-29T20:21:56.896Z"
+   },
+   "validationStatus": "pending"
+  },
+  {
+   "id": "IN-TN-perambalur",
+   "level": "district",
+   "stateId": "IN-TN",
+   "names": {
+    "en": "Perambalur"
+   },
+   "source": {
+    "sourceId": "tn-gov-districts",
+    "sourceUrl": "https://www.tn.gov.in/district_list.php",
+    "publisher": "Government of Tamil Nadu (tn.gov.in)",
+    "contentHash": "de6e94d7d48dbea9995869666274402ae4559a93dce77b3e13e42a7ec19c8f72",
+    "fetchedAt": "2026-10-29T20:21:56.896Z"
+   },
+   "validationStatus": "pending"
+  },
+  {
+   "id": "IN-TN-pudukkottai",
+   "level": "district",
+   "stateId": "IN-TN",
+   "names": {
+    "en": "Pudukkottai"
+   },
+   "source": {
+    "sourceId": "tn-gov-districts",
+    "sourceUrl": "https://www.tn.gov.in/district_list.php",
+    "publisher": "Government of Tamil Nadu (tn.gov.in)",
+    "contentHash": "de6e94d7d48dbea9995869666274402ae4559a93dce77b3e13e42a7ec19c8f72",
+    "fetchedAt": "2026-10-29T20:21:56.896Z"
+   },
+   "validationStatus": "pending"
+  },
+  {
+   "id": "IN-TN-ramanathapuram",
+   "level": "district",
+   "stateId": "IN-TN",
+   "names": {
+    "en": "Ramanathapuram"
+   },
+   "source": {
+    "sourceId": "tn-gov-districts",
+    "sourceUrl": "https://www.tn.gov.in/district_list.php",
+    "publisher": "Government of Tamil Nadu (tn.gov.in)",
+    "contentHash": "de6e94d7d48dbea9995869666274402ae4559a93dce77b3e13e42a7ec19c8f72",
+    "fetchedAt": "2026-10-29T20:21:56.896Z"
+   },
+   "validationStatus": "pending"
+  },
+  {
+   "id": "IN-TN-ranipet",
+   "level": "district",
+   "stateId": "IN-TN",
+   "names": {
+    "en": "Ranipet"
+   },
+   "source": {
+    "sourceId": "tn-gov-districts",
+    "sourceUrl": "https://www.tn.gov.in/district_list.php",
+    "publisher": "Government of Tamil Nadu (tn.gov.in)",
+    "contentHash": "de6e94d7d48dbea9995869666274402ae4559a93dce77b3e13e42a7ec19c8f72",
+    "fetchedAt": "2026-10-29T20:21:56.896Z"
+   },
+   "validationStatus": "pending"
+  },
+  {
+   "id": "IN-TN-salem",
+   "level": "district",
+   "stateId": "IN-TN",
+   "names": {
+    "en": "Salem"
+   },
+   "source": {
+    "sourceId": "tn-gov-districts",
+    "sourceUrl": "https://www.tn.gov.in/district_list.php",
+    "publisher": "Government of Tamil Nadu (tn.gov.in)",
+    "contentHash": "de6e94d7d48dbea9995869666274402ae4559a93dce77b3e13e42a7ec19c8f72",
+    "fetchedAt": "2026-10-29T20:21:56.896Z"
+   },
+   "validationStatus": "pending"
+  },
+  {
+   "id": "IN-TN-sivaganga",
+   "level": "district",
+   "stateId": "IN-TN",
+   "names": {
+    "en": "Sivaganga"
+   },
+   "source": {
+    "sourceId": "tn-gov-districts",
+    "sourceUrl": "https://www.tn.gov.in/district_list.php",
+    "publisher": "Government of Tamil Nadu (tn.gov.in)",
+    "contentHash": "de6e94d7d48dbea9995869666274402ae4559a93dce77b3e13e42a7ec19c8f72",
+    "fetchedAt": "2026-10-29T20:21:56.896Z"
+   },
+   "validationStatus": "pending"
+  },
+  {
+   "id": "IN-TN-tenkasi",
+   "level": "district",
+   "stateId": "IN-TN",
+   "names": {
+    "en": "Tenkasi"
+   },
+   "source": {
+    "sourceId": "tn-gov-districts",
+    "sourceUrl": "https://www.tn.gov.in/district_list.php",
+    "publisher": "Government of Tamil Nadu (tn.gov.in)",
+    "contentHash": "de6e94d7d48dbea9995869666274402ae4559a93dce77b3e13e42a7ec19c8f72",
+    "fetchedAt": "2026-10-29T20:21:56.896Z"
+   },
+   "validationStatus": "pending"
+  },
+  {
+   "id": "IN-TN-thanjavur",
+   "level": "district",
+   "stateId": "IN-TN",
+   "names": {
+    "en": "Thanjavur"
+   },
+   "source": {
+    "sourceId": "tn-gov-districts",
+    "sourceUrl": "https://www.tn.gov.in/district_list.php",
+    "publisher": "Government of Tamil Nadu (tn.gov.in)",
+    "contentHash": "de6e94d7d48dbea9995869666274402ae4559a93dce77b3e13e42a7ec19c8f72",
+    "fetchedAt": "2026-10-29T20:21:56.896Z"
+   },
+   "validationStatus": "pending"
+  },
+  {
+   "id": "IN-TN-theni",
+   "level": "district",
+   "stateId": "IN-TN",
+   "names": {
+    "en": "Theni"
+   },
+   "source": {
+    "sourceId": "tn-gov-districts",
+    "sourceUrl": "https://www.tn.gov.in/district_list.php",
+    "publisher": "Government of Tamil Nadu (tn.gov.in)",
+    "contentHash": "de6e94d7d48dbea9995869666274402ae4559a93dce77b3e13e42a7ec19c8f72",
+    "fetchedAt": "2026-10-29T20:21:56.896Z"
+   },
+   "validationStatus": "pending"
+  },
+  {
+   "id": "IN-TN-nilgiris",
+   "level": "district",
+   "stateId": "IN-TN",
+   "names": {
+    "en": "The Nilgiris"
+   },
+   "source": {
+    "sourceId": "tn-gov-districts",
+    "sourceUrl": "https://www.tn.gov.in/district_list.php",
+    "publisher": "Government of Tamil Nadu (tn.gov.in)",
+    "contentHash": "de6e94d7d48dbea9995869666274402ae4559a93dce77b3e13e42a7ec19c8f72",
+    "fetchedAt": "2026-10-29T20:21:56.896Z"
+   },
+   "validationStatus": "pending"
+  },
+  {
+   "id": "IN-TN-thoothukudi",
+   "level": "district",
+   "stateId": "IN-TN",
+   "names": {
+    "en": "Thoothukudi"
+   },
+   "source": {
+    "sourceId": "tn-gov-districts",
+    "sourceUrl": "https://www.tn.gov.in/district_list.php",
+    "publisher": "Government of Tamil Nadu (tn.gov.in)",
+    "contentHash": "de6e94d7d48dbea9995869666274402ae4559a93dce77b3e13e42a7ec19c8f72",
+    "fetchedAt": "2026-10-29T20:21:56.896Z"
+   },
+   "validationStatus": "pending"
+  },
+  {
+   "id": "IN-TN-tiruchirappalli",
+   "level": "district",
+   "stateId": "IN-TN",
+   "names": {
+    "en": "Tiruchirappalli"
+   },
+   "source": {
+    "sourceId": "tn-gov-districts",
+    "sourceUrl": "https://www.tn.gov.in/district_list.php",
+    "publisher": "Government of Tamil Nadu (tn.gov.in)",
+    "contentHash": "de6e94d7d48dbea9995869666274402ae4559a93dce77b3e13e42a7ec19c8f72",
+    "fetchedAt": "2026-10-29T20:21:56.896Z"
+   },
+   "validationStatus": "pending"
+  },
+  {
+   "id": "IN-TN-tirunelveli",
+   "level": "district",
+   "stateId": "IN-TN",
+   "names": {
+    "en": "Tirunelveli"
+   },
+   "source": {
+    "sourceId": "tn-gov-districts",
+    "sourceUrl": "https://www.tn.gov.in/district_list.php",
+    "publisher": "Government of Tamil Nadu (tn.gov.in)",
+    "contentHash": "de6e94d7d48dbea9995869666274402ae4559a93dce77b3e13e42a7ec19c8f72",
+    "fetchedAt": "2026-10-29T20:21:56.896Z"
+   },
+   "validationStatus": "pending"
+  },
+  {
+   "id": "IN-TN-tirupathur",
+   "level": "district",
+   "stateId": "IN-TN",
+   "names": {
+    "en": "Tirupathur"
+   },
+   "source": {
+    "sourceId": "tn-gov-districts",
+    "sourceUrl": "https://www.tn.gov.in/district_list.php",
+    "publisher": "Government of Tamil Nadu (tn.gov.in)",
+    "contentHash": "de6e94d7d48dbea9995869666274402ae4559a93dce77b3e13e42a7ec19c8f72",
+    "fetchedAt": "2026-10-29T20:21:56.896Z"
+   },
+   "validationStatus": "pending"
+  },
+  {
+   "id": "IN-TN-tiruppur",
+   "level": "district",
+   "stateId": "IN-TN",
+   "names": {
+    "en": "Tiruppur"
+   },
+   "source": {
+    "sourceId": "tn-gov-districts",
+    "sourceUrl": "https://www.tn.gov.in/district_list.php",
+    "publisher": "Government of Tamil Nadu (tn.gov.in)",
+    "contentHash": "de6e94d7d48dbea9995869666274402ae4559a93dce77b3e13e42a7ec19c8f72",
+    "fetchedAt": "2026-10-29T20:21:56.896Z"
+   },
+   "validationStatus": "pending"
+  },
+  {
+   "id": "IN-TN-tiruvallur",
+   "level": "district",
+   "stateId": "IN-TN",
+   "names": {
+    "en": "Tiruvallur"
+   },
+   "source": {
+    "sourceId": "tn-gov-districts",
+    "sourceUrl": "https://www.tn.gov.in/district_list.php",
+    "publisher": "Government of Tamil Nadu (tn.gov.in)",
+    "contentHash": "de6e94d7d48dbea9995869666274402ae4559a93dce77b3e13e42a7ec19c8f72",
+    "fetchedAt": "2026-10-29T20:21:56.896Z"
+   },
+   "validationStatus": "pending"
+  },
+  {
+   "id": "IN-TN-tiruvannamalai",
+   "level": "district",
+   "stateId": "IN-TN",
+   "names": {
+    "en": "Tiruvannamalai"
+   },
+   "source": {
+    "sourceId": "tn-gov-districts",
+    "sourceUrl": "https://www.tn.gov.in/district_list.php",
+    "publisher": "Government of Tamil Nadu (tn.gov.in)",
+    "contentHash": "de6e94d7d48dbea9995869666274402ae4559a93dce77b3e13e42a7ec19c8f72",
+    "fetchedAt": "2026-10-29T20:21:56.896Z"
+   },
+   "validationStatus": "pending"
+  },
+  {
+   "id": "IN-TN-tiruvarur",
+   "level": "district",
+   "stateId": "IN-TN",
+   "names": {
+    "en": "Tiruvarur"
+   },
+   "source": {
+    "sourceId": "tn-gov-districts",
+    "sourceUrl": "https://www.tn.gov.in/district_list.php",
+    "publisher": "Government of Tamil Nadu (tn.gov.in)",
+    "contentHash": "de6e94d7d48dbea9995869666274402ae4559a93dce77b3e13e42a7ec19c8f72",
+    "fetchedAt": "2026-10-29T20:21:56.896Z"
+   },
+   "validationStatus": "pending"
+  },
+  {
+   "id": "IN-TN-vellore",
+   "level": "district",
+   "stateId": "IN-TN",
+   "names": {
+    "en": "Vellore"
+   },
+   "source": {
+    "sourceId": "tn-gov-districts",
+    "sourceUrl": "https://www.tn.gov.in/district_list.php",
+    "publisher": "Government of Tamil Nadu (tn.gov.in)",
+    "contentHash": "de6e94d7d48dbea9995869666274402ae4559a93dce77b3e13e42a7ec19c8f72",
+    "fetchedAt": "2026-10-29T20:21:56.896Z"
+   },
+   "validationStatus": "pending"
+  },
+  {
+   "id": "IN-TN-viluppuram",
+   "level": "district",
+   "stateId": "IN-TN",
+   "names": {
+    "en": "Viluppuram"
+   },
+   "source": {
+    "sourceId": "tn-gov-districts",
+    "sourceUrl": "https://www.tn.gov.in/district_list.php",
+    "publisher": "Government of Tamil Nadu (tn.gov.in)",
+    "contentHash": "de6e94d7d48dbea9995869666274402ae4559a93dce77b3e13e42a7ec19c8f72",
+    "fetchedAt": "2026-10-29T20:21:56.896Z"
+   },
+   "validationStatus": "pending"
+  },
+  {
+   "id": "IN-TN-virudhunagar",
+   "level": "district",
+   "stateId": "IN-TN",
+   "names": {
+    "en": "Virudhunagar"
+   },
+   "source": {
+    "sourceId": "tn-gov-districts",
+    "sourceUrl": "https://www.tn.gov.in/district_list.php",
+    "publisher": "Government of Tamil Nadu (tn.gov.in)",
+    "contentHash": "de6e94d7d48dbea9995869666274402ae4559a93dce77b3e13e42a7ec19c8f72",
+    "fetchedAt": "2026-10-29T20:21:56.896Z"
+   },
+   "validationStatus": "pending"
+  },
+  {
+   "id": "IN-AS-bajali",
+   "level": "district",
+   "stateId": "IN-AS",
+   "names": {
+    "en": "Bajali"
+   },
+   "source": {
+    "sourceId": "assam-gov-districts",
+    "sourceUrl": "https://assam.gov.in/districts-page.html",
+    "publisher": "Government of Assam (State Portal)",
+    "contentHash": "979641043c31092d5965e2eef6b39893b79f9dda91f143a953cd03901020a382",
+    "fetchedAt": "2026-10-29T20:21:57.194Z"
+   },
+   "validationStatus": "pending"
+  },
+  {
+   "id": "IN-AS-baksa",
+   "level": "district",
+   "stateId": "IN-AS",
+   "names": {
+    "en": "Baksa"
+   },
+   "source": {
+    "sourceId": "assam-gov-districts",
+    "sourceUrl": "https://assam.gov.in/districts-page.html",
+    "publisher": "Government of Assam (State Portal)",
+    "contentHash": "979641043c31092d5965e2eef6b39893b79f9dda91f143a953cd03901020a382",
+    "fetchedAt": "2026-10-29T20:21:57.194Z"
+   },
+   "validationStatus": "pending"
+  },
+  {
+   "id": "IN-AS-barpeta",
+   "level": "district",
+   "stateId": "IN-AS",
+   "names": {
+    "en": "Barpeta"
+   },
+   "source": {
+    "sourceId": "assam-gov-districts",
+    "sourceUrl": "https://assam.gov.in/districts-page.html",
+    "publisher": "Government of Assam (State Portal)",
+    "contentHash": "979641043c31092d5965e2eef6b39893b79f9dda91f143a953cd03901020a382",
+    "fetchedAt": "2026-10-29T20:21:57.194Z"
+   },
+   "validationStatus": "pending"
+  },
+  {
+   "id": "IN-AS-biswanath",
+   "level": "district",
+   "stateId": "IN-AS",
+   "names": {
+    "en": "Biswanath"
+   },
+   "source": {
+    "sourceId": "assam-gov-districts",
+    "sourceUrl": "https://assam.gov.in/districts-page.html",
+    "publisher": "Government of Assam (State Portal)",
+    "contentHash": "979641043c31092d5965e2eef6b39893b79f9dda91f143a953cd03901020a382",
+    "fetchedAt": "2026-10-29T20:21:57.194Z"
+   },
+   "validationStatus": "pending"
+  },
+  {
+   "id": "IN-AS-bongaigaon",
+   "level": "district",
+   "stateId": "IN-AS",
+   "names": {
+    "en": "Bongaigaon"
+   },
+   "source": {
+    "sourceId": "assam-gov-districts",
+    "sourceUrl": "https://assam.gov.in/districts-page.html",
+    "publisher": "Government of Assam (State Portal)",
+    "contentHash": "979641043c31092d5965e2eef6b39893b79f9dda91f143a953cd03901020a382",
+    "fetchedAt": "2026-10-29T20:21:57.194Z"
+   },
+   "validationStatus": "pending"
+  },
+  {
+   "id": "IN-AS-cachar",
+   "level": "district",
+   "stateId": "IN-AS",
+   "names": {
+    "en": "Cachar"
+   },
+   "source": {
+    "sourceId": "assam-gov-districts",
+    "sourceUrl": "https://assam.gov.in/districts-page.html",
+    "publisher": "Government of Assam (State Portal)",
+    "contentHash": "979641043c31092d5965e2eef6b39893b79f9dda91f143a953cd03901020a382",
+    "fetchedAt": "2026-10-29T20:21:57.194Z"
+   },
+   "validationStatus": "pending"
+  },
+  {
+   "id": "IN-AS-charaideo",
+   "level": "district",
+   "stateId": "IN-AS",
+   "names": {
+    "en": "Charaideo"
+   },
+   "source": {
+    "sourceId": "assam-gov-districts",
+    "sourceUrl": "https://assam.gov.in/districts-page.html",
+    "publisher": "Government of Assam (State Portal)",
+    "contentHash": "979641043c31092d5965e2eef6b39893b79f9dda91f143a953cd03901020a382",
+    "fetchedAt": "2026-10-29T20:21:57.194Z"
+   },
+   "validationStatus": "pending"
+  },
+  {
+   "id": "IN-AS-chirang",
+   "level": "district",
+   "stateId": "IN-AS",
+   "names": {
+    "en": "Chirang"
+   },
+   "source": {
+    "sourceId": "assam-gov-districts",
+    "sourceUrl": "https://assam.gov.in/districts-page.html",
+    "publisher": "Government of Assam (State Portal)",
+    "contentHash": "979641043c31092d5965e2eef6b39893b79f9dda91f143a953cd03901020a382",
+    "fetchedAt": "2026-10-29T20:21:57.194Z"
+   },
+   "validationStatus": "pending"
+  },
+  {
+   "id": "IN-AS-darrang",
+   "level": "district",
+   "stateId": "IN-AS",
+   "names": {
+    "en": "Darrang"
+   },
+   "source": {
+    "sourceId": "assam-gov-districts",
+    "sourceUrl": "https://assam.gov.in/districts-page.html",
+    "publisher": "Government of Assam (State Portal)",
+    "contentHash": "979641043c31092d5965e2eef6b39893b79f9dda91f143a953cd03901020a382",
+    "fetchedAt": "2026-10-29T20:21:57.194Z"
+   },
+   "validationStatus": "pending"
+  },
+  {
+   "id": "IN-AS-dhemaji",
+   "level": "district",
+   "stateId": "IN-AS",
+   "names": {
+    "en": "Dhemaji"
+   },
+   "source": {
+    "sourceId": "assam-gov-districts",
+    "sourceUrl": "https://assam.gov.in/districts-page.html",
+    "publisher": "Government of Assam (State Portal)",
+    "contentHash": "979641043c31092d5965e2eef6b39893b79f9dda91f143a953cd03901020a382",
+    "fetchedAt": "2026-10-29T20:21:57.194Z"
+   },
+   "validationStatus": "pending"
+  },
+  {
+   "id": "IN-AS-dhubri",
+   "level": "district",
+   "stateId": "IN-AS",
+   "names": {
+    "en": "Dhubri"
+   },
+   "source": {
+    "sourceId": "assam-gov-districts",
+    "sourceUrl": "https://assam.gov.in/districts-page.html",
+    "publisher": "Government of Assam (State Portal)",
+    "contentHash": "979641043c31092d5965e2eef6b39893b79f9dda91f143a953cd03901020a382",
+    "fetchedAt": "2026-10-29T20:21:57.194Z"
+   },
+   "validationStatus": "pending"
+  },
+  {
+   "id": "IN-AS-dibrugarh",
+   "level": "district",
+   "stateId": "IN-AS",
+   "names": {
+    "en": "Dibrugarh"
+   },
+   "source": {
+    "sourceId": "assam-gov-districts",
+    "sourceUrl": "https://assam.gov.in/districts-page.html",
+    "publisher": "Government of Assam (State Portal)",
+    "contentHash": "979641043c31092d5965e2eef6b39893b79f9dda91f143a953cd03901020a382",
+    "fetchedAt": "2026-10-29T20:21:57.194Z"
+   },
+   "validationStatus": "pending"
+  },
+  {
+   "id": "IN-AS-dima-hasao",
+   "level": "district",
+   "stateId": "IN-AS",
+   "names": {
+    "en": "Dima Hasao"
+   },
+   "source": {
+    "sourceId": "assam-gov-districts",
+    "sourceUrl": "https://assam.gov.in/districts-page.html",
+    "publisher": "Government of Assam (State Portal)",
+    "contentHash": "979641043c31092d5965e2eef6b39893b79f9dda91f143a953cd03901020a382",
+    "fetchedAt": "2026-10-29T20:21:57.194Z"
+   },
+   "validationStatus": "pending"
+  },
+  {
+   "id": "IN-AS-goalpara",
+   "level": "district",
+   "stateId": "IN-AS",
+   "names": {
+    "en": "Goalpara"
+   },
+   "source": {
+    "sourceId": "assam-gov-districts",
+    "sourceUrl": "https://assam.gov.in/districts-page.html",
+    "publisher": "Government of Assam (State Portal)",
+    "contentHash": "979641043c31092d5965e2eef6b39893b79f9dda91f143a953cd03901020a382",
+    "fetchedAt": "2026-10-29T20:21:57.194Z"
+   },
+   "validationStatus": "pending"
+  },
+  {
+   "id": "IN-AS-golaghat",
+   "level": "district",
+   "stateId": "IN-AS",
+   "names": {
+    "en": "Golaghat"
+   },
+   "source": {
+    "sourceId": "assam-gov-districts",
+    "sourceUrl": "https://assam.gov.in/districts-page.html",
+    "publisher": "Government of Assam (State Portal)",
+    "contentHash": "979641043c31092d5965e2eef6b39893b79f9dda91f143a953cd03901020a382",
+    "fetchedAt": "2026-10-29T20:21:57.194Z"
+   },
+   "validationStatus": "pending"
+  },
+  {
+   "id": "IN-AS-hailakandi",
+   "level": "district",
+   "stateId": "IN-AS",
+   "names": {
+    "en": "Hailakandi"
+   },
+   "source": {
+    "sourceId": "assam-gov-districts",
+    "sourceUrl": "https://assam.gov.in/districts-page.html",
+    "publisher": "Government of Assam (State Portal)",
+    "contentHash": "979641043c31092d5965e2eef6b39893b79f9dda91f143a953cd03901020a382",
+    "fetchedAt": "2026-10-29T20:21:57.194Z"
+   },
+   "validationStatus": "pending"
+  },
+  {
+   "id": "IN-AS-hojai",
+   "level": "district",
+   "stateId": "IN-AS",
+   "names": {
+    "en": "Hojai"
+   },
+   "source": {
+    "sourceId": "assam-gov-districts",
+    "sourceUrl": "https://assam.gov.in/districts-page.html",
+    "publisher": "Government of Assam (State Portal)",
+    "contentHash": "979641043c31092d5965e2eef6b39893b79f9dda91f143a953cd03901020a382",
+    "fetchedAt": "2026-10-29T20:21:57.194Z"
+   },
+   "validationStatus": "pending"
+  },
+  {
+   "id": "IN-AS-jorhat",
+   "level": "district",
+   "stateId": "IN-AS",
+   "names": {
+    "en": "Jorhat"
+   },
+   "source": {
+    "sourceId": "assam-gov-districts",
+    "sourceUrl": "https://assam.gov.in/districts-page.html",
+    "publisher": "Government of Assam (State Portal)",
+    "contentHash": "979641043c31092d5965e2eef6b39893b79f9dda91f143a953cd03901020a382",
+    "fetchedAt": "2026-10-29T20:21:57.194Z"
+   },
+   "validationStatus": "pending"
+  },
+  {
+   "id": "IN-AS-kamrup",
+   "level": "district",
+   "stateId": "IN-AS",
+   "names": {
+    "en": "Kamrup"
+   },
+   "source": {
+    "sourceId": "assam-gov-districts",
+    "sourceUrl": "https://assam.gov.in/districts-page.html",
+    "publisher": "Government of Assam (State Portal)",
+    "contentHash": "979641043c31092d5965e2eef6b39893b79f9dda91f143a953cd03901020a382",
+    "fetchedAt": "2026-10-29T20:21:57.194Z"
+   },
+   "validationStatus": "pending"
+  },
+  {
+   "id": "IN-AS-kamrup-metropolitan",
+   "level": "district",
+   "stateId": "IN-AS",
+   "names": {
+    "en": "Kamrup Metropolitan"
+   },
+   "source": {
+    "sourceId": "assam-gov-districts",
+    "sourceUrl": "https://assam.gov.in/districts-page.html",
+    "publisher": "Government of Assam (State Portal)",
+    "contentHash": "979641043c31092d5965e2eef6b39893b79f9dda91f143a953cd03901020a382",
+    "fetchedAt": "2026-10-29T20:21:57.194Z"
+   },
+   "validationStatus": "pending"
+  },
+  {
+   "id": "IN-AS-karbi-anglong",
+   "level": "district",
+   "stateId": "IN-AS",
+   "names": {
+    "en": "Karbi Anglong"
+   },
+   "source": {
+    "sourceId": "assam-gov-districts",
+    "sourceUrl": "https://assam.gov.in/districts-page.html",
+    "publisher": "Government of Assam (State Portal)",
+    "contentHash": "979641043c31092d5965e2eef6b39893b79f9dda91f143a953cd03901020a382",
+    "fetchedAt": "2026-10-29T20:21:57.194Z"
+   },
+   "validationStatus": "pending"
+  },
+  {
+   "id": "IN-AS-kokrajhar",
+   "level": "district",
+   "stateId": "IN-AS",
+   "names": {
+    "en": "Kokrajhar"
+   },
+   "source": {
+    "sourceId": "assam-gov-districts",
+    "sourceUrl": "https://assam.gov.in/districts-page.html",
+    "publisher": "Government of Assam (State Portal)",
+    "contentHash": "979641043c31092d5965e2eef6b39893b79f9dda91f143a953cd03901020a382",
+    "fetchedAt": "2026-10-29T20:21:57.194Z"
+   },
+   "validationStatus": "pending"
+  },
+  {
+   "id": "IN-AS-lakhimpur",
+   "level": "district",
+   "stateId": "IN-AS",
+   "names": {
+    "en": "Lakhimpur"
+   },
+   "source": {
+    "sourceId": "assam-gov-districts",
+    "sourceUrl": "https://assam.gov.in/districts-page.html",
+    "publisher": "Government of Assam (State Portal)",
+    "contentHash": "979641043c31092d5965e2eef6b39893b79f9dda91f143a953cd03901020a382",
+    "fetchedAt": "2026-10-29T20:21:57.194Z"
+   },
+   "validationStatus": "pending"
+  },
+  {
+   "id": "IN-AS-majuli",
+   "level": "district",
+   "stateId": "IN-AS",
+   "names": {
+    "en": "Majuli"
+   },
+   "source": {
+    "sourceId": "assam-gov-districts",
+    "sourceUrl": "https://assam.gov.in/districts-page.html",
+    "publisher": "Government of Assam (State Portal)",
+    "contentHash": "979641043c31092d5965e2eef6b39893b79f9dda91f143a953cd03901020a382",
+    "fetchedAt": "2026-10-29T20:21:57.194Z"
+   },
+   "validationStatus": "pending"
+  },
+  {
+   "id": "IN-AS-morigaon",
+   "level": "district",
+   "stateId": "IN-AS",
+   "names": {
+    "en": "Morigaon"
+   },
+   "source": {
+    "sourceId": "assam-gov-districts",
+    "sourceUrl": "https://assam.gov.in/districts-page.html",
+    "publisher": "Government of Assam (State Portal)",
+    "contentHash": "979641043c31092d5965e2eef6b39893b79f9dda91f143a953cd03901020a382",
+    "fetchedAt": "2026-10-29T20:21:57.194Z"
+   },
+   "validationStatus": "pending"
+  },
+  {
+   "id": "IN-AS-nagaon",
+   "level": "district",
+   "stateId": "IN-AS",
+   "names": {
+    "en": "Nagaon"
+   },
+   "source": {
+    "sourceId": "assam-gov-districts",
+    "sourceUrl": "https://assam.gov.in/districts-page.html",
+    "publisher": "Government of Assam (State Portal)",
+    "contentHash": "979641043c31092d5965e2eef6b39893b79f9dda91f143a953cd03901020a382",
+    "fetchedAt": "2026-10-29T20:21:57.194Z"
+   },
+   "validationStatus": "pending"
+  },
+  {
+   "id": "IN-AS-nalbari",
+   "level": "district",
+   "stateId": "IN-AS",
+   "names": {
+    "en": "Nalbari"
+   },
+   "source": {
+    "sourceId": "assam-gov-districts",
+    "sourceUrl": "https://assam.gov.in/districts-page.html",
+    "publisher": "Government of Assam (State Portal)",
+    "contentHash": "979641043c31092d5965e2eef6b39893b79f9dda91f143a953cd03901020a382",
+    "fetchedAt": "2026-10-29T20:21:57.194Z"
+   },
+   "validationStatus": "pending"
+  },
+  {
+   "id": "IN-AS-sivasagar",
+   "level": "district",
+   "stateId": "IN-AS",
+   "names": {
+    "en": "Sivasagar"
+   },
+   "source": {
+    "sourceId": "assam-gov-districts",
+    "sourceUrl": "https://assam.gov.in/districts-page.html",
+    "publisher": "Government of Assam (State Portal)",
+    "contentHash": "979641043c31092d5965e2eef6b39893b79f9dda91f143a953cd03901020a382",
+    "fetchedAt": "2026-10-29T20:21:57.194Z"
+   },
+   "validationStatus": "pending"
+  },
+  {
+   "id": "IN-AS-sonitpur",
+   "level": "district",
+   "stateId": "IN-AS",
+   "names": {
+    "en": "Sonitpur"
+   },
+   "source": {
+    "sourceId": "assam-gov-districts",
+    "sourceUrl": "https://assam.gov.in/districts-page.html",
+    "publisher": "Government of Assam (State Portal)",
+    "contentHash": "979641043c31092d5965e2eef6b39893b79f9dda91f143a953cd03901020a382",
+    "fetchedAt": "2026-10-29T20:21:57.194Z"
+   },
+   "validationStatus": "pending"
+  },
+  {
+   "id": "IN-AS-south-salmara-mankachar",
+   "level": "district",
+   "stateId": "IN-AS",
+   "names": {
+    "en": "South Salmara-Mankachar"
+   },
+   "source": {
+    "sourceId": "assam-gov-districts",
+    "sourceUrl": "https://assam.gov.in/districts-page.html",
+    "publisher": "Government of Assam (State Portal)",
+    "contentHash": "979641043c31092d5965e2eef6b39893b79f9dda91f143a953cd03901020a382",
+    "fetchedAt": "2026-10-29T20:21:57.194Z"
+   },
+   "validationStatus": "pending"
+  },
+  {
+   "id": "IN-AS-sribhumi",
+   "level": "district",
+   "stateId": "IN-AS",
+   "names": {
+    "en": "Sribhumi"
+   },
+   "source": {
+    "sourceId": "assam-gov-districts",
+    "sourceUrl": "https://assam.gov.in/districts-page.html",
+    "publisher": "Government of Assam (State Portal)",
+    "contentHash": "979641043c31092d5965e2eef6b39893b79f9dda91f143a953cd03901020a382",
+    "fetchedAt": "2026-10-29T20:21:57.194Z"
+   },
+   "validationStatus": "pending"
+  },
+  {
+   "id": "IN-AS-tamulpur",
+   "level": "district",
+   "stateId": "IN-AS",
+   "names": {
+    "en": "Tamulpur"
+   },
+   "source": {
+    "sourceId": "assam-gov-districts",
+    "sourceUrl": "https://assam.gov.in/districts-page.html",
+    "publisher": "Government of Assam (State Portal)",
+    "contentHash": "979641043c31092d5965e2eef6b39893b79f9dda91f143a953cd03901020a382",
+    "fetchedAt": "2026-10-29T20:21:57.194Z"
+   },
+   "validationStatus": "pending"
+  },
+  {
+   "id": "IN-AS-tinsukia",
+   "level": "district",
+   "stateId": "IN-AS",
+   "names": {
+    "en": "Tinsukia"
+   },
+   "source": {
+    "sourceId": "assam-gov-districts",
+    "sourceUrl": "https://assam.gov.in/districts-page.html",
+    "publisher": "Government of Assam (State Portal)",
+    "contentHash": "979641043c31092d5965e2eef6b39893b79f9dda91f143a953cd03901020a382",
+    "fetchedAt": "2026-10-29T20:21:57.194Z"
+   },
+   "validationStatus": "pending"
+  },
+  {
+   "id": "IN-AS-udalguri",
+   "level": "district",
+   "stateId": "IN-AS",
+   "names": {
+    "en": "Udalguri"
+   },
+   "source": {
+    "sourceId": "assam-gov-districts",
+    "sourceUrl": "https://assam.gov.in/districts-page.html",
+    "publisher": "Government of Assam (State Portal)",
+    "contentHash": "979641043c31092d5965e2eef6b39893b79f9dda91f143a953cd03901020a382",
+    "fetchedAt": "2026-10-29T20:21:57.194Z"
+   },
+   "validationStatus": "pending"
+  },
+  {
+   "id": "IN-AS-west-karbi-anglong",
+   "level": "district",
+   "stateId": "IN-AS",
+   "names": {
+    "en": "West Karbi Anglong"
+   },
+   "source": {
+    "sourceId": "assam-gov-districts",
+    "sourceUrl": "https://assam.gov.in/districts-page.html",
+    "publisher": "Government of Assam (State Portal)",
+    "contentHash": "979641043c31092d5965e2eef6b39893b79f9dda91f143a953cd03901020a382",
+    "fetchedAt": "2026-10-29T20:21:57.194Z"
+   },
+   "validationStatus": "pending"
+  },
+  {
+   "id": "IN-KA-bagalkot",
+   "level": "district",
+   "stateId": "IN-KA",
+   "names": {
+    "en": "Bagalkot"
+   },
+   "source": {
+    "sourceId": "karnataka-gov-districts",
+    "sourceUrl": "https://karnataka.gov.in/district/en",
+    "publisher": "Government of Karnataka (karnataka.gov.in)",
+    "contentHash": "6cb9548bba61d60efb9410a8a3558ad1e6d43359d7cff541a012251c17b8e81d",
+    "fetchedAt": "2026-10-29T20:22:00.027Z"
+   },
+   "validationStatus": "pending"
+  },
+  {
+   "id": "IN-KA-ballari",
+   "level": "district",
+   "stateId": "IN-KA",
+   "names": {
+    "en": "Ballari"
+   },
+   "source": {
+    "sourceId": "karnataka-gov-districts",
+    "sourceUrl": "https://karnataka.gov.in/district/en",
+    "publisher": "Government of Karnataka (karnataka.gov.in)",
+    "contentHash": "6cb9548bba61d60efb9410a8a3558ad1e6d43359d7cff541a012251c17b8e81d",
+    "fetchedAt": "2026-10-29T20:22:00.027Z"
+   },
+   "validationStatus": "pending"
+  },
+  {
+   "id": "IN-KA-belagavi",
+   "level": "district",
+   "stateId": "IN-KA",
+   "names": {
+    "en": "Belagavi"
+   },
+   "source": {
+    "sourceId": "karnataka-gov-districts",
+    "sourceUrl": "https://karnataka.gov.in/district/en",
+    "publisher": "Government of Karnataka (karnataka.gov.in)",
+    "contentHash": "6cb9548bba61d60efb9410a8a3558ad1e6d43359d7cff541a012251c17b8e81d",
+    "fetchedAt": "2026-10-29T20:22:00.027Z"
+   },
+   "validationStatus": "pending"
+  },
+  {
+   "id": "IN-KA-bengaluru-rural",
+   "level": "district",
+   "stateId": "IN-KA",
+   "names": {
+    "en": "Bengaluru Rural"
+   },
+   "source": {
+    "sourceId": "karnataka-gov-districts",
+    "sourceUrl": "https://karnataka.gov.in/district/en",
+    "publisher": "Government of Karnataka (karnataka.gov.in)",
+    "contentHash": "6cb9548bba61d60efb9410a8a3558ad1e6d43359d7cff541a012251c17b8e81d",
+    "fetchedAt": "2026-10-29T20:22:00.027Z"
+   },
+   "validationStatus": "pending"
+  },
+  {
+   "id": "IN-KA-bengaluru-urban",
+   "level": "district",
+   "stateId": "IN-KA",
+   "names": {
+    "en": "Bengaluru Urban"
+   },
+   "source": {
+    "sourceId": "karnataka-gov-districts",
+    "sourceUrl": "https://karnataka.gov.in/district/en",
+    "publisher": "Government of Karnataka (karnataka.gov.in)",
+    "contentHash": "6cb9548bba61d60efb9410a8a3558ad1e6d43359d7cff541a012251c17b8e81d",
+    "fetchedAt": "2026-10-29T20:22:00.027Z"
+   },
+   "validationStatus": "pending"
+  },
+  {
+   "id": "IN-KA-bidar",
+   "level": "district",
+   "stateId": "IN-KA",
+   "names": {
+    "en": "Bidar"
+   },
+   "source": {
+    "sourceId": "karnataka-gov-districts",
+    "sourceUrl": "https://karnataka.gov.in/district/en",
+    "publisher": "Government of Karnataka (karnataka.gov.in)",
+    "contentHash": "6cb9548bba61d60efb9410a8a3558ad1e6d43359d7cff541a012251c17b8e81d",
+    "fetchedAt": "2026-10-29T20:22:00.027Z"
+   },
+   "validationStatus": "pending"
+  },
+  {
+   "id": "IN-KA-chamarajanagar",
+   "level": "district",
+   "stateId": "IN-KA",
+   "names": {
+    "en": "Chamarajanagar"
+   },
+   "source": {
+    "sourceId": "karnataka-gov-districts",
+    "sourceUrl": "https://karnataka.gov.in/district/en",
+    "publisher": "Government of Karnataka (karnataka.gov.in)",
+    "contentHash": "6cb9548bba61d60efb9410a8a3558ad1e6d43359d7cff541a012251c17b8e81d",
+    "fetchedAt": "2026-10-29T20:22:00.027Z"
+   },
+   "validationStatus": "pending"
+  },
+  {
+   "id": "IN-KA-chikkaballapura",
+   "level": "district",
+   "stateId": "IN-KA",
+   "names": {
+    "en": "Chikkaballapura"
+   },
+   "source": {
+    "sourceId": "karnataka-gov-districts",
+    "sourceUrl": "https://karnataka.gov.in/district/en",
+    "publisher": "Government of Karnataka (karnataka.gov.in)",
+    "contentHash": "6cb9548bba61d60efb9410a8a3558ad1e6d43359d7cff541a012251c17b8e81d",
+    "fetchedAt": "2026-10-29T20:22:00.027Z"
+   },
+   "validationStatus": "pending"
+  },
+  {
+   "id": "IN-KA-chikkamagaluru",
+   "level": "district",
+   "stateId": "IN-KA",
+   "names": {
+    "en": "Chikkamagaluru"
+   },
+   "source": {
+    "sourceId": "karnataka-gov-districts",
+    "sourceUrl": "https://karnataka.gov.in/district/en",
+    "publisher": "Government of Karnataka (karnataka.gov.in)",
+    "contentHash": "6cb9548bba61d60efb9410a8a3558ad1e6d43359d7cff541a012251c17b8e81d",
+    "fetchedAt": "2026-10-29T20:22:00.027Z"
+   },
+   "validationStatus": "pending"
+  },
+  {
+   "id": "IN-KA-chitradurga",
+   "level": "district",
+   "stateId": "IN-KA",
+   "names": {
+    "en": "Chitradurga"
+   },
+   "source": {
+    "sourceId": "karnataka-gov-districts",
+    "sourceUrl": "https://karnataka.gov.in/district/en",
+    "publisher": "Government of Karnataka (karnataka.gov.in)",
+    "contentHash": "6cb9548bba61d60efb9410a8a3558ad1e6d43359d7cff541a012251c17b8e81d",
+    "fetchedAt": "2026-10-29T20:22:00.027Z"
+   },
+   "validationStatus": "pending"
+  },
+  {
+   "id": "IN-KA-dakshina-kannada",
+   "level": "district",
+   "stateId": "IN-KA",
+   "names": {
+    "en": "Dakshina Kannada"
+   },
+   "source": {
+    "sourceId": "karnataka-gov-districts",
+    "sourceUrl": "https://karnataka.gov.in/district/en",
+    "publisher": "Government of Karnataka (karnataka.gov.in)",
+    "contentHash": "6cb9548bba61d60efb9410a8a3558ad1e6d43359d7cff541a012251c17b8e81d",
+    "fetchedAt": "2026-10-29T20:22:00.027Z"
+   },
+   "validationStatus": "pending"
+  },
+  {
+   "id": "IN-KA-davanagere",
+   "level": "district",
+   "stateId": "IN-KA",
+   "names": {
+    "en": "Davanagere"
+   },
+   "source": {
+    "sourceId": "karnataka-gov-districts",
+    "sourceUrl": "https://karnataka.gov.in/district/en",
+    "publisher": "Government of Karnataka (karnataka.gov.in)",
+    "contentHash": "6cb9548bba61d60efb9410a8a3558ad1e6d43359d7cff541a012251c17b8e81d",
+    "fetchedAt": "2026-10-29T20:22:00.027Z"
+   },
+   "validationStatus": "pending"
+  },
+  {
+   "id": "IN-KA-dharwad",
+   "level": "district",
+   "stateId": "IN-KA",
+   "names": {
+    "en": "Dharwad"
+   },
+   "source": {
+    "sourceId": "karnataka-gov-districts",
+    "sourceUrl": "https://karnataka.gov.in/district/en",
+    "publisher": "Government of Karnataka (karnataka.gov.in)",
+    "contentHash": "6cb9548bba61d60efb9410a8a3558ad1e6d43359d7cff541a012251c17b8e81d",
+    "fetchedAt": "2026-10-29T20:22:00.027Z"
+   },
+   "validationStatus": "pending"
+  },
+  {
+   "id": "IN-KA-gadag",
+   "level": "district",
+   "stateId": "IN-KA",
+   "names": {
+    "en": "Gadag"
+   },
+   "source": {
+    "sourceId": "karnataka-gov-districts",
+    "sourceUrl": "https://karnataka.gov.in/district/en",
+    "publisher": "Government of Karnataka (karnataka.gov.in)",
+    "contentHash": "6cb9548bba61d60efb9410a8a3558ad1e6d43359d7cff541a012251c17b8e81d",
+    "fetchedAt": "2026-10-29T20:22:00.027Z"
+   },
+   "validationStatus": "pending"
+  },
+  {
+   "id": "IN-KA-hassan",
+   "level": "district",
+   "stateId": "IN-KA",
+   "names": {
+    "en": "Hassan",
+    "hi": "हासन",
+    "ta": "ஹாசன்"
+   },
+   "source": {
+    "sourceId": "karnataka-gov-districts",
+    "sourceUrl": "https://karnataka.gov.in/district/en",
+    "publisher": "Government of Karnataka (karnataka.gov.in)",
+    "contentHash": "6cb9548bba61d60efb9410a8a3558ad1e6d43359d7cff541a012251c17b8e81d",
+    "fetchedAt": "2026-10-29T20:22:00.027Z"
+   },
+   "validationStatus": "pending"
+  },
+  {
+   "id": "IN-KA-haveri",
+   "level": "district",
+   "stateId": "IN-KA",
+   "names": {
+    "en": "Haveri"
+   },
+   "source": {
+    "sourceId": "karnataka-gov-districts",
+    "sourceUrl": "https://karnataka.gov.in/district/en",
+    "publisher": "Government of Karnataka (karnataka.gov.in)",
+    "contentHash": "6cb9548bba61d60efb9410a8a3558ad1e6d43359d7cff541a012251c17b8e81d",
+    "fetchedAt": "2026-10-29T20:22:00.027Z"
+   },
+   "validationStatus": "pending"
+  },
+  {
+   "id": "IN-KA-kalaburagi",
+   "level": "district",
+   "stateId": "IN-KA",
+   "names": {
+    "en": "Kalaburagi"
+   },
+   "source": {
+    "sourceId": "karnataka-gov-districts",
+    "sourceUrl": "https://karnataka.gov.in/district/en",
+    "publisher": "Government of Karnataka (karnataka.gov.in)",
+    "contentHash": "6cb9548bba61d60efb9410a8a3558ad1e6d43359d7cff541a012251c17b8e81d",
+    "fetchedAt": "2026-10-29T20:22:00.027Z"
+   },
+   "validationStatus": "pending"
+  },
+  {
+   "id": "IN-KA-kodagu",
+   "level": "district",
+   "stateId": "IN-KA",
+   "names": {
+    "en": "Kodagu"
+   },
+   "source": {
+    "sourceId": "karnataka-gov-districts",
+    "sourceUrl": "https://karnataka.gov.in/district/en",
+    "publisher": "Government of Karnataka (karnataka.gov.in)",
+    "contentHash": "6cb9548bba61d60efb9410a8a3558ad1e6d43359d7cff541a012251c17b8e81d",
+    "fetchedAt": "2026-10-29T20:22:00.027Z"
+   },
+   "validationStatus": "pending"
+  },
+  {
+   "id": "IN-KA-kolar",
+   "level": "district",
+   "stateId": "IN-KA",
+   "names": {
+    "en": "Kolar"
+   },
+   "source": {
+    "sourceId": "karnataka-gov-districts",
+    "sourceUrl": "https://karnataka.gov.in/district/en",
+    "publisher": "Government of Karnataka (karnataka.gov.in)",
+    "contentHash": "6cb9548bba61d60efb9410a8a3558ad1e6d43359d7cff541a012251c17b8e81d",
+    "fetchedAt": "2026-10-29T20:22:00.027Z"
+   },
+   "validationStatus": "pending"
+  },
+  {
+   "id": "IN-KA-koppal",
+   "level": "district",
+   "stateId": "IN-KA",
+   "names": {
+    "en": "Koppal"
+   },
+   "source": {
+    "sourceId": "karnataka-gov-districts",
+    "sourceUrl": "https://karnataka.gov.in/district/en",
+    "publisher": "Government of Karnataka (karnataka.gov.in)",
+    "contentHash": "6cb9548bba61d60efb9410a8a3558ad1e6d43359d7cff541a012251c17b8e81d",
+    "fetchedAt": "2026-10-29T20:22:00.027Z"
+   },
+   "validationStatus": "pending"
+  },
+  {
+   "id": "IN-KA-mandya",
+   "level": "district",
+   "stateId": "IN-KA",
+   "names": {
+    "en": "Mandya"
+   },
+   "source": {
+    "sourceId": "karnataka-gov-districts",
+    "sourceUrl": "https://karnataka.gov.in/district/en",
+    "publisher": "Government of Karnataka (karnataka.gov.in)",
+    "contentHash": "6cb9548bba61d60efb9410a8a3558ad1e6d43359d7cff541a012251c17b8e81d",
+    "fetchedAt": "2026-10-29T20:22:00.027Z"
+   },
+   "validationStatus": "pending"
+  },
+  {
+   "id": "IN-KA-mysuru",
+   "level": "district",
+   "stateId": "IN-KA",
+   "names": {
+    "en": "Mysuru"
+   },
+   "source": {
+    "sourceId": "karnataka-gov-districts",
+    "sourceUrl": "https://karnataka.gov.in/district/en",
+    "publisher": "Government of Karnataka (karnataka.gov.in)",
+    "contentHash": "6cb9548bba61d60efb9410a8a3558ad1e6d43359d7cff541a012251c17b8e81d",
+    "fetchedAt": "2026-10-29T20:22:00.027Z"
+   },
+   "validationStatus": "pending"
+  },
+  {
+   "id": "IN-KA-raichur",
+   "level": "district",
+   "stateId": "IN-KA",
+   "names": {
+    "en": "Raichur"
+   },
+   "source": {
+    "sourceId": "karnataka-gov-districts",
+    "sourceUrl": "https://karnataka.gov.in/district/en",
+    "publisher": "Government of Karnataka (karnataka.gov.in)",
+    "contentHash": "6cb9548bba61d60efb9410a8a3558ad1e6d43359d7cff541a012251c17b8e81d",
+    "fetchedAt": "2026-10-29T20:22:00.027Z"
+   },
+   "validationStatus": "pending"
+  },
+  {
+   "id": "IN-KA-ramanagara",
+   "level": "district",
+   "stateId": "IN-KA",
+   "names": {
+    "en": "Ramanagara"
+   },
+   "source": {
+    "sourceId": "karnataka-gov-districts",
+    "sourceUrl": "https://karnataka.gov.in/district/en",
+    "publisher": "Government of Karnataka (karnataka.gov.in)",
+    "contentHash": "6cb9548bba61d60efb9410a8a3558ad1e6d43359d7cff541a012251c17b8e81d",
+    "fetchedAt": "2026-10-29T20:22:00.027Z"
+   },
+   "validationStatus": "pending"
+  },
+  {
+   "id": "IN-KA-shivamogga",
+   "level": "district",
+   "stateId": "IN-KA",
+   "names": {
+    "en": "Shivamogga"
+   },
+   "source": {
+    "sourceId": "karnataka-gov-districts",
+    "sourceUrl": "https://karnataka.gov.in/district/en",
+    "publisher": "Government of Karnataka (karnataka.gov.in)",
+    "contentHash": "6cb9548bba61d60efb9410a8a3558ad1e6d43359d7cff541a012251c17b8e81d",
+    "fetchedAt": "2026-10-29T20:22:00.027Z"
+   },
+   "validationStatus": "pending"
+  },
+  {
+   "id": "IN-KA-tumakuru",
+   "level": "district",
+   "stateId": "IN-KA",
+   "names": {
+    "en": "Tumakuru"
+   },
+   "source": {
+    "sourceId": "karnataka-gov-districts",
+    "sourceUrl": "https://karnataka.gov.in/district/en",
+    "publisher": "Government of Karnataka (karnataka.gov.in)",
+    "contentHash": "6cb9548bba61d60efb9410a8a3558ad1e6d43359d7cff541a012251c17b8e81d",
+    "fetchedAt": "2026-10-29T20:22:00.027Z"
+   },
+   "validationStatus": "pending"
+  },
+  {
+   "id": "IN-KA-udupi",
+   "level": "district",
+   "stateId": "IN-KA",
+   "names": {
+    "en": "Udupi"
+   },
+   "source": {
+    "sourceId": "karnataka-gov-districts",
+    "sourceUrl": "https://karnataka.gov.in/district/en",
+    "publisher": "Government of Karnataka (karnataka.gov.in)",
+    "contentHash": "6cb9548bba61d60efb9410a8a3558ad1e6d43359d7cff541a012251c17b8e81d",
+    "fetchedAt": "2026-10-29T20:22:00.027Z"
+   },
+   "validationStatus": "pending"
+  },
+  {
+   "id": "IN-KA-uttara-kannada",
+   "level": "district",
+   "stateId": "IN-KA",
+   "names": {
+    "en": "Uttara Kannada"
+   },
+   "source": {
+    "sourceId": "karnataka-gov-districts",
+    "sourceUrl": "https://karnataka.gov.in/district/en",
+    "publisher": "Government of Karnataka (karnataka.gov.in)",
+    "contentHash": "6cb9548bba61d60efb9410a8a3558ad1e6d43359d7cff541a012251c17b8e81d",
+    "fetchedAt": "2026-10-29T20:22:00.027Z"
+   },
+   "validationStatus": "pending"
+  },
+  {
+   "id": "IN-KA-vijayanagara",
+   "level": "district",
+   "stateId": "IN-KA",
+   "names": {
+    "en": "Vijayanagara"
+   },
+   "source": {
+    "sourceId": "karnataka-gov-districts",
+    "sourceUrl": "https://karnataka.gov.in/district/en",
+    "publisher": "Government of Karnataka (karnataka.gov.in)",
+    "contentHash": "6cb9548bba61d60efb9410a8a3558ad1e6d43359d7cff541a012251c17b8e81d",
+    "fetchedAt": "2026-10-29T20:22:00.027Z"
+   },
+   "validationStatus": "pending"
+  },
+  {
+   "id": "IN-KA-vijayapura",
+   "level": "district",
+   "stateId": "IN-KA",
+   "names": {
+    "en": "Vijayapura"
+   },
+   "source": {
+    "sourceId": "karnataka-gov-districts",
+    "sourceUrl": "https://karnataka.gov.in/district/en",
+    "publisher": "Government of Karnataka (karnataka.gov.in)",
+    "contentHash": "6cb9548bba61d60efb9410a8a3558ad1e6d43359d7cff541a012251c17b8e81d",
+    "fetchedAt": "2026-10-29T20:22:00.027Z"
+   },
+   "validationStatus": "pending"
+  },
+  {
+   "id": "IN-KA-yadgir",
+   "level": "district",
+   "stateId": "IN-KA",
+   "names": {
+    "en": "Yadgir"
+   },
+   "source": {
+    "sourceId": "karnataka-gov-districts",
+    "sourceUrl": "https://karnataka.gov.in/district/en",
+    "publisher": "Government of Karnataka (karnataka.gov.in)",
+    "contentHash": "6cb9548bba61d60efb9410a8a3558ad1e6d43359d7cff541a012251c17b8e81d",
+    "fetchedAt": "2026-10-29T20:22:00.027Z"
+   },
+   "validationStatus": "pending"
+  },
+  {
+   "id": "IN-region-west-coast",
+   "level": "region",
+   "stateId": null,
+   "names": {
+    "en": "West Coast of India"
+   },
+   "source": "iisr_ginger_guide_2025_wording",
+   "note": "Agro-region wording from the ICAR-IISR ginger guide; no boundary or member-district list is sourced, so no district resolves to it.",
+   "validationStatus": "pending"
+  },
+  {
+   "id": "IN",
+   "level": "national",
+   "stateId": null,
+   "names": {
+    "en": "India",
+    "hi": "भारत",
+    "ta": "இந்தியா"
+   },
+   "source": "iso_3166_1",
+   "validationStatus": "pending"
+  }
+ ]
+}

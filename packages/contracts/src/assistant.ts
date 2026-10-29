@@ -183,10 +183,13 @@ export const ToolSchemas = {
     input: z
       .object({
         mediaId: Id,
+        /** Matches POST /media/:id/segmentation (T10): a short concept, a normalised box, or normalised points. */
         prompt: z.discriminatedUnion('kind', [
-          z.object({ kind: z.literal('point'), x: Normalized, y: Normalized }).strict(),
+          z.object({ kind: z.literal('concept'), text: z.string().trim().min(1).max(40) }).strict(),
           z.object({ kind: z.literal('box'), x0: Normalized, y0: Normalized, x1: Normalized, y1: Normalized }).strict(),
-          z.object({ kind: z.literal('region'), regionId: Id }).strict(),
+          z
+            .object({ kind: z.literal('points'), points: z.array(z.object({ x: Normalized, y: Normalized, positive: z.boolean().optional() }).strict()).min(1).max(16) })
+            .strict(),
         ]),
       })
       .strict(),

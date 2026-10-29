@@ -97,7 +97,9 @@
           "budget.inrPerHa",
           "labour.level",
           "rainfall.seasonalMm",
-          "elevation.m"
+          "elevation.m",
+          "weather.dailyRainMm",
+          "weather.forecastRainMm7d"
         ]
       }
     },

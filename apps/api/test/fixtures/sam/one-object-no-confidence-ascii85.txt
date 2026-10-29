@@ -1,0 +1,2 @@
+<0f>
+1<|box;x1=40;y1=20;x2=119;y2=99;w=160;h=120|><|mask;x=0;y=0;data=30,40,!zzzzzz!!#7`qu?^]s82is5QCW]!'gM]!!#7`qu?^]s82is5QCW]!'gM]!!#7`qu?^]s82is5QCW]!'gM]!!#7`qu?^]s82is5QCW]!'gM]!!#7`qu?^]s82is5QCW]!'gM]zzzzzz!!!|>

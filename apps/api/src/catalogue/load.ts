@@ -1,0 +1,203 @@
+import { createHash } from "node:crypto";
+import type { Pool } from "../db/pool";
+import { withTransaction } from "../db/pool";
+import { readCatalogueFiles, type CatalogueFiles } from "./files";
+
+/** Deterministic UUID (v5-style, fixed namespace) so evidence ids are stable across reloads and databases. */
+const NS = Buffer.from("6ba7b8109dad11d180b400c04fd430c8", "hex");
+export function uuidFromKey(key: string): string {
+  const h = createHash("sha1").update(NS).update(key).digest();
+  h[6] = (h[6]! & 0x0f) | 0x50;
+  h[8] = (h[8]! & 0x3f) | 0x80;
+  const x = h.subarray(0, 16).toString("hex");
+  return `${x.slice(0, 8)}-${x.slice(8, 12)}-${x.slice(12, 16)}-${x.slice(16, 20)}-${x.slice(20)}`;
+}
+
+/** `ginger.fresh` (T05b) -> `ginger-fresh` (catalogue product id). Unknown product ids are dropped, never guessed. */
+export function normaliseProductIds(ids: string[], known: Set<string>): { kept: string[]; dropped: string[] } {
+  const kept: string[] = [];
+  const dropped: string[] = [];
+  for (const id of ids) {
+    const alt = id.replace(".", "-");
+    if (known.has(id)) kept.push(id);
+    else if (known.has(alt)) kept.push(alt);
+    else dropped.push(id);
+  }
+  return { kept: [...new Set(kept)], dropped };
+}
+
+export const topicOf = (section: string | undefined): string[] => {
+  const t = (section ?? "").toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, "").slice(0, 80);
+  return /^[a-z][a-z0-9_]{1,80}$/.test(t) ? [t] : [];
+};
+
+const locatorText = (l: { page?: number | undefined; section?: string | undefined }) => [l.page !== undefined ? `p${l.page}` : null, l.section ?? null].filter(Boolean).join(" | ") || null;
+
+export interface LoadCounts {
+  identities: number;
+  products: number;
+  profiles: number;
+  qualifiedProfiles: number;
+  sourceDocuments: number;
+  evidence: number;
+  evidenceValidated: number;
+  evidencePending: number;
+  droppedProductRefs: number;
+  stages: number;
+  rules: number;
+  rulesByStatus: Record<string, number>;
+  coverage: number;
+  districts: number;
+  states: number;
+}
+
+/** Idempotent upsert of the whole catalogue. Public reference data: mode-agnostic, no farmer data. */
+export async function loadCatalogueIntoDb(pool: Pool, files: CatalogueFiles = readCatalogueFiles()): Promise<LoadCounts> {
+  const knownProducts = new Set(files.products.map((p) => p.id));
+  return withTransaction(pool, async (db) => {
+    const cropUuid = new Map<string, string>();
+    const profileByCrop = new Map(files.profiles.map((p) => [p.cropId, p]));
+    for (const i of files.identities) {
+      const names = {
+        en: [
+          ...i.commonNames.filter((n) => n.language === "en").map((n) => ({ text: n.text, kind: n.kind })),
+          ...i.aliases.filter((n) => n.language === "en").map((n) => ({ text: n.text, kind: n.kind })),
+        ],
+        ...Object.fromEntries(
+          ["ta", "hi"].flatMap((l) => {
+            const t = [...i.commonNames, ...i.aliases].filter((n) => n.language === l).map((n) => ({ text: n.text, kind: n.kind }));
+            return t.length ? [[l, t]] : [];
+          }),
+        ),
+      };
+      const r = await db.query<{ id: string }>(
+        `INSERT INTO crop_identities (slug, scientific_name, names, category, record, source_id, validation_status)
+         VALUES ($1,$2,$3::jsonb,$4,$5::jsonb,'catalogue:T06a','pending')
+         ON CONFLICT (slug) DO UPDATE SET scientific_name=EXCLUDED.scientific_name, names=EXCLUDED.names, category=EXCLUDED.category,
+           record=EXCLUDED.record, source_id=EXCLUDED.source_id, updated_at=now() RETURNING id`,
+        [i.id, i.botanicalName, JSON.stringify(names), profileByCrop.get(i.id)?.group ?? null, JSON.stringify(i)],
+      );
+      cropUuid.set(i.id, r.rows[0]!.id);
+    }
+    for (const p of files.products) {
+      await db.query(
+        `INSERT INTO crop_products (crop_id, slug, name, form, grade, unit, record, source_id, validation_status)
+         VALUES ($1,$2,$3,$4,$5,'kg',$6::jsonb,'catalogue:T06a','pending')
+         ON CONFLICT (slug) DO UPDATE SET crop_id=EXCLUDED.crop_id, name=EXCLUDED.name, form=EXCLUDED.form, grade=EXCLUDED.grade,
+           unit=EXCLUDED.unit, record=EXCLUDED.record, updated_at=now()`,
+        [cropUuid.get(p.cropId)!, p.id, p.name, p.productBasis, p.grade, JSON.stringify(p)],
+      );
+    }
+    let qualified = 0;
+    for (const p of files.profiles) {
+      if (p.qualification.qualified) qualified++;
+      await db.query(
+        `INSERT INTO crop_profiles (crop_id, record, qualified, source_id, validation_status) VALUES ($1,$2::jsonb,$3,'catalogue:T06a','pending')
+         ON CONFLICT (crop_id) DO UPDATE SET record=EXCLUDED.record, qualified=EXCLUDED.qualified, updated_at=now()`,
+        [cropUuid.get(p.cropId)!, JSON.stringify(p), p.qualification.qualified],
+      );
+    }
+
+    const docs = new Set<string>();
+    let dropped = 0;
+    let validated = 0;
+    for (const { record: e, sourceId } of files.evidence) {
+      const doc = await db.query<{ id: string }>(
+        `INSERT INTO source_documents (content_hash, title, publisher, url, licence, access_class, retrieved_at, metadata)
+         VALUES ($1,$2,$3,$4,$5,'public',$6,$7::jsonb)
+         ON CONFLICT (content_hash) DO UPDATE SET title=EXCLUDED.title, publisher=EXCLUDED.publisher, url=EXCLUDED.url, licence=EXCLUDED.licence, updated_at=now()
+         RETURNING id`,
+        [e.contentHash, e.documentTitle, e.publisher, e.sourceUrl, e.licence.licence, e.ingestedAt, JSON.stringify({ documentVersion: e.documentVersion, redistributable: e.licence.redistributable })],
+      );
+      docs.add(doc.rows[0]!.id);
+      const prod = normaliseProductIds(e.productIds, knownProducts);
+      dropped += prod.dropped.length;
+      if (e.validationStatus === "validated") validated++;
+      await db.query(
+        `INSERT INTO evidence_records (id, evidence_key, source_id, locator, excerpt, claim, mode, geography_level, geography_ids, crop_ids, product_ids, topics,
+           effective_available_at, availability_basis, validation_status, record, catalogue_source_id)
+         VALUES ($1,$2,$3,$4,$5,$6::jsonb,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16::jsonb,$17)
+         ON CONFLICT (evidence_key) DO UPDATE SET source_id=EXCLUDED.source_id, locator=EXCLUDED.locator, excerpt=EXCLUDED.excerpt, claim=EXCLUDED.claim,
+           mode=EXCLUDED.mode, geography_level=EXCLUDED.geography_level, geography_ids=EXCLUDED.geography_ids, crop_ids=EXCLUDED.crop_ids,
+           product_ids=EXCLUDED.product_ids, topics=EXCLUDED.topics, effective_available_at=EXCLUDED.effective_available_at,
+           availability_basis=EXCLUDED.availability_basis, validation_status=EXCLUDED.validation_status, record=EXCLUDED.record,
+           catalogue_source_id=EXCLUDED.catalogue_source_id, updated_at=now()`,
+        [
+          uuidFromKey(e.id), e.id, doc.rows[0]!.id, locatorText(e.locator), e.content.kind === "excerpt" ? e.content.text : null,
+          JSON.stringify({ units: e.units, sourceUnits: e.sourceUnits, droppedProductIds: prod.dropped }),
+          e.mode, e.geography.level, e.geography.ids, e.cropIds, prod.kept, topicOf(e.locator.section),
+          e.availability.effectiveAvailableAt, e.availability.basis, e.validationStatus, JSON.stringify(e), sourceId,
+        ],
+      );
+    }
+
+    const rulesByStatus: Record<string, number> = {};
+    let ruleCount = 0;
+    for (const set of files.ruleSets) {
+      for (const r of set.rules) {
+        const crop = cropUuid.get(r.cropId);
+        if (!crop) throw new Error(`rule ${r.id}: unknown crop ${r.cropId}`);
+        const firstEv = r.evidenceIds[0];
+        await db.query(
+          `INSERT INTO crop_rules (crop_id, region_code, rule_kind, version, rule, evidence_id, rule_key, review_status, reviewer, rule_mode, source_id, validation_status, evidence_keys)
+           VALUES ($1,$2,$3,$4,$5::jsonb,(SELECT id FROM evidence_records WHERE evidence_key=$6),$7,$8,$9,$10,$11,'pending',$12)
+           ON CONFLICT (rule_key) DO UPDATE SET crop_id=EXCLUDED.crop_id, region_code=EXCLUDED.region_code, rule_kind=EXCLUDED.rule_kind, version=EXCLUDED.version,
+             rule=EXCLUDED.rule, evidence_id=EXCLUDED.evidence_id, review_status=EXCLUDED.review_status, reviewer=EXCLUDED.reviewer,
+             rule_mode=EXCLUDED.rule_mode, source_id=EXCLUDED.source_id, evidence_keys=EXCLUDED.evidence_keys, updated_at=now()`,
+          [crop, r.scope.regionIds.join(","), r.id, r.version, JSON.stringify(r), firstEv ?? null, r.id, r.reviewStatus, set.reviewers[r.id] ?? null, r.mode, set.sourceId, r.evidenceIds],
+        );
+        ruleCount++;
+        rulesByStatus[r.reviewStatus] = (rulesByStatus[r.reviewStatus] ?? 0) + 1;
+      }
+    }
+    for (const s of files.stages) {
+      const crop = cropUuid.get(s.cropId);
+      if (!crop) throw new Error(`stage ${s.id}: unknown crop`);
+      await db.query(
+        `INSERT INTO stage_definitions (crop_id, region_code, stage_key, ordinal, typical_days_min, typical_days_max, definition, evidence_id, version, record_key, review_status, source_id, validation_status)
+         VALUES ($1,$2,$3,$4,$5,$6,$7::jsonb,(SELECT id FROM evidence_records WHERE evidence_key=$8),1,$9,$10,'T05b:ginger.hassan-kharif.stages.json','pending')
+         ON CONFLICT (record_key) DO UPDATE SET region_code=EXCLUDED.region_code, stage_key=EXCLUDED.stage_key, ordinal=EXCLUDED.ordinal,
+           typical_days_min=EXCLUDED.typical_days_min, typical_days_max=EXCLUDED.typical_days_max, definition=EXCLUDED.definition,
+           evidence_id=EXCLUDED.evidence_id, review_status=EXCLUDED.review_status, updated_at=now()`,
+        [crop, s.scope.ids.join(","), s.stageId, s.order, s.durationDays.min, s.durationDays.max, JSON.stringify(s), s.evidenceIds[0] ?? null, s.id, s.reviewStatus],
+      );
+    }
+    for (const c of files.coverage) {
+      const crop = cropUuid.get(c.cropId);
+      if (!crop) throw new Error(`coverage ${c.id}: unknown crop`);
+      await db.query(
+        `INSERT INTO coverage_records (crop_id, region_code, capability, status, detail, record_key, record, source_id, validation_status)
+         VALUES ($1,$2,$3,$4,$5::jsonb,$6,$7::jsonb,'catalogue:T06a','pending')
+         ON CONFLICT (record_key) DO UPDATE SET crop_id=EXCLUDED.crop_id, region_code=EXCLUDED.region_code, capability=EXCLUDED.capability, status=EXCLUDED.status,
+           detail=EXCLUDED.detail, record=EXCLUDED.record, updated_at=now()`,
+        [crop, c.region.ids.join(","), c.capability, c.supportStatus, JSON.stringify({ season: c.season, irrigation: c.irrigation, productId: c.productId, missingReason: c.missingReason }), c.id, JSON.stringify(c)],
+      );
+    }
+    for (const a of files.areas) {
+      await db.query(
+        `INSERT INTO districts (id, level, state_id, names, source_id, source, validation_status)
+         VALUES ($1,$2,$3,$4::jsonb,$5,$6::jsonb,$7)
+         ON CONFLICT (id) DO UPDATE SET level=EXCLUDED.level, state_id=EXCLUDED.state_id, names=EXCLUDED.names, source_id=EXCLUDED.source_id,
+           source=EXCLUDED.source, validation_status=EXCLUDED.validation_status, updated_at=now()`,
+        [a.id, a.level, a.stateId, JSON.stringify(a.names), typeof a.source === "string" ? a.source : a.source.sourceId, JSON.stringify(a.source), a.validationStatus],
+      );
+    }
+    return {
+      identities: files.identities.length,
+      products: files.products.length,
+      profiles: files.profiles.length,
+      qualifiedProfiles: qualified,
+      sourceDocuments: docs.size,
+      evidence: files.evidence.length,
+      evidenceValidated: validated,
+      evidencePending: files.evidence.length - validated,
+      droppedProductRefs: dropped,
+      stages: files.stages.length,
+      rules: ruleCount,
+      rulesByStatus,
+      coverage: files.coverage.length,
+      districts: files.areas.filter((a) => a.level === "district").length,
+      states: files.areas.filter((a) => a.level === "state").length,
+    };
+  });
+}

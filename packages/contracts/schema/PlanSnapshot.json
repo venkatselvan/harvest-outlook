@@ -278,7 +278,11 @@
                       "kg/acre",
                       "days",
                       "celsius",
-                      "percent"
+                      "percent",
+                      "m",
+                      "cm",
+                      "g",
+                      "months"
                     ]
                   }
                 },
@@ -503,7 +507,11 @@
                       "kg/acre",
                       "days",
                       "celsius",
-                      "percent"
+                      "percent",
+                      "m",
+                      "cm",
+                      "g",
+                      "months"
                     ]
                   }
                 },
@@ -1092,7 +1100,11 @@
                           "kg/acre",
                           "days",
                           "celsius",
-                          "percent"
+                          "percent",
+                          "m",
+                          "cm",
+                          "g",
+                          "months"
                         ]
                       }
                     },
@@ -1317,7 +1329,11 @@
                           "kg/acre",
                           "days",
                           "celsius",
-                          "percent"
+                          "percent",
+                          "m",
+                          "cm",
+                          "g",
+                          "months"
                         ]
                       }
                     },

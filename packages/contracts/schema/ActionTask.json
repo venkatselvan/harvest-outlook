@@ -291,7 +291,11 @@
                     "kg/acre",
                     "days",
                     "celsius",
-                    "percent"
+                    "percent",
+                    "m",
+                    "cm",
+                    "g",
+                    "months"
                   ]
                 }
               },
@@ -516,7 +520,11 @@
                     "kg/acre",
                     "days",
                     "celsius",
-                    "percent"
+                    "percent",
+                    "m",
+                    "cm",
+                    "g",
+                    "months"
                   ]
                 }
               },
@@ -1009,7 +1017,9 @@
                     "budget.inrPerHa",
                     "labour.level",
                     "rainfall.seasonalMm",
-                    "elevation.m"
+                    "elevation.m",
+                    "weather.dailyRainMm",
+                    "weather.forecastRainMm7d"
                   ]
                 },
                 "op": {
@@ -1055,7 +1065,9 @@
                     "budget.inrPerHa",
                     "labour.level",
                     "rainfall.seasonalMm",
-                    "elevation.m"
+                    "elevation.m",
+                    "weather.dailyRainMm",
+                    "weather.forecastRainMm7d"
                   ]
                 },
                 "op": {
@@ -1105,7 +1117,9 @@
                     "budget.inrPerHa",
                     "labour.level",
                     "rainfall.seasonalMm",
-                    "elevation.m"
+                    "elevation.m",
+                    "weather.dailyRainMm",
+                    "weather.forecastRainMm7d"
                   ]
                 },
                 "op": {
@@ -1151,7 +1165,9 @@
                     "budget.inrPerHa",
                     "labour.level",
                     "rainfall.seasonalMm",
-                    "elevation.m"
+                    "elevation.m",
+                    "weather.dailyRainMm",
+                    "weather.forecastRainMm7d"
                   ]
                 },
                 "op": {
@@ -1197,7 +1213,9 @@
                     "budget.inrPerHa",
                     "labour.level",
                     "rainfall.seasonalMm",
-                    "elevation.m"
+                    "elevation.m",
+                    "weather.dailyRainMm",
+                    "weather.forecastRainMm7d"
                   ]
                 },
                 "op": {
@@ -1262,7 +1280,9 @@
                     "budget.inrPerHa",
                     "labour.level",
                     "rainfall.seasonalMm",
-                    "elevation.m"
+                    "elevation.m",
+                    "weather.dailyRainMm",
+                    "weather.forecastRainMm7d"
                   ]
                 },
                 "op": {

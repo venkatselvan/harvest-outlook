@@ -15,23 +15,17 @@
           "properties": {
             "kind": {
               "type": "string",
-              "const": "point"
+              "const": "concept"
             },
-            "x": {
-              "type": "number",
-              "minimum": 0,
-              "maximum": 1
-            },
-            "y": {
-              "type": "number",
-              "minimum": 0,
-              "maximum": 1
+            "text": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 40
             }
           },
           "required": [
             "kind",
-            "x",
-            "y"
+            "text"
           ],
           "additionalProperties": false
         },
@@ -77,18 +71,40 @@
           "properties": {
             "kind": {
               "type": "string",
-              "const": "region"
+              "const": "points"
             },
-            "regionId": {
-              "type": "string",
-              "minLength": 1,
-              "maxLength": 200,
-              "pattern": "^[A-Za-z0-9][A-Za-z0-9._:\\/-]*$"
+            "points": {
+              "minItems": 1,
+              "maxItems": 16,
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "x": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "y": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "positive": {
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "x",
+                  "y"
+                ],
+                "additionalProperties": false
+              }
             }
           },
           "required": [
             "kind",
-            "regionId"
+            "points"
           ],
           "additionalProperties": false
         }

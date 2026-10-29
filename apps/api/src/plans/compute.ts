@@ -418,7 +418,7 @@ export function computeWater(args: {
     return { methodVersion: WATER_METHOD_VERSION, status: "unavailable", missingReason: params ? "weather_unavailable" : "water_parameters_missing", irrigationCategory, interpretation: null, weather: null, byTiming: {}, notes: [] };
   }
   const notes = [
-    "Climatology days are passed to the water balance with rainState 'forecast' because the WaterDay contract has no climatology state; such results are scenarios.",
+    "Climatology days are passed to the water balance with rainState 'climatology'; such results are scenarios.",
     "Past days without an observation are passed as missing; the balance is then incomplete rather than gap-filled.",
   ];
   if (interpretation === "deficit_indicator_rainfed") notes.push("Rainfed plan: computed irrigation need is a water-deficit indicator, not an irrigation instruction.");
@@ -431,7 +431,7 @@ export function computeWater(args: {
       return k ? [{ stageId: s.stageId, start: s.start, end: s.end, kc: k.kc, kcSource: k.kcSource }] : [];
     });
     const end = spans.map((s) => s.end).sort().at(-1) ?? stages.plantingDate;
-    const days: { date: string; et0Mm: number | null; et0Source: string | null; rainMm: number | null; rainState: "observed" | "forecast" | "missing" }[] = [];
+    const days: { date: string; et0Mm: number | null; et0Source: string | null; rainMm: number | null; rainState: "observed" | "forecast" | "climatology" | "missing" }[] = [];
     for (let d = stages.plantingDate; d <= end; d = addDays(d, 1)) {
       const w = byDate.get(d);
       const rain = w && w.state !== "unavailable" ? w.rainMm : null;
@@ -441,7 +441,7 @@ export function computeWater(args: {
         et0Mm: et0,
         et0Source: et0 === null ? null : (w?.sourceId ?? null),
         rainMm: rain,
-        rainState: rain === null ? "missing" : w!.state === "observed" ? "observed" : "forecast",
+        rainState: rain === null ? "missing" : w!.state === "observed" ? "observed" : w!.state === "scenario" ? "climatology" : "forecast",
       });
     }
     byTiming[timing] = calculateWaterBalance({

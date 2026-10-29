@@ -3,9 +3,7 @@ import { SkeletonPage } from "../components/SkeletonPage";
 export const Explore = () => (
   <SkeletonPage title="Explore" description="Compare crops for your location and season. Placeholder: crop comparison arrives in a later task." />
 );
-export const Farm = () => (
-  <SkeletonPage title="Farm" description="Your farm profile, season plan and timeline. Placeholder." />
-);
+export { FarmPage as Farm } from "./farm/FarmPage";
 export const Journal = () => (
   <SkeletonPage title="Journal" description="Photos, voice and notes for your growing season. Placeholder." />
 );

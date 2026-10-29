@@ -24,7 +24,8 @@ export const WaterDay = z
     et0Mm: z.number().nonnegative().nullable(),
     et0Source: z.string().min(1).nullable(),
     rainMm: z.number().nonnegative().nullable(),
-    rainState: z.enum(['observed', 'forecast', 'missing']),
+    /** climatology is a long-term normal, treated like forecast: it forces a scenario run. */
+    rainState: z.enum(['observed', 'forecast', 'climatology', 'missing']),
   })
   .strict()
   .refine((d) => (d.rainState === 'missing') === (d.rainMm === null), { message: 'rainMm is null iff rainState is missing' });
@@ -79,7 +80,7 @@ export const WaterRun = z
           kc: z.number(),
           etcMm: z.number(),
           effectiveRainMm: z.number(),
-          rainState: z.enum(['observed', 'forecast', 'missing']),
+          rainState: z.enum(['observed', 'forecast', 'climatology', 'missing']),
           irrigationNetMm: z.number(),
           depletionEndMm: z.number().nullable(),
         })

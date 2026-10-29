@@ -1,0 +1,177 @@
+{
+  "synthetic": true,
+  "scenario": "tool_calling",
+  "description": "Synthetic. resolve_crop_identity then retrieve_evidence, then a cited synthesis. Needs the synthetic evidence row 00000000-0000-4000-8000-0000000000e1 and a crop with Tamil alias seeded by the test helper.",
+  "steps": [
+    {
+      "pass": "interpretation",
+      "response": {
+        "id": "resp_syn_0004",
+        "object": "response",
+        "created_at": 1761800004,
+        "status": "completed",
+        "model": "muse-spark-1.3",
+        "metadata": {
+          "synthetic": "true"
+        },
+        "output": [
+          {
+            "type": "message",
+            "id": "msg_syn_4",
+            "role": "assistant",
+            "status": "completed",
+            "content": [
+              {
+                "type": "output_text",
+                "text": "{\"intent\":\"explore_crops\",\"language\":\"ta\",\"cropMentions\":[{\"text\":\"இஞ்சி\",\"language\":\"ta\"}],\"facts\":[],\"needsEscalation\":false,\"clarificationQuestion\":null}",
+                "annotations": []
+              }
+            ]
+          }
+        ],
+        "usage": {
+          "input_tokens": 600,
+          "input_tokens_details": {
+            "cached_tokens": 0
+          },
+          "output_tokens": 90,
+          "total_tokens": 690
+        }
+      }
+    },
+    {
+      "pass": "tool_round",
+      "response": {
+        "id": "resp_syn_0005",
+        "object": "response",
+        "created_at": 1761800005,
+        "status": "completed",
+        "model": "muse-spark-1.3",
+        "metadata": {
+          "synthetic": "true"
+        },
+        "output": [
+          {
+            "type": "function_call",
+            "id": "fc_syn_1",
+            "call_id": "call_syn_1",
+            "name": "resolve_crop_identity",
+            "arguments": "{\"text\":\"இஞ்சி\",\"language\":\"ta\",\"context\":null}",
+            "status": "completed"
+          }
+        ],
+        "usage": {
+          "input_tokens": 900,
+          "input_tokens_details": {
+            "cached_tokens": 0
+          },
+          "output_tokens": 40,
+          "total_tokens": 940
+        }
+      }
+    },
+    {
+      "pass": "tool_round",
+      "response": {
+        "id": "resp_syn_0006",
+        "object": "response",
+        "created_at": 1761800006,
+        "status": "completed",
+        "model": "muse-spark-1.3",
+        "metadata": {
+          "synthetic": "true"
+        },
+        "output": [
+          {
+            "type": "function_call",
+            "id": "fc_syn_2",
+            "call_id": "call_syn_2",
+            "name": "retrieve_evidence",
+            "arguments": "{\"cropIds\":null,\"regionIds\":[\"IN-KA-HAS\",\"KA\"],\"topics\":[\"irrigation\"],\"availableBefore\":null,\"limit\":5}",
+            "status": "completed"
+          }
+        ],
+        "usage": {
+          "input_tokens": 1100,
+          "input_tokens_details": {
+            "cached_tokens": 0
+          },
+          "output_tokens": 50,
+          "total_tokens": 1150
+        }
+      }
+    },
+    {
+      "pass": "tool_round",
+      "response": {
+        "id": "resp_syn_0007",
+        "object": "response",
+        "created_at": 1761800007,
+        "status": "completed",
+        "model": "muse-spark-1.3",
+        "metadata": {
+          "synthetic": "true"
+        },
+        "output": [
+          {
+            "type": "message",
+            "id": "msg_syn_7",
+            "role": "assistant",
+            "status": "completed",
+            "content": [
+              {
+                "type": "output_text",
+                "text": "Enough information gathered.",
+                "annotations": []
+              }
+            ]
+          }
+        ],
+        "usage": {
+          "input_tokens": 1400,
+          "input_tokens_details": {
+            "cached_tokens": 0
+          },
+          "output_tokens": 15,
+          "total_tokens": 1415
+        }
+      }
+    },
+    {
+      "pass": "synthesis",
+      "response": {
+        "id": "resp_syn_0008",
+        "object": "response",
+        "created_at": 1761800008,
+        "status": "completed",
+        "model": "muse-spark-1.3",
+        "metadata": {
+          "synthetic": "true"
+        },
+        "output": [
+          {
+            "type": "message",
+            "id": "msg_syn_8",
+            "role": "assistant",
+            "status": "completed",
+            "content": [
+              {
+                "type": "output_text",
+                "text": "{\"schemaVersion\":\"1.0\",\"intent\":\"explore_crops\",\"language\":\"en\",\"proposedFacts\":[],\"clarifications\":[],\"toolRequests\":[],\"answerBlocks\":[{\"id\":\"b1\",\"kind\":\"evidence\",\"text\":\"The synthetic ginger note says to keep the soil evenly moist during rhizome development.\",\"numericRefIds\":[],\"claimIds\":[\"c1\"]}],\"numericRefs\":[],\"claimEvidenceRefs\":[{\"claimId\":\"c1\",\"text\":\"Keep soil evenly moist during rhizome development.\",\"evidenceIds\":[\"00000000-0000-4000-8000-0000000000e1\"]}],\"proposedPlanChange\":null,\"limitations\":[\"This answer replays a synthetic fixture and is not agronomic advice.\"]}",
+                "annotations": []
+              }
+            ]
+          }
+        ],
+        "usage": {
+          "input_tokens": 1500,
+          "input_tokens_details": {
+            "cached_tokens": 0
+          },
+          "output_tokens": 170,
+          "total_tokens": 1670
+        }
+      }
+    }
+  ]
+}

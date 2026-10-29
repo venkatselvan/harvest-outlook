@@ -1,5 +1,6 @@
 import { WaterBalanceInput, type WaterBalanceResult, type WaterRun } from '@harvest/contracts';
 import { waterDimensionalCheck } from '../units';
+import { addDays } from '../time/stages';
 
 /**
  * FAO-56 single-coefficient daily root-zone depletion bucket (method water-balance/1).
@@ -27,18 +28,44 @@ export const WATER_METHOD_VERSION = 'water-balance/1';
 
 type Input = ReturnType<typeof WaterBalanceInput.parse>;
 
-function effectiveRainFactors(inp: Input, rainUsed: (number | null)[]): number[] {
+/** Daily fixed fraction used for calendar months that are only partly covered by the series (FAO-56 / CROPWAT "fixed percentage" convention). */
+export const PARTIAL_MONTH_FIXED_FRACTION = 0.8;
+
+function daysInMonth(ym: string): number {
+  const [y, m] = ym.split('-').map(Number) as [number, number];
+  return new Date(Date.UTC(y, m, 0)).getUTCDate();
+}
+
+/**
+ * USDA-SCS monthly ratio is only meaningful on a full calendar-month total. For a month not fully
+ * covered by the (contiguous) series the documented daily fixed fraction is used instead.
+ * `methodByMonth` records which method applied to each month.
+ */
+function effectiveRainFactors(inp: Input, rainUsed: (number | null)[]): { factors: number[]; methodByMonth: Map<string, string> } {
   const m = inp.effectiveRain;
-  if (m.method === 'fixed_fraction') return rainUsed.map(() => m.fraction);
-  // usda_scs_monthly: ratio Peff/P from the calendar-month total of the supplied days.
+  const methodByMonth = new Map<string, string>();
+  if (m.method === 'fixed_fraction') {
+    inp.days.forEach((d) => methodByMonth.set(d.date.slice(0, 7), `fixed_fraction(${m.fraction})`));
+    return { factors: rainUsed.map(() => m.fraction), methodByMonth };
+  }
   const totals = new Map<string, number>();
-  inp.days.forEach((d, i) => totals.set(d.date.slice(0, 7), (totals.get(d.date.slice(0, 7)) ?? 0) + (rainUsed[i] ?? 0)));
-  return inp.days.map((d) => {
-    const p = totals.get(d.date.slice(0, 7)) ?? 0;
+  const counts = new Map<string, number>();
+  inp.days.forEach((d, i) => {
+    const k = d.date.slice(0, 7);
+    totals.set(k, (totals.get(k) ?? 0) + (rainUsed[i] ?? 0));
+    counts.set(k, (counts.get(k) ?? 0) + 1);
+  });
+  const complete = (k: string) => counts.get(k) === daysInMonth(k);
+  for (const k of counts.keys()) methodByMonth.set(k, complete(k) ? 'usda_scs_monthly' : `partial_month_fixed_fraction(${PARTIAL_MONTH_FIXED_FRACTION})`);
+  const factors = inp.days.map((d) => {
+    const k = d.date.slice(0, 7);
+    if (!complete(k)) return PARTIAL_MONTH_FIXED_FRACTION;
+    const p = totals.get(k) ?? 0;
     if (p <= 0) return 0;
     const peff = p <= 250 ? (p * (125 - 0.2 * p)) / 125 : 125 + 0.1 * p;
     return Math.min(1, peff / p);
   });
+  return { factors, methodByMonth };
 }
 
 const r3 = (x: number) => Math.round(x * 1000) / 1000;
@@ -132,6 +159,18 @@ export function calculateWaterBalance(raw: unknown): WaterBalanceResult {
   }
   if (errors.length) return { ...base, status: 'invalid', evidenceState: 'scenario', missingInputs: [], errors, assumptions, permittedPrecision: 'range_only', runs: [] };
 
+  // Gaps are never bridged: every calendar date between first and last must be present.
+  const present = new Set(inp.days.map((d) => d.date));
+  const gapDates: string[] = [];
+  for (let d = inp.days[0]!.date, last = inp.days[inp.days.length - 1]!.date; d < last; d = addDays(d, 1)) {
+    if (!present.has(d)) gapDates.push(d);
+  }
+  if (gapDates.length > 0) {
+    const shown = gapDates.slice(0, 366).map((d) => `day:${d}`);
+    if (gapDates.length > 366) shown.push(`day:+${gapDates.length - 366}_more`);
+    return { ...base, status: 'incomplete', evidenceState: 'scenario', missingInputs: shown, errors: [], assumptions: [...assumptions, `The day series has ${gapDates.length} missing calendar date(s); gaps are not treated as consecutive days, so no water figure is produced.`], permittedPrecision: 'range_only', runs: [] };
+  }
+
   const missingInputs: string[] = [];
   const kc = inp.days.map((d) => {
     const st = inp.stages.find((s) => s.start <= d.date && d.date <= s.end);
@@ -148,13 +187,16 @@ export function calculateWaterBalance(raw: unknown): WaterBalanceResult {
       missingInputs.push(`rain:${d.date}`);
       return null;
     }
-    if (d.rainState === 'forecast') {
+    if (d.rainState === 'forecast' || d.rainState === 'climatology') {
       usesScenario = true;
       return inp.forecastRainPolicy === 'use_forecast' ? d.rainMm : 0;
     }
     return d.rainMm;
   });
-  if (inp.days.some((d) => d.rainState === 'forecast')) {
+  if (inp.days.some((d) => d.rainState === 'climatology')) {
+    assumptions.push('climatology: some days use long-term normal rain, not observed or forecast values; results are a scenario.');
+  }
+  if (inp.days.some((d) => d.rainState === 'forecast' || d.rainState === 'climatology')) {
     assumptions.push(
       inp.forecastRainPolicy === 'use_forecast'
         ? 'Forecast rain is included as effective rain; results are a scenario, not an observation.'
@@ -168,9 +210,10 @@ export function calculateWaterBalance(raw: unknown): WaterBalanceResult {
     return { ...base, status: 'incomplete', evidenceState: 'scenario', missingInputs, errors: [], assumptions, permittedPrecision: 'range_only', runs: [] };
   }
 
-  const factors = effectiveRainFactors(inp, rainUsed);
+  const { factors, methodByMonth } = effectiveRainFactors(inp, rainUsed);
+  for (const [k, v] of [...methodByMonth].sort()) assumptions.push(`effective_rain_method:${k}=${v}`);
   const peff = rainUsed.map((r, i) => (r ?? 0) * factors[i]!);
-  const fromForecast = inp.days.map((d) => d.rainState === 'forecast' && inp.forecastRainPolicy === 'use_forecast');
+  const fromForecast = inp.days.map((d) => (d.rainState === 'forecast' || d.rainState === 'climatology') && inp.forecastRainPolicy === 'use_forecast');
   const runs: WaterRun[] = [];
   const taw = inp.rootZone.totalAvailableWaterMm;
   if (taw !== null) {

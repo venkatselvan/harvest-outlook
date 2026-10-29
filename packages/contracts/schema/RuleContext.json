@@ -305,6 +305,60 @@
         }
       ]
     },
+    "weather": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "dailyRainMm": {
+              "anyOf": [
+                {
+                  "type": "number",
+                  "minimum": 0
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "forecastRainMm7d": {
+              "anyOf": [
+                {
+                  "type": "number",
+                  "minimum": 0
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "evidenceState": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "observed",
+                    "farmer_reported",
+                    "derived",
+                    "forecast",
+                    "scenario",
+                    "illustrative",
+                    "unavailable"
+                  ]
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
     "elevation": {
       "anyOf": [
         {

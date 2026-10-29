@@ -217,7 +217,11 @@
                       "kg/acre",
                       "days",
                       "celsius",
-                      "percent"
+                      "percent",
+                      "m",
+                      "cm",
+                      "g",
+                      "months"
                     ]
                   }
                 },
@@ -442,7 +446,11 @@
                       "kg/acre",
                       "days",
                       "celsius",
-                      "percent"
+                      "percent",
+                      "m",
+                      "cm",
+                      "g",
+                      "months"
                     ]
                   }
                 },
@@ -1023,7 +1031,11 @@
                   "kg/acre",
                   "days",
                   "celsius",
-                  "percent"
+                  "percent",
+                  "m",
+                  "cm",
+                  "g",
+                  "months"
                 ]
               },
               "sourceUnit": {
@@ -1045,7 +1057,11 @@
                   "kg/acre",
                   "days",
                   "celsius",
-                  "percent"
+                  "percent",
+                  "m",
+                  "cm",
+                  "g",
+                  "months"
                 ]
               },
               "rounding": {
@@ -1341,7 +1357,11 @@
                           "kg/acre",
                           "days",
                           "celsius",
-                          "percent"
+                          "percent",
+                          "m",
+                          "cm",
+                          "g",
+                          "months"
                         ]
                       }
                     },
@@ -1566,7 +1586,11 @@
                           "kg/acre",
                           "days",
                           "celsius",
-                          "percent"
+                          "percent",
+                          "m",
+                          "cm",
+                          "g",
+                          "months"
                         ]
                       }
                     },

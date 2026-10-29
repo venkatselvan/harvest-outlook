@@ -1,0 +1,5 @@
+<0f>
+
+<3f>
+2<|box;x1=0;y1=0;x2=31;y2=23;w=160;h=120|><|mask;x=0;y=0;data=30,40,!rr<$!!<3$!!!*$!!!!$!zrr<$!!<3$!zzzzzzzzzzzzzzzzzzzzzzzzzzzzzz!!!|>
+<5f>

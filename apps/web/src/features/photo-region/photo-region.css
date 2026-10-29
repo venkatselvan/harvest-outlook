@@ -1,0 +1,38 @@
+/* Functional styles for the farm form and photo-region editor. Presentation polish is deferred to Astra. */
+.field { margin: 0 0 16px; padding: 0; border: 0; min-width: 0; }
+.field > label, .field legend { display: block; font-weight: 600; margin-bottom: 4px; padding: 0; }
+.field input[type="text"], .field input[type="number"], .field select { width: 100%; min-height: 44px; padding: 8px 10px; font: inherit; border: 1px solid #6b7a72; border-radius: 8px; background: #fff; color: inherit; }
+.field .row { display: flex; gap: 12px; flex-wrap: wrap; }
+.field .row > div { flex: 1 1 140px; min-width: 0; }
+.field .row label { display: block; margin-bottom: 2px; }
+.check { display: flex; align-items: center; gap: 10px; min-height: 44px; }
+.check input { width: 24px; height: 24px; }
+.btn.secondary { background: #fff; color: var(--accent); }
+.btn:disabled { opacity: 0.55; cursor: not-allowed; }
+.pr-error { color: #8a1212; font-weight: 600; margin: 8px 0; }
+.pr-ok { color: #0d3b1f; font-weight: 600; margin: 8px 0; }
+.pr-hint, .pr-help { color: var(--muted); font-size: 0.9rem; margin: 4px 0 8px; }
+.pr-note { font-weight: 700; border-left: 4px solid var(--accent); padding: 4px 10px; margin: 0 0 8px; background: #eef5ef; }
+.pr-problems { margin: 4px 0 8px; padding-left: 20px; color: #8a1212; font-weight: 600; }
+.pr-summary { font-weight: 600; margin: 8px 0 4px; }
+.pr-toolbar { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0; }
+.pr-stage { position: relative; width: 100%; max-height: 70vh; background: #dfe5e0; border: 2px solid var(--fg); border-radius: 6px; overflow: hidden; touch-action: manipulation; user-select: none; -webkit-user-select: none; cursor: crosshair; }
+.pr-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; pointer-events: none; -webkit-user-drag: none; }
+.pr-overlay { position: absolute; left: 0; top: 0; pointer-events: none; }
+.pr-poly-under { fill: none; stroke: #fff; stroke-width: 6; stroke-linejoin: round; }
+.pr-poly { fill: rgba(31, 95, 58, 0.28); stroke: #0b2a18; stroke-width: 3; stroke-linejoin: round; }
+.pr-line { stroke: #0b2a18; stroke-width: 3; }
+.pr-proposal-under { fill: none; stroke: #fff; stroke-width: 6; }
+.pr-proposal { fill: rgba(255, 255, 255, 0.12); stroke: #5b2a86; stroke-width: 3; stroke-dasharray: 10 6; }
+.pr-handle { position: absolute; width: 44px; height: 44px; margin: -22px 0 0 -22px; padding: 0; background: transparent; border: 0; border-radius: 50%; cursor: grab; touch-action: none; display: flex; align-items: center; justify-content: center; }
+.pr-dot { width: 24px; height: 24px; border-radius: 50%; background: #fff; color: #0b2a18; border: 3px solid #0b2a18; font-size: 0.75rem; font-weight: 800; line-height: 18px; text-align: center; box-sizing: border-box; }
+.pr-handle.active .pr-dot { background: #0b2a18; color: #fff; border-color: #fff; box-shadow: 0 0 0 3px #0b2a18; }
+.pr-handle:focus-visible { outline: 3px solid #0b57d0; outline-offset: 0; }
+.pr-stage:focus-visible { outline: 4px solid #0b57d0; outline-offset: 2px; }
+.pr-drop { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; padding: 16px; border: 2px dashed var(--muted); border-radius: 10px; background: #fff; }
+.pr-drop.over { border-color: var(--accent); background: #eef5ef; }
+.pr-file-btn { position: relative; display: inline-flex; align-items: center; cursor: pointer; }
+.pr-file-btn:focus-within { outline: 3px solid #0b57d0; outline-offset: 2px; }
+.sr-only-input { position: absolute; width: 1px; height: 1px; opacity: 0; overflow: hidden; }
+.pr-ai { margin-top: 16px; }
+@media (max-width: 420px) { .pr-toolbar .btn { flex: 1 1 45%; } }

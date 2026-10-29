@@ -71,7 +71,7 @@ describe('ValueRecord', () => {
 
 describe('ApiEnvelope', () => {
   const Env = apiEnvelope(z.object({ ok: z.boolean() }));
-  const ok = { schemaVersion: '1.0', requestId: 'synthetic-req-1', mode: 'synthetic', asOf: '2026-10-30T05:30:00+05:30', data: { ok: true }, warnings: [] };
+  const ok = { schemaVersion: '1.0', requestId: 'synthetic-req-1', mode: 'synthetic', asOf: '2026-10-30T05:30:00+05:30', data: { ok: true }, warnings: [], error: null };
   it('accepts data without error', () => roundTrip(Env, ok));
   it('requires data null with error, and error with null data', () => {
     const error = { code: 'not_found', message: 'synthetic', retryable: false };
@@ -79,6 +79,9 @@ describe('ApiEnvelope', () => {
     expect(Env.safeParse({ ...ok, error }).success).toBe(false);
     expect(Env.safeParse({ ...ok, data: null, error }).success).toBe(true);
     expect(Env.safeParse({ ...ok, data: null }).success).toBe(false);
+    expect(Env.safeParse({ ...ok, data: null, error: null }).success).toBe(false);
+    const { error: _omitted, ...noError } = ok;
+    expect(Env.safeParse(noError).success).toBe(false);
   });
   it('rejects timestamps without offset and invalid modes', () => {
     expect(Env.safeParse({ ...ok, asOf: '2026-10-30T05:30:00' }).success).toBe(false);

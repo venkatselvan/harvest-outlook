@@ -1,0 +1,4589 @@
+{
+ "schemaVersion": "1.0",
+ "generatedBy": "scripts/catalogue/derive-rules.ts",
+ "reviewerOfApproved": "mechanical_derivation",
+ "note": "Approved = derived 1:1 from a verified excerpt naming the start and end months. Not human-reviewed. Outside-window and irrigation-mismatch effects are requires_review/caution, never ineligible.",
+ "summary": {
+  "total": 98,
+  "approved": 94,
+  "candidate": 4,
+  "crops": 24,
+  "skipped": [
+   "ginger: reviewed rules exist (ginger.rules.json)"
+  ]
+ },
+ "provenance": {
+  "rule.cat.black-gram.as.planting-in-window": {
+   "reviewer": "mechanical_derivation",
+   "derivedFromContexts": [
+    "black-gram.AS.kharif"
+   ],
+   "months": [
+    8,
+    9
+   ],
+   "basis": "derived 1:1 from verified excerpts that name the start and end month of each context window"
+  },
+  "rule.cat.black-gram.as.planting-outside-window": {
+   "reviewer": "mechanical_derivation",
+   "derivedFromContexts": [
+    "black-gram.AS.kharif"
+   ],
+   "months": [
+    8,
+    9
+   ],
+   "basis": "derived 1:1 from verified excerpts that name the start and end month of each context window"
+  },
+  "rule.cat.brinjal.tn.planting-in-window": {
+   "reviewer": "mechanical_derivation",
+   "derivedFromContexts": [
+    "brinjal.TN.main"
+   ],
+   "months": [
+    1,
+    12
+   ],
+   "basis": "derived 1:1 from verified excerpts that name the start and end month of each context window"
+  },
+  "rule.cat.brinjal.tn.planting-outside-window": {
+   "reviewer": "mechanical_derivation",
+   "derivedFromContexts": [
+    "brinjal.TN.main"
+   ],
+   "months": [
+    1,
+    12
+   ],
+   "basis": "derived 1:1 from verified excerpts that name the start and end month of each context window"
+  },
+  "rule.cat.brinjal.as.planting-in-window": {
+   "reviewer": "mechanical_derivation",
+   "derivedFromContexts": [
+    "brinjal.AS.winter"
+   ],
+   "months": [
+    9,
+    10
+   ],
+   "basis": "derived 1:1 from verified excerpts that name the start and end month of each context window"
+  },
+  "rule.cat.brinjal.as.planting-outside-window": {
+   "reviewer": "mechanical_derivation",
+   "derivedFromContexts": [
+    "brinjal.AS.winter"
+   ],
+   "months": [
+    9,
+    10
+   ],
+   "basis": "derived 1:1 from verified excerpts that name the start and end month of each context window"
+  },
+  "rule.cat.chickpea.tn.rainfed.planting-in-window": {
+   "reviewer": "mechanical_derivation",
+   "derivedFromContexts": [
+    "chickpea.TN.rainfed"
+   ],
+   "months": [
+    11
+   ],
+   "basis": "derived 1:1 from verified excerpts that name the start and end month of each context window"
+  },
+  "rule.cat.chickpea.tn.rainfed.planting-outside-window": {
+   "reviewer": "mechanical_derivation",
+   "derivedFromContexts": [
+    "chickpea.TN.rainfed"
+   ],
+   "months": [
+    11
+   ],
+   "basis": "derived 1:1 from verified excerpts that name the start and end month of each context window"
+  },
+  "rule.cat.chilli.tn.planting-in-window": {
+   "reviewer": "mechanical_derivation",
+   "derivedFromContexts": [
+    "chilli.TN.main"
+   ],
+   "months": [
+    1,
+    2
+   ],
+   "basis": "derived 1:1 from verified excerpts that name the start and end month of each context window"
+  },
+  "rule.cat.chilli.tn.planting-outside-window": {
+   "reviewer": "mechanical_derivation",
+   "derivedFromContexts": [
+    "chilli.TN.main"
+   ],
+   "months": [
+    1,
+    2
+   ],
+   "basis": "derived 1:1 from verified excerpts that name the start and end month of each context window"
+  },
+  "rule.cat.cotton.tn.irrigated.planting-in-window": {
+   "reviewer": "mechanical_derivation",
+   "derivedFromContexts": [
+    "cotton.TN.winter-irrigated",
+    "cotton.TN.summer-irrigated"
+   ],
+   "months": [
+    2,
+    3,
+    8,
+    9
+   ],
+   "basis": "derived 1:1 from verified excerpts that name the start and end month of each context window"
+  },
+  "rule.cat.cotton.tn.irrigated.planting-outside-window": {
+   "reviewer": "mechanical_derivation",
+   "derivedFromContexts": [
+    "cotton.TN.winter-irrigated",
+    "cotton.TN.summer-irrigated"
+   ],
+   "months": [
+    2,
+    3,
+    8,
+    9
+   ],
+   "basis": "derived 1:1 from verified excerpts that name the start and end month of each context window"
+  },
+  "rule.cat.cotton.tn.rainfed.planting-in-window": {
+   "reviewer": "mechanical_derivation",
+   "derivedFromContexts": [
+    "cotton.TN.winter-rainfed"
+   ],
+   "months": [
+    8,
+    9
+   ],
+   "basis": "derived 1:1 from verified excerpts that name the start and end month of each context window"
+  },
+  "rule.cat.cotton.tn.rainfed.planting-outside-window": {
+   "reviewer": "mechanical_derivation",
+   "derivedFromContexts": [
+    "cotton.TN.winter-rainfed"
+   ],
+   "months": [
+    8,
+    9
+   ],
+   "basis": "derived 1:1 from verified excerpts that name the start and end month of each context window"
+  },
+  "rule.cat.cotton.as.planting-in-window": {
+   "reviewer": "mechanical_derivation",
+   "derivedFromContexts": [
+    "cotton.AS.kharif"
+   ],
+   "months": [
+    7
+   ],
+   "basis": "derived 1:1 from verified excerpts that name the start and end month of each context window"
+  },
+  "rule.cat.cotton.as.planting-outside-window": {
+   "reviewer": "mechanical_derivation",
+   "derivedFromContexts": [
+    "cotton.AS.kharif"
+   ],
+   "months": [
+    7
+   ],
+   "basis": "derived 1:1 from verified excerpts that name the start and end month of each context window"
+  },
+  "rule.cat.finger-millet.tn.irrigated.planting-in-window": {
+   "reviewer": "mechanical_derivation",
+   "derivedFromContexts": [
+    "finger-millet.TN.irrigated"
+   ],
+   "months": [
+    1,
+    12
+   ],
+   "basis": "derived 1:1 from verified excerpts that name the start and end month of each context window"
+  },
+  "rule.cat.finger-millet.tn.irrigated.planting-outside-window": {
+   "reviewer": "mechanical_derivation",
+   "derivedFromContexts": [
+    "finger-millet.TN.irrigated"
+   ],
+   "months": [
+    1,
+    12
+   ],
+   "basis": "derived 1:1 from verified excerpts that name the start and end month of each context window"
+  },
+  "rule.cat.finger-millet.tn.rainfed.planting-in-window": {
+   "reviewer": "mechanical_derivation",
+   "derivedFromContexts": [
+    "finger-millet.TN.rainfed"
+   ],
+   "months": [
+    6,
+    7
+   ],
+   "basis": "derived 1:1 from verified excerpts that name the start and end month of each context window"
+  },
+  "rule.cat.finger-millet.tn.rainfed.planting-outside-window": {
+   "reviewer": "mechanical_derivation",
+   "derivedFromContexts": [
+    "finger-millet.TN.rainfed"
+   ],
+   "months": [
+    6,
+    7
+   ],
+   "basis": "derived 1:1 from verified excerpts that name the start and end month of each context window"
+  },
+  "rule.cat.finger-millet.as.planting-in-window": {
+   "reviewer": "mechanical_derivation",
+   "derivedFromContexts": [
+    "finger-millet.AS.kharif"
+   ],
+   "months": [
+    9
+   ],
+   "basis": "derived 1:1 from verified excerpts that name the start and end month of each context window"
+  },
+  "rule.cat.finger-millet.as.planting-outside-window": {
+   "reviewer": "mechanical_derivation",
+   "derivedFromContexts": [
+    "finger-millet.AS.kharif"
+   ],
+   "months": [
+    9
+   ],
+   "basis": "derived 1:1 from verified excerpts that name the start and end month of each context window"
+  },
+  "rule.cat.green-gram.as.planting-in-window": {
+   "reviewer": "mechanical_derivation",
+   "derivedFromContexts": [
+    "green-gram.AS.kharif"
+   ],
+   "months": [
+    8,
+    9
+   ],
+   "basis": "derived 1:1 from verified excerpts that name the start and end month of each context window"
+  },
+  "rule.cat.green-gram.as.planting-outside-window": {
+   "reviewer": "mechanical_derivation",
+   "derivedFromContexts": [
+    "green-gram.AS.kharif"
+   ],
+   "months": [
+    8,
+    9
+   ],
+   "basis": "derived 1:1 from verified excerpts that name the start and end month of each context window"
+  },
+  "rule.cat.groundnut.as.planting-in-window": {
+   "reviewer": "mechanical_derivation",
+   "derivedFromContexts": [
+    "groundnut.AS.kharif"
+   ],
+   "months": [
+    6,
+    7
+   ],
+   "basis": "derived 1:1 from verified excerpts that name the start and end month of each context window"
+  },
+  "rule.cat.groundnut.as.planting-outside-window": {
+   "reviewer": "mechanical_derivation",
+   "derivedFromContexts": [
+    "groundnut.AS.kharif"
+   ],
+   "months": [
+    6,
+    7
+   ],
+   "basis": "derived 1:1 from verified excerpts that name the start and end month of each context window"
+  },
+  "rule.cat.groundnut.as.supplemental.planting-in-window": {
+   "reviewer": "mechanical_derivation",
+   "derivedFromContexts": [
+    "groundnut.AS.rabi"
+   ],
+   "months": [
+    9,
+    10
+   ],
+   "basis": "derived 1:1 from verified excerpts that name the start and end month of each context window"
+  },
+  "rule.cat.groundnut.as.supplemental.planting-outside-window": {
+   "reviewer": "mechanical_derivation",
+   "derivedFromContexts": [
+    "groundnut.AS.rabi"
+   ],
+   "months": [
+    9,
+    10
+   ],
+   "basis": "derived 1:1 from verified excerpts that name the start and end month of each context window"
+  },
+  "rule.cat.lentil.as.supplemental.planting-in-window": {
+   "reviewer": "mechanical_derivation",
+   "derivedFromContexts": [
+    "lentil.AS.rabi"
+   ],
+   "months": [
+    10,
+    11
+   ],
+   "basis": "derived 1:1 from verified excerpts that name the start and end month of each context window"
+  },
+  "rule.cat.lentil.as.supplemental.planting-outside-window": {
+   "reviewer": "mechanical_derivation",
+   "derivedFromContexts": [
+    "lentil.AS.rabi"
+   ],
+   "months": [
+    10,
+    11
+   ],
+   "basis": "derived 1:1 from verified excerpts that name the start and end month of each context window"
+  },
+  "rule.cat.maize.tn.planting-in-window": {
+   "reviewer": "mechanical_derivation",
+   "derivedFromContexts": [
+    "maize.TN.adipattam"
+   ],
+   "months": [
+    7,
+    8
+   ],
+   "basis": "derived 1:1 from verified excerpts that name the start and end month of each context window"
+  },
+  "rule.cat.maize.tn.planting-outside-window": {
+   "reviewer": "mechanical_derivation",
+   "derivedFromContexts": [
+    "maize.TN.adipattam"
+   ],
+   "months": [
+    7,
+    8
+   ],
+   "basis": "derived 1:1 from verified excerpts that name the start and end month of each context window"
+  },
+  "rule.cat.maize.as.rainfed.planting-in-window": {
+   "reviewer": "mechanical_derivation",
+   "derivedFromContexts": [
+    "maize.AS.spring"
+   ],
+   "months": [
+    2,
+    3,
+    4,
+    5
+   ],
+   "basis": "derived 1:1 from verified excerpts that name the start and end month of each context window"
+  },
+  "rule.cat.maize.as.rainfed.planting-outside-window": {
+   "reviewer": "mechanical_derivation",
+   "derivedFromContexts": [
+    "maize.AS.spring"
+   ],
+   "months": [
+    2,
+    3,
+    4,
+    5
+   ],
+   "basis": "derived 1:1 from verified excerpts that name the start and end month of each context window"
+  },
+  "rule.cat.maize.as.irrigated.planting-in-window": {
+   "reviewer": "mechanical_derivation",
+   "derivedFromContexts": [
+    "maize.AS.rabi"
+   ],
+   "months": [
+    9,
+    10
+   ],
+   "basis": "derived 1:1 from verified excerpts that name the start and end month of each context window"
+  },
+  "rule.cat.maize.as.irrigated.planting-outside-window": {
+   "reviewer": "mechanical_derivation",
+   "derivedFromContexts": [
+    "maize.AS.rabi"
+   ],
+   "months": [
+    9,
+    10
+   ],
+   "basis": "derived 1:1 from verified excerpts that name the start and end month of each context window"
+  },
+  "rule.cat.mustard.as.supplemental.planting-in-window": {
+   "reviewer": "mechanical_derivation",
+   "derivedFromContexts": [
+    "mustard.AS.rabi"
+   ],
+   "months": [
+    10,
+    11
+   ],
+   "basis": "derived 1:1 from verified excerpts that name the start and end month of each context window"
+  },
+  "rule.cat.mustard.as.supplemental.planting-outside-window": {
+   "reviewer": "mechanical_derivation",
+   "derivedFromContexts": [
+    "mustard.AS.rabi"
+   ],
+   "months": [
+    10,
+    11
+   ],
+   "basis": "derived 1:1 from verified excerpts that name the start and end month of each context window"
+  },
+  "rule.cat.okra.tn.irrigated.planting-in-window": {
+   "reviewer": "mechanical_derivation",
+   "derivedFromContexts": [
+    "okra.TN.main"
+   ],
+   "months": [
+    6,
+    7,
+    8
+   ],
+   "basis": "derived 1:1 from verified excerpts that name the start and end month of each context window"
+  },
+  "rule.cat.okra.tn.irrigated.planting-outside-window": {
+   "reviewer": "mechanical_derivation",
+   "derivedFromContexts": [
+    "okra.TN.main"
+   ],
+   "months": [
+    6,
+    7,
+    8
+   ],
+   "basis": "derived 1:1 from verified excerpts that name the start and end month of each context window"
+  },
+  "rule.cat.onion.tn.planting-in-window": {
+   "reviewer": "mechanical_derivation",
+   "derivedFromContexts": [
+    "onion.TN.bellary",
+    "onion.TN.small"
+   ],
+   "months": [
+    5,
+    6,
+    10,
+    11
+   ],
+   "basis": "derived 1:1 from verified excerpts that name the start and end month of each context window"
+  },
+  "rule.cat.onion.tn.planting-outside-window": {
+   "reviewer": "mechanical_derivation",
+   "derivedFromContexts": [
+    "onion.TN.bellary",
+    "onion.TN.small"
+   ],
+   "months": [
+    5,
+    6,
+    10,
+    11
+   ],
+   "basis": "derived 1:1 from verified excerpts that name the start and end month of each context window"
+  },
+  "rule.cat.onion.gj_mh.planting-in-window": {
+   "reviewer": "mechanical_derivation",
+   "derivedFromContexts": [
+    "onion.MH-GJ.kharif"
+   ],
+   "months": [
+    5,
+    6
+   ],
+   "basis": "derived 1:1 from verified excerpts that name the start and end month of each context window"
+  },
+  "rule.cat.onion.gj_mh.planting-outside-window": {
+   "reviewer": "mechanical_derivation",
+   "derivedFromContexts": [
+    "onion.MH-GJ.kharif"
+   ],
+   "months": [
+    5,
+    6
+   ],
+   "basis": "derived 1:1 from verified excerpts that name the start and end month of each context window"
+  },
+  "rule.cat.onion.br_hr_pb_rj_up.planting-in-window": {
+   "reviewer": "mechanical_derivation",
+   "derivedFromContexts": [
+    "onion.NORTH.rabi"
+   ],
+   "months": [
+    10,
+    11
+   ],
+   "basis": "derived 1:1 from verified excerpts that name the start and end month of each context window"
+  },
+  "rule.cat.onion.br_hr_pb_rj_up.planting-outside-window": {
+   "reviewer": "mechanical_derivation",
+   "derivedFromContexts": [
+    "onion.NORTH.rabi"
+   ],
+   "months": [
+    10,
+    11
+   ],
+   "basis": "derived 1:1 from verified excerpts that name the start and end month of each context window"
+  },
+  "rule.cat.paddy.tn.planting-in-window": {
+   "reviewer": "mechanical_derivation",
+   "derivedFromContexts": [
+    "paddy.TN.kuruvai",
+    "paddy.TN.samba",
+    "paddy.TN.thaladi",
+    "paddy.TN.navarai"
+   ],
+   "months": [
+    1,
+    6,
+    7,
+    8,
+    9,
+    10,
+    12
+   ],
+   "basis": "derived 1:1 from verified excerpts that name the start and end month of each context window"
+  },
+  "rule.cat.paddy.tn.planting-outside-window": {
+   "reviewer": "mechanical_derivation",
+   "derivedFromContexts": [
+    "paddy.TN.kuruvai",
+    "paddy.TN.samba",
+    "paddy.TN.thaladi",
+    "paddy.TN.navarai"
+   ],
+   "months": [
+    1,
+    6,
+    7,
+    8,
+    9,
+    10,
+    12
+   ],
+   "basis": "derived 1:1 from verified excerpts that name the start and end month of each context window"
+  },
+  "rule.cat.paddy.as.planting-in-window": {
+   "reviewer": "mechanical_derivation",
+   "derivedFromContexts": [
+    "paddy.AS.sali"
+   ],
+   "months": [
+    6
+   ],
+   "basis": "derived 1:1 from verified excerpts that name the start and end month of each context window"
+  },
+  "rule.cat.paddy.as.planting-outside-window": {
+   "reviewer": "mechanical_derivation",
+   "derivedFromContexts": [
+    "paddy.AS.sali"
+   ],
+   "months": [
+    6
+   ],
+   "basis": "derived 1:1 from verified excerpts that name the start and end month of each context window"
+  },
+  "rule.cat.pearl-millet.tn.irrigated.planting-in-window": {
+   "reviewer": "mechanical_derivation",
+   "derivedFromContexts": [
+    "pearl-millet.TN.irrigated"
+   ],
+   "months": [
+    3,
+    4
+   ],
+   "basis": "derived 1:1 from verified excerpts that name the start and end month of each context window"
+  },
+  "rule.cat.pearl-millet.tn.irrigated.planting-outside-window": {
+   "reviewer": "mechanical_derivation",
+   "derivedFromContexts": [
+    "pearl-millet.TN.irrigated"
+   ],
+   "months": [
+    3,
+    4
+   ],
+   "basis": "derived 1:1 from verified excerpts that name the start and end month of each context window"
+  },
+  "rule.cat.pearl-millet.tn.rainfed.planting-in-window": {
+   "reviewer": "mechanical_derivation",
+   "derivedFromContexts": [
+    "pearl-millet.TN.rainfed"
+   ],
+   "months": [
+    6,
+    7
+   ],
+   "basis": "derived 1:1 from verified excerpts that name the start and end month of each context window"
+  },
+  "rule.cat.pearl-millet.tn.rainfed.planting-outside-window": {
+   "reviewer": "mechanical_derivation",
+   "derivedFromContexts": [
+    "pearl-millet.TN.rainfed"
+   ],
+   "months": [
+    6,
+    7
+   ],
+   "basis": "derived 1:1 from verified excerpts that name the start and end month of each context window"
+  },
+  "rule.cat.pigeon-pea.tn.planting-in-window": {
+   "reviewer": "mechanical_derivation",
+   "derivedFromContexts": [
+    "pigeon-pea.TN.vaigasi"
+   ],
+   "months": [
+    5,
+    6
+   ],
+   "basis": "derived 1:1 from verified excerpts that name the start and end month of each context window"
+  },
+  "rule.cat.pigeon-pea.tn.planting-outside-window": {
+   "reviewer": "mechanical_derivation",
+   "derivedFromContexts": [
+    "pigeon-pea.TN.vaigasi"
+   ],
+   "months": [
+    5,
+    6
+   ],
+   "basis": "derived 1:1 from verified excerpts that name the start and end month of each context window"
+  },
+  "rule.cat.pigeon-pea.as.planting-in-window": {
+   "reviewer": "mechanical_derivation",
+   "derivedFromContexts": [
+    "pigeon-pea.AS.kharif"
+   ],
+   "months": [
+    6,
+    7
+   ],
+   "basis": "derived 1:1 from verified excerpts that name the start and end month of each context window"
+  },
+  "rule.cat.pigeon-pea.as.planting-outside-window": {
+   "reviewer": "mechanical_derivation",
+   "derivedFromContexts": [
+    "pigeon-pea.AS.kharif"
+   ],
+   "months": [
+    6,
+    7
+   ],
+   "basis": "derived 1:1 from verified excerpts that name the start and end month of each context window"
+  },
+  "rule.cat.potato.tn.planting-in-window": {
+   "reviewer": "mechanical_derivation",
+   "derivedFromContexts": [
+    "potato.TN.plains"
+   ],
+   "months": [
+    10,
+    11
+   ],
+   "basis": "derived 1:1 from verified excerpts that name the start and end month of each context window"
+  },
+  "rule.cat.potato.tn.planting-outside-window": {
+   "reviewer": "mechanical_derivation",
+   "derivedFromContexts": [
+    "potato.TN.plains"
+   ],
+   "months": [
+    10,
+    11
+   ],
+   "basis": "derived 1:1 from verified excerpts that name the start and end month of each context window"
+  },
+  "rule.cat.potato.as.rainfed.planting-in-window": {
+   "reviewer": "mechanical_derivation",
+   "derivedFromContexts": [
+    "potato.AS.rainfed"
+   ],
+   "months": [
+    10,
+    11
+   ],
+   "basis": "derived 1:1 from verified excerpts that name the start and end month of each context window"
+  },
+  "rule.cat.potato.as.rainfed.planting-outside-window": {
+   "reviewer": "mechanical_derivation",
+   "derivedFromContexts": [
+    "potato.AS.rainfed"
+   ],
+   "months": [
+    10,
+    11
+   ],
+   "basis": "derived 1:1 from verified excerpts that name the start and end month of each context window"
+  },
+  "rule.cat.potato.as.irrigated.planting-in-window": {
+   "reviewer": "mechanical_derivation",
+   "derivedFromContexts": [
+    "potato.AS.irrigated"
+   ],
+   "months": [
+    10,
+    11
+   ],
+   "basis": "derived 1:1 from verified excerpts that name the start and end month of each context window"
+  },
+  "rule.cat.potato.as.irrigated.planting-outside-window": {
+   "reviewer": "mechanical_derivation",
+   "derivedFromContexts": [
+    "potato.AS.irrigated"
+   ],
+   "months": [
+    10,
+    11
+   ],
+   "basis": "derived 1:1 from verified excerpts that name the start and end month of each context window"
+  },
+  "rule.cat.sesame.tn.irrigated.planting-in-window": {
+   "reviewer": "mechanical_derivation",
+   "derivedFromContexts": [
+    "sesame.TN.irrigated"
+   ],
+   "months": [
+    2,
+    3
+   ],
+   "basis": "derived 1:1 from verified excerpts that name the start and end month of each context window"
+  },
+  "rule.cat.sesame.tn.irrigated.planting-outside-window": {
+   "reviewer": "mechanical_derivation",
+   "derivedFromContexts": [
+    "sesame.TN.irrigated"
+   ],
+   "months": [
+    2,
+    3
+   ],
+   "basis": "derived 1:1 from verified excerpts that name the start and end month of each context window"
+  },
+  "rule.cat.sesame.tn.rainfed.planting-in-window": {
+   "reviewer": "mechanical_derivation",
+   "derivedFromContexts": [
+    "sesame.TN.rainfed"
+   ],
+   "months": [
+    6,
+    7
+   ],
+   "basis": "derived 1:1 from verified excerpts that name the start and end month of each context window"
+  },
+  "rule.cat.sesame.tn.rainfed.planting-outside-window": {
+   "reviewer": "mechanical_derivation",
+   "derivedFromContexts": [
+    "sesame.TN.rainfed"
+   ],
+   "months": [
+    6,
+    7
+   ],
+   "basis": "derived 1:1 from verified excerpts that name the start and end month of each context window"
+  },
+  "rule.cat.sesame.as.planting-in-window": {
+   "reviewer": "mechanical_derivation",
+   "derivedFromContexts": [
+    "sesame.AS.kharif"
+   ],
+   "months": [
+    7,
+    8
+   ],
+   "basis": "derived 1:1 from verified excerpts that name the start and end month of each context window"
+  },
+  "rule.cat.sesame.as.planting-outside-window": {
+   "reviewer": "mechanical_derivation",
+   "derivedFromContexts": [
+    "sesame.AS.kharif"
+   ],
+   "months": [
+    7,
+    8
+   ],
+   "basis": "derived 1:1 from verified excerpts that name the start and end month of each context window"
+  },
+  "rule.cat.sorghum.tn.rainfed.planting-in-window": {
+   "reviewer": "mechanical_derivation",
+   "derivedFromContexts": [
+    "sorghum.TN.rainfed"
+   ],
+   "months": [
+    6,
+    7
+   ],
+   "basis": "derived 1:1 from verified excerpts that name the start and end month of each context window"
+  },
+  "rule.cat.sorghum.tn.rainfed.planting-outside-window": {
+   "reviewer": "mechanical_derivation",
+   "derivedFromContexts": [
+    "sorghum.TN.rainfed"
+   ],
+   "months": [
+    6,
+    7
+   ],
+   "basis": "derived 1:1 from verified excerpts that name the start and end month of each context window"
+  },
+  "rule.cat.sorghum.tn.irrigated.planting-in-window": {
+   "reviewer": "mechanical_derivation",
+   "derivedFromContexts": [
+    "sorghum.TN.irrigated"
+   ],
+   "months": [
+    4,
+    5
+   ],
+   "basis": "derived 1:1 from verified excerpts that name the start and end month of each context window"
+  },
+  "rule.cat.sorghum.tn.irrigated.planting-outside-window": {
+   "reviewer": "mechanical_derivation",
+   "derivedFromContexts": [
+    "sorghum.TN.irrigated"
+   ],
+   "months": [
+    4,
+    5
+   ],
+   "basis": "derived 1:1 from verified excerpts that name the start and end month of each context window"
+  },
+  "rule.cat.sorghum.in.planting-in-window": {
+   "reviewer": "mechanical_derivation",
+   "derivedFromContexts": [
+    "sorghum.IN.kharif"
+   ],
+   "months": [
+    5,
+    6,
+    7
+   ],
+   "basis": "derived 1:1 from verified excerpts that name the start and end month of each context window"
+  },
+  "rule.cat.sorghum.in.planting-outside-window": {
+   "reviewer": "mechanical_derivation",
+   "derivedFromContexts": [
+    "sorghum.IN.kharif"
+   ],
+   "months": [
+    5,
+    6,
+    7
+   ],
+   "basis": "derived 1:1 from verified excerpts that name the start and end month of each context window"
+  },
+  "rule.cat.soybean.tn.planting-in-window": {
+   "reviewer": "mechanical_derivation",
+   "derivedFromContexts": [
+    "soybean.TN.multi"
+   ],
+   "months": [
+    6,
+    7
+   ],
+   "basis": "derived 1:1 from verified excerpts that name the start and end month of each context window"
+  },
+  "rule.cat.soybean.tn.planting-outside-window": {
+   "reviewer": "mechanical_derivation",
+   "derivedFromContexts": [
+    "soybean.TN.multi"
+   ],
+   "months": [
+    6,
+    7
+   ],
+   "basis": "derived 1:1 from verified excerpts that name the start and end month of each context window"
+  },
+  "rule.cat.soybean.as.planting-in-window": {
+   "reviewer": "mechanical_derivation",
+   "derivedFromContexts": [
+    "soybean.AS.kharif"
+   ],
+   "months": [
+    5,
+    6
+   ],
+   "basis": "derived 1:1 from verified excerpts that name the start and end month of each context window"
+  },
+  "rule.cat.soybean.as.planting-outside-window": {
+   "reviewer": "mechanical_derivation",
+   "derivedFromContexts": [
+    "soybean.AS.kharif"
+   ],
+   "months": [
+    5,
+    6
+   ],
+   "basis": "derived 1:1 from verified excerpts that name the start and end month of each context window"
+  },
+  "rule.cat.soybean.as.irrigated.planting-in-window": {
+   "reviewer": "mechanical_derivation",
+   "derivedFromContexts": [
+    "soybean.AS.rabi"
+   ],
+   "months": [
+    1
+   ],
+   "basis": "derived 1:1 from verified excerpts that name the start and end month of each context window"
+  },
+  "rule.cat.soybean.as.irrigated.planting-outside-window": {
+   "reviewer": "mechanical_derivation",
+   "derivedFromContexts": [
+    "soybean.AS.rabi"
+   ],
+   "months": [
+    1
+   ],
+   "basis": "derived 1:1 from verified excerpts that name the start and end month of each context window"
+  },
+  "rule.cat.sunflower.tn.rainfed.planting-in-window": {
+   "reviewer": "mechanical_derivation",
+   "derivedFromContexts": [
+    "sunflower.TN.rainfed"
+   ],
+   "months": [
+    10,
+    11
+   ],
+   "basis": "derived 1:1 from verified excerpts that name the start and end month of each context window"
+  },
+  "rule.cat.sunflower.tn.rainfed.planting-outside-window": {
+   "reviewer": "mechanical_derivation",
+   "derivedFromContexts": [
+    "sunflower.TN.rainfed"
+   ],
+   "months": [
+    10,
+    11
+   ],
+   "basis": "derived 1:1 from verified excerpts that name the start and end month of each context window"
+  },
+  "rule.cat.sunflower.tn.irrigated.planting-in-window": {
+   "reviewer": "mechanical_derivation",
+   "derivedFromContexts": [
+    "sunflower.TN.irrigated"
+   ],
+   "months": [
+    6,
+    7
+   ],
+   "basis": "derived 1:1 from verified excerpts that name the start and end month of each context window"
+  },
+  "rule.cat.sunflower.tn.irrigated.planting-outside-window": {
+   "reviewer": "mechanical_derivation",
+   "derivedFromContexts": [
+    "sunflower.TN.irrigated"
+   ],
+   "months": [
+    6,
+    7
+   ],
+   "basis": "derived 1:1 from verified excerpts that name the start and end month of each context window"
+  },
+  "rule.cat.tomato.tn.planting-in-window": {
+   "reviewer": "mechanical_derivation",
+   "derivedFromContexts": [
+    "tomato.TN.main"
+   ],
+   "months": [
+    5,
+    6
+   ],
+   "basis": "derived 1:1 from verified excerpts that name the start and end month of each context window"
+  },
+  "rule.cat.tomato.tn.planting-outside-window": {
+   "reviewer": "mechanical_derivation",
+   "derivedFromContexts": [
+    "tomato.TN.main"
+   ],
+   "months": [
+    5,
+    6
+   ],
+   "basis": "derived 1:1 from verified excerpts that name the start and end month of each context window"
+  },
+  "rule.cat.tomato.as.irrigated.planting-in-window": {
+   "reviewer": "mechanical_derivation",
+   "derivedFromContexts": [
+    "tomato.AS.rabi"
+   ],
+   "months": [
+    10,
+    11
+   ],
+   "basis": "derived 1:1 from verified excerpts that name the start and end month of each context window"
+  },
+  "rule.cat.tomato.as.irrigated.planting-outside-window": {
+   "reviewer": "mechanical_derivation",
+   "derivedFromContexts": [
+    "tomato.AS.rabi"
+   ],
+   "months": [
+    10,
+    11
+   ],
+   "basis": "derived 1:1 from verified excerpts that name the start and end month of each context window"
+  },
+  "rule.cat.turmeric.in.planting-in-window": {
+   "reviewer": "mechanical_derivation",
+   "derivedFromContexts": [
+    "turmeric.IN.kharif"
+   ],
+   "months": [
+    4,
+    5
+   ],
+   "basis": "derived 1:1 from verified excerpts that name the start and end month of each context window"
+  },
+  "rule.cat.turmeric.in.planting-outside-window": {
+   "reviewer": "mechanical_derivation",
+   "derivedFromContexts": [
+    "turmeric.IN.kharif"
+   ],
+   "months": [
+    4,
+    5
+   ],
+   "basis": "derived 1:1 from verified excerpts that name the start and end month of each context window"
+  },
+  "rule.cat.wheat.as.irrigated.planting-in-window": {
+   "reviewer": "mechanical_derivation",
+   "derivedFromContexts": [
+    "wheat.AS.rabi"
+   ],
+   "months": [
+    11,
+    12
+   ],
+   "basis": "derived 1:1 from verified excerpts that name the start and end month of each context window"
+  },
+  "rule.cat.wheat.as.irrigated.planting-outside-window": {
+   "reviewer": "mechanical_derivation",
+   "derivedFromContexts": [
+    "wheat.AS.rabi"
+   ],
+   "months": [
+    11,
+    12
+   ],
+   "basis": "derived 1:1 from verified excerpts that name the start and end month of each context window"
+  },
+  "rule.cat.chickpea.tn.source-rainfed-only": {
+   "reviewer": null,
+   "derivedFromContexts": [
+    "chickpea.TN.rainfed"
+   ],
+   "basis": "interpretation of the irrigation text"
+  },
+  "rule.cat.okra.tn.source-irrigated-only": {
+   "reviewer": null,
+   "derivedFromContexts": [
+    "okra.TN.main"
+   ],
+   "basis": "interpretation of the irrigation text; a source describing irrigated cultivation does not prove rainfed cultivation is impossible"
+  },
+  "rule.cat.tomato.as.source-irrigated-only": {
+   "reviewer": null,
+   "derivedFromContexts": [
+    "tomato.AS.rabi"
+   ],
+   "basis": "interpretation of the irrigation text; a source describing irrigated cultivation does not prove rainfed cultivation is impossible"
+  },
+  "rule.cat.wheat.as.source-irrigated-only": {
+   "reviewer": null,
+   "derivedFromContexts": [
+    "wheat.AS.rabi"
+   ],
+   "basis": "interpretation of the irrigation text; a source describing irrigated cultivation does not prove rainfed cultivation is impossible"
+  }
+ },
+ "rules": [
+  {
+   "schemaVersion": "1.0",
+   "id": "rule.cat.black-gram.as.planting-in-window",
+   "version": 1,
+   "mode": "live",
+   "cropId": "black-gram",
+   "productId": null,
+   "scope": {
+    "regionIds": [
+     "IN-AS"
+    ],
+    "seasons": [],
+    "irrigation": []
+   },
+   "when": {
+    "field": "planting.month",
+    "op": "in",
+    "value": [
+     8,
+     9
+    ]
+   },
+   "exceptions": [],
+   "effect": {
+    "type": "eligible",
+    "reasonCode": "planting_in_sourced_window"
+   },
+   "alternatives": [],
+   "evidenceIds": [
+    "cat.black-gram.sow"
+   ],
+   "reviewStatus": "approved"
+  },
+  {
+   "schemaVersion": "1.0",
+   "id": "rule.cat.black-gram.as.planting-outside-window",
+   "version": 1,
+   "mode": "live",
+   "cropId": "black-gram",
+   "productId": null,
+   "scope": {
+    "regionIds": [
+     "IN-AS"
+    ],
+    "seasons": [],
+    "irrigation": []
+   },
+   "when": {
+    "not": {
+     "field": "planting.month",
+     "op": "in",
+     "value": [
+      8,
+      9
+     ]
+    }
+   },
+   "exceptions": [],
+   "effect": {
+    "type": "requires_review",
+    "reasonCode": "planting_outside_sourced_window"
+   },
+   "alternatives": [],
+   "evidenceIds": [
+    "cat.black-gram.sow"
+   ],
+   "reviewStatus": "approved"
+  },
+  {
+   "schemaVersion": "1.0",
+   "id": "rule.cat.brinjal.tn.planting-in-window",
+   "version": 1,
+   "mode": "live",
+   "cropId": "brinjal",
+   "productId": null,
+   "scope": {
+    "regionIds": [
+     "IN-TN"
+    ],
+    "seasons": [],
+    "irrigation": []
+   },
+   "when": {
+    "field": "planting.month",
+    "op": "in",
+    "value": [
+     1,
+     12
+    ]
+   },
+   "exceptions": [],
+   "effect": {
+    "type": "eligible",
+    "reasonCode": "planting_in_sourced_window"
+   },
+   "alternatives": [],
+   "evidenceIds": [
+    "cat.brinjal.tn"
+   ],
+   "reviewStatus": "approved"
+  },
+  {
+   "schemaVersion": "1.0",
+   "id": "rule.cat.brinjal.tn.planting-outside-window",
+   "version": 1,
+   "mode": "live",
+   "cropId": "brinjal",
+   "productId": null,
+   "scope": {
+    "regionIds": [
+     "IN-TN"
+    ],
+    "seasons": [],
+    "irrigation": []
+   },
+   "when": {
+    "not": {
+     "field": "planting.month",
+     "op": "in",
+     "value": [
+      1,
+      12
+     ]
+    }
+   },
+   "exceptions": [],
+   "effect": {
+    "type": "requires_review",
+    "reasonCode": "planting_outside_sourced_window"
+   },
+   "alternatives": [],
+   "evidenceIds": [
+    "cat.brinjal.tn"
+   ],
+   "reviewStatus": "approved"
+  },
+  {
+   "schemaVersion": "1.0",
+   "id": "rule.cat.brinjal.as.planting-in-window",
+   "version": 1,
+   "mode": "live",
+   "cropId": "brinjal",
+   "productId": null,
+   "scope": {
+    "regionIds": [
+     "IN-AS"
+    ],
+    "seasons": [],
+    "irrigation": []
+   },
+   "when": {
+    "field": "planting.month",
+    "op": "in",
+    "value": [
+     9,
+     10
+    ]
+   },
+   "exceptions": [],
+   "effect": {
+    "type": "eligible",
+    "reasonCode": "planting_in_sourced_window"
+   },
+   "alternatives": [],
+   "evidenceIds": [
+    "cat.brinjal.sow"
+   ],
+   "reviewStatus": "approved"
+  },
+  {
+   "schemaVersion": "1.0",
+   "id": "rule.cat.brinjal.as.planting-outside-window",
+   "version": 1,
+   "mode": "live",
+   "cropId": "brinjal",
+   "productId": null,
+   "scope": {
+    "regionIds": [
+     "IN-AS"
+    ],
+    "seasons": [],
+    "irrigation": []
+   },
+   "when": {
+    "not": {
+     "field": "planting.month",
+     "op": "in",
+     "value": [
+      9,
+      10
+     ]
+    }
+   },
+   "exceptions": [],
+   "effect": {
+    "type": "requires_review",
+    "reasonCode": "planting_outside_sourced_window"
+   },
+   "alternatives": [],
+   "evidenceIds": [
+    "cat.brinjal.sow"
+   ],
+   "reviewStatus": "approved"
+  },
+  {
+   "schemaVersion": "1.0",
+   "id": "rule.cat.chickpea.tn.rainfed.planting-in-window",
+   "version": 1,
+   "mode": "live",
+   "cropId": "chickpea",
+   "productId": null,
+   "scope": {
+    "regionIds": [
+     "IN-TN"
+    ],
+    "seasons": [],
+    "irrigation": [
+     "rainfed"
+    ]
+   },
+   "when": {
+    "field": "planting.month",
+    "op": "in",
+    "value": [
+     11
+    ]
+   },
+   "exceptions": [],
+   "effect": {
+    "type": "eligible",
+    "reasonCode": "planting_in_sourced_window"
+   },
+   "alternatives": [],
+   "evidenceIds": [
+    "cat.chickpea.sow"
+   ],
+   "reviewStatus": "approved"
+  },
+  {
+   "schemaVersion": "1.0",
+   "id": "rule.cat.chickpea.tn.rainfed.planting-outside-window",
+   "version": 1,
+   "mode": "live",
+   "cropId": "chickpea",
+   "productId": null,
+   "scope": {
+    "regionIds": [
+     "IN-TN"
+    ],
+    "seasons": [],
+    "irrigation": [
+     "rainfed"
+    ]
+   },
+   "when": {
+    "not": {
+     "field": "planting.month",
+     "op": "in",
+     "value": [
+      11
+     ]
+    }
+   },
+   "exceptions": [],
+   "effect": {
+    "type": "requires_review",
+    "reasonCode": "planting_outside_sourced_window"
+   },
+   "alternatives": [],
+   "evidenceIds": [
+    "cat.chickpea.sow"
+   ],
+   "reviewStatus": "approved"
+  },
+  {
+   "schemaVersion": "1.0",
+   "id": "rule.cat.chilli.tn.planting-in-window",
+   "version": 1,
+   "mode": "live",
+   "cropId": "chilli",
+   "productId": null,
+   "scope": {
+    "regionIds": [
+     "IN-TN"
+    ],
+    "seasons": [],
+    "irrigation": []
+   },
+   "when": {
+    "field": "planting.month",
+    "op": "in",
+    "value": [
+     1,
+     2
+    ]
+   },
+   "exceptions": [],
+   "effect": {
+    "type": "eligible",
+    "reasonCode": "planting_in_sourced_window"
+   },
+   "alternatives": [],
+   "evidenceIds": [
+    "cat.chilli.sow"
+   ],
+   "reviewStatus": "approved"
+  },
+  {
+   "schemaVersion": "1.0",
+   "id": "rule.cat.chilli.tn.planting-outside-window",
+   "version": 1,
+   "mode": "live",
+   "cropId": "chilli",
+   "productId": null,
+   "scope": {
+    "regionIds": [
+     "IN-TN"
+    ],
+    "seasons": [],
+    "irrigation": []
+   },
+   "when": {
+    "not": {
+     "field": "planting.month",
+     "op": "in",
+     "value": [
+      1,
+      2
+     ]
+    }
+   },
+   "exceptions": [],
+   "effect": {
+    "type": "requires_review",
+    "reasonCode": "planting_outside_sourced_window"
+   },
+   "alternatives": [],
+   "evidenceIds": [
+    "cat.chilli.sow"
+   ],
+   "reviewStatus": "approved"
+  },
+  {
+   "schemaVersion": "1.0",
+   "id": "rule.cat.cotton.tn.irrigated.planting-in-window",
+   "version": 1,
+   "mode": "live",
+   "cropId": "cotton",
+   "productId": null,
+   "scope": {
+    "regionIds": [
+     "IN-TN"
+    ],
+    "seasons": [],
+    "irrigation": [
+     "irrigated"
+    ]
+   },
+   "when": {
+    "field": "planting.month",
+    "op": "in",
+    "value": [
+     2,
+     3,
+     8,
+     9
+    ]
+   },
+   "exceptions": [],
+   "effect": {
+    "type": "eligible",
+    "reasonCode": "planting_in_sourced_window"
+   },
+   "alternatives": [],
+   "evidenceIds": [
+    "cat.cotton.si",
+    "cat.cotton.wi"
+   ],
+   "reviewStatus": "approved"
+  },
+  {
+   "schemaVersion": "1.0",
+   "id": "rule.cat.cotton.tn.irrigated.planting-outside-window",
+   "version": 1,
+   "mode": "live",
+   "cropId": "cotton",
+   "productId": null,
+   "scope": {
+    "regionIds": [
+     "IN-TN"
+    ],
+    "seasons": [],
+    "irrigation": [
+     "irrigated"
+    ]
+   },
+   "when": {
+    "not": {
+     "field": "planting.month",
+     "op": "in",
+     "value": [
+      2,
+      3,
+      8,
+      9
+     ]
+    }
+   },
+   "exceptions": [],
+   "effect": {
+    "type": "requires_review",
+    "reasonCode": "planting_outside_sourced_window"
+   },
+   "alternatives": [],
+   "evidenceIds": [
+    "cat.cotton.si",
+    "cat.cotton.wi"
+   ],
+   "reviewStatus": "approved"
+  },
+  {
+   "schemaVersion": "1.0",
+   "id": "rule.cat.cotton.tn.rainfed.planting-in-window",
+   "version": 1,
+   "mode": "live",
+   "cropId": "cotton",
+   "productId": null,
+   "scope": {
+    "regionIds": [
+     "IN-TN"
+    ],
+    "seasons": [],
+    "irrigation": [
+     "rainfed"
+    ]
+   },
+   "when": {
+    "field": "planting.month",
+    "op": "in",
+    "value": [
+     8,
+     9
+    ]
+   },
+   "exceptions": [],
+   "effect": {
+    "type": "eligible",
+    "reasonCode": "planting_in_sourced_window"
+   },
+   "alternatives": [],
+   "evidenceIds": [
+    "cat.cotton.wr"
+   ],
+   "reviewStatus": "approved"
+  },
+  {
+   "schemaVersion": "1.0",
+   "id": "rule.cat.cotton.tn.rainfed.planting-outside-window",
+   "version": 1,
+   "mode": "live",
+   "cropId": "cotton",
+   "productId": null,
+   "scope": {
+    "regionIds": [
+     "IN-TN"
+    ],
+    "seasons": [],
+    "irrigation": [
+     "rainfed"
+    ]
+   },
+   "when": {
+    "not": {
+     "field": "planting.month",
+     "op": "in",
+     "value": [
+      8,
+      9
+     ]
+    }
+   },
+   "exceptions": [],
+   "effect": {
+    "type": "requires_review",
+    "reasonCode": "planting_outside_sourced_window"
+   },
+   "alternatives": [],
+   "evidenceIds": [
+    "cat.cotton.wr"
+   ],
+   "reviewStatus": "approved"
+  },
+  {
+   "schemaVersion": "1.0",
+   "id": "rule.cat.cotton.as.planting-in-window",
+   "version": 1,
+   "mode": "live",
+   "cropId": "cotton",
+   "productId": null,
+   "scope": {
+    "regionIds": [
+     "IN-AS"
+    ],
+    "seasons": [],
+    "irrigation": []
+   },
+   "when": {
+    "field": "planting.month",
+    "op": "in",
+    "value": [
+     7
+    ]
+   },
+   "exceptions": [],
+   "effect": {
+    "type": "eligible",
+    "reasonCode": "planting_in_sourced_window"
+   },
+   "alternatives": [],
+   "evidenceIds": [
+    "cat.cotton.sow"
+   ],
+   "reviewStatus": "approved"
+  },
+  {
+   "schemaVersion": "1.0",
+   "id": "rule.cat.cotton.as.planting-outside-window",
+   "version": 1,
+   "mode": "live",
+   "cropId": "cotton",
+   "productId": null,
+   "scope": {
+    "regionIds": [
+     "IN-AS"
+    ],
+    "seasons": [],
+    "irrigation": []
+   },
+   "when": {
+    "not": {
+     "field": "planting.month",
+     "op": "in",
+     "value": [
+      7
+     ]
+    }
+   },
+   "exceptions": [],
+   "effect": {
+    "type": "requires_review",
+    "reasonCode": "planting_outside_sourced_window"
+   },
+   "alternatives": [],
+   "evidenceIds": [
+    "cat.cotton.sow"
+   ],
+   "reviewStatus": "approved"
+  },
+  {
+   "schemaVersion": "1.0",
+   "id": "rule.cat.finger-millet.tn.irrigated.planting-in-window",
+   "version": 1,
+   "mode": "live",
+   "cropId": "finger-millet",
+   "productId": null,
+   "scope": {
+    "regionIds": [
+     "IN-TN"
+    ],
+    "seasons": [],
+    "irrigation": [
+     "irrigated"
+    ]
+   },
+   "when": {
+    "field": "planting.month",
+    "op": "in",
+    "value": [
+     1,
+     12
+    ]
+   },
+   "exceptions": [],
+   "effect": {
+    "type": "eligible",
+    "reasonCode": "planting_in_sourced_window"
+   },
+   "alternatives": [],
+   "evidenceIds": [
+    "cat.finger-millet.irr"
+   ],
+   "reviewStatus": "approved"
+  },
+  {
+   "schemaVersion": "1.0",
+   "id": "rule.cat.finger-millet.tn.irrigated.planting-outside-window",
+   "version": 1,
+   "mode": "live",
+   "cropId": "finger-millet",
+   "productId": null,
+   "scope": {
+    "regionIds": [
+     "IN-TN"
+    ],
+    "seasons": [],
+    "irrigation": [
+     "irrigated"
+    ]
+   },
+   "when": {
+    "not": {
+     "field": "planting.month",
+     "op": "in",
+     "value": [
+      1,
+      12
+     ]
+    }
+   },
+   "exceptions": [],
+   "effect": {
+    "type": "requires_review",
+    "reasonCode": "planting_outside_sourced_window"
+   },
+   "alternatives": [],
+   "evidenceIds": [
+    "cat.finger-millet.irr"
+   ],
+   "reviewStatus": "approved"
+  },
+  {
+   "schemaVersion": "1.0",
+   "id": "rule.cat.finger-millet.tn.rainfed.planting-in-window",
+   "version": 1,
+   "mode": "live",
+   "cropId": "finger-millet",
+   "productId": null,
+   "scope": {
+    "regionIds": [
+     "IN-TN"
+    ],
+    "seasons": [],
+    "irrigation": [
+     "rainfed"
+    ]
+   },
+   "when": {
+    "field": "planting.month",
+    "op": "in",
+    "value": [
+     6,
+     7
+    ]
+   },
+   "exceptions": [],
+   "effect": {
+    "type": "eligible",
+    "reasonCode": "planting_in_sourced_window"
+   },
+   "alternatives": [],
+   "evidenceIds": [
+    "cat.finger-millet.rf"
+   ],
+   "reviewStatus": "approved"
+  },
+  {
+   "schemaVersion": "1.0",
+   "id": "rule.cat.finger-millet.tn.rainfed.planting-outside-window",
+   "version": 1,
+   "mode": "live",
+   "cropId": "finger-millet",
+   "productId": null,
+   "scope": {
+    "regionIds": [
+     "IN-TN"
+    ],
+    "seasons": [],
+    "irrigation": [
+     "rainfed"
+    ]
+   },
+   "when": {
+    "not": {
+     "field": "planting.month",
+     "op": "in",
+     "value": [
+      6,
+      7
+     ]
+    }
+   },
+   "exceptions": [],
+   "effect": {
+    "type": "requires_review",
+    "reasonCode": "planting_outside_sourced_window"
+   },
+   "alternatives": [],
+   "evidenceIds": [
+    "cat.finger-millet.rf"
+   ],
+   "reviewStatus": "approved"
+  },
+  {
+   "schemaVersion": "1.0",
+   "id": "rule.cat.finger-millet.as.planting-in-window",
+   "version": 1,
+   "mode": "live",
+   "cropId": "finger-millet",
+   "productId": null,
+   "scope": {
+    "regionIds": [
+     "IN-AS"
+    ],
+    "seasons": [],
+    "irrigation": []
+   },
+   "when": {
+    "field": "planting.month",
+    "op": "in",
+    "value": [
+     9
+    ]
+   },
+   "exceptions": [],
+   "effect": {
+    "type": "eligible",
+    "reasonCode": "planting_in_sourced_window"
+   },
+   "alternatives": [],
+   "evidenceIds": [
+    "cat.finger-millet.asw"
+   ],
+   "reviewStatus": "approved"
+  },
+  {
+   "schemaVersion": "1.0",
+   "id": "rule.cat.finger-millet.as.planting-outside-window",
+   "version": 1,
+   "mode": "live",
+   "cropId": "finger-millet",
+   "productId": null,
+   "scope": {
+    "regionIds": [
+     "IN-AS"
+    ],
+    "seasons": [],
+    "irrigation": []
+   },
+   "when": {
+    "not": {
+     "field": "planting.month",
+     "op": "in",
+     "value": [
+      9
+     ]
+    }
+   },
+   "exceptions": [],
+   "effect": {
+    "type": "requires_review",
+    "reasonCode": "planting_outside_sourced_window"
+   },
+   "alternatives": [],
+   "evidenceIds": [
+    "cat.finger-millet.asw"
+   ],
+   "reviewStatus": "approved"
+  },
+  {
+   "schemaVersion": "1.0",
+   "id": "rule.cat.green-gram.as.planting-in-window",
+   "version": 1,
+   "mode": "live",
+   "cropId": "green-gram",
+   "productId": null,
+   "scope": {
+    "regionIds": [
+     "IN-AS"
+    ],
+    "seasons": [],
+    "irrigation": []
+   },
+   "when": {
+    "field": "planting.month",
+    "op": "in",
+    "value": [
+     8,
+     9
+    ]
+   },
+   "exceptions": [],
+   "effect": {
+    "type": "eligible",
+    "reasonCode": "planting_in_sourced_window"
+   },
+   "alternatives": [],
+   "evidenceIds": [
+    "cat.green-gram.sow"
+   ],
+   "reviewStatus": "approved"
+  },
+  {
+   "schemaVersion": "1.0",
+   "id": "rule.cat.green-gram.as.planting-outside-window",
+   "version": 1,
+   "mode": "live",
+   "cropId": "green-gram",
+   "productId": null,
+   "scope": {
+    "regionIds": [
+     "IN-AS"
+    ],
+    "seasons": [],
+    "irrigation": []
+   },
+   "when": {
+    "not": {
+     "field": "planting.month",
+     "op": "in",
+     "value": [
+      8,
+      9
+     ]
+    }
+   },
+   "exceptions": [],
+   "effect": {
+    "type": "requires_review",
+    "reasonCode": "planting_outside_sourced_window"
+   },
+   "alternatives": [],
+   "evidenceIds": [
+    "cat.green-gram.sow"
+   ],
+   "reviewStatus": "approved"
+  },
+  {
+   "schemaVersion": "1.0",
+   "id": "rule.cat.groundnut.as.planting-in-window",
+   "version": 1,
+   "mode": "live",
+   "cropId": "groundnut",
+   "productId": null,
+   "scope": {
+    "regionIds": [
+     "IN-AS"
+    ],
+    "seasons": [],
+    "irrigation": []
+   },
+   "when": {
+    "field": "planting.month",
+    "op": "in",
+    "value": [
+     6,
+     7
+    ]
+   },
+   "exceptions": [],
+   "effect": {
+    "type": "eligible",
+    "reasonCode": "planting_in_sourced_window"
+   },
+   "alternatives": [],
+   "evidenceIds": [
+    "cat.groundnut.ksow"
+   ],
+   "reviewStatus": "approved"
+  },
+  {
+   "schemaVersion": "1.0",
+   "id": "rule.cat.groundnut.as.planting-outside-window",
+   "version": 1,
+   "mode": "live",
+   "cropId": "groundnut",
+   "productId": null,
+   "scope": {
+    "regionIds": [
+     "IN-AS"
+    ],
+    "seasons": [],
+    "irrigation": []
+   },
+   "when": {
+    "not": {
+     "field": "planting.month",
+     "op": "in",
+     "value": [
+      6,
+      7
+     ]
+    }
+   },
+   "exceptions": [],
+   "effect": {
+    "type": "requires_review",
+    "reasonCode": "planting_outside_sourced_window"
+   },
+   "alternatives": [],
+   "evidenceIds": [
+    "cat.groundnut.ksow"
+   ],
+   "reviewStatus": "approved"
+  },
+  {
+   "schemaVersion": "1.0",
+   "id": "rule.cat.groundnut.as.supplemental.planting-in-window",
+   "version": 1,
+   "mode": "live",
+   "cropId": "groundnut",
+   "productId": null,
+   "scope": {
+    "regionIds": [
+     "IN-AS"
+    ],
+    "seasons": [],
+    "irrigation": [
+     "supplemental"
+    ]
+   },
+   "when": {
+    "field": "planting.month",
+    "op": "in",
+    "value": [
+     9,
+     10
+    ]
+   },
+   "exceptions": [],
+   "effect": {
+    "type": "eligible",
+    "reasonCode": "planting_in_sourced_window"
+   },
+   "alternatives": [],
+   "evidenceIds": [
+    "cat.groundnut.rsow"
+   ],
+   "reviewStatus": "approved"
+  },
+  {
+   "schemaVersion": "1.0",
+   "id": "rule.cat.groundnut.as.supplemental.planting-outside-window",
+   "version": 1,
+   "mode": "live",
+   "cropId": "groundnut",
+   "productId": null,
+   "scope": {
+    "regionIds": [
+     "IN-AS"
+    ],
+    "seasons": [],
+    "irrigation": [
+     "supplemental"
+    ]
+   },
+   "when": {
+    "not": {
+     "field": "planting.month",
+     "op": "in",
+     "value": [
+      9,
+      10
+     ]
+    }
+   },
+   "exceptions": [],
+   "effect": {
+    "type": "requires_review",
+    "reasonCode": "planting_outside_sourced_window"
+   },
+   "alternatives": [],
+   "evidenceIds": [
+    "cat.groundnut.rsow"
+   ],
+   "reviewStatus": "approved"
+  },
+  {
+   "schemaVersion": "1.0",
+   "id": "rule.cat.lentil.as.supplemental.planting-in-window",
+   "version": 1,
+   "mode": "live",
+   "cropId": "lentil",
+   "productId": null,
+   "scope": {
+    "regionIds": [
+     "IN-AS"
+    ],
+    "seasons": [],
+    "irrigation": [
+     "supplemental"
+    ]
+   },
+   "when": {
+    "field": "planting.month",
+    "op": "in",
+    "value": [
+     10,
+     11
+    ]
+   },
+   "exceptions": [],
+   "effect": {
+    "type": "eligible",
+    "reasonCode": "planting_in_sourced_window"
+   },
+   "alternatives": [],
+   "evidenceIds": [
+    "cat.lentil.sow"
+   ],
+   "reviewStatus": "approved"
+  },
+  {
+   "schemaVersion": "1.0",
+   "id": "rule.cat.lentil.as.supplemental.planting-outside-window",
+   "version": 1,
+   "mode": "live",
+   "cropId": "lentil",
+   "productId": null,
+   "scope": {
+    "regionIds": [
+     "IN-AS"
+    ],
+    "seasons": [],
+    "irrigation": [
+     "supplemental"
+    ]
+   },
+   "when": {
+    "not": {
+     "field": "planting.month",
+     "op": "in",
+     "value": [
+      10,
+      11
+     ]
+    }
+   },
+   "exceptions": [],
+   "effect": {
+    "type": "requires_review",
+    "reasonCode": "planting_outside_sourced_window"
+   },
+   "alternatives": [],
+   "evidenceIds": [
+    "cat.lentil.sow"
+   ],
+   "reviewStatus": "approved"
+  },
+  {
+   "schemaVersion": "1.0",
+   "id": "rule.cat.maize.tn.planting-in-window",
+   "version": 1,
+   "mode": "live",
+   "cropId": "maize",
+   "productId": null,
+   "scope": {
+    "regionIds": [
+     "IN-TN"
+    ],
+    "seasons": [],
+    "irrigation": []
+   },
+   "when": {
+    "field": "planting.month",
+    "op": "in",
+    "value": [
+     7,
+     8
+    ]
+   },
+   "exceptions": [],
+   "effect": {
+    "type": "eligible",
+    "reasonCode": "planting_in_sourced_window"
+   },
+   "alternatives": [],
+   "evidenceIds": [
+    "cat.maize.tnadi"
+   ],
+   "reviewStatus": "approved"
+  },
+  {
+   "schemaVersion": "1.0",
+   "id": "rule.cat.maize.tn.planting-outside-window",
+   "version": 1,
+   "mode": "live",
+   "cropId": "maize",
+   "productId": null,
+   "scope": {
+    "regionIds": [
+     "IN-TN"
+    ],
+    "seasons": [],
+    "irrigation": []
+   },
+   "when": {
+    "not": {
+     "field": "planting.month",
+     "op": "in",
+     "value": [
+      7,
+      8
+     ]
+    }
+   },
+   "exceptions": [],
+   "effect": {
+    "type": "requires_review",
+    "reasonCode": "planting_outside_sourced_window"
+   },
+   "alternatives": [],
+   "evidenceIds": [
+    "cat.maize.tnadi"
+   ],
+   "reviewStatus": "approved"
+  },
+  {
+   "schemaVersion": "1.0",
+   "id": "rule.cat.maize.as.rainfed.planting-in-window",
+   "version": 1,
+   "mode": "live",
+   "cropId": "maize",
+   "productId": null,
+   "scope": {
+    "regionIds": [
+     "IN-AS"
+    ],
+    "seasons": [],
+    "irrigation": [
+     "rainfed"
+    ]
+   },
+   "when": {
+    "field": "planting.month",
+    "op": "in",
+    "value": [
+     2,
+     3,
+     4,
+     5
+    ]
+   },
+   "exceptions": [],
+   "effect": {
+    "type": "eligible",
+    "reasonCode": "planting_in_sourced_window"
+   },
+   "alternatives": [],
+   "evidenceIds": [
+    "cat.maize.ksow"
+   ],
+   "reviewStatus": "approved"
+  },
+  {
+   "schemaVersion": "1.0",
+   "id": "rule.cat.maize.as.rainfed.planting-outside-window",
+   "version": 1,
+   "mode": "live",
+   "cropId": "maize",
+   "productId": null,
+   "scope": {
+    "regionIds": [
+     "IN-AS"
+    ],
+    "seasons": [],
+    "irrigation": [
+     "rainfed"
+    ]
+   },
+   "when": {
+    "not": {
+     "field": "planting.month",
+     "op": "in",
+     "value": [
+      2,
+      3,
+      4,
+      5
+     ]
+    }
+   },
+   "exceptions": [],
+   "effect": {
+    "type": "requires_review",
+    "reasonCode": "planting_outside_sourced_window"
+   },
+   "alternatives": [],
+   "evidenceIds": [
+    "cat.maize.ksow"
+   ],
+   "reviewStatus": "approved"
+  },
+  {
+   "schemaVersion": "1.0",
+   "id": "rule.cat.maize.as.irrigated.planting-in-window",
+   "version": 1,
+   "mode": "live",
+   "cropId": "maize",
+   "productId": null,
+   "scope": {
+    "regionIds": [
+     "IN-AS"
+    ],
+    "seasons": [],
+    "irrigation": [
+     "irrigated"
+    ]
+   },
+   "when": {
+    "field": "planting.month",
+    "op": "in",
+    "value": [
+     9,
+     10
+    ]
+   },
+   "exceptions": [],
+   "effect": {
+    "type": "eligible",
+    "reasonCode": "planting_in_sourced_window"
+   },
+   "alternatives": [],
+   "evidenceIds": [
+    "cat.maize.rsow"
+   ],
+   "reviewStatus": "approved"
+  },
+  {
+   "schemaVersion": "1.0",
+   "id": "rule.cat.maize.as.irrigated.planting-outside-window",
+   "version": 1,
+   "mode": "live",
+   "cropId": "maize",
+   "productId": null,
+   "scope": {
+    "regionIds": [
+     "IN-AS"
+    ],
+    "seasons": [],
+    "irrigation": [
+     "irrigated"
+    ]
+   },
+   "when": {
+    "not": {
+     "field": "planting.month",
+     "op": "in",
+     "value": [
+      9,
+      10
+     ]
+    }
+   },
+   "exceptions": [],
+   "effect": {
+    "type": "requires_review",
+    "reasonCode": "planting_outside_sourced_window"
+   },
+   "alternatives": [],
+   "evidenceIds": [
+    "cat.maize.rsow"
+   ],
+   "reviewStatus": "approved"
+  },
+  {
+   "schemaVersion": "1.0",
+   "id": "rule.cat.mustard.as.supplemental.planting-in-window",
+   "version": 1,
+   "mode": "live",
+   "cropId": "mustard",
+   "productId": null,
+   "scope": {
+    "regionIds": [
+     "IN-AS"
+    ],
+    "seasons": [],
+    "irrigation": [
+     "supplemental"
+    ]
+   },
+   "when": {
+    "field": "planting.month",
+    "op": "in",
+    "value": [
+     10,
+     11
+    ]
+   },
+   "exceptions": [],
+   "effect": {
+    "type": "eligible",
+    "reasonCode": "planting_in_sourced_window"
+   },
+   "alternatives": [],
+   "evidenceIds": [
+    "cat.mustard.sow"
+   ],
+   "reviewStatus": "approved"
+  },
+  {
+   "schemaVersion": "1.0",
+   "id": "rule.cat.mustard.as.supplemental.planting-outside-window",
+   "version": 1,
+   "mode": "live",
+   "cropId": "mustard",
+   "productId": null,
+   "scope": {
+    "regionIds": [
+     "IN-AS"
+    ],
+    "seasons": [],
+    "irrigation": [
+     "supplemental"
+    ]
+   },
+   "when": {
+    "not": {
+     "field": "planting.month",
+     "op": "in",
+     "value": [
+      10,
+      11
+     ]
+    }
+   },
+   "exceptions": [],
+   "effect": {
+    "type": "requires_review",
+    "reasonCode": "planting_outside_sourced_window"
+   },
+   "alternatives": [],
+   "evidenceIds": [
+    "cat.mustard.sow"
+   ],
+   "reviewStatus": "approved"
+  },
+  {
+   "schemaVersion": "1.0",
+   "id": "rule.cat.okra.tn.irrigated.planting-in-window",
+   "version": 1,
+   "mode": "live",
+   "cropId": "okra",
+   "productId": null,
+   "scope": {
+    "regionIds": [
+     "IN-TN"
+    ],
+    "seasons": [],
+    "irrigation": [
+     "irrigated"
+    ]
+   },
+   "when": {
+    "field": "planting.month",
+    "op": "in",
+    "value": [
+     6,
+     7,
+     8
+    ]
+   },
+   "exceptions": [],
+   "effect": {
+    "type": "eligible",
+    "reasonCode": "planting_in_sourced_window"
+   },
+   "alternatives": [],
+   "evidenceIds": [
+    "cat.okra.sow"
+   ],
+   "reviewStatus": "approved"
+  },
+  {
+   "schemaVersion": "1.0",
+   "id": "rule.cat.okra.tn.irrigated.planting-outside-window",
+   "version": 1,
+   "mode": "live",
+   "cropId": "okra",
+   "productId": null,
+   "scope": {
+    "regionIds": [
+     "IN-TN"
+    ],
+    "seasons": [],
+    "irrigation": [
+     "irrigated"
+    ]
+   },
+   "when": {
+    "not": {
+     "field": "planting.month",
+     "op": "in",
+     "value": [
+      6,
+      7,
+      8
+     ]
+    }
+   },
+   "exceptions": [],
+   "effect": {
+    "type": "requires_review",
+    "reasonCode": "planting_outside_sourced_window"
+   },
+   "alternatives": [],
+   "evidenceIds": [
+    "cat.okra.sow"
+   ],
+   "reviewStatus": "approved"
+  },
+  {
+   "schemaVersion": "1.0",
+   "id": "rule.cat.onion.tn.planting-in-window",
+   "version": 1,
+   "mode": "live",
+   "cropId": "onion",
+   "productId": null,
+   "scope": {
+    "regionIds": [
+     "IN-TN"
+    ],
+    "seasons": [],
+    "irrigation": []
+   },
+   "when": {
+    "field": "planting.month",
+    "op": "in",
+    "value": [
+     5,
+     6,
+     10,
+     11
+    ]
+   },
+   "exceptions": [],
+   "effect": {
+    "type": "eligible",
+    "reasonCode": "planting_in_sourced_window"
+   },
+   "alternatives": [],
+   "evidenceIds": [
+    "cat.onion.bsow",
+    "cat.onion.ssow"
+   ],
+   "reviewStatus": "approved"
+  },
+  {
+   "schemaVersion": "1.0",
+   "id": "rule.cat.onion.tn.planting-outside-window",
+   "version": 1,
+   "mode": "live",
+   "cropId": "onion",
+   "productId": null,
+   "scope": {
+    "regionIds": [
+     "IN-TN"
+    ],
+    "seasons": [],
+    "irrigation": []
+   },
+   "when": {
+    "not": {
+     "field": "planting.month",
+     "op": "in",
+     "value": [
+      5,
+      6,
+      10,
+      11
+     ]
+    }
+   },
+   "exceptions": [],
+   "effect": {
+    "type": "requires_review",
+    "reasonCode": "planting_outside_sourced_window"
+   },
+   "alternatives": [],
+   "evidenceIds": [
+    "cat.onion.bsow",
+    "cat.onion.ssow"
+   ],
+   "reviewStatus": "approved"
+  },
+  {
+   "schemaVersion": "1.0",
+   "id": "rule.cat.onion.gj_mh.planting-in-window",
+   "version": 1,
+   "mode": "live",
+   "cropId": "onion",
+   "productId": null,
+   "scope": {
+    "regionIds": [
+     "IN-GJ",
+     "IN-MH"
+    ],
+    "seasons": [],
+    "irrigation": []
+   },
+   "when": {
+    "field": "planting.month",
+    "op": "in",
+    "value": [
+     5,
+     6
+    ]
+   },
+   "exceptions": [],
+   "effect": {
+    "type": "eligible",
+    "reasonCode": "planting_in_sourced_window"
+   },
+   "alternatives": [],
+   "evidenceIds": [
+    "cat.onion.mhk"
+   ],
+   "reviewStatus": "approved"
+  },
+  {
+   "schemaVersion": "1.0",
+   "id": "rule.cat.onion.gj_mh.planting-outside-window",
+   "version": 1,
+   "mode": "live",
+   "cropId": "onion",
+   "productId": null,
+   "scope": {
+    "regionIds": [
+     "IN-GJ",
+     "IN-MH"
+    ],
+    "seasons": [],
+    "irrigation": []
+   },
+   "when": {
+    "not": {
+     "field": "planting.month",
+     "op": "in",
+     "value": [
+      5,
+      6
+     ]
+    }
+   },
+   "exceptions": [],
+   "effect": {
+    "type": "requires_review",
+    "reasonCode": "planting_outside_sourced_window"
+   },
+   "alternatives": [],
+   "evidenceIds": [
+    "cat.onion.mhk"
+   ],
+   "reviewStatus": "approved"
+  },
+  {
+   "schemaVersion": "1.0",
+   "id": "rule.cat.onion.br_hr_pb_rj_up.planting-in-window",
+   "version": 1,
+   "mode": "live",
+   "cropId": "onion",
+   "productId": null,
+   "scope": {
+    "regionIds": [
+     "IN-BR",
+     "IN-HR",
+     "IN-PB",
+     "IN-RJ",
+     "IN-UP"
+    ],
+    "seasons": [],
+    "irrigation": []
+   },
+   "when": {
+    "field": "planting.month",
+    "op": "in",
+    "value": [
+     10,
+     11
+    ]
+   },
+   "exceptions": [],
+   "effect": {
+    "type": "eligible",
+    "reasonCode": "planting_in_sourced_window"
+   },
+   "alternatives": [],
+   "evidenceIds": [
+    "cat.onion.north"
+   ],
+   "reviewStatus": "approved"
+  },
+  {
+   "schemaVersion": "1.0",
+   "id": "rule.cat.onion.br_hr_pb_rj_up.planting-outside-window",
+   "version": 1,
+   "mode": "live",
+   "cropId": "onion",
+   "productId": null,
+   "scope": {
+    "regionIds": [
+     "IN-BR",
+     "IN-HR",
+     "IN-PB",
+     "IN-RJ",
+     "IN-UP"
+    ],
+    "seasons": [],
+    "irrigation": []
+   },
+   "when": {
+    "not": {
+     "field": "planting.month",
+     "op": "in",
+     "value": [
+      10,
+      11
+     ]
+    }
+   },
+   "exceptions": [],
+   "effect": {
+    "type": "requires_review",
+    "reasonCode": "planting_outside_sourced_window"
+   },
+   "alternatives": [],
+   "evidenceIds": [
+    "cat.onion.north"
+   ],
+   "reviewStatus": "approved"
+  },
+  {
+   "schemaVersion": "1.0",
+   "id": "rule.cat.paddy.tn.planting-in-window",
+   "version": 1,
+   "mode": "live",
+   "cropId": "paddy",
+   "productId": null,
+   "scope": {
+    "regionIds": [
+     "IN-TN"
+    ],
+    "seasons": [],
+    "irrigation": []
+   },
+   "when": {
+    "field": "planting.month",
+    "op": "in",
+    "value": [
+     1,
+     6,
+     7,
+     8,
+     9,
+     10,
+     12
+    ]
+   },
+   "exceptions": [],
+   "effect": {
+    "type": "eligible",
+    "reasonCode": "planting_in_sourced_window"
+   },
+   "alternatives": [],
+   "evidenceIds": [
+    "cat.paddy.kuruvai",
+    "cat.paddy.navarai",
+    "cat.paddy.samba",
+    "cat.paddy.thaladi"
+   ],
+   "reviewStatus": "approved"
+  },
+  {
+   "schemaVersion": "1.0",
+   "id": "rule.cat.paddy.tn.planting-outside-window",
+   "version": 1,
+   "mode": "live",
+   "cropId": "paddy",
+   "productId": null,
+   "scope": {
+    "regionIds": [
+     "IN-TN"
+    ],
+    "seasons": [],
+    "irrigation": []
+   },
+   "when": {
+    "not": {
+     "field": "planting.month",
+     "op": "in",
+     "value": [
+      1,
+      6,
+      7,
+      8,
+      9,
+      10,
+      12
+     ]
+    }
+   },
+   "exceptions": [],
+   "effect": {
+    "type": "requires_review",
+    "reasonCode": "planting_outside_sourced_window"
+   },
+   "alternatives": [],
+   "evidenceIds": [
+    "cat.paddy.kuruvai",
+    "cat.paddy.navarai",
+    "cat.paddy.samba",
+    "cat.paddy.thaladi"
+   ],
+   "reviewStatus": "approved"
+  },
+  {
+   "schemaVersion": "1.0",
+   "id": "rule.cat.paddy.as.planting-in-window",
+   "version": 1,
+   "mode": "live",
+   "cropId": "paddy",
+   "productId": null,
+   "scope": {
+    "regionIds": [
+     "IN-AS"
+    ],
+    "seasons": [],
+    "irrigation": []
+   },
+   "when": {
+    "field": "planting.month",
+    "op": "in",
+    "value": [
+     6
+    ]
+   },
+   "exceptions": [],
+   "effect": {
+    "type": "eligible",
+    "reasonCode": "planting_in_sourced_window"
+   },
+   "alternatives": [],
+   "evidenceIds": [
+    "cat.paddy.sali"
+   ],
+   "reviewStatus": "approved"
+  },
+  {
+   "schemaVersion": "1.0",
+   "id": "rule.cat.paddy.as.planting-outside-window",
+   "version": 1,
+   "mode": "live",
+   "cropId": "paddy",
+   "productId": null,
+   "scope": {
+    "regionIds": [
+     "IN-AS"
+    ],
+    "seasons": [],
+    "irrigation": []
+   },
+   "when": {
+    "not": {
+     "field": "planting.month",
+     "op": "in",
+     "value": [
+      6
+     ]
+    }
+   },
+   "exceptions": [],
+   "effect": {
+    "type": "requires_review",
+    "reasonCode": "planting_outside_sourced_window"
+   },
+   "alternatives": [],
+   "evidenceIds": [
+    "cat.paddy.sali"
+   ],
+   "reviewStatus": "approved"
+  },
+  {
+   "schemaVersion": "1.0",
+   "id": "rule.cat.pearl-millet.tn.irrigated.planting-in-window",
+   "version": 1,
+   "mode": "live",
+   "cropId": "pearl-millet",
+   "productId": null,
+   "scope": {
+    "regionIds": [
+     "IN-TN"
+    ],
+    "seasons": [],
+    "irrigation": [
+     "irrigated"
+    ]
+   },
+   "when": {
+    "field": "planting.month",
+    "op": "in",
+    "value": [
+     3,
+     4
+    ]
+   },
+   "exceptions": [],
+   "effect": {
+    "type": "eligible",
+    "reasonCode": "planting_in_sourced_window"
+   },
+   "alternatives": [],
+   "evidenceIds": [
+    "cat.pearl-millet.irr"
+   ],
+   "reviewStatus": "approved"
+  },
+  {
+   "schemaVersion": "1.0",
+   "id": "rule.cat.pearl-millet.tn.irrigated.planting-outside-window",
+   "version": 1,
+   "mode": "live",
+   "cropId": "pearl-millet",
+   "productId": null,
+   "scope": {
+    "regionIds": [
+     "IN-TN"
+    ],
+    "seasons": [],
+    "irrigation": [
+     "irrigated"
+    ]
+   },
+   "when": {
+    "not": {
+     "field": "planting.month",
+     "op": "in",
+     "value": [
+      3,
+      4
+     ]
+    }
+   },
+   "exceptions": [],
+   "effect": {
+    "type": "requires_review",
+    "reasonCode": "planting_outside_sourced_window"
+   },
+   "alternatives": [],
+   "evidenceIds": [
+    "cat.pearl-millet.irr"
+   ],
+   "reviewStatus": "approved"
+  },
+  {
+   "schemaVersion": "1.0",
+   "id": "rule.cat.pearl-millet.tn.rainfed.planting-in-window",
+   "version": 1,
+   "mode": "live",
+   "cropId": "pearl-millet",
+   "productId": null,
+   "scope": {
+    "regionIds": [
+     "IN-TN"
+    ],
+    "seasons": [],
+    "irrigation": [
+     "rainfed"
+    ]
+   },
+   "when": {
+    "field": "planting.month",
+    "op": "in",
+    "value": [
+     6,
+     7
+    ]
+   },
+   "exceptions": [],
+   "effect": {
+    "type": "eligible",
+    "reasonCode": "planting_in_sourced_window"
+   },
+   "alternatives": [],
+   "evidenceIds": [
+    "cat.pearl-millet.rf"
+   ],
+   "reviewStatus": "approved"
+  },
+  {
+   "schemaVersion": "1.0",
+   "id": "rule.cat.pearl-millet.tn.rainfed.planting-outside-window",
+   "version": 1,
+   "mode": "live",
+   "cropId": "pearl-millet",
+   "productId": null,
+   "scope": {
+    "regionIds": [
+     "IN-TN"
+    ],
+    "seasons": [],
+    "irrigation": [
+     "rainfed"
+    ]
+   },
+   "when": {
+    "not": {
+     "field": "planting.month",
+     "op": "in",
+     "value": [
+      6,
+      7
+     ]
+    }
+   },
+   "exceptions": [],
+   "effect": {
+    "type": "requires_review",
+    "reasonCode": "planting_outside_sourced_window"
+   },
+   "alternatives": [],
+   "evidenceIds": [
+    "cat.pearl-millet.rf"
+   ],
+   "reviewStatus": "approved"
+  },
+  {
+   "schemaVersion": "1.0",
+   "id": "rule.cat.pigeon-pea.tn.planting-in-window",
+   "version": 1,
+   "mode": "live",
+   "cropId": "pigeon-pea",
+   "productId": null,
+   "scope": {
+    "regionIds": [
+     "IN-TN"
+    ],
+    "seasons": [],
+    "irrigation": []
+   },
+   "when": {
+    "field": "planting.month",
+    "op": "in",
+    "value": [
+     5,
+     6
+    ]
+   },
+   "exceptions": [],
+   "effect": {
+    "type": "eligible",
+    "reasonCode": "planting_in_sourced_window"
+   },
+   "alternatives": [],
+   "evidenceIds": [
+    "cat.pigeon-pea.tnsow"
+   ],
+   "reviewStatus": "approved"
+  },
+  {
+   "schemaVersion": "1.0",
+   "id": "rule.cat.pigeon-pea.tn.planting-outside-window",
+   "version": 1,
+   "mode": "live",
+   "cropId": "pigeon-pea",
+   "productId": null,
+   "scope": {
+    "regionIds": [
+     "IN-TN"
+    ],
+    "seasons": [],
+    "irrigation": []
+   },
+   "when": {
+    "not": {
+     "field": "planting.month",
+     "op": "in",
+     "value": [
+      5,
+      6
+     ]
+    }
+   },
+   "exceptions": [],
+   "effect": {
+    "type": "requires_review",
+    "reasonCode": "planting_outside_sourced_window"
+   },
+   "alternatives": [],
+   "evidenceIds": [
+    "cat.pigeon-pea.tnsow"
+   ],
+   "reviewStatus": "approved"
+  },
+  {
+   "schemaVersion": "1.0",
+   "id": "rule.cat.pigeon-pea.as.planting-in-window",
+   "version": 1,
+   "mode": "live",
+   "cropId": "pigeon-pea",
+   "productId": null,
+   "scope": {
+    "regionIds": [
+     "IN-AS"
+    ],
+    "seasons": [],
+    "irrigation": []
+   },
+   "when": {
+    "field": "planting.month",
+    "op": "in",
+    "value": [
+     6,
+     7
+    ]
+   },
+   "exceptions": [],
+   "effect": {
+    "type": "eligible",
+    "reasonCode": "planting_in_sourced_window"
+   },
+   "alternatives": [],
+   "evidenceIds": [
+    "cat.pigeon-pea.sow"
+   ],
+   "reviewStatus": "approved"
+  },
+  {
+   "schemaVersion": "1.0",
+   "id": "rule.cat.pigeon-pea.as.planting-outside-window",
+   "version": 1,
+   "mode": "live",
+   "cropId": "pigeon-pea",
+   "productId": null,
+   "scope": {
+    "regionIds": [
+     "IN-AS"
+    ],
+    "seasons": [],
+    "irrigation": []
+   },
+   "when": {
+    "not": {
+     "field": "planting.month",
+     "op": "in",
+     "value": [
+      6,
+      7
+     ]
+    }
+   },
+   "exceptions": [],
+   "effect": {
+    "type": "requires_review",
+    "reasonCode": "planting_outside_sourced_window"
+   },
+   "alternatives": [],
+   "evidenceIds": [
+    "cat.pigeon-pea.sow"
+   ],
+   "reviewStatus": "approved"
+  },
+  {
+   "schemaVersion": "1.0",
+   "id": "rule.cat.potato.tn.planting-in-window",
+   "version": 1,
+   "mode": "live",
+   "cropId": "potato",
+   "productId": null,
+   "scope": {
+    "regionIds": [
+     "IN-TN"
+    ],
+    "seasons": [],
+    "irrigation": []
+   },
+   "when": {
+    "field": "planting.month",
+    "op": "in",
+    "value": [
+     10,
+     11
+    ]
+   },
+   "exceptions": [],
+   "effect": {
+    "type": "eligible",
+    "reasonCode": "planting_in_sourced_window"
+   },
+   "alternatives": [],
+   "evidenceIds": [
+    "cat.potato.tnsow"
+   ],
+   "reviewStatus": "approved"
+  },
+  {
+   "schemaVersion": "1.0",
+   "id": "rule.cat.potato.tn.planting-outside-window",
+   "version": 1,
+   "mode": "live",
+   "cropId": "potato",
+   "productId": null,
+   "scope": {
+    "regionIds": [
+     "IN-TN"
+    ],
+    "seasons": [],
+    "irrigation": []
+   },
+   "when": {
+    "not": {
+     "field": "planting.month",
+     "op": "in",
+     "value": [
+      10,
+      11
+     ]
+    }
+   },
+   "exceptions": [],
+   "effect": {
+    "type": "requires_review",
+    "reasonCode": "planting_outside_sourced_window"
+   },
+   "alternatives": [],
+   "evidenceIds": [
+    "cat.potato.tnsow"
+   ],
+   "reviewStatus": "approved"
+  },
+  {
+   "schemaVersion": "1.0",
+   "id": "rule.cat.potato.as.rainfed.planting-in-window",
+   "version": 1,
+   "mode": "live",
+   "cropId": "potato",
+   "productId": null,
+   "scope": {
+    "regionIds": [
+     "IN-AS"
+    ],
+    "seasons": [],
+    "irrigation": [
+     "rainfed"
+    ]
+   },
+   "when": {
+    "field": "planting.month",
+    "op": "in",
+    "value": [
+     10,
+     11
+    ]
+   },
+   "exceptions": [],
+   "effect": {
+    "type": "eligible",
+    "reasonCode": "planting_in_sourced_window"
+   },
+   "alternatives": [],
+   "evidenceIds": [
+    "cat.potato.sow"
+   ],
+   "reviewStatus": "approved"
+  },
+  {
+   "schemaVersion": "1.0",
+   "id": "rule.cat.potato.as.rainfed.planting-outside-window",
+   "version": 1,
+   "mode": "live",
+   "cropId": "potato",
+   "productId": null,
+   "scope": {
+    "regionIds": [
+     "IN-AS"
+    ],
+    "seasons": [],
+    "irrigation": [
+     "rainfed"
+    ]
+   },
+   "when": {
+    "not": {
+     "field": "planting.month",
+     "op": "in",
+     "value": [
+      10,
+      11
+     ]
+    }
+   },
+   "exceptions": [],
+   "effect": {
+    "type": "requires_review",
+    "reasonCode": "planting_outside_sourced_window"
+   },
+   "alternatives": [],
+   "evidenceIds": [
+    "cat.potato.sow"
+   ],
+   "reviewStatus": "approved"
+  },
+  {
+   "schemaVersion": "1.0",
+   "id": "rule.cat.potato.as.irrigated.planting-in-window",
+   "version": 1,
+   "mode": "live",
+   "cropId": "potato",
+   "productId": null,
+   "scope": {
+    "regionIds": [
+     "IN-AS"
+    ],
+    "seasons": [],
+    "irrigation": [
+     "irrigated"
+    ]
+   },
+   "when": {
+    "field": "planting.month",
+    "op": "in",
+    "value": [
+     10,
+     11
+    ]
+   },
+   "exceptions": [],
+   "effect": {
+    "type": "eligible",
+    "reasonCode": "planting_in_sourced_window"
+   },
+   "alternatives": [],
+   "evidenceIds": [
+    "cat.potato.sow"
+   ],
+   "reviewStatus": "approved"
+  },
+  {
+   "schemaVersion": "1.0",
+   "id": "rule.cat.potato.as.irrigated.planting-outside-window",
+   "version": 1,
+   "mode": "live",
+   "cropId": "potato",
+   "productId": null,
+   "scope": {
+    "regionIds": [
+     "IN-AS"
+    ],
+    "seasons": [],
+    "irrigation": [
+     "irrigated"
+    ]
+   },
+   "when": {
+    "not": {
+     "field": "planting.month",
+     "op": "in",
+     "value": [
+      10,
+      11
+     ]
+    }
+   },
+   "exceptions": [],
+   "effect": {
+    "type": "requires_review",
+    "reasonCode": "planting_outside_sourced_window"
+   },
+   "alternatives": [],
+   "evidenceIds": [
+    "cat.potato.sow"
+   ],
+   "reviewStatus": "approved"
+  },
+  {
+   "schemaVersion": "1.0",
+   "id": "rule.cat.sesame.tn.irrigated.planting-in-window",
+   "version": 1,
+   "mode": "live",
+   "cropId": "sesame",
+   "productId": null,
+   "scope": {
+    "regionIds": [
+     "IN-TN"
+    ],
+    "seasons": [],
+    "irrigation": [
+     "irrigated"
+    ]
+   },
+   "when": {
+    "field": "planting.month",
+    "op": "in",
+    "value": [
+     2,
+     3
+    ]
+   },
+   "exceptions": [],
+   "effect": {
+    "type": "eligible",
+    "reasonCode": "planting_in_sourced_window"
+   },
+   "alternatives": [],
+   "evidenceIds": [
+    "cat.sesame.irr"
+   ],
+   "reviewStatus": "approved"
+  },
+  {
+   "schemaVersion": "1.0",
+   "id": "rule.cat.sesame.tn.irrigated.planting-outside-window",
+   "version": 1,
+   "mode": "live",
+   "cropId": "sesame",
+   "productId": null,
+   "scope": {
+    "regionIds": [
+     "IN-TN"
+    ],
+    "seasons": [],
+    "irrigation": [
+     "irrigated"
+    ]
+   },
+   "when": {
+    "not": {
+     "field": "planting.month",
+     "op": "in",
+     "value": [
+      2,
+      3
+     ]
+    }
+   },
+   "exceptions": [],
+   "effect": {
+    "type": "requires_review",
+    "reasonCode": "planting_outside_sourced_window"
+   },
+   "alternatives": [],
+   "evidenceIds": [
+    "cat.sesame.irr"
+   ],
+   "reviewStatus": "approved"
+  },
+  {
+   "schemaVersion": "1.0",
+   "id": "rule.cat.sesame.tn.rainfed.planting-in-window",
+   "version": 1,
+   "mode": "live",
+   "cropId": "sesame",
+   "productId": null,
+   "scope": {
+    "regionIds": [
+     "IN-TN"
+    ],
+    "seasons": [],
+    "irrigation": [
+     "rainfed"
+    ]
+   },
+   "when": {
+    "field": "planting.month",
+    "op": "in",
+    "value": [
+     6,
+     7
+    ]
+   },
+   "exceptions": [],
+   "effect": {
+    "type": "eligible",
+    "reasonCode": "planting_in_sourced_window"
+   },
+   "alternatives": [],
+   "evidenceIds": [
+    "cat.sesame.rf"
+   ],
+   "reviewStatus": "approved"
+  },
+  {
+   "schemaVersion": "1.0",
+   "id": "rule.cat.sesame.tn.rainfed.planting-outside-window",
+   "version": 1,
+   "mode": "live",
+   "cropId": "sesame",
+   "productId": null,
+   "scope": {
+    "regionIds": [
+     "IN-TN"
+    ],
+    "seasons": [],
+    "irrigation": [
+     "rainfed"
+    ]
+   },
+   "when": {
+    "not": {
+     "field": "planting.month",
+     "op": "in",
+     "value": [
+      6,
+      7
+     ]
+    }
+   },
+   "exceptions": [],
+   "effect": {
+    "type": "requires_review",
+    "reasonCode": "planting_outside_sourced_window"
+   },
+   "alternatives": [],
+   "evidenceIds": [
+    "cat.sesame.rf"
+   ],
+   "reviewStatus": "approved"
+  },
+  {
+   "schemaVersion": "1.0",
+   "id": "rule.cat.sesame.as.planting-in-window",
+   "version": 1,
+   "mode": "live",
+   "cropId": "sesame",
+   "productId": null,
+   "scope": {
+    "regionIds": [
+     "IN-AS"
+    ],
+    "seasons": [],
+    "irrigation": []
+   },
+   "when": {
+    "field": "planting.month",
+    "op": "in",
+    "value": [
+     7,
+     8
+    ]
+   },
+   "exceptions": [],
+   "effect": {
+    "type": "eligible",
+    "reasonCode": "planting_in_sourced_window"
+   },
+   "alternatives": [],
+   "evidenceIds": [
+    "cat.sesame.sow"
+   ],
+   "reviewStatus": "approved"
+  },
+  {
+   "schemaVersion": "1.0",
+   "id": "rule.cat.sesame.as.planting-outside-window",
+   "version": 1,
+   "mode": "live",
+   "cropId": "sesame",
+   "productId": null,
+   "scope": {
+    "regionIds": [
+     "IN-AS"
+    ],
+    "seasons": [],
+    "irrigation": []
+   },
+   "when": {
+    "not": {
+     "field": "planting.month",
+     "op": "in",
+     "value": [
+      7,
+      8
+     ]
+    }
+   },
+   "exceptions": [],
+   "effect": {
+    "type": "requires_review",
+    "reasonCode": "planting_outside_sourced_window"
+   },
+   "alternatives": [],
+   "evidenceIds": [
+    "cat.sesame.sow"
+   ],
+   "reviewStatus": "approved"
+  },
+  {
+   "schemaVersion": "1.0",
+   "id": "rule.cat.sorghum.tn.rainfed.planting-in-window",
+   "version": 1,
+   "mode": "live",
+   "cropId": "sorghum",
+   "productId": null,
+   "scope": {
+    "regionIds": [
+     "IN-TN"
+    ],
+    "seasons": [],
+    "irrigation": [
+     "rainfed"
+    ]
+   },
+   "when": {
+    "field": "planting.month",
+    "op": "in",
+    "value": [
+     6,
+     7
+    ]
+   },
+   "exceptions": [],
+   "effect": {
+    "type": "eligible",
+    "reasonCode": "planting_in_sourced_window"
+   },
+   "alternatives": [],
+   "evidenceIds": [
+    "cat.sorghum.adi"
+   ],
+   "reviewStatus": "approved"
+  },
+  {
+   "schemaVersion": "1.0",
+   "id": "rule.cat.sorghum.tn.rainfed.planting-outside-window",
+   "version": 1,
+   "mode": "live",
+   "cropId": "sorghum",
+   "productId": null,
+   "scope": {
+    "regionIds": [
+     "IN-TN"
+    ],
+    "seasons": [],
+    "irrigation": [
+     "rainfed"
+    ]
+   },
+   "when": {
+    "not": {
+     "field": "planting.month",
+     "op": "in",
+     "value": [
+      6,
+      7
+     ]
+    }
+   },
+   "exceptions": [],
+   "effect": {
+    "type": "requires_review",
+    "reasonCode": "planting_outside_sourced_window"
+   },
+   "alternatives": [],
+   "evidenceIds": [
+    "cat.sorghum.adi"
+   ],
+   "reviewStatus": "approved"
+  },
+  {
+   "schemaVersion": "1.0",
+   "id": "rule.cat.sorghum.tn.irrigated.planting-in-window",
+   "version": 1,
+   "mode": "live",
+   "cropId": "sorghum",
+   "productId": null,
+   "scope": {
+    "regionIds": [
+     "IN-TN"
+    ],
+    "seasons": [],
+    "irrigation": [
+     "irrigated"
+    ]
+   },
+   "when": {
+    "field": "planting.month",
+    "op": "in",
+    "value": [
+     4,
+     5
+    ]
+   },
+   "exceptions": [],
+   "effect": {
+    "type": "eligible",
+    "reasonCode": "planting_in_sourced_window"
+   },
+   "alternatives": [],
+   "evidenceIds": [
+    "cat.sorghum.chi"
+   ],
+   "reviewStatus": "approved"
+  },
+  {
+   "schemaVersion": "1.0",
+   "id": "rule.cat.sorghum.tn.irrigated.planting-outside-window",
+   "version": 1,
+   "mode": "live",
+   "cropId": "sorghum",
+   "productId": null,
+   "scope": {
+    "regionIds": [
+     "IN-TN"
+    ],
+    "seasons": [],
+    "irrigation": [
+     "irrigated"
+    ]
+   },
+   "when": {
+    "not": {
+     "field": "planting.month",
+     "op": "in",
+     "value": [
+      4,
+      5
+     ]
+    }
+   },
+   "exceptions": [],
+   "effect": {
+    "type": "requires_review",
+    "reasonCode": "planting_outside_sourced_window"
+   },
+   "alternatives": [],
+   "evidenceIds": [
+    "cat.sorghum.chi"
+   ],
+   "reviewStatus": "approved"
+  },
+  {
+   "schemaVersion": "1.0",
+   "id": "rule.cat.sorghum.in.planting-in-window",
+   "version": 1,
+   "mode": "live",
+   "cropId": "sorghum",
+   "productId": null,
+   "scope": {
+    "regionIds": [
+     "IN"
+    ],
+    "seasons": [],
+    "irrigation": []
+   },
+   "when": {
+    "all": [
+     {
+      "not": {
+       "field": "location.stateId",
+       "op": "in",
+       "value": [
+        "IN-TN"
+       ]
+      }
+     },
+     {
+      "field": "planting.month",
+      "op": "in",
+      "value": [
+       5,
+       6,
+       7
+      ]
+     }
+    ]
+   },
+   "exceptions": [],
+   "effect": {
+    "type": "eligible",
+    "reasonCode": "planting_in_sourced_window"
+   },
+   "alternatives": [],
+   "evidenceIds": [
+    "cat.sorghum.kh"
+   ],
+   "reviewStatus": "approved"
+  },
+  {
+   "schemaVersion": "1.0",
+   "id": "rule.cat.sorghum.in.planting-outside-window",
+   "version": 1,
+   "mode": "live",
+   "cropId": "sorghum",
+   "productId": null,
+   "scope": {
+    "regionIds": [
+     "IN"
+    ],
+    "seasons": [],
+    "irrigation": []
+   },
+   "when": {
+    "all": [
+     {
+      "not": {
+       "field": "location.stateId",
+       "op": "in",
+       "value": [
+        "IN-TN"
+       ]
+      }
+     },
+     {
+      "not": {
+       "field": "planting.month",
+       "op": "in",
+       "value": [
+        5,
+        6,
+        7
+       ]
+      }
+     }
+    ]
+   },
+   "exceptions": [],
+   "effect": {
+    "type": "requires_review",
+    "reasonCode": "planting_outside_sourced_window"
+   },
+   "alternatives": [],
+   "evidenceIds": [
+    "cat.sorghum.kh"
+   ],
+   "reviewStatus": "approved"
+  },
+  {
+   "schemaVersion": "1.0",
+   "id": "rule.cat.soybean.tn.planting-in-window",
+   "version": 1,
+   "mode": "live",
+   "cropId": "soybean",
+   "productId": null,
+   "scope": {
+    "regionIds": [
+     "IN-TN"
+    ],
+    "seasons": [],
+    "irrigation": []
+   },
+   "when": {
+    "field": "planting.month",
+    "op": "in",
+    "value": [
+     6,
+     7
+    ]
+   },
+   "exceptions": [],
+   "effect": {
+    "type": "eligible",
+    "reasonCode": "planting_in_sourced_window"
+   },
+   "alternatives": [],
+   "evidenceIds": [
+    "cat.soybean.tns"
+   ],
+   "reviewStatus": "approved"
+  },
+  {
+   "schemaVersion": "1.0",
+   "id": "rule.cat.soybean.tn.planting-outside-window",
+   "version": 1,
+   "mode": "live",
+   "cropId": "soybean",
+   "productId": null,
+   "scope": {
+    "regionIds": [
+     "IN-TN"
+    ],
+    "seasons": [],
+    "irrigation": []
+   },
+   "when": {
+    "not": {
+     "field": "planting.month",
+     "op": "in",
+     "value": [
+      6,
+      7
+     ]
+    }
+   },
+   "exceptions": [],
+   "effect": {
+    "type": "requires_review",
+    "reasonCode": "planting_outside_sourced_window"
+   },
+   "alternatives": [],
+   "evidenceIds": [
+    "cat.soybean.tns"
+   ],
+   "reviewStatus": "approved"
+  },
+  {
+   "schemaVersion": "1.0",
+   "id": "rule.cat.soybean.as.planting-in-window",
+   "version": 1,
+   "mode": "live",
+   "cropId": "soybean",
+   "productId": null,
+   "scope": {
+    "regionIds": [
+     "IN-AS"
+    ],
+    "seasons": [],
+    "irrigation": []
+   },
+   "when": {
+    "field": "planting.month",
+    "op": "in",
+    "value": [
+     5,
+     6
+    ]
+   },
+   "exceptions": [],
+   "effect": {
+    "type": "eligible",
+    "reasonCode": "planting_in_sourced_window"
+   },
+   "alternatives": [],
+   "evidenceIds": [
+    "cat.soybean.ksow"
+   ],
+   "reviewStatus": "approved"
+  },
+  {
+   "schemaVersion": "1.0",
+   "id": "rule.cat.soybean.as.planting-outside-window",
+   "version": 1,
+   "mode": "live",
+   "cropId": "soybean",
+   "productId": null,
+   "scope": {
+    "regionIds": [
+     "IN-AS"
+    ],
+    "seasons": [],
+    "irrigation": []
+   },
+   "when": {
+    "not": {
+     "field": "planting.month",
+     "op": "in",
+     "value": [
+      5,
+      6
+     ]
+    }
+   },
+   "exceptions": [],
+   "effect": {
+    "type": "requires_review",
+    "reasonCode": "planting_outside_sourced_window"
+   },
+   "alternatives": [],
+   "evidenceIds": [
+    "cat.soybean.ksow"
+   ],
+   "reviewStatus": "approved"
+  },
+  {
+   "schemaVersion": "1.0",
+   "id": "rule.cat.soybean.as.irrigated.planting-in-window",
+   "version": 1,
+   "mode": "live",
+   "cropId": "soybean",
+   "productId": null,
+   "scope": {
+    "regionIds": [
+     "IN-AS"
+    ],
+    "seasons": [],
+    "irrigation": [
+     "irrigated"
+    ]
+   },
+   "when": {
+    "field": "planting.month",
+    "op": "in",
+    "value": [
+     1
+    ]
+   },
+   "exceptions": [],
+   "effect": {
+    "type": "eligible",
+    "reasonCode": "planting_in_sourced_window"
+   },
+   "alternatives": [],
+   "evidenceIds": [
+    "cat.soybean.rsow"
+   ],
+   "reviewStatus": "approved"
+  },
+  {
+   "schemaVersion": "1.0",
+   "id": "rule.cat.soybean.as.irrigated.planting-outside-window",
+   "version": 1,
+   "mode": "live",
+   "cropId": "soybean",
+   "productId": null,
+   "scope": {
+    "regionIds": [
+     "IN-AS"
+    ],
+    "seasons": [],
+    "irrigation": [
+     "irrigated"
+    ]
+   },
+   "when": {
+    "not": {
+     "field": "planting.month",
+     "op": "in",
+     "value": [
+      1
+     ]
+    }
+   },
+   "exceptions": [],
+   "effect": {
+    "type": "requires_review",
+    "reasonCode": "planting_outside_sourced_window"
+   },
+   "alternatives": [],
+   "evidenceIds": [
+    "cat.soybean.rsow"
+   ],
+   "reviewStatus": "approved"
+  },
+  {
+   "schemaVersion": "1.0",
+   "id": "rule.cat.sunflower.tn.rainfed.planting-in-window",
+   "version": 1,
+   "mode": "live",
+   "cropId": "sunflower",
+   "productId": null,
+   "scope": {
+    "regionIds": [
+     "IN-TN"
+    ],
+    "seasons": [],
+    "irrigation": [
+     "rainfed"
+    ]
+   },
+   "when": {
+    "field": "planting.month",
+    "op": "in",
+    "value": [
+     10,
+     11
+    ]
+   },
+   "exceptions": [],
+   "effect": {
+    "type": "eligible",
+    "reasonCode": "planting_in_sourced_window"
+   },
+   "alternatives": [],
+   "evidenceIds": [
+    "cat.sunflower.rf"
+   ],
+   "reviewStatus": "approved"
+  },
+  {
+   "schemaVersion": "1.0",
+   "id": "rule.cat.sunflower.tn.rainfed.planting-outside-window",
+   "version": 1,
+   "mode": "live",
+   "cropId": "sunflower",
+   "productId": null,
+   "scope": {
+    "regionIds": [
+     "IN-TN"
+    ],
+    "seasons": [],
+    "irrigation": [
+     "rainfed"
+    ]
+   },
+   "when": {
+    "not": {
+     "field": "planting.month",
+     "op": "in",
+     "value": [
+      10,
+      11
+     ]
+    }
+   },
+   "exceptions": [],
+   "effect": {
+    "type": "requires_review",
+    "reasonCode": "planting_outside_sourced_window"
+   },
+   "alternatives": [],
+   "evidenceIds": [
+    "cat.sunflower.rf"
+   ],
+   "reviewStatus": "approved"
+  },
+  {
+   "schemaVersion": "1.0",
+   "id": "rule.cat.sunflower.tn.irrigated.planting-in-window",
+   "version": 1,
+   "mode": "live",
+   "cropId": "sunflower",
+   "productId": null,
+   "scope": {
+    "regionIds": [
+     "IN-TN"
+    ],
+    "seasons": [],
+    "irrigation": [
+     "irrigated"
+    ]
+   },
+   "when": {
+    "field": "planting.month",
+    "op": "in",
+    "value": [
+     6,
+     7
+    ]
+   },
+   "exceptions": [],
+   "effect": {
+    "type": "eligible",
+    "reasonCode": "planting_in_sourced_window"
+   },
+   "alternatives": [],
+   "evidenceIds": [
+    "cat.sunflower.ir"
+   ],
+   "reviewStatus": "approved"
+  },
+  {
+   "schemaVersion": "1.0",
+   "id": "rule.cat.sunflower.tn.irrigated.planting-outside-window",
+   "version": 1,
+   "mode": "live",
+   "cropId": "sunflower",
+   "productId": null,
+   "scope": {
+    "regionIds": [
+     "IN-TN"
+    ],
+    "seasons": [],
+    "irrigation": [
+     "irrigated"
+    ]
+   },
+   "when": {
+    "not": {
+     "field": "planting.month",
+     "op": "in",
+     "value": [
+      6,
+      7
+     ]
+    }
+   },
+   "exceptions": [],
+   "effect": {
+    "type": "requires_review",
+    "reasonCode": "planting_outside_sourced_window"
+   },
+   "alternatives": [],
+   "evidenceIds": [
+    "cat.sunflower.ir"
+   ],
+   "reviewStatus": "approved"
+  },
+  {
+   "schemaVersion": "1.0",
+   "id": "rule.cat.tomato.tn.planting-in-window",
+   "version": 1,
+   "mode": "live",
+   "cropId": "tomato",
+   "productId": null,
+   "scope": {
+    "regionIds": [
+     "IN-TN"
+    ],
+    "seasons": [],
+    "irrigation": []
+   },
+   "when": {
+    "field": "planting.month",
+    "op": "in",
+    "value": [
+     5,
+     6
+    ]
+   },
+   "exceptions": [],
+   "effect": {
+    "type": "eligible",
+    "reasonCode": "planting_in_sourced_window"
+   },
+   "alternatives": [],
+   "evidenceIds": [
+    "cat.tomato.tn"
+   ],
+   "reviewStatus": "approved"
+  },
+  {
+   "schemaVersion": "1.0",
+   "id": "rule.cat.tomato.tn.planting-outside-window",
+   "version": 1,
+   "mode": "live",
+   "cropId": "tomato",
+   "productId": null,
+   "scope": {
+    "regionIds": [
+     "IN-TN"
+    ],
+    "seasons": [],
+    "irrigation": []
+   },
+   "when": {
+    "not": {
+     "field": "planting.month",
+     "op": "in",
+     "value": [
+      5,
+      6
+     ]
+    }
+   },
+   "exceptions": [],
+   "effect": {
+    "type": "requires_review",
+    "reasonCode": "planting_outside_sourced_window"
+   },
+   "alternatives": [],
+   "evidenceIds": [
+    "cat.tomato.tn"
+   ],
+   "reviewStatus": "approved"
+  },
+  {
+   "schemaVersion": "1.0",
+   "id": "rule.cat.tomato.as.irrigated.planting-in-window",
+   "version": 1,
+   "mode": "live",
+   "cropId": "tomato",
+   "productId": null,
+   "scope": {
+    "regionIds": [
+     "IN-AS"
+    ],
+    "seasons": [],
+    "irrigation": [
+     "irrigated"
+    ]
+   },
+   "when": {
+    "field": "planting.month",
+    "op": "in",
+    "value": [
+     10,
+     11
+    ]
+   },
+   "exceptions": [],
+   "effect": {
+    "type": "eligible",
+    "reasonCode": "planting_in_sourced_window"
+   },
+   "alternatives": [],
+   "evidenceIds": [
+    "cat.tomato.sow"
+   ],
+   "reviewStatus": "approved"
+  },
+  {
+   "schemaVersion": "1.0",
+   "id": "rule.cat.tomato.as.irrigated.planting-outside-window",
+   "version": 1,
+   "mode": "live",
+   "cropId": "tomato",
+   "productId": null,
+   "scope": {
+    "regionIds": [
+     "IN-AS"
+    ],
+    "seasons": [],
+    "irrigation": [
+     "irrigated"
+    ]
+   },
+   "when": {
+    "not": {
+     "field": "planting.month",
+     "op": "in",
+     "value": [
+      10,
+      11
+     ]
+    }
+   },
+   "exceptions": [],
+   "effect": {
+    "type": "requires_review",
+    "reasonCode": "planting_outside_sourced_window"
+   },
+   "alternatives": [],
+   "evidenceIds": [
+    "cat.tomato.sow"
+   ],
+   "reviewStatus": "approved"
+  },
+  {
+   "schemaVersion": "1.0",
+   "id": "rule.cat.turmeric.in.planting-in-window",
+   "version": 1,
+   "mode": "live",
+   "cropId": "turmeric",
+   "productId": null,
+   "scope": {
+    "regionIds": [
+     "IN"
+    ],
+    "seasons": [],
+    "irrigation": []
+   },
+   "when": {
+    "field": "planting.month",
+    "op": "in",
+    "value": [
+     4,
+     5
+    ]
+   },
+   "exceptions": [],
+   "effect": {
+    "type": "eligible",
+    "reasonCode": "planting_in_sourced_window"
+   },
+   "alternatives": [],
+   "evidenceIds": [
+    "cat.turmeric.sow"
+   ],
+   "reviewStatus": "approved"
+  },
+  {
+   "schemaVersion": "1.0",
+   "id": "rule.cat.turmeric.in.planting-outside-window",
+   "version": 1,
+   "mode": "live",
+   "cropId": "turmeric",
+   "productId": null,
+   "scope": {
+    "regionIds": [
+     "IN"
+    ],
+    "seasons": [],
+    "irrigation": []
+   },
+   "when": {
+    "not": {
+     "field": "planting.month",
+     "op": "in",
+     "value": [
+      4,
+      5
+     ]
+    }
+   },
+   "exceptions": [],
+   "effect": {
+    "type": "requires_review",
+    "reasonCode": "planting_outside_sourced_window"
+   },
+   "alternatives": [],
+   "evidenceIds": [
+    "cat.turmeric.sow"
+   ],
+   "reviewStatus": "approved"
+  },
+  {
+   "schemaVersion": "1.0",
+   "id": "rule.cat.wheat.as.irrigated.planting-in-window",
+   "version": 1,
+   "mode": "live",
+   "cropId": "wheat",
+   "productId": null,
+   "scope": {
+    "regionIds": [
+     "IN-AS"
+    ],
+    "seasons": [],
+    "irrigation": [
+     "irrigated"
+    ]
+   },
+   "when": {
+    "field": "planting.month",
+    "op": "in",
+    "value": [
+     11,
+     12
+    ]
+   },
+   "exceptions": [],
+   "effect": {
+    "type": "eligible",
+    "reasonCode": "planting_in_sourced_window"
+   },
+   "alternatives": [],
+   "evidenceIds": [
+    "cat.wheat.sow"
+   ],
+   "reviewStatus": "approved"
+  },
+  {
+   "schemaVersion": "1.0",
+   "id": "rule.cat.wheat.as.irrigated.planting-outside-window",
+   "version": 1,
+   "mode": "live",
+   "cropId": "wheat",
+   "productId": null,
+   "scope": {
+    "regionIds": [
+     "IN-AS"
+    ],
+    "seasons": [],
+    "irrigation": [
+     "irrigated"
+    ]
+   },
+   "when": {
+    "not": {
+     "field": "planting.month",
+     "op": "in",
+     "value": [
+      11,
+      12
+     ]
+    }
+   },
+   "exceptions": [],
+   "effect": {
+    "type": "requires_review",
+    "reasonCode": "planting_outside_sourced_window"
+   },
+   "alternatives": [],
+   "evidenceIds": [
+    "cat.wheat.sow"
+   ],
+   "reviewStatus": "approved"
+  },
+  {
+   "schemaVersion": "1.0",
+   "id": "rule.cat.chickpea.tn.source-rainfed-only",
+   "version": 1,
+   "mode": "live",
+   "cropId": "chickpea",
+   "productId": null,
+   "scope": {
+    "regionIds": [
+     "IN-TN"
+    ],
+    "seasons": [],
+    "irrigation": [
+     "irrigated"
+    ]
+   },
+   "when": {
+    "field": "irrigation.category",
+    "op": "eq",
+    "value": "irrigated"
+   },
+   "exceptions": [],
+   "effect": {
+    "type": "caution",
+    "reasonCode": "source_describes_rainfed_cultivation_only"
+   },
+   "alternatives": [],
+   "evidenceIds": [
+    "cat.chickpea.sow"
+   ],
+   "reviewStatus": "candidate"
+  },
+  {
+   "schemaVersion": "1.0",
+   "id": "rule.cat.okra.tn.source-irrigated-only",
+   "version": 1,
+   "mode": "live",
+   "cropId": "okra",
+   "productId": null,
+   "scope": {
+    "regionIds": [
+     "IN-TN"
+    ],
+    "seasons": [],
+    "irrigation": [
+     "rainfed"
+    ]
+   },
+   "when": {
+    "field": "irrigation.category",
+    "op": "eq",
+    "value": "rainfed"
+   },
+   "exceptions": [],
+   "effect": {
+    "type": "requires_review",
+    "reasonCode": "source_describes_irrigated_cultivation_only"
+   },
+   "alternatives": [],
+   "evidenceIds": [
+    "cat.okra.irr"
+   ],
+   "reviewStatus": "candidate"
+  },
+  {
+   "schemaVersion": "1.0",
+   "id": "rule.cat.tomato.as.source-irrigated-only",
+   "version": 1,
+   "mode": "live",
+   "cropId": "tomato",
+   "productId": null,
+   "scope": {
+    "regionIds": [
+     "IN-AS"
+    ],
+    "seasons": [],
+    "irrigation": [
+     "rainfed"
+    ]
+   },
+   "when": {
+    "field": "irrigation.category",
+    "op": "eq",
+    "value": "rainfed"
+   },
+   "exceptions": [],
+   "effect": {
+    "type": "requires_review",
+    "reasonCode": "source_describes_irrigated_cultivation_only"
+   },
+   "alternatives": [],
+   "evidenceIds": [
+    "cat.tomato.irr"
+   ],
+   "reviewStatus": "candidate"
+  },
+  {
+   "schemaVersion": "1.0",
+   "id": "rule.cat.wheat.as.source-irrigated-only",
+   "version": 1,
+   "mode": "live",
+   "cropId": "wheat",
+   "productId": null,
+   "scope": {
+    "regionIds": [
+     "IN-AS"
+    ],
+    "seasons": [],
+    "irrigation": [
+     "rainfed"
+    ]
+   },
+   "when": {
+    "field": "irrigation.category",
+    "op": "eq",
+    "value": "rainfed"
+   },
+   "exceptions": [],
+   "effect": {
+    "type": "requires_review",
+    "reasonCode": "source_describes_irrigated_cultivation_only"
+   },
+   "alternatives": [],
+   "evidenceIds": [
+    "cat.wheat.dur"
+   ],
+   "reviewStatus": "candidate"
+  }
+ ]
+}

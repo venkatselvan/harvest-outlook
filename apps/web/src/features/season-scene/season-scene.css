@@ -1,0 +1,6 @@
+.season-scene { margin: 0; display: grid; gap: 0.5rem; }
+.season-scene__stage { position: relative; width: 100%; max-height: 70vh; background: #eef1ea; border-radius: 8px; overflow: hidden; }
+.season-scene__canvas { display: block; }
+.season-scene__label { margin: 0; padding: 0.5rem 0.75rem; font-size: 0.95rem; font-weight: 600; border-left: 4px solid #8a6a43; background: #fbfaf5; color: #2b2b24; }
+.season-scene[data-kind="illustrative"] .season-scene__label { border-left-color: #1f5f3a; }
+.season-scene__note { margin: 0; padding: 0 0.75rem; font-size: 0.875rem; color: #4a4a40; }

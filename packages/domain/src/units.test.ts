@@ -52,3 +52,22 @@ describe('decimal-safe INR', () => {
     expect(inrString(new Decimal('2.355'))).toBe('2.36');
   });
 });
+
+describe('additional units', () => {
+  it('m <-> cm and g <-> kg', () => {
+    expect(convert(2.5, 'm', 'cm')).toBe(250);
+    expect(convert(30, 'cm', 'm')).toBe(0.3);
+    expect(convert(1500, 'g', 'kg')).toBe(1.5);
+    expect(convert(2, 'kg', 'g')).toBe(2000);
+  });
+  it('months -> days requires approximate: true', () => {
+    expect(() => convert(2, 'months', 'days')).toThrow(UnitError);
+    expect(() => convert(60, 'days', 'months')).toThrow(/approximate/);
+    expect(convertDecimal(2, 'months', 'days', { approximate: true }).toString()).toBe('60.875');
+    expect(convert(30.4375, 'days', 'months', { approximate: true })).toBe(1);
+  });
+  it('new units keep dimension checks', () => {
+    expect(() => convert(1, 'm', 'mm')).toThrow(UnitError);
+    expect(() => convert(1, 'g', 'days', { approximate: true })).toThrow(UnitError);
+  });
+});

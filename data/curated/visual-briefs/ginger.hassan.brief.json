@@ -1,0 +1,148 @@
+{
+  "schemaVersion": "1.0",
+  "cropId": "ginger",
+  "scopeId": "IN-KA-hassan",
+  "promptVersion": "ginger-brief-1",
+  "label": "Illustrative growth — generated image, not a prediction",
+  "disclaimer": "Generated crop appearances are illustrative. They do not predict leaf count, plant height, biomass, rhizome mass, disease or yield, and are not field observations.",
+  "preservation": "Keep the same field, camera angle, lighting and background. Change only the planting region to show",
+  "negativeConstraints": [
+    "no text, letters or numbers anywhere in the image",
+    "no labels, captions, watermarks or overlays",
+    "no prices, dates or calendar marks",
+    "no rain, storm or weather effects added to the scene",
+    "no people, animals, buildings or equipment added or removed"
+  ],
+  "stages": [
+    {
+      "stageId": "sprouting_vegetative",
+      "order": 0,
+      "stageName": "Sprouting and vegetative growth (planting to rhizome initiation)",
+      "descriptor": "young ginger sprouts emerging in moist soil as the planted crop establishes",
+      "evidenceIds": [
+        "ev.ginger.iisr2025.p3.rainfall-pattern",
+        "ev.ginger.iisr2025.p15.soft-rot-monsoon-moisture"
+      ],
+      "evidenceExcerpts": [
+        {
+          "id": "ev.ginger.iisr2025.p3.rainfall-pattern",
+          "page": 3,
+          "text": "a moderate rainfall during sowing time till the rhizomes sprout, fairly heavy and well distributed showers during the growing period and dry weather for about a month before harvesting are necessary."
+        },
+        {
+          "id": "ev.ginger.iisr2025.p15.soft-rot-monsoon-moisture",
+          "page": 15,
+          "text": "The fungus multiplies with build up of soil moisture with the onset of south west monsoon. Younger sprouts are most susceptible to the pathogen."
+        }
+      ],
+      "promptTemplate": "Edit this farm photo. Keep the same field, camera angle, lighting and background. Change only the planting region to show young ginger sprouts emerging in moist soil as the planted crop establishes. Constraints: no text, letters or numbers anywhere in the image; no labels, captions, watermarks or overlays; no prices, dates or calendar marks; no rain, storm or weather effects added to the scene; no people, animals, buildings or equipment added or removed.",
+      "promptTemplateHash": "1dc875ed11bbda0963a92b94579d2e6a2a5b599beb1996b34a9146f60cfaf1b3",
+      "gaps": [
+        "The source does not describe sprout height, leaf count or canopy cover."
+      ]
+    },
+    {
+      "stageId": "rhizome_initiation",
+      "order": 1,
+      "stageName": "Rhizome initiation (90 to 135 DAP)",
+      "descriptor": "growing ginger plants with mulch on the soil between them, while rhizomes begin to form below ground",
+      "evidenceIds": [
+        "ev.ginger.iisr2025.p14.critical-stages",
+        "ev.ginger.iisr2025.p14.mulching-repeat"
+      ],
+      "evidenceExcerpts": [
+        {
+          "id": "ev.ginger.iisr2025.p14.critical-stages",
+          "page": 14,
+          "text": "for irrigation are during germination, rhizome initiation (90 DAP) and rhizome development stages (135 DAP)."
+        },
+        {
+          "id": "ev.ginger.iisr2025.p14.mulching-repeat",
+          "page": 14,
+          "text": "repeated @ 7.5 tonnes ha-1 at 45 and 90 days after planting, immediately after weeding, application of fertilizers and earthing up."
+        }
+      ],
+      "promptTemplate": "Edit this farm photo. Keep the same field, camera angle, lighting and background. Change only the planting region to show growing ginger plants with mulch on the soil between them, while rhizomes begin to form below ground. Constraints: no text, letters or numbers anywhere in the image; no labels, captions, watermarks or overlays; no prices, dates or calendar marks; no rain, storm or weather effects added to the scene; no people, animals, buildings or equipment added or removed.",
+      "promptTemplateHash": "1bbcf2fd67f69bf6362fb10f0ad693e81ecb60d580dcfdb02e53edb8962b4064",
+      "gaps": [
+        "Rhizomes form below ground and are not visible; the source gives no above-ground size."
+      ]
+    },
+    {
+      "stageId": "rhizome_development",
+      "order": 2,
+      "stageName": "Rhizome development (135 to 180 DAP)",
+      "descriptor": "established ginger plants while the rhizomes develop below ground",
+      "evidenceIds": [
+        "ev.ginger.iisr2025.p14.critical-stages",
+        "ev.ginger.iisr2025.p25.maturity-days"
+      ],
+      "evidenceExcerpts": [
+        {
+          "id": "ev.ginger.iisr2025.p14.critical-stages",
+          "page": 14,
+          "text": "for irrigation are during germination, rhizome initiation (90 DAP) and rhizome development stages (135 DAP)."
+        },
+        {
+          "id": "ev.ginger.iisr2025.p25.maturity-days",
+          "page": 25,
+          "text": "Ginger attains full maturity in 210 -240 days after planting. Harvesting of ginger for vegetable purpose starts after 180 days based on the demand."
+        }
+      ],
+      "promptTemplate": "Edit this farm photo. Keep the same field, camera angle, lighting and background. Change only the planting region to show established ginger plants while the rhizomes develop below ground. Constraints: no text, letters or numbers anywhere in the image; no labels, captions, watermarks or overlays; no prices, dates or calendar marks; no rain, storm or weather effects added to the scene; no people, animals, buildings or equipment added or removed.",
+      "promptTemplateHash": "03a3f4de52cf6320c611f96ba441fff62b1b58ddd782aeb3be3b5f6a61908f34",
+      "gaps": [
+        "The source does not describe above-ground appearance at this stage."
+      ]
+    },
+    {
+      "stageId": "maturation",
+      "order": 3,
+      "stageName": "Maturation (180 DAP to full maturity); fresh vegetable-purpose harvest possible on demand",
+      "descriptor": "a ginger crop approaching maturity, with irrigation stopped and drier field conditions",
+      "evidenceIds": [
+        "ev.ginger.iisr2025.p25.irrigation-stop",
+        "ev.ginger.iisr2025.p3.rainfall-pattern"
+      ],
+      "evidenceExcerpts": [
+        {
+          "id": "ev.ginger.iisr2025.p25.irrigation-stop",
+          "page": 25,
+          "text": "Irrigation is stopped one month before harvest and the rhizome clumps are lifted carefully with a spade or digging fork."
+        },
+        {
+          "id": "ev.ginger.iisr2025.p3.rainfall-pattern",
+          "page": 3,
+          "text": "a moderate rainfall during sowing time till the rhizomes sprout, fairly heavy and well distributed showers during the growing period and dry weather for about a month before harvesting are necessary."
+        }
+      ],
+      "promptTemplate": "Edit this farm photo. Keep the same field, camera angle, lighting and background. Change only the planting region to show a ginger crop approaching maturity, with irrigation stopped and drier field conditions. Constraints: no text, letters or numbers anywhere in the image; no labels, captions, watermarks or overlays; no prices, dates or calendar marks; no rain, storm or weather effects added to the scene; no people, animals, buildings or equipment added or removed.",
+      "promptTemplateHash": "12139ae62c561fb17f6e30e259a2834b70f33de33fdde8344ae464c3a77e5da5",
+      "gaps": [
+        "The source does not describe leaf colour before full maturity."
+      ]
+    },
+    {
+      "stageId": "harvest_full_maturity",
+      "order": 4,
+      "stageName": "Harvest at full maturity (leaves turn yellow and start drying)",
+      "descriptor": "ginger leaves turning yellow and starting to dry at full maturity",
+      "evidenceIds": [
+        "ev.ginger.iisr2025.p25.harvest-indicator-dry"
+      ],
+      "evidenceExcerpts": [
+        {
+          "id": "ev.ginger.iisr2025.p25.harvest-indicator-dry",
+          "page": 25,
+          "text": "for making dry ginger, the matured rhizomes are harvested at full maturity i.e. when the leaves turn yellow and start drying."
+        }
+      ],
+      "promptTemplate": "Edit this farm photo. Keep the same field, camera angle, lighting and background. Change only the planting region to show ginger leaves turning yellow and starting to dry at full maturity. Constraints: no text, letters or numbers anywhere in the image; no labels, captions, watermarks or overlays; no prices, dates or calendar marks; no rain, storm or weather effects added to the scene; no people, animals, buildings or equipment added or removed.",
+      "promptTemplateHash": "edf03e010bcb7c9922e76fcf52dfcfd9d94e3d546d1f6e130e09667e49801655",
+      "gaps": [
+        "Late harvest is also practiced; the source does not describe the field after leaves dry."
+      ]
+    }
+  ],
+  "briefHash": "28b625a94a3e360ea4e12bded5f4cbd19a038e5b2ba967ff2d02c7c48192c11c"
+}

@@ -18,7 +18,11 @@
     "kg/acre",
     "days",
     "celsius",
-    "percent"
+    "percent",
+    "m",
+    "cm",
+    "g",
+    "months"
   ],
   "$id": "https://harvest-outlook.local/schema/1.0/Unit.json",
   "x-schemaVersion": "1.0"

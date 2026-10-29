@@ -1,0 +1,115 @@
+{
+  "synthetic": true,
+  "scenario": "profile_extraction",
+  "description": "Synthetic. Tamil/English code-switched sentence: about 2 acres, limited water, Hassan. Interpretation extracts proposals; no tools are needed; synthesis asks one follow-up.",
+  "steps": [
+    {
+      "pass": "interpretation",
+      "response": {
+        "id": "resp_syn_0001",
+        "object": "response",
+        "created_at": 1761800001,
+        "status": "completed",
+        "model": "muse-spark-1.3",
+        "metadata": {
+          "synthetic": "true"
+        },
+        "output": [
+          {
+            "type": "message",
+            "id": "msg_syn_1",
+            "role": "assistant",
+            "status": "completed",
+            "content": [
+              {
+                "type": "output_text",
+                "text": "{\"intent\":\"explore_crops\",\"language\":\"ta\",\"cropMentions\":[],\"facts\":[{\"field\":\"area\",\"text\":\"2 acre\",\"number\":2,\"unit\":\"acre\",\"sourceSpan\":\"என்கிட்ட 2 acre நிலம் இருக்கு\"},{\"field\":\"water_availability\",\"text\":\"limited water\",\"number\":null,\"unit\":null,\"sourceSpan\":\"தண்ணீர் ரொம்ப கம்மி\"},{\"field\":\"district\",\"text\":\"Hassan\",\"number\":null,\"unit\":null,\"sourceSpan\":\"Hassan district-ல\"}],\"needsEscalation\":false,\"clarificationQuestion\":null}",
+                "annotations": []
+              }
+            ]
+          }
+        ],
+        "usage": {
+          "input_tokens": 640,
+          "input_tokens_details": {
+            "cached_tokens": 0
+          },
+          "output_tokens": 210,
+          "total_tokens": 850
+        }
+      }
+    },
+    {
+      "pass": "tool_round",
+      "response": {
+        "id": "resp_syn_0002",
+        "object": "response",
+        "created_at": 1761800002,
+        "status": "completed",
+        "model": "muse-spark-1.3",
+        "metadata": {
+          "synthetic": "true"
+        },
+        "output": [
+          {
+            "type": "message",
+            "id": "msg_syn_2",
+            "role": "assistant",
+            "status": "completed",
+            "content": [
+              {
+                "type": "output_text",
+                "text": "No tools are needed to acknowledge the profile.",
+                "annotations": []
+              }
+            ]
+          }
+        ],
+        "usage": {
+          "input_tokens": 700,
+          "input_tokens_details": {
+            "cached_tokens": 0
+          },
+          "output_tokens": 20,
+          "total_tokens": 720
+        }
+      }
+    },
+    {
+      "pass": "synthesis",
+      "response": {
+        "id": "resp_syn_0003",
+        "object": "response",
+        "created_at": 1761800003,
+        "status": "completed",
+        "model": "muse-spark-1.3",
+        "metadata": {
+          "synthetic": "true"
+        },
+        "output": [
+          {
+            "type": "message",
+            "id": "msg_syn_3",
+            "role": "assistant",
+            "status": "completed",
+            "content": [
+              {
+                "type": "output_text",
+                "text": "{\"schemaVersion\":\"1.0\",\"intent\":\"explore_crops\",\"language\":\"ta\",\"proposedFacts\":[],\"clarifications\":[{\"id\":\"q1\",\"question\":\"Is the water from a borewell, a canal, or only rain?\",\"field\":\"irrigation\",\"options\":[\"borewell\",\"canal\",\"rain only\"]}],\"toolRequests\":[],\"answerBlocks\":[{\"id\":\"b1\",\"kind\":\"text\",\"text\":\"I noted a small holding in Hassan district with limited water. Please confirm these details before I compare crops for you.\",\"numericRefIds\":[],\"claimIds\":[]},{\"id\":\"b2\",\"kind\":\"limitation\",\"text\":\"No crop ranking is shown yet because the water source and planting window are not known.\",\"numericRefIds\":[],\"claimIds\":[]}],\"numericRefs\":[],\"claimEvidenceRefs\":[],\"proposedPlanChange\":null,\"limitations\":[\"Details you stated are proposals until you confirm them.\"]}",
+                "annotations": []
+              }
+            ]
+          }
+        ],
+        "usage": {
+          "input_tokens": 760,
+          "input_tokens_details": {
+            "cached_tokens": 0
+          },
+          "output_tokens": 260,
+          "total_tokens": 1020
+        }
+      }
+    }
+  ]
+}

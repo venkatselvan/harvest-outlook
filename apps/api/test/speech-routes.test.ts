@@ -2,7 +2,6 @@ import { readFileSync } from "node:fs";
 import type { FastifyInstance } from "fastify";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { buildServer } from "../src/server";
-import { registerSpeechRoutes } from "../src/routes/speech";
 import { makeWav } from "../src/speech/audio";
 import { approvedTextHash, recordApprovedText } from "../src/speech/approved";
 import { ElevenLabsProvider } from "../src/speech/elevenlabs";
@@ -33,10 +32,8 @@ beforeAll(async () => {
   h = await setupHarness();
   const m = mockFetch((c) => (c.url.includes("speech-to-text") ? json(sttBody, 200, { "request-id": "stt_req" }) : new Response(ttsStatus === 200 ? MP3 : "x", { status: ttsStatus, headers: { "request-id": "tts_req" } })));
   liveCalls = m.calls;
-  live = await buildServer(h.config, h.pool, { storage: h.storage });
-  await registerSpeechRoutes(live, { config: { ...h.config, RUNTIME_MODE: "live" }, pool: h.pool, speech: speechCfg(), provider: new ElevenLabsProvider(speechCfg(), m.fetch) });
-  fixtureApp = await buildServer(h.config, h.pool, { storage: h.storage });
-  await registerSpeechRoutes(fixtureApp, { config: h.config, pool: h.pool, speech: speechCfg({ apiKey: undefined }), provider: new FixtureProvider() });
+  live = await buildServer(h.config, h.pool, { storage: h.storage, speech: { config: { ...h.config, RUNTIME_MODE: "live" }, speech: speechCfg(), provider: new ElevenLabsProvider(speechCfg(), m.fetch) } });
+  fixtureApp = await buildServer(h.config, h.pool, { storage: h.storage, speech: { config: h.config, speech: speechCfg({ apiKey: undefined }), provider: new FixtureProvider() } });
 });
 afterAll(async () => {
   await live.close();
@@ -101,8 +98,7 @@ describe("POST /speech/transcriptions", () => {
     expect((await stt(c, makeWav(61.5, { sampleRate: 1000 }))).json().error.code).toBe("audio_too_long");
     expect((await stt(c, makeWav(1), { language: "fr" })).statusCode).toBe(400);
     expect((await stt(c, makeWav(1), {})).statusCode).toBe(400);
-    const small = await buildServer(h.config, h.pool, { storage: h.storage });
-    await registerSpeechRoutes(small, { config: h.config, pool: h.pool, speech: speechCfg({ maxBytes: 2000 }), provider: new FixtureProvider() });
+    const small = await buildServer(h.config, h.pool, { storage: h.storage, speech: { config: h.config, speech: speechCfg({ maxBytes: 2000 }), provider: new FixtureProvider() } });
     const c2 = await login(small);
     expect((await stt(c2, makeWav(1))).statusCode).toBe(413);
     await small.close();
@@ -123,9 +119,8 @@ describe("POST /speech/transcriptions", () => {
   });
 
   it("provider failures surface as 424 provider errors, not internal_error", async () => {
-    const bad = await buildServer(h.config, h.pool, { storage: h.storage });
     const m = mockFetch(() => new Response("{}", { status: 500 }));
-    await registerSpeechRoutes(bad, { config: h.config, pool: h.pool, speech: speechCfg(), provider: new ElevenLabsProvider(speechCfg(), m.fetch) });
+    const bad = await buildServer(h.config, h.pool, { storage: h.storage, speech: { config: h.config, speech: speechCfg(), provider: new ElevenLabsProvider(speechCfg(), m.fetch) } });
     const cb = await login(bad);
     const res = await stt(cb, makeWav(1));
     expect(res.statusCode).toBe(424);
@@ -140,7 +135,7 @@ describe("POST /speech/transcriptions", () => {
     const ok = await stt(c, FIXTURE_CLIPS[1]!.audio, { language: "ta" });
     expect(ok.statusCode).toBe(200);
     expect(ok.json().data).toMatchObject({ synthetic: true, provider: { name: "fixture" }, detectedLanguage: "ta" });
-    expect(ok.json().warnings.join(" ")).toMatch(/Synthetic fixture/);
+    expect(ok.json().warnings.map((w: { message: string }) => w.message).join(" ")).toMatch(/Synthetic fixture/);
     const other = await stt(c, makeWav(0.7, { freq: 1234 }));
     expect(other.statusCode).toBe(424);
     expect(other.json().error.code).toBe("provider_unavailable");

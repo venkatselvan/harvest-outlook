@@ -17,7 +17,10 @@ export const KG_PER_TONNE = new Decimal(1000);
 export const LITRES_PER_M3 = new Decimal(1000);
 export const LITRES_PER_MM_HA = new Decimal(10000);
 
-export type Dimension = 'area' | 'mass' | 'currency' | 'price_per_mass' | 'cost_per_area' | 'depth' | 'volume' | 'yield' | 'time' | 'temperature' | 'ratio';
+/** Calendar months are not a fixed length: 365.25 / 12 days, usable only with approximate: true. */
+export const DAYS_PER_MONTH_APPROX = new Decimal('30.4375');
+
+export type Dimension = 'length' | 'area' | 'mass' | 'currency' | 'price_per_mass' | 'cost_per_area' | 'depth' | 'volume' | 'yield' | 'time' | 'temperature' | 'ratio';
 
 /** Each unit: dimension and factor to the canonical unit of that dimension. */
 const UNIT_TABLE: Record<Unit, { dim: Dimension; toCanonical: Decimal }> = {
@@ -38,6 +41,10 @@ const UNIT_TABLE: Record<Unit, { dim: Dimension; toCanonical: Decimal }> = {
   days: { dim: 'time', toCanonical: new Decimal(1) },
   celsius: { dim: 'temperature', toCanonical: new Decimal(1) },
   percent: { dim: 'ratio', toCanonical: new Decimal(1) },
+  m: { dim: 'length', toCanonical: new Decimal(1) },
+  cm: { dim: 'length', toCanonical: new Decimal('0.01') },
+  g: { dim: 'mass', toCanonical: new Decimal('0.001') },
+  months: { dim: 'time', toCanonical: DAYS_PER_MONTH_APPROX },
 };
 
 export const CANONICAL_UNIT: Record<Dimension, Unit> = {
@@ -52,10 +59,11 @@ export const CANONICAL_UNIT: Record<Dimension, Unit> = {
   time: 'days',
   temperature: 'celsius',
   ratio: 'percent',
+  length: 'm',
 };
 
 export class UnitError extends Error {
-  constructor(public readonly code: 'missing_unit' | 'unknown_unit' | 'incompatible_dimensions' | 'invalid_value', message: string) {
+  constructor(public readonly code: 'missing_unit' | 'unknown_unit' | 'incompatible_dimensions' | 'invalid_value' | 'approximate_required', message: string) {
     super(message);
   }
 }
@@ -80,9 +88,13 @@ function toDecimal(v: DecimalInput): Decimal {
 }
 
 /** Exact decimal conversion. Throws on missing/unknown unit or incompatible dimensions. */
-export function convertDecimal(value: DecimalInput, from: Unit | null | undefined, to: Unit | null | undefined): Decimal {
+export function convertDecimal(value: DecimalInput, from: Unit | null | undefined, to: Unit | null | undefined, opts: { approximate?: boolean } = {}): Decimal {
   const f = requireUnit(from);
   const t = requireUnit(to);
+  if ((f === 'months') !== (t === 'months') && UNIT_TABLE[f].dim === UNIT_TABLE[t].dim && opts.approximate !== true) {
+    throw new UnitError('approximate_required', 'months convert to days only with an explicit approximate: true (30.4375 days/month)');
+  }
+  if (f === 'months' && t === 'months') return toDecimal(value);
   const df = UNIT_TABLE[f];
   const dt = UNIT_TABLE[t];
   if (df.dim !== dt.dim) throw new UnitError('incompatible_dimensions', `incompatible dimensions: cannot convert ${f} (${df.dim}) to ${t} (${dt.dim})`);
@@ -90,8 +102,8 @@ export function convertDecimal(value: DecimalInput, from: Unit | null | undefine
 }
 
 /** Number convenience wrapper over convertDecimal. */
-export function convert(value: DecimalInput, from: Unit | null | undefined, to: Unit | null | undefined): number {
-  return convertDecimal(value, from, to).toNumber();
+export function convert(value: DecimalInput, from: Unit | null | undefined, to: Unit | null | undefined, opts: { approximate?: boolean } = {}): number {
+  return convertDecimal(value, from, to, opts).toNumber();
 }
 
 /** Water depth over an area to volume: litres = mm * ha * 10,000. */

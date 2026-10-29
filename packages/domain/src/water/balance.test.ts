@@ -96,13 +96,54 @@ describe('water balance', () => {
     expect(r.runs[0]!.grossIrrigationMm).toBeNull();
     expect(r.runs[0]!.grossLitresPerHa).toBeNull();
   });
-  it('USDA-SCS monthly effective rain', () => {
+  const march = (rainOn: (i: number) => number) =>
+    Array.from({ length: 31 }, (_, i) => ({ date: addDays('2027-03-01', i), et0Mm: 1, et0Source: 'synthetic-et0', rainMm: rainOn(i), rainState: 'observed' as const }));
+  it('USDA-SCS monthly effective rain on a COMPLETE calendar month', () => {
     const inp = base();
     inp.effectiveRain = { method: 'usda_scs_monthly' };
-    inp.days = days(10, 5, 10); // 100 mm in March -> Peff = 100*(125-20)/125 = 84
-    inp.stages = [{ ...inp.stages[0]!, end: '2027-03-10' }];
+    inp.days = march((i) => (i < 10 ? 10 : 0)); // 100 mm in March -> Peff = 100*(125-20)/125 = 84
+    inp.stages = [{ ...inp.stages[0]!, end: '2027-03-31' }];
     const r = calculateWaterBalance(inp);
     expect(r.runs[0]!.effectiveRainMm).toBe(84);
+    expect(r.assumptions).toContain('effective_rain_method:2027-03=usda_scs_monthly');
+  });
+  it('USDA-SCS is NOT applied to a partial month: documented daily fixed fraction instead', () => {
+    const inp = base();
+    inp.effectiveRain = { method: 'usda_scs_monthly' };
+    inp.days = days(2, 5, 100); // 200 mm over 2 days; monthly formula would give ratio 0.68
+    inp.stages = [{ ...inp.stages[0]!, end: '2027-03-02' }];
+    const r = calculateWaterBalance(inp);
+    expect(r.runs[0]!.effectiveRainMm).toBe(160); // 0.8 fixed fraction, not 136
+    expect(r.assumptions).toContain('effective_rain_method:2027-03=partial_month_fixed_fraction(0.8)');
+  });
+  it('mixed series records the method per month', () => {
+    const inp = base();
+    inp.effectiveRain = { method: 'usda_scs_monthly' };
+    const mar = march(() => 0);
+    const apr = Array.from({ length: 5 }, (_, i) => ({ date: addDays('2027-04-01', i), et0Mm: 1, et0Source: 's', rainMm: 0, rainState: 'observed' as const }));
+    inp.days = [...mar, ...apr];
+    inp.stages = [{ ...inp.stages[0]!, end: '2027-04-05' }];
+    const r = calculateWaterBalance(inp);
+    expect(r.assumptions).toContain('effective_rain_method:2027-03=usda_scs_monthly');
+    expect(r.assumptions).toContain('effective_rain_method:2027-04=partial_month_fixed_fraction(0.8)');
+  });
+  it('a gap in the day series is never bridged as consecutive days', () => {
+    const inp = base();
+    inp.days = [days(1, 5, 0)[0]!, { ...days(1, 5, 0)[0]!, date: '2027-03-20' }];
+    inp.stages = [{ ...inp.stages[0]!, end: '2027-03-30' }];
+    const r = calculateWaterBalance(inp);
+    expect(r.status).toBe('incomplete');
+    expect(r.permittedPrecision).toBe('range_only');
+    expect(r.runs).toEqual([]);
+    expect(r.missingInputs).toHaveLength(18);
+    expect(r.missingInputs).toContain('day:2027-03-02');
+    expect(r.missingInputs).toContain('day:2027-03-19');
+    expect(r.missingInputs).not.toContain('day:2027-03-20');
+    // contiguous control: same endpoints filled in is complete
+    const full = base();
+    full.days = days(20, 5, 0);
+    full.stages = [{ ...full.stages[0]!, end: '2027-03-20' }];
+    expect(calculateWaterBalance(full).status).toBe('complete');
   });
   it('stress days counted when starting depleted beyond RAW', () => {
     const inp = base();
@@ -117,5 +158,18 @@ describe('water balance', () => {
     const inp = base();
     inp.days = [days(2, 5, 0)[1]!, days(1, 5, 0)[0]!];
     expect(calculateWaterBalance(inp).status).toBe('invalid');
+  });
+});
+
+describe('climatology rain', () => {
+  it('climatology rainState makes the run a scenario with an explicit assumption', () => {
+    const inp = base();
+    inp.days = days(30, 5, 2, 'climatology' as 'forecast');
+    const r = calculateWaterBalance({ ...inp, forecastRainPolicy: 'use_forecast' });
+    expect(r.evidenceState).toBe('scenario');
+    expect(r.runs[0]!.evidenceState).toBe('scenario');
+    expect(r.assumptions.some((a) => a.startsWith('climatology'))).toBe(true);
+    expect(r.runs[0]!.daily[0]!.rainState).toBe('climatology');
+    expect(r.permittedPrecision).toBe('range_only');
   });
 });

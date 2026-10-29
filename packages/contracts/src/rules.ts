@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { Id, IsoDate, Mode, ReasonCode, SchemaVersion } from './common';
+import { EvidenceState, Id, IsoDate, Mode, ReasonCode, SchemaVersion } from './common';
 
 /**
  * Rule context shape (the only data a rule can read). Every leaf is optional
@@ -29,6 +29,19 @@ export const RuleContext = z
     budget: opt(z.object({ inrPerHa: opt(z.number().nonnegative()) }).strict()),
     labour: opt(z.object({ level: opt(LabourLevel) }).strict()),
     rainfall: opt(z.object({ seasonalMm: opt(z.number().nonnegative()) }).strict()),
+    /**
+     * Observed or forecast weather values. The numbers carry no meaning without
+     * `evidenceState`; rule evaluation treats weather.* fields as unknown when it is absent.
+     */
+    weather: opt(
+      z
+        .object({
+          dailyRainMm: opt(z.number().nonnegative()),
+          forecastRainMm7d: opt(z.number().nonnegative()),
+          evidenceState: opt(EvidenceState),
+        })
+        .strict(),
+    ),
     elevation: opt(z.object({ m: opt(z.number()) }).strict()),
   })
   .strict();
@@ -51,6 +64,9 @@ export const RULE_FIELD_TYPES = {
   'labour.level': 'string',
   'rainfall.seasonalMm': 'number',
   'elevation.m': 'number',
+  /** Evaluated against observed or forecast values; context.weather.evidenceState must accompany them. */
+  'weather.dailyRainMm': 'number',
+  'weather.forecastRainMm7d': 'number',
 } as const;
 export type RuleField = keyof typeof RULE_FIELD_TYPES;
 export const RuleField = z.enum(Object.keys(RULE_FIELD_TYPES) as [RuleField, ...RuleField[]]);
