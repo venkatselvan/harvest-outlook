@@ -159,3 +159,27 @@ describe("why this changed", () => {
     expect(lines[0]).toMatch(/1,00,000/);
   });
 });
+
+describe("plan-change confirm gate (M1)", () => {
+  it("Confirm needs a computed preview: a failed preview must not enable it", async () => {
+    const { canConfirmPlanChange } = await import("./model");
+    expect(canConfirmPlanChange(null, null)).toBe(false); // still calculating
+    expect(canConfirmPlanChange(null, "Could not prepare the preview.")).toBe(false); // the old code enabled this
+    expect(canConfirmPlanChange({ changes: [] }, null)).toBe(true);
+    expect(canConfirmPlanChange({ changes: [] }, "stale error")).toBe(false);
+  });
+});
+
+describe("scoped draft store (M2)", () => {
+  it("a draft written under one owner scope is unreachable under another", async () => {
+    const { scopedStore } = await import("./model");
+    const base = new MemoryStore();
+    let scope = "a";
+    const s = scopedStore(base, () => scope);
+    await s.set("draft:x", { v: 1 });
+    expect(await s.get("draft:x")).toEqual({ v: 1 });
+    scope = "b";
+    expect(await s.get("draft:x")).toBeUndefined();
+    expect([...base.map.keys()]).toEqual(["s:a:draft:x"]);
+  });
+});

@@ -78,9 +78,13 @@ export function CropCard(props: CropCardProps) {
           </Show>
         </Row>
         <Row label="Price reference" testid="price-reference" badge={<StateBadge state="unavailable" />}>{priceLabel(it())}</Row>
-        <Row label="Yield basis" testid="yield-basis" badge={<StateBadge state={it().yieldReference ? "reference" : "unavailable"} />}>
+        <Row label="Yield basis" testid="yield-basis" badge={<StateBadge state={it().yieldReference?.appliesToProduct ? "reference" : "unavailable"} />}>
           <Show when={it().yieldReference} fallback={<>No sourced yield reference for this product and region</>}>
-            {(y) => <>{y().minKgPerHa} to {y().maxKgPerHa} kg/ha. Basis: {yieldBasisLabel(it())}. {y().label}.</>}
+            {(y) => (
+              <Show when={y().appliesToProduct} fallback={<>Yield reference exists for {y().productId}, not applied to this product.</>}>
+                {y().minKgPerHa} to {y().maxKgPerHa} kg/ha. Basis: {yieldBasisLabel(it())}. {y().label}.
+              </Show>
+            )}
           </Show>
         </Row>
         <Row label="Cost basis" testid="cost-basis" badge={<StateBadge state="unavailable" />}>{it().costBasis.label}</Row>

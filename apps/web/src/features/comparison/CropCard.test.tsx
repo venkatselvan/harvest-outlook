@@ -79,3 +79,13 @@ describe("ResultsList", () => {
     expect(t).toContain("at most 3 crops");
   });
 });
+
+describe("CropCard yield row for another product's reference (L6)", () => {
+  it("hides the numbers and says the reference exists for the other product, not applied", () => {
+    const item = find(tnFixture.items, "chilli-green");
+    expect(item.yieldReference?.appliesToProduct).toBe(false);
+    const t = card(item);
+    expect(t).toContain("Yield reference exists for chilli-dry, not applied");
+    expect(t).not.toMatch(/2000 to 3000 kg\/ha/);
+  });
+});

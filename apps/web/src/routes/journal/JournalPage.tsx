@@ -5,6 +5,8 @@ import { apiRequest } from "../../features/photo-region/http";
 import { ApiError } from "../../lib/api";
 import { loadTimeline, type ConfirmResult, type JournalEntry, type Timeline } from "../../features/journal/api";
 import { EntryCard } from "../../features/journal/EntryCard";
+import { getOwnerScope } from "../../features/offline/scope";
+import { scopedStore } from "../../features/journal/model";
 import { createIdbStore } from "../../features/journal/idbStore";
 import { JournalForm } from "../../features/journal/JournalForm";
 
@@ -28,7 +30,7 @@ const selectedFarm = (farms: FarmLite[]): FarmLite | null => {
   return farms.find((f) => f.id === saved) ?? farms[0] ?? null;
 };
 
-const store = createIdbStore();
+const store = scopedStore(createIdbStore(), () => getOwnerScope());
 
 /** Functional Journal screen: entry form, analysis with confirmable proposals, and the season timeline. */
 export function JournalPage() {

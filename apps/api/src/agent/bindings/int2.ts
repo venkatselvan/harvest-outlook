@@ -72,24 +72,24 @@ export function bindScreenCrops(deps: Int2Deps): ToolHandler<"screen_crops"> {
     const out = compareCrops(snap, cmp, { mode: ctx.mode, now: asOf });
     const ruleCtx = buildRuleContext(cmp);
     const { rules } = executableRules(snap.rules, ctx.mode);
-    const byCrop = new Map<string, typeof out.items>();
-    for (const it of out.items) if (it.outcome !== "excluded_by_farmer") byCrop.set(it.cropId, [...(byCrop.get(it.cropId) ?? []), it]);
-    const results = [...byCrop.entries()].map(([cropId, items]) => {
-      const first = items[0]!;
+    // One result per (crop, product): outcomes, rules and dimensions differ by product form, so a crop-level entry
+    // would report the first product's outcome for the others.
+    const results = out.items.filter((it) => it.outcome !== "excluded_by_farmer").map((it) => {
+      const cropId = it.cropId;
       const cropRules = rules.filter((r) => r.cropId === cropId);
-      const ruleResults = screenCrop(cropId, cropRules, ruleCtx, { mode: ctx.mode, productId: first.productId }).results.filter((r) => r.effect !== "not_applicable");
+      const ruleResults = screenCrop(cropId, cropRules, ruleCtx, { mode: ctx.mode, productId: it.productId }).results.filter((r) => r.effect !== "not_applicable");
       const dimensions = (Object.keys(DIM_NAME) as DimensionKey[]).flatMap((k) => {
-        const d = first.dimensions[k];
+        const d = it.dimensions[k];
         if (!d || d.status !== "known") return [];
         const text = typeof d.value === "string" ? d.value : JSON.stringify(d.value);
         return [{ dimension: DIM_NAME[k]!, value: dimValue(farm.id, text, d.evidenceIds) }];
       });
       return {
         cropId,
-        productIds: items.map((i) => i.productId),
-        outcome: first.outcome as "eligible" | "ineligible" | "requires_review" | "unknown",
+        productIds: [it.productId],
+        outcome: it.outcome as "eligible" | "ineligible" | "requires_review" | "unknown",
         ruleResults,
-        unknownFields: first.screening.unknownFields,
+        unknownFields: it.screening.unknownFields,
         coverage: snap.coverage.filter((c) => c.cropId === cropId),
         dimensions,
       };
@@ -142,6 +142,6 @@ export function bindVisualKeyframes(deps: Int2Deps): ToolHandler<"request_visual
     };
     let out = await one(base);
     for (let n = 1; !out.created && !reusable(out.job) && n <= 20; n++) out = await one(`${base}:r${n}`);
-    return { jobId: out.job.id, deduplicated: !out.created, allowedStageCount: v.selected.length, budgetGate: "reserved" as const };
+    return { jobId: out.job.id, deduplicated: !out.created, allowedStageCount: v.selected.length, budgetGate: "checked" as const };
   };
 }

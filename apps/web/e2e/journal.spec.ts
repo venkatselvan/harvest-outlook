@@ -3,9 +3,9 @@ import { resolve } from "node:path";
 import { expect, test, type Page } from "@playwright/test";
 
 /*
- * Journal journey at 360 px against the real API in SYNTHETIC mode (support/start-journal-api.ts).
+ * Journal journey at 360 px against the real API in SYNTHETIC mode (started by playwright.config.ts: support/start-real-api.ts + Vite).
  * The "AI" answer is the journal_waterlogging fixture, so nothing here shows a real model reading a real photo.
- * JOURNAL_PATH defaults to the real /journal route; set it to /e2e/support/journal.html to use the harness page.
+ * JOURNAL_PATH defaults to the real /journal route.
  */
 test.use({ viewport: { width: 360, height: 740 }, hasTouch: false });
 const JOURNAL_PATH = process.env.JOURNAL_PATH ?? "/journal";

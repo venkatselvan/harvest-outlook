@@ -20,7 +20,9 @@ export default defineConfig({
         icons: [{ src: "/icon.svg", sizes: "any", type: "image/svg+xml", purpose: "any" }],
       },
       workbox: {
-        // App shell plus two public, non-personal read endpoints (crop catalogue, capabilities) so Explore opens offline.
+        // App shell plus one public, non-personal read endpoint family (the crop catalogue) so Explore opens offline.
+        // GET /capabilities is deliberately NOT cached: for a signed-in guest it carries budget figures and the
+        // response has no Vary on the session cookie.
         // Everything else under /api (plans, journal, farms, media, assistant, speech, session, jobs) is private and
         // is NEVER cached by the service worker; private snapshots live in IndexedDB under an owner scope instead
         // (src/features/plan-cache). The fixed `private` rule below is an allow-list, not a deny-list.
@@ -29,10 +31,10 @@ export default defineConfig({
         navigateFallbackDenylist: [/^\/api\//],
         runtimeCaching: [
           {
-            // GET /api/v1/crops* and /api/v1/capabilities only. NetworkFirst with a short maxAge: fresh data when
+            // GET /api/v1/crops* only. NetworkFirst with a short maxAge: fresh data when
             // online, last good copy (at most one hour old) when not. Cleared on logout (features/offline/purge.ts).
             urlPattern: ({ url, request }: { url: URL; request: Request }) =>
-              request.method === "GET" && (url.pathname === "/api/v1/capabilities" || url.pathname === "/api/v1/crops" || url.pathname.startsWith("/api/v1/crops/")),
+              request.method === "GET" && (url.pathname === "/api/v1/crops" || url.pathname.startsWith("/api/v1/crops/")),
             handler: "NetworkFirst",
             options: {
               cacheName: "ho-api-public",

@@ -101,6 +101,54 @@ test("a journal entry written offline is queued, then sent exactly once when bac
   expect(posts).toHaveLength(1);
 });
 
+// H1: the owner scope used to live in sessionStorage, so a new tab or a reopened app minted a new scope, could not see
+// the saved plan and orphaned queued entries. Both tests below close the page and continue in a NEW page.
+test("cold start: after closing the page, a new page offline renders the plan from the saved copy with stale labels", async ({ page, context }) => {
+  const { planId } = await seedFarmAndPlan(page);
+  await page.goto(`/farm/plan/${planId}`);
+  await expect(page.getByTestId("plan-summary")).toBeVisible();
+  await controlled(page);
+  await expect(page.getByTestId("plan-summary")).toBeVisible();
+  await page.waitForTimeout(500);
+  await page.close();
+
+  await context.setOffline(true);
+  const fresh = await context.newPage();
+  await fresh.goto(`/farm/plan/${planId}`);
+  await expect(fresh.getByTestId("plan-summary")).toBeVisible();
+  await expect(fresh.getByTestId("offline-banner")).toContainText("You are offline");
+  await expect(fresh.getByTestId("stale-label").first()).toHaveText(/^Saved .+ · offline$/);
+  await context.setOffline(false);
+});
+
+test("cold start: an entry queued offline survives closing the page and is sent exactly once from a new page", async ({ page, context }) => {
+  await seedFarmAndPlan(page);
+  const seen: string[] = [];
+  context.on("request", (r) => {
+    if (r.method() === "POST" && new URL(r.url()).pathname === "/api/v1/journal") seen.push(r.headers()["idempotency-key"] ?? "");
+  });
+  await page.goto("/journal");
+  await expect(page.getByRole("heading", { name: "New journal entry" })).toBeVisible();
+  await controlled(page);
+  await page.waitForTimeout(500);
+  await context.setOffline(true);
+  await page.reload();
+  await page.getByLabel("Note", { exact: true }).fill("Cold start note: queued before the page was closed.");
+  await page.getByRole("button", { name: "Save entry" }).click();
+  await expect(page.getByTestId("sync-panel")).toContainText("Cold start note");
+  expect(seen).toHaveLength(0);
+  await page.close();
+
+  const fresh = await context.newPage();
+  await fresh.goto("/journal");
+  await expect(fresh.getByTestId("sync-panel")).toContainText("Cold start note"); // visible again in the new page, still offline
+  await context.setOffline(false);
+  await expect(fresh.getByTestId("sync-panel")).toHaveCount(0, { timeout: 20_000 });
+  await expect(fresh.locator(".jr-timeline")).toContainText("Cold start note: queued before the page was closed.");
+  await fresh.waitForTimeout(1500);
+  expect(seen).toHaveLength(1);
+});
+
 test("a 409 from the server puts the entry in conflict with a review UI; both choices work", async ({ page }) => {
   await seedFarmAndPlan(page);
   await page.goto("/journal");

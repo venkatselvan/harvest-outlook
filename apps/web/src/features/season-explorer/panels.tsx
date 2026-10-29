@@ -10,9 +10,11 @@ import {
   outlookView,
   taskRows,
   waterRows,
+  modeQualifier,
   weatherView,
   type WaterIndex,
 } from "./model";
+import { capabilitiesState } from "../../lib/capabilities";
 import type { TimelineDay } from "../../lib/plan-api";
 
 export function Badge(props: { state: string; children?: JSX.Element }) {
@@ -23,11 +25,19 @@ export function Badge(props: { state: string; children?: JSX.Element }) {
   );
 }
 
-function Panel(props: { id: string; title: string; badge?: string; children: JSX.Element }) {
+/** Runtime mode from GET /capabilities (null until it has loaded or when it failed). */
+function runtimeMode() {
+  const c = capabilitiesState();
+  return c.status === "ready" ? c.envelope.mode : null;
+}
+
+function Panel(props: { id: string; title: string; badge?: string; mode?: boolean; children: JSX.Element }) {
+  const qualifier = () => (props.mode ? modeQualifier(runtimeMode()) : null);
   return (
     <section class="card se-panel" aria-labelledby={`${props.id}-h`} data-testid={`panel-${props.id}`}>
       <h2 id={`${props.id}-h`}>
         {props.title} <Show when={props.badge}>{(b) => <Badge state={b()} />}</Show>
+        <Show when={qualifier()}>{(q) => <span class="se-badge" data-state="mode" data-testid="mode-qualifier">{q()}</span>}</Show>
       </h2>
       {props.children}
     </section>
@@ -127,7 +137,7 @@ export function TasksPanel(props: {
 export function WeatherPanel(props: { day: TimelineDay }) {
   const w = createMemo(() => weatherView(props.day));
   return (
-    <Panel id="weather" title="Weather and rain" badge={w().badge}>
+    <Panel mode id="weather" title="Weather and rain" badge={w().badge}>
       <p data-testid="weather-title" data-kind={w().kind}>
         <strong>{w().title}</strong>
       </p>
@@ -143,7 +153,7 @@ export function WeatherPanel(props: { day: TimelineDay }) {
 export function WaterPanel(props: { day: TimelineDay; runs: NonNullable<SeasonState["outputs"]["water"]>["byTiming"][keyof NonNullable<SeasonState["outputs"]["water"]>["byTiming"]] | undefined; index: WaterIndex | null; water: SeasonState["outputs"]["water"] | undefined }) {
   const rows = createMemo(() => (props.index ? waterRows(props.runs?.runs, props.index, props.day.calendarDate) : []));
   return (
-    <Panel id="water" title="Water balance" badge={props.day.water.state === "unavailable" ? "unavailable" : props.day.water.state}>
+    <Panel mode id="water" title="Water balance" badge={props.day.water.state === "unavailable" ? "unavailable" : props.day.water.state}>
       <Show
         when={props.day.water.state !== "unavailable"}
         fallback={<p data-testid="water-unavailable">Unavailable — {(props.day.water.missingReason ?? "not computed").replace(/_/g, " ")}.{props.water?.status === "unavailable" ? " Water is not computed for this plan: no sourced crop coefficients exist for this crop and region." : ""}</p>}
@@ -172,7 +182,7 @@ export function WaterPanel(props: { day: TimelineDay; runs: NonNullable<SeasonSt
 export function OutlookPanel(props: { day: TimelineDay; outputs: SeasonState["outputs"]; assumedPrice: string | null }) {
   const v = createMemo(() => outlookView(props.day, props.outputs.market_outlook, props.assumedPrice));
   return (
-    <Panel id="outlook" title="Price outlook" badge={v().badge}>
+    <Panel mode id="outlook" title="Price outlook" badge={v().badge}>
       <p>
         <strong>{v().title}</strong>
       </p>
@@ -188,7 +198,7 @@ export function EconomicsPanel(props: { outputs: SeasonState["outputs"]; selecte
   const e = () => props.outputs.economics;
   const current = () => h()?.periods.find((p) => p.period.start <= props.selectedDate && props.selectedDate <= p.period.end) ?? null;
   return (
-    <Panel id="economics" title="Harvest windows and economics" badge="scenario">
+    <Panel mode id="economics" title="Harvest windows and economics" badge="scenario">
       <Show when={(h()?.periods ?? []).length > 0} fallback={<p>No harvest window is computed.</p>}>
         <ul class="se-list" data-testid="harvest-windows">
           <For each={h()!.periods}>

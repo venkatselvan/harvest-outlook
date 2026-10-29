@@ -1,7 +1,7 @@
 import { Show, createSignal } from "solid-js";
 import { ApiError } from "../../lib/api";
 import { confirmFacts, previewRevision, type ConfirmResult, type JournalEntry, type JournalFact, type Preview, type Timeline } from "./api";
-import { isFinalProposal, proposalReducer, type ProposalState, type ProposalStatus } from "./model";
+import { canConfirmPlanChange, isFinalProposal, proposalReducer, type ProposalState, type ProposalStatus } from "./model";
 import { WhyChanged } from "./WhyChanged";
 
 const FIELD_LABEL: Record<string, string> = {
@@ -53,6 +53,9 @@ export function ProposalItem(props: {
   const accept = async () => {
     dispatch({ type: "accept", planChanging: planChanging() });
     if (!planChanging()) return void send("accept");
+    await loadPreview();
+  };
+  const loadPreview = async () => {
     setPreview(null);
     setPreviewError(null);
     try {
@@ -98,7 +101,10 @@ export function ProposalItem(props: {
           </Show>
           <p class="jr-small">{mine ? "You chose this stage." : "This is an AI reading of one photo."} Nothing changes until you confirm.</p>
           <div class="jr-actions">
-            <button type="button" class="btn" onClick={confirm} disabled={!preview() && !previewError()}>Confirm plan change</button>
+            <button type="button" class="btn" onClick={confirm} disabled={!canConfirmPlanChange(preview(), previewError())}>Confirm plan change</button>
+            <Show when={previewError()}>
+              <button type="button" class="btn secondary" onClick={() => void loadPreview()}>Retry preview</button>
+            </Show>
             <button type="button" class="btn secondary" onClick={() => dispatch({ type: "cancel_review" })}>Not now</button>
             <button type="button" class="btn secondary" onClick={reject}>Reject</button>
           </div>

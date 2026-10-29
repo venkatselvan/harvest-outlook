@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 
-// Real API in SYNTHETIC mode with the T06b crop routes (e2e/support/start-crops-api.ts) behind the Explore harness
-// (e2e/support/vite.explore.config.ts). No provider is contacted. Findings depend on the seeded synthetic catalogue.
+// Runs against the real API in SYNTHETIC mode and the real Explore route, started by playwright.config.ts
+// (support/start-real-api.ts + Vite). No provider is contacted. Findings depend on the seeded synthetic catalogue.
 test.use({ viewport: { width: 360, height: 740 }, hasTouch: false });
 
 test("Hassan, kharif May, rainfed: results, three cards, choose ginger", async ({ page }) => {

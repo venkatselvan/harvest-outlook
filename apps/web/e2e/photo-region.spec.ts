@@ -1,6 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 
-// Runs against the real API in SYNTHETIC mode (see e2e/support/start-api.ts). No provider is contacted.
+// Runs against the real API in SYNTHETIC mode (started by playwright.config.ts: support/start-real-api.ts). No provider is contacted.
 test.use({ viewport: { width: 360, height: 740 }, hasTouch: false });
 
 /** Generates a JPEG in the browser (canvas) so no binary fixture is needed. */

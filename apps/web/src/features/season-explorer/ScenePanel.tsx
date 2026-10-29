@@ -5,7 +5,7 @@ import { toKeyframes } from "../../lib/plan-api";
 import { SCHEMATIC_REASON_TEXT, type SeasonState } from "./controller";
 import type { SceneChoice } from "./model";
 
-/** Scene for the selected date: an actual journal photo wins; a past date without one stays empty; otherwise the labelled illustration. */
+/** Scene for the selected date: an actual journal photo wins; a past date without one stays an empty labelled frame (the base photo is never shown under another date); otherwise the labelled illustration. */
 export function ScenePanel(props: { state: SeasonState; choice: SceneChoice; onGenerate: () => void }) {
   const base = () => (props.state.media ? normalizedUrl(props.state.media.id) : null);
   const keyframes = createMemo(() => toKeyframes(props.state.visuals));
@@ -27,9 +27,7 @@ export function ScenePanel(props: { state: SeasonState; choice: SceneChoice; onG
         <Match when={props.choice.kind === "absent" && props.choice}>
           {(c) => (
             <figure class="se-photo" data-testid="scene-absent">
-              <Show when={base()} fallback={<div class="se-photo__empty">No photo for this date</div>}>
-                {(u) => <img src={u()} alt="Your base farm photo, shown for reference only" />}
-              </Show>
+              <div class="se-photo__empty">No photo recorded for this date</div>
               <figcaption>{(c() as { message: string }).message}</figcaption>
             </figure>
           )}

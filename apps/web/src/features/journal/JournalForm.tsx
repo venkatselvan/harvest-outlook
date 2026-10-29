@@ -31,7 +31,7 @@ import {
  * Entry form. Every change is written to the device (IndexedDB) at once, keyed by the client entry id, so a reload or a
  * dropped connection loses nothing. The same id is sent on every retry; the server never creates a second entry for it.
  */
-export function JournalForm(props: { farmId: string; stages: { stageId: string; name: string }[]; store: KeyValueStore & { persistent?: boolean }; onSaved: (e: JournalEntry) => void }) {
+export function JournalForm(props: { farmId: string; stages: { stageId: string; name: string }[]; store: KeyValueStore & { persistent?: boolean | undefined }; onSaved: (e: JournalEntry) => void }) {
   const [draft, setDraft] = createSignal<Draft>(newDraft(props.farmId, newEntryId("entry")));
   const [restored, setRestored] = createSignal(false);
   const [saving, setSaving] = createSignal(false);

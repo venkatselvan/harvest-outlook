@@ -11,11 +11,12 @@ const input = (id = "entry-0001", note = "hello") => ({ clientEntryId: id, farmI
 const ok = (id = "srv-1"): SendResult => ({ kind: "ok", entryId: id, entry: { id } });
 const retry = (status = 0): SendResult => ({ kind: "retry", status, code: status ? "http_error" : "network_error", message: "down" });
 
-beforeEach(() => {
+beforeEach(async () => {
   now = 1_000_000;
   scope = "scope-a";
   store = new MemoryListableStore();
   q = new SyncQueue(store, () => scope, () => now);
+  await q.list(); // runs (and records) the one-time legacy-scope sweep on the empty store
 });
 
 describe("backoff", () => {
@@ -151,6 +152,29 @@ describe("conflict resolution", () => {
     await q.keepServer("entry-0001");
     expect(await q.resubmitAsNew("entry-0001", "entry-0002")).toBeNull();
     expect(await q.list()).toHaveLength(1);
+  });
+});
+
+describe("legacy scope migration (H1)", () => {
+  it("moves items saved under older per-tab scopes to the current scope once, then sends them exactly once", async () => {
+    const legacy = new MemoryListableStore();
+    const old = new SyncQueue(legacy, () => "old-tab-scope", () => now);
+    await old.list(); // (the old build had no marker; simulate by removing it)
+    await legacy.delete("meta:legacy-scopes-swept-v2");
+    await old.enqueue(input("entry-0001", "queued in an old tab"));
+    await legacy.set("q:another-old-scope:entry-0002", { ...(await old.get("entry-0001"))!, clientEntryId: "entry-0002" });
+    const fresh = new SyncQueue(legacy, () => "stable-scope", () => now);
+    expect((await fresh.list()).map((i) => i.clientEntryId).sort()).toEqual(["entry-0001", "entry-0002"]);
+    expect((await legacy.keys("q:")).every((k) => k.startsWith("q:stable-scope:"))).toBe(true);
+    const sent: string[] = [];
+    await fresh.flush(async (i) => (sent.push(i.clientEntryId), ok(`srv-${i.clientEntryId}`)));
+    await fresh.flush(async (i) => (sent.push(i.clientEntryId), ok()));
+    expect(sent.sort()).toEqual(["entry-0001", "entry-0002"]);
+  });
+  it("does not adopt another scope's items after the sweep has been recorded", async () => {
+    await q.enqueue(input("entry-0009"));
+    const other = new SyncQueue(store, () => "scope-z", () => now);
+    expect(await other.list()).toHaveLength(0);
   });
 });
 

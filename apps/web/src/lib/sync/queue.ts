@@ -67,6 +67,7 @@ export function stableStringify(v: unknown): string {
 }
 
 const PREFIX = "q:";
+const SWEPT_MARKER = "meta:legacy-scopes-swept-v2";
 
 export interface EnqueueInput {
   clientEntryId: string;
@@ -97,8 +98,36 @@ export class SyncQueue {
     for (const fn of this.listeners) fn();
   }
 
-  /** Items for the current owner scope only, oldest first. */
+  private swept: Promise<void> | null = null;
+
+  /**
+   * One-time migration (per device, recorded by a marker): items stored under any other scope (an older build kept the
+   * scope per tab, so a reopened app could not see them) are moved to the current scope, so nothing is orphaned.
+   */
+  private sweepLegacy(): Promise<void> {
+    this.swept ??= (async () => {
+      if ((await this.store.get(SWEPT_MARKER)) !== undefined) return;
+      const mine = `${PREFIX}${this.scope()}:`;
+      for (const k of await this.store.keys(PREFIX)) {
+        if (k.startsWith(mine)) continue;
+        const item = (await this.store.get(k)) as QueueItem | undefined;
+        if (item && typeof item.clientEntryId === "string") {
+          const target = this.key(item.clientEntryId);
+          if ((await this.store.get(target)) === undefined) await this.store.set(target, item);
+        }
+        await this.store.delete(k);
+      }
+      // Written last and only once per device: later scopes are real, separate workspaces and must stay isolated.
+      await this.store.set(SWEPT_MARKER, Date.now());
+    })().catch(() => {
+      this.swept = null;
+    });
+    return this.swept;
+  }
+
+  /** Items for the current owner scope (after the one-time legacy sweep), oldest first. */
   async list(): Promise<QueueItem[]> {
+    await this.sweepLegacy();
     const keys = await this.store.keys(`${PREFIX}${this.scope()}:`);
     const items = await Promise.all(keys.map((k) => this.store.get(k) as Promise<QueueItem | undefined>));
     return items.filter((i): i is QueueItem => !!i && typeof i.clientEntryId === "string").sort((a, b) => a.createdAt - b.createdAt || a.clientEntryId.localeCompare(b.clientEntryId));
@@ -241,6 +270,7 @@ export class SyncQueue {
 
   /** Deletes every queued item of every scope (logout / farm deletion: the data belongs to a workspace that is gone). */
   async clearAll(): Promise<void> {
+    this.swept = null;
     for (const k of await this.store.keys(PREFIX)) await this.store.delete(k);
     this.emit();
   }

@@ -87,6 +87,8 @@ export function AskPanel(props: { context: AskContext; defaultLanguage?: AskLang
   const [turn, setTurn] = createSignal<TurnResult | null>(null);
   const [error, setError] = createSignal<{ message: string; retryable: boolean } | null>(null);
   const [asked, setAsked] = createSignal("");
+  // Language the displayed answer was requested in; the selector may have changed since, and speech must match the text shown.
+  const [turnLanguage, setTurnLanguage] = createSignal<AskLanguage>(props.defaultLanguage ?? "en");
   const [reply, setReply] = createSignal("");
   let pendingKey: string | null = null; // reused when the same text is retried after an error
 
@@ -96,7 +98,8 @@ export function AskPanel(props: { context: AskContext; defaultLanguage?: AskLang
     if (busy() || !question.trim()) return;
     setBusy(true);
     setError(null);
-    const body: TurnRequest = { text: question.trim(), language: language() };
+    const sentLanguage = language();
+    const body: TurnRequest = { text: question.trim(), language: sentLanguage };
     if (useContext()) {
       if (props.context.farmId) body.farmId = props.context.farmId;
       if (props.context.planId) body.planId = props.context.planId;
@@ -107,6 +110,7 @@ export function AskPanel(props: { context: AskContext; defaultLanguage?: AskLang
       const t = await postTurn(body, pendingKey);
       pendingKey = null;
       setTurn(t);
+      setTurnLanguage(sentLanguage);
       setAsked(question.trim());
     } catch (e) {
       const m = askErrorMessage(e);
@@ -160,7 +164,7 @@ export function AskPanel(props: { context: AskContext; defaultLanguage?: AskLang
       <Show when={turn()}>
         {(t) => (
           <>
-            <Answer turn={t()} language={language()} />
+            <Answer turn={t()} language={turnLanguage()} />
             <For each={t().clarifications}>
               {(c) => (
                 <div class="card ask-reply" data-testid="ask-clarification">

@@ -240,6 +240,12 @@ describe("synthetic journey: farm -> photo -> region -> plan -> timeline -> revi
     const ctx = (ownerId: string) => ({ ownerId, mode: "synthetic" as const, requestId: "req-int2", pool: h.pool, agentRunId: "run-int2", asOf: new Date().toISOString() });
     const out = await b.screen_crops!({ contextId: farmId, cropIds: ["ginger"] }, ctx(owner));
     expect(out.results[0]).toMatchObject({ cropId: "ginger", outcome: "requires_review" });
+    // L1: one result per product form, each carrying its own outcome (the comparison endpoint is the oracle).
+    const cmp = res.json().data.items.filter((i: any) => i.cropId === "ginger" && i.outcome !== "excluded_by_farmer");
+    expect(cmp.length).toBeGreaterThan(0);
+    expect(out.results.every((r) => r.productIds.length === 1)).toBe(true);
+    expect(out.results.map((r) => r.productIds[0]!).sort()).toEqual(cmp.map((i: any) => i.productId).sort());
+    for (const r of out.results) expect(r.outcome).toBe(cmp.find((i: any) => i.productId === r.productIds[0])!.outcome);
     await expect(b.screen_crops!({ contextId: farmId }, ctx(stranger))).rejects.toMatchObject({ statusCode: 404 });
     const mk = await b.get_market_outlook!({ productId: "ginger-fresh", marketIds: ["hassan-apmc"], issueDate: today, harvestWindows: [{ start: addDays(today, 100), end: addDays(today, 120) }] }, ctx(owner));
     expect(mk.forecasts).toEqual([]);
@@ -248,6 +254,7 @@ describe("synthetic journey: farm -> photo -> region -> plan -> timeline -> revi
     expect(seg.budgetGate).toBe("checked");
     const vk = await b.request_visual_keyframes!({ planId: plan.snapshot.id, briefId: "ginger", stageIds: [PLAN_FIXTURE.stageDefinitions[0].stageId] }, ctx(owner));
     expect(vk.jobId).toMatch(/^[0-9a-f-]{36}$/);
+    expect(vk.budgetGate).toBe("checked"); // L2: nothing is reserved at enqueue, so "reserved" was untrue
     const vk2 = await b.request_visual_keyframes!({ planId: plan.snapshot.id, briefId: "ginger", stageIds: [PLAN_FIXTURE.stageDefinitions[0].stageId] }, ctx(owner));
     expect(vk2).toMatchObject({ jobId: vk.jobId, deduplicated: true });
     await expect(b.request_visual_keyframes!({ planId: plan.snapshot.id, briefId: "ginger", stageIds: [PLAN_FIXTURE.stageDefinitions[0].stageId] }, ctx(stranger))).rejects.toMatchObject({ statusCode: 404 });

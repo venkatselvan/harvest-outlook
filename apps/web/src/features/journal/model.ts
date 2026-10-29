@@ -99,6 +99,19 @@ export class MemoryStore implements KeyValueStore {
   }
 }
 
+/** Namespaces every key by owner scope so a draft written for one workspace is unreachable from another. */
+export function scopedStore<T extends KeyValueStore>(store: T, scope: () => string): KeyValueStore & { persistent?: boolean | undefined } {
+  const k = (key: string) => `s:${scope()}:${key}`;
+  return {
+    get persistent() {
+      return (store as { persistent?: boolean }).persistent;
+    },
+    get: (key) => store.get(k(key)),
+    set: (key, value) => store.set(k(key), value),
+    delete: (key) => store.delete(k(key)),
+  };
+}
+
 const draftKey = (id: string) => `draft:${id}`;
 const pointerKey = (farmId: string) => `current:${farmId}`;
 
@@ -174,6 +187,11 @@ export function proposalReducer(s: ProposalState, e: ProposalEvent): ProposalSta
     case "retry":
       return s.status === "error" ? initialProposal : s;
   }
+}
+
+/** Confirm for a plan-changing proposal is allowed only once a preview was actually computed and shown. */
+export function canConfirmPlanChange(preview: unknown | null, previewError: string | null): boolean {
+  return preview != null && previewError === null;
 }
 
 export const isFinalProposal = (s: ProposalState): boolean => s.status === "confirmed" || s.status === "rejected";

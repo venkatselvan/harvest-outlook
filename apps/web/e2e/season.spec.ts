@@ -1,6 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
 
-// SYNTHETIC mode against e2e/support/start-plan-api.ts (PORT 8795) and the Vite entry on 5195. No provider is contacted.
+// SYNTHETIC mode against the real API and app started by playwright.config.ts (support/start-real-api.ts, ports
+// E2E_API_PORT/E2E_WEB_PORT, default 8791/5188). No provider is contacted.
 test.use({ viewport: { width: 360, height: 740 } });
 
 const istToday = () => new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Kolkata" }).format(new Date());

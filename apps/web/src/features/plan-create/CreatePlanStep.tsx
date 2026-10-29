@@ -39,8 +39,11 @@ export function CreatePlanStep(props: CreatePlanStepProps) {
     key = newEntryId("plan");
   };
 
+  const productId = () => (props.productId && props.productId.trim() ? props.productId : null);
+
   const submit = async (ev: SubmitEvent) => {
     ev.preventDefault();
+    if (!productId()) return;
     const errs = validateCreate(form(), known());
     setErrors(errs);
     if (Object.keys(errs).length > 0) {
@@ -50,7 +53,7 @@ export function CreatePlanStep(props: CreatePlanStepProps) {
     setBusy(true);
     setFailure(null);
     try {
-      const res = await createPlan(toCreateInput(props.farm.id, props.cropId, props.productId ?? `${props.cropId}-fresh`, form()), key);
+      const res = await createPlan(toCreateInput(props.farm.id, props.cropId, productId()!, form()), key);
       navigate(`/farm/plan/${res.data.snapshot.id}`);
     } catch (e) {
       if (e instanceof ApiError && e.code === "bad_request" && /stage definitions/i.test(e.message)) setUnsupported(e.message);
@@ -76,7 +79,14 @@ export function CreatePlanStep(props: CreatePlanStepProps) {
           </div>
         )}
       </Show>
-      <Show when={!(support() && !support()!.supported) && !unsupported()}>
+      <Show when={!productId()}>
+        <div role="alert" data-testid="plan-needs-product">
+          <p>Choose a product form in Explore</p>
+          <p class="se-help">A season plan is built for one product form of the crop (for example fresh or dried). None was chosen, so nothing is guessed.</p>
+          <p><A href="/explore">Back to Explore</A></p>
+        </div>
+      </Show>
+      <Show when={productId() && !(support() && !support()!.supported) && !unsupported()}>
         <form onSubmit={(e) => void submit(e)} novalidate>
           <p class="pr-help">Planting dates and stage windows are estimates. Tasks and stage durations come from the crop catalogue, not from you.</p>
           <div class="field">

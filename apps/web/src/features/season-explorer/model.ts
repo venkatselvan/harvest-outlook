@@ -138,6 +138,17 @@ const REASONS: Record<string, string> = {
 };
 const reasonText = (r: string | null): string => (r ? (REASONS[r] ?? r.replace(/_/g, " ")) : "No data.");
 
+/**
+ * Qualifier shown beside value badges at panel level. Only live mode has real observations: in synthetic mode a row
+ * badged "Observed" is a fixture, and in replay it is a recorded response. Null means no qualifier is needed.
+ */
+export function modeQualifier(mode: "live" | "replay" | "synthetic" | null): string | null {
+  if (mode === "live") return null;
+  if (mode === "replay") return "Replay";
+  if (mode === "synthetic") return "Synthetic fixture (observed-shaped)";
+  return "Data mode not confirmed";
+}
+
 export const SCENARIO_WEATHER_TEXT = "Seasonal climatology scenario. No daily rain prediction exists this far ahead.";
 
 export function weatherView(day: TimelineDay): WeatherView {
@@ -265,7 +276,7 @@ export function sceneChoice(ix: TimelineIndex, day: TimelineDay): SceneChoice {
     return {
       kind: "absent",
       message: day.markers.past
-        ? "No photo was recorded for this date, so none is shown. Any stage shown in the panels is inferred from the calendar."
+        ? "No photo recorded for this date. No picture is drawn; any stage shown in the panels is inferred from the calendar."
         : "No stage is expected on this date, so no illustration is drawn.",
     };
   }
