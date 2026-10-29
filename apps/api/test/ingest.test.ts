@@ -126,6 +126,12 @@ describe("synthetic fixtures", () => {
     expect(await count("market_observations")).toBe(0);
     const syn = await runSeed(pool, "synthetic");
     expect(syn.fixtures).toMatchObject({ market: { inserted: 240, rejected: 0 }, weatherObservations: 110, weatherForecasts: 3 });
+    // 5 prior calendar years of synthetic daily rows (>=300 each) so the seasonal-scenario band can be shown; re-seeding replaces, never adds
+    const clim = (syn.fixtures as { weatherClimatologyObservations: number }).weatherClimatologyObservations;
+    expect(clim).toBeGreaterThanOrEqual(5 * 300);
+    expect(await count("weather_observations", "mode='synthetic' AND is_synthetic")).toBe(110 + clim);
+    await runSeed(pool, "synthetic");
+    expect(await count("weather_observations", "mode='synthetic' AND is_synthetic")).toBe(110 + clim);
     expect(await count("market_observations", "mode='synthetic' AND is_synthetic")).toBe(240);
     expect(await count("market_observations", "mode <> 'synthetic'")).toBe(0);
     const row = (await pool.query("SELECT * FROM market_observations LIMIT 1")).rows[0];
@@ -166,7 +172,8 @@ describe("mode-scoped reads", () => {
       }
     }
     const s = scopedQuery("synthetic");
-    expect((await s.weatherObservations(pool)).length).toBe(110);
+    expect((await s.weatherObservations(pool)).length).toBeGreaterThan(110 + 5 * 300 - 1);
+    expect((await s.weatherObservations(pool, { from: "2026-01-01" })).length).toBeLessThanOrEqual(110);
     expect((await s.marketObservations(pool)).every((r) => r.is_synthetic === true)).toBe(true);
     // no filter combination widens a live read
     expect((await scopedQuery("live").weatherObservations(pool, { locationKey: "synthetic:hassan-like" })).length).toBe(0);

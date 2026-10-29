@@ -14,8 +14,6 @@ import { seedFarmAndPlan } from "./support/seed";
  * be present; any OTHER serious/critical finding fails the test. Remove an entry when its fix lands.
  */
 const KNOWN_AXE: Record<string, string> = {
-  "aria-prohibited-attr|.explore-results": "UI-001 explore results container has aria-label on a div with no role",
-  'label-content-name-mismatch|button[aria-label="Record a voice note in English"]': "UI-002 voice button aria-label does not contain its visible text",
 };
 
 const VIEWPORTS = [

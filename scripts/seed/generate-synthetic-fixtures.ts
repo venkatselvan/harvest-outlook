@@ -65,6 +65,6 @@ const LABEL = "SYNTHETIC FIXTURE: invented numbers for development and demos; no
   const seed = 20260102;
   const TEMPLATE_DATE = "2026-10-30";
   const records = generateSyntheticWeather(TEMPLATE_DATE, seed);
-  writeFileSync(resolve(out, "weather_synthetic_hassan_like.json"), JSON.stringify({ synthetic: true, sourceId: SOURCE, fixture: "weather_synthetic_hassan_like", label: LABEL, generatedAtSeed: `Dates below are a sample rendered for ${TEMPLATE_DATE}. loadSyntheticFixtures ignores them and regenerates the rows relative to the seed date (today-120..today-1 with a gap at today-60..today-51, plus 3 forecast days from today).`, seed, location: { key: "synthetic:hassan-like", lat: 13.0033, lon: 76.1004 }, generator: "scripts/seed/generate-synthetic-fixtures.ts", records }, null, 1) + "\n");
+  writeFileSync(resolve(out, "weather_synthetic_hassan_like.json"), JSON.stringify({ synthetic: true, sourceId: SOURCE, fixture: "weather_synthetic_hassan_like", label: LABEL, generatedAtSeed: `Dates below are a sample rendered for ${TEMPLATE_DATE}. loadSyntheticFixtures ignores them and regenerates the rows relative to the seed date (today-120..today-1 with a gap at today-60..today-51, plus 3 forecast days from today) and adds 5 prior calendar years of synthetic daily observations (climatology scenario support).`, seed, location: { key: "synthetic:hassan-like", lat: 13.0033, lon: 76.1004 }, generator: "scripts/seed/generate-synthetic-fixtures.ts", records }, null, 1) + "\n");
 }
 console.log("wrote synthetic fixtures to", out);

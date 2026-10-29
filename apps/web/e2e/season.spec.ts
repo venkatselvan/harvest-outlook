@@ -72,7 +72,7 @@ test("create a ginger plan, slide through past/forecast/scenario dates without n
   await expect(page.getByTestId("weather-lines")).toContainText("Issued");
   await expect(page.getByTestId("weather-lines")).toContainText(/Horizon: [1-3] days from issue/);
   await date.fill(addDays(today, 60));
-  await expect(page.getByTestId("weather-title")).toHaveText("Unavailable"); // honest: the synthetic seed has no multi-year climatology, so no scenario is invented (D31/never substituted)
+  await expect(page.getByTestId("weather-title")).toHaveText("Seasonal scenario"); // synthetic seed carries 5 synthetic prior years, so the climatology band is shown (no daily value)
   await expect(page.getByTestId("weather-lines")).not.toContainText("Rain ");
 
   // Keyboard on the slider and a burst of input events.

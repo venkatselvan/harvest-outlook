@@ -22,7 +22,7 @@ try {
   if (typeof r.fixtures === "string") console.log(`synthetic fixtures: ${r.fixtures}`);
   else {
     console.log(`synthetic market rows: ${r.fixtures.market.inserted} inserted, ${r.fixtures.market.revisions} revisions, ${r.fixtures.market.unchanged} unchanged, ${r.fixtures.market.rejected} rejected (mode=synthetic)`);
-    console.log(`synthetic weather: ${r.fixtures.weatherObservations} observations, ${r.fixtures.weatherForecasts} forecast rows (mode=synthetic)`);
+    console.log(`synthetic weather: ${r.fixtures.weatherObservations} observations (+${r.fixtures.weatherClimatologyObservations} synthetic prior-year climatology), ${r.fixtures.weatherForecasts} forecast rows (mode=synthetic)`);
   }
 } catch (e) {
   console.error((e as Error).message);

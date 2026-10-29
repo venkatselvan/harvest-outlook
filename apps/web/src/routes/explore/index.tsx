@@ -137,7 +137,7 @@ export function ExplorePage() {
         />
       </div>
 
-      <div class="explore-results" ref={resultsRef} tabindex="-1" aria-label="Comparison results">
+      <div class="explore-results" ref={resultsRef} tabindex="-1" role="region" aria-label="Comparison results">
         <Switch>
           <Match when={run().status === "loading"}>
             <p role="status" class="explore-status">Comparing crops…</p>

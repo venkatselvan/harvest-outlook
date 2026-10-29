@@ -3,7 +3,7 @@
  "sourceId": "synthetic-fixture",
  "fixture": "weather_synthetic_hassan_like",
  "label": "SYNTHETIC FIXTURE: invented numbers for development and demos; not real data",
- "generatedAtSeed": "Dates below are a sample rendered for 2026-10-30. loadSyntheticFixtures ignores them and regenerates the rows relative to the seed date (today-120..today-1 with a gap at today-60..today-51, plus 3 forecast days from today).",
+ "generatedAtSeed": "Dates below are a sample rendered for 2026-10-30. loadSyntheticFixtures ignores them and regenerates the rows relative to the seed date (today-120..today-1 with a gap at today-60..today-51, plus 3 forecast days from today) and adds 5 prior calendar years of synthetic daily observations (climatology scenario support).",
  "seed": 20260102,
  "location": {
   "key": "synthetic:hassan-like",
@@ -2216,7 +2216,7 @@
    "synthetic": true,
    "sourceId": "synthetic-fixture",
    "kind": "forecast",
-   "issuedAt": "2026-10-30T00:00:00Z",
+   "issuedAt": "2026-10-30T00:00:00+05:30",
    "date": "2026-10-30",
    "values": {
     "precipitation_sum": 0,
@@ -2237,7 +2237,7 @@
    "synthetic": true,
    "sourceId": "synthetic-fixture",
    "kind": "forecast",
-   "issuedAt": "2026-10-30T00:00:00Z",
+   "issuedAt": "2026-10-30T00:00:00+05:30",
    "date": "2026-10-31",
    "values": {
     "precipitation_sum": 9.8,
@@ -2258,7 +2258,7 @@
    "synthetic": true,
    "sourceId": "synthetic-fixture",
    "kind": "forecast",
-   "issuedAt": "2026-10-30T00:00:00Z",
+   "issuedAt": "2026-10-30T00:00:00+05:30",
    "date": "2026-11-01",
    "values": {
     "precipitation_sum": 0,

@@ -99,6 +99,43 @@ export function generateSyntheticWeather(today: string, seed: number): z.infer<t
   return out;
 }
 
+/** Number of complete prior calendar years of synthetic daily observations generated for the climatology scenario band. */
+export const SYNTHETIC_CLIMATOLOGY_YEARS = 5;
+
+/**
+ * Synthetic multi-year "climatology" history: full calendar years (today.year-5 .. today.year-1), one daily observation each,
+ * from a separate seeded stream. Dates inside the recent observation window are skipped so they never collide with it.
+ * Every number is invented; it only makes the seasonal-scenario band demonstrable (weather adapter needs >=5 years x 300 rows).
+ */
+export function generateSyntheticClimatology(today: string, seed: number): z.infer<typeof weatherRecord>[] {
+  const windowStart = addDays(today, -SYNTHETIC_WEATHER_WINDOW.observedDaysBack);
+  const thisYear = Number(today.slice(0, 4));
+  const units: Record<string, string> = { ...SYNTHETIC_WEATHER_UNITS };
+  const out: z.infer<typeof weatherRecord>[] = [];
+  for (let y = thisYear - SYNTHETIC_CLIMATOLOGY_YEARS; y < thisYear; y++) {
+    const rnd = mulberry32(seed + 1000 * (y - 2000));
+    for (let d = `${y}-01-01`, i = 0; d < `${y + 1}-01-01`; d = addDays(d, 1), i++) {
+      const season = Math.sin(((i - 120) / 365) * 2 * Math.PI); // wet mid-year, dry ends
+      const wet = rnd() < 0.3 + 0.2 * season;
+      const rain = wet ? Math.round(rnd() * 180) / 10 : 0;
+      const tmax = Math.round((27 + 3 * Math.sin(i / 9) - (rain > 5 ? 2 : 0) + (rnd() - 0.5) * 2) * 10) / 10;
+      if (d >= windowStart) continue; // later dates are all inside the window too, so skipping never shifts a kept day
+      out.push({
+        synthetic: true, sourceId: SYNTHETIC_SOURCE_ID, kind: "observation", date: d,
+        values: {
+          precipitation_sum: rain,
+          temperature_2m_max: tmax,
+          temperature_2m_min: Math.round((tmax - 8 + (rnd() - 0.5)) * 10) / 10,
+          et0_fao_evapotranspiration: Math.round((4.2 - (rain > 5 ? 1.2 : 0) + (rnd() - 0.5)) * 100) / 100,
+          shortwave_radiation_sum: Math.round((19 - (rain > 5 ? 5 : 0) + (rnd() - 0.5) * 3) * 100) / 100,
+        },
+        units,
+      });
+    }
+  }
+  return out;
+}
+
 /** Fixtures are loadable only in synthetic runtime mode; any other mode throws before touching the database. */
 export function assertSyntheticMode(runtimeMode: string): void {
   if (runtimeMode !== "synthetic") {
@@ -109,6 +146,8 @@ export function assertSyntheticMode(runtimeMode: string): void {
 export interface FixtureCounts {
   market: { inserted: number; revisions: number; unchanged: number; rejected: number };
   weatherObservations: number;
+  /** Synthetic prior-year daily observations (climatology scenario support); not part of the recent window. */
+  weatherClimatologyObservations: number;
   weatherForecasts: number;
 }
 
@@ -148,13 +187,17 @@ export async function loadSyntheticFixtures(pool: Pool, runtimeMode: string, dir
   const stored = await storeMarketRows(pool, report.rows, { sourceId, mode: "synthetic", availableAt: now });
 
   let obs = 0;
+  let clim = 0;
   let fc = 0;
   const loc = weather.data.location;
   // Dates move with the seed date, so earlier synthetic weather rows would linger as stale bands: replace them (synthetic rows only).
   await pool.query("DELETE FROM weather_observations WHERE is_synthetic AND location_key=$1", [loc.key]);
   await pool.query("DELETE FROM weather_forecasts WHERE is_synthetic AND location_key=$1", [loc.key]);
   // The committed weather JSON is a template (label, location, seed); the rows are generated here, relative to the seed date.
-  for (const r of generateSyntheticWeather(today, weather.data.seed)) {
+  const recent = generateSyntheticWeather(today, weather.data.seed);
+  const climatology = generateSyntheticClimatology(today, weather.data.seed);
+  const climSet = new Set(climatology);
+  for (const r of [...recent, ...climatology]) {
     const meta = { synthetic: true, label: weather.data.label, units: r.units, seed: weather.data.seed, measurementKind: "synthetic" };
     // Same vintage rules as real rows (./vintage.ts): identical values add nothing, changed values add a vintage.
     if (r.kind === "observation") {
@@ -165,7 +208,8 @@ export async function loadSyntheticFixtures(pool: Pool, runtimeMode: string, dir
         other: { lon: loc.lon, lat: loc.lat, is_synthetic: true, mode: "synthetic", evidence_state: "illustrative", measurement_kind: "synthetic", available_at: now, meta: JSON.stringify(meta) },
         hasRevisedAt: true,
       });
-      obs++;
+      if (climSet.has(r)) clim++;
+      else obs++;
     } else {
       if (!r.issuedAt) throw new SyntheticFixtureError("synthetic forecast record needs issuedAt");
       await insertVintage(pool, {
@@ -177,5 +221,5 @@ export async function loadSyntheticFixtures(pool: Pool, runtimeMode: string, dir
       fc++;
     }
   }
-  return { market: { inserted: stored.inserted, revisions: stored.revisions, unchanged: stored.unchanged, rejected: report.rejected.length }, weatherObservations: obs, weatherForecasts: fc };
+  return { market: { inserted: stored.inserted, revisions: stored.revisions, unchanged: stored.unchanged, rejected: report.rejected.length }, weatherObservations: obs, weatherClimatologyObservations: clim, weatherForecasts: fc };
 }

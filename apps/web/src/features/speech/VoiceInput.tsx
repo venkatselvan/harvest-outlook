@@ -228,7 +228,7 @@ export function VoiceInput(props: VoiceInputProps) {
           </button>
         </Match>
         <Match when={state().kind === "idle" || state().kind === "review" || state().kind === "error"}>
-          <button type="button" class="btn" onClick={tapRecord} aria-label={`Record a voice note in ${langName()}`}>
+          <button type="button" class="btn" onClick={tapRecord}>
             Record voice ({langName()})
           </button>
         </Match>
