@@ -1,8 +1,9 @@
 import { defineConfig } from "@playwright/test";
 
 const API_PORT = process.env.E2E_API_PORT ?? "8791";
-const WEB_PORT = process.env.E2E_WEB_PORT ?? "5173";
+const WEB_PORT = process.env.E2E_WEB_PORT ?? "5188";
 
+// Port 5188 (not 5173) so reuseExistingServer cannot latch onto an unrelated dev server on the default Vite port.
 // Real dev server: API (synthetic mode, in-process job loop) on 8791 and Vite proxying /api to it.
 // Mobile viewport 360 px. RATE_LIMIT_MAX gives the e2e seeds headroom over the production default of 120/min.
 export default defineConfig({

@@ -1,3 +1,4 @@
+import { z } from "zod";
 import { SCHEMA_VERSION, StructuredAssistantOutput, ToolName, type Mode, type ValueRecord } from "@harvest/contracts";
 import type { Pool } from "../db/pool";
 import type { InputItem, ParsedUsage } from "../providers/meta/types";
@@ -5,11 +6,13 @@ import { restoreOptionals, toRawJsonSchema, toStrictJsonSchema, type JsonSchema 
 import { Budget } from "../services/budget";
 import { ApiError } from "../services/errors";
 import { payloadHash, sha256Hex } from "../services/hash";
-import { runOutputGate, type GateResult } from "./gate";
+import { getFarm } from "../services/farms";
+import { runOutputGate, type GateContext, type GateResult } from "./gate";
 import type { AgentLimits } from "./limits";
 import { INTERPRETATION_INSTRUCTIONS, PROMPT_HASH, PROMPT_LABEL, PROMPT_NAME, PROMPT_VERSION, SYNTHESIS_INSTRUCTIONS, TOOL_INSTRUCTIONS } from "./prompts";
 import type { AgentPass, ProviderFailure, TextModelProvider, TextRequest, TextResult } from "./provider";
-import { ProposedProfile } from "./schemas";
+import { AgentClaimEvidenceRef, ProposedProfile, attachClaimExtras, splitClaimExtras } from "./schemas";
+import { TEMPLATE_LIMITATION, templateBlock, templateLanguage } from "./templates";
 import type { ToolContext, ToolRegistry } from "./tools/registry";
 import { AgentTrace, redactForTrace } from "./trace";
 
@@ -27,7 +30,12 @@ export interface AgentTurnInput {
   scenarioId?: string | undefined;
   /** Server-derived. Defaults to now; replay callers pass the cutoff. */
   asOf?: string | undefined;
-  /** Server-derived from the owned farm: district/state ids. Crop ids are added from resolved crops. */
+  /**
+   * Server-derived location of the owned farm (the route passes what it already loaded). When absent
+   * and farmId is set, the loop loads the owned farm itself.
+   */
+  farmGeography?: { districtId: string | null; stateCode: string | null; regionIds?: string[] } | undefined;
+  /** Legacy flat geography list (district/state ids); classified by id pattern in the gate. */
   geographyIds?: string[] | undefined;
 }
 
@@ -55,6 +63,8 @@ export interface AgentRunResult {
   limitations: string[];
   incomplete?: { reasons: string[] } | undefined;
   gateStatus: GateResult["status"] | null;
+  /** What the gate removed (claims, limitations, clarifications, blocks) and which blocks were templated. */
+  gateReport: GateResult["report"] | null;
   error?: { code: string; message: string } | undefined;
   cost: { estimatedUsd: number; settledUsd: number; providerCalls: number; billable: boolean; cachedInputTokensObserved: number };
   usage: ParsedUsage;
@@ -76,10 +86,17 @@ class Stop extends Error {
 const OUTPUT_FORMAT_NAME = "assistant_output";
 const MAX_TOOL_VIEW_CHARS = 60_000;
 
+const claimRefsArray = z.array(AgentClaimEvidenceRef);
 const outputSchemaStrict = (): JsonSchema =>
   // `toolRequests` items are z.unknown() in the contract; the synthesis pass never requests tools.
-  toStrictJsonSchema(StructuredAssistantOutput, { overrideProperties: { toolRequests: { type: "array", items: { type: "string" } } } });
-const outputSchemaRaw = (): JsonSchema => toRawJsonSchema(StructuredAssistantOutput);
+  // claimEvidenceRefs carries the agent-local cropIds/granularity extension (stripped by the gate).
+  toStrictJsonSchema(StructuredAssistantOutput, { overrideProperties: { toolRequests: { type: "array", items: { type: "string" } }, claimEvidenceRefs: toStrictJsonSchema(claimRefsArray) } });
+const outputSchemaRaw = (): JsonSchema => {
+  const raw = toRawJsonSchema(StructuredAssistantOutput);
+  (raw.properties as Record<string, JsonSchema>).claimEvidenceRefs = toRawJsonSchema(claimRefsArray);
+  return raw;
+};
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const profileSchemaStrict = (): JsonSchema => toStrictJsonSchema(ProposedProfile);
 
 const userMsg = (text: string): InputItem => ({ role: "user", content: text });
@@ -102,16 +119,39 @@ const estimateTokens = (...parts: unknown[]): number => Math.ceil(parts.reduce<n
 export async function runAgentTurn(deps: AgentDeps, input: AgentTurnInput): Promise<AgentRunResult> {
   const { pool, budget, provider, registry, limits, models } = deps;
   const asOf = input.asOf ?? new Date().toISOString();
+  const farmUuid = input.farmId && UUID_RE.test(input.farmId) ? input.farmId : null;
+  // farm_id is set only for a farm the owner actually holds, so farm deletion removes the run.
   const run = await pool.query<{ id: string }>(
-    `INSERT INTO agent_runs (owner_id, session_id, mode, purpose, provider, model, prompt_version, request_id, status, input_hash, provenance, limits)
-     VALUES ($1,$2,$3,'assistant_turn',$4,$5,$6,$7,'running',$8,$9,$10::jsonb) RETURNING id`,
-    [input.ownerId, input.sessionId, input.mode, provider.kind === "fixture" ? "fixture" : "meta", models.text, PROMPT_LABEL, input.requestId, sha256Hex(input.text), provider.provenance, JSON.stringify(limits)],
+    `INSERT INTO agent_runs (owner_id, session_id, mode, purpose, provider, model, prompt_version, request_id, status, input_hash, provenance, limits, farm_id)
+     VALUES ($1,$2,$3,'assistant_turn',$4,$5,$6,$7,'running',$8,$9,$10::jsonb,(SELECT f.id FROM farms f WHERE f.id = $11::uuid AND f.owner_id = $1)) RETURNING id`,
+    [input.ownerId, input.sessionId, input.mode, provider.kind === "fixture" ? "fixture" : "meta", models.text, PROMPT_LABEL, input.requestId, sha256Hex(input.text), provider.provenance, JSON.stringify(limits), farmUuid],
   );
   const runId = run.rows[0]!.id;
   await pool.query("INSERT INTO prompt_versions (name, version, content_sha256) VALUES ($1,$2,$3) ON CONFLICT (name, version) DO NOTHING", [PROMPT_NAME, PROMPT_VERSION, PROMPT_HASH]);
 
   const trace = new AgentTrace(runId);
-  trace.add("run_started", { provider: provider.provenance, detail: { mode: input.mode, limits, promptVersion: PROMPT_LABEL, text: input.text, language: input.language, hasFarm: !!input.farmId, hasPlan: !!input.planId } });
+  // The farmer's message is never stored in the trace: only its length and hash.
+  trace.add("run_started", { provider: provider.provenance, detail: { mode: input.mode, limits, promptVersion: PROMPT_LABEL, textLength: input.text.length, textSha256: sha256Hex(input.text), language: input.language, hasFarm: !!input.farmId, hasPlan: !!input.planId } });
+
+  // Server-derived claim scope: the plan's crop and the owned farm's district/state.
+  const planCropIds: string[] = [];
+  if (input.planId && UUID_RE.test(input.planId)) {
+    const pr = await pool.query<{ crop_id: string }>("SELECT crop_id FROM plans WHERE id = $1 AND owner_id = $2", [input.planId, input.ownerId]);
+    for (const row of pr.rows) planCropIds.push(row.crop_id);
+  }
+  let farmGeo = input.farmGeography;
+  if (!farmGeo && farmUuid) {
+    const farm = await getFarm(pool, input.ownerId, farmUuid).catch(() => null);
+    if (farm) farmGeo = { districtId: farm.location.districtId, stateCode: farm.location.stateCode };
+  }
+  const claimScope: GateContext["claimScope"] = {
+    geographyIds: input.geographyIds ?? [],
+    districtIds: farmGeo?.districtId ? [farmGeo.districtId] : [],
+    stateIds: farmGeo?.stateCode ? [farmGeo.stateCode, `IN-${farmGeo.stateCode}`] : [],
+    regionIds: farmGeo?.regionIds ?? [],
+    cropIds: planCropIds,
+  };
+  const gateCtx = (): GateContext => ({ ownerId: input.ownerId, mode: input.mode, agentRunId: runId, asOf, language: input.language, claimScope, userText: input.text, rainHorizonDays: limits.rainHorizonDays });
 
   const usage: ParsedUsage = { inputTokens: 0, outputTokens: 0, cachedInputTokens: 0 };
   let estimatedUsd = 0;
@@ -124,10 +164,11 @@ export async function runAgentTurn(deps: AgentDeps, input: AgentTurnInput): Prom
   let chainTokens = 0;
   const toolResultIds: string[] = [];
   const toolResultViews: string[] = [];
-  const discoveredCrops = new Set<string>();
   const unboundUsed = new Set<string>();
   let profile: ProposedProfile | null = null;
   let best: { gate: GateResult; candidate: StructuredAssistantOutput } | null = null;
+  let repairsExhausted = false;
+  let templateUsed = false;
   let lastGate: GateResult | null = null;
   let stop: Stop | null = null;
 
@@ -345,9 +386,6 @@ export async function runAgentTurn(deps: AgentDeps, input: AgentTurnInput): Prom
       );
       const id = ins.rows[0]!.id;
       toolResultIds.push(id);
-      if (name === "resolve_crop_identity" && outcome.status === "ok") {
-        for (const cand of (outcome.output as { candidates: { cropId: string }[] }).candidates) discoveredCrops.add(cand.cropId);
-      }
       trace.add("tool_call", { pass: "tool_round", detail: { tool: toolName, callId, status: outcome.status, toolResultId: id, durationMs: Date.now() - started, ...(outcome.status !== "ok" ? { outcome } : {}) } });
       let view: string;
       if (outcome.status === "ok") {
@@ -384,28 +422,27 @@ export async function runAgentTurn(deps: AgentDeps, input: AgentTurnInput): Prom
         reasoningEffort: limits.reasoningEffort,
       }, { chained: prevId !== undefined });
       let correction: string;
-      const parsed = parseStructured(r.outputText, outRaw, { safeParse: (v: unknown) => StructuredAssistantOutput.safeParse({ ...(v as object), toolRequests: [], proposedFacts }) as never });
+      // Validate the contract shape with the agent-local claim fields split off, but gate the full candidate.
+      const parsed = parseStructured(r.outputText, outRaw, {
+        safeParse: (v: unknown) => {
+          const full = { ...(v as object), toolRequests: [], proposedFacts };
+          const split = splitClaimExtras(full);
+          if (!split.ok) return { success: false, error: { issues: [{ path: ["claimEvidenceRefs"], message: split.message }] } } as never;
+          const c = StructuredAssistantOutput.safeParse(split.stripped);
+          return (c.success ? { success: true, data: full } : c) as never;
+        },
+      });
       let gate: GateResult;
       if (!parsed.ok) {
-        gate = { status: "correction_requested", approvedBlocks: [], approvedNumericRefs: [], approvedClaimEvidenceRefs: [], issues: [{ code: "schema_invalid", message: parsed.message, blockIds: [], correctable: true }], incomplete: { reasons: ["schema_invalid"] } };
+        gate = { status: "correction_requested", approvedBlocks: [], approvedNumericRefs: [], approvedClaimEvidenceRefs: [], approvedLimitations: [], approvedClarifications: [], report: { removed: [], groundedEvidenceIds: [], templated: [] }, withheld: [], issues: [{ code: "schema_invalid", message: parsed.message, blockIds: [], correctable: true }], incomplete: { reasons: ["schema_invalid"] } };
         correction = `Your previous output was invalid: ${parsed.message}. Return the complete corrected JSON only.`;
       } else {
-        const candidate = parsed.value as StructuredAssistantOutput;
-        gate = await runOutputGate(pool, candidate, {
-          ownerId: input.ownerId,
-          mode: input.mode,
-          agentRunId: runId,
-          asOf,
-          language: input.language,
-          claimScope: { geographyIds: input.geographyIds ?? [], cropIds: [...discoveredCrops] },
-          userText: input.text,
-          rainHorizonDays: limits.rainHorizonDays,
-        });
+        gate = await runOutputGate(pool, parsed.value, gateCtx());
         if (gate.parsed && (best === null || gate.approvedBlocks.length >= best.gate.approvedBlocks.length)) best = { gate, candidate: gate.parsed };
         correction = gate.correctionRequest ? `${gate.correctionRequest.instruction} Issues: ${JSON.stringify(gate.correctionRequest.issues)}` : "";
       }
       lastGate = gate;
-      trace.add("gate", { pass, detail: { status: gate.status, issues: gate.issues.map((i) => ({ code: i.code, blockIds: i.blockIds })), approvedBlocks: gate.approvedBlocks.length } });
+      trace.add("gate", { pass, detail: { status: gate.status, issues: gate.issues.map((i) => ({ code: i.code, blockIds: i.blockIds })), approvedBlocks: gate.approvedBlocks.length, removed: gate.report.removed } });
       if (gate.status === "approved" || gate.status === "unverified") break;
       // Needs repair (partial or nothing approved).
       if (repairBudgetLeft() && r.responseId) {
@@ -425,7 +462,47 @@ export async function runAgentTurn(deps: AgentDeps, input: AgentTurnInput): Prom
         pass = "escalation";
         continue;
       }
+      repairsExhausted = true;
       break;
+    }
+
+    // ------------------------------------------------------------ server templates after repair exhaustion
+    // Withheld critical statements are replaced by server-authored template sentences built only from
+    // verified numericRefs (or a fixed safety sentence), and the result is gated again.
+    if (repairsExhausted && best && best.gate.status !== "approved" && best.gate.withheld.length > 0 && best.gate.parsed) {
+      const g = best.gate;
+      const lang = templateLanguage(input.language);
+      const refs = new Map(g.parsed!.numericRefs.map((r) => [r.id, r]));
+      const withheldById = new Map(g.withheld.map((w) => [w.blockId, w]));
+      const templated: GateResult["report"]["templated"] = [];
+      const blocks = g.parsed!.answerBlocks.flatMap((b) => {
+        const w = withheldById.get(b.id);
+        if (!w) return g.approvedBlocks.some((a) => a.id === b.id) ? [b] : [];
+        const t = templateBlock(lang, b, w, refs, (id) => g.presented?.get(id) ?? null);
+        if (!t) return [];
+        templated.push({ blockId: b.id, template: t.template, numericRefIds: t.block.numericRefIds });
+        return [t.block];
+      });
+      if (templated.length > 0) {
+        const rebuilt = attachClaimExtras({ ...g.parsed!, answerBlocks: blocks, limitations: g.approvedLimitations, clarifications: g.approvedClarifications }, g.claimExtras ?? new Map());
+        const regate = await runOutputGate(pool, rebuilt, gateCtx());
+        const kept = templated.filter((t) => regate.approvedBlocks.some((b) => b.id === t.blockId));
+        trace.add("gate", { pass: "template", detail: { status: regate.status, templated: templated.map((t) => ({ blockId: t.blockId, template: t.template })), approvedBlocks: regate.approvedBlocks.length, issues: regate.issues.map((i) => ({ code: i.code, blockIds: i.blockIds })) } });
+        if (kept.length > 0 && regate.approvedBlocks.length > 0) {
+          const removed = [...g.report.removed, ...regate.report.removed];
+          best = {
+            candidate: best.candidate,
+            gate: {
+              ...regate,
+              // Templated output is never "approved": the original text was withheld.
+              status: "partial",
+              report: { removed, groundedEvidenceIds: regate.report.groundedEvidenceIds, templated: kept },
+              incomplete: { reasons: [...new Set([...(g.incomplete?.reasons ?? []), "template_substituted"])] },
+            },
+          };
+          templateUsed = true;
+        }
+      }
     }
   } catch (e) {
     if (e instanceof Stop) stop = e;
@@ -449,7 +526,9 @@ export async function runAgentTurn(deps: AgentDeps, input: AgentTurnInput): Prom
   const limitations: string[] = [];
   if (provider.provenance === "synthetic_fixture") limitations.push("Synthetic fixture response: not produced by a live model and not based on real data.");
   for (const t of unboundUsed) limitations.push(`The ${t} capability is not available yet, so no result from it is included.`);
-  if (final) limitations.push(...final.candidate.limitations);
+  if (final) limitations.push(...final.gate.approvedLimitations);
+  if (templateUsed) limitations.push(TEMPLATE_LIMITATION[templateLanguage(input.language)]);
+  if (final && final.gate.report.groundedEvidenceIds.length > 0) limitations.push("Some cited evidence is a machine-grounded excerpt; human review of its meaning and scope is pending.");
   const incomplete = status === "approved" ? undefined : (final?.gate.incomplete ?? (stop ? { reasons: [stop.code] } : useGate?.incomplete ?? { reasons: ["no_verified_answer"] }));
   if (incomplete && status !== "approved") limitations.push("Part of the answer was withheld because it could not be verified.");
 
@@ -463,10 +542,11 @@ export async function runAgentTurn(deps: AgentDeps, input: AgentTurnInput): Prom
       ? { answerBlocks: final.gate.approvedBlocks, numericRefs: final.gate.approvedNumericRefs, claimEvidenceRefs: final.gate.approvedClaimEvidenceRefs }
       : { answerBlocks: [], numericRefs: [], claimEvidenceRefs: [] },
     proposedFacts: proposedFactsFromProfile(profile, input.farmId),
-    clarifications: (final?.candidate.clarifications ?? []).slice(0, 1),
+    clarifications: (final?.gate.approvedClarifications ?? []).slice(0, 1),
     limitations: [...new Set(limitations)],
     incomplete,
     gateStatus: useGate?.status ?? null,
+    gateReport: final?.gate.report ?? useGate?.report ?? null,
     ...(stop ? { error: { code: stop.code, message: stop.message } } : {}),
     cost: { estimatedUsd: safeNum(estimatedUsd), settledUsd: safeNum(settledUsd), providerCalls, billable: provider.billable, cachedInputTokensObserved: usage.cachedInputTokens },
     usage,
@@ -493,7 +573,7 @@ export async function runAgentTurn(deps: AgentDeps, input: AgentTurnInput): Prom
         safeNum(estimatedUsd),
         safeNum(settledUsd),
         JSON.stringify(trace.toJSON()),
-        final ? JSON.stringify({ intent: result.intent, language: result.language, approved: result.approved, limitations: result.limitations, status }) : null,
+        final ? JSON.stringify({ intent: result.intent, language: result.language, approved: result.approved, limitations: result.limitations, status, gateReport: result.gateReport }) : null,
         stop ? JSON.stringify({ code: stop.code, message: stop.message }) : null,
       ],
     )

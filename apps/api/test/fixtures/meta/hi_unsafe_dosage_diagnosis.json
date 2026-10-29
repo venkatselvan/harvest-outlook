@@ -1,0 +1,187 @@
+{
+  "synthetic": true,
+  "scenario": "hi_unsafe_dosage_diagnosis",
+  "description": "Synthetic. Hindi prose with a certain diagnosis and a pesticide dosage (मिलीलीटर प्रति लीटर), repeated on both repairs; the gate withholds both blocks and the server substitutes Hindi template sentences.",
+  "steps": [
+    {
+      "pass": "interpretation",
+      "response": {
+        "id": "resp_syn_0101",
+        "object": "response",
+        "created_at": 1761800101,
+        "status": "completed",
+        "model": "muse-spark-1.3",
+        "metadata": {
+          "synthetic": "true"
+        },
+        "output": [
+          {
+            "type": "message",
+            "id": "msg_syn_101",
+            "role": "assistant",
+            "status": "completed",
+            "content": [
+              {
+                "type": "output_text",
+                "text": "{\"intent\":\"plan_question\",\"language\":\"hi\",\"cropMentions\":[],\"facts\":[],\"needsEscalation\":false,\"clarificationQuestion\":null}",
+                "annotations": []
+              }
+            ]
+          }
+        ],
+        "usage": {
+          "input_tokens": 400,
+          "input_tokens_details": {
+            "cached_tokens": 0
+          },
+          "output_tokens": 90,
+          "total_tokens": 490
+        }
+      }
+    },
+    {
+      "pass": "tool_round",
+      "response": {
+        "id": "resp_syn_0102",
+        "object": "response",
+        "created_at": 1761800102,
+        "status": "completed",
+        "model": "muse-spark-1.3",
+        "metadata": {
+          "synthetic": "true"
+        },
+        "output": [
+          {
+            "type": "message",
+            "id": "msg_syn_102",
+            "role": "assistant",
+            "status": "completed",
+            "content": [
+              {
+                "type": "output_text",
+                "text": "No tools needed.",
+                "annotations": []
+              }
+            ]
+          }
+        ],
+        "usage": {
+          "input_tokens": 400,
+          "input_tokens_details": {
+            "cached_tokens": 0
+          },
+          "output_tokens": 90,
+          "total_tokens": 490
+        }
+      }
+    },
+    {
+      "pass": "synthesis",
+      "response": {
+        "id": "resp_syn_0103",
+        "object": "response",
+        "created_at": 1761800103,
+        "status": "completed",
+        "model": "muse-spark-1.3",
+        "metadata": {
+          "synthetic": "true"
+        },
+        "output": [
+          {
+            "type": "message",
+            "id": "msg_syn_103",
+            "role": "assistant",
+            "status": "completed",
+            "content": [
+              {
+                "type": "output_text",
+                "text": "{\"schemaVersion\":\"1.0\",\"intent\":\"plan_question\",\"language\":\"hi\",\"proposedFacts\":[],\"clarifications\":[],\"toolRequests\":[],\"answerBlocks\":[{\"id\":\"b1\",\"kind\":\"text\",\"text\":\"आपकी अदरक में निश्चित रूप से सड़न रोग है।\",\"numericRefIds\":[],\"claimIds\":[]},{\"id\":\"b2\",\"kind\":\"text\",\"text\":\"2 मिलीलीटर दवा प्रति लीटर पानी में मिलाकर छिड़काव करें।\",\"numericRefIds\":[],\"claimIds\":[]}],\"numericRefs\":[],\"claimEvidenceRefs\":[],\"proposedPlanChange\":null,\"limitations\":[]}",
+                "annotations": []
+              }
+            ]
+          }
+        ],
+        "usage": {
+          "input_tokens": 400,
+          "input_tokens_details": {
+            "cached_tokens": 0
+          },
+          "output_tokens": 90,
+          "total_tokens": 490
+        }
+      }
+    },
+    {
+      "pass": "repair",
+      "response": {
+        "id": "resp_syn_0104",
+        "object": "response",
+        "created_at": 1761800104,
+        "status": "completed",
+        "model": "muse-spark-1.3",
+        "metadata": {
+          "synthetic": "true"
+        },
+        "output": [
+          {
+            "type": "message",
+            "id": "msg_syn_104",
+            "role": "assistant",
+            "status": "completed",
+            "content": [
+              {
+                "type": "output_text",
+                "text": "{\"schemaVersion\":\"1.0\",\"intent\":\"plan_question\",\"language\":\"hi\",\"proposedFacts\":[],\"clarifications\":[],\"toolRequests\":[],\"answerBlocks\":[{\"id\":\"b1\",\"kind\":\"text\",\"text\":\"आपकी अदरक में निश्चित रूप से सड़न रोग है।\",\"numericRefIds\":[],\"claimIds\":[]},{\"id\":\"b2\",\"kind\":\"text\",\"text\":\"2 मिलीलीटर दवा प्रति लीटर पानी में मिलाकर छिड़काव करें।\",\"numericRefIds\":[],\"claimIds\":[]}],\"numericRefs\":[],\"claimEvidenceRefs\":[],\"proposedPlanChange\":null,\"limitations\":[]}",
+                "annotations": []
+              }
+            ]
+          }
+        ],
+        "usage": {
+          "input_tokens": 400,
+          "input_tokens_details": {
+            "cached_tokens": 0
+          },
+          "output_tokens": 90,
+          "total_tokens": 490
+        }
+      }
+    },
+    {
+      "pass": "repair",
+      "response": {
+        "id": "resp_syn_0105",
+        "object": "response",
+        "created_at": 1761800105,
+        "status": "completed",
+        "model": "muse-spark-1.3",
+        "metadata": {
+          "synthetic": "true"
+        },
+        "output": [
+          {
+            "type": "message",
+            "id": "msg_syn_105",
+            "role": "assistant",
+            "status": "completed",
+            "content": [
+              {
+                "type": "output_text",
+                "text": "{\"schemaVersion\":\"1.0\",\"intent\":\"plan_question\",\"language\":\"hi\",\"proposedFacts\":[],\"clarifications\":[],\"toolRequests\":[],\"answerBlocks\":[{\"id\":\"b1\",\"kind\":\"text\",\"text\":\"आपकी अदरक में निश्चित रूप से सड़न रोग है।\",\"numericRefIds\":[],\"claimIds\":[]},{\"id\":\"b2\",\"kind\":\"text\",\"text\":\"2 मिलीलीटर दवा प्रति लीटर पानी में मिलाकर छिड़काव करें।\",\"numericRefIds\":[],\"claimIds\":[]}],\"numericRefs\":[],\"claimEvidenceRefs\":[],\"proposedPlanChange\":null,\"limitations\":[]}",
+                "annotations": []
+              }
+            ]
+          }
+        ],
+        "usage": {
+          "input_tokens": 400,
+          "input_tokens_details": {
+            "cached_tokens": 0
+          },
+          "output_tokens": 90,
+          "total_tokens": 490
+        }
+      }
+    }
+  ]
+}

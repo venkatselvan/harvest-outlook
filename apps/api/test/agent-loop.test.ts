@@ -147,14 +147,18 @@ describe("loop with the synthetic fixture provider", () => {
     expect(gates).toEqual(["correction_requested", "approved"]);
   });
 
-  it("unsupported dosage: blocked on the first output and on both repairs; nothing unsafe is returned", async () => {
+  // F5 policy change: after the repair budget is exhausted the withheld dosage block is replaced by the
+  // server-authored safety template (previously: nothing returned, status incomplete).
+  it("unsupported dosage: blocked on the first output and on both repairs; only the server safety template is returned", async () => {
     const f = new FixtureProvider("unsupported_dosage");
     const r = await runAgentTurn(await deps(f), turn());
     expect(f.seenPasses).toEqual(["interpretation", "tool_round", "synthesis", "repair", "repair"]);
-    expect(r.status).toBe("incomplete");
-    expect(r.approved.answerBlocks).toEqual([]);
-    expect(r.incomplete?.reasons).toContain("chemical_dosage");
-    expect(JSON.stringify(r)).not.toMatch(/chlorpyrifos/);
+    expect(r.status).toBe("partial");
+    expect(r.approved.answerBlocks).toEqual([{ id: "b1", kind: "warning", text: "Please consult a local agricultural officer before applying any chemical.", numericRefIds: [], claimIds: [] }]);
+    expect(r.incomplete?.reasons).toEqual(expect.arrayContaining(["chemical_dosage", "template_substituted"]));
+    expect(r.gateReport?.templated).toEqual([{ blockId: "b1", template: "chemical_dosage", numericRefIds: [] }]);
+    expect(r.limitations.join(" ")).toMatch(/standard wording written by the application/);
+    expect(JSON.stringify(r.approved)).not.toMatch(/chlorpyrifos|2\.5/);
   });
 });
 
@@ -533,7 +537,11 @@ describe("trace redaction", () => {
     expect(blob).not.toContain("QUJDQUJD");
     expect(blob).not.toContain("very long story very long story very long story very long story very long story very long story very long story very long story very long story very long story");
     const startStep = stored.trace.steps.find((s: { kind: string }) => s.kind === "run_started");
-    expect(startStep.detail.text.length).toBeLessThan(260);
+    // F9: the farmer's message is stored as length + sha256 only (previously a 200-char prefix).
+    expect(startStep.detail.text).toBeUndefined();
+    expect(startStep.detail.textLength).toBe(longText.length);
+    expect(startStep.detail.textSha256).toMatch(/^[0-9a-f]{64}$/);
+    expect(blob).not.toContain("I have a field");
     // the model-visible farm context withheld the precise point
     const farmView = (p.requests.find((q) => Array.isArray(q.input) && q.input.some((i) => "type" in i && i.type === "function_call_output"))!.input as { output: string }[])[0]!.output;
     expect(farmView).not.toMatch(/13\.0071|76\.1022/);

@@ -1644,6 +1644,7 @@
                           "type": "string",
                           "enum": [
                             "validated",
+                            "grounded",
                             "unsupported",
                             "pending",
                             "rejected"
@@ -1852,6 +1853,7 @@
                           "type": "string",
                           "enum": [
                             "validated",
+                            "grounded",
                             "unsupported",
                             "pending",
                             "rejected"
@@ -2081,6 +2083,7 @@
                           "type": "string",
                           "enum": [
                             "validated",
+                            "grounded",
                             "unsupported",
                             "pending",
                             "rejected"
@@ -2259,6 +2262,7 @@
                           "type": "string",
                           "enum": [
                             "validated",
+                            "grounded",
                             "unsupported",
                             "pending",
                             "rejected"

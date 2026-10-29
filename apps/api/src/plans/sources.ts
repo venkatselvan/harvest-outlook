@@ -48,7 +48,7 @@ export interface WeatherSource {
   /** Latest forecast issued at or before `issuedAtOrBefore`; null when none exists. */
   getForecast(scope: WeatherScope, opts: { issuedAtOrBefore: string }): Promise<ForecastBundle | null>;
   /** Daily climatological normals for the range; null when unavailable. Reference years must end before a replay cutoff year. */
-  getClimatology(scope: WeatherScope, range: DateRange): Promise<ClimatologyBundle | null>;
+  getClimatology(scope: WeatherScope, range: DateRange, opts?: { availableBy?: string }): Promise<ClimatologyBundle | null>;
   /** Cheap version token of the data that would be returned (no bulk fetch). Used as a timeline cache key component. */
   dataVersion(scope: WeatherScope, range: DateRange, asOf: string): Promise<string>;
 }

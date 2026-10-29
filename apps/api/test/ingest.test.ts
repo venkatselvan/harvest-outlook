@@ -125,7 +125,7 @@ describe("synthetic fixtures", () => {
     expect(typeof live.fixtures).toBe("string");
     expect(await count("market_observations")).toBe(0);
     const syn = await runSeed(pool, "synthetic");
-    expect(syn.fixtures).toMatchObject({ market: { inserted: 240, rejected: 0 }, weatherObservations: 60, weatherForecasts: 10 });
+    expect(syn.fixtures).toMatchObject({ market: { inserted: 240, rejected: 0 }, weatherObservations: 110, weatherForecasts: 3 });
     expect(await count("market_observations", "mode='synthetic' AND is_synthetic")).toBe(240);
     expect(await count("market_observations", "mode <> 'synthetic'")).toBe(0);
     const row = (await pool.query("SELECT * FROM market_observations LIMIT 1")).rows[0];
@@ -166,7 +166,7 @@ describe("mode-scoped reads", () => {
       }
     }
     const s = scopedQuery("synthetic");
-    expect((await s.weatherObservations(pool)).length).toBe(60);
+    expect((await s.weatherObservations(pool)).length).toBe(110);
     expect((await s.marketObservations(pool)).every((r) => r.is_synthetic === true)).toBe(true);
     // no filter combination widens a live read
     expect((await scopedQuery("live").weatherObservations(pool, { locationKey: "synthetic:hassan-like" })).length).toBe(0);

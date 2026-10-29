@@ -1,0 +1,43 @@
+{
+  "synthetic": true,
+  "scenario": "journal_poor_image",
+  "description": "SYNTHETIC fixture, not a model output. Poor image: asks for a closer photo and proposes nothing.",
+  "steps": [
+    {
+      "pass": "interpretation",
+      "response": {
+        "id": "resp_syn_journal_poor_image",
+        "object": "response",
+        "created_at": 1761800100,
+        "status": "completed",
+        "model": "muse-spark-1.3",
+        "metadata": {
+          "synthetic": "true"
+        },
+        "output": [
+          {
+            "type": "message",
+            "id": "msg_resp_syn_journal_poor_image",
+            "role": "assistant",
+            "status": "completed",
+            "content": [
+              {
+                "type": "output_text",
+                "text": "{\"visibleObservations\": [\"The image is dark and out of focus; plant shapes cannot be told apart.\"], \"competingInterpretations\": [], \"missingContext\": [\"A closer, well-lit photo of a few plants and the soil between rows.\"], \"proposedFacts\": [], \"candidatePlanChanges\": [], \"imageQualityIssues\": [\"blur\", \"too_dark\"], \"requestAnotherAngle\": true, \"aiNarrative\": \"I cannot read this photo. Please take a closer photo in daylight, holding the camera steady, showing a few plants and the soil.\"}",
+                "annotations": []
+              }
+            ]
+          }
+        ],
+        "usage": {
+          "input_tokens": 1900,
+          "input_tokens_details": {
+            "cached_tokens": 0
+          },
+          "output_tokens": 150,
+          "total_tokens": 2050
+        }
+      }
+    }
+  ]
+}

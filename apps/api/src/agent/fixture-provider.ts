@@ -43,7 +43,8 @@ export class FixtureProvider implements TextModelProvider {
   readonly scenario: FixtureScenario;
   readonly seenPasses: AgentPass[] = [];
 
-  constructor(scenario: string | FixtureScenario, dir?: string) {
+  /** `{{var:name}}` placeholders are replaced from `vars` (test-supplied ids such as a seeded farm id). */
+  constructor(scenario: string | FixtureScenario, dir?: string, private readonly vars: Record<string, string> = {}) {
     this.scenario = typeof scenario === "string" ? loadScenario(scenario, dir) : scenario;
   }
 
@@ -53,7 +54,7 @@ export class FixtureProvider implements TextModelProvider {
     const step = this.scenario.steps[this.cursor++];
     if (!step) return fail("fixture_error", `fixture '${this.scenario.scenario}' exhausted at call ${this.cursor}`);
     if (step.pass && step.pass !== req.pass) return fail("fixture_error", `fixture '${this.scenario.scenario}' step ${this.cursor} expects pass ${step.pass} but loop requested ${req.pass}`);
-    const body = fill(step.response, req.toolResultIds ?? []) as Record<string, unknown>;
+    const body = fill(step.response, req.toolResultIds ?? [], this.vars) as Record<string, unknown>;
     const parsed = parseOutputItems(body);
     return {
       ok: true,
@@ -77,9 +78,10 @@ const fail = (code: "aborted" | "fixture_error", message: string): ProviderOutco
   error: { code, message, retryable: false, outcomeUncertain: false, requestId: null, retries: 0 },
 });
 
-function fill(v: unknown, ids: string[]): unknown {
-  if (typeof v === "string") return v.replace(/\{\{toolResultId:(\d+)\}\}/g, (_m, n: string) => ids[Number(n)] ?? "missing-tool-result");
-  if (Array.isArray(v)) return v.map((x) => fill(x, ids));
-  if (typeof v === "object" && v !== null) return Object.fromEntries(Object.entries(v).map(([k, x]) => [k, fill(x, ids)]));
+function fill(v: unknown, ids: string[], vars: Record<string, string>): unknown {
+  if (typeof v === "string")
+    return v.replace(/\{\{toolResultId:(\d+)\}\}/g, (_m, n: string) => ids[Number(n)] ?? "missing-tool-result").replace(/\{\{var:([a-zA-Z0-9_]+)\}\}/g, (_m, k: string) => vars[k] ?? "missing-var");
+  if (Array.isArray(v)) return v.map((x) => fill(x, ids, vars));
+  if (typeof v === "object" && v !== null) return Object.fromEntries(Object.entries(v).map(([k, x]) => [k, fill(x, ids, vars)]));
   return v;
 }

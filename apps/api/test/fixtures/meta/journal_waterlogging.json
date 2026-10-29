@@ -1,0 +1,43 @@
+{
+  "synthetic": true,
+  "scenario": "journal_waterlogging",
+  "description": "SYNTHETIC fixture, not a model output and not a real observation. Waterlogging visible; proposes inspect drainage (note) and a stage behind the plan (observed_stage vegetative, a stage id of the synthetic ginger test plan).",
+  "steps": [
+    {
+      "pass": "interpretation",
+      "response": {
+        "id": "resp_syn_journal_waterlogging",
+        "object": "response",
+        "created_at": 1761800100,
+        "status": "completed",
+        "model": "muse-spark-1.3",
+        "metadata": {
+          "synthetic": "true"
+        },
+        "output": [
+          {
+            "type": "message",
+            "id": "msg_resp_syn_journal_waterlogging",
+            "role": "assistant",
+            "status": "completed",
+            "content": [
+              {
+                "type": "output_text",
+                "text": "{\"visibleObservations\": [\"Standing water is visible between two rows in the lower part of the photo.\", \"Leaves in the foreground look pale green and some tips look yellow.\", \"Plants appear shorter than the row spacing would suggest for a mature stand.\"], \"competingInterpretations\": [{\"label\": \"Waterlogging after heavy rain\", \"rationale\": \"Standing water and pale leaves can go together; a visit to check drainage would help tell.\"}, {\"label\": \"Slow growth for other reasons\", \"rationale\": \"Short plants could also reflect late sprouting or a nutrient or soil limit that a photo cannot show.\"}], \"missingContext\": [\"How many days since the last heavy rain?\", \"Is water standing for more than a day?\"], \"proposedFacts\": [{\"field\": \"waterlogging_visible\", \"value\": \"yes\", \"unit\": null, \"basis\": \"ai_proposed\", \"requiresConfirmation\": true}, {\"field\": \"observed_stage\", \"value\": \"vegetative\", \"unit\": null, \"basis\": \"ai_proposed\", \"requiresConfirmation\": true}], \"candidatePlanChanges\": [{\"type\": \"observed_stage\", \"stageId\": \"vegetative\", \"category\": null, \"date\": null, \"note\": null, \"rationale\": \"The plants look earlier in growth than the plan expects for this date.\"}, {\"type\": \"note_only\", \"stageId\": null, \"category\": null, \"date\": null, \"note\": \"Inspect drainage channels after the next heavy rain.\", \"rationale\": \"Standing water is visible.\"}], \"imageQualityIssues\": [], \"requestAnotherAngle\": false, \"aiNarrative\": \"The photo may show water standing between the rows, and the plants look behind the stage your plan expects. This is an AI reading of one photo. Please check the drainage in person and confirm the stage only if it matches what you see.\"}",
+                "annotations": []
+              }
+            ]
+          }
+        ],
+        "usage": {
+          "input_tokens": 2100,
+          "input_tokens_details": {
+            "cached_tokens": 0
+          },
+          "output_tokens": 420,
+          "total_tokens": 2520
+        }
+      }
+    }
+  ]
+}

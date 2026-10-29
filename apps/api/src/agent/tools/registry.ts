@@ -66,6 +66,15 @@ const META: Record<ToolName, { description: string; modes: Mode[]; readsCurrentD
 
 export const UNBOUND_REASON = "tool_not_bound";
 
+/**
+ * Agent-local output schemas that extend a contract output (not yet promoted into @harvest/contracts).
+ * retrieve_evidence passages carry `validationStatus` (validated | grounded), decision D28.
+ */
+const passage = ToolSchemas.retrieve_evidence.output.shape.passages.element;
+export const OUTPUT_OVERRIDES: Partial<Record<ToolName, z.ZodType>> = {
+  retrieve_evidence: z.object({ passages: z.array(passage.extend({ validationStatus: z.enum(["validated", "grounded"]) }).strict()) }).strict(),
+};
+
 export class ToolRegistry {
   private readonly defs = new Map<ToolName, ToolDefinition>();
   constructor(bindings: ToolBindings) {
@@ -76,7 +85,7 @@ export class ToolRegistry {
         name,
         description: m.description,
         inputSchema: ToolSchemas[name].input,
-        outputSchema: ToolSchemas[name].output,
+        outputSchema: (OUTPUT_OVERRIDES[name] ?? ToolSchemas[name].output) as (typeof ToolSchemas)[ToolName]["output"],
         modes: m.modes,
         readsCurrentData: m.readsCurrentData,
         bound: bound !== undefined,

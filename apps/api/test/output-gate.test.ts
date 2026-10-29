@@ -163,11 +163,19 @@ describe("gate: evidence", () => {
     expect(codes(run(ev("e1", { mode: "live" })))).toContain("evidence_mode_mismatch");
   });
 
-  it("state-level and national evidence cover a district claim in that state; another state's does not", () => {
-    const run = (e: EvidenceFact) => evaluateGate(claimOut([e.id]), ctx(), facts([], [e]));
-    expect(run(ev("e1", { geographyLevel: "state", geographyIds: ["KA"] })).status).toBe("approved");
-    expect(run(ev("e1", { geographyLevel: "national", geographyIds: ["IN"] })).status).toBe("approved");
-    expect(codes(run(ev("e1", { geographyLevel: "state", geographyIds: ["TN"] })))).toContain("evidence_scope_geography");
+  // F5 policy change: a claim defaults to district granularity when a farm is present, so state or national
+  // evidence no longer covers it silently; the claim must declare the coarser granularity and the text must say so.
+  it("state-level and national evidence cover a claim only when it declares that granularity and the text labels it", () => {
+    const run = (e: EvidenceFact, granularity?: string, text = "Keep the soil evenly moist.") =>
+      evaluateGate(out({ answerBlocks: [block("b1", text, { kind: "evidence", claimIds: ["c1"] })] as never, claimEvidenceRefs: [{ claimId: "c1", text: "moist soil", evidenceIds: [e.id], ...(granularity ? { granularity } : {}) }] as never }), ctx(), facts([], [e]));
+    const state = ev("e1", { geographyLevel: "state", geographyIds: ["KA"] });
+    const national = ev("e1", { geographyLevel: "national", geographyIds: ["IN"] });
+    expect(codes(run(state))).toContain("evidence_scope_granularity");
+    expect(codes(run(national))).toContain("evidence_scope_granularity");
+    expect(codes(run(state, "state"))).toContain("claim_granularity_unlabelled");
+    expect(run(state, "state", "At state level, keep the soil evenly moist.").status).toBe("approved");
+    expect(run(national, "national", "At national level, keep the soil evenly moist.").status).toBe("approved");
+    expect(codes(run(ev("e1", { geographyLevel: "state", geographyIds: ["TN"] }), "state", "At state level, keep the soil evenly moist."))).toContain("evidence_scope_geography");
   });
 
   it("replay mode requires a known availability time at or before the cutoff", () => {

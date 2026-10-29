@@ -47,14 +47,7 @@ let budget: Budget;
 
 async function mount(): Promise<FastifyInstance> {
   const a = await h.make();
-  await registerJournalRoutes(a, {
-    config: h.config,
-    service,
-    resolveOwner: (req) => requireAuth(req).ownerId,
-    onRequest: privateRouteGuard(h.config, h.pool),
-    resolveSession: (req) => requireAuth(req).sessionId,
-    idempotency: { run: (o, e) => runIdempotent(h.pool, o, e) },
-  });
+  // INT2: buildServer registers the journal routes itself.
   return a;
 }
 
@@ -406,7 +399,7 @@ describe("confirmation and revision", () => {
 
   it("a confirmed observed_stage calls the plan engine with the typed change and returns the change summary for 'Why this changed'", async () => {
     const { w, e, full } = await analysed();
-    const spy = vi.spyOn(plans, "revisePlan");
+    const spy = vi.spyOn(PlanService.prototype, "revisePlan");
     const r = await w.c.call("POST", `/api/v1/journal/${e.id}/confirmations`, { payload: { expectedVersion: full.version, accept: [stageFact(full).id, noteFact(full).id], expectedPlanContentHash: w.planHash } });
     expect(r.statusCode, r.body).toBe(200);
     expect(spy).toHaveBeenCalledTimes(1);
@@ -466,7 +459,7 @@ describe("confirmation and revision", () => {
 
   it("rejecting or accepting a non-plan fact never calls the plan engine", async () => {
     const { w, e, full } = await analysed();
-    const spy = vi.spyOn(plans, "revisePlan");
+    const spy = vi.spyOn(PlanService.prototype, "revisePlan");
     const r = await w.c.call("POST", `/api/v1/journal/${e.id}/confirmations`, { payload: { expectedVersion: full.version, accept: [noteFact(full).id], reject: [stageFact(full).id] } });
     expect(r.statusCode, r.body).toBe(200);
     expect(r.json().data.revision).toBeNull();

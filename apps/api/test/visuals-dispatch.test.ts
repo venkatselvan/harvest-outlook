@@ -4,7 +4,6 @@ import { randomUUID } from "node:crypto";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import type { Pool } from "../src/db/pool";
 import { Budget } from "../src/services/budget";
-import { registerVisualRoutes } from "../src/routes/visuals";
 import { runVisualKeyframes, type VisualJobDeps } from "../src/visuals/job";
 import { dataUrlToBuffer, editRegionOnly, providerOk, REGION, sceneJpeg } from "./fixtures/muse-image/build";
 import { farmBody, login, setupHarness, testConfig, upload, type Client, type Harness } from "./helpers";
@@ -79,7 +78,6 @@ const slowEdit = (ms = 40) =>
 
 beforeAll(async () => {
   h = await setupHarness(live);
-  await h.app.register(registerVisualRoutes, { config: h.config, pool: h.pool, storage: h.storage });
   a = await login(h.app);
   scene = await sceneJpeg();
   const probe = await upload(a, scene);

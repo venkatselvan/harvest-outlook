@@ -89,13 +89,11 @@ export async function registerAssistantRoutes(app: FastifyInstance, deps: Assist
       const text = (body.text ?? body.confirmedTranscript)!;
 
       // Ownership of every referenced id is checked before any provider spend; other owners' ids are 404.
-      let geographyIds: string[] = [];
+      let farmGeography: { districtId: string | null; stateCode: string | null } | undefined;
       if (body.farmId) {
         const farm = await getFarm(pool, ownerId, body.farmId);
         if (!farm) throw notFound("Farm");
-        const d = farm.location.districtId;
-        const s = farm.location.stateCode;
-        geographyIds = [d, s, s ? `IN-${s}` : null, "IN"].filter((x): x is string => !!x);
+        farmGeography = { districtId: farm.location.districtId, stateCode: farm.location.stateCode };
       }
       if (body.planId) {
         const p = await pool.query("SELECT 1 FROM plans WHERE id = $1 AND owner_id = $2", [body.planId, ownerId]);
@@ -110,7 +108,7 @@ export async function registerAssistantRoutes(app: FastifyInstance, deps: Assist
       const out = await runIdempotent(pool, { ownerId, key, route: "POST /api/v1/assistant/turns", hashInput: body }, async () => {
         const result = await runAgentTurn(
           { pool, budget, provider: providerFor(config.RUNTIME_MODE), registry, limits, models: { text: config.META_TEXT_MODEL, escalation: config.META_ESCALATION_MODEL }, signal: ac.signal },
-          { ownerId, sessionId, mode: config.RUNTIME_MODE, requestId: req.id, language: body.language, text, farmId: body.farmId, planId: body.planId, selectedDate: body.selectedDate, scenarioId: body.scenarioId, geographyIds },
+          { ownerId, sessionId, mode: config.RUNTIME_MODE, requestId: req.id, language: body.language, text, farmId: body.farmId, planId: body.planId, selectedDate: body.selectedDate, scenarioId: body.scenarioId, farmGeography },
         );
         if (result.status === "provider_unavailable") {
           return { status: 503, body: errorEnvelope(req.id, config.RUNTIME_MODE, { code: "provider_unavailable", message: "The AI provider is not available. Text exploration without AI remains available.", details: { traceId: result.runId } }) };

@@ -1,0 +1,146 @@
+{
+  "synthetic": true,
+  "scenario": "hi_referenced_numbers",
+  "description": "Synthetic. Hindi answer whose every number is a numericRef into the stored get_farm_context result (0.81 ha shown as हेक्टेयर and converted to एकड़); it must be approved without repair.",
+  "steps": [
+    {
+      "pass": "interpretation",
+      "response": {
+        "id": "resp_syn_0111",
+        "object": "response",
+        "created_at": 1761800111,
+        "status": "completed",
+        "model": "muse-spark-1.3",
+        "metadata": {
+          "synthetic": "true"
+        },
+        "output": [
+          {
+            "type": "message",
+            "id": "msg_syn_111",
+            "role": "assistant",
+            "status": "completed",
+            "content": [
+              {
+                "type": "output_text",
+                "text": "{\"intent\":\"plan_question\",\"language\":\"hi\",\"cropMentions\":[],\"facts\":[],\"needsEscalation\":false,\"clarificationQuestion\":null}",
+                "annotations": []
+              }
+            ]
+          }
+        ],
+        "usage": {
+          "input_tokens": 400,
+          "input_tokens_details": {
+            "cached_tokens": 0
+          },
+          "output_tokens": 90,
+          "total_tokens": 490
+        }
+      }
+    },
+    {
+      "pass": "tool_round",
+      "response": {
+        "id": "resp_syn_0112",
+        "object": "response",
+        "created_at": 1761800112,
+        "status": "completed",
+        "model": "muse-spark-1.3",
+        "metadata": {
+          "synthetic": "true"
+        },
+        "output": [
+          {
+            "type": "function_call",
+            "id": "fc_syn_112_0",
+            "call_id": "call_syn_112_0",
+            "name": "get_farm_context",
+            "arguments": "{\"farmId\": \"{{var:farmId}}\"}",
+            "status": "completed"
+          }
+        ],
+        "usage": {
+          "input_tokens": 400,
+          "input_tokens_details": {
+            "cached_tokens": 0
+          },
+          "output_tokens": 90,
+          "total_tokens": 490
+        }
+      }
+    },
+    {
+      "pass": "tool_round",
+      "response": {
+        "id": "resp_syn_0113",
+        "object": "response",
+        "created_at": 1761800113,
+        "status": "completed",
+        "model": "muse-spark-1.3",
+        "metadata": {
+          "synthetic": "true"
+        },
+        "output": [
+          {
+            "type": "message",
+            "id": "msg_syn_113",
+            "role": "assistant",
+            "status": "completed",
+            "content": [
+              {
+                "type": "output_text",
+                "text": "done",
+                "annotations": []
+              }
+            ]
+          }
+        ],
+        "usage": {
+          "input_tokens": 400,
+          "input_tokens_details": {
+            "cached_tokens": 0
+          },
+          "output_tokens": 90,
+          "total_tokens": 490
+        }
+      }
+    },
+    {
+      "pass": "synthesis",
+      "response": {
+        "id": "resp_syn_0114",
+        "object": "response",
+        "created_at": 1761800114,
+        "status": "completed",
+        "model": "muse-spark-1.3",
+        "metadata": {
+          "synthetic": "true"
+        },
+        "output": [
+          {
+            "type": "message",
+            "id": "msg_syn_114",
+            "role": "assistant",
+            "status": "completed",
+            "content": [
+              {
+                "type": "output_text",
+                "text": "{\"schemaVersion\":\"1.0\",\"intent\":\"plan_question\",\"language\":\"hi\",\"proposedFacts\":[],\"clarifications\":[],\"toolRequests\":[],\"answerBlocks\":[{\"id\":\"b1\",\"kind\":\"numeric\",\"text\":\"आपके खेत का क्षेत्रफल 0.81 हेक्टेयर है, यानी लगभग 2 एकड़।\",\"numericRefIds\":[\"n1\",\"n2\"],\"claimIds\":[]},{\"id\":\"b2\",\"kind\":\"text\",\"text\":\"फसल चुनने से पहले कृपया पानी के स्रोत की पुष्टि करें।\",\"numericRefIds\":[],\"claimIds\":[]}],\"numericRefs\":[{\"id\":\"n1\",\"toolResultId\":\"{{toolResultId:0}}\",\"jsonPointer\":\"/farm/area/value/amount\",\"presentation\":{\"unit\":\"ha\",\"sourceUnit\":\"ha\",\"rounding\":{\"mode\":\"decimals\",\"digits\":2},\"intervalLabel\":\"none\"}},{\"id\":\"n2\",\"toolResultId\":\"{{toolResultId:0}}\",\"jsonPointer\":\"/farm/area/value/amount\",\"presentation\":{\"unit\":\"acre\",\"sourceUnit\":\"ha\",\"rounding\":{\"mode\":\"decimals\",\"digits\":0},\"intervalLabel\":\"none\"}}],\"claimEvidenceRefs\":[],\"proposedPlanChange\":null,\"limitations\":[\"पानी के स्रोत की जानकारी अभी उपलब्ध नहीं है।\"]}",
+                "annotations": []
+              }
+            ]
+          }
+        ],
+        "usage": {
+          "input_tokens": 400,
+          "input_tokens_details": {
+            "cached_tokens": 0
+          },
+          "output_tokens": 90,
+          "total_tokens": 490
+        }
+      }
+    }
+  ]
+}

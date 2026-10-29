@@ -9,6 +9,8 @@ import { SEGMENT_JOB_TYPE } from "../../vision/jobs/segmentation";
 import { implementedBindings } from "../tools/handlers";
 import type { ToolBindings, ToolContext, ToolHandler } from "../tools/registry";
 import type { Budget } from "../../services/budget";
+import { bindMarketOutlook, bindScreenCrops, bindVisualKeyframes, type Int2Deps } from "./int2";
+import { journalToolBindings, type JournalService } from "../../journal";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const unavailable = (reason: string) => ({ status: "unavailable" as const, reason });
@@ -18,6 +20,9 @@ export interface BindingDeps {
   plans: PlanService;
   budget: Budget;
   segmentModel: string;
+  /** INT2: optional so unit tests of the T08/T10 bindings need no catalogue; production passes all of them. */
+  int2?: Omit<Int2Deps, "pool" | "budget"> | undefined;
+  journal?: JournalService | undefined;
 }
 
 /** Owner-scoped plan read. Foreign and missing plans are both 404 (PlanService enforces ownership in SQL). */
@@ -78,7 +83,7 @@ export function createToolBindings(deps: BindingDeps): ToolBindings {
     const reusable = (j: JobRecord) => !(j.state === "failed" || j.state === "cancelled" || (j.state === "succeeded" && (j.result as { status?: string } | null)?.status === "unavailable"));
     let out = await enqueue(deps.pool, SEGMENT_JOB_TYPE, payload, ctx.ownerId, base);
     for (let n = 1; !out.created && !reusable(out.job) && n <= 20; n++) out = await enqueue(deps.pool, SEGMENT_JOB_TYPE, payload, ctx.ownerId, `${base}:r${n}`);
-    return { jobId: out.job.id, budgetGate: "reserved" as const, manualFallbackAvailable: true as const };
+    return { jobId: out.job.id, budgetGate: "checked" as const, manualFallbackAvailable: true as const };
   };
 
   return {
@@ -90,7 +95,15 @@ export function createToolBindings(deps: BindingDeps): ToolBindings {
 
 /** Everything the assistant can call today: the T09 tools plus the bindings above. */
 export function allBindings(deps: BindingDeps): ToolBindings {
-  return { ...implementedBindings(), ...createToolBindings(deps) };
+  const extra: ToolBindings = {};
+  if (deps.int2) {
+    const d = { pool: deps.pool, budget: deps.budget, ...deps.int2 };
+    extra.screen_crops = bindScreenCrops(d);
+    extra.get_market_outlook = bindMarketOutlook();
+    extra.request_visual_keyframes = bindVisualKeyframes(d);
+  }
+  if (deps.journal) Object.assign(extra, journalToolBindings({ pool: deps.pool, service: deps.journal, plans: deps.plans }));
+  return { ...implementedBindings(), ...createToolBindings(deps), ...extra };
 }
 
 export { implementedBindings };

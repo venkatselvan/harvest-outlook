@@ -1,7 +1,7 @@
 {
   "synthetic": true,
   "scenario": "tool_calling",
-  "description": "Synthetic. resolve_crop_identity then retrieve_evidence, then a cited synthesis. Needs the synthetic evidence row 00000000-0000-4000-8000-0000000000e1 and a crop with Tamil alias seeded by the test helper.",
+  "description": "Synthetic. resolve_crop_identity then retrieve_evidence, then a cited synthesis. Needs the synthetic evidence row 00000000-0000-4000-8000-0000000000e1 and a crop with Tamil alias seeded by the test helper. The claim declares cropIds (ginger) and granularity district (F5: no plan crop is in scope).",
   "steps": [
     {
       "pass": "interpretation",
@@ -157,7 +157,7 @@
             "content": [
               {
                 "type": "output_text",
-                "text": "{\"schemaVersion\":\"1.0\",\"intent\":\"explore_crops\",\"language\":\"en\",\"proposedFacts\":[],\"clarifications\":[],\"toolRequests\":[],\"answerBlocks\":[{\"id\":\"b1\",\"kind\":\"evidence\",\"text\":\"The synthetic ginger note says to keep the soil evenly moist during rhizome development.\",\"numericRefIds\":[],\"claimIds\":[\"c1\"]}],\"numericRefs\":[],\"claimEvidenceRefs\":[{\"claimId\":\"c1\",\"text\":\"Keep soil evenly moist during rhizome development.\",\"evidenceIds\":[\"00000000-0000-4000-8000-0000000000e1\"]}],\"proposedPlanChange\":null,\"limitations\":[\"This answer replays a synthetic fixture and is not agronomic advice.\"]}",
+                "text": "{\"schemaVersion\":\"1.0\",\"intent\":\"explore_crops\",\"language\":\"en\",\"proposedFacts\":[],\"clarifications\":[],\"toolRequests\":[],\"answerBlocks\":[{\"id\":\"b1\",\"kind\":\"evidence\",\"text\":\"The synthetic ginger note says to keep the soil evenly moist during rhizome development.\",\"numericRefIds\":[],\"claimIds\":[\"c1\"]}],\"numericRefs\":[],\"claimEvidenceRefs\":[{\"claimId\":\"c1\",\"text\":\"Keep soil evenly moist during rhizome development.\",\"evidenceIds\":[\"00000000-0000-4000-8000-0000000000e1\"],\"cropIds\":[\"00000000-0000-4000-8000-0000000000c1\"],\"granularity\":\"district\"}],\"proposedPlanChange\":null,\"limitations\":[\"This answer replays a synthetic fixture and is not agronomic advice.\"]}",
                 "annotations": []
               }
             ]

@@ -130,14 +130,23 @@ export async function getFarmContextHandler(input: { farmId: string }, ctx: Tool
 // ---------------------------------------------------------------- retrieve_evidence
 export const EXCERPT_MAX = 600;
 
-export async function retrieveEvidenceHandler(input: { cropIds?: string[] | undefined; regionIds?: string[] | undefined; topics?: string[] | undefined; availableBefore?: string | undefined; limit: number }, ctx: ToolContext): Promise<ToolOutput<"retrieve_evidence">> {
+/**
+ * Evidence statuses the assistant may cite (decision D28): `validated` (human reviewed) and `grounded`
+ * (excerpt verified present on the cited page by the automated grounding check; human review of meaning
+ * and scope pending). Each passage carries `validationStatus` so the gate and UI can label grounded rows
+ * "machine-grounded excerpt; human review pending". `pending`, `rejected` and `unsupported` are never returned.
+ */
+export const CITABLE_EVIDENCE_STATUSES = ["validated", "grounded"] as const;
+export type RetrieveEvidenceOutput = ToolOutput<"retrieve_evidence"> & { passages: (ToolOutput<"retrieve_evidence">["passages"][number] & { validationStatus: (typeof CITABLE_EVIDENCE_STATUSES)[number] })[] };
+
+export async function retrieveEvidenceHandler(input: { cropIds?: string[] | undefined; regionIds?: string[] | undefined; topics?: string[] | undefined; availableBefore?: string | undefined; limit: number }, ctx: ToolContext): Promise<RetrieveEvidenceOutput> {
   const cutoff = input.availableBefore && input.availableBefore < ctx.asOf ? input.availableBefore : ctx.asOf;
   const modes = ctx.mode === "synthetic" ? ["synthetic"] : ctx.mode === "replay" ? ["replay", "live"] : ["live"];
   const strict = ctx.mode === "replay";
-  const r = await ctx.pool.query<{ id: string; excerpt: string; effective_available_at: Date | null; geography_level: string; geography_ids: string[]; crop_ids: string[] }>(
-    `SELECT e.id, e.excerpt, e.effective_available_at, e.geography_level, e.geography_ids, e.crop_ids
+  const r = await ctx.pool.query<{ id: string; excerpt: string; effective_available_at: Date | null; geography_level: string; geography_ids: string[]; crop_ids: string[]; validation_status: "validated" | "grounded" }>(
+    `SELECT e.id, e.excerpt, e.effective_available_at, e.geography_level, e.geography_ids, e.crop_ids, e.validation_status
        FROM evidence_records e
-      WHERE e.validation_status = 'validated' AND e.excerpt IS NOT NULL AND e.geography_level IS NOT NULL AND cardinality(e.geography_ids) > 0
+      WHERE e.validation_status IN ('validated','grounded') AND e.excerpt IS NOT NULL AND e.geography_level IS NOT NULL AND cardinality(e.geography_ids) > 0
         AND e.mode = ANY($1::text[])
         AND ($2::text[] IS NULL OR e.crop_ids && $2::text[])
         AND ($3::text[] IS NULL OR e.geography_level = 'national' OR e.geography_ids && $3::text[])
@@ -157,6 +166,7 @@ export async function retrieveEvidenceHandler(input: { cropIds?: string[] | unde
         effectiveAvailableAt: row.effective_available_at ? row.effective_available_at.toISOString() : null,
         scope: { level: level.data, ids: row.geography_ids },
         cropIds: row.crop_ids,
+        validationStatus: row.validation_status,
       },
     ];
   });
