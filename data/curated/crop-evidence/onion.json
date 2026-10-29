@@ -1,0 +1,347 @@
+[
+  {
+    "schemaVersion": "1.0",
+    "id": "cat.onion.bsow",
+    "mode": "live",
+    "sourceUrl": "https://agritech.tnau.ac.in/horticulture/horti_vegetables_bellaryonion.html",
+    "publisher": "Tamil Nadu Agricultural University (TNAU Agritech Portal)",
+    "documentTitle": "Horticulture: Bellary (big) onion",
+    "documentVersion": null,
+    "contentHash": "7c0dcd654b4e9ed86b50de2c0c34dfee67a9652de60a588901c7bf220a4c8ca0",
+    "locator": {
+      "section": "Season"
+    },
+    "content": {
+      "kind": "excerpt",
+      "text": "Season May - June is best season for planting.",
+      "language": "en"
+    },
+    "publishedAt": null,
+    "availability": {
+      "effectiveAvailableAt": "2026-10-29T20:00:48.965Z",
+      "basis": "first_observed"
+    },
+    "ingestedAt": "2026-10-29T20:00:48.965Z",
+    "revisedAt": null,
+    "geography": {
+      "level": "state",
+      "ids": [
+        "IN-TN"
+      ]
+    },
+    "cropIds": [
+      "onion"
+    ],
+    "productIds": [],
+    "units": [],
+    "sourceUnits": [],
+    "licence": {
+      "licence": "Public web page; publisher copyright. Excerpt (<=60 words) kept for provenance, full page not redistributed.",
+      "accessStatus": "open",
+      "redistributable": false,
+      "attribution": "Tamil Nadu Agricultural University (TNAU Agritech Portal)"
+    },
+    "extraction": {
+      "method": "manual",
+      "version": "catalogue-build-1",
+      "reviewedBy": "rule_check"
+    },
+    "validationStatus": "pending"
+  },
+  {
+    "schemaVersion": "1.0",
+    "id": "cat.onion.bsoil",
+    "mode": "live",
+    "sourceUrl": "https://agritech.tnau.ac.in/horticulture/horti_vegetables_bellaryonion.html",
+    "publisher": "Tamil Nadu Agricultural University (TNAU Agritech Portal)",
+    "documentTitle": "Horticulture: Bellary (big) onion",
+    "documentVersion": null,
+    "contentHash": "7c0dcd654b4e9ed86b50de2c0c34dfee67a9652de60a588901c7bf220a4c8ca0",
+    "locator": {
+      "section": "Soil"
+    },
+    "content": {
+      "kind": "excerpt",
+      "text": "Red loam to black soils with good drainage facilities is highly preferred for bellary onion cultivation.",
+      "language": "en"
+    },
+    "publishedAt": null,
+    "availability": {
+      "effectiveAvailableAt": "2026-10-29T20:00:48.965Z",
+      "basis": "first_observed"
+    },
+    "ingestedAt": "2026-10-29T20:00:48.965Z",
+    "revisedAt": null,
+    "geography": {
+      "level": "state",
+      "ids": [
+        "IN-TN"
+      ]
+    },
+    "cropIds": [
+      "onion"
+    ],
+    "productIds": [],
+    "units": [],
+    "sourceUnits": [],
+    "licence": {
+      "licence": "Public web page; publisher copyright. Excerpt (<=60 words) kept for provenance, full page not redistributed.",
+      "accessStatus": "open",
+      "redistributable": false,
+      "attribution": "Tamil Nadu Agricultural University (TNAU Agritech Portal)"
+    },
+    "extraction": {
+      "method": "manual",
+      "version": "catalogue-build-1",
+      "reviewedBy": "rule_check"
+    },
+    "validationStatus": "pending"
+  },
+  {
+    "schemaVersion": "1.0",
+    "id": "cat.onion.bdur",
+    "mode": "live",
+    "sourceUrl": "https://agritech.tnau.ac.in/horticulture/horti_vegetables_bellaryonion.html",
+    "publisher": "Tamil Nadu Agricultural University (TNAU Agritech Portal)",
+    "documentTitle": "Horticulture: Bellary (big) onion",
+    "documentVersion": null,
+    "contentHash": "7c0dcd654b4e9ed86b50de2c0c34dfee67a9652de60a588901c7bf220a4c8ca0",
+    "locator": {
+      "section": "Yield"
+    },
+    "content": {
+      "kind": "excerpt",
+      "text": "The crop yields about 15 - 18 t/ha in 140 - 150 days.",
+      "language": "en"
+    },
+    "publishedAt": null,
+    "availability": {
+      "effectiveAvailableAt": "2026-10-29T20:00:48.965Z",
+      "basis": "first_observed"
+    },
+    "ingestedAt": "2026-10-29T20:00:48.965Z",
+    "revisedAt": null,
+    "geography": {
+      "level": "state",
+      "ids": [
+        "IN-TN"
+      ]
+    },
+    "cropIds": [
+      "onion"
+    ],
+    "productIds": [],
+    "units": [],
+    "sourceUnits": [],
+    "licence": {
+      "licence": "Public web page; publisher copyright. Excerpt (<=60 words) kept for provenance, full page not redistributed.",
+      "accessStatus": "open",
+      "redistributable": false,
+      "attribution": "Tamil Nadu Agricultural University (TNAU Agritech Portal)"
+    },
+    "extraction": {
+      "method": "manual",
+      "version": "catalogue-build-1",
+      "reviewedBy": "rule_check"
+    },
+    "validationStatus": "pending"
+  },
+  {
+    "schemaVersion": "1.0",
+    "id": "cat.onion.ssow",
+    "mode": "live",
+    "sourceUrl": "https://agritech.tnau.ac.in/horticulture/horti_vegetables_small%20onion.html",
+    "publisher": "Tamil Nadu Agricultural University (TNAU Agritech Portal)",
+    "documentTitle": "Horticulture: Small onion",
+    "documentVersion": null,
+    "contentHash": "0fcd878aa071a6a00d81ed692acc7baa5ed1b9f752e6a78e4d0ec8f012db41d9",
+    "locator": {
+      "section": "Season"
+    },
+    "content": {
+      "kind": "excerpt",
+      "text": "Sow the medium sized bulbs during April - May and October - November.",
+      "language": "en"
+    },
+    "publishedAt": null,
+    "availability": {
+      "effectiveAvailableAt": "2026-10-29T20:00:49.010Z",
+      "basis": "first_observed"
+    },
+    "ingestedAt": "2026-10-29T20:00:49.010Z",
+    "revisedAt": null,
+    "geography": {
+      "level": "state",
+      "ids": [
+        "IN-TN"
+      ]
+    },
+    "cropIds": [
+      "onion"
+    ],
+    "productIds": [],
+    "units": [],
+    "sourceUnits": [],
+    "licence": {
+      "licence": "Public web page; publisher copyright. Excerpt (<=60 words) kept for provenance, full page not redistributed.",
+      "accessStatus": "open",
+      "redistributable": false,
+      "attribution": "Tamil Nadu Agricultural University (TNAU Agritech Portal)"
+    },
+    "extraction": {
+      "method": "manual",
+      "version": "catalogue-build-1",
+      "reviewedBy": "rule_check"
+    },
+    "validationStatus": "pending"
+  },
+  {
+    "schemaVersion": "1.0",
+    "id": "cat.onion.mhk",
+    "mode": "live",
+    "sourceUrl": "https://nhb.gov.in/pdf/vegetable/onion/oni011.pdf",
+    "publisher": "National Horticulture Board",
+    "documentTitle": "Onion: cultivation guidance (oni011)",
+    "documentVersion": null,
+    "contentHash": "ea5c1073d1d47db31500a6bfced4fc031b16252a2f982c3aa0221518bcad508b",
+    "locator": {
+      "page": 1,
+      "section": "Season of planting"
+    },
+    "content": {
+      "kind": "excerpt",
+      "text": "Maharashtra & Gujarat. Kharif May-June Late Kharif or early Rabi August-September Rabi November-December",
+      "language": "en"
+    },
+    "publishedAt": null,
+    "availability": {
+      "effectiveAvailableAt": "2026-10-29T20:06:32.025Z",
+      "basis": "first_observed"
+    },
+    "ingestedAt": "2026-10-29T20:06:32.025Z",
+    "revisedAt": null,
+    "geography": {
+      "level": "national",
+      "ids": [
+        "IN"
+      ]
+    },
+    "cropIds": [
+      "onion"
+    ],
+    "productIds": [],
+    "units": [],
+    "sourceUnits": [],
+    "licence": {
+      "licence": "Public web page; publisher copyright. Excerpt (<=60 words) kept for provenance, full page not redistributed.",
+      "accessStatus": "open",
+      "redistributable": false,
+      "attribution": "National Horticulture Board"
+    },
+    "extraction": {
+      "method": "native_text",
+      "version": "catalogue-build-1",
+      "reviewedBy": "rule_check"
+    },
+    "validationStatus": "pending"
+  },
+  {
+    "schemaVersion": "1.0",
+    "id": "cat.onion.north",
+    "mode": "live",
+    "sourceUrl": "https://nhb.gov.in/pdf/vegetable/onion/oni011.pdf",
+    "publisher": "National Horticulture Board",
+    "documentTitle": "Onion: cultivation guidance (oni011)",
+    "documentVersion": null,
+    "contentHash": "ea5c1073d1d47db31500a6bfced4fc031b16252a2f982c3aa0221518bcad508b",
+    "locator": {
+      "page": 1,
+      "section": "Season of planting"
+    },
+    "content": {
+      "kind": "excerpt",
+      "text": "Rajastahn, Haryana Punjab, U. P & Bihar Kharif May-June Rabi October November",
+      "language": "en"
+    },
+    "publishedAt": null,
+    "availability": {
+      "effectiveAvailableAt": "2026-10-29T20:06:32.025Z",
+      "basis": "first_observed"
+    },
+    "ingestedAt": "2026-10-29T20:06:32.025Z",
+    "revisedAt": null,
+    "geography": {
+      "level": "national",
+      "ids": [
+        "IN"
+      ]
+    },
+    "cropIds": [
+      "onion"
+    ],
+    "productIds": [],
+    "units": [],
+    "sourceUnits": [],
+    "licence": {
+      "licence": "Public web page; publisher copyright. Excerpt (<=60 words) kept for provenance, full page not redistributed.",
+      "accessStatus": "open",
+      "redistributable": false,
+      "attribution": "National Horticulture Board"
+    },
+    "extraction": {
+      "method": "native_text",
+      "version": "catalogue-build-1",
+      "reviewedBy": "rule_check"
+    },
+    "validationStatus": "pending"
+  },
+  {
+    "schemaVersion": "1.0",
+    "id": "cat.onion.rain",
+    "mode": "live",
+    "sourceUrl": "https://agritech.tnau.ac.in/horticulture/horti_vegetables_small%20onion.html",
+    "publisher": "Tamil Nadu Agricultural University (TNAU Agritech Portal)",
+    "documentTitle": "Horticulture: Small onion",
+    "documentVersion": null,
+    "contentHash": "0fcd878aa071a6a00d81ed692acc7baa5ed1b9f752e6a78e4d0ec8f012db41d9",
+    "locator": {
+      "section": "Season"
+    },
+    "content": {
+      "kind": "excerpt",
+      "text": "heavy rains during bulb germination and bulb formation affects the crop growth",
+      "language": "en"
+    },
+    "publishedAt": null,
+    "availability": {
+      "effectiveAvailableAt": "2026-10-29T20:00:49.010Z",
+      "basis": "first_observed"
+    },
+    "ingestedAt": "2026-10-29T20:00:49.010Z",
+    "revisedAt": null,
+    "geography": {
+      "level": "state",
+      "ids": [
+        "IN-TN"
+      ]
+    },
+    "cropIds": [
+      "onion"
+    ],
+    "productIds": [],
+    "units": [],
+    "sourceUnits": [],
+    "licence": {
+      "licence": "Public web page; publisher copyright. Excerpt (<=60 words) kept for provenance, full page not redistributed.",
+      "accessStatus": "open",
+      "redistributable": false,
+      "attribution": "Tamil Nadu Agricultural University (TNAU Agritech Portal)"
+    },
+    "extraction": {
+      "method": "manual",
+      "version": "catalogue-build-1",
+      "reviewedBy": "rule_check"
+    },
+    "validationStatus": "pending"
+  }
+]

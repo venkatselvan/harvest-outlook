@@ -31,7 +31,7 @@ export default defineConfig({
   ],
   server: {
     port: 5173,
-    proxy: { "/api": { target: "http://127.0.0.1:8787", changeOrigin: false } },
+    proxy: { "/api": { target: process.env.API_PROXY_TARGET ?? "http://127.0.0.1:8787", changeOrigin: false } },
   },
   build: { target: "es2022" },
 });

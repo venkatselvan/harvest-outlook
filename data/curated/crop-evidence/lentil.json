@@ -1,0 +1,302 @@
+[
+  {
+    "schemaVersion": "1.0",
+    "id": "cat.lentil.sow",
+    "mode": "live",
+    "sourceUrl": "https://kvkchirang.aau.ac.in/pdf/package_of_practice/Rabi/Lentil.pdf",
+    "publisher": "Assam Agricultural University, KVK Chirang",
+    "documentTitle": "Package of practices for Rabi crops of Assam: Lentil",
+    "documentVersion": "2021",
+    "contentHash": "818a45951301bd0668f897456b374b4cd0693d68c84759b15049b8f66bb22c98",
+    "locator": {
+      "page": 1,
+      "section": "Time of sowing"
+    },
+    "content": {
+      "kind": "excerpt",
+      "text": "Time of Sowing: Mid October to mid November.",
+      "language": "en"
+    },
+    "publishedAt": null,
+    "availability": {
+      "effectiveAvailableAt": "2026-10-29T20:00:50.939Z",
+      "basis": "first_observed"
+    },
+    "ingestedAt": "2026-10-29T20:00:50.939Z",
+    "revisedAt": null,
+    "geography": {
+      "level": "state",
+      "ids": [
+        "IN-AS"
+      ]
+    },
+    "cropIds": [
+      "lentil"
+    ],
+    "productIds": [],
+    "units": [],
+    "sourceUnits": [],
+    "licence": {
+      "licence": "Public web page; publisher copyright. Excerpt (<=60 words) kept for provenance, full page not redistributed.",
+      "accessStatus": "open",
+      "redistributable": false,
+      "attribution": "Assam Agricultural University, KVK Chirang"
+    },
+    "extraction": {
+      "method": "native_text",
+      "version": "catalogue-build-1",
+      "reviewedBy": "rule_check"
+    },
+    "validationStatus": "pending"
+  },
+  {
+    "schemaVersion": "1.0",
+    "id": "cat.lentil.d1",
+    "mode": "live",
+    "sourceUrl": "https://kvkchirang.aau.ac.in/pdf/package_of_practice/Rabi/Lentil.pdf",
+    "publisher": "Assam Agricultural University, KVK Chirang",
+    "documentTitle": "Package of practices for Rabi crops of Assam: Lentil",
+    "documentVersion": "2021",
+    "contentHash": "818a45951301bd0668f897456b374b4cd0693d68c84759b15049b8f66bb22c98",
+    "locator": {
+      "page": 1,
+      "section": "Varieties"
+    },
+    "content": {
+      "kind": "excerpt",
+      "text": "HUL 57 (Small 2005 112-115 12-14 Resistant to Seeded",
+      "language": "en"
+    },
+    "publishedAt": null,
+    "availability": {
+      "effectiveAvailableAt": "2026-10-29T20:00:50.939Z",
+      "basis": "first_observed"
+    },
+    "ingestedAt": "2026-10-29T20:00:50.939Z",
+    "revisedAt": null,
+    "geography": {
+      "level": "state",
+      "ids": [
+        "IN-AS"
+      ]
+    },
+    "cropIds": [
+      "lentil"
+    ],
+    "productIds": [],
+    "units": [],
+    "sourceUnits": [],
+    "licence": {
+      "licence": "Public web page; publisher copyright. Excerpt (<=60 words) kept for provenance, full page not redistributed.",
+      "accessStatus": "open",
+      "redistributable": false,
+      "attribution": "Assam Agricultural University, KVK Chirang"
+    },
+    "extraction": {
+      "method": "native_text",
+      "version": "catalogue-build-1",
+      "reviewedBy": "rule_check"
+    },
+    "validationStatus": "pending"
+  },
+  {
+    "schemaVersion": "1.0",
+    "id": "cat.lentil.d2",
+    "mode": "live",
+    "sourceUrl": "https://kvkchirang.aau.ac.in/pdf/package_of_practice/Rabi/Lentil.pdf",
+    "publisher": "Assam Agricultural University, KVK Chirang",
+    "documentTitle": "Package of practices for Rabi crops of Assam: Lentil",
+    "documentVersion": "2021",
+    "contentHash": "818a45951301bd0668f897456b374b4cd0693d68c84759b15049b8f66bb22c98",
+    "locator": {
+      "page": 1,
+      "section": "Varieties"
+    },
+    "content": {
+      "kind": "excerpt",
+      "text": "PL 406 Branched semi spreading, 35-40 cm tall 120-125 10-12",
+      "language": "en"
+    },
+    "publishedAt": null,
+    "availability": {
+      "effectiveAvailableAt": "2026-10-29T20:00:50.939Z",
+      "basis": "first_observed"
+    },
+    "ingestedAt": "2026-10-29T20:00:50.939Z",
+    "revisedAt": null,
+    "geography": {
+      "level": "state",
+      "ids": [
+        "IN-AS"
+      ]
+    },
+    "cropIds": [
+      "lentil"
+    ],
+    "productIds": [],
+    "units": [],
+    "sourceUnits": [],
+    "licence": {
+      "licence": "Public web page; publisher copyright. Excerpt (<=60 words) kept for provenance, full page not redistributed.",
+      "accessStatus": "open",
+      "redistributable": false,
+      "attribution": "Assam Agricultural University, KVK Chirang"
+    },
+    "extraction": {
+      "method": "native_text",
+      "version": "catalogue-build-1",
+      "reviewedBy": "rule_check"
+    },
+    "validationStatus": "pending"
+  },
+  {
+    "schemaVersion": "1.0",
+    "id": "cat.lentil.soil",
+    "mode": "live",
+    "sourceUrl": "https://kvkchirang.aau.ac.in/pdf/package_of_practice/Rabi/Lentil.pdf",
+    "publisher": "Assam Agricultural University, KVK Chirang",
+    "documentTitle": "Package of practices for Rabi crops of Assam: Lentil",
+    "documentVersion": "2021",
+    "contentHash": "818a45951301bd0668f897456b374b4cd0693d68c84759b15049b8f66bb22c98",
+    "locator": {
+      "page": 1,
+      "section": "Soil type"
+    },
+    "content": {
+      "kind": "excerpt",
+      "text": "Soil type: Loam or silty loam is preferable.",
+      "language": "en"
+    },
+    "publishedAt": null,
+    "availability": {
+      "effectiveAvailableAt": "2026-10-29T20:00:50.939Z",
+      "basis": "first_observed"
+    },
+    "ingestedAt": "2026-10-29T20:00:50.939Z",
+    "revisedAt": null,
+    "geography": {
+      "level": "state",
+      "ids": [
+        "IN-AS"
+      ]
+    },
+    "cropIds": [
+      "lentil"
+    ],
+    "productIds": [],
+    "units": [],
+    "sourceUnits": [],
+    "licence": {
+      "licence": "Public web page; publisher copyright. Excerpt (<=60 words) kept for provenance, full page not redistributed.",
+      "accessStatus": "open",
+      "redistributable": false,
+      "attribution": "Assam Agricultural University, KVK Chirang"
+    },
+    "extraction": {
+      "method": "native_text",
+      "version": "catalogue-build-1",
+      "reviewedBy": "rule_check"
+    },
+    "validationStatus": "pending"
+  },
+  {
+    "schemaVersion": "1.0",
+    "id": "cat.lentil.irr",
+    "mode": "live",
+    "sourceUrl": "https://kvkchirang.aau.ac.in/pdf/package_of_practice/Rabi/Lentil.pdf",
+    "publisher": "Assam Agricultural University, KVK Chirang",
+    "documentTitle": "Package of practices for Rabi crops of Assam: Lentil",
+    "documentVersion": "2021",
+    "contentHash": "818a45951301bd0668f897456b374b4cd0693d68c84759b15049b8f66bb22c98",
+    "locator": {
+      "page": 3,
+      "section": "Irrigation"
+    },
+    "content": {
+      "kind": "excerpt",
+      "text": "If necessary and available, one light irrigation is to be given during pod filling stage.",
+      "language": "en"
+    },
+    "publishedAt": null,
+    "availability": {
+      "effectiveAvailableAt": "2026-10-29T20:00:50.939Z",
+      "basis": "first_observed"
+    },
+    "ingestedAt": "2026-10-29T20:00:50.939Z",
+    "revisedAt": null,
+    "geography": {
+      "level": "state",
+      "ids": [
+        "IN-AS"
+      ]
+    },
+    "cropIds": [
+      "lentil"
+    ],
+    "productIds": [],
+    "units": [],
+    "sourceUnits": [],
+    "licence": {
+      "licence": "Public web page; publisher copyright. Excerpt (<=60 words) kept for provenance, full page not redistributed.",
+      "accessStatus": "open",
+      "redistributable": false,
+      "attribution": "Assam Agricultural University, KVK Chirang"
+    },
+    "extraction": {
+      "method": "native_text",
+      "version": "catalogue-build-1",
+      "reviewedBy": "rule_check"
+    },
+    "validationStatus": "pending"
+  },
+  {
+    "schemaVersion": "1.0",
+    "id": "cat.lentil.yld",
+    "mode": "live",
+    "sourceUrl": "https://kvkchirang.aau.ac.in/pdf/package_of_practice/Rabi/Lentil.pdf",
+    "publisher": "Assam Agricultural University, KVK Chirang",
+    "documentTitle": "Package of practices for Rabi crops of Assam: Lentil",
+    "documentVersion": "2021",
+    "contentHash": "818a45951301bd0668f897456b374b4cd0693d68c84759b15049b8f66bb22c98",
+    "locator": {
+      "page": 3,
+      "section": "Harvesting"
+    },
+    "content": {
+      "kind": "excerpt",
+      "text": "Average yield: 12.0 q/ha",
+      "language": "en"
+    },
+    "publishedAt": null,
+    "availability": {
+      "effectiveAvailableAt": "2026-10-29T20:00:50.939Z",
+      "basis": "first_observed"
+    },
+    "ingestedAt": "2026-10-29T20:00:50.939Z",
+    "revisedAt": null,
+    "geography": {
+      "level": "state",
+      "ids": [
+        "IN-AS"
+      ]
+    },
+    "cropIds": [
+      "lentil"
+    ],
+    "productIds": [],
+    "units": [],
+    "sourceUnits": [],
+    "licence": {
+      "licence": "Public web page; publisher copyright. Excerpt (<=60 words) kept for provenance, full page not redistributed.",
+      "accessStatus": "open",
+      "redistributable": false,
+      "attribution": "Assam Agricultural University, KVK Chirang"
+    },
+    "extraction": {
+      "method": "native_text",
+      "version": "catalogue-build-1",
+      "reviewedBy": "rule_check"
+    },
+    "validationStatus": "pending"
+  }
+]

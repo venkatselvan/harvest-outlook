@@ -1,0 +1,349 @@
+[
+  {
+    "schemaVersion": "1.0",
+    "id": "cat.cotton.wi",
+    "mode": "live",
+    "sourceUrl": "https://agritech.tnau.ac.in/agriculture/agri_seasonandvarieties_cotton.html",
+    "publisher": "Tamil Nadu Agricultural University (TNAU Agritech Portal)",
+    "documentTitle": "Cotton: season and varieties",
+    "documentVersion": null,
+    "contentHash": "3ae8c3cecdb06e8f358af32d28c5af2380ece20d689f20c3dcc310db7bcfb4d1",
+    "locator": {
+      "section": "Season and varieties"
+    },
+    "content": {
+      "kind": "excerpt",
+      "text": "Winter Irrigated | 150-160 | Aug - Sep | Coimbatore",
+      "language": "en"
+    },
+    "publishedAt": null,
+    "availability": {
+      "effectiveAvailableAt": "2026-10-29T20:00:49.250Z",
+      "basis": "first_observed"
+    },
+    "ingestedAt": "2026-10-29T20:00:49.250Z",
+    "revisedAt": null,
+    "geography": {
+      "level": "state",
+      "ids": [
+        "IN-TN"
+      ]
+    },
+    "cropIds": [
+      "cotton"
+    ],
+    "productIds": [],
+    "units": [],
+    "sourceUnits": [],
+    "licence": {
+      "licence": "Public web page; publisher copyright. Excerpt (<=60 words) kept for provenance, full page not redistributed.",
+      "accessStatus": "open",
+      "redistributable": false,
+      "attribution": "Tamil Nadu Agricultural University (TNAU Agritech Portal)"
+    },
+    "extraction": {
+      "method": "manual",
+      "version": "catalogue-build-1",
+      "reviewedBy": "rule_check"
+    },
+    "validationStatus": "pending"
+  },
+  {
+    "schemaVersion": "1.0",
+    "id": "cat.cotton.wr",
+    "mode": "live",
+    "sourceUrl": "https://agritech.tnau.ac.in/agriculture/agri_seasonandvarieties_cotton.html",
+    "publisher": "Tamil Nadu Agricultural University (TNAU Agritech Portal)",
+    "documentTitle": "Cotton: season and varieties",
+    "documentVersion": null,
+    "contentHash": "3ae8c3cecdb06e8f358af32d28c5af2380ece20d689f20c3dcc310db7bcfb4d1",
+    "locator": {
+      "section": "Season and varieties"
+    },
+    "content": {
+      "kind": "excerpt",
+      "text": "Winter Rainfed | 140 - 150 | Aug - Sep | Ariyalur",
+      "language": "en"
+    },
+    "publishedAt": null,
+    "availability": {
+      "effectiveAvailableAt": "2026-10-29T20:00:49.250Z",
+      "basis": "first_observed"
+    },
+    "ingestedAt": "2026-10-29T20:00:49.250Z",
+    "revisedAt": null,
+    "geography": {
+      "level": "state",
+      "ids": [
+        "IN-TN"
+      ]
+    },
+    "cropIds": [
+      "cotton"
+    ],
+    "productIds": [],
+    "units": [],
+    "sourceUnits": [],
+    "licence": {
+      "licence": "Public web page; publisher copyright. Excerpt (<=60 words) kept for provenance, full page not redistributed.",
+      "accessStatus": "open",
+      "redistributable": false,
+      "attribution": "Tamil Nadu Agricultural University (TNAU Agritech Portal)"
+    },
+    "extraction": {
+      "method": "manual",
+      "version": "catalogue-build-1",
+      "reviewedBy": "rule_check"
+    },
+    "validationStatus": "pending"
+  },
+  {
+    "schemaVersion": "1.0",
+    "id": "cat.cotton.si",
+    "mode": "live",
+    "sourceUrl": "https://agritech.tnau.ac.in/agriculture/agri_seasonandvarieties_cotton.html",
+    "publisher": "Tamil Nadu Agricultural University (TNAU Agritech Portal)",
+    "documentTitle": "Cotton: season and varieties",
+    "documentVersion": null,
+    "contentHash": "3ae8c3cecdb06e8f358af32d28c5af2380ece20d689f20c3dcc310db7bcfb4d1",
+    "locator": {
+      "section": "Season and varieties"
+    },
+    "content": {
+      "kind": "excerpt",
+      "text": "Summer - Irrigated | 150 - 160 | Feb - Mar | Erode",
+      "language": "en"
+    },
+    "publishedAt": null,
+    "availability": {
+      "effectiveAvailableAt": "2026-10-29T20:00:49.250Z",
+      "basis": "first_observed"
+    },
+    "ingestedAt": "2026-10-29T20:00:49.250Z",
+    "revisedAt": null,
+    "geography": {
+      "level": "state",
+      "ids": [
+        "IN-TN"
+      ]
+    },
+    "cropIds": [
+      "cotton"
+    ],
+    "productIds": [],
+    "units": [],
+    "sourceUnits": [],
+    "licence": {
+      "licence": "Public web page; publisher copyright. Excerpt (<=60 words) kept for provenance, full page not redistributed.",
+      "accessStatus": "open",
+      "redistributable": false,
+      "attribution": "Tamil Nadu Agricultural University (TNAU Agritech Portal)"
+    },
+    "extraction": {
+      "method": "manual",
+      "version": "catalogue-build-1",
+      "reviewedBy": "rule_check"
+    },
+    "validationStatus": "pending"
+  },
+  {
+    "schemaVersion": "1.0",
+    "id": "cat.cotton.sow",
+    "mode": "live",
+    "sourceUrl": "https://kvkchirang.aau.ac.in/pdf/package_of_practice/kharif/Cotton.pdf",
+    "publisher": "Assam Agricultural University, KVK Chirang",
+    "documentTitle": "Package of practices for Kharif crops of Assam: Cotton",
+    "documentVersion": "2021",
+    "contentHash": "202cfaa7fac5ef784d8a6639238f32e8726ef23ab9a43e5e3a8b913bb0329f56",
+    "locator": {
+      "page": 1,
+      "section": "Time of sowing"
+    },
+    "content": {
+      "kind": "excerpt",
+      "text": "Time of Sowing: July",
+      "language": "en"
+    },
+    "publishedAt": null,
+    "availability": {
+      "effectiveAvailableAt": "2026-10-29T20:00:53.110Z",
+      "basis": "first_observed"
+    },
+    "ingestedAt": "2026-10-29T20:00:53.110Z",
+    "revisedAt": null,
+    "geography": {
+      "level": "state",
+      "ids": [
+        "IN-AS"
+      ]
+    },
+    "cropIds": [
+      "cotton"
+    ],
+    "productIds": [],
+    "units": [],
+    "sourceUnits": [],
+    "licence": {
+      "licence": "Public web page; publisher copyright. Excerpt (<=60 words) kept for provenance, full page not redistributed.",
+      "accessStatus": "open",
+      "redistributable": false,
+      "attribution": "Assam Agricultural University, KVK Chirang"
+    },
+    "extraction": {
+      "method": "native_text",
+      "version": "catalogue-build-1",
+      "reviewedBy": "rule_check"
+    },
+    "validationStatus": "pending"
+  },
+  {
+    "schemaVersion": "1.0",
+    "id": "cat.cotton.soil",
+    "mode": "live",
+    "sourceUrl": "https://kvkchirang.aau.ac.in/pdf/package_of_practice/kharif/Cotton.pdf",
+    "publisher": "Assam Agricultural University, KVK Chirang",
+    "documentTitle": "Package of practices for Kharif crops of Assam: Cotton",
+    "documentVersion": "2021",
+    "contentHash": "202cfaa7fac5ef784d8a6639238f32e8726ef23ab9a43e5e3a8b913bb0329f56",
+    "locator": {
+      "page": 1,
+      "section": "Soil"
+    },
+    "content": {
+      "kind": "excerpt",
+      "text": "It requires well drained soil as it cannot tolerate water logging.",
+      "language": "en"
+    },
+    "publishedAt": null,
+    "availability": {
+      "effectiveAvailableAt": "2026-10-29T20:00:53.110Z",
+      "basis": "first_observed"
+    },
+    "ingestedAt": "2026-10-29T20:00:53.110Z",
+    "revisedAt": null,
+    "geography": {
+      "level": "state",
+      "ids": [
+        "IN-AS"
+      ]
+    },
+    "cropIds": [
+      "cotton"
+    ],
+    "productIds": [],
+    "units": [],
+    "sourceUnits": [],
+    "licence": {
+      "licence": "Public web page; publisher copyright. Excerpt (<=60 words) kept for provenance, full page not redistributed.",
+      "accessStatus": "open",
+      "redistributable": false,
+      "attribution": "Assam Agricultural University, KVK Chirang"
+    },
+    "extraction": {
+      "method": "native_text",
+      "version": "catalogue-build-1",
+      "reviewedBy": "rule_check"
+    },
+    "validationStatus": "pending"
+  },
+  {
+    "schemaVersion": "1.0",
+    "id": "cat.cotton.yld",
+    "mode": "live",
+    "sourceUrl": "https://kvkchirang.aau.ac.in/pdf/package_of_practice/kharif/Cotton.pdf",
+    "publisher": "Assam Agricultural University, KVK Chirang",
+    "documentTitle": "Package of practices for Kharif crops of Assam: Cotton",
+    "documentVersion": "2021",
+    "contentHash": "202cfaa7fac5ef784d8a6639238f32e8726ef23ab9a43e5e3a8b913bb0329f56",
+    "locator": {
+      "page": 2,
+      "section": "Yield"
+    },
+    "content": {
+      "kind": "excerpt",
+      "text": "Average yield 8-12 q/ha (seed cotton) for long staple varieties and 4-6 q/ha (seed cotton) for short staple varieties",
+      "language": "en"
+    },
+    "publishedAt": null,
+    "availability": {
+      "effectiveAvailableAt": "2026-10-29T20:00:53.110Z",
+      "basis": "first_observed"
+    },
+    "ingestedAt": "2026-10-29T20:00:53.110Z",
+    "revisedAt": null,
+    "geography": {
+      "level": "state",
+      "ids": [
+        "IN-AS"
+      ]
+    },
+    "cropIds": [
+      "cotton"
+    ],
+    "productIds": [],
+    "units": [],
+    "sourceUnits": [],
+    "licence": {
+      "licence": "Public web page; publisher copyright. Excerpt (<=60 words) kept for provenance, full page not redistributed.",
+      "accessStatus": "open",
+      "redistributable": false,
+      "attribution": "Assam Agricultural University, KVK Chirang"
+    },
+    "extraction": {
+      "method": "native_text",
+      "version": "catalogue-build-1",
+      "reviewedBy": "rule_check"
+    },
+    "validationStatus": "pending"
+  },
+  {
+    "schemaVersion": "1.0",
+    "id": "cat.cotton.pick",
+    "mode": "live",
+    "sourceUrl": "https://kvkchirang.aau.ac.in/pdf/package_of_practice/kharif/Cotton.pdf",
+    "publisher": "Assam Agricultural University, KVK Chirang",
+    "documentTitle": "Package of practices for Kharif crops of Assam: Cotton",
+    "documentVersion": "2021",
+    "contentHash": "202cfaa7fac5ef784d8a6639238f32e8726ef23ab9a43e5e3a8b913bb0329f56",
+    "locator": {
+      "page": 2,
+      "section": "Picking"
+    },
+    "content": {
+      "kind": "excerpt",
+      "text": "Generally 3-4 pickings are required.",
+      "language": "en"
+    },
+    "publishedAt": null,
+    "availability": {
+      "effectiveAvailableAt": "2026-10-29T20:00:53.110Z",
+      "basis": "first_observed"
+    },
+    "ingestedAt": "2026-10-29T20:00:53.110Z",
+    "revisedAt": null,
+    "geography": {
+      "level": "state",
+      "ids": [
+        "IN-AS"
+      ]
+    },
+    "cropIds": [
+      "cotton"
+    ],
+    "productIds": [],
+    "units": [],
+    "sourceUnits": [],
+    "licence": {
+      "licence": "Public web page; publisher copyright. Excerpt (<=60 words) kept for provenance, full page not redistributed.",
+      "accessStatus": "open",
+      "redistributable": false,
+      "attribution": "Assam Agricultural University, KVK Chirang"
+    },
+    "extraction": {
+      "method": "native_text",
+      "version": "catalogue-build-1",
+      "reviewedBy": "rule_check"
+    },
+    "validationStatus": "pending"
+  }
+]

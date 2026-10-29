@@ -1,0 +1,92 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://harvest-outlook.local/analytics/schema/replay_request.schema.json",
+  "title": "Temporal replay request (BUILD_SPEC 8.2)",
+  "type": "object",
+  "required": ["decisionCutoff", "productId", "marketIds", "plantingWindow", "harvestWindow", "trainingPolicy", "dataSnapshotId", "horizonWeeks", "modelConfig"],
+  "additionalProperties": false,
+  "properties": {
+    "decisionCutoff": {"$ref": "observation_row.schema.json#/$defs/dateTime"},
+    "seasonId": {"type": "string", "minLength": 1, "maxLength": 50},
+    "productId": {"$ref": "observation_row.schema.json#/$defs/id"},
+    "marketIds": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"$ref": "observation_row.schema.json#/$defs/id"}},
+    "plantingWindow": {"$ref": "#/$defs/dateRange"},
+    "harvestWindow": {"$ref": "#/$defs/dateRange"},
+    "trainingPolicy": {
+      "type": "object",
+      "required": ["kind", "minTrainWeeks"],
+      "additionalProperties": false,
+      "properties": {
+        "kind": {"enum": ["expanding", "rolling"]},
+        "minTrainWeeks": {"type": "integer", "minimum": 1},
+        "rollingWeeks": {"type": ["integer", "null"], "minimum": 1},
+        "labelSettleDays": {"type": "integer", "minimum": 0}
+      }
+    },
+    "dataSnapshotId": {"type": "string", "minLength": 1, "maxLength": 200},
+    "horizonWeeks": {"type": "integer", "minimum": 1, "maximum": 104},
+    "regionTimezone": {"type": "string", "minLength": 1},
+    "modelConfig": {"$ref": "#/$defs/modelConfig"}
+  },
+  "$defs": {
+    "dateRange": {
+      "type": "object",
+      "required": ["start", "end"],
+      "additionalProperties": false,
+      "properties": {
+        "start": {"$ref": "observation_row.schema.json#/$defs/date"},
+        "end": {"$ref": "observation_row.schema.json#/$defs/date"}
+      }
+    },
+    "featureGroups": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "arrivals_lag": {"type": "boolean"},
+        "weather_climatology": {"type": "boolean"},
+        "satellite_anomaly": {"type": "boolean"}
+      }
+    },
+    "modelConfig": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "targetStatistic": {"enum": ["weekly_median_modal", "weekly_arrival_weighted_modal"]},
+        "maxStaleWeeks": {"type": "integer", "minimum": 0, "maximum": 8},
+        "strictVintage": {"type": "boolean"},
+        "baselineA": {"type": "object", "additionalProperties": false, "properties": {"enabled": {"type": "boolean"}, "minResidualPairs": {"type": "integer", "minimum": 2}}},
+        "baselineB": {"type": "object", "additionalProperties": false, "properties": {"enabled": {"type": "boolean"}, "minSeasonYears": {"type": "integer", "minimum": 1}, "minResidualPairs": {"type": "integer", "minimum": 2}, "isoWeekWindow": {"type": "integer", "minimum": 0, "maximum": 3}}},
+        "candidate": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "ridgeAlpha": {"type": "number", "minimum": 0},
+            "anchorYears": {"type": "integer", "minimum": 1, "maximum": 10},
+            "fourierOrder": {"type": "integer", "minimum": 0, "maximum": 4},
+            "calibrationWeeks": {"type": "integer", "minimum": 4},
+            "minFitPairs": {"type": "integer", "minimum": 4},
+            "minCalibrationPairs": {"type": "integer", "minimum": 2},
+            "weatherWindowWeeks": {"type": "integer", "minimum": 1, "maximum": 26},
+            "weatherLagWeeks": {"type": "integer", "minimum": 0, "maximum": 8},
+            "weatherVariable": {"type": "string", "minLength": 1},
+            "weatherRegionByMarket": {"type": "object", "additionalProperties": {"$ref": "observation_row.schema.json#/$defs/id"}},
+            "satelliteVariable": {"type": "string", "minLength": 1}
+          }
+        },
+        "candidates": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["id", "featureGroups"],
+            "additionalProperties": false,
+            "properties": {
+              "id": {"type": "string", "pattern": "^[A-Za-z][A-Za-z0-9_]{0,40}$"},
+              "anchor": {"enum": ["seasonal_naive", "seasonal_reference"]},
+              "featureGroups": {"$ref": "#/$defs/featureGroups"}
+            }
+          }
+        }
+      }
+    }
+  }
+}

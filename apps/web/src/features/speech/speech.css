@@ -1,0 +1,14 @@
+.speech { display: grid; gap: 12px; }
+.speech-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.speech .btn:disabled { opacity: 0.55; }
+.speech-secondary { background: #fff; color: var(--accent); }
+.speech-status { display: flex; align-items: center; gap: 8px; min-height: 44px; font-weight: 600; }
+.speech-dot { width: 12px; height: 12px; border-radius: 50%; background: #b53030; }
+.speech-label { font-weight: 600; }
+.speech-text { width: 100%; min-height: 44px; padding: 8px 12px; font: inherit; border: 1px solid var(--border); border-radius: 8px; resize: vertical; }
+.speech-note { margin: 0; color: var(--muted); font-size: 0.9rem; }
+.speech-error { margin: 0; padding: 8px 12px; background: #fde0e0; color: #6b1010; border-radius: 8px; }
+.speech-warning { margin: 0; padding: 8px 12px; background: #fff3cd; color: #5c4400; border-radius: 8px; }
+.speech-disclosure { padding: 12px; border: 1px solid var(--border); border-radius: 8px; background: #fff; }
+.speech-speaker { display: grid; gap: 4px; }
+@media (prefers-reduced-motion: reduce) { .speech-dot { animation: none; } }

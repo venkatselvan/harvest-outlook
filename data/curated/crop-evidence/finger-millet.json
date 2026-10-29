@@ -1,0 +1,398 @@
+[
+  {
+    "schemaVersion": "1.0",
+    "id": "cat.finger-millet.irr",
+    "mode": "live",
+    "sourceUrl": "https://agritech.tnau.ac.in/agriculture/millets_ragi.html",
+    "publisher": "Tamil Nadu Agricultural University (TNAU Agritech Portal)",
+    "documentTitle": "Millets: Finger millet (ragi) crop production",
+    "documentVersion": null,
+    "contentHash": "acddd24dab4f4f3ec6061fae9a5d670a5437ddff30e0c089b8a6290806382f70",
+    "locator": {
+      "section": "Season and varieties"
+    },
+    "content": {
+      "kind": "excerpt",
+      "text": "Irrigated Marghazipattam (Dec - Jan) All districts except Kanyakumari & Nilgiris",
+      "language": "en"
+    },
+    "publishedAt": null,
+    "availability": {
+      "effectiveAvailableAt": "2026-10-29T20:00:48.259Z",
+      "basis": "first_observed"
+    },
+    "ingestedAt": "2026-10-29T20:00:48.259Z",
+    "revisedAt": null,
+    "geography": {
+      "level": "state",
+      "ids": [
+        "IN-TN"
+      ]
+    },
+    "cropIds": [
+      "finger-millet"
+    ],
+    "productIds": [],
+    "units": [],
+    "sourceUnits": [],
+    "licence": {
+      "licence": "Public web page; publisher copyright. Excerpt (<=60 words) kept for provenance, full page not redistributed.",
+      "accessStatus": "open",
+      "redistributable": false,
+      "attribution": "Tamil Nadu Agricultural University (TNAU Agritech Portal)"
+    },
+    "extraction": {
+      "method": "manual",
+      "version": "catalogue-build-1",
+      "reviewedBy": "rule_check"
+    },
+    "validationStatus": "pending"
+  },
+  {
+    "schemaVersion": "1.0",
+    "id": "cat.finger-millet.rf",
+    "mode": "live",
+    "sourceUrl": "https://agritech.tnau.ac.in/agriculture/millets_ragi.html",
+    "publisher": "Tamil Nadu Agricultural University (TNAU Agritech Portal)",
+    "documentTitle": "Millets: Finger millet (ragi) crop production",
+    "documentVersion": null,
+    "contentHash": "acddd24dab4f4f3ec6061fae9a5d670a5437ddff30e0c089b8a6290806382f70",
+    "locator": {
+      "section": "Season and varieties"
+    },
+    "content": {
+      "kind": "excerpt",
+      "text": "Rainfed Adipattam (June - July) All districts except Kanyakumari & Nilgiris",
+      "language": "en"
+    },
+    "publishedAt": null,
+    "availability": {
+      "effectiveAvailableAt": "2026-10-29T20:00:48.259Z",
+      "basis": "first_observed"
+    },
+    "ingestedAt": "2026-10-29T20:00:48.259Z",
+    "revisedAt": null,
+    "geography": {
+      "level": "state",
+      "ids": [
+        "IN-TN"
+      ]
+    },
+    "cropIds": [
+      "finger-millet"
+    ],
+    "productIds": [],
+    "units": [],
+    "sourceUnits": [],
+    "licence": {
+      "licence": "Public web page; publisher copyright. Excerpt (<=60 words) kept for provenance, full page not redistributed.",
+      "accessStatus": "open",
+      "redistributable": false,
+      "attribution": "Tamil Nadu Agricultural University (TNAU Agritech Portal)"
+    },
+    "extraction": {
+      "method": "manual",
+      "version": "catalogue-build-1",
+      "reviewedBy": "rule_check"
+    },
+    "validationStatus": "pending"
+  },
+  {
+    "schemaVersion": "1.0",
+    "id": "cat.finger-millet.dur",
+    "mode": "live",
+    "sourceUrl": "https://agritech.tnau.ac.in/agriculture/millets_ragi.html",
+    "publisher": "Tamil Nadu Agricultural University (TNAU Agritech Portal)",
+    "documentTitle": "Millets: Finger millet (ragi) crop production",
+    "documentVersion": null,
+    "contentHash": "acddd24dab4f4f3ec6061fae9a5d670a5437ddff30e0c089b8a6290806382f70",
+    "locator": {
+      "section": "Particulars of ragi strains"
+    },
+    "content": {
+      "kind": "excerpt",
+      "text": "Duration (days) | 100-105 | 95 - 100 | 105-110",
+      "language": "en"
+    },
+    "publishedAt": null,
+    "availability": {
+      "effectiveAvailableAt": "2026-10-29T20:00:48.259Z",
+      "basis": "first_observed"
+    },
+    "ingestedAt": "2026-10-29T20:00:48.259Z",
+    "revisedAt": null,
+    "geography": {
+      "level": "state",
+      "ids": [
+        "IN-TN"
+      ]
+    },
+    "cropIds": [
+      "finger-millet"
+    ],
+    "productIds": [],
+    "units": [],
+    "sourceUnits": [],
+    "licence": {
+      "licence": "Public web page; publisher copyright. Excerpt (<=60 words) kept for provenance, full page not redistributed.",
+      "accessStatus": "open",
+      "redistributable": false,
+      "attribution": "Tamil Nadu Agricultural University (TNAU Agritech Portal)"
+    },
+    "extraction": {
+      "method": "manual",
+      "version": "catalogue-build-1",
+      "reviewedBy": "rule_check"
+    },
+    "validationStatus": "pending"
+  },
+  {
+    "schemaVersion": "1.0",
+    "id": "cat.finger-millet.yld",
+    "mode": "live",
+    "sourceUrl": "https://agritech.tnau.ac.in/agriculture/millets_ragi.html",
+    "publisher": "Tamil Nadu Agricultural University (TNAU Agritech Portal)",
+    "documentTitle": "Millets: Finger millet (ragi) crop production",
+    "documentVersion": null,
+    "contentHash": "acddd24dab4f4f3ec6061fae9a5d670a5437ddff30e0c089b8a6290806382f70",
+    "locator": {
+      "section": "Particulars of ragi strains"
+    },
+    "content": {
+      "kind": "excerpt",
+      "text": "Grain yield kg/ha | | | | Irrigated | 4500 | 3600 | 2892 | Rainfed | 3100 | 2300 | 2794",
+      "language": "en"
+    },
+    "publishedAt": null,
+    "availability": {
+      "effectiveAvailableAt": "2026-10-29T20:00:48.259Z",
+      "basis": "first_observed"
+    },
+    "ingestedAt": "2026-10-29T20:00:48.259Z",
+    "revisedAt": null,
+    "geography": {
+      "level": "state",
+      "ids": [
+        "IN-TN"
+      ]
+    },
+    "cropIds": [
+      "finger-millet"
+    ],
+    "productIds": [],
+    "units": [],
+    "sourceUnits": [],
+    "licence": {
+      "licence": "Public web page; publisher copyright. Excerpt (<=60 words) kept for provenance, full page not redistributed.",
+      "accessStatus": "open",
+      "redistributable": false,
+      "attribution": "Tamil Nadu Agricultural University (TNAU Agritech Portal)"
+    },
+    "extraction": {
+      "method": "manual",
+      "version": "catalogue-build-1",
+      "reviewedBy": "rule_check"
+    },
+    "validationStatus": "pending"
+  },
+  {
+    "schemaVersion": "1.0",
+    "id": "cat.finger-millet.asw",
+    "mode": "live",
+    "sourceUrl": "https://kvkchirang.aau.ac.in/pdf/package_of_practice/kharif/Fingermillet.pdf",
+    "publisher": "Assam Agricultural University, KVK Chirang",
+    "documentTitle": "Package of practices for Kharif crops of Assam: Finger millet",
+    "documentVersion": "2021",
+    "contentHash": "b8f254492dc770fe8082b38f2d3e5ab4f34af345e4b0ae7bda3e5cf5c99abf8f",
+    "locator": {
+      "page": 1,
+      "section": "Time of sowing"
+    },
+    "content": {
+      "kind": "excerpt",
+      "text": "One month old seedlings are to be transplanted in the 1st week of September.",
+      "language": "en"
+    },
+    "publishedAt": null,
+    "availability": {
+      "effectiveAvailableAt": "2026-10-29T20:00:52.990Z",
+      "basis": "first_observed"
+    },
+    "ingestedAt": "2026-10-29T20:00:52.990Z",
+    "revisedAt": null,
+    "geography": {
+      "level": "state",
+      "ids": [
+        "IN-AS"
+      ]
+    },
+    "cropIds": [
+      "finger-millet"
+    ],
+    "productIds": [],
+    "units": [],
+    "sourceUnits": [],
+    "licence": {
+      "licence": "Public web page; publisher copyright. Excerpt (<=60 words) kept for provenance, full page not redistributed.",
+      "accessStatus": "open",
+      "redistributable": false,
+      "attribution": "Assam Agricultural University, KVK Chirang"
+    },
+    "extraction": {
+      "method": "native_text",
+      "version": "catalogue-build-1",
+      "reviewedBy": "rule_check"
+    },
+    "validationStatus": "pending"
+  },
+  {
+    "schemaVersion": "1.0",
+    "id": "cat.finger-millet.asd",
+    "mode": "live",
+    "sourceUrl": "https://kvkchirang.aau.ac.in/pdf/package_of_practice/kharif/Fingermillet.pdf",
+    "publisher": "Assam Agricultural University, KVK Chirang",
+    "documentTitle": "Package of practices for Kharif crops of Assam: Finger millet",
+    "documentVersion": "2021",
+    "contentHash": "b8f254492dc770fe8082b38f2d3e5ab4f34af345e4b0ae7bda3e5cf5c99abf8f",
+    "locator": {
+      "page": 1,
+      "section": "Varieties"
+    },
+    "content": {
+      "kind": "excerpt",
+      "text": "Duration: 80 - 90 days.",
+      "language": "en"
+    },
+    "publishedAt": null,
+    "availability": {
+      "effectiveAvailableAt": "2026-10-29T20:00:52.990Z",
+      "basis": "first_observed"
+    },
+    "ingestedAt": "2026-10-29T20:00:52.990Z",
+    "revisedAt": null,
+    "geography": {
+      "level": "state",
+      "ids": [
+        "IN-AS"
+      ]
+    },
+    "cropIds": [
+      "finger-millet"
+    ],
+    "productIds": [],
+    "units": [],
+    "sourceUnits": [],
+    "licence": {
+      "licence": "Public web page; publisher copyright. Excerpt (<=60 words) kept for provenance, full page not redistributed.",
+      "accessStatus": "open",
+      "redistributable": false,
+      "attribution": "Assam Agricultural University, KVK Chirang"
+    },
+    "extraction": {
+      "method": "native_text",
+      "version": "catalogue-build-1",
+      "reviewedBy": "rule_check"
+    },
+    "validationStatus": "pending"
+  },
+  {
+    "schemaVersion": "1.0",
+    "id": "cat.finger-millet.ass",
+    "mode": "live",
+    "sourceUrl": "https://kvkchirang.aau.ac.in/pdf/package_of_practice/kharif/Fingermillet.pdf",
+    "publisher": "Assam Agricultural University, KVK Chirang",
+    "documentTitle": "Package of practices for Kharif crops of Assam: Finger millet",
+    "documentVersion": "2021",
+    "contentHash": "b8f254492dc770fe8082b38f2d3e5ab4f34af345e4b0ae7bda3e5cf5c99abf8f",
+    "locator": {
+      "page": 1,
+      "section": "Soil type"
+    },
+    "content": {
+      "kind": "excerpt",
+      "text": "Soil Type: Sandy loam",
+      "language": "en"
+    },
+    "publishedAt": null,
+    "availability": {
+      "effectiveAvailableAt": "2026-10-29T20:00:52.990Z",
+      "basis": "first_observed"
+    },
+    "ingestedAt": "2026-10-29T20:00:52.990Z",
+    "revisedAt": null,
+    "geography": {
+      "level": "state",
+      "ids": [
+        "IN-AS"
+      ]
+    },
+    "cropIds": [
+      "finger-millet"
+    ],
+    "productIds": [],
+    "units": [],
+    "sourceUnits": [],
+    "licence": {
+      "licence": "Public web page; publisher copyright. Excerpt (<=60 words) kept for provenance, full page not redistributed.",
+      "accessStatus": "open",
+      "redistributable": false,
+      "attribution": "Assam Agricultural University, KVK Chirang"
+    },
+    "extraction": {
+      "method": "native_text",
+      "version": "catalogue-build-1",
+      "reviewedBy": "rule_check"
+    },
+    "validationStatus": "pending"
+  },
+  {
+    "schemaVersion": "1.0",
+    "id": "cat.finger-millet.asy",
+    "mode": "live",
+    "sourceUrl": "https://kvkchirang.aau.ac.in/pdf/package_of_practice/kharif/Fingermillet.pdf",
+    "publisher": "Assam Agricultural University, KVK Chirang",
+    "documentTitle": "Package of practices for Kharif crops of Assam: Finger millet",
+    "documentVersion": "2021",
+    "contentHash": "b8f254492dc770fe8082b38f2d3e5ab4f34af345e4b0ae7bda3e5cf5c99abf8f",
+    "locator": {
+      "page": 1,
+      "section": "Varieties"
+    },
+    "content": {
+      "kind": "excerpt",
+      "text": "Grain yield: 18-20q/ha (transplanted)",
+      "language": "en"
+    },
+    "publishedAt": null,
+    "availability": {
+      "effectiveAvailableAt": "2026-10-29T20:00:52.990Z",
+      "basis": "first_observed"
+    },
+    "ingestedAt": "2026-10-29T20:00:52.990Z",
+    "revisedAt": null,
+    "geography": {
+      "level": "state",
+      "ids": [
+        "IN-AS"
+      ]
+    },
+    "cropIds": [
+      "finger-millet"
+    ],
+    "productIds": [],
+    "units": [],
+    "sourceUnits": [],
+    "licence": {
+      "licence": "Public web page; publisher copyright. Excerpt (<=60 words) kept for provenance, full page not redistributed.",
+      "accessStatus": "open",
+      "redistributable": false,
+      "attribution": "Assam Agricultural University, KVK Chirang"
+    },
+    "extraction": {
+      "method": "native_text",
+      "version": "catalogue-build-1",
+      "reviewedBy": "rule_check"
+    },
+    "validationStatus": "pending"
+  }
+]

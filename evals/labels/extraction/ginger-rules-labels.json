@@ -1,0 +1,66 @@
+{
+  "schemaVersion": "1.0",
+  "labelSet": "ginger-rules",
+  "labeller": "claude-opus-5-5 (harvest-opus-builder, task T05b) - SAME MODEL THAT WROTE THE RULE CANDIDATES",
+  "independentHumanReview": "pending",
+  "labelledAt": "2026-10-30",
+  "method": "Full-condition correctness: scope (regionIds, seasons, irrigation), every leaf of `when`, every exception, the effect type and reasonCode were each checked against the extracted text of every cited evidence page. Labels: correct (all parts supported) | incorrect (some part contradicts or over-states the source) | unsupported (source does not support the inference). Mapping applied by curate.py: correct -> approved, incorrect -> disabled, unsupported -> candidate.",
+  "engineSemanticsNote": "Under packages/domain/src/rules/evaluate.ts an UNKNOWN field makes any rule (including prefer/caution rules) return requires_review. Labels judge the source support of the rule when its fields are known; the unknown-field behaviour is the engine's documented conservative policy.",
+  "labels": [
+    {
+      "ruleId": "rule.ginger.soil-drainage-poor",
+      "label": "correct",
+      "notes": "IISR p3 'thrives best in well drained soils'; p16 'selection of well drained soils for planting is important, since stagnation of water predisposes the plant to infection'; p15 drainage channels to avoid stagnation. The source states a risk and a preference, not an exclusion, so requires_review (not ineligible) matches its wording. National scope matches the guide's unscoped wording."
+    },
+    {
+      "ruleId": "rule.ginger.soil-drainage-unknown",
+      "label": "correct",
+      "notes": "IISR p16 says selection of well-drained soil is important because stagnation predisposes plants to infection; when drainage is not known the check cannot be completed, so review is required. 'known' is always decidable in the engine."
+    },
+    {
+      "ruleId": "rule.ginger.soil-drainage-good",
+      "label": "correct",
+      "notes": "IISR p3 'Ginger thrives best in well drained soils'. Effect prefer (not eligible) matches 'thrives best'."
+    },
+    {
+      "ruleId": "rule.ginger.soil-texture-listed",
+      "label": "correct",
+      "notes": "IISR p3 lists sandy loam, clay loam, red loam, lateritic loam; 'friable loam rich in humus is ideal'. sandy_loam and clay_loam map directly. 'loam' stands for red loam / lateritic loam / friable loam, whose names add colour or parent material to the loam texture class; this mapping is an interpretation and is the main reason human review is still required. Effect prefer, not eligible."
+    },
+    {
+      "ruleId": "rule.ginger.soil-texture-unlisted",
+      "label": "unsupported",
+      "notes": "The source lists the textures in which ginger 'thrives best'; it does not caution against other textures. Inferring a caution for sand, loamy sand, silt loam, silty clay or clay from their absence is not supported. Left as candidate."
+    },
+    {
+      "ruleId": "rule.ginger.elevation-above-source-range",
+      "label": "correct",
+      "notes": "IISR p3 'cultivated from sea level to an altitude of 1500 m above sea level'. The condition not(elevation <= 1500) is exactly 'above the stated range'. The source describes where ginger is cultivated and does not say it cannot grow higher, so requires_review rather than ineligible."
+    },
+    {
+      "ruleId": "rule.ginger.rainfed-rainfall-below-requirement",
+      "label": "correct",
+      "notes": "IISR p14: 'requires 1300-1500 mm of water during its crop cycle' and is rainfed 'in high rainfall areas (uniform distribution for 5 to 7 months)'. Caution when rainfed rainfall is below the low end (1300 mm) matches. Assumes rainfall.seasonalMm means rainfall over the crop season; rainfall distribution (5-7 months uniform) is not captured by any allowlisted field, so meeting 1300 mm does not make a farm positively suitable (rule only cautions)."
+    },
+    {
+      "ruleId": "rule.ginger.ka.rainfed-rainfall-unknown",
+      "label": "correct",
+      "notes": "Base rule (Karnataka, rainfed, farm rainfall unknown -> requires_review): IISR p14 makes rainfed suitability depend on high, uniform rainfall, so unknown rainfall needs review. Narrowing the national statement to Karnataka is a subset and remains supported. Exception (district Hassan -> caution): CRIDA p1 Hassan normal annual rainfall 1031.2 mm, below the IISR p14 crop-cycle requirement of 1300 mm; annual rain bounds crop-cycle rain from above, so the comparison is conservative. This exception is constructed from the two documents' differing scopes (national guide + district plan); neither document itself states a Karnataka rule with a Hassan exception. Limitation: district normal hides intra-district variation (not sourced)."
+    },
+    {
+      "ruleId": "rule.ginger.planting-month-outside-sourced-window",
+      "label": "correct",
+      "notes": "IISR p10: the only rainfed planting window in the sources is 'first fortnight of May' for the West Coast of India; CRIDA p9 sowing windows cover five field crops and not ginger. A rainfed planting month other than May therefore has no sourced window and requires review. The rule makes no positive claim for May (when false -> not applicable); it does not certify May outside the West Coast."
+    },
+    {
+      "ruleId": "rule.ginger.hassan.may-premonsoon-planting",
+      "label": "unsupported",
+      "notes": "The IISR May window is explicitly for the West Coast of India; Hassan (Southern Transition Zone, ~943 m) is not on the West Coast. CRIDA p10 confirms that rains conventionally start in the 1st week of May in Hassan and p1 gives 168.7 mm Apr-May normal rain, which matches the source's pre-monsoon-shower cue, but neither document states a ginger planting window for Hassan. A 'prefer' for Hassan extends the West Coast scope. Left as candidate pending an agronomist or a Karnataka/Hassan source (e.g. UAS/KVK package of practices)."
+    },
+    {
+      "ruleId": "rule.ginger.irrigated-early-planting",
+      "label": "incorrect",
+      "notes": "IISR p10: 'Under irrigated conditions, it can be planted well in advance during the middle of February or early March.' The month condition in [2, 3] over-states this: it includes early February and late March, which the source does not cover. The sentence also inherits the West Coast scope while the rule is national. Disabled; a correct version would need planting.date bounds (year-agnostic dates are not expressible in the current Rule IR)."
+    }
+  ]
+}

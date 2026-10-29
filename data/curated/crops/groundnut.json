@@ -1,0 +1,115 @@
+{
+  "cropId": "groundnut",
+  "identityRef": "groundnut",
+  "group": "oilseeds",
+  "products": [
+    {
+      "productId": "groundnut-pod",
+      "name": "Groundnut in shell (pods)",
+      "productBasis": "pod"
+    },
+    {
+      "productId": "groundnut-kernel",
+      "name": "Groundnut kernel (shelled)",
+      "productBasis": "kernel"
+    }
+  ],
+  "regionalContexts": [
+    {
+      "contextId": "groundnut.AS.kharif",
+      "geography": {
+        "level": "state",
+        "ids": [
+          "IN-AS"
+        ]
+      },
+      "stateId": "IN-AS",
+      "districtIds": null,
+      "season": "kharif",
+      "plantingWindow": {
+        "fromMonth": 6,
+        "toMonth": 7,
+        "evidenceIds": [
+          "cat.groundnut.ksow"
+        ]
+      },
+      "durationDays": null,
+      "irrigation": "unspecified",
+      "irrigationEvidenceIds": [],
+      "waterNeedClass": null,
+      "soilNotes": {
+        "text": "Well drained sandy loam.",
+        "evidenceIds": [
+          "cat.groundnut.ksoil"
+        ]
+      },
+      "yieldReference": {
+        "min": 3690,
+        "max": 3890,
+        "unit": "kg/ha",
+        "basis": "regional_reference",
+        "productId": "groundnut-pod",
+        "evidenceIds": [
+          "cat.groundnut.kyld"
+        ]
+      },
+      "labourClass": null,
+      "harvestPattern": "single",
+      "notes": "Assam only; yield is nut yield for two varieties. No crop-duration figure on the saved page."
+    },
+    {
+      "contextId": "groundnut.AS.rabi",
+      "geography": {
+        "level": "state",
+        "ids": [
+          "IN-AS"
+        ]
+      },
+      "stateId": "IN-AS",
+      "districtIds": null,
+      "season": "rabi",
+      "plantingWindow": {
+        "fromMonth": 9,
+        "toMonth": 10,
+        "evidenceIds": [
+          "cat.groundnut.rsow"
+        ]
+      },
+      "durationDays": null,
+      "irrigation": "supplemental",
+      "irrigationEvidenceIds": [
+        "cat.groundnut.rirr"
+      ],
+      "waterNeedClass": null,
+      "soilNotes": {
+        "text": "Well drained, light textured, friable sandy loam; pH 5.5 to 7.5.",
+        "evidenceIds": [
+          "cat.groundnut.rsoil"
+        ]
+      },
+      "yieldReference": null,
+      "labourClass": null,
+      "harvestPattern": "single",
+      "notes": "Assam only; summer sowing is mid January to February (same page). Duration increases if sowing is delayed (same page). The saved TNAU groundnut pages held no season text."
+    }
+  ],
+  "exclusionsOrCautions": [],
+  "marketCoverageStatus": "unavailable_pending_price_access",
+  "evidenceIds": [
+    "cat.groundnut.ksow",
+    "cat.groundnut.ksoil",
+    "cat.groundnut.kyld",
+    "cat.groundnut.rsow",
+    "cat.groundnut.rsoil",
+    "cat.groundnut.rirr"
+  ],
+  "qualification": {
+    "identityResolved": true,
+    "hasRegionalContext": true,
+    "hasSourcedRequirements": true,
+    "hasSeasonInfo": true,
+    "marketStatusExplicit": true,
+    "qualified": true,
+    "missing": []
+  }
+}

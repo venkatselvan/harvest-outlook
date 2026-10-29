@@ -1,0 +1,106 @@
+{
+  "cropId": "brinjal",
+  "identityRef": "brinjal",
+  "group": "vegetables",
+  "products": [
+    {
+      "productId": "brinjal-fresh",
+      "name": "Brinjal fruit (fresh)",
+      "productBasis": "fresh"
+    }
+  ],
+  "regionalContexts": [
+    {
+      "contextId": "brinjal.TN.main",
+      "geography": {
+        "level": "state",
+        "ids": [
+          "IN-TN"
+        ]
+      },
+      "stateId": "IN-TN",
+      "districtIds": null,
+      "season": "rabi",
+      "plantingWindow": {
+        "fromMonth": 12,
+        "toMonth": 1,
+        "evidenceIds": [
+          "cat.brinjal.tn"
+        ]
+      },
+      "durationDays": null,
+      "irrigation": "unspecified",
+      "irrigationEvidenceIds": [],
+      "waterNeedClass": null,
+      "soilNotes": {
+        "text": "Well drained, rich in organic matter, pH 6.5-7.5.",
+        "evidenceIds": [
+          "cat.brinjal.tnsoil"
+        ]
+      },
+      "yieldReference": null,
+      "labourClass": null,
+      "harvestPattern": "single",
+      "notes": "TN-only coverage: Tamil Nadu source; not generalised to other states. Second window May-June."
+    },
+    {
+      "contextId": "brinjal.AS.winter",
+      "geography": {
+        "level": "state",
+        "ids": [
+          "IN-AS"
+        ]
+      },
+      "stateId": "IN-AS",
+      "districtIds": null,
+      "season": "rabi",
+      "plantingWindow": {
+        "fromMonth": 9,
+        "toMonth": 10,
+        "evidenceIds": [
+          "cat.brinjal.sow"
+        ]
+      },
+      "durationDays": {
+        "min": 75,
+        "max": 110,
+        "evidenceIds": [
+          "cat.brinjal.d1",
+          "cat.brinjal.d2"
+        ]
+      },
+      "irrigation": "unspecified",
+      "irrigationEvidenceIds": [],
+      "waterNeedClass": null,
+      "soilNotes": {
+        "text": "Rich sandy loam (early) or silt to clay loam (late crop); pH 5.5-7.0 ideal.",
+        "evidenceIds": [
+          "cat.brinjal.soil"
+        ]
+      },
+      "yieldReference": null,
+      "labourClass": null,
+      "harvestPattern": "repeated_picking",
+      "notes": "Assam winter crop (spring crop Jan-Feb on same page); maturity is for named varieties."
+    }
+  ],
+  "exclusionsOrCautions": [],
+  "marketCoverageStatus": "unavailable_pending_price_access",
+  "evidenceIds": [
+    "cat.brinjal.tn",
+    "cat.brinjal.tnsoil",
+    "cat.brinjal.sow",
+    "cat.brinjal.soil",
+    "cat.brinjal.d1",
+    "cat.brinjal.d2"
+  ],
+  "qualification": {
+    "identityResolved": true,
+    "hasRegionalContext": true,
+    "hasSourcedRequirements": true,
+    "hasSeasonInfo": true,
+    "marketStatusExplicit": true,
+    "qualified": true,
+    "missing": []
+  }
+}

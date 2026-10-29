@@ -1,0 +1,399 @@
+[
+  {
+    "schemaVersion": "1.0",
+    "id": "cat.sesame.irr",
+    "mode": "live",
+    "sourceUrl": "https://agritech.tnau.ac.in/agriculture/agri_seasonandvarieties_gingelly.html",
+    "publisher": "Tamil Nadu Agricultural University (TNAU Agritech Portal)",
+    "documentTitle": "Gingelly: season and varieties",
+    "documentVersion": null,
+    "contentHash": "fc01b6237a06f81bb7d23decf2e22235e73a3664104d8ebe7c8e9b3c6be5a28c",
+    "locator": {
+      "section": "Seasons and varieties"
+    },
+    "content": {
+      "kind": "excerpt",
+      "text": "I. Western Zone (Irrigated) | Coimbatore, Tiruppur and Erode | | Masipattam | Feb - March",
+      "language": "en"
+    },
+    "publishedAt": null,
+    "availability": {
+      "effectiveAvailableAt": "2026-10-29T20:00:48.784Z",
+      "basis": "first_observed"
+    },
+    "ingestedAt": "2026-10-29T20:00:48.784Z",
+    "revisedAt": null,
+    "geography": {
+      "level": "state",
+      "ids": [
+        "IN-TN"
+      ]
+    },
+    "cropIds": [
+      "sesame"
+    ],
+    "productIds": [],
+    "units": [],
+    "sourceUnits": [],
+    "licence": {
+      "licence": "Public web page; publisher copyright. Excerpt (<=60 words) kept for provenance, full page not redistributed.",
+      "accessStatus": "open",
+      "redistributable": false,
+      "attribution": "Tamil Nadu Agricultural University (TNAU Agritech Portal)"
+    },
+    "extraction": {
+      "method": "manual",
+      "version": "catalogue-build-1",
+      "reviewedBy": "rule_check"
+    },
+    "validationStatus": "pending"
+  },
+  {
+    "schemaVersion": "1.0",
+    "id": "cat.sesame.rf",
+    "mode": "live",
+    "sourceUrl": "https://agritech.tnau.ac.in/agriculture/agri_seasonandvarieties_gingelly.html",
+    "publisher": "Tamil Nadu Agricultural University (TNAU Agritech Portal)",
+    "documentTitle": "Gingelly: season and varieties",
+    "documentVersion": null,
+    "contentHash": "fc01b6237a06f81bb7d23decf2e22235e73a3664104d8ebe7c8e9b3c6be5a28c",
+    "locator": {
+      "section": "Seasons and varieties"
+    },
+    "content": {
+      "kind": "excerpt",
+      "text": "Western Zone (Rainfed) | Coimbatore,Tiruppur, Erode and Dindigul | Anippattam | June - July",
+      "language": "en"
+    },
+    "publishedAt": null,
+    "availability": {
+      "effectiveAvailableAt": "2026-10-29T20:00:48.784Z",
+      "basis": "first_observed"
+    },
+    "ingestedAt": "2026-10-29T20:00:48.784Z",
+    "revisedAt": null,
+    "geography": {
+      "level": "state",
+      "ids": [
+        "IN-TN"
+      ]
+    },
+    "cropIds": [
+      "sesame"
+    ],
+    "productIds": [],
+    "units": [],
+    "sourceUnits": [],
+    "licence": {
+      "licence": "Public web page; publisher copyright. Excerpt (<=60 words) kept for provenance, full page not redistributed.",
+      "accessStatus": "open",
+      "redistributable": false,
+      "attribution": "Tamil Nadu Agricultural University (TNAU Agritech Portal)"
+    },
+    "extraction": {
+      "method": "manual",
+      "version": "catalogue-build-1",
+      "reviewedBy": "rule_check"
+    },
+    "validationStatus": "pending"
+  },
+  {
+    "schemaVersion": "1.0",
+    "id": "cat.sesame.dur",
+    "mode": "live",
+    "sourceUrl": "https://agritech.tnau.ac.in/agriculture/agri_seasonandvarieties_gingelly.html",
+    "publisher": "Tamil Nadu Agricultural University (TNAU Agritech Portal)",
+    "documentTitle": "Gingelly: season and varieties",
+    "documentVersion": null,
+    "contentHash": "fc01b6237a06f81bb7d23decf2e22235e73a3664104d8ebe7c8e9b3c6be5a28c",
+    "locator": {
+      "section": "Description of varieties"
+    },
+    "content": {
+      "kind": "excerpt",
+      "text": "Duration (days) | 80-85 | 80-85 | 75-80 | 85-90 | 75-80",
+      "language": "en"
+    },
+    "publishedAt": null,
+    "availability": {
+      "effectiveAvailableAt": "2026-10-29T20:00:48.784Z",
+      "basis": "first_observed"
+    },
+    "ingestedAt": "2026-10-29T20:00:48.784Z",
+    "revisedAt": null,
+    "geography": {
+      "level": "state",
+      "ids": [
+        "IN-TN"
+      ]
+    },
+    "cropIds": [
+      "sesame"
+    ],
+    "productIds": [],
+    "units": [],
+    "sourceUnits": [],
+    "licence": {
+      "licence": "Public web page; publisher copyright. Excerpt (<=60 words) kept for provenance, full page not redistributed.",
+      "accessStatus": "open",
+      "redistributable": false,
+      "attribution": "Tamil Nadu Agricultural University (TNAU Agritech Portal)"
+    },
+    "extraction": {
+      "method": "manual",
+      "version": "catalogue-build-1",
+      "reviewedBy": "rule_check"
+    },
+    "validationStatus": "pending"
+  },
+  {
+    "schemaVersion": "1.0",
+    "id": "cat.sesame.sow",
+    "mode": "live",
+    "sourceUrl": "https://kvkchirang.aau.ac.in/pdf/package_of_practice/kharif/Sesamum.pdf",
+    "publisher": "Assam Agricultural University, KVK Chirang",
+    "documentTitle": "Package of practices for Kharif crops of Assam: Sesamum",
+    "documentVersion": "2021",
+    "contentHash": "f25896a9b10acec6c0bb0b39a67e46847fe5b76b1c747f331369ab38ef56b487",
+    "locator": {
+      "page": 1,
+      "section": "Time of sowing"
+    },
+    "content": {
+      "kind": "excerpt",
+      "text": "Time of Sowing: July to first fortnight of August for Phytophthora blight endemic areas",
+      "language": "en"
+    },
+    "publishedAt": null,
+    "availability": {
+      "effectiveAvailableAt": "2026-10-29T20:00:53.749Z",
+      "basis": "first_observed"
+    },
+    "ingestedAt": "2026-10-29T20:00:53.749Z",
+    "revisedAt": null,
+    "geography": {
+      "level": "state",
+      "ids": [
+        "IN-AS"
+      ]
+    },
+    "cropIds": [
+      "sesame"
+    ],
+    "productIds": [],
+    "units": [],
+    "sourceUnits": [],
+    "licence": {
+      "licence": "Public web page; publisher copyright. Excerpt (<=60 words) kept for provenance, full page not redistributed.",
+      "accessStatus": "open",
+      "redistributable": false,
+      "attribution": "Assam Agricultural University, KVK Chirang"
+    },
+    "extraction": {
+      "method": "native_text",
+      "version": "catalogue-build-1",
+      "reviewedBy": "rule_check"
+    },
+    "validationStatus": "pending"
+  },
+  {
+    "schemaVersion": "1.0",
+    "id": "cat.sesame.adur",
+    "mode": "live",
+    "sourceUrl": "https://kvkchirang.aau.ac.in/pdf/package_of_practice/kharif/Sesamum.pdf",
+    "publisher": "Assam Agricultural University, KVK Chirang",
+    "documentTitle": "Package of practices for Kharif crops of Assam: Sesamum",
+    "documentVersion": "2021",
+    "contentHash": "f25896a9b10acec6c0bb0b39a67e46847fe5b76b1c747f331369ab38ef56b487",
+    "locator": {
+      "page": 1,
+      "section": "Varieties"
+    },
+    "content": {
+      "kind": "excerpt",
+      "text": "Duration (days) 90-95 75-85 80-90",
+      "language": "en"
+    },
+    "publishedAt": null,
+    "availability": {
+      "effectiveAvailableAt": "2026-10-29T20:00:53.749Z",
+      "basis": "first_observed"
+    },
+    "ingestedAt": "2026-10-29T20:00:53.749Z",
+    "revisedAt": null,
+    "geography": {
+      "level": "state",
+      "ids": [
+        "IN-AS"
+      ]
+    },
+    "cropIds": [
+      "sesame"
+    ],
+    "productIds": [],
+    "units": [],
+    "sourceUnits": [],
+    "licence": {
+      "licence": "Public web page; publisher copyright. Excerpt (<=60 words) kept for provenance, full page not redistributed.",
+      "accessStatus": "open",
+      "redistributable": false,
+      "attribution": "Assam Agricultural University, KVK Chirang"
+    },
+    "extraction": {
+      "method": "native_text",
+      "version": "catalogue-build-1",
+      "reviewedBy": "rule_check"
+    },
+    "validationStatus": "pending"
+  },
+  {
+    "schemaVersion": "1.0",
+    "id": "cat.sesame.ayld",
+    "mode": "live",
+    "sourceUrl": "https://kvkchirang.aau.ac.in/pdf/package_of_practice/kharif/Sesamum.pdf",
+    "publisher": "Assam Agricultural University, KVK Chirang",
+    "documentTitle": "Package of practices for Kharif crops of Assam: Sesamum",
+    "documentVersion": "2021",
+    "contentHash": "f25896a9b10acec6c0bb0b39a67e46847fe5b76b1c747f331369ab38ef56b487",
+    "locator": {
+      "page": 1,
+      "section": "Varieties"
+    },
+    "content": {
+      "kind": "excerpt",
+      "text": "Yield (q/ha) 5-9 8-9 8-10",
+      "language": "en"
+    },
+    "publishedAt": null,
+    "availability": {
+      "effectiveAvailableAt": "2026-10-29T20:00:53.749Z",
+      "basis": "first_observed"
+    },
+    "ingestedAt": "2026-10-29T20:00:53.749Z",
+    "revisedAt": null,
+    "geography": {
+      "level": "state",
+      "ids": [
+        "IN-AS"
+      ]
+    },
+    "cropIds": [
+      "sesame"
+    ],
+    "productIds": [],
+    "units": [],
+    "sourceUnits": [],
+    "licence": {
+      "licence": "Public web page; publisher copyright. Excerpt (<=60 words) kept for provenance, full page not redistributed.",
+      "accessStatus": "open",
+      "redistributable": false,
+      "attribution": "Assam Agricultural University, KVK Chirang"
+    },
+    "extraction": {
+      "method": "native_text",
+      "version": "catalogue-build-1",
+      "reviewedBy": "rule_check"
+    },
+    "validationStatus": "pending"
+  },
+  {
+    "schemaVersion": "1.0",
+    "id": "cat.sesame.soil",
+    "mode": "live",
+    "sourceUrl": "https://kvkchirang.aau.ac.in/pdf/package_of_practice/kharif/Sesamum.pdf",
+    "publisher": "Assam Agricultural University, KVK Chirang",
+    "documentTitle": "Package of practices for Kharif crops of Assam: Sesamum",
+    "documentVersion": "2021",
+    "contentHash": "f25896a9b10acec6c0bb0b39a67e46847fe5b76b1c747f331369ab38ef56b487",
+    "locator": {
+      "page": 1,
+      "section": "Soil"
+    },
+    "content": {
+      "kind": "excerpt",
+      "text": "Soil: Well drained sandy loam soils are preferable.",
+      "language": "en"
+    },
+    "publishedAt": null,
+    "availability": {
+      "effectiveAvailableAt": "2026-10-29T20:00:53.749Z",
+      "basis": "first_observed"
+    },
+    "ingestedAt": "2026-10-29T20:00:53.749Z",
+    "revisedAt": null,
+    "geography": {
+      "level": "state",
+      "ids": [
+        "IN-AS"
+      ]
+    },
+    "cropIds": [
+      "sesame"
+    ],
+    "productIds": [],
+    "units": [],
+    "sourceUnits": [],
+    "licence": {
+      "licence": "Public web page; publisher copyright. Excerpt (<=60 words) kept for provenance, full page not redistributed.",
+      "accessStatus": "open",
+      "redistributable": false,
+      "attribution": "Assam Agricultural University, KVK Chirang"
+    },
+    "extraction": {
+      "method": "native_text",
+      "version": "catalogue-build-1",
+      "reviewedBy": "rule_check"
+    },
+    "validationStatus": "pending"
+  },
+  {
+    "schemaVersion": "1.0",
+    "id": "cat.sesame.pb",
+    "mode": "live",
+    "sourceUrl": "https://kvkchirang.aau.ac.in/pdf/package_of_practice/kharif/Sesamum.pdf",
+    "publisher": "Assam Agricultural University, KVK Chirang",
+    "documentTitle": "Package of practices for Kharif crops of Assam: Sesamum",
+    "documentVersion": "2021",
+    "contentHash": "f25896a9b10acec6c0bb0b39a67e46847fe5b76b1c747f331369ab38ef56b487",
+    "locator": {
+      "page": 1,
+      "section": "Varieties"
+    },
+    "content": {
+      "kind": "excerpt",
+      "text": "All the varieties are susceptible to Phytophthora blight and bacterial wilt to varying degrees.",
+      "language": "en"
+    },
+    "publishedAt": null,
+    "availability": {
+      "effectiveAvailableAt": "2026-10-29T20:00:53.749Z",
+      "basis": "first_observed"
+    },
+    "ingestedAt": "2026-10-29T20:00:53.749Z",
+    "revisedAt": null,
+    "geography": {
+      "level": "state",
+      "ids": [
+        "IN-AS"
+      ]
+    },
+    "cropIds": [
+      "sesame"
+    ],
+    "productIds": [],
+    "units": [],
+    "sourceUnits": [],
+    "licence": {
+      "licence": "Public web page; publisher copyright. Excerpt (<=60 words) kept for provenance, full page not redistributed.",
+      "accessStatus": "open",
+      "redistributable": false,
+      "attribution": "Assam Agricultural University, KVK Chirang"
+    },
+    "extraction": {
+      "method": "native_text",
+      "version": "catalogue-build-1",
+      "reviewedBy": "rule_check"
+    },
+    "validationStatus": "pending"
+  }
+]

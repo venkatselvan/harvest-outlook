@@ -1,0 +1,108 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://harvest-outlook.local/analytics/schema/replay_report.schema.json",
+  "title": "Forecast replay / ablation report",
+  "description": "Written to evals/results/<runId>/report.json. Synthetic runs must say so in mode, synthetic and banner.",
+  "type": "object",
+  "required": ["schemaVersion", "runId", "mode", "synthetic", "banner", "runDate", "codeVersion", "dataSnapshotId", "productId", "marketIds", "target", "trainingPolicy", "modelConfig", "perCutoff", "aggregate", "exclusions", "leakageChecks", "limitations"],
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": {"const": "1.0"},
+    "runId": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,99}$"},
+    "mode": {"enum": ["synthetic", "replay"]},
+    "synthetic": {"type": "boolean"},
+    "banner": {"type": "string", "minLength": 1},
+    "inputLabel": {"type": ["string", "null"]},
+    "runDate": {"$ref": "observation_row.schema.json#/$defs/dateTime"},
+    "codeVersion": {
+      "type": "object",
+      "required": ["gitSha", "gitDirty", "packageVersion", "sourceHash"],
+      "properties": {
+        "gitSha": {"type": ["string", "null"], "pattern": "^[0-9a-f]{40}$"},
+        "gitDirty": {"type": ["boolean", "null"]},
+        "packageVersion": {"type": "string"},
+        "sourceHash": {"type": "string", "pattern": "^[0-9a-f]{16}$"},
+        "note": {"type": ["string", "null"]}
+      }
+    },
+    "dataSnapshotId": {"type": "string", "minLength": 1},
+    "productId": {"$ref": "observation_row.schema.json#/$defs/id"},
+    "marketIds": {"type": "array", "minItems": 1, "items": {"$ref": "observation_row.schema.json#/$defs/id"}},
+    "target": {
+      "type": "object",
+      "required": ["statistic", "unit"],
+      "properties": {"statistic": {"enum": ["weekly_median_modal", "weekly_arrival_weighted_modal"]}, "unit": {"const": "INR/kg"}}
+    },
+    "trainingPolicy": {"type": "object", "required": ["kind", "minTrainWeeks"]},
+    "modelConfig": {"type": "object", "required": ["targetStatistic", "baselineA", "baselineB", "candidate", "candidates"]},
+    "perCutoff": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["seasonId", "decisionCutoff", "originWeek", "plantingWindow", "harvestWindow", "targetWeeks", "predictionsHash", "trainingLabels", "featureGroups", "fittedModels", "perModel", "realizedTarget", "leakageChecks"],
+        "properties": {
+          "seasonId": {"type": "string"},
+          "decisionCutoff": {"type": "string"},
+          "originWeek": {"$ref": "observation_row.schema.json#/$defs/date"},
+          "targetWeeks": {"type": "array", "items": {"type": "object", "required": ["targetWeek", "horizonWeeks"]}},
+          "predictionsHash": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+          "trainingLabels": {"type": "array", "items": {"type": "object", "required": ["marketId", "nWeeks", "nValidWeeks", "passed"]}},
+          "fittedModels": {"type": "array", "items": {"type": "object", "required": ["modelId", "marketId", "fittedModelId"]}},
+          "perModel": {"type": "object", "additionalProperties": {"$ref": "#/$defs/modelSummary"}},
+          "realizedTarget": {"type": "array", "items": {"type": "object", "required": ["marketId", "targetWeek", "value"], "properties": {"value": {"type": ["number", "null"], "minimum": 0}}}},
+          "leakageChecks": {"type": "array", "items": {"$ref": "#/$defs/check"}}
+        }
+      }
+    },
+    "aggregate": {
+      "type": "object",
+      "required": ["models", "commonSet", "breakdowns"],
+      "properties": {
+        "models": {"type": "array", "minItems": 1, "items": {"allOf": [{"$ref": "#/$defs/modelSummary"}, {"required": ["modelId"]}]}},
+        "commonSet": {"type": "object", "required": ["nCommonTargets", "modelsIncluded", "modelsExcludedNoScoredTargets", "perModel"]},
+        "breakdowns": {"type": "object"}
+      }
+    },
+    "exclusions": {"type": "object"},
+    "leakageChecks": {
+      "type": "object",
+      "required": ["passed", "nChecks", "checks"],
+      "properties": {"passed": {"const": true}, "nChecks": {"type": "integer", "minimum": 1}, "checks": {"type": "array", "items": {"$ref": "#/$defs/check"}}}
+    },
+    "limitations": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}}
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"synthetic": {"const": true}}},
+      "then": {"properties": {"mode": {"const": "synthetic"}, "banner": {"pattern": "SYNTHETIC"}}},
+      "else": {"properties": {"mode": {"const": "replay"}}}
+    }
+  ],
+  "$defs": {
+    "check": {"type": "object", "required": ["name", "passed"], "properties": {"name": {"type": "string"}, "passed": {"type": "boolean"}}},
+    "nullableNumber": {"type": ["number", "null"]},
+    "modelSummary": {
+      "type": "object",
+      "required": ["nTargets", "nAbstained", "abstainReasons", "nPredicted", "nUnscoredMissingRealized", "nScored", "mae", "mase", "nMase", "pinball", "wis80", "coverage80", "meanWidth80", "maeCI90", "ciNote"],
+      "properties": {
+        "modelId": {"type": "string"},
+        "nTargets": {"type": "integer", "minimum": 0},
+        "nAbstained": {"type": "integer", "minimum": 0},
+        "abstainReasons": {"type": "object", "additionalProperties": {"type": "integer", "minimum": 1}},
+        "nPredicted": {"type": "integer", "minimum": 0},
+        "nUnscoredMissingRealized": {"type": "integer", "minimum": 0},
+        "nScored": {"type": "integer", "minimum": 0},
+        "mae": {"type": ["number", "null"], "minimum": 0},
+        "mase": {"type": ["number", "null"], "minimum": 0},
+        "nMase": {"type": "integer", "minimum": 0},
+        "pinball": {"anyOf": [{"type": "null"}, {"type": "object", "required": ["q10", "q50", "q90"]}]},
+        "wis80": {"type": ["number", "null"], "minimum": 0},
+        "coverage80": {"type": ["number", "null"], "minimum": 0, "maximum": 1},
+        "meanWidth80": {"type": ["number", "null"], "minimum": 0},
+        "maeCI90": {"anyOf": [{"type": "null"}, {"type": "array", "minItems": 2, "maxItems": 2, "items": {"type": "number"}}]},
+        "ciNote": {"type": ["string", "null"]}
+      }
+    }
+  }
+}

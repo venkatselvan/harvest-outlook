@@ -1,0 +1,121 @@
+{
+  "cropId": "pearl-millet",
+  "identityRef": "pearl-millet",
+  "group": "cereals",
+  "products": [
+    {
+      "productId": "pearl-millet-grain",
+      "name": "Pearl millet grain",
+      "productBasis": "grain"
+    }
+  ],
+  "regionalContexts": [
+    {
+      "contextId": "pearl-millet.TN.irrigated",
+      "geography": {
+        "level": "state",
+        "ids": [
+          "IN-TN"
+        ]
+      },
+      "stateId": "IN-TN",
+      "districtIds": null,
+      "season": "zaid",
+      "plantingWindow": {
+        "fromMonth": 3,
+        "toMonth": 4,
+        "evidenceIds": [
+          "cat.pearl-millet.irr"
+        ]
+      },
+      "durationDays": {
+        "min": 80,
+        "max": 100,
+        "evidenceIds": [
+          "cat.pearl-millet.dur"
+        ]
+      },
+      "irrigation": "irrigated",
+      "irrigationEvidenceIds": [
+        "cat.pearl-millet.irr"
+      ],
+      "waterNeedClass": null,
+      "soilNotes": null,
+      "yieldReference": {
+        "min": 2865,
+        "max": 3500,
+        "unit": "kg/ha",
+        "basis": "regional_reference",
+        "productId": "pearl-millet-grain",
+        "evidenceIds": [
+          "cat.pearl-millet.yld"
+        ]
+      },
+      "labourClass": null,
+      "harvestPattern": "single",
+      "notes": "TN-only coverage: Tamil Nadu source; not generalised to other states."
+    },
+    {
+      "contextId": "pearl-millet.TN.rainfed",
+      "geography": {
+        "level": "state",
+        "ids": [
+          "IN-TN"
+        ]
+      },
+      "stateId": "IN-TN",
+      "districtIds": null,
+      "season": "kharif",
+      "plantingWindow": {
+        "fromMonth": 6,
+        "toMonth": 7,
+        "evidenceIds": [
+          "cat.pearl-millet.rf"
+        ]
+      },
+      "durationDays": {
+        "min": 80,
+        "max": 100,
+        "evidenceIds": [
+          "cat.pearl-millet.dur"
+        ]
+      },
+      "irrigation": "rainfed",
+      "irrigationEvidenceIds": [
+        "cat.pearl-millet.rf"
+      ],
+      "waterNeedClass": null,
+      "soilNotes": null,
+      "yieldReference": {
+        "min": 2354,
+        "max": 2800,
+        "unit": "kg/ha",
+        "basis": "regional_reference",
+        "productId": "pearl-millet-grain",
+        "evidenceIds": [
+          "cat.pearl-millet.yld"
+        ]
+      },
+      "labourClass": null,
+      "harvestPattern": "single",
+      "notes": "TN-only coverage: Tamil Nadu source; not generalised to other states."
+    }
+  ],
+  "exclusionsOrCautions": [],
+  "marketCoverageStatus": "unavailable_pending_price_access",
+  "evidenceIds": [
+    "cat.pearl-millet.irr",
+    "cat.pearl-millet.rf",
+    "cat.pearl-millet.dur",
+    "cat.pearl-millet.yld"
+  ],
+  "qualification": {
+    "identityResolved": true,
+    "hasRegionalContext": true,
+    "hasSourcedRequirements": true,
+    "hasSeasonInfo": true,
+    "marketStatusExplicit": true,
+    "qualified": true,
+    "missing": []
+  }
+}

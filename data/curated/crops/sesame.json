@@ -1,0 +1,162 @@
+{
+  "cropId": "sesame",
+  "identityRef": "sesame",
+  "group": "oilseeds",
+  "products": [
+    {
+      "productId": "sesame-seed",
+      "name": "Sesame seed",
+      "productBasis": "seed"
+    }
+  ],
+  "regionalContexts": [
+    {
+      "contextId": "sesame.TN.irrigated",
+      "geography": {
+        "level": "state",
+        "ids": [
+          "IN-TN"
+        ]
+      },
+      "stateId": "IN-TN",
+      "districtIds": null,
+      "season": "zaid",
+      "plantingWindow": {
+        "fromMonth": 2,
+        "toMonth": 3,
+        "evidenceIds": [
+          "cat.sesame.irr"
+        ]
+      },
+      "durationDays": {
+        "min": 75,
+        "max": 90,
+        "evidenceIds": [
+          "cat.sesame.dur"
+        ]
+      },
+      "irrigation": "irrigated",
+      "irrigationEvidenceIds": [
+        "cat.sesame.irr"
+      ],
+      "waterNeedClass": null,
+      "soilNotes": null,
+      "yieldReference": null,
+      "labourClass": null,
+      "harvestPattern": "single",
+      "notes": "TN-only coverage: Tamil Nadu source; not generalised to other states. Western zone, Masipattam."
+    },
+    {
+      "contextId": "sesame.TN.rainfed",
+      "geography": {
+        "level": "state",
+        "ids": [
+          "IN-TN"
+        ]
+      },
+      "stateId": "IN-TN",
+      "districtIds": null,
+      "season": "kharif",
+      "plantingWindow": {
+        "fromMonth": 6,
+        "toMonth": 7,
+        "evidenceIds": [
+          "cat.sesame.rf"
+        ]
+      },
+      "durationDays": {
+        "min": 75,
+        "max": 90,
+        "evidenceIds": [
+          "cat.sesame.dur"
+        ]
+      },
+      "irrigation": "rainfed",
+      "irrigationEvidenceIds": [
+        "cat.sesame.rf"
+      ],
+      "waterNeedClass": null,
+      "soilNotes": null,
+      "yieldReference": null,
+      "labourClass": null,
+      "harvestPattern": "single",
+      "notes": "TN-only coverage: Tamil Nadu source; not generalised to other states. Western zone, Anippattam."
+    },
+    {
+      "contextId": "sesame.AS.kharif",
+      "geography": {
+        "level": "state",
+        "ids": [
+          "IN-AS"
+        ]
+      },
+      "stateId": "IN-AS",
+      "districtIds": null,
+      "season": "kharif",
+      "plantingWindow": {
+        "fromMonth": 7,
+        "toMonth": 8,
+        "evidenceIds": [
+          "cat.sesame.sow"
+        ]
+      },
+      "durationDays": {
+        "min": 75,
+        "max": 95,
+        "evidenceIds": [
+          "cat.sesame.adur"
+        ]
+      },
+      "irrigation": "unspecified",
+      "irrigationEvidenceIds": [],
+      "waterNeedClass": null,
+      "soilNotes": {
+        "text": "Well drained sandy loam.",
+        "evidenceIds": [
+          "cat.sesame.soil"
+        ]
+      },
+      "yieldReference": {
+        "min": 500,
+        "max": 1000,
+        "unit": "kg/ha",
+        "basis": "regional_reference",
+        "productId": "sesame-seed",
+        "evidenceIds": [
+          "cat.sesame.ayld"
+        ]
+      },
+      "labourClass": null,
+      "harvestPattern": "single",
+      "notes": "Assam; hill-zone window July to 1st fortnight of August (earlier June start for some varieties on the same page)."
+    }
+  ],
+  "exclusionsOrCautions": [
+    {
+      "text": "All Assam-listed varieties susceptible to Phytophthora blight and bacterial wilt.",
+      "evidenceIds": [
+        "cat.sesame.pb"
+      ]
+    }
+  ],
+  "marketCoverageStatus": "unavailable_pending_price_access",
+  "evidenceIds": [
+    "cat.sesame.irr",
+    "cat.sesame.rf",
+    "cat.sesame.dur",
+    "cat.sesame.sow",
+    "cat.sesame.adur",
+    "cat.sesame.ayld",
+    "cat.sesame.soil",
+    "cat.sesame.pb"
+  ],
+  "qualification": {
+    "identityResolved": true,
+    "hasRegionalContext": true,
+    "hasSourcedRequirements": true,
+    "hasSeasonInfo": true,
+    "marketStatusExplicit": true,
+    "qualified": true,
+    "missing": []
+  }
+}

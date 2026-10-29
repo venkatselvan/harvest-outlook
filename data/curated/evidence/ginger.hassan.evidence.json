@@ -1,0 +1,2566 @@
+[
+  {
+    "schemaVersion": "1.0",
+    "id": "ev.ginger.iisr2025.p3.karnataka-major-producer",
+    "mode": "live",
+    "sourceUrl": "https://spices.res.in/storage/app/public/pdfs/GINGER/3ENG.pdf",
+    "publisher": "ICAR-Indian Institute of Spices Research (ICAR-IISR), Kozhikode",
+    "documentTitle": "Ginger (ICAR-IISR extension guide, English)",
+    "documentVersion": "February 2025 imprint; PDF CreationDate 2025-03-10",
+    "contentHash": "8dde754dc3defc1c116fd11e963b091870e463b99f7c601a040f1aae0f1fe65e",
+    "locator": {
+      "page": 3,
+      "section": "Introduction"
+    },
+    "content": {
+      "kind": "excerpt",
+      "text": "states namely Madhya Pradesh, Karnataka, Orissa, Assam, Meghalaya, Arunachal Pradesh and Gujarat together contribute 65 percent to the country's total production.",
+      "language": "en"
+    },
+    "publishedAt": null,
+    "availability": {
+      "effectiveAvailableAt": "2026-10-29T19:37:50+00:00",
+      "basis": "conservative_upper_bound"
+    },
+    "ingestedAt": "2026-10-30T00:00:00+00:00",
+    "revisedAt": null,
+    "geography": {
+      "level": "national",
+      "ids": [
+        "IN"
+      ]
+    },
+    "cropIds": [
+      "ginger"
+    ],
+    "productIds": [
+      "ginger.fresh"
+    ],
+    "units": [
+      "percent"
+    ],
+    "sourceUnits": [
+      "percent"
+    ],
+    "licence": {
+      "licence": "unstated (no copyright or licence statement in the PDF text)",
+      "accessStatus": "open",
+      "redistributable": false,
+      "attribution": "ICAR-Indian Institute of Spices Research, Kozhikode. Ginger (Feb 2025)."
+    },
+    "extraction": {
+      "method": "native_text",
+      "version": "pypdf-native-text-1+pypdf6.21.4",
+      "reviewedBy": "rule_check"
+    },
+    "validationStatus": "pending"
+  },
+  {
+    "schemaVersion": "1.0",
+    "id": "ev.ginger.iisr2025.p3.altitude-and-water-regime",
+    "mode": "live",
+    "sourceUrl": "https://spices.res.in/storage/app/public/pdfs/GINGER/3ENG.pdf",
+    "publisher": "ICAR-Indian Institute of Spices Research (ICAR-IISR), Kozhikode",
+    "documentTitle": "Ginger (ICAR-IISR extension guide, English)",
+    "documentVersion": "February 2025 imprint; PDF CreationDate 2025-03-10",
+    "contentHash": "8dde754dc3defc1c116fd11e963b091870e463b99f7c601a040f1aae0f1fe65e",
+    "locator": {
+      "page": 3,
+      "section": "Climate and soil"
+    },
+    "content": {
+      "kind": "excerpt",
+      "text": "cultivated from sea level to an altitude of 1500 m above sea level. Ginger can be grown both under rain-fed and irrigated conditions.",
+      "language": "en"
+    },
+    "publishedAt": null,
+    "availability": {
+      "effectiveAvailableAt": "2026-10-29T19:37:50+00:00",
+      "basis": "conservative_upper_bound"
+    },
+    "ingestedAt": "2026-10-30T00:00:00+00:00",
+    "revisedAt": null,
+    "geography": {
+      "level": "national",
+      "ids": [
+        "IN"
+      ]
+    },
+    "cropIds": [
+      "ginger"
+    ],
+    "productIds": [
+      "ginger.fresh"
+    ],
+    "units": [],
+    "sourceUnits": [
+      "m above sea level"
+    ],
+    "licence": {
+      "licence": "unstated (no copyright or licence statement in the PDF text)",
+      "accessStatus": "open",
+      "redistributable": false,
+      "attribution": "ICAR-Indian Institute of Spices Research, Kozhikode. Ginger (Feb 2025)."
+    },
+    "extraction": {
+      "method": "native_text",
+      "version": "pypdf-native-text-1+pypdf6.21.4",
+      "reviewedBy": "rule_check"
+    },
+    "validationStatus": "pending"
+  },
+  {
+    "schemaVersion": "1.0",
+    "id": "ev.ginger.iisr2025.p3.rainfall-pattern",
+    "mode": "live",
+    "sourceUrl": "https://spices.res.in/storage/app/public/pdfs/GINGER/3ENG.pdf",
+    "publisher": "ICAR-Indian Institute of Spices Research (ICAR-IISR), Kozhikode",
+    "documentTitle": "Ginger (ICAR-IISR extension guide, English)",
+    "documentVersion": "February 2025 imprint; PDF CreationDate 2025-03-10",
+    "contentHash": "8dde754dc3defc1c116fd11e963b091870e463b99f7c601a040f1aae0f1fe65e",
+    "locator": {
+      "page": 3,
+      "section": "Climate and soil"
+    },
+    "content": {
+      "kind": "excerpt",
+      "text": "a moderate rainfall during sowing time till the rhizomes sprout, fairly heavy and well distributed showers during the growing period and dry weather for about a month before harvesting are necessary.",
+      "language": "en"
+    },
+    "publishedAt": null,
+    "availability": {
+      "effectiveAvailableAt": "2026-10-29T19:37:50+00:00",
+      "basis": "conservative_upper_bound"
+    },
+    "ingestedAt": "2026-10-30T00:00:00+00:00",
+    "revisedAt": null,
+    "geography": {
+      "level": "national",
+      "ids": [
+        "IN"
+      ]
+    },
+    "cropIds": [
+      "ginger"
+    ],
+    "productIds": [
+      "ginger.fresh"
+    ],
+    "units": [],
+    "sourceUnits": [],
+    "licence": {
+      "licence": "unstated (no copyright or licence statement in the PDF text)",
+      "accessStatus": "open",
+      "redistributable": false,
+      "attribution": "ICAR-Indian Institute of Spices Research, Kozhikode. Ginger (Feb 2025)."
+    },
+    "extraction": {
+      "method": "native_text",
+      "version": "pypdf-native-text-1+pypdf6.21.4",
+      "reviewedBy": "rule_check"
+    },
+    "validationStatus": "pending"
+  },
+  {
+    "schemaVersion": "1.0",
+    "id": "ev.ginger.iisr2025.p3.soil-well-drained",
+    "mode": "live",
+    "sourceUrl": "https://spices.res.in/storage/app/public/pdfs/GINGER/3ENG.pdf",
+    "publisher": "ICAR-Indian Institute of Spices Research (ICAR-IISR), Kozhikode",
+    "documentTitle": "Ginger (ICAR-IISR extension guide, English)",
+    "documentVersion": "February 2025 imprint; PDF CreationDate 2025-03-10",
+    "contentHash": "8dde754dc3defc1c116fd11e963b091870e463b99f7c601a040f1aae0f1fe65e",
+    "locator": {
+      "page": 3,
+      "section": "Climate and soil"
+    },
+    "content": {
+      "kind": "excerpt",
+      "text": "Ginger thrives best in well drained soils like sandy loam, clay loam, red loam or lateritic loam. A friable loam rich in humus is ideal.",
+      "language": "en"
+    },
+    "publishedAt": null,
+    "availability": {
+      "effectiveAvailableAt": "2026-10-29T19:37:50+00:00",
+      "basis": "conservative_upper_bound"
+    },
+    "ingestedAt": "2026-10-30T00:00:00+00:00",
+    "revisedAt": null,
+    "geography": {
+      "level": "national",
+      "ids": [
+        "IN"
+      ]
+    },
+    "cropIds": [
+      "ginger"
+    ],
+    "productIds": [
+      "ginger.fresh"
+    ],
+    "units": [],
+    "sourceUnits": [],
+    "licence": {
+      "licence": "unstated (no copyright or licence statement in the PDF text)",
+      "accessStatus": "open",
+      "redistributable": false,
+      "attribution": "ICAR-Indian Institute of Spices Research, Kozhikode. Ginger (Feb 2025)."
+    },
+    "extraction": {
+      "method": "native_text",
+      "version": "pypdf-native-text-1+pypdf6.21.4",
+      "reviewedBy": "rule_check"
+    },
+    "validationStatus": "pending"
+  },
+  {
+    "schemaVersion": "1.0",
+    "id": "ev.ginger.iisr2025.p4.variety-varada",
+    "mode": "live",
+    "sourceUrl": "https://spices.res.in/storage/app/public/pdfs/GINGER/3ENG.pdf",
+    "publisher": "ICAR-Indian Institute of Spices Research (ICAR-IISR), Kozhikode",
+    "documentTitle": "Ginger (ICAR-IISR extension guide, English)",
+    "documentVersion": "February 2025 imprint; PDF CreationDate 2025-03-10",
+    "contentHash": "8dde754dc3defc1c116fd11e963b091870e463b99f7c601a040f1aae0f1fe65e",
+    "locator": {
+      "page": 4,
+      "section": "Table 1. Ginger varieties released from ICAR-IISR"
+    },
+    "content": {
+      "kind": "excerpt",
+      "text": "IISR Varada 22.6 200 20.7 4.5 6.7 1.8",
+      "language": "en"
+    },
+    "publishedAt": null,
+    "availability": {
+      "effectiveAvailableAt": "2026-10-29T19:37:50+00:00",
+      "basis": "conservative_upper_bound"
+    },
+    "ingestedAt": "2026-10-30T00:00:00+00:00",
+    "revisedAt": null,
+    "geography": {
+      "level": "national",
+      "ids": [
+        "IN"
+      ]
+    },
+    "cropIds": [
+      "ginger"
+    ],
+    "productIds": [
+      "ginger.fresh",
+      "ginger.dry"
+    ],
+    "units": [
+      "kg/ha",
+      "days",
+      "percent"
+    ],
+    "sourceUnits": [
+      "t ha-1",
+      "days",
+      "%"
+    ],
+    "licence": {
+      "licence": "unstated (no copyright or licence statement in the PDF text)",
+      "accessStatus": "open",
+      "redistributable": false,
+      "attribution": "ICAR-Indian Institute of Spices Research, Kozhikode. Ginger (Feb 2025)."
+    },
+    "extraction": {
+      "method": "native_text",
+      "version": "pypdf-native-text-1+pypdf6.21.4",
+      "reviewedBy": "rule_check"
+    },
+    "validationStatus": "pending"
+  },
+  {
+    "schemaVersion": "1.0",
+    "id": "ev.ginger.iisr2025.p4.variety-surasa",
+    "mode": "live",
+    "sourceUrl": "https://spices.res.in/storage/app/public/pdfs/GINGER/3ENG.pdf",
+    "publisher": "ICAR-Indian Institute of Spices Research (ICAR-IISR), Kozhikode",
+    "documentTitle": "Ginger (ICAR-IISR extension guide, English)",
+    "documentVersion": "February 2025 imprint; PDF CreationDate 2025-03-10",
+    "contentHash": "8dde754dc3defc1c116fd11e963b091870e463b99f7c601a040f1aae0f1fe65e",
+    "locator": {
+      "page": 4,
+      "section": "Table 1. Ginger varieties released from ICAR-IISR"
+    },
+    "content": {
+      "kind": "excerpt",
+      "text": "IISR Surasa 24.33 210-240 21.97 5.5 4.45 1.66 Plumpy bold rhizomes suitable for vegetable purpose",
+      "language": "en"
+    },
+    "publishedAt": null,
+    "availability": {
+      "effectiveAvailableAt": "2026-10-29T19:37:50+00:00",
+      "basis": "conservative_upper_bound"
+    },
+    "ingestedAt": "2026-10-30T00:00:00+00:00",
+    "revisedAt": null,
+    "geography": {
+      "level": "national",
+      "ids": [
+        "IN"
+      ]
+    },
+    "cropIds": [
+      "ginger"
+    ],
+    "productIds": [
+      "ginger.fresh",
+      "ginger.dry"
+    ],
+    "units": [
+      "kg/ha",
+      "days",
+      "percent"
+    ],
+    "sourceUnits": [
+      "t ha-1",
+      "days",
+      "%"
+    ],
+    "licence": {
+      "licence": "unstated (no copyright or licence statement in the PDF text)",
+      "accessStatus": "open",
+      "redistributable": false,
+      "attribution": "ICAR-Indian Institute of Spices Research, Kozhikode. Ginger (Feb 2025)."
+    },
+    "extraction": {
+      "method": "native_text",
+      "version": "pypdf-native-text-1+pypdf6.21.4",
+      "reviewedBy": "rule_check"
+    },
+    "validationStatus": "pending"
+  },
+  {
+    "schemaVersion": "1.0",
+    "id": "ev.ginger.iisr2025.p10.planting-season-west-coast",
+    "mode": "live",
+    "sourceUrl": "https://spices.res.in/storage/app/public/pdfs/GINGER/3ENG.pdf",
+    "publisher": "ICAR-Indian Institute of Spices Research (ICAR-IISR), Kozhikode",
+    "documentTitle": "Ginger (ICAR-IISR extension guide, English)",
+    "documentVersion": "February 2025 imprint; PDF CreationDate 2025-03-10",
+    "contentHash": "8dde754dc3defc1c116fd11e963b091870e463b99f7c601a040f1aae0f1fe65e",
+    "locator": {
+      "page": 10,
+      "section": "Season"
+    },
+    "content": {
+      "kind": "excerpt",
+      "text": "The best time for planting ginger in the West Coast of India is during the first fortnight of May with the receipt of pre -monsoon showers.",
+      "language": "en"
+    },
+    "publishedAt": null,
+    "availability": {
+      "effectiveAvailableAt": "2026-10-29T19:37:50+00:00",
+      "basis": "conservative_upper_bound"
+    },
+    "ingestedAt": "2026-10-30T00:00:00+00:00",
+    "revisedAt": null,
+    "geography": {
+      "level": "region",
+      "ids": [
+        "IN-region-west-coast"
+      ]
+    },
+    "cropIds": [
+      "ginger"
+    ],
+    "productIds": [
+      "ginger.fresh"
+    ],
+    "units": [],
+    "sourceUnits": [
+      "fortnight"
+    ],
+    "licence": {
+      "licence": "unstated (no copyright or licence statement in the PDF text)",
+      "accessStatus": "open",
+      "redistributable": false,
+      "attribution": "ICAR-Indian Institute of Spices Research, Kozhikode. Ginger (Feb 2025)."
+    },
+    "extraction": {
+      "method": "native_text",
+      "version": "pypdf-native-text-1+pypdf6.21.4",
+      "reviewedBy": "rule_check"
+    },
+    "validationStatus": "pending"
+  },
+  {
+    "schemaVersion": "1.0",
+    "id": "ev.ginger.iisr2025.p10.planting-irrigated-early",
+    "mode": "live",
+    "sourceUrl": "https://spices.res.in/storage/app/public/pdfs/GINGER/3ENG.pdf",
+    "publisher": "ICAR-Indian Institute of Spices Research (ICAR-IISR), Kozhikode",
+    "documentTitle": "Ginger (ICAR-IISR extension guide, English)",
+    "documentVersion": "February 2025 imprint; PDF CreationDate 2025-03-10",
+    "contentHash": "8dde754dc3defc1c116fd11e963b091870e463b99f7c601a040f1aae0f1fe65e",
+    "locator": {
+      "page": 10,
+      "section": "Season"
+    },
+    "content": {
+      "kind": "excerpt",
+      "text": "Under irrigated conditions, it can be planted well in advance during the middle of February or early March.",
+      "language": "en"
+    },
+    "publishedAt": null,
+    "availability": {
+      "effectiveAvailableAt": "2026-10-29T19:37:50+00:00",
+      "basis": "conservative_upper_bound"
+    },
+    "ingestedAt": "2026-10-30T00:00:00+00:00",
+    "revisedAt": null,
+    "geography": {
+      "level": "region",
+      "ids": [
+        "IN-region-west-coast"
+      ]
+    },
+    "cropIds": [
+      "ginger"
+    ],
+    "productIds": [
+      "ginger.fresh"
+    ],
+    "units": [],
+    "sourceUnits": [],
+    "licence": {
+      "licence": "unstated (no copyright or licence statement in the PDF text)",
+      "accessStatus": "open",
+      "redistributable": false,
+      "attribution": "ICAR-Indian Institute of Spices Research, Kozhikode. Ginger (Feb 2025)."
+    },
+    "extraction": {
+      "method": "native_text",
+      "version": "pypdf-native-text-1+pypdf6.21.4",
+      "reviewedBy": "rule_check"
+    },
+    "validationStatus": "pending"
+  },
+  {
+    "schemaVersion": "1.0",
+    "id": "ev.ginger.iisr2025.p10.seed-piece",
+    "mode": "live",
+    "sourceUrl": "https://spices.res.in/storage/app/public/pdfs/GINGER/3ENG.pdf",
+    "publisher": "ICAR-Indian Institute of Spices Research (ICAR-IISR), Kozhikode",
+    "documentTitle": "Ginger (ICAR-IISR extension guide, English)",
+    "documentVersion": "February 2025 imprint; PDF CreationDate 2025-03-10",
+    "contentHash": "8dde754dc3defc1c116fd11e963b091870e463b99f7c601a040f1aae0f1fe65e",
+    "locator": {
+      "page": 10,
+      "section": "Planting"
+    },
+    "content": {
+      "kind": "excerpt",
+      "text": "Carefully preserved seed rhizomes are cut into pieces of 2.5-5.0 cm length weighing 20 -25 g each having one or two good buds.",
+      "language": "en"
+    },
+    "publishedAt": null,
+    "availability": {
+      "effectiveAvailableAt": "2026-10-29T19:37:50+00:00",
+      "basis": "conservative_upper_bound"
+    },
+    "ingestedAt": "2026-10-30T00:00:00+00:00",
+    "revisedAt": null,
+    "geography": {
+      "level": "national",
+      "ids": [
+        "IN"
+      ]
+    },
+    "cropIds": [
+      "ginger"
+    ],
+    "productIds": [
+      "ginger.seed_rhizome"
+    ],
+    "units": [],
+    "sourceUnits": [
+      "cm",
+      "g"
+    ],
+    "licence": {
+      "licence": "unstated (no copyright or licence statement in the PDF text)",
+      "accessStatus": "open",
+      "redistributable": false,
+      "attribution": "ICAR-Indian Institute of Spices Research, Kozhikode. Ginger (Feb 2025)."
+    },
+    "extraction": {
+      "method": "native_text",
+      "version": "pypdf-native-text-1+pypdf6.21.4",
+      "reviewedBy": "rule_check"
+    },
+    "validationStatus": "pending"
+  },
+  {
+    "schemaVersion": "1.0",
+    "id": "ev.ginger.iisr2025.p10.seed-rate-kerala",
+    "mode": "live",
+    "sourceUrl": "https://spices.res.in/storage/app/public/pdfs/GINGER/3ENG.pdf",
+    "publisher": "ICAR-Indian Institute of Spices Research (ICAR-IISR), Kozhikode",
+    "documentTitle": "Ginger (ICAR-IISR extension guide, English)",
+    "documentVersion": "February 2025 imprint; PDF CreationDate 2025-03-10",
+    "contentHash": "8dde754dc3defc1c116fd11e963b091870e463b99f7c601a040f1aae0f1fe65e",
+    "locator": {
+      "page": 10,
+      "section": "Planting"
+    },
+    "content": {
+      "kind": "excerpt",
+      "text": "In Kerala, the seed rate varies from 1500 to 1800 kg ha-1. At higher altitudes the seed rate may vary from 2000 to 2500 kg ha-1.",
+      "language": "en"
+    },
+    "publishedAt": null,
+    "availability": {
+      "effectiveAvailableAt": "2026-10-29T19:37:50+00:00",
+      "basis": "conservative_upper_bound"
+    },
+    "ingestedAt": "2026-10-30T00:00:00+00:00",
+    "revisedAt": null,
+    "geography": {
+      "level": "state",
+      "ids": [
+        "IN-KL"
+      ]
+    },
+    "cropIds": [
+      "ginger"
+    ],
+    "productIds": [
+      "ginger.seed_rhizome"
+    ],
+    "units": [
+      "kg/ha"
+    ],
+    "sourceUnits": [
+      "kg ha-1"
+    ],
+    "licence": {
+      "licence": "unstated (no copyright or licence statement in the PDF text)",
+      "accessStatus": "open",
+      "redistributable": false,
+      "attribution": "ICAR-Indian Institute of Spices Research, Kozhikode. Ginger (Feb 2025)."
+    },
+    "extraction": {
+      "method": "native_text",
+      "version": "pypdf-native-text-1+pypdf6.21.4",
+      "reviewedBy": "rule_check"
+    },
+    "validationStatus": "pending"
+  },
+  {
+    "schemaVersion": "1.0",
+    "id": "ev.ginger.iisr2025.p11.spacing",
+    "mode": "live",
+    "sourceUrl": "https://spices.res.in/storage/app/public/pdfs/GINGER/3ENG.pdf",
+    "publisher": "ICAR-Indian Institute of Spices Research (ICAR-IISR), Kozhikode",
+    "documentTitle": "Ginger (ICAR-IISR extension guide, English)",
+    "documentVersion": "February 2025 imprint; PDF CreationDate 2025-03-10",
+    "contentHash": "8dde754dc3defc1c116fd11e963b091870e463b99f7c601a040f1aae0f1fe65e",
+    "locator": {
+      "page": 11,
+      "section": "Planting"
+    },
+    "content": {
+      "kind": "excerpt",
+      "text": "along the rows and 20-25 cm between the rows.",
+      "language": "en"
+    },
+    "publishedAt": null,
+    "availability": {
+      "effectiveAvailableAt": "2026-10-29T19:37:50+00:00",
+      "basis": "conservative_upper_bound"
+    },
+    "ingestedAt": "2026-10-30T00:00:00+00:00",
+    "revisedAt": null,
+    "geography": {
+      "level": "national",
+      "ids": [
+        "IN"
+      ]
+    },
+    "cropIds": [
+      "ginger"
+    ],
+    "productIds": [
+      "ginger.fresh"
+    ],
+    "units": [],
+    "sourceUnits": [
+      "cm"
+    ],
+    "licence": {
+      "licence": "unstated (no copyright or licence statement in the PDF text)",
+      "accessStatus": "open",
+      "redistributable": false,
+      "attribution": "ICAR-Indian Institute of Spices Research, Kozhikode. Ginger (Feb 2025)."
+    },
+    "extraction": {
+      "method": "native_text",
+      "version": "pypdf-native-text-1+pypdf6.21.4",
+      "reviewedBy": "rule_check"
+    },
+    "validationStatus": "pending"
+  },
+  {
+    "schemaVersion": "1.0",
+    "id": "ev.ginger.iisr2025.p12.fertilizer-karnataka-row",
+    "mode": "live",
+    "sourceUrl": "https://spices.res.in/storage/app/public/pdfs/GINGER/3ENG.pdf",
+    "publisher": "ICAR-Indian Institute of Spices Research (ICAR-IISR), Kozhikode",
+    "documentTitle": "Ginger (ICAR-IISR extension guide, English)",
+    "documentVersion": "February 2025 imprint; PDF CreationDate 2025-03-10",
+    "contentHash": "8dde754dc3defc1c116fd11e963b091870e463b99f7c601a040f1aae0f1fe65e",
+    "locator": {
+      "page": 12,
+      "section": "Table 3. Fertilizer schedule of ginger for different states in India"
+    },
+    "content": {
+      "kind": "excerpt",
+      "text": "Karnataka FYM/compost 25 t ha-1; NPK 100:50:50 kg ha-1.",
+      "language": "en"
+    },
+    "publishedAt": null,
+    "availability": {
+      "effectiveAvailableAt": "2026-10-29T19:37:50+00:00",
+      "basis": "conservative_upper_bound"
+    },
+    "ingestedAt": "2026-10-30T00:00:00+00:00",
+    "revisedAt": null,
+    "geography": {
+      "level": "state",
+      "ids": [
+        "IN-KA"
+      ]
+    },
+    "cropIds": [
+      "ginger"
+    ],
+    "productIds": [
+      "ginger.fresh"
+    ],
+    "units": [
+      "kg/ha"
+    ],
+    "sourceUnits": [
+      "t ha-1",
+      "kg ha-1"
+    ],
+    "licence": {
+      "licence": "unstated (no copyright or licence statement in the PDF text)",
+      "accessStatus": "open",
+      "redistributable": false,
+      "attribution": "ICAR-Indian Institute of Spices Research, Kozhikode. Ginger (Feb 2025)."
+    },
+    "extraction": {
+      "method": "native_text",
+      "version": "pypdf-native-text-1+pypdf6.21.4",
+      "reviewedBy": "rule_check"
+    },
+    "validationStatus": "pending"
+  },
+  {
+    "schemaVersion": "1.0",
+    "id": "ev.ginger.iisr2025.p14.mulching-purpose",
+    "mode": "live",
+    "sourceUrl": "https://spices.res.in/storage/app/public/pdfs/GINGER/3ENG.pdf",
+    "publisher": "ICAR-Indian Institute of Spices Research (ICAR-IISR), Kozhikode",
+    "documentTitle": "Ginger (ICAR-IISR extension guide, English)",
+    "documentVersion": "February 2025 imprint; PDF CreationDate 2025-03-10",
+    "contentHash": "8dde754dc3defc1c116fd11e963b091870e463b99f7c601a040f1aae0f1fe65e",
+    "locator": {
+      "page": 14,
+      "section": "Mulching"
+    },
+    "content": {
+      "kind": "excerpt",
+      "text": "Mulching the beds with green leaves/organic wastes is essential to prevent soil splashing and erosion of soil due to heavy rain.",
+      "language": "en"
+    },
+    "publishedAt": null,
+    "availability": {
+      "effectiveAvailableAt": "2026-10-29T19:37:50+00:00",
+      "basis": "conservative_upper_bound"
+    },
+    "ingestedAt": "2026-10-30T00:00:00+00:00",
+    "revisedAt": null,
+    "geography": {
+      "level": "national",
+      "ids": [
+        "IN"
+      ]
+    },
+    "cropIds": [
+      "ginger"
+    ],
+    "productIds": [
+      "ginger.fresh"
+    ],
+    "units": [],
+    "sourceUnits": [],
+    "licence": {
+      "licence": "unstated (no copyright or licence statement in the PDF text)",
+      "accessStatus": "open",
+      "redistributable": false,
+      "attribution": "ICAR-Indian Institute of Spices Research, Kozhikode. Ginger (Feb 2025)."
+    },
+    "extraction": {
+      "method": "native_text",
+      "version": "pypdf-native-text-1+pypdf6.21.4",
+      "reviewedBy": "rule_check"
+    },
+    "validationStatus": "pending"
+  },
+  {
+    "schemaVersion": "1.0",
+    "id": "ev.ginger.iisr2025.p14.mulching-repeat",
+    "mode": "live",
+    "sourceUrl": "https://spices.res.in/storage/app/public/pdfs/GINGER/3ENG.pdf",
+    "publisher": "ICAR-Indian Institute of Spices Research (ICAR-IISR), Kozhikode",
+    "documentTitle": "Ginger (ICAR-IISR extension guide, English)",
+    "documentVersion": "February 2025 imprint; PDF CreationDate 2025-03-10",
+    "contentHash": "8dde754dc3defc1c116fd11e963b091870e463b99f7c601a040f1aae0f1fe65e",
+    "locator": {
+      "page": 14,
+      "section": "Mulching"
+    },
+    "content": {
+      "kind": "excerpt",
+      "text": "repeated @ 7.5 tonnes ha-1 at 45 and 90 days after planting, immediately after weeding, application of fertilizers and earthing up.",
+      "language": "en"
+    },
+    "publishedAt": null,
+    "availability": {
+      "effectiveAvailableAt": "2026-10-29T19:37:50+00:00",
+      "basis": "conservative_upper_bound"
+    },
+    "ingestedAt": "2026-10-30T00:00:00+00:00",
+    "revisedAt": null,
+    "geography": {
+      "level": "national",
+      "ids": [
+        "IN"
+      ]
+    },
+    "cropIds": [
+      "ginger"
+    ],
+    "productIds": [
+      "ginger.fresh"
+    ],
+    "units": [
+      "days"
+    ],
+    "sourceUnits": [
+      "tonnes ha-1",
+      "days after planting"
+    ],
+    "licence": {
+      "licence": "unstated (no copyright or licence statement in the PDF text)",
+      "accessStatus": "open",
+      "redistributable": false,
+      "attribution": "ICAR-Indian Institute of Spices Research, Kozhikode. Ginger (Feb 2025)."
+    },
+    "extraction": {
+      "method": "native_text",
+      "version": "pypdf-native-text-1+pypdf6.21.4",
+      "reviewedBy": "rule_check"
+    },
+    "validationStatus": "pending"
+  },
+  {
+    "schemaVersion": "1.0",
+    "id": "ev.ginger.iisr2025.p14.rainfed-vs-irrigated",
+    "mode": "live",
+    "sourceUrl": "https://spices.res.in/storage/app/public/pdfs/GINGER/3ENG.pdf",
+    "publisher": "ICAR-Indian Institute of Spices Research (ICAR-IISR), Kozhikode",
+    "documentTitle": "Ginger (ICAR-IISR extension guide, English)",
+    "documentVersion": "February 2025 imprint; PDF CreationDate 2025-03-10",
+    "contentHash": "8dde754dc3defc1c116fd11e963b091870e463b99f7c601a040f1aae0f1fe65e",
+    "locator": {
+      "page": 14,
+      "section": "Irrigation"
+    },
+    "content": {
+      "kind": "excerpt",
+      "text": "Ginger is cultivated as rainfed crop in high rainfall areas (uniform distribution for 5 to 7 months) and irrigated crop in less rainfall areas where distribution is not uniform.",
+      "language": "en"
+    },
+    "publishedAt": null,
+    "availability": {
+      "effectiveAvailableAt": "2026-10-29T19:37:50+00:00",
+      "basis": "conservative_upper_bound"
+    },
+    "ingestedAt": "2026-10-30T00:00:00+00:00",
+    "revisedAt": null,
+    "geography": {
+      "level": "national",
+      "ids": [
+        "IN"
+      ]
+    },
+    "cropIds": [
+      "ginger"
+    ],
+    "productIds": [
+      "ginger.fresh"
+    ],
+    "units": [],
+    "sourceUnits": [
+      "months"
+    ],
+    "licence": {
+      "licence": "unstated (no copyright or licence statement in the PDF text)",
+      "accessStatus": "open",
+      "redistributable": false,
+      "attribution": "ICAR-Indian Institute of Spices Research, Kozhikode. Ginger (Feb 2025)."
+    },
+    "extraction": {
+      "method": "native_text",
+      "version": "pypdf-native-text-1+pypdf6.21.4",
+      "reviewedBy": "rule_check"
+    },
+    "validationStatus": "pending"
+  },
+  {
+    "schemaVersion": "1.0",
+    "id": "ev.ginger.iisr2025.p14.water-requirement",
+    "mode": "live",
+    "sourceUrl": "https://spices.res.in/storage/app/public/pdfs/GINGER/3ENG.pdf",
+    "publisher": "ICAR-Indian Institute of Spices Research (ICAR-IISR), Kozhikode",
+    "documentTitle": "Ginger (ICAR-IISR extension guide, English)",
+    "documentVersion": "February 2025 imprint; PDF CreationDate 2025-03-10",
+    "contentHash": "8dde754dc3defc1c116fd11e963b091870e463b99f7c601a040f1aae0f1fe65e",
+    "locator": {
+      "page": 14,
+      "section": "Irrigation"
+    },
+    "content": {
+      "kind": "excerpt",
+      "text": "Ginger requires 1300 -1500 mm of water during its crop cycle.",
+      "language": "en"
+    },
+    "publishedAt": null,
+    "availability": {
+      "effectiveAvailableAt": "2026-10-29T19:37:50+00:00",
+      "basis": "conservative_upper_bound"
+    },
+    "ingestedAt": "2026-10-30T00:00:00+00:00",
+    "revisedAt": null,
+    "geography": {
+      "level": "national",
+      "ids": [
+        "IN"
+      ]
+    },
+    "cropIds": [
+      "ginger"
+    ],
+    "productIds": [
+      "ginger.fresh"
+    ],
+    "units": [
+      "mm"
+    ],
+    "sourceUnits": [
+      "mm"
+    ],
+    "licence": {
+      "licence": "unstated (no copyright or licence statement in the PDF text)",
+      "accessStatus": "open",
+      "redistributable": false,
+      "attribution": "ICAR-Indian Institute of Spices Research, Kozhikode. Ginger (Feb 2025)."
+    },
+    "extraction": {
+      "method": "native_text",
+      "version": "pypdf-native-text-1+pypdf6.21.4",
+      "reviewedBy": "rule_check"
+    },
+    "validationStatus": "pending"
+  },
+  {
+    "schemaVersion": "1.0",
+    "id": "ev.ginger.iisr2025.p14.critical-stages",
+    "mode": "live",
+    "sourceUrl": "https://spices.res.in/storage/app/public/pdfs/GINGER/3ENG.pdf",
+    "publisher": "ICAR-Indian Institute of Spices Research (ICAR-IISR), Kozhikode",
+    "documentTitle": "Ginger (ICAR-IISR extension guide, English)",
+    "documentVersion": "February 2025 imprint; PDF CreationDate 2025-03-10",
+    "contentHash": "8dde754dc3defc1c116fd11e963b091870e463b99f7c601a040f1aae0f1fe65e",
+    "locator": {
+      "page": 14,
+      "section": "Irrigation"
+    },
+    "content": {
+      "kind": "excerpt",
+      "text": "for irrigation are during germination, rhizome initiation (90 DAP) and rhizome development stages (135 DAP).",
+      "language": "en"
+    },
+    "publishedAt": null,
+    "availability": {
+      "effectiveAvailableAt": "2026-10-29T19:37:50+00:00",
+      "basis": "conservative_upper_bound"
+    },
+    "ingestedAt": "2026-10-30T00:00:00+00:00",
+    "revisedAt": null,
+    "geography": {
+      "level": "national",
+      "ids": [
+        "IN"
+      ]
+    },
+    "cropIds": [
+      "ginger"
+    ],
+    "productIds": [
+      "ginger.fresh"
+    ],
+    "units": [
+      "days"
+    ],
+    "sourceUnits": [
+      "DAP"
+    ],
+    "licence": {
+      "licence": "unstated (no copyright or licence statement in the PDF text)",
+      "accessStatus": "open",
+      "redistributable": false,
+      "attribution": "ICAR-Indian Institute of Spices Research, Kozhikode. Ginger (Feb 2025)."
+    },
+    "extraction": {
+      "method": "native_text",
+      "version": "pypdf-native-text-1+pypdf6.21.4",
+      "reviewedBy": "rule_check"
+    },
+    "validationStatus": "pending"
+  },
+  {
+    "schemaVersion": "1.0",
+    "id": "ev.ginger.iisr2025.p14.irrigation-interval",
+    "mode": "live",
+    "sourceUrl": "https://spices.res.in/storage/app/public/pdfs/GINGER/3ENG.pdf",
+    "publisher": "ICAR-Indian Institute of Spices Research (ICAR-IISR), Kozhikode",
+    "documentTitle": "Ginger (ICAR-IISR extension guide, English)",
+    "documentVersion": "February 2025 imprint; PDF CreationDate 2025-03-10",
+    "contentHash": "8dde754dc3defc1c116fd11e963b091870e463b99f7c601a040f1aae0f1fe65e",
+    "locator": {
+      "page": 14,
+      "section": "Irrigation"
+    },
+    "content": {
+      "kind": "excerpt",
+      "text": "The first irrigation should be done immediately after planting and subsequent irrigations are given at intervals of 7 to 10 days in conventional irrigation (based on prevailing weather and soil type).",
+      "language": "en"
+    },
+    "publishedAt": null,
+    "availability": {
+      "effectiveAvailableAt": "2026-10-29T19:37:50+00:00",
+      "basis": "conservative_upper_bound"
+    },
+    "ingestedAt": "2026-10-30T00:00:00+00:00",
+    "revisedAt": null,
+    "geography": {
+      "level": "national",
+      "ids": [
+        "IN"
+      ]
+    },
+    "cropIds": [
+      "ginger"
+    ],
+    "productIds": [
+      "ginger.fresh"
+    ],
+    "units": [
+      "days"
+    ],
+    "sourceUnits": [
+      "days"
+    ],
+    "licence": {
+      "licence": "unstated (no copyright or licence statement in the PDF text)",
+      "accessStatus": "open",
+      "redistributable": false,
+      "attribution": "ICAR-Indian Institute of Spices Research, Kozhikode. Ginger (Feb 2025)."
+    },
+    "extraction": {
+      "method": "native_text",
+      "version": "pypdf-native-text-1+pypdf6.21.4",
+      "reviewedBy": "rule_check"
+    },
+    "validationStatus": "pending"
+  },
+  {
+    "schemaVersion": "1.0",
+    "id": "ev.ginger.iisr2025.p15.drainage-channels",
+    "mode": "live",
+    "sourceUrl": "https://spices.res.in/storage/app/public/pdfs/GINGER/3ENG.pdf",
+    "publisher": "ICAR-Indian Institute of Spices Research (ICAR-IISR), Kozhikode",
+    "documentTitle": "Ginger (ICAR-IISR extension guide, English)",
+    "documentVersion": "February 2025 imprint; PDF CreationDate 2025-03-10",
+    "contentHash": "8dde754dc3defc1c116fd11e963b091870e463b99f7c601a040f1aae0f1fe65e",
+    "locator": {
+      "page": 15,
+      "section": "Inter cultivation"
+    },
+    "content": {
+      "kind": "excerpt",
+      "text": "Proper drainage channels are to be provided to avoid stagnation of water.",
+      "language": "en"
+    },
+    "publishedAt": null,
+    "availability": {
+      "effectiveAvailableAt": "2026-10-29T19:37:50+00:00",
+      "basis": "conservative_upper_bound"
+    },
+    "ingestedAt": "2026-10-30T00:00:00+00:00",
+    "revisedAt": null,
+    "geography": {
+      "level": "national",
+      "ids": [
+        "IN"
+      ]
+    },
+    "cropIds": [
+      "ginger"
+    ],
+    "productIds": [
+      "ginger.fresh"
+    ],
+    "units": [],
+    "sourceUnits": [],
+    "licence": {
+      "licence": "unstated (no copyright or licence statement in the PDF text)",
+      "accessStatus": "open",
+      "redistributable": false,
+      "attribution": "ICAR-Indian Institute of Spices Research, Kozhikode. Ginger (Feb 2025)."
+    },
+    "extraction": {
+      "method": "native_text",
+      "version": "pypdf-native-text-1+pypdf6.21.4",
+      "reviewedBy": "rule_check"
+    },
+    "validationStatus": "pending"
+  },
+  {
+    "schemaVersion": "1.0",
+    "id": "ev.ginger.iisr2025.p15.karnataka-cropping",
+    "mode": "live",
+    "sourceUrl": "https://spices.res.in/storage/app/public/pdfs/GINGER/3ENG.pdf",
+    "publisher": "ICAR-Indian Institute of Spices Research (ICAR-IISR), Kozhikode",
+    "documentTitle": "Ginger (ICAR-IISR extension guide, English)",
+    "documentVersion": "February 2025 imprint; PDF CreationDate 2025-03-10",
+    "contentHash": "8dde754dc3defc1c116fd11e963b091870e463b99f7c601a040f1aae0f1fe65e",
+    "locator": {
+      "page": 15,
+      "section": "Inter cropping and crop rotation"
+    },
+    "content": {
+      "kind": "excerpt",
+      "text": "In Karnataka, ginger is also mix cropped with ragi, red gram and castor. Ginger is also grown as an intercrop in coconut, arecanut, coffee and orange plantations in Kerala and Karnataka.",
+      "language": "en"
+    },
+    "publishedAt": null,
+    "availability": {
+      "effectiveAvailableAt": "2026-10-29T19:37:50+00:00",
+      "basis": "conservative_upper_bound"
+    },
+    "ingestedAt": "2026-10-30T00:00:00+00:00",
+    "revisedAt": null,
+    "geography": {
+      "level": "region",
+      "ids": [
+        "IN-KA",
+        "IN-KL"
+      ]
+    },
+    "cropIds": [
+      "ginger"
+    ],
+    "productIds": [
+      "ginger.fresh"
+    ],
+    "units": [],
+    "sourceUnits": [],
+    "licence": {
+      "licence": "unstated (no copyright or licence statement in the PDF text)",
+      "accessStatus": "open",
+      "redistributable": false,
+      "attribution": "ICAR-Indian Institute of Spices Research, Kozhikode. Ginger (Feb 2025)."
+    },
+    "extraction": {
+      "method": "native_text",
+      "version": "pypdf-native-text-1+pypdf6.21.4",
+      "reviewedBy": "rule_check"
+    },
+    "validationStatus": "pending"
+  },
+  {
+    "schemaVersion": "1.0",
+    "id": "ev.ginger.iisr2025.p15.rotation-wilt-hosts",
+    "mode": "live",
+    "sourceUrl": "https://spices.res.in/storage/app/public/pdfs/GINGER/3ENG.pdf",
+    "publisher": "ICAR-Indian Institute of Spices Research (ICAR-IISR), Kozhikode",
+    "documentTitle": "Ginger (ICAR-IISR extension guide, English)",
+    "documentVersion": "February 2025 imprint; PDF CreationDate 2025-03-10",
+    "contentHash": "8dde754dc3defc1c116fd11e963b091870e463b99f7c601a040f1aae0f1fe65e",
+    "locator": {
+      "page": 15,
+      "section": "Inter cropping and crop rotation"
+    },
+    "content": {
+      "kind": "excerpt",
+      "text": "crop rotation using tomato, potato, chillies, brinjal and peanut should be avoided, as these plants are hosts for the wilt causing organism, Ralstonia solanacearum.",
+      "language": "en"
+    },
+    "publishedAt": null,
+    "availability": {
+      "effectiveAvailableAt": "2026-10-29T19:37:50+00:00",
+      "basis": "conservative_upper_bound"
+    },
+    "ingestedAt": "2026-10-30T00:00:00+00:00",
+    "revisedAt": null,
+    "geography": {
+      "level": "national",
+      "ids": [
+        "IN"
+      ]
+    },
+    "cropIds": [
+      "ginger"
+    ],
+    "productIds": [
+      "ginger.fresh"
+    ],
+    "units": [],
+    "sourceUnits": [],
+    "licence": {
+      "licence": "unstated (no copyright or licence statement in the PDF text)",
+      "accessStatus": "open",
+      "redistributable": false,
+      "attribution": "ICAR-Indian Institute of Spices Research, Kozhikode. Ginger (Feb 2025)."
+    },
+    "extraction": {
+      "method": "native_text",
+      "version": "pypdf-native-text-1+pypdf6.21.4",
+      "reviewedBy": "rule_check"
+    },
+    "validationStatus": "pending"
+  },
+  {
+    "schemaVersion": "1.0",
+    "id": "ev.ginger.iisr2025.p15.soft-rot-destructive",
+    "mode": "live",
+    "sourceUrl": "https://spices.res.in/storage/app/public/pdfs/GINGER/3ENG.pdf",
+    "publisher": "ICAR-Indian Institute of Spices Research (ICAR-IISR), Kozhikode",
+    "documentTitle": "Ginger (ICAR-IISR extension guide, English)",
+    "documentVersion": "February 2025 imprint; PDF CreationDate 2025-03-10",
+    "contentHash": "8dde754dc3defc1c116fd11e963b091870e463b99f7c601a040f1aae0f1fe65e",
+    "locator": {
+      "page": 15,
+      "section": "Diseases: Soft rot"
+    },
+    "content": {
+      "kind": "excerpt",
+      "text": "Soft rot is the most destructive disease of ginger which results in total loss of affected clumps.",
+      "language": "en"
+    },
+    "publishedAt": null,
+    "availability": {
+      "effectiveAvailableAt": "2026-10-29T19:37:50+00:00",
+      "basis": "conservative_upper_bound"
+    },
+    "ingestedAt": "2026-10-30T00:00:00+00:00",
+    "revisedAt": null,
+    "geography": {
+      "level": "national",
+      "ids": [
+        "IN"
+      ]
+    },
+    "cropIds": [
+      "ginger"
+    ],
+    "productIds": [
+      "ginger.fresh"
+    ],
+    "units": [],
+    "sourceUnits": [],
+    "licence": {
+      "licence": "unstated (no copyright or licence statement in the PDF text)",
+      "accessStatus": "open",
+      "redistributable": false,
+      "attribution": "ICAR-Indian Institute of Spices Research, Kozhikode. Ginger (Feb 2025)."
+    },
+    "extraction": {
+      "method": "native_text",
+      "version": "pypdf-native-text-1+pypdf6.21.4",
+      "reviewedBy": "rule_check"
+    },
+    "validationStatus": "pending"
+  },
+  {
+    "schemaVersion": "1.0",
+    "id": "ev.ginger.iisr2025.p15.soft-rot-monsoon-moisture",
+    "mode": "live",
+    "sourceUrl": "https://spices.res.in/storage/app/public/pdfs/GINGER/3ENG.pdf",
+    "publisher": "ICAR-Indian Institute of Spices Research (ICAR-IISR), Kozhikode",
+    "documentTitle": "Ginger (ICAR-IISR extension guide, English)",
+    "documentVersion": "February 2025 imprint; PDF CreationDate 2025-03-10",
+    "contentHash": "8dde754dc3defc1c116fd11e963b091870e463b99f7c601a040f1aae0f1fe65e",
+    "locator": {
+      "page": 15,
+      "section": "Diseases: Soft rot"
+    },
+    "content": {
+      "kind": "excerpt",
+      "text": "The fungus multiplies with build up of soil moisture with the onset of south west monsoon. Younger sprouts are most susceptible to the pathogen.",
+      "language": "en"
+    },
+    "publishedAt": null,
+    "availability": {
+      "effectiveAvailableAt": "2026-10-29T19:37:50+00:00",
+      "basis": "conservative_upper_bound"
+    },
+    "ingestedAt": "2026-10-30T00:00:00+00:00",
+    "revisedAt": null,
+    "geography": {
+      "level": "national",
+      "ids": [
+        "IN"
+      ]
+    },
+    "cropIds": [
+      "ginger"
+    ],
+    "productIds": [
+      "ginger.fresh"
+    ],
+    "units": [],
+    "sourceUnits": [],
+    "licence": {
+      "licence": "unstated (no copyright or licence statement in the PDF text)",
+      "accessStatus": "open",
+      "redistributable": false,
+      "attribution": "ICAR-Indian Institute of Spices Research, Kozhikode. Ginger (Feb 2025)."
+    },
+    "extraction": {
+      "method": "native_text",
+      "version": "pypdf-native-text-1+pypdf6.21.4",
+      "reviewedBy": "rule_check"
+    },
+    "validationStatus": "pending"
+  },
+  {
+    "schemaVersion": "1.0",
+    "id": "ev.ginger.iisr2025.p16.soft-rot-foliar-symptom",
+    "mode": "live",
+    "sourceUrl": "https://spices.res.in/storage/app/public/pdfs/GINGER/3ENG.pdf",
+    "publisher": "ICAR-Indian Institute of Spices Research (ICAR-IISR), Kozhikode",
+    "documentTitle": "Ginger (ICAR-IISR extension guide, English)",
+    "documentVersion": "February 2025 imprint; PDF CreationDate 2025-03-10",
+    "contentHash": "8dde754dc3defc1c116fd11e963b091870e463b99f7c601a040f1aae0f1fe65e",
+    "locator": {
+      "page": 16,
+      "section": "Diseases: Soft rot"
+    },
+    "content": {
+      "kind": "excerpt",
+      "text": "Foliar symptoms appear as light yellowing of the leaf margins of lower leaves which gradually spreads to the leaf lamina.",
+      "language": "en"
+    },
+    "publishedAt": null,
+    "availability": {
+      "effectiveAvailableAt": "2026-10-29T19:37:50+00:00",
+      "basis": "conservative_upper_bound"
+    },
+    "ingestedAt": "2026-10-30T00:00:00+00:00",
+    "revisedAt": null,
+    "geography": {
+      "level": "national",
+      "ids": [
+        "IN"
+      ]
+    },
+    "cropIds": [
+      "ginger"
+    ],
+    "productIds": [
+      "ginger.fresh"
+    ],
+    "units": [],
+    "sourceUnits": [],
+    "licence": {
+      "licence": "unstated (no copyright or licence statement in the PDF text)",
+      "accessStatus": "open",
+      "redistributable": false,
+      "attribution": "ICAR-Indian Institute of Spices Research, Kozhikode. Ginger (Feb 2025)."
+    },
+    "extraction": {
+      "method": "native_text",
+      "version": "pypdf-native-text-1+pypdf6.21.4",
+      "reviewedBy": "rule_check"
+    },
+    "validationStatus": "pending"
+  },
+  {
+    "schemaVersion": "1.0",
+    "id": "ev.ginger.iisr2025.p16.soft-rot-drainage",
+    "mode": "live",
+    "sourceUrl": "https://spices.res.in/storage/app/public/pdfs/GINGER/3ENG.pdf",
+    "publisher": "ICAR-Indian Institute of Spices Research (ICAR-IISR), Kozhikode",
+    "documentTitle": "Ginger (ICAR-IISR extension guide, English)",
+    "documentVersion": "February 2025 imprint; PDF CreationDate 2025-03-10",
+    "contentHash": "8dde754dc3defc1c116fd11e963b091870e463b99f7c601a040f1aae0f1fe65e",
+    "locator": {
+      "page": 16,
+      "section": "Diseases: Soft rot, management"
+    },
+    "content": {
+      "kind": "excerpt",
+      "text": "selection of well drained soils for planting is important, since stagnation of water predisposes the plant to infection.",
+      "language": "en"
+    },
+    "publishedAt": null,
+    "availability": {
+      "effectiveAvailableAt": "2026-10-29T19:37:50+00:00",
+      "basis": "conservative_upper_bound"
+    },
+    "ingestedAt": "2026-10-30T00:00:00+00:00",
+    "revisedAt": null,
+    "geography": {
+      "level": "national",
+      "ids": [
+        "IN"
+      ]
+    },
+    "cropIds": [
+      "ginger"
+    ],
+    "productIds": [
+      "ginger.fresh"
+    ],
+    "units": [],
+    "sourceUnits": [],
+    "licence": {
+      "licence": "unstated (no copyright or licence statement in the PDF text)",
+      "accessStatus": "open",
+      "redistributable": false,
+      "attribution": "ICAR-Indian Institute of Spices Research, Kozhikode. Ginger (Feb 2025)."
+    },
+    "extraction": {
+      "method": "native_text",
+      "version": "pypdf-native-text-1+pypdf6.21.4",
+      "reviewedBy": "rule_check"
+    },
+    "validationStatus": "pending"
+  },
+  {
+    "schemaVersion": "1.0",
+    "id": "ev.ginger.iisr2025.p18.bacterial-wilt",
+    "mode": "live",
+    "sourceUrl": "https://spices.res.in/storage/app/public/pdfs/GINGER/3ENG.pdf",
+    "publisher": "ICAR-Indian Institute of Spices Research (ICAR-IISR), Kozhikode",
+    "documentTitle": "Ginger (ICAR-IISR extension guide, English)",
+    "documentVersion": "February 2025 imprint; PDF CreationDate 2025-03-10",
+    "contentHash": "8dde754dc3defc1c116fd11e963b091870e463b99f7c601a040f1aae0f1fe65e",
+    "locator": {
+      "page": 18,
+      "section": "Diseases: Bacterial wilt"
+    },
+    "content": {
+      "kind": "excerpt",
+      "text": "The first conspicuous symptom is mild drooping and curling of leaf margins of the lower leaves which spread upwards.",
+      "language": "en"
+    },
+    "publishedAt": null,
+    "availability": {
+      "effectiveAvailableAt": "2026-10-29T19:37:50+00:00",
+      "basis": "conservative_upper_bound"
+    },
+    "ingestedAt": "2026-10-30T00:00:00+00:00",
+    "revisedAt": null,
+    "geography": {
+      "level": "national",
+      "ids": [
+        "IN"
+      ]
+    },
+    "cropIds": [
+      "ginger"
+    ],
+    "productIds": [
+      "ginger.fresh"
+    ],
+    "units": [],
+    "sourceUnits": [],
+    "licence": {
+      "licence": "unstated (no copyright or licence statement in the PDF text)",
+      "accessStatus": "open",
+      "redistributable": false,
+      "attribution": "ICAR-Indian Institute of Spices Research, Kozhikode. Ginger (Feb 2025)."
+    },
+    "extraction": {
+      "method": "native_text",
+      "version": "pypdf-native-text-1+pypdf6.21.4",
+      "reviewedBy": "rule_check"
+    },
+    "validationStatus": "pending"
+  },
+  {
+    "schemaVersion": "1.0",
+    "id": "ev.ginger.iisr2025.p21.shoot-borer-symptom",
+    "mode": "live",
+    "sourceUrl": "https://spices.res.in/storage/app/public/pdfs/GINGER/3ENG.pdf",
+    "publisher": "ICAR-Indian Institute of Spices Research (ICAR-IISR), Kozhikode",
+    "documentTitle": "Ginger (ICAR-IISR extension guide, English)",
+    "documentVersion": "February 2025 imprint; PDF CreationDate 2025-03-10",
+    "contentHash": "8dde754dc3defc1c116fd11e963b091870e463b99f7c601a040f1aae0f1fe65e",
+    "locator": {
+      "page": 21,
+      "section": "Insect pests: Shoot borer"
+    },
+    "content": {
+      "kind": "excerpt",
+      "text": "The presence of a bore -hole on the pseudostem through which frass is extruded and the withered and yellow central shoot is a characteristic symptom of pest infestation.",
+      "language": "en"
+    },
+    "publishedAt": null,
+    "availability": {
+      "effectiveAvailableAt": "2026-10-29T19:37:50+00:00",
+      "basis": "conservative_upper_bound"
+    },
+    "ingestedAt": "2026-10-30T00:00:00+00:00",
+    "revisedAt": null,
+    "geography": {
+      "level": "national",
+      "ids": [
+        "IN"
+      ]
+    },
+    "cropIds": [
+      "ginger"
+    ],
+    "productIds": [
+      "ginger.fresh"
+    ],
+    "units": [],
+    "sourceUnits": [],
+    "licence": {
+      "licence": "unstated (no copyright or licence statement in the PDF text)",
+      "accessStatus": "open",
+      "redistributable": false,
+      "attribution": "ICAR-Indian Institute of Spices Research, Kozhikode. Ginger (Feb 2025)."
+    },
+    "extraction": {
+      "method": "native_text",
+      "version": "pypdf-native-text-1+pypdf6.21.4",
+      "reviewedBy": "rule_check"
+    },
+    "validationStatus": "pending"
+  },
+  {
+    "schemaVersion": "1.0",
+    "id": "ev.ginger.iisr2025.p25.maturity-days",
+    "mode": "live",
+    "sourceUrl": "https://spices.res.in/storage/app/public/pdfs/GINGER/3ENG.pdf",
+    "publisher": "ICAR-Indian Institute of Spices Research (ICAR-IISR), Kozhikode",
+    "documentTitle": "Ginger (ICAR-IISR extension guide, English)",
+    "documentVersion": "February 2025 imprint; PDF CreationDate 2025-03-10",
+    "contentHash": "8dde754dc3defc1c116fd11e963b091870e463b99f7c601a040f1aae0f1fe65e",
+    "locator": {
+      "page": 25,
+      "section": "Harvesting"
+    },
+    "content": {
+      "kind": "excerpt",
+      "text": "Ginger attains full maturity in 210 -240 days after planting. Harvesting of ginger for vegetable purpose starts after 180 days based on the demand.",
+      "language": "en"
+    },
+    "publishedAt": null,
+    "availability": {
+      "effectiveAvailableAt": "2026-10-29T19:37:50+00:00",
+      "basis": "conservative_upper_bound"
+    },
+    "ingestedAt": "2026-10-30T00:00:00+00:00",
+    "revisedAt": null,
+    "geography": {
+      "level": "national",
+      "ids": [
+        "IN"
+      ]
+    },
+    "cropIds": [
+      "ginger"
+    ],
+    "productIds": [
+      "ginger.fresh"
+    ],
+    "units": [
+      "days"
+    ],
+    "sourceUnits": [
+      "days after planting"
+    ],
+    "licence": {
+      "licence": "unstated (no copyright or licence statement in the PDF text)",
+      "accessStatus": "open",
+      "redistributable": false,
+      "attribution": "ICAR-Indian Institute of Spices Research, Kozhikode. Ginger (Feb 2025)."
+    },
+    "extraction": {
+      "method": "native_text",
+      "version": "pypdf-native-text-1+pypdf6.21.4",
+      "reviewedBy": "rule_check"
+    },
+    "validationStatus": "pending"
+  },
+  {
+    "schemaVersion": "1.0",
+    "id": "ev.ginger.iisr2025.p25.harvest-indicator-dry",
+    "mode": "live",
+    "sourceUrl": "https://spices.res.in/storage/app/public/pdfs/GINGER/3ENG.pdf",
+    "publisher": "ICAR-Indian Institute of Spices Research (ICAR-IISR), Kozhikode",
+    "documentTitle": "Ginger (ICAR-IISR extension guide, English)",
+    "documentVersion": "February 2025 imprint; PDF CreationDate 2025-03-10",
+    "contentHash": "8dde754dc3defc1c116fd11e963b091870e463b99f7c601a040f1aae0f1fe65e",
+    "locator": {
+      "page": 25,
+      "section": "Harvesting"
+    },
+    "content": {
+      "kind": "excerpt",
+      "text": "for making dry ginger, the matured rhizomes are harvested at full maturity i.e. when the leaves turn yellow and start drying.",
+      "language": "en"
+    },
+    "publishedAt": null,
+    "availability": {
+      "effectiveAvailableAt": "2026-10-29T19:37:50+00:00",
+      "basis": "conservative_upper_bound"
+    },
+    "ingestedAt": "2026-10-30T00:00:00+00:00",
+    "revisedAt": null,
+    "geography": {
+      "level": "national",
+      "ids": [
+        "IN"
+      ]
+    },
+    "cropIds": [
+      "ginger"
+    ],
+    "productIds": [
+      "ginger.dry"
+    ],
+    "units": [],
+    "sourceUnits": [],
+    "licence": {
+      "licence": "unstated (no copyright or licence statement in the PDF text)",
+      "accessStatus": "open",
+      "redistributable": false,
+      "attribution": "ICAR-Indian Institute of Spices Research, Kozhikode. Ginger (Feb 2025)."
+    },
+    "extraction": {
+      "method": "native_text",
+      "version": "pypdf-native-text-1+pypdf6.21.4",
+      "reviewedBy": "rule_check"
+    },
+    "validationStatus": "pending"
+  },
+  {
+    "schemaVersion": "1.0",
+    "id": "ev.ginger.iisr2025.p25.irrigation-stop",
+    "mode": "live",
+    "sourceUrl": "https://spices.res.in/storage/app/public/pdfs/GINGER/3ENG.pdf",
+    "publisher": "ICAR-Indian Institute of Spices Research (ICAR-IISR), Kozhikode",
+    "documentTitle": "Ginger (ICAR-IISR extension guide, English)",
+    "documentVersion": "February 2025 imprint; PDF CreationDate 2025-03-10",
+    "contentHash": "8dde754dc3defc1c116fd11e963b091870e463b99f7c601a040f1aae0f1fe65e",
+    "locator": {
+      "page": 25,
+      "section": "Harvesting"
+    },
+    "content": {
+      "kind": "excerpt",
+      "text": "Irrigation is stopped one month before harvest and the rhizome clumps are lifted carefully with a spade or digging fork.",
+      "language": "en"
+    },
+    "publishedAt": null,
+    "availability": {
+      "effectiveAvailableAt": "2026-10-29T19:37:50+00:00",
+      "basis": "conservative_upper_bound"
+    },
+    "ingestedAt": "2026-10-30T00:00:00+00:00",
+    "revisedAt": null,
+    "geography": {
+      "level": "national",
+      "ids": [
+        "IN"
+      ]
+    },
+    "cropIds": [
+      "ginger"
+    ],
+    "productIds": [
+      "ginger.fresh"
+    ],
+    "units": [],
+    "sourceUnits": [
+      "month"
+    ],
+    "licence": {
+      "licence": "unstated (no copyright or licence statement in the PDF text)",
+      "accessStatus": "open",
+      "redistributable": false,
+      "attribution": "ICAR-Indian Institute of Spices Research, Kozhikode. Ginger (Feb 2025)."
+    },
+    "extraction": {
+      "method": "native_text",
+      "version": "pypdf-native-text-1+pypdf6.21.4",
+      "reviewedBy": "rule_check"
+    },
+    "validationStatus": "pending"
+  },
+  {
+    "schemaVersion": "1.0",
+    "id": "ev.ginger.iisr2025.p25.late-harvest",
+    "mode": "live",
+    "sourceUrl": "https://spices.res.in/storage/app/public/pdfs/GINGER/3ENG.pdf",
+    "publisher": "ICAR-Indian Institute of Spices Research (ICAR-IISR), Kozhikode",
+    "documentTitle": "Ginger (ICAR-IISR extension guide, English)",
+    "documentVersion": "February 2025 imprint; PDF CreationDate 2025-03-10",
+    "contentHash": "8dde754dc3defc1c116fd11e963b091870e463b99f7c601a040f1aae0f1fe65e",
+    "locator": {
+      "page": 25,
+      "section": "Harvesting"
+    },
+    "content": {
+      "kind": "excerpt",
+      "text": "Late harvest is also practiced, as the crop does not deteriorate by leaving it for some months underground.",
+      "language": "en"
+    },
+    "publishedAt": null,
+    "availability": {
+      "effectiveAvailableAt": "2026-10-29T19:37:50+00:00",
+      "basis": "conservative_upper_bound"
+    },
+    "ingestedAt": "2026-10-30T00:00:00+00:00",
+    "revisedAt": null,
+    "geography": {
+      "level": "national",
+      "ids": [
+        "IN"
+      ]
+    },
+    "cropIds": [
+      "ginger"
+    ],
+    "productIds": [
+      "ginger.fresh"
+    ],
+    "units": [],
+    "sourceUnits": [],
+    "licence": {
+      "licence": "unstated (no copyright or licence statement in the PDF text)",
+      "accessStatus": "open",
+      "redistributable": false,
+      "attribution": "ICAR-Indian Institute of Spices Research, Kozhikode. Ginger (Feb 2025)."
+    },
+    "extraction": {
+      "method": "native_text",
+      "version": "pypdf-native-text-1+pypdf6.21.4",
+      "reviewedBy": "rule_check"
+    },
+    "validationStatus": "pending"
+  },
+  {
+    "schemaVersion": "1.0",
+    "id": "ev.ginger.iisr2025.p25.end-use-vegetable",
+    "mode": "live",
+    "sourceUrl": "https://spices.res.in/storage/app/public/pdfs/GINGER/3ENG.pdf",
+    "publisher": "ICAR-Indian Institute of Spices Research (ICAR-IISR), Kozhikode",
+    "documentTitle": "Ginger (ICAR-IISR extension guide, English)",
+    "documentVersion": "February 2025 imprint; PDF CreationDate 2025-03-10",
+    "contentHash": "8dde754dc3defc1c116fd11e963b091870e463b99f7c601a040f1aae0f1fe65e",
+    "locator": {
+      "page": 25,
+      "section": "Table 5. Stage of harvest of ginger for various end uses"
+    },
+    "content": {
+      "kind": "excerpt",
+      "text": "Vegetable purpose and preparation of ginger preserve, candy, soft drinks, pickles and alcoholic beverages 5-6",
+      "language": "en"
+    },
+    "publishedAt": null,
+    "availability": {
+      "effectiveAvailableAt": "2026-10-29T19:37:50+00:00",
+      "basis": "conservative_upper_bound"
+    },
+    "ingestedAt": "2026-10-30T00:00:00+00:00",
+    "revisedAt": null,
+    "geography": {
+      "level": "national",
+      "ids": [
+        "IN"
+      ]
+    },
+    "cropIds": [
+      "ginger"
+    ],
+    "productIds": [
+      "ginger.fresh"
+    ],
+    "units": [],
+    "sourceUnits": [
+      "months after planting"
+    ],
+    "licence": {
+      "licence": "unstated (no copyright or licence statement in the PDF text)",
+      "accessStatus": "open",
+      "redistributable": false,
+      "attribution": "ICAR-Indian Institute of Spices Research, Kozhikode. Ginger (Feb 2025)."
+    },
+    "extraction": {
+      "method": "native_text",
+      "version": "pypdf-native-text-1+pypdf6.21.4",
+      "reviewedBy": "rule_check"
+    },
+    "validationStatus": "pending"
+  },
+  {
+    "schemaVersion": "1.0",
+    "id": "ev.ginger.iisr2025.p25.end-use-dry",
+    "mode": "live",
+    "sourceUrl": "https://spices.res.in/storage/app/public/pdfs/GINGER/3ENG.pdf",
+    "publisher": "ICAR-Indian Institute of Spices Research (ICAR-IISR), Kozhikode",
+    "documentTitle": "Ginger (ICAR-IISR extension guide, English)",
+    "documentVersion": "February 2025 imprint; PDF CreationDate 2025-03-10",
+    "contentHash": "8dde754dc3defc1c116fd11e963b091870e463b99f7c601a040f1aae0f1fe65e",
+    "locator": {
+      "page": 25,
+      "section": "Table 5. Stage of harvest of ginger for various end uses"
+    },
+    "content": {
+      "kind": "excerpt",
+      "text": "Dried ginger and preparation of ginger oil, oleoresin, dehydrated and bleached ginger 7-8",
+      "language": "en"
+    },
+    "publishedAt": null,
+    "availability": {
+      "effectiveAvailableAt": "2026-10-29T19:37:50+00:00",
+      "basis": "conservative_upper_bound"
+    },
+    "ingestedAt": "2026-10-30T00:00:00+00:00",
+    "revisedAt": null,
+    "geography": {
+      "level": "national",
+      "ids": [
+        "IN"
+      ]
+    },
+    "cropIds": [
+      "ginger"
+    ],
+    "productIds": [
+      "ginger.dry"
+    ],
+    "units": [],
+    "sourceUnits": [
+      "months after planting"
+    ],
+    "licence": {
+      "licence": "unstated (no copyright or licence statement in the PDF text)",
+      "accessStatus": "open",
+      "redistributable": false,
+      "attribution": "ICAR-Indian Institute of Spices Research, Kozhikode. Ginger (Feb 2025)."
+    },
+    "extraction": {
+      "method": "native_text",
+      "version": "pypdf-native-text-1+pypdf6.21.4",
+      "reviewedBy": "rule_check"
+    },
+    "validationStatus": "pending"
+  },
+  {
+    "schemaVersion": "1.0",
+    "id": "ev.ginger.iisr2025.p26.dry-recovery",
+    "mode": "live",
+    "sourceUrl": "https://spices.res.in/storage/app/public/pdfs/GINGER/3ENG.pdf",
+    "publisher": "ICAR-Indian Institute of Spices Research (ICAR-IISR), Kozhikode",
+    "documentTitle": "Ginger (ICAR-IISR extension guide, English)",
+    "documentVersion": "February 2025 imprint; PDF CreationDate 2025-03-10",
+    "contentHash": "8dde754dc3defc1c116fd11e963b091870e463b99f7c601a040f1aae0f1fe65e",
+    "locator": {
+      "page": 26,
+      "section": "Drying"
+    },
+    "content": {
+      "kind": "excerpt",
+      "text": "The yield of dry ginger is about 19 -25 per cent of fresh ginger depending on the variety and climatic zone.",
+      "language": "en"
+    },
+    "publishedAt": null,
+    "availability": {
+      "effectiveAvailableAt": "2026-10-29T19:37:50+00:00",
+      "basis": "conservative_upper_bound"
+    },
+    "ingestedAt": "2026-10-30T00:00:00+00:00",
+    "revisedAt": null,
+    "geography": {
+      "level": "national",
+      "ids": [
+        "IN"
+      ]
+    },
+    "cropIds": [
+      "ginger"
+    ],
+    "productIds": [
+      "ginger.fresh",
+      "ginger.dry"
+    ],
+    "units": [
+      "percent"
+    ],
+    "sourceUnits": [
+      "per cent"
+    ],
+    "licence": {
+      "licence": "unstated (no copyright or licence statement in the PDF text)",
+      "accessStatus": "open",
+      "redistributable": false,
+      "attribution": "ICAR-Indian Institute of Spices Research, Kozhikode. Ginger (Feb 2025)."
+    },
+    "extraction": {
+      "method": "native_text",
+      "version": "pypdf-native-text-1+pypdf6.21.4",
+      "reviewedBy": "rule_check"
+    },
+    "validationStatus": "pending"
+  },
+  {
+    "schemaVersion": "1.0",
+    "id": "ev.ginger.iisr2025.p29.chemical-disclaimer",
+    "mode": "live",
+    "sourceUrl": "https://spices.res.in/storage/app/public/pdfs/GINGER/3ENG.pdf",
+    "publisher": "ICAR-Indian Institute of Spices Research (ICAR-IISR), Kozhikode",
+    "documentTitle": "Ginger (ICAR-IISR extension guide, English)",
+    "documentVersion": "February 2025 imprint; PDF CreationDate 2025-03-10",
+    "contentHash": "8dde754dc3defc1c116fd11e963b091870e463b99f7c601a040f1aae0f1fe65e",
+    "locator": {
+      "page": 29,
+      "section": "Notes"
+    },
+    "content": {
+      "kind": "excerpt",
+      "text": "The formulations may not be included in the list of approved pesticides for ginger by CIBRC.",
+      "language": "en"
+    },
+    "publishedAt": null,
+    "availability": {
+      "effectiveAvailableAt": "2026-10-29T19:37:50+00:00",
+      "basis": "conservative_upper_bound"
+    },
+    "ingestedAt": "2026-10-30T00:00:00+00:00",
+    "revisedAt": null,
+    "geography": {
+      "level": "national",
+      "ids": [
+        "IN"
+      ]
+    },
+    "cropIds": [
+      "ginger"
+    ],
+    "productIds": [
+      "ginger.fresh"
+    ],
+    "units": [],
+    "sourceUnits": [],
+    "licence": {
+      "licence": "unstated (no copyright or licence statement in the PDF text)",
+      "accessStatus": "open",
+      "redistributable": false,
+      "attribution": "ICAR-Indian Institute of Spices Research, Kozhikode. Ginger (Feb 2025)."
+    },
+    "extraction": {
+      "method": "native_text",
+      "version": "pypdf-native-text-1+pypdf6.21.4",
+      "reviewedBy": "rule_check"
+    },
+    "validationStatus": "pending"
+  },
+  {
+    "schemaVersion": "1.0",
+    "id": "ev.ginger.crida2011.p1.district-identity",
+    "mode": "live",
+    "sourceUrl": "https://www.icar-crida.res.in/CP-2012/statewiseplans/Karnataka%20(Pdf)/GKVK,%20Bangalore/KA28-Hassan%20%2004.10.2011.pdf",
+    "publisher": "ICAR-Central Research Institute for Dryland Agriculture (ICAR-CRIDA)",
+    "documentTitle": "Agriculture Contingency Plan for District: HASSAN (Karnataka, KA28)",
+    "documentVersion": "2011-10-04 (file name; PDF CreationDate 2011-10-04)",
+    "contentHash": "8e1d6636773a5714c3110a7908815baf0e6dc2736ec77bf96dda5ea8322ddd6a",
+    "locator": {
+      "page": 1,
+      "section": "1.0 District Agriculture profile"
+    },
+    "content": {
+      "kind": "excerpt",
+      "text": "State: KARNATAKA Agriculture Contingency Plan for District: HASSAN",
+      "language": "en"
+    },
+    "publishedAt": null,
+    "availability": {
+      "effectiveAvailableAt": "2026-10-29T19:38:46+00:00",
+      "basis": "conservative_upper_bound"
+    },
+    "ingestedAt": "2026-10-30T00:00:00+00:00",
+    "revisedAt": null,
+    "geography": {
+      "level": "district",
+      "ids": [
+        "IN-KA-hassan"
+      ]
+    },
+    "cropIds": [],
+    "productIds": [],
+    "units": [],
+    "sourceUnits": [],
+    "licence": {
+      "licence": "unstated in PDF; publisher website footer: © Copyright ICAR-CRIDA . All Rights Reserved",
+      "accessStatus": "open",
+      "redistributable": false,
+      "attribution": "ICAR-CRIDA. Agriculture Contingency Plan for District Hassan (2011)."
+    },
+    "extraction": {
+      "method": "native_text",
+      "version": "pypdf-native-text-1+pypdf6.21.4",
+      "reviewedBy": "rule_check"
+    },
+    "validationStatus": "pending"
+  },
+  {
+    "schemaVersion": "1.0",
+    "id": "ev.ginger.crida2011.p1.altitude",
+    "mode": "live",
+    "sourceUrl": "https://www.icar-crida.res.in/CP-2012/statewiseplans/Karnataka%20(Pdf)/GKVK,%20Bangalore/KA28-Hassan%20%2004.10.2011.pdf",
+    "publisher": "ICAR-Central Research Institute for Dryland Agriculture (ICAR-CRIDA)",
+    "documentTitle": "Agriculture Contingency Plan for District: HASSAN (Karnataka, KA28)",
+    "documentVersion": "2011-10-04 (file name; PDF CreationDate 2011-10-04)",
+    "contentHash": "8e1d6636773a5714c3110a7908815baf0e6dc2736ec77bf96dda5ea8322ddd6a",
+    "locator": {
+      "page": 1,
+      "section": "1.1 Geographic coordinates of district"
+    },
+    "content": {
+      "kind": "excerpt",
+      "text": "76º06'13.06\" E 943m",
+      "language": "en"
+    },
+    "publishedAt": null,
+    "availability": {
+      "effectiveAvailableAt": "2026-10-29T19:38:46+00:00",
+      "basis": "conservative_upper_bound"
+    },
+    "ingestedAt": "2026-10-30T00:00:00+00:00",
+    "revisedAt": null,
+    "geography": {
+      "level": "district",
+      "ids": [
+        "IN-KA-hassan"
+      ]
+    },
+    "cropIds": [],
+    "productIds": [],
+    "units": [],
+    "sourceUnits": [
+      "m"
+    ],
+    "licence": {
+      "licence": "unstated in PDF; publisher website footer: © Copyright ICAR-CRIDA . All Rights Reserved",
+      "accessStatus": "open",
+      "redistributable": false,
+      "attribution": "ICAR-CRIDA. Agriculture Contingency Plan for District Hassan (2011)."
+    },
+    "extraction": {
+      "method": "native_text",
+      "version": "pypdf-native-text-1+pypdf6.21.4",
+      "reviewedBy": "rule_check"
+    },
+    "validationStatus": "pending"
+  },
+  {
+    "schemaVersion": "1.0",
+    "id": "ev.ginger.crida2011.p1.rainfall-kharif",
+    "mode": "live",
+    "sourceUrl": "https://www.icar-crida.res.in/CP-2012/statewiseplans/Karnataka%20(Pdf)/GKVK,%20Bangalore/KA28-Hassan%20%2004.10.2011.pdf",
+    "publisher": "ICAR-Central Research Institute for Dryland Agriculture (ICAR-CRIDA)",
+    "documentTitle": "Agriculture Contingency Plan for District: HASSAN (Karnataka, KA28)",
+    "documentVersion": "2011-10-04 (file name; PDF CreationDate 2011-10-04)",
+    "contentHash": "8e1d6636773a5714c3110a7908815baf0e6dc2736ec77bf96dda5ea8322ddd6a",
+    "locator": {
+      "page": 1,
+      "section": "1.2 Rainfall"
+    },
+    "content": {
+      "kind": "excerpt",
+      "text": "Kharif (June-Sep): 604.9 40 1 st to 2nd Week of June 2 nd Week of Sept",
+      "language": "en"
+    },
+    "publishedAt": null,
+    "availability": {
+      "effectiveAvailableAt": "2026-10-29T19:38:46+00:00",
+      "basis": "conservative_upper_bound"
+    },
+    "ingestedAt": "2026-10-30T00:00:00+00:00",
+    "revisedAt": null,
+    "geography": {
+      "level": "district",
+      "ids": [
+        "IN-KA-hassan"
+      ]
+    },
+    "cropIds": [],
+    "productIds": [],
+    "units": [
+      "mm"
+    ],
+    "sourceUnits": [
+      "mm",
+      "number of rainy days"
+    ],
+    "licence": {
+      "licence": "unstated in PDF; publisher website footer: © Copyright ICAR-CRIDA . All Rights Reserved",
+      "accessStatus": "open",
+      "redistributable": false,
+      "attribution": "ICAR-CRIDA. Agriculture Contingency Plan for District Hassan (2011)."
+    },
+    "extraction": {
+      "method": "native_text",
+      "version": "pypdf-native-text-1+pypdf6.21.4",
+      "reviewedBy": "rule_check"
+    },
+    "validationStatus": "pending"
+  },
+  {
+    "schemaVersion": "1.0",
+    "id": "ev.ginger.crida2011.p1.rainfall-summer",
+    "mode": "live",
+    "sourceUrl": "https://www.icar-crida.res.in/CP-2012/statewiseplans/Karnataka%20(Pdf)/GKVK,%20Bangalore/KA28-Hassan%20%2004.10.2011.pdf",
+    "publisher": "ICAR-Central Research Institute for Dryland Agriculture (ICAR-CRIDA)",
+    "documentTitle": "Agriculture Contingency Plan for District: HASSAN (Karnataka, KA28)",
+    "documentVersion": "2011-10-04 (file name; PDF CreationDate 2011-10-04)",
+    "contentHash": "8e1d6636773a5714c3110a7908815baf0e6dc2736ec77bf96dda5ea8322ddd6a",
+    "locator": {
+      "page": 1,
+      "section": "1.2 Rainfall"
+    },
+    "content": {
+      "kind": "excerpt",
+      "text": "Summer (Apr-May) 168.7 12",
+      "language": "en"
+    },
+    "publishedAt": null,
+    "availability": {
+      "effectiveAvailableAt": "2026-10-29T19:38:46+00:00",
+      "basis": "conservative_upper_bound"
+    },
+    "ingestedAt": "2026-10-30T00:00:00+00:00",
+    "revisedAt": null,
+    "geography": {
+      "level": "district",
+      "ids": [
+        "IN-KA-hassan"
+      ]
+    },
+    "cropIds": [],
+    "productIds": [],
+    "units": [
+      "mm"
+    ],
+    "sourceUnits": [
+      "mm",
+      "number of rainy days"
+    ],
+    "licence": {
+      "licence": "unstated in PDF; publisher website footer: © Copyright ICAR-CRIDA . All Rights Reserved",
+      "accessStatus": "open",
+      "redistributable": false,
+      "attribution": "ICAR-CRIDA. Agriculture Contingency Plan for District Hassan (2011)."
+    },
+    "extraction": {
+      "method": "native_text",
+      "version": "pypdf-native-text-1+pypdf6.21.4",
+      "reviewedBy": "rule_check"
+    },
+    "validationStatus": "pending"
+  },
+  {
+    "schemaVersion": "1.0",
+    "id": "ev.ginger.crida2011.p1.rainfall-annual",
+    "mode": "live",
+    "sourceUrl": "https://www.icar-crida.res.in/CP-2012/statewiseplans/Karnataka%20(Pdf)/GKVK,%20Bangalore/KA28-Hassan%20%2004.10.2011.pdf",
+    "publisher": "ICAR-Central Research Institute for Dryland Agriculture (ICAR-CRIDA)",
+    "documentTitle": "Agriculture Contingency Plan for District: HASSAN (Karnataka, KA28)",
+    "documentVersion": "2011-10-04 (file name; PDF CreationDate 2011-10-04)",
+    "contentHash": "8e1d6636773a5714c3110a7908815baf0e6dc2736ec77bf96dda5ea8322ddd6a",
+    "locator": {
+      "page": 1,
+      "section": "1.2 Rainfall"
+    },
+    "content": {
+      "kind": "excerpt",
+      "text": "Annual 1031.2 65",
+      "language": "en"
+    },
+    "publishedAt": null,
+    "availability": {
+      "effectiveAvailableAt": "2026-10-29T19:38:46+00:00",
+      "basis": "conservative_upper_bound"
+    },
+    "ingestedAt": "2026-10-30T00:00:00+00:00",
+    "revisedAt": null,
+    "geography": {
+      "level": "district",
+      "ids": [
+        "IN-KA-hassan"
+      ]
+    },
+    "cropIds": [],
+    "productIds": [],
+    "units": [
+      "mm"
+    ],
+    "sourceUnits": [
+      "mm",
+      "number of rainy days"
+    ],
+    "licence": {
+      "licence": "unstated in PDF; publisher website footer: © Copyright ICAR-CRIDA . All Rights Reserved",
+      "accessStatus": "open",
+      "redistributable": false,
+      "attribution": "ICAR-CRIDA. Agriculture Contingency Plan for District Hassan (2011)."
+    },
+    "extraction": {
+      "method": "native_text",
+      "version": "pypdf-native-text-1+pypdf6.21.4",
+      "reviewedBy": "rule_check"
+    },
+    "validationStatus": "pending"
+  },
+  {
+    "schemaVersion": "1.0",
+    "id": "ev.ginger.crida2011.p2.soils-poorly-drained",
+    "mode": "live",
+    "sourceUrl": "https://www.icar-crida.res.in/CP-2012/statewiseplans/Karnataka%20(Pdf)/GKVK,%20Bangalore/KA28-Hassan%20%2004.10.2011.pdf",
+    "publisher": "ICAR-Central Research Institute for Dryland Agriculture (ICAR-CRIDA)",
+    "documentTitle": "Agriculture Contingency Plan for District: HASSAN (Karnataka, KA28)",
+    "documentVersion": "2011-10-04 (file name; PDF CreationDate 2011-10-04)",
+    "contentHash": "8e1d6636773a5714c3110a7908815baf0e6dc2736ec77bf96dda5ea8322ddd6a",
+    "locator": {
+      "page": 2,
+      "section": "1.4 Major Soils"
+    },
+    "content": {
+      "kind": "excerpt",
+      "text": "Deep Red soils with Moderate/ poor drained soils in plains . 80.8 12.2 %",
+      "language": "en"
+    },
+    "publishedAt": null,
+    "availability": {
+      "effectiveAvailableAt": "2026-10-29T19:38:46+00:00",
+      "basis": "conservative_upper_bound"
+    },
+    "ingestedAt": "2026-10-30T00:00:00+00:00",
+    "revisedAt": null,
+    "geography": {
+      "level": "district",
+      "ids": [
+        "IN-KA-hassan"
+      ]
+    },
+    "cropIds": [],
+    "productIds": [],
+    "units": [
+      "ha",
+      "percent"
+    ],
+    "sourceUnits": [
+      "'000 ha",
+      "%"
+    ],
+    "licence": {
+      "licence": "unstated in PDF; publisher website footer: © Copyright ICAR-CRIDA . All Rights Reserved",
+      "accessStatus": "open",
+      "redistributable": false,
+      "attribution": "ICAR-CRIDA. Agriculture Contingency Plan for District Hassan (2011)."
+    },
+    "extraction": {
+      "method": "native_text",
+      "version": "pypdf-native-text-1+pypdf6.21.4",
+      "reviewedBy": "rule_check"
+    },
+    "validationStatus": "pending"
+  },
+  {
+    "schemaVersion": "1.0",
+    "id": "ev.ginger.crida2011.p3.irrigation-area",
+    "mode": "live",
+    "sourceUrl": "https://www.icar-crida.res.in/CP-2012/statewiseplans/Karnataka%20(Pdf)/GKVK,%20Bangalore/KA28-Hassan%20%2004.10.2011.pdf",
+    "publisher": "ICAR-Central Research Institute for Dryland Agriculture (ICAR-CRIDA)",
+    "documentTitle": "Agriculture Contingency Plan for District: HASSAN (Karnataka, KA28)",
+    "documentVersion": "2011-10-04 (file name; PDF CreationDate 2011-10-04)",
+    "contentHash": "8e1d6636773a5714c3110a7908815baf0e6dc2736ec77bf96dda5ea8322ddd6a",
+    "locator": {
+      "page": 3,
+      "section": "1.6 Irrigation"
+    },
+    "content": {
+      "kind": "excerpt",
+      "text": "Irrigation Area ('000 ha) Net irrigated area 88.6 Gross irrigated area 97.4 Rainfed area 255.0",
+      "language": "en"
+    },
+    "publishedAt": null,
+    "availability": {
+      "effectiveAvailableAt": "2026-10-29T19:38:46+00:00",
+      "basis": "conservative_upper_bound"
+    },
+    "ingestedAt": "2026-10-30T00:00:00+00:00",
+    "revisedAt": null,
+    "geography": {
+      "level": "district",
+      "ids": [
+        "IN-KA-hassan"
+      ]
+    },
+    "cropIds": [],
+    "productIds": [],
+    "units": [
+      "ha"
+    ],
+    "sourceUnits": [
+      "'000 ha"
+    ],
+    "licence": {
+      "licence": "unstated in PDF; publisher website footer: © Copyright ICAR-CRIDA . All Rights Reserved",
+      "accessStatus": "open",
+      "redistributable": false,
+      "attribution": "ICAR-CRIDA. Agriculture Contingency Plan for District Hassan (2011)."
+    },
+    "extraction": {
+      "method": "native_text",
+      "version": "pypdf-native-text-1+pypdf6.21.4",
+      "reviewedBy": "rule_check"
+    },
+    "validationStatus": "pending"
+  },
+  {
+    "schemaVersion": "1.0",
+    "id": "ev.ginger.crida2011.p6.horticulture-area-unit",
+    "mode": "live",
+    "sourceUrl": "https://www.icar-crida.res.in/CP-2012/statewiseplans/Karnataka%20(Pdf)/GKVK,%20Bangalore/KA28-Hassan%20%2004.10.2011.pdf",
+    "publisher": "ICAR-Central Research Institute for Dryland Agriculture (ICAR-CRIDA)",
+    "documentTitle": "Agriculture Contingency Plan for District: HASSAN (Karnataka, KA28)",
+    "documentVersion": "2011-10-04 (file name; PDF CreationDate 2011-10-04)",
+    "contentHash": "8e1d6636773a5714c3110a7908815baf0e6dc2736ec77bf96dda5ea8322ddd6a",
+    "locator": {
+      "page": 6,
+      "section": "1.7 Major Horticulture Crops cultivated"
+    },
+    "content": {
+      "kind": "excerpt",
+      "text": "Major Horticulture Crops cultivated Area ('000 ha) Total area Fruits",
+      "language": "en"
+    },
+    "publishedAt": null,
+    "availability": {
+      "effectiveAvailableAt": "2026-10-29T19:38:46+00:00",
+      "basis": "conservative_upper_bound"
+    },
+    "ingestedAt": "2026-10-30T00:00:00+00:00",
+    "revisedAt": null,
+    "geography": {
+      "level": "district",
+      "ids": [
+        "IN-KA-hassan"
+      ]
+    },
+    "cropIds": [],
+    "productIds": [],
+    "units": [
+      "ha"
+    ],
+    "sourceUnits": [
+      "'000 ha"
+    ],
+    "licence": {
+      "licence": "unstated in PDF; publisher website footer: © Copyright ICAR-CRIDA . All Rights Reserved",
+      "accessStatus": "open",
+      "redistributable": false,
+      "attribution": "ICAR-CRIDA. Agriculture Contingency Plan for District Hassan (2011)."
+    },
+    "extraction": {
+      "method": "native_text",
+      "version": "pypdf-native-text-1+pypdf6.21.4",
+      "reviewedBy": "rule_check"
+    },
+    "validationStatus": "pending"
+  },
+  {
+    "schemaVersion": "1.0",
+    "id": "ev.ginger.crida2011.p7.ginger-area",
+    "mode": "live",
+    "sourceUrl": "https://www.icar-crida.res.in/CP-2012/statewiseplans/Karnataka%20(Pdf)/GKVK,%20Bangalore/KA28-Hassan%20%2004.10.2011.pdf",
+    "publisher": "ICAR-Central Research Institute for Dryland Agriculture (ICAR-CRIDA)",
+    "documentTitle": "Agriculture Contingency Plan for District: HASSAN (Karnataka, KA28)",
+    "documentVersion": "2011-10-04 (file name; PDF CreationDate 2011-10-04)",
+    "contentHash": "8e1d6636773a5714c3110a7908815baf0e6dc2736ec77bf96dda5ea8322ddd6a",
+    "locator": {
+      "page": 7,
+      "section": "1.7 Major Horticulture Crops cultivated: Spices"
+    },
+    "content": {
+      "kind": "excerpt",
+      "text": "Spices Total Area Ginger 13.8 Cardamom 7.5 Pepper 2.7 Turmeric 0.1",
+      "language": "en"
+    },
+    "publishedAt": null,
+    "availability": {
+      "effectiveAvailableAt": "2026-10-29T19:38:46+00:00",
+      "basis": "conservative_upper_bound"
+    },
+    "ingestedAt": "2026-10-30T00:00:00+00:00",
+    "revisedAt": null,
+    "geography": {
+      "level": "district",
+      "ids": [
+        "IN-KA-hassan"
+      ]
+    },
+    "cropIds": [
+      "ginger"
+    ],
+    "productIds": [],
+    "units": [
+      "ha"
+    ],
+    "sourceUnits": [
+      "'000 ha (unit from table header on page 6)"
+    ],
+    "licence": {
+      "licence": "unstated in PDF; publisher website footer: © Copyright ICAR-CRIDA . All Rights Reserved",
+      "accessStatus": "open",
+      "redistributable": false,
+      "attribution": "ICAR-CRIDA. Agriculture Contingency Plan for District Hassan (2011)."
+    },
+    "extraction": {
+      "method": "native_text",
+      "version": "pypdf-native-text-1+pypdf6.21.4",
+      "reviewedBy": "rule_check"
+    },
+    "validationStatus": "pending"
+  },
+  {
+    "schemaVersion": "1.0",
+    "id": "ev.ginger.crida2011.p9.sowing-window-field-crops",
+    "mode": "live",
+    "sourceUrl": "https://www.icar-crida.res.in/CP-2012/statewiseplans/Karnataka%20(Pdf)/GKVK,%20Bangalore/KA28-Hassan%20%2004.10.2011.pdf",
+    "publisher": "ICAR-Central Research Institute for Dryland Agriculture (ICAR-CRIDA)",
+    "documentTitle": "Agriculture Contingency Plan for District: HASSAN (Karnataka, KA28)",
+    "documentVersion": "2011-10-04 (file name; PDF CreationDate 2011-10-04)",
+    "contentHash": "8e1d6636773a5714c3110a7908815baf0e6dc2736ec77bf96dda5ea8322ddd6a",
+    "locator": {
+      "page": 9,
+      "section": "1.12 Sowing window"
+    },
+    "content": {
+      "kind": "excerpt",
+      "text": "Sowing window for 5 major field crops (start and end of normal sowing week) Paddy Ragi Maize Potato Sunflower",
+      "language": "en"
+    },
+    "publishedAt": null,
+    "availability": {
+      "effectiveAvailableAt": "2026-10-29T19:38:46+00:00",
+      "basis": "conservative_upper_bound"
+    },
+    "ingestedAt": "2026-10-30T00:00:00+00:00",
+    "revisedAt": null,
+    "geography": {
+      "level": "district",
+      "ids": [
+        "IN-KA-hassan"
+      ]
+    },
+    "cropIds": [],
+    "productIds": [],
+    "units": [],
+    "sourceUnits": [
+      "week"
+    ],
+    "licence": {
+      "licence": "unstated in PDF; publisher website footer: © Copyright ICAR-CRIDA . All Rights Reserved",
+      "accessStatus": "open",
+      "redistributable": false,
+      "attribution": "ICAR-CRIDA. Agriculture Contingency Plan for District Hassan (2011)."
+    },
+    "extraction": {
+      "method": "native_text",
+      "version": "pypdf-native-text-1+pypdf6.21.4",
+      "reviewedBy": "rule_check"
+    },
+    "validationStatus": "pending"
+  },
+  {
+    "schemaVersion": "1.0",
+    "id": "ev.ginger.crida2011.p9.drought-2003",
+    "mode": "live",
+    "sourceUrl": "https://www.icar-crida.res.in/CP-2012/statewiseplans/Karnataka%20(Pdf)/GKVK,%20Bangalore/KA28-Hassan%20%2004.10.2011.pdf",
+    "publisher": "ICAR-Central Research Institute for Dryland Agriculture (ICAR-CRIDA)",
+    "documentTitle": "Agriculture Contingency Plan for District: HASSAN (Karnataka, KA28)",
+    "documentVersion": "2011-10-04 (file name; PDF CreationDate 2011-10-04)",
+    "contentHash": "8e1d6636773a5714c3110a7908815baf0e6dc2736ec77bf96dda5ea8322ddd6a",
+    "locator": {
+      "page": 9,
+      "section": "1.13 Major contingency"
+    },
+    "content": {
+      "kind": "excerpt",
+      "text": "Drought √ In 2003 (53 % of Normal Rains)",
+      "language": "en"
+    },
+    "publishedAt": null,
+    "availability": {
+      "effectiveAvailableAt": "2026-10-29T19:38:46+00:00",
+      "basis": "conservative_upper_bound"
+    },
+    "ingestedAt": "2026-10-30T00:00:00+00:00",
+    "revisedAt": null,
+    "geography": {
+      "level": "district",
+      "ids": [
+        "IN-KA-hassan"
+      ]
+    },
+    "cropIds": [],
+    "productIds": [],
+    "units": [
+      "percent"
+    ],
+    "sourceUnits": [
+      "% of Normal Rains"
+    ],
+    "licence": {
+      "licence": "unstated in PDF; publisher website footer: © Copyright ICAR-CRIDA . All Rights Reserved",
+      "accessStatus": "open",
+      "redistributable": false,
+      "attribution": "ICAR-CRIDA. Agriculture Contingency Plan for District Hassan (2011)."
+    },
+    "extraction": {
+      "method": "native_text",
+      "version": "pypdf-native-text-1+pypdf6.21.4",
+      "reviewedBy": "rule_check"
+    },
+    "validationStatus": "pending"
+  },
+  {
+    "schemaVersion": "1.0",
+    "id": "ev.ginger.crida2011.p10.rain-onset",
+    "mode": "live",
+    "sourceUrl": "https://www.icar-crida.res.in/CP-2012/statewiseplans/Karnataka%20(Pdf)/GKVK,%20Bangalore/KA28-Hassan%20%2004.10.2011.pdf",
+    "publisher": "ICAR-Central Research Institute for Dryland Agriculture (ICAR-CRIDA)",
+    "documentTitle": "Agriculture Contingency Plan for District: HASSAN (Karnataka, KA28)",
+    "documentVersion": "2011-10-04 (file name; PDF CreationDate 2011-10-04)",
+    "contentHash": "8e1d6636773a5714c3110a7908815baf0e6dc2736ec77bf96dda5ea8322ddd6a",
+    "locator": {
+      "page": 10,
+      "section": "2.1.1 Rainfed situation"
+    },
+    "content": {
+      "kind": "excerpt",
+      "text": "(Conventional rains actually start in 1 st week of May; Through Monsoon sets in 1 st week of June",
+      "language": "en"
+    },
+    "publishedAt": null,
+    "availability": {
+      "effectiveAvailableAt": "2026-10-29T19:38:46+00:00",
+      "basis": "conservative_upper_bound"
+    },
+    "ingestedAt": "2026-10-30T00:00:00+00:00",
+    "revisedAt": null,
+    "geography": {
+      "level": "district",
+      "ids": [
+        "IN-KA-hassan"
+      ]
+    },
+    "cropIds": [],
+    "productIds": [],
+    "units": [],
+    "sourceUnits": [
+      "week"
+    ],
+    "licence": {
+      "licence": "unstated in PDF; publisher website footer: © Copyright ICAR-CRIDA . All Rights Reserved",
+      "accessStatus": "open",
+      "redistributable": false,
+      "attribution": "ICAR-CRIDA. Agriculture Contingency Plan for District Hassan (2011)."
+    },
+    "extraction": {
+      "method": "native_text",
+      "version": "pypdf-native-text-1+pypdf6.21.4",
+      "reviewedBy": "rule_check"
+    },
+    "validationStatus": "pending"
+  },
+  {
+    "schemaVersion": "1.0",
+    "id": "ev.ginger.crida2011.p29.waterlogging-contingency",
+    "mode": "live",
+    "sourceUrl": "https://www.icar-crida.res.in/CP-2012/statewiseplans/Karnataka%20(Pdf)/GKVK,%20Bangalore/KA28-Hassan%20%2004.10.2011.pdf",
+    "publisher": "ICAR-Central Research Institute for Dryland Agriculture (ICAR-CRIDA)",
+    "documentTitle": "Agriculture Contingency Plan for District: HASSAN (Karnataka, KA28)",
+    "documentVersion": "2011-10-04 (file name; PDF CreationDate 2011-10-04)",
+    "contentHash": "8e1d6636773a5714c3110a7908815baf0e6dc2736ec77bf96dda5ea8322ddd6a",
+    "locator": {
+      "page": 29,
+      "section": "2.2 Unusual rains"
+    },
+    "content": {
+      "kind": "excerpt",
+      "text": "Continuous high rainfall in a short span leading to water logging",
+      "language": "en"
+    },
+    "publishedAt": null,
+    "availability": {
+      "effectiveAvailableAt": "2026-10-29T19:38:46+00:00",
+      "basis": "conservative_upper_bound"
+    },
+    "ingestedAt": "2026-10-30T00:00:00+00:00",
+    "revisedAt": null,
+    "geography": {
+      "level": "district",
+      "ids": [
+        "IN-KA-hassan"
+      ]
+    },
+    "cropIds": [],
+    "productIds": [],
+    "units": [],
+    "sourceUnits": [],
+    "licence": {
+      "licence": "unstated in PDF; publisher website footer: © Copyright ICAR-CRIDA . All Rights Reserved",
+      "accessStatus": "open",
+      "redistributable": false,
+      "attribution": "ICAR-CRIDA. Agriculture Contingency Plan for District Hassan (2011)."
+    },
+    "extraction": {
+      "method": "native_text",
+      "version": "pypdf-native-text-1+pypdf6.21.4",
+      "reviewedBy": "rule_check"
+    },
+    "validationStatus": "pending"
+  }
+]

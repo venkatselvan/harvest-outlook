@@ -1,0 +1,121 @@
+{
+  "cropId": "sunflower",
+  "identityRef": "sunflower",
+  "group": "oilseeds",
+  "products": [
+    {
+      "productId": "sunflower-seed",
+      "name": "Sunflower seed",
+      "productBasis": "seed"
+    }
+  ],
+  "regionalContexts": [
+    {
+      "contextId": "sunflower.TN.rainfed",
+      "geography": {
+        "level": "state",
+        "ids": [
+          "IN-TN"
+        ]
+      },
+      "stateId": "IN-TN",
+      "districtIds": null,
+      "season": "rabi",
+      "plantingWindow": {
+        "fromMonth": 10,
+        "toMonth": 11,
+        "evidenceIds": [
+          "cat.sunflower.rf"
+        ]
+      },
+      "durationDays": {
+        "min": 85,
+        "max": 95,
+        "evidenceIds": [
+          "cat.sunflower.dur"
+        ]
+      },
+      "irrigation": "rainfed",
+      "irrigationEvidenceIds": [
+        "cat.sunflower.yld"
+      ],
+      "waterNeedClass": null,
+      "soilNotes": null,
+      "yieldReference": {
+        "min": 1500,
+        "max": 1950,
+        "unit": "kg/ha",
+        "basis": "regional_reference",
+        "productId": "sunflower-seed",
+        "evidenceIds": [
+          "cat.sunflower.yld"
+        ]
+      },
+      "labourClass": null,
+      "harvestPattern": "single",
+      "notes": "TN-only coverage: Tamil Nadu source; not generalised to other states. Karthigaipattam (also June-July rainfed season on the page)."
+    },
+    {
+      "contextId": "sunflower.TN.irrigated",
+      "geography": {
+        "level": "state",
+        "ids": [
+          "IN-TN"
+        ]
+      },
+      "stateId": "IN-TN",
+      "districtIds": null,
+      "season": "kharif",
+      "plantingWindow": {
+        "fromMonth": 6,
+        "toMonth": 7,
+        "evidenceIds": [
+          "cat.sunflower.ir"
+        ]
+      },
+      "durationDays": {
+        "min": 85,
+        "max": 95,
+        "evidenceIds": [
+          "cat.sunflower.dur"
+        ]
+      },
+      "irrigation": "irrigated",
+      "irrigationEvidenceIds": [
+        "cat.sunflower.yld"
+      ],
+      "waterNeedClass": null,
+      "soilNotes": null,
+      "yieldReference": {
+        "min": 1700,
+        "max": 2250,
+        "unit": "kg/ha",
+        "basis": "regional_reference",
+        "productId": "sunflower-seed",
+        "evidenceIds": [
+          "cat.sunflower.yld"
+        ]
+      },
+      "labourClass": null,
+      "harvestPattern": "single",
+      "notes": "TN-only coverage: Tamil Nadu source; not generalised to other states. Adipattam irrigated."
+    }
+  ],
+  "exclusionsOrCautions": [],
+  "marketCoverageStatus": "unavailable_pending_price_access",
+  "evidenceIds": [
+    "cat.sunflower.rf",
+    "cat.sunflower.ir",
+    "cat.sunflower.dur",
+    "cat.sunflower.yld"
+  ],
+  "qualification": {
+    "identityResolved": true,
+    "hasRegionalContext": true,
+    "hasSourcedRequirements": true,
+    "hasSeasonInfo": true,
+    "marketStatusExplicit": true,
+    "qualified": true,
+    "missing": []
+  }
+}

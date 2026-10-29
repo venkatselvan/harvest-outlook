@@ -1,0 +1,89 @@
+{
+  "cropId": "lentil",
+  "identityRef": "lentil",
+  "group": "pulses",
+  "products": [
+    {
+      "productId": "lentil-whole",
+      "name": "Lentil whole seed",
+      "productBasis": "whole"
+    },
+    {
+      "productId": "lentil-split",
+      "name": "Lentil split (dal)",
+      "productBasis": "split"
+    }
+  ],
+  "regionalContexts": [
+    {
+      "contextId": "lentil.AS.rabi",
+      "geography": {
+        "level": "state",
+        "ids": [
+          "IN-AS"
+        ]
+      },
+      "stateId": "IN-AS",
+      "districtIds": null,
+      "season": "rabi",
+      "plantingWindow": {
+        "fromMonth": 10,
+        "toMonth": 11,
+        "evidenceIds": [
+          "cat.lentil.sow"
+        ]
+      },
+      "durationDays": {
+        "min": 112,
+        "max": 125,
+        "evidenceIds": [
+          "cat.lentil.d1",
+          "cat.lentil.d2"
+        ]
+      },
+      "irrigation": "supplemental",
+      "irrigationEvidenceIds": [
+        "cat.lentil.irr"
+      ],
+      "waterNeedClass": null,
+      "soilNotes": {
+        "text": "Loam or silty loam preferable.",
+        "evidenceIds": [
+          "cat.lentil.soil"
+        ]
+      },
+      "yieldReference": {
+        "min": 1200,
+        "max": 1200,
+        "unit": "kg/ha",
+        "basis": "regional_reference",
+        "productId": "lentil-whole",
+        "evidenceIds": [
+          "cat.lentil.yld"
+        ]
+      },
+      "labourClass": null,
+      "harvestPattern": "single",
+      "notes": "Assam only. No northern-plains lentil source was reachable and content-bearing (ICAR-IIPR DNS failure, Vikaspedia JS shell); lentil is retained because the AAU Assam package is content-bearing. Not a major-belt (UP/MP) context."
+    }
+  ],
+  "exclusionsOrCautions": [],
+  "marketCoverageStatus": "unavailable_pending_price_access",
+  "evidenceIds": [
+    "cat.lentil.sow",
+    "cat.lentil.d1",
+    "cat.lentil.d2",
+    "cat.lentil.soil",
+    "cat.lentil.irr",
+    "cat.lentil.yld"
+  ],
+  "qualification": {
+    "identityResolved": true,
+    "hasRegionalContext": true,
+    "hasSourcedRequirements": true,
+    "hasSeasonInfo": true,
+    "marketStatusExplicit": true,
+    "qualified": true,
+    "missing": []
+  }
+}

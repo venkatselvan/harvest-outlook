@@ -1,0 +1,173 @@
+{
+  "cropId": "finger-millet",
+  "identityRef": "finger-millet",
+  "group": "cereals",
+  "products": [
+    {
+      "productId": "finger-millet-grain",
+      "name": "Finger millet grain",
+      "productBasis": "grain"
+    }
+  ],
+  "regionalContexts": [
+    {
+      "contextId": "finger-millet.TN.irrigated",
+      "geography": {
+        "level": "state",
+        "ids": [
+          "IN-TN"
+        ]
+      },
+      "stateId": "IN-TN",
+      "districtIds": null,
+      "season": "rabi",
+      "plantingWindow": {
+        "fromMonth": 12,
+        "toMonth": 1,
+        "evidenceIds": [
+          "cat.finger-millet.irr"
+        ]
+      },
+      "durationDays": {
+        "min": 95,
+        "max": 110,
+        "evidenceIds": [
+          "cat.finger-millet.dur"
+        ]
+      },
+      "irrigation": "irrigated",
+      "irrigationEvidenceIds": [
+        "cat.finger-millet.irr"
+      ],
+      "waterNeedClass": null,
+      "soilNotes": null,
+      "yieldReference": {
+        "min": 2892,
+        "max": 4500,
+        "unit": "kg/ha",
+        "basis": "regional_reference",
+        "productId": "finger-millet-grain",
+        "evidenceIds": [
+          "cat.finger-millet.yld"
+        ]
+      },
+      "labourClass": null,
+      "harvestPattern": "single",
+      "notes": "TN-only coverage: Tamil Nadu source; not generalised to other states."
+    },
+    {
+      "contextId": "finger-millet.TN.rainfed",
+      "geography": {
+        "level": "state",
+        "ids": [
+          "IN-TN"
+        ]
+      },
+      "stateId": "IN-TN",
+      "districtIds": null,
+      "season": "kharif",
+      "plantingWindow": {
+        "fromMonth": 6,
+        "toMonth": 7,
+        "evidenceIds": [
+          "cat.finger-millet.rf"
+        ]
+      },
+      "durationDays": {
+        "min": 95,
+        "max": 110,
+        "evidenceIds": [
+          "cat.finger-millet.dur"
+        ]
+      },
+      "irrigation": "rainfed",
+      "irrigationEvidenceIds": [
+        "cat.finger-millet.rf"
+      ],
+      "waterNeedClass": null,
+      "soilNotes": null,
+      "yieldReference": {
+        "min": 2300,
+        "max": 3100,
+        "unit": "kg/ha",
+        "basis": "regional_reference",
+        "productId": "finger-millet-grain",
+        "evidenceIds": [
+          "cat.finger-millet.yld"
+        ]
+      },
+      "labourClass": null,
+      "harvestPattern": "single",
+      "notes": "TN-only coverage: Tamil Nadu source; not generalised to other states."
+    },
+    {
+      "contextId": "finger-millet.AS.kharif",
+      "geography": {
+        "level": "state",
+        "ids": [
+          "IN-AS"
+        ]
+      },
+      "stateId": "IN-AS",
+      "districtIds": null,
+      "season": "kharif",
+      "plantingWindow": {
+        "fromMonth": 9,
+        "toMonth": 9,
+        "evidenceIds": [
+          "cat.finger-millet.asw"
+        ]
+      },
+      "durationDays": {
+        "min": 80,
+        "max": 90,
+        "evidenceIds": [
+          "cat.finger-millet.asd"
+        ]
+      },
+      "irrigation": "unspecified",
+      "irrigationEvidenceIds": [],
+      "waterNeedClass": null,
+      "soilNotes": {
+        "text": "Sandy loam.",
+        "evidenceIds": [
+          "cat.finger-millet.ass"
+        ]
+      },
+      "yieldReference": {
+        "min": 1800,
+        "max": 2000,
+        "unit": "kg/ha",
+        "basis": "regional_reference",
+        "productId": "finger-millet-grain",
+        "evidenceIds": [
+          "cat.finger-millet.asy"
+        ]
+      },
+      "labourClass": null,
+      "harvestPattern": "single",
+      "notes": "Assam; transplanted crop, one-month seedlings in the 1st week of September (nursery sown earlier)."
+    }
+  ],
+  "exclusionsOrCautions": [],
+  "marketCoverageStatus": "unavailable_pending_price_access",
+  "evidenceIds": [
+    "cat.finger-millet.irr",
+    "cat.finger-millet.rf",
+    "cat.finger-millet.dur",
+    "cat.finger-millet.yld",
+    "cat.finger-millet.asw",
+    "cat.finger-millet.asd",
+    "cat.finger-millet.ass",
+    "cat.finger-millet.asy"
+  ],
+  "qualification": {
+    "identityResolved": true,
+    "hasRegionalContext": true,
+    "hasSourcedRequirements": true,
+    "hasSeasonInfo": true,
+    "marketStatusExplicit": true,
+    "qualified": true,
+    "missing": []
+  }
+}

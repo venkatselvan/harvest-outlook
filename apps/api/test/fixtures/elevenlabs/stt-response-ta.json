@@ -1,0 +1,11 @@
+{
+  "_note": "SYNTHETIC hand-written example of the documented response shape; not provider output.",
+  "language_code": "tam",
+  "language_probability": 0.91,
+  "text": "நான் இரண்டு ஏக்கரில் இஞ்சி நட்டேன்",
+  "words": [
+    { "text": "நான்", "start": 0.0, "end": 0.4, "type": "word" },
+    { "text": "இரண்டு", "start": 0.5, "end": 1.0, "type": "word" },
+    { "text": "ஏக்கரில்", "start": 1.1, "end": 1.7, "type": "word" }
+  ]
+}

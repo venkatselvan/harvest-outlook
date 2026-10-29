@@ -1,0 +1,74 @@
+{
+  "cropId": "green-gram",
+  "identityRef": "green-gram",
+  "group": "pulses",
+  "products": [
+    {
+      "productId": "green-gram-whole",
+      "name": "Green gram whole seed",
+      "productBasis": "whole"
+    },
+    {
+      "productId": "green-gram-split",
+      "name": "Green gram split (dal)",
+      "productBasis": "split"
+    }
+  ],
+  "regionalContexts": [
+    {
+      "contextId": "green-gram.AS.kharif",
+      "geography": {
+        "level": "state",
+        "ids": [
+          "IN-AS"
+        ]
+      },
+      "stateId": "IN-AS",
+      "districtIds": null,
+      "season": "kharif",
+      "plantingWindow": {
+        "fromMonth": 8,
+        "toMonth": 9,
+        "evidenceIds": [
+          "cat.green-gram.sow"
+        ]
+      },
+      "durationDays": {
+        "min": 60,
+        "max": 70,
+        "evidenceIds": [
+          "cat.green-gram.dur"
+        ]
+      },
+      "irrigation": "unspecified",
+      "irrigationEvidenceIds": [],
+      "waterNeedClass": null,
+      "soilNotes": {
+        "text": "Well drained sandy loam.",
+        "evidenceIds": [
+          "cat.green-gram.soil"
+        ]
+      },
+      "yieldReference": null,
+      "labourClass": null,
+      "harvestPattern": "single",
+      "notes": "Assam only. The saved TNAU green gram page held no season or duration text."
+    }
+  ],
+  "exclusionsOrCautions": [],
+  "marketCoverageStatus": "unavailable_pending_price_access",
+  "evidenceIds": [
+    "cat.green-gram.sow",
+    "cat.green-gram.dur",
+    "cat.green-gram.soil"
+  ],
+  "qualification": {
+    "identityResolved": true,
+    "hasRegionalContext": true,
+    "hasSourcedRequirements": true,
+    "hasSeasonInfo": true,
+    "marketStatusExplicit": true,
+    "qualified": true,
+    "missing": []
+  }
+}

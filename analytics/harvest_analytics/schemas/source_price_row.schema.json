@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://harvest-outlook.local/analytics/schema/source_price_row.schema.json",
+  "title": "Source-unit price row accepted by the loader",
+  "description": "Prices in the unit the source published. priceUnit is required: the loader never infers a unit from magnitude.",
+  "type": "object",
+  "required": ["rowId", "marketId", "productId", "observedOn", "minPrice", "maxPrice", "modalPrice", "priceUnit", "sourceId", "availableAt"],
+  "additionalProperties": false,
+  "properties": {
+    "rowId": {"$ref": "observation_row.schema.json#/$defs/id"},
+    "marketId": {"$ref": "observation_row.schema.json#/$defs/id"},
+    "productId": {"$ref": "observation_row.schema.json#/$defs/id"},
+    "observedOn": {"$ref": "observation_row.schema.json#/$defs/date"},
+    "minPrice": {"type": ["number", "null"], "minimum": 0},
+    "maxPrice": {"type": ["number", "null"], "minimum": 0},
+    "modalPrice": {"type": ["number", "null"], "minimum": 0},
+    "priceUnit": {"enum": ["INR/kg", "INR/quintal"]},
+    "arrivals": {"type": ["number", "null"], "minimum": 0},
+    "arrivalsUnit": {"enum": ["tonnes", "quintal", null]},
+    "sourceId": {"$ref": "observation_row.schema.json#/$defs/id"},
+    "availableAt": {"$ref": "observation_row.schema.json#/$defs/dateTime"},
+    "availableAtBasis": {"enum": ["recorded", "conservative_upper_bound", "estimated"]},
+    "revisionOf": {"anyOf": [{"$ref": "observation_row.schema.json#/$defs/id"}, {"type": "null"}]}
+  }
+}

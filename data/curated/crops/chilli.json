@@ -1,0 +1,78 @@
+{
+  "cropId": "chilli",
+  "identityRef": "chilli",
+  "group": "spices",
+  "products": [
+    {
+      "productId": "chilli-green",
+      "name": "Green chilli (fresh)",
+      "productBasis": "green"
+    },
+    {
+      "productId": "chilli-dry",
+      "name": "Dry red chilli",
+      "productBasis": "dry"
+    }
+  ],
+  "regionalContexts": [
+    {
+      "contextId": "chilli.TN.main",
+      "geography": {
+        "level": "state",
+        "ids": [
+          "IN-TN"
+        ]
+      },
+      "stateId": "IN-TN",
+      "districtIds": null,
+      "season": "rabi",
+      "plantingWindow": {
+        "fromMonth": 1,
+        "toMonth": 2,
+        "evidenceIds": [
+          "cat.chilli.sow"
+        ]
+      },
+      "durationDays": null,
+      "irrigation": "unspecified",
+      "irrigationEvidenceIds": [],
+      "waterNeedClass": null,
+      "soilNotes": {
+        "text": "Well drained loam rich in organic matter, pH 6.5-7.5.",
+        "evidenceIds": [
+          "cat.chilli.soil"
+        ]
+      },
+      "yieldReference": {
+        "min": 2000,
+        "max": 3000,
+        "unit": "kg/ha",
+        "basis": "regional_reference",
+        "productId": "chilli-dry",
+        "evidenceIds": [
+          "cat.chilli.yld"
+        ]
+      },
+      "labourClass": null,
+      "harvestPattern": "repeated_picking",
+      "notes": "TN-only coverage: Tamil Nadu source; not generalised to other states. Sowing windows Jan-Feb, Jun-Jul and Sep-Oct (nursery sowing); the first window is mapped here. Dry-pod yield 2-3 t/ha; green chilli 10-15 t/ha (same excerpt) is a different product and not interchangeable. The Spices Board chilli PDF text was garbled and unused."
+    }
+  ],
+  "exclusionsOrCautions": [],
+  "marketCoverageStatus": "unavailable_pending_price_access",
+  "evidenceIds": [
+    "cat.chilli.sow",
+    "cat.chilli.soil",
+    "cat.chilli.yld",
+    "cat.chilli.pick"
+  ],
+  "qualification": {
+    "identityResolved": true,
+    "hasRegionalContext": true,
+    "hasSourcedRequirements": true,
+    "hasSeasonInfo": true,
+    "marketStatusExplicit": true,
+    "qualified": true,
+    "missing": []
+  }
+}

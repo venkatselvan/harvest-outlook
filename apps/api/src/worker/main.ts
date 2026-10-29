@@ -3,6 +3,7 @@ import { fileURLToPath } from "node:url";
 import { resolve } from "node:path";
 import type { Pool } from "../db/pool";
 import { withTransaction } from "../db/pool";
+import { ingestHandlers } from "./handlers";
 
 export interface JobRow {
   id: string;
@@ -13,7 +14,14 @@ export interface JobRow {
   payload: unknown;
 }
 
-export type JobHandler = (job: JobRow, ctx: { heartbeat: (progress?: number) => Promise<void> }) => Promise<unknown>;
+export interface JobContext {
+  heartbeat: (progress?: number) => Promise<void>;
+  pool: Pool;
+  /** True once cancellation was requested; handlers check this between units of work. */
+  isCancelled: () => Promise<boolean>;
+}
+
+export type JobHandler = (job: JobRow, ctx: JobContext) => Promise<unknown>;
 
 export class RetryableError extends Error {
   readonly retryable = true;
@@ -21,6 +29,7 @@ export class RetryableError extends Error {
 
 export const handlers: Record<string, JobHandler> = {
   noop: async () => ({ ok: true }),
+  ...ingestHandlers,
 };
 
 export const LEASE_SECONDS = 30;
@@ -66,7 +75,11 @@ export async function runJob(pool: Pool, job: JobRow, workerId: string, leaseSec
   const handler = handlers[job.type];
   try {
     if (!handler) throw Object.assign(new Error(`no handler for job type ${job.type}`), { retryable: false });
-    const result = await handler(job, { heartbeat });
+    const isCancelled = async () => {
+      const r = await pool.query<{ cancel_requested: boolean }>("SELECT cancel_requested FROM jobs WHERE id=$1", [job.id]);
+      return r.rows[0]?.cancel_requested === true;
+    };
+    const result = await handler(job, { heartbeat, pool, isCancelled });
     const r = await pool.query(
       `UPDATE jobs SET state='succeeded', result=$3, progress=1, finished_at=now(), lease_owner=NULL, lease_expires_at=NULL
        WHERE id=$1 AND lease_owner=$2 AND state='running'`,

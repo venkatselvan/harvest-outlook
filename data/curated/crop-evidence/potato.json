@@ -1,0 +1,349 @@
+[
+  {
+    "schemaVersion": "1.0",
+    "id": "cat.potato.tnsow",
+    "mode": "live",
+    "sourceUrl": "https://agritech.tnau.ac.in/horticulture/horti_vegetables_potato.html",
+    "publisher": "Tamil Nadu Agricultural University (TNAU Agritech Portal)",
+    "documentTitle": "Horticulture: Potato",
+    "documentVersion": null,
+    "contentHash": "4137434ed7ddf0e47b8a2240934faa0d1764a973f4f848faf4bd6af70279389e",
+    "locator": {
+      "section": "Season"
+    },
+    "content": {
+      "kind": "excerpt",
+      "text": "Plains Planting is done during October - November in plains.",
+      "language": "en"
+    },
+    "publishedAt": null,
+    "availability": {
+      "effectiveAvailableAt": "2026-10-29T20:00:48.915Z",
+      "basis": "first_observed"
+    },
+    "ingestedAt": "2026-10-29T20:00:48.915Z",
+    "revisedAt": null,
+    "geography": {
+      "level": "state",
+      "ids": [
+        "IN-TN"
+      ]
+    },
+    "cropIds": [
+      "potato"
+    ],
+    "productIds": [],
+    "units": [],
+    "sourceUnits": [],
+    "licence": {
+      "licence": "Public web page; publisher copyright. Excerpt (<=60 words) kept for provenance, full page not redistributed.",
+      "accessStatus": "open",
+      "redistributable": false,
+      "attribution": "Tamil Nadu Agricultural University (TNAU Agritech Portal)"
+    },
+    "extraction": {
+      "method": "manual",
+      "version": "catalogue-build-1",
+      "reviewedBy": "rule_check"
+    },
+    "validationStatus": "pending"
+  },
+  {
+    "schemaVersion": "1.0",
+    "id": "cat.potato.tnsoil",
+    "mode": "live",
+    "sourceUrl": "https://agritech.tnau.ac.in/horticulture/horti_vegetables_potato.html",
+    "publisher": "Tamil Nadu Agricultural University (TNAU Agritech Portal)",
+    "documentTitle": "Horticulture: Potato",
+    "documentVersion": null,
+    "contentHash": "4137434ed7ddf0e47b8a2240934faa0d1764a973f4f848faf4bd6af70279389e",
+    "locator": {
+      "section": "Soil"
+    },
+    "content": {
+      "kind": "excerpt",
+      "text": "The soil should be friable, porous and well drained.",
+      "language": "en"
+    },
+    "publishedAt": null,
+    "availability": {
+      "effectiveAvailableAt": "2026-10-29T20:00:48.915Z",
+      "basis": "first_observed"
+    },
+    "ingestedAt": "2026-10-29T20:00:48.915Z",
+    "revisedAt": null,
+    "geography": {
+      "level": "state",
+      "ids": [
+        "IN-TN"
+      ]
+    },
+    "cropIds": [
+      "potato"
+    ],
+    "productIds": [],
+    "units": [],
+    "sourceUnits": [],
+    "licence": {
+      "licence": "Public web page; publisher copyright. Excerpt (<=60 words) kept for provenance, full page not redistributed.",
+      "accessStatus": "open",
+      "redistributable": false,
+      "attribution": "Tamil Nadu Agricultural University (TNAU Agritech Portal)"
+    },
+    "extraction": {
+      "method": "manual",
+      "version": "catalogue-build-1",
+      "reviewedBy": "rule_check"
+    },
+    "validationStatus": "pending"
+  },
+  {
+    "schemaVersion": "1.0",
+    "id": "cat.potato.tnyld",
+    "mode": "live",
+    "sourceUrl": "https://agritech.tnau.ac.in/horticulture/horti_vegetables_potato.html",
+    "publisher": "Tamil Nadu Agricultural University (TNAU Agritech Portal)",
+    "documentTitle": "Horticulture: Potato",
+    "documentVersion": null,
+    "contentHash": "4137434ed7ddf0e47b8a2240934faa0d1764a973f4f848faf4bd6af70279389e",
+    "locator": {
+      "section": "Yield"
+    },
+    "content": {
+      "kind": "excerpt",
+      "text": "Yield 15 - 20 t/ha of tubers can be obtained.",
+      "language": "en"
+    },
+    "publishedAt": null,
+    "availability": {
+      "effectiveAvailableAt": "2026-10-29T20:00:48.915Z",
+      "basis": "first_observed"
+    },
+    "ingestedAt": "2026-10-29T20:00:48.915Z",
+    "revisedAt": null,
+    "geography": {
+      "level": "state",
+      "ids": [
+        "IN-TN"
+      ]
+    },
+    "cropIds": [
+      "potato"
+    ],
+    "productIds": [],
+    "units": [],
+    "sourceUnits": [],
+    "licence": {
+      "licence": "Public web page; publisher copyright. Excerpt (<=60 words) kept for provenance, full page not redistributed.",
+      "accessStatus": "open",
+      "redistributable": false,
+      "attribution": "Tamil Nadu Agricultural University (TNAU Agritech Portal)"
+    },
+    "extraction": {
+      "method": "manual",
+      "version": "catalogue-build-1",
+      "reviewedBy": "rule_check"
+    },
+    "validationStatus": "pending"
+  },
+  {
+    "schemaVersion": "1.0",
+    "id": "cat.potato.sow",
+    "mode": "live",
+    "sourceUrl": "https://kvkchirang.aau.ac.in/pdf/package_of_practice/Rabi/Potato.pdf",
+    "publisher": "Assam Agricultural University, KVK Chirang",
+    "documentTitle": "Package of practices for Rabi crops of Assam: Potato",
+    "documentVersion": "2021",
+    "contentHash": "a6103eb0ef62795d1612cd21474044049203827a12584a951bbb918e339b37ef",
+    "locator": {
+      "page": 2,
+      "section": "Time of planting"
+    },
+    "content": {
+      "kind": "excerpt",
+      "text": "The optimum time for planting is mid October to mid November.",
+      "language": "en"
+    },
+    "publishedAt": null,
+    "availability": {
+      "effectiveAvailableAt": "2026-10-29T20:00:51.753Z",
+      "basis": "first_observed"
+    },
+    "ingestedAt": "2026-10-29T20:00:51.753Z",
+    "revisedAt": null,
+    "geography": {
+      "level": "state",
+      "ids": [
+        "IN-AS"
+      ]
+    },
+    "cropIds": [
+      "potato"
+    ],
+    "productIds": [],
+    "units": [],
+    "sourceUnits": [],
+    "licence": {
+      "licence": "Public web page; publisher copyright. Excerpt (<=60 words) kept for provenance, full page not redistributed.",
+      "accessStatus": "open",
+      "redistributable": false,
+      "attribution": "Assam Agricultural University, KVK Chirang"
+    },
+    "extraction": {
+      "method": "native_text",
+      "version": "catalogue-build-1",
+      "reviewedBy": "rule_check"
+    },
+    "validationStatus": "pending"
+  },
+  {
+    "schemaVersion": "1.0",
+    "id": "cat.potato.dur",
+    "mode": "live",
+    "sourceUrl": "https://kvkchirang.aau.ac.in/pdf/package_of_practice/Rabi/Potato.pdf",
+    "publisher": "Assam Agricultural University, KVK Chirang",
+    "documentTitle": "Package of practices for Rabi crops of Assam: Potato",
+    "documentVersion": "2021",
+    "contentHash": "a6103eb0ef62795d1612cd21474044049203827a12584a951bbb918e339b37ef",
+    "locator": {
+      "page": 1,
+      "section": "Varieties"
+    },
+    "content": {
+      "kind": "excerpt",
+      "text": "Duration (days) 80-100 110-120 100-120 60-75",
+      "language": "en"
+    },
+    "publishedAt": null,
+    "availability": {
+      "effectiveAvailableAt": "2026-10-29T20:00:51.753Z",
+      "basis": "first_observed"
+    },
+    "ingestedAt": "2026-10-29T20:00:51.753Z",
+    "revisedAt": null,
+    "geography": {
+      "level": "state",
+      "ids": [
+        "IN-AS"
+      ]
+    },
+    "cropIds": [
+      "potato"
+    ],
+    "productIds": [],
+    "units": [],
+    "sourceUnits": [],
+    "licence": {
+      "licence": "Public web page; publisher copyright. Excerpt (<=60 words) kept for provenance, full page not redistributed.",
+      "accessStatus": "open",
+      "redistributable": false,
+      "attribution": "Assam Agricultural University, KVK Chirang"
+    },
+    "extraction": {
+      "method": "native_text",
+      "version": "catalogue-build-1",
+      "reviewedBy": "rule_check"
+    },
+    "validationStatus": "pending"
+  },
+  {
+    "schemaVersion": "1.0",
+    "id": "cat.potato.yld",
+    "mode": "live",
+    "sourceUrl": "https://kvkchirang.aau.ac.in/pdf/package_of_practice/Rabi/Potato.pdf",
+    "publisher": "Assam Agricultural University, KVK Chirang",
+    "documentTitle": "Package of practices for Rabi crops of Assam: Potato",
+    "documentVersion": "2021",
+    "contentHash": "a6103eb0ef62795d1612cd21474044049203827a12584a951bbb918e339b37ef",
+    "locator": {
+      "page": 1,
+      "section": "Varieties"
+    },
+    "content": {
+      "kind": "excerpt",
+      "text": "Yield (q/ha) Rainfed Irrigated 85-100 150-160 85-100 150-160 120-150 175-200 145 200-250",
+      "language": "en"
+    },
+    "publishedAt": null,
+    "availability": {
+      "effectiveAvailableAt": "2026-10-29T20:00:51.753Z",
+      "basis": "first_observed"
+    },
+    "ingestedAt": "2026-10-29T20:00:51.753Z",
+    "revisedAt": null,
+    "geography": {
+      "level": "state",
+      "ids": [
+        "IN-AS"
+      ]
+    },
+    "cropIds": [
+      "potato"
+    ],
+    "productIds": [],
+    "units": [],
+    "sourceUnits": [],
+    "licence": {
+      "licence": "Public web page; publisher copyright. Excerpt (<=60 words) kept for provenance, full page not redistributed.",
+      "accessStatus": "open",
+      "redistributable": false,
+      "attribution": "Assam Agricultural University, KVK Chirang"
+    },
+    "extraction": {
+      "method": "native_text",
+      "version": "catalogue-build-1",
+      "reviewedBy": "rule_check"
+    },
+    "validationStatus": "pending"
+  },
+  {
+    "schemaVersion": "1.0",
+    "id": "cat.potato.soil",
+    "mode": "live",
+    "sourceUrl": "https://kvkchirang.aau.ac.in/pdf/package_of_practice/Rabi/Potato.pdf",
+    "publisher": "Assam Agricultural University, KVK Chirang",
+    "documentTitle": "Package of practices for Rabi crops of Assam: Potato",
+    "documentVersion": "2021",
+    "contentHash": "a6103eb0ef62795d1612cd21474044049203827a12584a951bbb918e339b37ef",
+    "locator": {
+      "page": 1,
+      "section": "Soil type"
+    },
+    "content": {
+      "kind": "excerpt",
+      "text": "Well drained sandy loam and loam soils, rich in organic matter are suitable.",
+      "language": "en"
+    },
+    "publishedAt": null,
+    "availability": {
+      "effectiveAvailableAt": "2026-10-29T20:00:51.753Z",
+      "basis": "first_observed"
+    },
+    "ingestedAt": "2026-10-29T20:00:51.753Z",
+    "revisedAt": null,
+    "geography": {
+      "level": "state",
+      "ids": [
+        "IN-AS"
+      ]
+    },
+    "cropIds": [
+      "potato"
+    ],
+    "productIds": [],
+    "units": [],
+    "sourceUnits": [],
+    "licence": {
+      "licence": "Public web page; publisher copyright. Excerpt (<=60 words) kept for provenance, full page not redistributed.",
+      "accessStatus": "open",
+      "redistributable": false,
+      "attribution": "Assam Agricultural University, KVK Chirang"
+    },
+    "extraction": {
+      "method": "native_text",
+      "version": "catalogue-build-1",
+      "reviewedBy": "rule_check"
+    },
+    "validationStatus": "pending"
+  }
+]

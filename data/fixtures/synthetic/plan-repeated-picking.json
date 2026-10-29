@@ -1,0 +1,381 @@
+{
+  "_note": "SYNTHETIC TEST FIXTURE (T08). Every number, duration, Kc, threshold, yield, cost and offset here is invented for engine tests. Not agronomic guidance, not a source claim, not a ginger calendar. Repeated-picking crop is generic and fictional.",
+  "cropId": "synthetic-picking-crop",
+  "productId": "synthetic-picking-crop-fresh",
+  "confirmedInputs": [
+    {
+      "key": "planting_date",
+      "value": {
+        "schemaVersion": "1.0",
+        "kind": "text",
+        "value": "2026-07-01",
+        "unit": null,
+        "evidenceState": "farmer_reported",
+        "scope": {
+          "level": "farm",
+          "ids": [
+            "synthetic-farm"
+          ]
+        },
+        "validFrom": null,
+        "validTo": null,
+        "issuedAt": null,
+        "evidenceIds": [],
+        "assumptionIds": [],
+        "methodVersion": null,
+        "validationStatus": "pending",
+        "missingReason": null
+      }
+    },
+    {
+      "key": "area",
+      "value": {
+        "schemaVersion": "1.0",
+        "kind": "quantity",
+        "value": 1.0,
+        "unit": "ha",
+        "evidenceState": "farmer_reported",
+        "scope": {
+          "level": "national",
+          "ids": [
+            "IN"
+          ]
+        },
+        "validFrom": null,
+        "validTo": null,
+        "issuedAt": null,
+        "evidenceIds": [],
+        "assumptionIds": [],
+        "methodVersion": null,
+        "validationStatus": "pending",
+        "missingReason": null
+      }
+    },
+    {
+      "key": "irrigation_category",
+      "value": {
+        "schemaVersion": "1.0",
+        "kind": "category",
+        "value": "irrigated",
+        "unit": null,
+        "evidenceState": "farmer_reported",
+        "scope": {
+          "level": "national",
+          "ids": [
+            "IN"
+          ]
+        },
+        "validFrom": null,
+        "validTo": null,
+        "issuedAt": null,
+        "evidenceIds": [],
+        "assumptionIds": [],
+        "methodVersion": null,
+        "validationStatus": "pending",
+        "missingReason": null
+      }
+    }
+  ],
+  "assumptions": [
+    {
+      "id": "synthetic_task_offsets",
+      "description": "Synthetic task offsets relative to stage windows (test fixture, not a rule).",
+      "value": null,
+      "evidenceIds": []
+    },
+    {
+      "id": "heavy_rain_threshold_mm",
+      "description": "Named planning assumption: daily rain at or above this triggers a drainage inspection. Synthetic value; not a source claim.",
+      "value": {
+        "schemaVersion": "1.0",
+        "kind": "quantity",
+        "value": 50,
+        "unit": "mm",
+        "evidenceState": "scenario",
+        "scope": {
+          "level": "national",
+          "ids": [
+            "IN"
+          ]
+        },
+        "validFrom": null,
+        "validTo": null,
+        "issuedAt": null,
+        "evidenceIds": [],
+        "assumptionIds": [],
+        "methodVersion": null,
+        "validationStatus": "pending",
+        "missingReason": null
+      },
+      "evidenceIds": []
+    }
+  ],
+  "ruleVersions": [
+    {
+      "id": "synthetic-ruleset-picking",
+      "version": 1
+    }
+  ],
+  "stageDefinitions": [
+    {
+      "schemaVersion": "1.0",
+      "id": "synthetic-stage-synthetic-picking-crop-establishment",
+      "mode": "synthetic",
+      "cropId": "synthetic-picking-crop",
+      "varietyId": null,
+      "scope": {
+        "level": "national",
+        "ids": [
+          "IN"
+        ]
+      },
+      "seasons": [],
+      "stageId": "establishment",
+      "name": "Establishment (synthetic)",
+      "order": 0,
+      "startsAfter": null,
+      "prerequisites": [],
+      "method": "calendar_days",
+      "durationDays": {
+        "min": 15,
+        "max": 20
+      },
+      "thermal": null,
+      "isHarvest": false,
+      "repeat": null,
+      "evidenceIds": [
+        "synthetic-fixture-plan-v1"
+      ],
+      "limitations": [
+        "Synthetic duration range for tests only."
+      ],
+      "reviewStatus": "synthetic"
+    },
+    {
+      "schemaVersion": "1.0",
+      "id": "synthetic-stage-synthetic-picking-crop-flowering",
+      "mode": "synthetic",
+      "cropId": "synthetic-picking-crop",
+      "varietyId": null,
+      "scope": {
+        "level": "national",
+        "ids": [
+          "IN"
+        ]
+      },
+      "seasons": [],
+      "stageId": "flowering",
+      "name": "Flowering (synthetic)",
+      "order": 1,
+      "startsAfter": "establishment",
+      "prerequisites": [
+        "establishment"
+      ],
+      "method": "calendar_days",
+      "durationDays": {
+        "min": 40,
+        "max": 50
+      },
+      "thermal": null,
+      "isHarvest": false,
+      "repeat": null,
+      "evidenceIds": [
+        "synthetic-fixture-plan-v1"
+      ],
+      "limitations": [
+        "Synthetic duration range for tests only."
+      ],
+      "reviewStatus": "synthetic"
+    },
+    {
+      "schemaVersion": "1.0",
+      "id": "synthetic-stage-synthetic-picking-crop-picking",
+      "mode": "synthetic",
+      "cropId": "synthetic-picking-crop",
+      "varietyId": null,
+      "scope": {
+        "level": "national",
+        "ids": [
+          "IN"
+        ]
+      },
+      "seasons": [],
+      "stageId": "picking",
+      "name": "Picking (synthetic)",
+      "order": 2,
+      "startsAfter": "flowering",
+      "prerequisites": [
+        "flowering"
+      ],
+      "method": "calendar_days",
+      "durationDays": {
+        "min": 7,
+        "max": 10
+      },
+      "thermal": null,
+      "isHarvest": true,
+      "repeat": {
+        "intervalDays": {
+          "min": 10,
+          "max": 14
+        },
+        "maxOccurrences": 4
+      },
+      "evidenceIds": [
+        "synthetic-fixture-plan-v1"
+      ],
+      "limitations": [
+        "Synthetic duration range for tests only."
+      ],
+      "reviewStatus": "synthetic"
+    }
+  ],
+  "parameters": {
+    "schemaVersion": "1.0",
+    "taskTemplateSet": {
+      "id": "synthetic-task-templates-picking",
+      "version": 1
+    },
+    "taskTemplates": [
+      {
+        "id": "plant",
+        "stageId": "establishment",
+        "taskType": "plant",
+        "description": "Transplant (synthetic template).",
+        "anchor": "stage_start",
+        "startOffsetDays": 0,
+        "endOffsetDays": 0,
+        "offsetBasis": {
+          "kind": "assumption",
+          "assumptionId": "synthetic_task_offsets"
+        },
+        "reasonCode": "synthetic_planting",
+        "evidenceIds": [
+          "synthetic-fixture-plan-v1"
+        ],
+        "dependsOn": [],
+        "irrigation": [],
+        "amount": null,
+        "trigger": null
+      },
+      {
+        "id": "pick",
+        "stageId": "picking",
+        "taskType": "harvest",
+        "description": "Pick (synthetic template).",
+        "anchor": "stage_span",
+        "startOffsetDays": 0,
+        "endOffsetDays": 0,
+        "offsetBasis": {
+          "kind": "assumption",
+          "assumptionId": "synthetic_task_offsets"
+        },
+        "reasonCode": "synthetic_picking",
+        "evidenceIds": [
+          "synthetic-fixture-plan-v1"
+        ],
+        "dependsOn": [
+          "plant"
+        ],
+        "irrigation": [],
+        "amount": null,
+        "trigger": null
+      }
+    ],
+    "water": {
+      "kcByStage": [
+        {
+          "stageId": "establishment",
+          "kc": 0.6,
+          "kcSource": "synthetic fixture (not FAO-56 table values)"
+        },
+        {
+          "stageId": "flowering",
+          "kc": 1.0,
+          "kcSource": "synthetic fixture (not FAO-56 table values)"
+        },
+        {
+          "stageId": "picking",
+          "kc": 0.9,
+          "kcSource": "synthetic fixture (not FAO-56 table values)"
+        }
+      ],
+      "rootZone": {
+        "totalAvailableWaterMm": null,
+        "depletionFraction": 0.5,
+        "initialDepletionMm": 0,
+        "basis": "synthetic: soil capacity unknown"
+      },
+      "effectiveRain": {
+        "method": "fixed_fraction",
+        "fraction": 0.8
+      },
+      "forecastRainPolicy": "use_forecast",
+      "irrigationEfficiency": 0.75,
+      "tawScenariosMm": [
+        60,
+        120
+      ]
+    },
+    "economics": {
+      "marketIds": [
+        "synthetic-market-2"
+      ],
+      "priceProductBasis": "fresh",
+      "yield": {
+        "productBasis": "fresh",
+        "unit": "kg/ha",
+        "amount": {
+          "low": 10000,
+          "central": 15000,
+          "high": 20000
+        },
+        "evidenceState": "scenario",
+        "evidenceIds": []
+      },
+      "marketableFraction": {
+        "low": 0.8,
+        "central": 0.85,
+        "high": 0.9
+      },
+      "harvestShares": null,
+      "conversion": null,
+      "costs": {
+        "cashProduction": {
+          "basis": "per_ha",
+          "amountInr": {
+            "low": "300000",
+            "central": "350000",
+            "high": "400000"
+          },
+          "evidenceIds": [],
+          "definition": "synthetic cash cost (A2-like), test only"
+        },
+        "harvest": {
+          "basis": "per_kg_marketable",
+          "amountInr": {
+            "low": "2",
+            "central": "3",
+            "high": "4"
+          },
+          "evidenceIds": [],
+          "definition": "synthetic harvest cost per kg"
+        },
+        "saleAndTransport": {
+          "basis": "per_kg_marketable",
+          "amountInr": {
+            "low": "1",
+            "central": "1.5",
+            "high": "2"
+          },
+          "evidenceIds": [],
+          "definition": "synthetic sale and transport per kg"
+        },
+        "fullEconomic": null
+      },
+      "unpricedItems": [
+        "family_labour"
+      ]
+    }
+  }
+}

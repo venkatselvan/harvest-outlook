@@ -1,0 +1,252 @@
+[
+  {
+    "schemaVersion": "1.0",
+    "id": "cat.turmeric.sow",
+    "mode": "live",
+    "sourceUrl": "https://www.indianspices.com/sites/default/files/cultivation_practices-TURMERIC-1.pdf",
+    "publisher": "Spices Board India",
+    "documentTitle": "Cultivation practices: Turmeric",
+    "documentVersion": null,
+    "contentHash": "ae5c6a433e252aae43528fc59cbb6371cb858d3b66ef21a3adaf56e8c8a72bfa",
+    "locator": {
+      "page": 9,
+      "section": "Season"
+    },
+    "content": {
+      "kind": "excerpt",
+      "text": "the crop can be planted during April-May",
+      "language": "en"
+    },
+    "publishedAt": null,
+    "availability": {
+      "effectiveAvailableAt": "2026-10-29T20:03:07.088Z",
+      "basis": "first_observed"
+    },
+    "ingestedAt": "2026-10-29T20:03:07.088Z",
+    "revisedAt": null,
+    "geography": {
+      "level": "national",
+      "ids": [
+        "IN"
+      ]
+    },
+    "cropIds": [
+      "turmeric"
+    ],
+    "productIds": [],
+    "units": [],
+    "sourceUnits": [],
+    "licence": {
+      "licence": "Public web page; publisher copyright. Excerpt (<=60 words) kept for provenance, full page not redistributed.",
+      "accessStatus": "open",
+      "redistributable": false,
+      "attribution": "Spices Board India"
+    },
+    "extraction": {
+      "method": "native_text",
+      "version": "catalogue-build-1",
+      "reviewedBy": "rule_check"
+    },
+    "validationStatus": "pending"
+  },
+  {
+    "schemaVersion": "1.0",
+    "id": "cat.turmeric.soil",
+    "mode": "live",
+    "sourceUrl": "https://www.indianspices.com/sites/default/files/cultivation_practices-TURMERIC-1.pdf",
+    "publisher": "Spices Board India",
+    "documentTitle": "Cultivation practices: Turmeric",
+    "documentVersion": null,
+    "contentHash": "ae5c6a433e252aae43528fc59cbb6371cb858d3b66ef21a3adaf56e8c8a72bfa",
+    "locator": {
+      "page": 4,
+      "section": "Climate and soil"
+    },
+    "content": {
+      "kind": "excerpt",
+      "text": "it thrives best in well-drained red or clay loam soils with a pH range of 4.5-7.5 with good organic status.",
+      "language": "en"
+    },
+    "publishedAt": null,
+    "availability": {
+      "effectiveAvailableAt": "2026-10-29T20:03:07.088Z",
+      "basis": "first_observed"
+    },
+    "ingestedAt": "2026-10-29T20:03:07.088Z",
+    "revisedAt": null,
+    "geography": {
+      "level": "national",
+      "ids": [
+        "IN"
+      ]
+    },
+    "cropIds": [
+      "turmeric"
+    ],
+    "productIds": [],
+    "units": [],
+    "sourceUnits": [],
+    "licence": {
+      "licence": "Public web page; publisher copyright. Excerpt (<=60 words) kept for provenance, full page not redistributed.",
+      "accessStatus": "open",
+      "redistributable": false,
+      "attribution": "Spices Board India"
+    },
+    "extraction": {
+      "method": "native_text",
+      "version": "catalogue-build-1",
+      "reviewedBy": "rule_check"
+    },
+    "validationStatus": "pending"
+  },
+  {
+    "schemaVersion": "1.0",
+    "id": "cat.turmeric.irr",
+    "mode": "live",
+    "sourceUrl": "https://www.indianspices.com/sites/default/files/cultivation_practices-TURMERIC-1.pdf",
+    "publisher": "Spices Board India",
+    "documentTitle": "Cultivation practices: Turmeric",
+    "documentVersion": null,
+    "contentHash": "ae5c6a433e252aae43528fc59cbb6371cb858d3b66ef21a3adaf56e8c8a72bfa",
+    "locator": {
+      "page": 4,
+      "section": "Climate and soil"
+    },
+    "content": {
+      "kind": "excerpt",
+      "text": "under rainfed or irrigated conditions",
+      "language": "en"
+    },
+    "publishedAt": null,
+    "availability": {
+      "effectiveAvailableAt": "2026-10-29T20:03:07.088Z",
+      "basis": "first_observed"
+    },
+    "ingestedAt": "2026-10-29T20:03:07.088Z",
+    "revisedAt": null,
+    "geography": {
+      "level": "national",
+      "ids": [
+        "IN"
+      ]
+    },
+    "cropIds": [
+      "turmeric"
+    ],
+    "productIds": [],
+    "units": [],
+    "sourceUnits": [],
+    "licence": {
+      "licence": "Public web page; publisher copyright. Excerpt (<=60 words) kept for provenance, full page not redistributed.",
+      "accessStatus": "open",
+      "redistributable": false,
+      "attribution": "Spices Board India"
+    },
+    "extraction": {
+      "method": "native_text",
+      "version": "catalogue-build-1",
+      "reviewedBy": "rule_check"
+    },
+    "validationStatus": "pending"
+  },
+  {
+    "schemaVersion": "1.0",
+    "id": "cat.turmeric.d9",
+    "mode": "live",
+    "sourceUrl": "https://www.indianspices.com/sites/default/files/cultivation_practices-TURMERIC-1.pdf",
+    "publisher": "Spices Board India",
+    "documentTitle": "Cultivation practices: Turmeric",
+    "documentVersion": null,
+    "contentHash": "ae5c6a433e252aae43528fc59cbb6371cb858d3b66ef21a3adaf56e8c8a72bfa",
+    "locator": {
+      "page": 16,
+      "section": "Intercropping"
+    },
+    "content": {
+      "kind": "excerpt",
+      "text": "Turmeric is a long duration crop (9 months)",
+      "language": "en"
+    },
+    "publishedAt": null,
+    "availability": {
+      "effectiveAvailableAt": "2026-10-29T20:03:07.088Z",
+      "basis": "first_observed"
+    },
+    "ingestedAt": "2026-10-29T20:03:07.088Z",
+    "revisedAt": null,
+    "geography": {
+      "level": "national",
+      "ids": [
+        "IN"
+      ]
+    },
+    "cropIds": [
+      "turmeric"
+    ],
+    "productIds": [],
+    "units": [],
+    "sourceUnits": [],
+    "licence": {
+      "licence": "Public web page; publisher copyright. Excerpt (<=60 words) kept for provenance, full page not redistributed.",
+      "accessStatus": "open",
+      "redistributable": false,
+      "attribution": "Spices Board India"
+    },
+    "extraction": {
+      "method": "native_text",
+      "version": "catalogue-build-1",
+      "reviewedBy": "rule_check"
+    },
+    "validationStatus": "pending"
+  },
+  {
+    "schemaVersion": "1.0",
+    "id": "cat.turmeric.d6",
+    "mode": "live",
+    "sourceUrl": "https://www.indianspices.com/sites/default/files/cultivation_practices-TURMERIC-1.pdf",
+    "publisher": "Spices Board India",
+    "documentTitle": "Cultivation practices: Turmeric",
+    "documentVersion": null,
+    "contentHash": "ae5c6a433e252aae43528fc59cbb6371cb858d3b66ef21a3adaf56e8c8a72bfa",
+    "locator": {
+      "page": 4,
+      "section": "Varieties"
+    },
+    "content": {
+      "kind": "excerpt",
+      "text": "short duration (180 days) turmeric variety named IISR Pragati",
+      "language": "en"
+    },
+    "publishedAt": null,
+    "availability": {
+      "effectiveAvailableAt": "2026-10-29T20:03:07.088Z",
+      "basis": "first_observed"
+    },
+    "ingestedAt": "2026-10-29T20:03:07.088Z",
+    "revisedAt": null,
+    "geography": {
+      "level": "national",
+      "ids": [
+        "IN"
+      ]
+    },
+    "cropIds": [
+      "turmeric"
+    ],
+    "productIds": [],
+    "units": [],
+    "sourceUnits": [],
+    "licence": {
+      "licence": "Public web page; publisher copyright. Excerpt (<=60 words) kept for provenance, full page not redistributed.",
+      "accessStatus": "open",
+      "redistributable": false,
+      "attribution": "Spices Board India"
+    },
+    "extraction": {
+      "method": "native_text",
+      "version": "catalogue-build-1",
+      "reviewedBy": "rule_check"
+    },
+    "validationStatus": "pending"
+  }
+]

@@ -1,0 +1,1425 @@
+{
+ "synthetic": true,
+ "sourceId": "synthetic-fixture",
+ "fixture": "weather_synthetic_hassan_like",
+ "label": "SYNTHETIC FIXTURE: invented numbers for development and demos; not real data",
+ "seed": 20260102,
+ "location": {
+  "key": "synthetic:hassan-like",
+  "lat": 13.0033,
+  "lon": 76.1004
+ },
+ "generator": "scripts/seed/generate-synthetic-fixtures.ts",
+ "records": [
+  {
+   "synthetic": true,
+   "sourceId": "synthetic-fixture",
+   "kind": "observation",
+   "date": "2026-06-01",
+   "values": {
+    "precipitation_sum": 14.6,
+    "temperature_2m_max": 24.2,
+    "temperature_2m_min": 16.1,
+    "et0_fao_evapotranspiration": 2.88,
+    "shortwave_radiation_sum": 12.94
+   },
+   "units": {
+    "precipitation_sum": "mm",
+    "temperature_2m_max": "°C",
+    "temperature_2m_min": "°C",
+    "et0_fao_evapotranspiration": "mm",
+    "shortwave_radiation_sum": "MJ/m²"
+   }
+  },
+  {
+   "synthetic": true,
+   "sourceId": "synthetic-fixture",
+   "kind": "observation",
+   "date": "2026-06-02",
+   "values": {
+    "precipitation_sum": 3.7,
+    "temperature_2m_max": 28.1,
+    "temperature_2m_min": 20.5,
+    "et0_fao_evapotranspiration": 3.98,
+    "shortwave_radiation_sum": 20.46
+   },
+   "units": {
+    "precipitation_sum": "mm",
+    "temperature_2m_max": "°C",
+    "temperature_2m_min": "°C",
+    "et0_fao_evapotranspiration": "mm",
+    "shortwave_radiation_sum": "MJ/m²"
+   }
+  },
+  {
+   "synthetic": true,
+   "sourceId": "synthetic-fixture",
+   "kind": "observation",
+   "date": "2026-06-03",
+   "values": {
+    "precipitation_sum": 0,
+    "temperature_2m_max": 27,
+    "temperature_2m_min": 19.4,
+    "et0_fao_evapotranspiration": 4.02,
+    "shortwave_radiation_sum": 19.3
+   },
+   "units": {
+    "precipitation_sum": "mm",
+    "temperature_2m_max": "°C",
+    "temperature_2m_min": "°C",
+    "et0_fao_evapotranspiration": "mm",
+    "shortwave_radiation_sum": "MJ/m²"
+   }
+  },
+  {
+   "synthetic": true,
+   "sourceId": "synthetic-fixture",
+   "kind": "observation",
+   "date": "2026-06-04",
+   "values": {
+    "precipitation_sum": 0,
+    "temperature_2m_max": 27.4,
+    "temperature_2m_min": 19.5,
+    "et0_fao_evapotranspiration": 4.44,
+    "shortwave_radiation_sum": 20.46
+   },
+   "units": {
+    "precipitation_sum": "mm",
+    "temperature_2m_max": "°C",
+    "temperature_2m_min": "°C",
+    "et0_fao_evapotranspiration": "mm",
+    "shortwave_radiation_sum": "MJ/m²"
+   }
+  },
+  {
+   "synthetic": true,
+   "sourceId": "synthetic-fixture",
+   "kind": "observation",
+   "date": "2026-06-05",
+   "values": {
+    "precipitation_sum": 2.6,
+    "temperature_2m_max": 27.7,
+    "temperature_2m_min": 19.8,
+    "et0_fao_evapotranspiration": 4.37,
+    "shortwave_radiation_sum": 19.72
+   },
+   "units": {
+    "precipitation_sum": "mm",
+    "temperature_2m_max": "°C",
+    "temperature_2m_min": "°C",
+    "et0_fao_evapotranspiration": "mm",
+    "shortwave_radiation_sum": "MJ/m²"
+   }
+  },
+  {
+   "synthetic": true,
+   "sourceId": "synthetic-fixture",
+   "kind": "observation",
+   "date": "2026-06-06",
+   "values": {
+    "precipitation_sum": 0,
+    "temperature_2m_max": 27.9,
+    "temperature_2m_min": 19.9,
+    "et0_fao_evapotranspiration": 4.38,
+    "shortwave_radiation_sum": 19.48
+   },
+   "units": {
+    "precipitation_sum": "mm",
+    "temperature_2m_max": "°C",
+    "temperature_2m_min": "°C",
+    "et0_fao_evapotranspiration": "mm",
+    "shortwave_radiation_sum": "MJ/m²"
+   }
+  },
+  {
+   "synthetic": true,
+   "sourceId": "synthetic-fixture",
+   "kind": "observation",
+   "date": "2026-06-07",
+   "values": {
+    "precipitation_sum": 15.9,
+    "temperature_2m_max": 26.3,
+    "temperature_2m_min": 18.6,
+    "et0_fao_evapotranspiration": 3.44,
+    "shortwave_radiation_sum": 15.25
+   },
+   "units": {
+    "precipitation_sum": "mm",
+    "temperature_2m_max": "°C",
+    "temperature_2m_min": "°C",
+    "et0_fao_evapotranspiration": "mm",
+    "shortwave_radiation_sum": "MJ/m²"
+   }
+  },
+  {
+   "synthetic": true,
+   "sourceId": "synthetic-fixture",
+   "kind": "observation",
+   "date": "2026-06-08",
+   "values": {
+    "precipitation_sum": 0,
+    "temperature_2m_max": 29.3,
+    "temperature_2m_min": 21.7,
+    "et0_fao_evapotranspiration": 3.76,
+    "shortwave_radiation_sum": 17.84
+   },
+   "units": {
+    "precipitation_sum": "mm",
+    "temperature_2m_max": "°C",
+    "temperature_2m_min": "°C",
+    "et0_fao_evapotranspiration": "mm",
+    "shortwave_radiation_sum": "MJ/m²"
+   }
+  },
+  {
+   "synthetic": true,
+   "sourceId": "synthetic-fixture",
+   "kind": "observation",
+   "date": "2026-06-09",
+   "values": {
+    "precipitation_sum": 0,
+    "temperature_2m_max": 29.2,
+    "temperature_2m_min": 20.8,
+    "et0_fao_evapotranspiration": 4.02,
+    "shortwave_radiation_sum": 19.58
+   },
+   "units": {
+    "precipitation_sum": "mm",
+    "temperature_2m_max": "°C",
+    "temperature_2m_min": "°C",
+    "et0_fao_evapotranspiration": "mm",
+    "shortwave_radiation_sum": "MJ/m²"
+   }
+  },
+  {
+   "synthetic": true,
+   "sourceId": "synthetic-fixture",
+   "kind": "observation",
+   "date": "2026-06-10",
+   "values": {
+    "precipitation_sum": 0,
+    "temperature_2m_max": 28.7,
+    "temperature_2m_min": 21.1,
+    "et0_fao_evapotranspiration": 4.67,
+    "shortwave_radiation_sum": 18.71
+   },
+   "units": {
+    "precipitation_sum": "mm",
+    "temperature_2m_max": "°C",
+    "temperature_2m_min": "°C",
+    "et0_fao_evapotranspiration": "mm",
+    "shortwave_radiation_sum": "MJ/m²"
+   }
+  },
+  {
+   "synthetic": true,
+   "sourceId": "synthetic-fixture",
+   "kind": "observation",
+   "date": "2026-06-11",
+   "values": {
+    "precipitation_sum": 16.4,
+    "temperature_2m_max": 27.8,
+    "temperature_2m_min": 20.2,
+    "et0_fao_evapotranspiration": 2.6,
+    "shortwave_radiation_sum": 13.19
+   },
+   "units": {
+    "precipitation_sum": "mm",
+    "temperature_2m_max": "°C",
+    "temperature_2m_min": "°C",
+    "et0_fao_evapotranspiration": "mm",
+    "shortwave_radiation_sum": "MJ/m²"
+   }
+  },
+  {
+   "synthetic": true,
+   "sourceId": "synthetic-fixture",
+   "kind": "observation",
+   "date": "2026-06-12",
+   "values": {
+    "precipitation_sum": 4.8,
+    "temperature_2m_max": 29.5,
+    "temperature_2m_min": 21.9,
+    "et0_fao_evapotranspiration": 4.18,
+    "shortwave_radiation_sum": 17.9
+   },
+   "units": {
+    "precipitation_sum": "mm",
+    "temperature_2m_max": "°C",
+    "temperature_2m_min": "°C",
+    "et0_fao_evapotranspiration": "mm",
+    "shortwave_radiation_sum": "MJ/m²"
+   }
+  },
+  {
+   "synthetic": true,
+   "sourceId": "synthetic-fixture",
+   "kind": "observation",
+   "date": "2026-06-13",
+   "values": {
+    "precipitation_sum": 7.2,
+    "temperature_2m_max": 28.4,
+    "temperature_2m_min": 20,
+    "et0_fao_evapotranspiration": 2.56,
+    "shortwave_radiation_sum": 12.68
+   },
+   "units": {
+    "precipitation_sum": "mm",
+    "temperature_2m_max": "°C",
+    "temperature_2m_min": "°C",
+    "et0_fao_evapotranspiration": "mm",
+    "shortwave_radiation_sum": "MJ/m²"
+   }
+  },
+  {
+   "synthetic": true,
+   "sourceId": "synthetic-fixture",
+   "kind": "observation",
+   "date": "2026-06-14",
+   "values": {
+    "precipitation_sum": 0,
+    "temperature_2m_max": 29.8,
+    "temperature_2m_min": 21.3,
+    "et0_fao_evapotranspiration": 4.1,
+    "shortwave_radiation_sum": 18.23
+   },
+   "units": {
+    "precipitation_sum": "mm",
+    "temperature_2m_max": "°C",
+    "temperature_2m_min": "°C",
+    "et0_fao_evapotranspiration": "mm",
+    "shortwave_radiation_sum": "MJ/m²"
+   }
+  },
+  {
+   "synthetic": true,
+   "sourceId": "synthetic-fixture",
+   "kind": "observation",
+   "date": "2026-06-15",
+   "values": {
+    "precipitation_sum": 0,
+    "temperature_2m_max": 29.2,
+    "temperature_2m_min": 20.8,
+    "et0_fao_evapotranspiration": 3.78,
+    "shortwave_radiation_sum": 17.94
+   },
+   "units": {
+    "precipitation_sum": "mm",
+    "temperature_2m_max": "°C",
+    "temperature_2m_min": "°C",
+    "et0_fao_evapotranspiration": "mm",
+    "shortwave_radiation_sum": "MJ/m²"
+   }
+  },
+  {
+   "synthetic": true,
+   "sourceId": "synthetic-fixture",
+   "kind": "observation",
+   "date": "2026-06-16",
+   "values": {
+    "precipitation_sum": 0,
+    "temperature_2m_max": 30.2,
+    "temperature_2m_min": 21.7,
+    "et0_fao_evapotranspiration": 4.59,
+    "shortwave_radiation_sum": 17.86
+   },
+   "units": {
+    "precipitation_sum": "mm",
+    "temperature_2m_max": "°C",
+    "temperature_2m_min": "°C",
+    "et0_fao_evapotranspiration": "mm",
+    "shortwave_radiation_sum": "MJ/m²"
+   }
+  },
+  {
+   "synthetic": true,
+   "sourceId": "synthetic-fixture",
+   "kind": "observation",
+   "date": "2026-06-17",
+   "values": {
+    "precipitation_sum": 7.6,
+    "temperature_2m_max": 28.9,
+    "temperature_2m_min": 20.7,
+    "et0_fao_evapotranspiration": 3.02,
+    "shortwave_radiation_sum": 15.42
+   },
+   "units": {
+    "precipitation_sum": "mm",
+    "temperature_2m_max": "°C",
+    "temperature_2m_min": "°C",
+    "et0_fao_evapotranspiration": "mm",
+    "shortwave_radiation_sum": "MJ/m²"
+   }
+  },
+  {
+   "synthetic": true,
+   "sourceId": "synthetic-fixture",
+   "kind": "observation",
+   "date": "2026-06-18",
+   "values": {
+    "precipitation_sum": 0,
+    "temperature_2m_max": 30.8,
+    "temperature_2m_min": 22.8,
+    "et0_fao_evapotranspiration": 4.32,
+    "shortwave_radiation_sum": 19.61
+   },
+   "units": {
+    "precipitation_sum": "mm",
+    "temperature_2m_max": "°C",
+    "temperature_2m_min": "°C",
+    "et0_fao_evapotranspiration": "mm",
+    "shortwave_radiation_sum": "MJ/m²"
+   }
+  },
+  {
+   "synthetic": true,
+   "sourceId": "synthetic-fixture",
+   "kind": "observation",
+   "date": "2026-06-19",
+   "values": {
+    "precipitation_sum": 12.9,
+    "temperature_2m_max": 28.7,
+    "temperature_2m_min": 20.3,
+    "et0_fao_evapotranspiration": 2.58,
+    "shortwave_radiation_sum": 13.04
+   },
+   "units": {
+    "precipitation_sum": "mm",
+    "temperature_2m_max": "°C",
+    "temperature_2m_min": "°C",
+    "et0_fao_evapotranspiration": "mm",
+    "shortwave_radiation_sum": "MJ/m²"
+   }
+  },
+  {
+   "synthetic": true,
+   "sourceId": "synthetic-fixture",
+   "kind": "observation",
+   "date": "2026-06-20",
+   "values": {
+    "precipitation_sum": 0,
+    "temperature_2m_max": 30,
+    "temperature_2m_min": 22,
+    "et0_fao_evapotranspiration": 4.28,
+    "shortwave_radiation_sum": 20.07
+   },
+   "units": {
+    "precipitation_sum": "mm",
+    "temperature_2m_max": "°C",
+    "temperature_2m_min": "°C",
+    "et0_fao_evapotranspiration": "mm",
+    "shortwave_radiation_sum": "MJ/m²"
+   }
+  },
+  {
+   "synthetic": true,
+   "sourceId": "synthetic-fixture",
+   "kind": "observation",
+   "date": "2026-06-21",
+   "values": {
+    "precipitation_sum": 0,
+    "temperature_2m_max": 29.3,
+    "temperature_2m_min": 21,
+    "et0_fao_evapotranspiration": 3.92,
+    "shortwave_radiation_sum": 18.13
+   },
+   "units": {
+    "precipitation_sum": "mm",
+    "temperature_2m_max": "°C",
+    "temperature_2m_min": "°C",
+    "et0_fao_evapotranspiration": "mm",
+    "shortwave_radiation_sum": "MJ/m²"
+   }
+  },
+  {
+   "synthetic": true,
+   "sourceId": "synthetic-fixture",
+   "kind": "observation",
+   "date": "2026-06-22",
+   "values": {
+    "precipitation_sum": 1.5,
+    "temperature_2m_max": 28.3,
+    "temperature_2m_min": 20.4,
+    "et0_fao_evapotranspiration": 4.53,
+    "shortwave_radiation_sum": 17.68
+   },
+   "units": {
+    "precipitation_sum": "mm",
+    "temperature_2m_max": "°C",
+    "temperature_2m_min": "°C",
+    "et0_fao_evapotranspiration": "mm",
+    "shortwave_radiation_sum": "MJ/m²"
+   }
+  },
+  {
+   "synthetic": true,
+   "sourceId": "synthetic-fixture",
+   "kind": "observation",
+   "date": "2026-06-23",
+   "values": {
+    "precipitation_sum": 0,
+    "temperature_2m_max": 28.2,
+    "temperature_2m_min": 20.1,
+    "et0_fao_evapotranspiration": 4.68,
+    "shortwave_radiation_sum": 19.32
+   },
+   "units": {
+    "precipitation_sum": "mm",
+    "temperature_2m_max": "°C",
+    "temperature_2m_min": "°C",
+    "et0_fao_evapotranspiration": "mm",
+    "shortwave_radiation_sum": "MJ/m²"
+   }
+  },
+  {
+   "synthetic": true,
+   "sourceId": "synthetic-fixture",
+   "kind": "observation",
+   "date": "2026-06-24",
+   "values": {
+    "precipitation_sum": 0,
+    "temperature_2m_max": 27.8,
+    "temperature_2m_min": 20,
+    "et0_fao_evapotranspiration": 3.7,
+    "shortwave_radiation_sum": 18.75
+   },
+   "units": {
+    "precipitation_sum": "mm",
+    "temperature_2m_max": "°C",
+    "temperature_2m_min": "°C",
+    "et0_fao_evapotranspiration": "mm",
+    "shortwave_radiation_sum": "MJ/m²"
+   }
+  },
+  {
+   "synthetic": true,
+   "sourceId": "synthetic-fixture",
+   "kind": "observation",
+   "date": "2026-06-25",
+   "values": {
+    "precipitation_sum": 10.6,
+    "temperature_2m_max": 26.6,
+    "temperature_2m_min": 18.7,
+    "et0_fao_evapotranspiration": 3.05,
+    "shortwave_radiation_sum": 13.15
+   },
+   "units": {
+    "precipitation_sum": "mm",
+    "temperature_2m_max": "°C",
+    "temperature_2m_min": "°C",
+    "et0_fao_evapotranspiration": "mm",
+    "shortwave_radiation_sum": "MJ/m²"
+   }
+  },
+  {
+   "synthetic": true,
+   "sourceId": "synthetic-fixture",
+   "kind": "observation",
+   "date": "2026-06-26",
+   "values": {
+    "precipitation_sum": 0,
+    "temperature_2m_max": 27.9,
+    "temperature_2m_min": 19.9,
+    "et0_fao_evapotranspiration": 3.94,
+    "shortwave_radiation_sum": 20.24
+   },
+   "units": {
+    "precipitation_sum": "mm",
+    "temperature_2m_max": "°C",
+    "temperature_2m_min": "°C",
+    "et0_fao_evapotranspiration": "mm",
+    "shortwave_radiation_sum": "MJ/m²"
+   }
+  },
+  {
+   "synthetic": true,
+   "sourceId": "synthetic-fixture",
+   "kind": "observation",
+   "date": "2026-06-27",
+   "values": {
+    "precipitation_sum": 0,
+    "temperature_2m_max": 28.4,
+    "temperature_2m_min": 20.6,
+    "et0_fao_evapotranspiration": 3.91,
+    "shortwave_radiation_sum": 18.35
+   },
+   "units": {
+    "precipitation_sum": "mm",
+    "temperature_2m_max": "°C",
+    "temperature_2m_min": "°C",
+    "et0_fao_evapotranspiration": "mm",
+    "shortwave_radiation_sum": "MJ/m²"
+   }
+  },
+  {
+   "synthetic": true,
+   "sourceId": "synthetic-fixture",
+   "kind": "observation",
+   "date": "2026-06-28",
+   "values": {
+    "precipitation_sum": 0,
+    "temperature_2m_max": 26.7,
+    "temperature_2m_min": 19,
+    "et0_fao_evapotranspiration": 3.97,
+    "shortwave_radiation_sum": 18.22
+   },
+   "units": {
+    "precipitation_sum": "mm",
+    "temperature_2m_max": "°C",
+    "temperature_2m_min": "°C",
+    "et0_fao_evapotranspiration": "mm",
+    "shortwave_radiation_sum": "MJ/m²"
+   }
+  },
+  {
+   "synthetic": true,
+   "sourceId": "synthetic-fixture",
+   "kind": "observation",
+   "date": "2026-06-29",
+   "values": {
+    "precipitation_sum": 0,
+    "temperature_2m_max": 28,
+    "temperature_2m_min": 20.4,
+    "et0_fao_evapotranspiration": 4.09,
+    "shortwave_radiation_sum": 18.93
+   },
+   "units": {
+    "precipitation_sum": "mm",
+    "temperature_2m_max": "°C",
+    "temperature_2m_min": "°C",
+    "et0_fao_evapotranspiration": "mm",
+    "shortwave_radiation_sum": "MJ/m²"
+   }
+  },
+  {
+   "synthetic": true,
+   "sourceId": "synthetic-fixture",
+   "kind": "observation",
+   "date": "2026-06-30",
+   "values": {
+    "precipitation_sum": 0,
+    "temperature_2m_max": 27.6,
+    "temperature_2m_min": 20,
+    "et0_fao_evapotranspiration": 4.67,
+    "shortwave_radiation_sum": 19.33
+   },
+   "units": {
+    "precipitation_sum": "mm",
+    "temperature_2m_max": "°C",
+    "temperature_2m_min": "°C",
+    "et0_fao_evapotranspiration": "mm",
+    "shortwave_radiation_sum": "MJ/m²"
+   }
+  },
+  {
+   "synthetic": true,
+   "sourceId": "synthetic-fixture",
+   "kind": "observation",
+   "date": "2026-07-01",
+   "values": {
+    "precipitation_sum": 0,
+    "temperature_2m_max": 25.8,
+    "temperature_2m_min": 18,
+    "et0_fao_evapotranspiration": 4.07,
+    "shortwave_radiation_sum": 19.92
+   },
+   "units": {
+    "precipitation_sum": "mm",
+    "temperature_2m_max": "°C",
+    "temperature_2m_min": "°C",
+    "et0_fao_evapotranspiration": "mm",
+    "shortwave_radiation_sum": "MJ/m²"
+   }
+  },
+  {
+   "synthetic": true,
+   "sourceId": "synthetic-fixture",
+   "kind": "observation",
+   "date": "2026-07-02",
+   "values": {
+    "precipitation_sum": 11.5,
+    "temperature_2m_max": 24.8,
+    "temperature_2m_min": 17.2,
+    "et0_fao_evapotranspiration": 3.29,
+    "shortwave_radiation_sum": 12.57
+   },
+   "units": {
+    "precipitation_sum": "mm",
+    "temperature_2m_max": "°C",
+    "temperature_2m_min": "°C",
+    "et0_fao_evapotranspiration": "mm",
+    "shortwave_radiation_sum": "MJ/m²"
+   }
+  },
+  {
+   "synthetic": true,
+   "sourceId": "synthetic-fixture",
+   "kind": "observation",
+   "date": "2026-07-03",
+   "values": {
+    "precipitation_sum": 0,
+    "temperature_2m_max": 26.4,
+    "temperature_2m_min": 18.1,
+    "et0_fao_evapotranspiration": 4.21,
+    "shortwave_radiation_sum": 19.94
+   },
+   "units": {
+    "precipitation_sum": "mm",
+    "temperature_2m_max": "°C",
+    "temperature_2m_min": "°C",
+    "et0_fao_evapotranspiration": "mm",
+    "shortwave_radiation_sum": "MJ/m²"
+   }
+  },
+  {
+   "synthetic": true,
+   "sourceId": "synthetic-fixture",
+   "kind": "observation",
+   "date": "2026-07-04",
+   "values": {
+    "precipitation_sum": 0.5,
+    "temperature_2m_max": 24.8,
+    "temperature_2m_min": 16.3,
+    "et0_fao_evapotranspiration": 4.7,
+    "shortwave_radiation_sum": 19.55
+   },
+   "units": {
+    "precipitation_sum": "mm",
+    "temperature_2m_max": "°C",
+    "temperature_2m_min": "°C",
+    "et0_fao_evapotranspiration": "mm",
+    "shortwave_radiation_sum": "MJ/m²"
+   }
+  },
+  {
+   "synthetic": true,
+   "sourceId": "synthetic-fixture",
+   "kind": "observation",
+   "date": "2026-07-05",
+   "values": {
+    "precipitation_sum": 0,
+    "temperature_2m_max": 25.6,
+    "temperature_2m_min": 17.6,
+    "et0_fao_evapotranspiration": 4.09,
+    "shortwave_radiation_sum": 18.55
+   },
+   "units": {
+    "precipitation_sum": "mm",
+    "temperature_2m_max": "°C",
+    "temperature_2m_min": "°C",
+    "et0_fao_evapotranspiration": "mm",
+    "shortwave_radiation_sum": "MJ/m²"
+   }
+  },
+  {
+   "synthetic": true,
+   "sourceId": "synthetic-fixture",
+   "kind": "observation",
+   "date": "2026-07-06",
+   "values": {
+    "precipitation_sum": 0,
+    "temperature_2m_max": 25.3,
+    "temperature_2m_min": 17.4,
+    "et0_fao_evapotranspiration": 3.75,
+    "shortwave_radiation_sum": 18.94
+   },
+   "units": {
+    "precipitation_sum": "mm",
+    "temperature_2m_max": "°C",
+    "temperature_2m_min": "°C",
+    "et0_fao_evapotranspiration": "mm",
+    "shortwave_radiation_sum": "MJ/m²"
+   }
+  },
+  {
+   "synthetic": true,
+   "sourceId": "synthetic-fixture",
+   "kind": "observation",
+   "date": "2026-07-07",
+   "values": {
+    "precipitation_sum": 0,
+    "temperature_2m_max": 24.1,
+    "temperature_2m_min": 16,
+    "et0_fao_evapotranspiration": 4.18,
+    "shortwave_radiation_sum": 18.68
+   },
+   "units": {
+    "precipitation_sum": "mm",
+    "temperature_2m_max": "°C",
+    "temperature_2m_min": "°C",
+    "et0_fao_evapotranspiration": "mm",
+    "shortwave_radiation_sum": "MJ/m²"
+   }
+  },
+  {
+   "synthetic": true,
+   "sourceId": "synthetic-fixture",
+   "kind": "observation",
+   "date": "2026-07-08",
+   "values": {
+    "precipitation_sum": 9.9,
+    "temperature_2m_max": 23.2,
+    "temperature_2m_min": 14.9,
+    "et0_fao_evapotranspiration": 2.69,
+    "shortwave_radiation_sum": 14.02
+   },
+   "units": {
+    "precipitation_sum": "mm",
+    "temperature_2m_max": "°C",
+    "temperature_2m_min": "°C",
+    "et0_fao_evapotranspiration": "mm",
+    "shortwave_radiation_sum": "MJ/m²"
+   }
+  },
+  {
+   "synthetic": true,
+   "sourceId": "synthetic-fixture",
+   "kind": "observation",
+   "date": "2026-07-09",
+   "values": {
+    "precipitation_sum": 7,
+    "temperature_2m_max": 22.5,
+    "temperature_2m_min": 14.3,
+    "et0_fao_evapotranspiration": 2.76,
+    "shortwave_radiation_sum": 13.7
+   },
+   "units": {
+    "precipitation_sum": "mm",
+    "temperature_2m_max": "°C",
+    "temperature_2m_min": "°C",
+    "et0_fao_evapotranspiration": "mm",
+    "shortwave_radiation_sum": "MJ/m²"
+   }
+  },
+  {
+   "synthetic": true,
+   "sourceId": "synthetic-fixture",
+   "kind": "observation",
+   "date": "2026-07-10",
+   "values": {
+    "precipitation_sum": 2.8,
+    "temperature_2m_max": 25,
+    "temperature_2m_min": 16.7,
+    "et0_fao_evapotranspiration": 4.41,
+    "shortwave_radiation_sum": 18.18
+   },
+   "units": {
+    "precipitation_sum": "mm",
+    "temperature_2m_max": "°C",
+    "temperature_2m_min": "°C",
+    "et0_fao_evapotranspiration": "mm",
+    "shortwave_radiation_sum": "MJ/m²"
+   }
+  },
+  {
+   "synthetic": true,
+   "sourceId": "synthetic-fixture",
+   "kind": "observation",
+   "date": "2026-07-11",
+   "values": {
+    "precipitation_sum": 0,
+    "temperature_2m_max": 24.2,
+    "temperature_2m_min": 16,
+    "et0_fao_evapotranspiration": 4.38,
+    "shortwave_radiation_sum": 18.02
+   },
+   "units": {
+    "precipitation_sum": "mm",
+    "temperature_2m_max": "°C",
+    "temperature_2m_min": "°C",
+    "et0_fao_evapotranspiration": "mm",
+    "shortwave_radiation_sum": "MJ/m²"
+   }
+  },
+  {
+   "synthetic": true,
+   "sourceId": "synthetic-fixture",
+   "kind": "observation",
+   "date": "2026-07-12",
+   "values": {
+    "precipitation_sum": 6.3,
+    "temperature_2m_max": 21.5,
+    "temperature_2m_min": 13.7,
+    "et0_fao_evapotranspiration": 3.2,
+    "shortwave_radiation_sum": 13.67
+   },
+   "units": {
+    "precipitation_sum": "mm",
+    "temperature_2m_max": "°C",
+    "temperature_2m_min": "°C",
+    "et0_fao_evapotranspiration": "mm",
+    "shortwave_radiation_sum": "MJ/m²"
+   }
+  },
+  {
+   "synthetic": true,
+   "sourceId": "synthetic-fixture",
+   "kind": "observation",
+   "date": "2026-07-13",
+   "values": {
+    "precipitation_sum": 15.1,
+    "temperature_2m_max": 21.2,
+    "temperature_2m_min": 13.1,
+    "et0_fao_evapotranspiration": 3.19,
+    "shortwave_radiation_sum": 14.36
+   },
+   "units": {
+    "precipitation_sum": "mm",
+    "temperature_2m_max": "°C",
+    "temperature_2m_min": "°C",
+    "et0_fao_evapotranspiration": "mm",
+    "shortwave_radiation_sum": "MJ/m²"
+   }
+  },
+  {
+   "synthetic": true,
+   "sourceId": "synthetic-fixture",
+   "kind": "observation",
+   "date": "2026-07-14",
+   "values": {
+    "precipitation_sum": 17.5,
+    "temperature_2m_max": 21,
+    "temperature_2m_min": 13,
+    "et0_fao_evapotranspiration": 3.25,
+    "shortwave_radiation_sum": 14.69
+   },
+   "units": {
+    "precipitation_sum": "mm",
+    "temperature_2m_max": "°C",
+    "temperature_2m_min": "°C",
+    "et0_fao_evapotranspiration": "mm",
+    "shortwave_radiation_sum": "MJ/m²"
+   }
+  },
+  {
+   "synthetic": true,
+   "sourceId": "synthetic-fixture",
+   "kind": "observation",
+   "date": "2026-07-15",
+   "values": {
+    "precipitation_sum": 0,
+    "temperature_2m_max": 24.3,
+    "temperature_2m_min": 16.5,
+    "et0_fao_evapotranspiration": 4.06,
+    "shortwave_radiation_sum": 17.59
+   },
+   "units": {
+    "precipitation_sum": "mm",
+    "temperature_2m_max": "°C",
+    "temperature_2m_min": "°C",
+    "et0_fao_evapotranspiration": "mm",
+    "shortwave_radiation_sum": "MJ/m²"
+   }
+  },
+  {
+   "synthetic": true,
+   "sourceId": "synthetic-fixture",
+   "kind": "observation",
+   "date": "2026-07-16",
+   "values": {
+    "precipitation_sum": 0.9,
+    "temperature_2m_max": 24.7,
+    "temperature_2m_min": 16.9,
+    "et0_fao_evapotranspiration": 4.33,
+    "shortwave_radiation_sum": 20.24
+   },
+   "units": {
+    "precipitation_sum": "mm",
+    "temperature_2m_max": "°C",
+    "temperature_2m_min": "°C",
+    "et0_fao_evapotranspiration": "mm",
+    "shortwave_radiation_sum": "MJ/m²"
+   }
+  },
+  {
+   "synthetic": true,
+   "sourceId": "synthetic-fixture",
+   "kind": "observation",
+   "date": "2026-07-17",
+   "values": {
+    "precipitation_sum": 5.8,
+    "temperature_2m_max": 22.5,
+    "temperature_2m_min": 14.4,
+    "et0_fao_evapotranspiration": 2.58,
+    "shortwave_radiation_sum": 12.79
+   },
+   "units": {
+    "precipitation_sum": "mm",
+    "temperature_2m_max": "°C",
+    "temperature_2m_min": "°C",
+    "et0_fao_evapotranspiration": "mm",
+    "shortwave_radiation_sum": "MJ/m²"
+   }
+  },
+  {
+   "synthetic": true,
+   "sourceId": "synthetic-fixture",
+   "kind": "observation",
+   "date": "2026-07-18",
+   "values": {
+    "precipitation_sum": 0,
+    "temperature_2m_max": 24.9,
+    "temperature_2m_min": 16.9,
+    "et0_fao_evapotranspiration": 4.59,
+    "shortwave_radiation_sum": 20.2
+   },
+   "units": {
+    "precipitation_sum": "mm",
+    "temperature_2m_max": "°C",
+    "temperature_2m_min": "°C",
+    "et0_fao_evapotranspiration": "mm",
+    "shortwave_radiation_sum": "MJ/m²"
+   }
+  },
+  {
+   "synthetic": true,
+   "sourceId": "synthetic-fixture",
+   "kind": "observation",
+   "date": "2026-07-19",
+   "values": {
+    "precipitation_sum": 0,
+    "temperature_2m_max": 25.4,
+    "temperature_2m_min": 17.5,
+    "et0_fao_evapotranspiration": 3.78,
+    "shortwave_radiation_sum": 19.41
+   },
+   "units": {
+    "precipitation_sum": "mm",
+    "temperature_2m_max": "°C",
+    "temperature_2m_min": "°C",
+    "et0_fao_evapotranspiration": "mm",
+    "shortwave_radiation_sum": "MJ/m²"
+   }
+  },
+  {
+   "synthetic": true,
+   "sourceId": "synthetic-fixture",
+   "kind": "observation",
+   "date": "2026-07-20",
+   "values": {
+    "precipitation_sum": 0,
+    "temperature_2m_max": 24,
+    "temperature_2m_min": 16.3,
+    "et0_fao_evapotranspiration": 3.96,
+    "shortwave_radiation_sum": 18.73
+   },
+   "units": {
+    "precipitation_sum": "mm",
+    "temperature_2m_max": "°C",
+    "temperature_2m_min": "°C",
+    "et0_fao_evapotranspiration": "mm",
+    "shortwave_radiation_sum": "MJ/m²"
+   }
+  },
+  {
+   "synthetic": true,
+   "sourceId": "synthetic-fixture",
+   "kind": "observation",
+   "date": "2026-07-21",
+   "values": {
+    "precipitation_sum": 4.6,
+    "temperature_2m_max": 24.1,
+    "temperature_2m_min": 15.8,
+    "et0_fao_evapotranspiration": 4.22,
+    "shortwave_radiation_sum": 18.61
+   },
+   "units": {
+    "precipitation_sum": "mm",
+    "temperature_2m_max": "°C",
+    "temperature_2m_min": "°C",
+    "et0_fao_evapotranspiration": "mm",
+    "shortwave_radiation_sum": "MJ/m²"
+   }
+  },
+  {
+   "synthetic": true,
+   "sourceId": "synthetic-fixture",
+   "kind": "observation",
+   "date": "2026-07-22",
+   "values": {
+    "precipitation_sum": 0,
+    "temperature_2m_max": 25.7,
+    "temperature_2m_min": 17.8,
+    "et0_fao_evapotranspiration": 4.22,
+    "shortwave_radiation_sum": 20.09
+   },
+   "units": {
+    "precipitation_sum": "mm",
+    "temperature_2m_max": "°C",
+    "temperature_2m_min": "°C",
+    "et0_fao_evapotranspiration": "mm",
+    "shortwave_radiation_sum": "MJ/m²"
+   }
+  },
+  {
+   "synthetic": true,
+   "sourceId": "synthetic-fixture",
+   "kind": "observation",
+   "date": "2026-07-23",
+   "values": {
+    "precipitation_sum": 8.7,
+    "temperature_2m_max": 22.6,
+    "temperature_2m_min": 14.9,
+    "et0_fao_evapotranspiration": 2.57,
+    "shortwave_radiation_sum": 13.67
+   },
+   "units": {
+    "precipitation_sum": "mm",
+    "temperature_2m_max": "°C",
+    "temperature_2m_min": "°C",
+    "et0_fao_evapotranspiration": "mm",
+    "shortwave_radiation_sum": "MJ/m²"
+   }
+  },
+  {
+   "synthetic": true,
+   "sourceId": "synthetic-fixture",
+   "kind": "observation",
+   "date": "2026-07-24",
+   "values": {
+    "precipitation_sum": 0,
+    "temperature_2m_max": 26.5,
+    "temperature_2m_min": 18.7,
+    "et0_fao_evapotranspiration": 4.25,
+    "shortwave_radiation_sum": 19.82
+   },
+   "units": {
+    "precipitation_sum": "mm",
+    "temperature_2m_max": "°C",
+    "temperature_2m_min": "°C",
+    "et0_fao_evapotranspiration": "mm",
+    "shortwave_radiation_sum": "MJ/m²"
+   }
+  },
+  {
+   "synthetic": true,
+   "sourceId": "synthetic-fixture",
+   "kind": "observation",
+   "date": "2026-07-25",
+   "values": {
+    "precipitation_sum": 0,
+    "temperature_2m_max": 26.5,
+    "temperature_2m_min": 18.7,
+    "et0_fao_evapotranspiration": 4.24,
+    "shortwave_radiation_sum": 17.74
+   },
+   "units": {
+    "precipitation_sum": "mm",
+    "temperature_2m_max": "°C",
+    "temperature_2m_min": "°C",
+    "et0_fao_evapotranspiration": "mm",
+    "shortwave_radiation_sum": "MJ/m²"
+   }
+  },
+  {
+   "synthetic": true,
+   "sourceId": "synthetic-fixture",
+   "kind": "observation",
+   "date": "2026-07-26",
+   "values": {
+    "precipitation_sum": 0.1,
+    "temperature_2m_max": 26.7,
+    "temperature_2m_min": 19.1,
+    "et0_fao_evapotranspiration": 4.26,
+    "shortwave_radiation_sum": 17.8
+   },
+   "units": {
+    "precipitation_sum": "mm",
+    "temperature_2m_max": "°C",
+    "temperature_2m_min": "°C",
+    "et0_fao_evapotranspiration": "mm",
+    "shortwave_radiation_sum": "MJ/m²"
+   }
+  },
+  {
+   "synthetic": true,
+   "sourceId": "synthetic-fixture",
+   "kind": "observation",
+   "date": "2026-07-27",
+   "values": {
+    "precipitation_sum": 0,
+    "temperature_2m_max": 26.5,
+    "temperature_2m_min": 18.3,
+    "et0_fao_evapotranspiration": 4.26,
+    "shortwave_radiation_sum": 18.09
+   },
+   "units": {
+    "precipitation_sum": "mm",
+    "temperature_2m_max": "°C",
+    "temperature_2m_min": "°C",
+    "et0_fao_evapotranspiration": "mm",
+    "shortwave_radiation_sum": "MJ/m²"
+   }
+  },
+  {
+   "synthetic": true,
+   "sourceId": "synthetic-fixture",
+   "kind": "observation",
+   "date": "2026-07-28",
+   "values": {
+    "precipitation_sum": 0,
+    "temperature_2m_max": 26.5,
+    "temperature_2m_min": 18.2,
+    "et0_fao_evapotranspiration": 4.38,
+    "shortwave_radiation_sum": 19.63
+   },
+   "units": {
+    "precipitation_sum": "mm",
+    "temperature_2m_max": "°C",
+    "temperature_2m_min": "°C",
+    "et0_fao_evapotranspiration": "mm",
+    "shortwave_radiation_sum": "MJ/m²"
+   }
+  },
+  {
+   "synthetic": true,
+   "sourceId": "synthetic-fixture",
+   "kind": "observation",
+   "date": "2026-07-29",
+   "values": {
+    "precipitation_sum": 0,
+    "temperature_2m_max": 27.3,
+    "temperature_2m_min": 19.2,
+    "et0_fao_evapotranspiration": 4.03,
+    "shortwave_radiation_sum": 20.45
+   },
+   "units": {
+    "precipitation_sum": "mm",
+    "temperature_2m_max": "°C",
+    "temperature_2m_min": "°C",
+    "et0_fao_evapotranspiration": "mm",
+    "shortwave_radiation_sum": "MJ/m²"
+   }
+  },
+  {
+   "synthetic": true,
+   "sourceId": "synthetic-fixture",
+   "kind": "observation",
+   "date": "2026-07-30",
+   "values": {
+    "precipitation_sum": 2.1,
+    "temperature_2m_max": 27.2,
+    "temperature_2m_min": 19.3,
+    "et0_fao_evapotranspiration": 4.52,
+    "shortwave_radiation_sum": 19.69
+   },
+   "units": {
+    "precipitation_sum": "mm",
+    "temperature_2m_max": "°C",
+    "temperature_2m_min": "°C",
+    "et0_fao_evapotranspiration": "mm",
+    "shortwave_radiation_sum": "MJ/m²"
+   }
+  },
+  {
+   "synthetic": true,
+   "sourceId": "synthetic-fixture",
+   "kind": "forecast",
+   "issuedAt": "2026-07-31T00:00:00Z",
+   "date": "2026-07-31",
+   "values": {
+    "precipitation_sum": 6.7,
+    "temperature_2m_max": 26.5,
+    "temperature_2m_min": 18.5,
+    "et0_fao_evapotranspiration": 3.48,
+    "shortwave_radiation_sum": 13.47
+   },
+   "units": {
+    "precipitation_sum": "mm",
+    "temperature_2m_max": "°C",
+    "temperature_2m_min": "°C",
+    "et0_fao_evapotranspiration": "mm",
+    "shortwave_radiation_sum": "MJ/m²"
+   }
+  },
+  {
+   "synthetic": true,
+   "sourceId": "synthetic-fixture",
+   "kind": "forecast",
+   "issuedAt": "2026-07-31T00:00:00Z",
+   "date": "2026-08-01",
+   "values": {
+    "precipitation_sum": 0,
+    "temperature_2m_max": 28.3,
+    "temperature_2m_min": 20,
+    "et0_fao_evapotranspiration": 4.61,
+    "shortwave_radiation_sum": 17.99
+   },
+   "units": {
+    "precipitation_sum": "mm",
+    "temperature_2m_max": "°C",
+    "temperature_2m_min": "°C",
+    "et0_fao_evapotranspiration": "mm",
+    "shortwave_radiation_sum": "MJ/m²"
+   }
+  },
+  {
+   "synthetic": true,
+   "sourceId": "synthetic-fixture",
+   "kind": "forecast",
+   "issuedAt": "2026-07-31T00:00:00Z",
+   "date": "2026-08-02",
+   "values": {
+    "precipitation_sum": 1.5,
+    "temperature_2m_max": 29,
+    "temperature_2m_min": 20.8,
+    "et0_fao_evapotranspiration": 4.57,
+    "shortwave_radiation_sum": 18.84
+   },
+   "units": {
+    "precipitation_sum": "mm",
+    "temperature_2m_max": "°C",
+    "temperature_2m_min": "°C",
+    "et0_fao_evapotranspiration": "mm",
+    "shortwave_radiation_sum": "MJ/m²"
+   }
+  },
+  {
+   "synthetic": true,
+   "sourceId": "synthetic-fixture",
+   "kind": "forecast",
+   "issuedAt": "2026-07-31T00:00:00Z",
+   "date": "2026-08-03",
+   "values": {
+    "precipitation_sum": 0,
+    "temperature_2m_max": 29.7,
+    "temperature_2m_min": 21.9,
+    "et0_fao_evapotranspiration": 4.61,
+    "shortwave_radiation_sum": 18.89
+   },
+   "units": {
+    "precipitation_sum": "mm",
+    "temperature_2m_max": "°C",
+    "temperature_2m_min": "°C",
+    "et0_fao_evapotranspiration": "mm",
+    "shortwave_radiation_sum": "MJ/m²"
+   }
+  },
+  {
+   "synthetic": true,
+   "sourceId": "synthetic-fixture",
+   "kind": "forecast",
+   "issuedAt": "2026-07-31T00:00:00Z",
+   "date": "2026-08-04",
+   "values": {
+    "precipitation_sum": 0,
+    "temperature_2m_max": 30.1,
+    "temperature_2m_min": 21.8,
+    "et0_fao_evapotranspiration": 3.92,
+    "shortwave_radiation_sum": 19.22
+   },
+   "units": {
+    "precipitation_sum": "mm",
+    "temperature_2m_max": "°C",
+    "temperature_2m_min": "°C",
+    "et0_fao_evapotranspiration": "mm",
+    "shortwave_radiation_sum": "MJ/m²"
+   }
+  },
+  {
+   "synthetic": true,
+   "sourceId": "synthetic-fixture",
+   "kind": "forecast",
+   "issuedAt": "2026-07-31T00:00:00Z",
+   "date": "2026-08-05",
+   "values": {
+    "precipitation_sum": 0,
+    "temperature_2m_max": 29.3,
+    "temperature_2m_min": 21,
+    "et0_fao_evapotranspiration": 4.18,
+    "shortwave_radiation_sum": 18
+   },
+   "units": {
+    "precipitation_sum": "mm",
+    "temperature_2m_max": "°C",
+    "temperature_2m_min": "°C",
+    "et0_fao_evapotranspiration": "mm",
+    "shortwave_radiation_sum": "MJ/m²"
+   }
+  },
+  {
+   "synthetic": true,
+   "sourceId": "synthetic-fixture",
+   "kind": "forecast",
+   "issuedAt": "2026-07-31T00:00:00Z",
+   "date": "2026-08-06",
+   "values": {
+    "precipitation_sum": 0,
+    "temperature_2m_max": 28.9,
+    "temperature_2m_min": 20.5,
+    "et0_fao_evapotranspiration": 3.92,
+    "shortwave_radiation_sum": 18.76
+   },
+   "units": {
+    "precipitation_sum": "mm",
+    "temperature_2m_max": "°C",
+    "temperature_2m_min": "°C",
+    "et0_fao_evapotranspiration": "mm",
+    "shortwave_radiation_sum": "MJ/m²"
+   }
+  },
+  {
+   "synthetic": true,
+   "sourceId": "synthetic-fixture",
+   "kind": "forecast",
+   "issuedAt": "2026-07-31T00:00:00Z",
+   "date": "2026-08-07",
+   "values": {
+    "precipitation_sum": 0,
+    "temperature_2m_max": 29,
+    "temperature_2m_min": 21.1,
+    "et0_fao_evapotranspiration": 4.57,
+    "shortwave_radiation_sum": 17.63
+   },
+   "units": {
+    "precipitation_sum": "mm",
+    "temperature_2m_max": "°C",
+    "temperature_2m_min": "°C",
+    "et0_fao_evapotranspiration": "mm",
+    "shortwave_radiation_sum": "MJ/m²"
+   }
+  },
+  {
+   "synthetic": true,
+   "sourceId": "synthetic-fixture",
+   "kind": "forecast",
+   "issuedAt": "2026-07-31T00:00:00Z",
+   "date": "2026-08-08",
+   "values": {
+    "precipitation_sum": 0,
+    "temperature_2m_max": 30,
+    "temperature_2m_min": 21.7,
+    "et0_fao_evapotranspiration": 4.41,
+    "shortwave_radiation_sum": 18.67
+   },
+   "units": {
+    "precipitation_sum": "mm",
+    "temperature_2m_max": "°C",
+    "temperature_2m_min": "°C",
+    "et0_fao_evapotranspiration": "mm",
+    "shortwave_radiation_sum": "MJ/m²"
+   }
+  },
+  {
+   "synthetic": true,
+   "sourceId": "synthetic-fixture",
+   "kind": "forecast",
+   "issuedAt": "2026-07-31T00:00:00Z",
+   "date": "2026-08-09",
+   "values": {
+    "precipitation_sum": 0,
+    "temperature_2m_max": 29.5,
+    "temperature_2m_min": 22,
+    "et0_fao_evapotranspiration": 3.99,
+    "shortwave_radiation_sum": 19.71
+   },
+   "units": {
+    "precipitation_sum": "mm",
+    "temperature_2m_max": "°C",
+    "temperature_2m_min": "°C",
+    "et0_fao_evapotranspiration": "mm",
+    "shortwave_radiation_sum": "MJ/m²"
+   }
+  }
+ ]
+}

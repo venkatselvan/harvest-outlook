@@ -1,0 +1,82 @@
+{
+  "cropId": "mustard",
+  "identityRef": "mustard",
+  "group": "oilseeds",
+  "products": [
+    {
+      "productId": "mustard-seed",
+      "name": "Rapeseed-mustard seed",
+      "productBasis": "seed"
+    }
+  ],
+  "regionalContexts": [
+    {
+      "contextId": "mustard.AS.rabi",
+      "geography": {
+        "level": "state",
+        "ids": [
+          "IN-AS"
+        ]
+      },
+      "stateId": "IN-AS",
+      "districtIds": null,
+      "season": "rabi",
+      "plantingWindow": {
+        "fromMonth": 10,
+        "toMonth": 11,
+        "evidenceIds": [
+          "cat.mustard.sow"
+        ]
+      },
+      "durationDays": {
+        "min": 90,
+        "max": 115,
+        "evidenceIds": [
+          "cat.mustard.dur"
+        ]
+      },
+      "irrigation": "supplemental",
+      "irrigationEvidenceIds": [
+        "cat.mustard.irr"
+      ],
+      "waterNeedClass": null,
+      "soilNotes": {
+        "text": "Sandy and other light soils.",
+        "evidenceIds": [
+          "cat.mustard.soil"
+        ]
+      },
+      "yieldReference": {
+        "min": 1000,
+        "max": 1600,
+        "unit": "kg/ha",
+        "basis": "regional_reference",
+        "productId": "mustard-seed",
+        "evidenceIds": [
+          "cat.mustard.yld"
+        ]
+      },
+      "labourClass": null,
+      "harvestPattern": "single",
+      "notes": "Assam only (Barak Valley may sow to Nov 30). Yield figures are varietal q/ha converted to kg/ha. No Rajasthan/UP/MP/Haryana source was reachable (T01: DRMR home page only)."
+    }
+  ],
+  "exclusionsOrCautions": [],
+  "marketCoverageStatus": "unavailable_pending_price_access",
+  "evidenceIds": [
+    "cat.mustard.sow",
+    "cat.mustard.dur",
+    "cat.mustard.yld",
+    "cat.mustard.soil",
+    "cat.mustard.irr"
+  ],
+  "qualification": {
+    "identityResolved": true,
+    "hasRegionalContext": true,
+    "hasSourcedRequirements": true,
+    "hasSeasonInfo": true,
+    "marketStatusExplicit": true,
+    "qualified": true,
+    "missing": []
+  }
+}

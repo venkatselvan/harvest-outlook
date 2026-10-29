@@ -1,0 +1,178 @@
+{
+  "cropId": "onion",
+  "identityRef": "onion",
+  "group": "vegetables",
+  "products": [
+    {
+      "productId": "onion-bulb",
+      "name": "Onion bulbs (fresh)",
+      "productBasis": "bulb"
+    }
+  ],
+  "regionalContexts": [
+    {
+      "contextId": "onion.TN.bellary",
+      "geography": {
+        "level": "state",
+        "ids": [
+          "IN-TN"
+        ]
+      },
+      "stateId": "IN-TN",
+      "districtIds": null,
+      "season": "kharif",
+      "plantingWindow": {
+        "fromMonth": 5,
+        "toMonth": 6,
+        "evidenceIds": [
+          "cat.onion.bsow"
+        ]
+      },
+      "durationDays": {
+        "min": 140,
+        "max": 150,
+        "evidenceIds": [
+          "cat.onion.bdur"
+        ]
+      },
+      "irrigation": "unspecified",
+      "irrigationEvidenceIds": [],
+      "waterNeedClass": null,
+      "soilNotes": {
+        "text": "Red loam to black soils with good drainage.",
+        "evidenceIds": [
+          "cat.onion.bsoil"
+        ]
+      },
+      "yieldReference": {
+        "min": 15000,
+        "max": 18000,
+        "unit": "kg/ha",
+        "basis": "regional_reference",
+        "productId": "onion-bulb",
+        "evidenceIds": [
+          "cat.onion.bdur"
+        ]
+      },
+      "labourClass": null,
+      "harvestPattern": "single",
+      "notes": "TN-only coverage: Tamil Nadu source; not generalised to other states. Bellary (big) onion."
+    },
+    {
+      "contextId": "onion.TN.small",
+      "geography": {
+        "level": "state",
+        "ids": [
+          "IN-TN"
+        ]
+      },
+      "stateId": "IN-TN",
+      "districtIds": null,
+      "season": "rabi",
+      "plantingWindow": {
+        "fromMonth": 10,
+        "toMonth": 11,
+        "evidenceIds": [
+          "cat.onion.ssow"
+        ]
+      },
+      "durationDays": null,
+      "irrigation": "unspecified",
+      "irrigationEvidenceIds": [],
+      "waterNeedClass": null,
+      "soilNotes": null,
+      "yieldReference": null,
+      "labourClass": null,
+      "harvestPattern": "single",
+      "notes": "TN-only coverage: Tamil Nadu source; not generalised to other states. Small onion; also April-May planting of bulbs on the same page."
+    },
+    {
+      "contextId": "onion.MH-GJ.kharif",
+      "geography": {
+        "level": "region",
+        "ids": [
+          "IN-MH",
+          "IN-GJ"
+        ]
+      },
+      "stateId": null,
+      "districtIds": null,
+      "season": "kharif",
+      "plantingWindow": {
+        "fromMonth": 5,
+        "toMonth": 6,
+        "evidenceIds": [
+          "cat.onion.mhk"
+        ]
+      },
+      "durationDays": null,
+      "irrigation": "unspecified",
+      "irrigationEvidenceIds": [],
+      "waterNeedClass": null,
+      "soilNotes": null,
+      "yieldReference": null,
+      "labourClass": null,
+      "harvestPattern": "single",
+      "notes": "National Horticulture Board table for \"Maharashtra & Gujarat\" (sowing month; transplanting is later). Also late-kharif Aug-Sep and rabi Nov-Dec on the same row."
+    },
+    {
+      "contextId": "onion.NORTH.rabi",
+      "geography": {
+        "level": "region",
+        "ids": [
+          "IN-RJ",
+          "IN-HR",
+          "IN-PB",
+          "IN-UP",
+          "IN-BR"
+        ]
+      },
+      "stateId": null,
+      "districtIds": null,
+      "season": "rabi",
+      "plantingWindow": {
+        "fromMonth": 10,
+        "toMonth": 11,
+        "evidenceIds": [
+          "cat.onion.north"
+        ]
+      },
+      "durationDays": null,
+      "irrigation": "unspecified",
+      "irrigationEvidenceIds": [],
+      "waterNeedClass": null,
+      "soilNotes": null,
+      "yieldReference": null,
+      "labourClass": null,
+      "harvestPattern": "single",
+      "notes": "NHB table row \"Rajasthan, Haryana, Punjab, UP and Bihar\" (as published, spelled Rajastahn); kharif May-June also listed."
+    }
+  ],
+  "exclusionsOrCautions": [
+    {
+      "text": "Heavy rain during bulb germination and formation harms the crop (TNAU small onion).",
+      "evidenceIds": [
+        "cat.onion.rain"
+      ]
+    }
+  ],
+  "marketCoverageStatus": "unavailable_pending_price_access",
+  "evidenceIds": [
+    "cat.onion.bsow",
+    "cat.onion.bsoil",
+    "cat.onion.bdur",
+    "cat.onion.ssow",
+    "cat.onion.mhk",
+    "cat.onion.north",
+    "cat.onion.rain"
+  ],
+  "qualification": {
+    "identityResolved": true,
+    "hasRegionalContext": true,
+    "hasSourcedRequirements": true,
+    "hasSeasonInfo": true,
+    "marketStatusExplicit": true,
+    "qualified": true,
+    "missing": []
+  }
+}

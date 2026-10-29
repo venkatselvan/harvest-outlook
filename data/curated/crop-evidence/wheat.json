@@ -1,0 +1,202 @@
+[
+  {
+    "schemaVersion": "1.0",
+    "id": "cat.wheat.sow",
+    "mode": "live",
+    "sourceUrl": "https://kvkchirang.aau.ac.in/pdf/package_of_practice/Rabi/Wheat.pdf",
+    "publisher": "Assam Agricultural University, KVK Chirang",
+    "documentTitle": "Package of practices for Rabi crops of Assam: Wheat",
+    "documentVersion": "2021",
+    "contentHash": "3d659e4b599dfe3e7baafa29ab617d35b31d7ea110ac60773e0393f1143b786d",
+    "locator": {
+      "page": 2,
+      "section": "Time of sowing"
+    },
+    "content": {
+      "kind": "excerpt",
+      "text": "November 5 to December 15",
+      "language": "en"
+    },
+    "publishedAt": null,
+    "availability": {
+      "effectiveAvailableAt": "2026-10-29T20:00:49.294Z",
+      "basis": "first_observed"
+    },
+    "ingestedAt": "2026-10-29T20:00:49.294Z",
+    "revisedAt": null,
+    "geography": {
+      "level": "state",
+      "ids": [
+        "IN-AS"
+      ]
+    },
+    "cropIds": [
+      "wheat"
+    ],
+    "productIds": [],
+    "units": [],
+    "sourceUnits": [],
+    "licence": {
+      "licence": "Public web page; publisher copyright. Excerpt (<=60 words) kept for provenance, full page not redistributed.",
+      "accessStatus": "open",
+      "redistributable": false,
+      "attribution": "Assam Agricultural University, KVK Chirang"
+    },
+    "extraction": {
+      "method": "native_text",
+      "version": "catalogue-build-1",
+      "reviewedBy": "rule_check"
+    },
+    "validationStatus": "pending"
+  },
+  {
+    "schemaVersion": "1.0",
+    "id": "cat.wheat.dur",
+    "mode": "live",
+    "sourceUrl": "https://kvkchirang.aau.ac.in/pdf/package_of_practice/Rabi/Wheat.pdf",
+    "publisher": "Assam Agricultural University, KVK Chirang",
+    "documentTitle": "Package of practices for Rabi crops of Assam: Wheat",
+    "documentVersion": "2021",
+    "contentHash": "3d659e4b599dfe3e7baafa29ab617d35b31d7ea110ac60773e0393f1143b786d",
+    "locator": {
+      "page": 1,
+      "section": "New varieties recommended"
+    },
+    "content": {
+      "kind": "excerpt",
+      "text": "100-105 (irrigated condition) 105-110 (irrigated condition)",
+      "language": "en"
+    },
+    "publishedAt": null,
+    "availability": {
+      "effectiveAvailableAt": "2026-10-29T20:00:49.294Z",
+      "basis": "first_observed"
+    },
+    "ingestedAt": "2026-10-29T20:00:49.294Z",
+    "revisedAt": null,
+    "geography": {
+      "level": "state",
+      "ids": [
+        "IN-AS"
+      ]
+    },
+    "cropIds": [
+      "wheat"
+    ],
+    "productIds": [],
+    "units": [],
+    "sourceUnits": [],
+    "licence": {
+      "licence": "Public web page; publisher copyright. Excerpt (<=60 words) kept for provenance, full page not redistributed.",
+      "accessStatus": "open",
+      "redistributable": false,
+      "attribution": "Assam Agricultural University, KVK Chirang"
+    },
+    "extraction": {
+      "method": "native_text",
+      "version": "catalogue-build-1",
+      "reviewedBy": "rule_check"
+    },
+    "validationStatus": "pending"
+  },
+  {
+    "schemaVersion": "1.0",
+    "id": "cat.wheat.soil",
+    "mode": "live",
+    "sourceUrl": "https://kvkchirang.aau.ac.in/pdf/package_of_practice/Rabi/Wheat.pdf",
+    "publisher": "Assam Agricultural University, KVK Chirang",
+    "documentTitle": "Package of practices for Rabi crops of Assam: Wheat",
+    "documentVersion": "2021",
+    "contentHash": "3d659e4b599dfe3e7baafa29ab617d35b31d7ea110ac60773e0393f1143b786d",
+    "locator": {
+      "page": 1,
+      "section": "Soil"
+    },
+    "content": {
+      "kind": "excerpt",
+      "text": "Sandy loam to silty loam soils, rich in organic matter are suitable. Clayey soil is not suitable for wheat.",
+      "language": "en"
+    },
+    "publishedAt": null,
+    "availability": {
+      "effectiveAvailableAt": "2026-10-29T20:00:49.294Z",
+      "basis": "first_observed"
+    },
+    "ingestedAt": "2026-10-29T20:00:49.294Z",
+    "revisedAt": null,
+    "geography": {
+      "level": "state",
+      "ids": [
+        "IN-AS"
+      ]
+    },
+    "cropIds": [
+      "wheat"
+    ],
+    "productIds": [],
+    "units": [],
+    "sourceUnits": [],
+    "licence": {
+      "licence": "Public web page; publisher copyright. Excerpt (<=60 words) kept for provenance, full page not redistributed.",
+      "accessStatus": "open",
+      "redistributable": false,
+      "attribution": "Assam Agricultural University, KVK Chirang"
+    },
+    "extraction": {
+      "method": "native_text",
+      "version": "catalogue-build-1",
+      "reviewedBy": "rule_check"
+    },
+    "validationStatus": "pending"
+  },
+  {
+    "schemaVersion": "1.0",
+    "id": "cat.wheat.yld",
+    "mode": "live",
+    "sourceUrl": "https://kvkchirang.aau.ac.in/pdf/package_of_practice/Rabi/Wheat.pdf",
+    "publisher": "Assam Agricultural University, KVK Chirang",
+    "documentTitle": "Package of practices for Rabi crops of Assam: Wheat",
+    "documentVersion": "2021",
+    "contentHash": "3d659e4b599dfe3e7baafa29ab617d35b31d7ea110ac60773e0393f1143b786d",
+    "locator": {
+      "page": 1,
+      "section": "New varieties recommended"
+    },
+    "content": {
+      "kind": "excerpt",
+      "text": "Grain yield (q/ha) 30-35 25-30",
+      "language": "en"
+    },
+    "publishedAt": null,
+    "availability": {
+      "effectiveAvailableAt": "2026-10-29T20:00:49.294Z",
+      "basis": "first_observed"
+    },
+    "ingestedAt": "2026-10-29T20:00:49.294Z",
+    "revisedAt": null,
+    "geography": {
+      "level": "state",
+      "ids": [
+        "IN-AS"
+      ]
+    },
+    "cropIds": [
+      "wheat"
+    ],
+    "productIds": [],
+    "units": [],
+    "sourceUnits": [],
+    "licence": {
+      "licence": "Public web page; publisher copyright. Excerpt (<=60 words) kept for provenance, full page not redistributed.",
+      "accessStatus": "open",
+      "redistributable": false,
+      "attribution": "Assam Agricultural University, KVK Chirang"
+    },
+    "extraction": {
+      "method": "native_text",
+      "version": "catalogue-build-1",
+      "reviewedBy": "rule_check"
+    },
+    "validationStatus": "pending"
+  }
+]

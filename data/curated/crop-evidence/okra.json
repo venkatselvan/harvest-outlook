@@ -1,0 +1,247 @@
+[
+  {
+    "schemaVersion": "1.0",
+    "id": "cat.okra.sow",
+    "mode": "live",
+    "sourceUrl": "https://agritech.tnau.ac.in/horticulture/horti_vegetables_bhendi_Soil.html",
+    "publisher": "Tamil Nadu Agricultural University (TNAU Agritech Portal)",
+    "documentTitle": "Bhendi: climate and field preparation",
+    "documentVersion": null,
+    "contentHash": "a73da506d43a3103b0a1eb251477c08d22e6af69eef9de4cac6cf5bcabb1ac52",
+    "locator": {
+      "section": "Soil and season"
+    },
+    "content": {
+      "kind": "excerpt",
+      "text": "Planting can be done during June - August and February",
+      "language": "en"
+    },
+    "publishedAt": null,
+    "availability": {
+      "effectiveAvailableAt": "2026-10-29T20:03:02.150Z",
+      "basis": "first_observed"
+    },
+    "ingestedAt": "2026-10-29T20:03:02.150Z",
+    "revisedAt": null,
+    "geography": {
+      "level": "state",
+      "ids": [
+        "IN-TN"
+      ]
+    },
+    "cropIds": [
+      "okra"
+    ],
+    "productIds": [],
+    "units": [],
+    "sourceUnits": [],
+    "licence": {
+      "licence": "Public web page; publisher copyright. Excerpt (<=60 words) kept for provenance, full page not redistributed.",
+      "accessStatus": "open",
+      "redistributable": false,
+      "attribution": "Tamil Nadu Agricultural University (TNAU Agritech Portal)"
+    },
+    "extraction": {
+      "method": "manual",
+      "version": "catalogue-build-1",
+      "reviewedBy": "rule_check"
+    },
+    "validationStatus": "pending"
+  },
+  {
+    "schemaVersion": "1.0",
+    "id": "cat.okra.soil",
+    "mode": "live",
+    "sourceUrl": "https://agritech.tnau.ac.in/horticulture/horti_vegetables_bhendi_Soil.html",
+    "publisher": "Tamil Nadu Agricultural University (TNAU Agritech Portal)",
+    "documentTitle": "Bhendi: climate and field preparation",
+    "documentVersion": null,
+    "contentHash": "a73da506d43a3103b0a1eb251477c08d22e6af69eef9de4cac6cf5bcabb1ac52",
+    "locator": {
+      "section": "Soil and season"
+    },
+    "content": {
+      "kind": "excerpt",
+      "text": "It is adaptable to a wide range of soils from sandy loam to clayey loam.",
+      "language": "en"
+    },
+    "publishedAt": null,
+    "availability": {
+      "effectiveAvailableAt": "2026-10-29T20:03:02.150Z",
+      "basis": "first_observed"
+    },
+    "ingestedAt": "2026-10-29T20:03:02.150Z",
+    "revisedAt": null,
+    "geography": {
+      "level": "state",
+      "ids": [
+        "IN-TN"
+      ]
+    },
+    "cropIds": [
+      "okra"
+    ],
+    "productIds": [],
+    "units": [],
+    "sourceUnits": [],
+    "licence": {
+      "licence": "Public web page; publisher copyright. Excerpt (<=60 words) kept for provenance, full page not redistributed.",
+      "accessStatus": "open",
+      "redistributable": false,
+      "attribution": "Tamil Nadu Agricultural University (TNAU Agritech Portal)"
+    },
+    "extraction": {
+      "method": "manual",
+      "version": "catalogue-build-1",
+      "reviewedBy": "rule_check"
+    },
+    "validationStatus": "pending"
+  },
+  {
+    "schemaVersion": "1.0",
+    "id": "cat.okra.dur90",
+    "mode": "live",
+    "sourceUrl": "https://agritech.tnau.ac.in/horticulture/horti_vegetables_bhendi_Varieties.html",
+    "publisher": "Tamil Nadu Agricultural University (TNAU Agritech Portal)",
+    "documentTitle": "Bhendi: varieties",
+    "documentVersion": null,
+    "contentHash": "548b0d7163e3c547e2400763671a3cb80ebe8a315a2b0dac2c96b78a1b3eb194",
+    "locator": {
+      "section": "CO.2 variety"
+    },
+    "content": {
+      "kind": "excerpt",
+      "text": "It has a yield potential of 15-16 tonnes/ha in 90 days",
+      "language": "en"
+    },
+    "publishedAt": null,
+    "availability": {
+      "effectiveAvailableAt": "2026-10-29T20:16:22.349Z",
+      "basis": "first_observed"
+    },
+    "ingestedAt": "2026-10-29T20:16:22.349Z",
+    "revisedAt": null,
+    "geography": {
+      "level": "state",
+      "ids": [
+        "IN-TN"
+      ]
+    },
+    "cropIds": [
+      "okra"
+    ],
+    "productIds": [],
+    "units": [],
+    "sourceUnits": [],
+    "licence": {
+      "licence": "Public web page; publisher copyright. Excerpt (<=60 words) kept for provenance, full page not redistributed.",
+      "accessStatus": "open",
+      "redistributable": false,
+      "attribution": "Tamil Nadu Agricultural University (TNAU Agritech Portal)"
+    },
+    "extraction": {
+      "method": "manual",
+      "version": "catalogue-build-1",
+      "reviewedBy": "rule_check"
+    },
+    "validationStatus": "pending"
+  },
+  {
+    "schemaVersion": "1.0",
+    "id": "cat.okra.dur110",
+    "mode": "live",
+    "sourceUrl": "https://agritech.tnau.ac.in/horticulture/horti_vegetables_bhendi_Varieties.html",
+    "publisher": "Tamil Nadu Agricultural University (TNAU Agritech Portal)",
+    "documentTitle": "Bhendi: varieties",
+    "documentVersion": null,
+    "contentHash": "548b0d7163e3c547e2400763671a3cb80ebe8a315a2b0dac2c96b78a1b3eb194",
+    "locator": {
+      "section": "Hybrid CO 4"
+    },
+    "content": {
+      "kind": "excerpt",
+      "text": "BHD 9 / Karamadai local, 110 days duration, yield 25.60 t/ha",
+      "language": "en"
+    },
+    "publishedAt": null,
+    "availability": {
+      "effectiveAvailableAt": "2026-10-29T20:16:22.349Z",
+      "basis": "first_observed"
+    },
+    "ingestedAt": "2026-10-29T20:16:22.349Z",
+    "revisedAt": null,
+    "geography": {
+      "level": "state",
+      "ids": [
+        "IN-TN"
+      ]
+    },
+    "cropIds": [
+      "okra"
+    ],
+    "productIds": [],
+    "units": [],
+    "sourceUnits": [],
+    "licence": {
+      "licence": "Public web page; publisher copyright. Excerpt (<=60 words) kept for provenance, full page not redistributed.",
+      "accessStatus": "open",
+      "redistributable": false,
+      "attribution": "Tamil Nadu Agricultural University (TNAU Agritech Portal)"
+    },
+    "extraction": {
+      "method": "manual",
+      "version": "catalogue-build-1",
+      "reviewedBy": "rule_check"
+    },
+    "validationStatus": "pending"
+  },
+  {
+    "schemaVersion": "1.0",
+    "id": "cat.okra.irr",
+    "mode": "live",
+    "sourceUrl": "https://agritech.tnau.ac.in/horticulture/horti_vegetables_bhendi_irrigation.html",
+    "publisher": "Tamil Nadu Agricultural University (TNAU Agritech Portal)",
+    "documentTitle": "Bhendi: irrigation",
+    "documentVersion": null,
+    "contentHash": "4c2b8af94b5cc15a75846fbc8f0e7668fc6fc217a45e113fa1ef5d9fda7893a6",
+    "locator": {
+      "section": "Irrigation"
+    },
+    "content": {
+      "kind": "excerpt",
+      "text": "After germination, irrigate at weekly intervals.",
+      "language": "en"
+    },
+    "publishedAt": null,
+    "availability": {
+      "effectiveAvailableAt": "2026-10-29T20:16:22.148Z",
+      "basis": "first_observed"
+    },
+    "ingestedAt": "2026-10-29T20:16:22.148Z",
+    "revisedAt": null,
+    "geography": {
+      "level": "state",
+      "ids": [
+        "IN-TN"
+      ]
+    },
+    "cropIds": [
+      "okra"
+    ],
+    "productIds": [],
+    "units": [],
+    "sourceUnits": [],
+    "licence": {
+      "licence": "Public web page; publisher copyright. Excerpt (<=60 words) kept for provenance, full page not redistributed.",
+      "accessStatus": "open",
+      "redistributable": false,
+      "attribution": "Tamil Nadu Agricultural University (TNAU Agritech Portal)"
+    },
+    "extraction": {
+      "method": "manual",
+      "version": "catalogue-build-1",
+      "reviewedBy": "rule_check"
+    },
+    "validationStatus": "pending"
+  }
+]

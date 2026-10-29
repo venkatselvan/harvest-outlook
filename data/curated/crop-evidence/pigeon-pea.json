@@ -1,0 +1,300 @@
+[
+  {
+    "schemaVersion": "1.0",
+    "id": "cat.pigeon-pea.tnsow",
+    "mode": "live",
+    "sourceUrl": "https://agritech.tnau.ac.in/agriculture/CropProduction/Pulses/pulses_redgram.html",
+    "publisher": "Tamil Nadu Agricultural University (TNAU Agritech Portal)",
+    "documentTitle": "Pulses: Red gram (pigeon pea)",
+    "documentVersion": null,
+    "contentHash": "b900cb52434a69900ea6a63418319f733e74f137953fff67ac393f317e06f405",
+    "locator": {
+      "section": "Season and varieties"
+    },
+    "content": {
+      "kind": "excerpt",
+      "text": "Vaigasi Pattam (May-June)",
+      "language": "en"
+    },
+    "publishedAt": null,
+    "availability": {
+      "effectiveAvailableAt": "2026-10-29T20:00:48.433Z",
+      "basis": "first_observed"
+    },
+    "ingestedAt": "2026-10-29T20:00:48.433Z",
+    "revisedAt": null,
+    "geography": {
+      "level": "state",
+      "ids": [
+        "IN-TN"
+      ]
+    },
+    "cropIds": [
+      "pigeon-pea"
+    ],
+    "productIds": [],
+    "units": [],
+    "sourceUnits": [],
+    "licence": {
+      "licence": "Public web page; publisher copyright. Excerpt (<=60 words) kept for provenance, full page not redistributed.",
+      "accessStatus": "open",
+      "redistributable": false,
+      "attribution": "Tamil Nadu Agricultural University (TNAU Agritech Portal)"
+    },
+    "extraction": {
+      "method": "manual",
+      "version": "catalogue-build-1",
+      "reviewedBy": "rule_check"
+    },
+    "validationStatus": "pending"
+  },
+  {
+    "schemaVersion": "1.0",
+    "id": "cat.pigeon-pea.tndur",
+    "mode": "live",
+    "sourceUrl": "https://agritech.tnau.ac.in/agriculture/agri_seasonandvarieties_redgram.html",
+    "publisher": "Tamil Nadu Agricultural University (TNAU Agritech Portal)",
+    "documentTitle": "Red gram: season and varieties",
+    "documentVersion": null,
+    "contentHash": "0f55a159f29efa69b75a892fcf2dfbf5ad3e4c2c270cd3ee02d855441120ea1e",
+    "locator": {
+      "section": "Description of varieties"
+    },
+    "content": {
+      "kind": "excerpt",
+      "text": "Duration days) | 95 - 105 | 172 - 180",
+      "language": "en"
+    },
+    "publishedAt": null,
+    "availability": {
+      "effectiveAvailableAt": "2026-10-29T20:00:48.475Z",
+      "basis": "first_observed"
+    },
+    "ingestedAt": "2026-10-29T20:00:48.475Z",
+    "revisedAt": null,
+    "geography": {
+      "level": "state",
+      "ids": [
+        "IN-TN"
+      ]
+    },
+    "cropIds": [
+      "pigeon-pea"
+    ],
+    "productIds": [],
+    "units": [],
+    "sourceUnits": [],
+    "licence": {
+      "licence": "Public web page; publisher copyright. Excerpt (<=60 words) kept for provenance, full page not redistributed.",
+      "accessStatus": "open",
+      "redistributable": false,
+      "attribution": "Tamil Nadu Agricultural University (TNAU Agritech Portal)"
+    },
+    "extraction": {
+      "method": "manual",
+      "version": "catalogue-build-1",
+      "reviewedBy": "rule_check"
+    },
+    "validationStatus": "pending"
+  },
+  {
+    "schemaVersion": "1.0",
+    "id": "cat.pigeon-pea.sow",
+    "mode": "live",
+    "sourceUrl": "https://kvkchirang.aau.ac.in/pdf/package_of_practice/kharif/Pigeonpea.pdf",
+    "publisher": "Assam Agricultural University, KVK Chirang",
+    "documentTitle": "Package of practices for Kharif crops of Assam: Pigeon pea",
+    "documentVersion": "2021",
+    "contentHash": "15e144e8d986a2600b731ff706f7fb4707a8c837d57b56635c600d082bd3d715",
+    "locator": {
+      "page": 1,
+      "section": "Time of sowing"
+    },
+    "content": {
+      "kind": "excerpt",
+      "text": "Time of Sowing: June - July.",
+      "language": "en"
+    },
+    "publishedAt": null,
+    "availability": {
+      "effectiveAvailableAt": "2026-10-29T20:00:53.508Z",
+      "basis": "first_observed"
+    },
+    "ingestedAt": "2026-10-29T20:00:53.508Z",
+    "revisedAt": null,
+    "geography": {
+      "level": "state",
+      "ids": [
+        "IN-AS"
+      ]
+    },
+    "cropIds": [
+      "pigeon-pea"
+    ],
+    "productIds": [],
+    "units": [],
+    "sourceUnits": [],
+    "licence": {
+      "licence": "Public web page; publisher copyright. Excerpt (<=60 words) kept for provenance, full page not redistributed.",
+      "accessStatus": "open",
+      "redistributable": false,
+      "attribution": "Assam Agricultural University, KVK Chirang"
+    },
+    "extraction": {
+      "method": "native_text",
+      "version": "catalogue-build-1",
+      "reviewedBy": "rule_check"
+    },
+    "validationStatus": "pending"
+  },
+  {
+    "schemaVersion": "1.0",
+    "id": "cat.pigeon-pea.dur",
+    "mode": "live",
+    "sourceUrl": "https://kvkchirang.aau.ac.in/pdf/package_of_practice/kharif/Pigeonpea.pdf",
+    "publisher": "Assam Agricultural University, KVK Chirang",
+    "documentTitle": "Package of practices for Kharif crops of Assam: Pigeon pea",
+    "documentVersion": "2021",
+    "contentHash": "15e144e8d986a2600b731ff706f7fb4707a8c837d57b56635c600d082bd3d715",
+    "locator": {
+      "page": 1,
+      "section": "Variety"
+    },
+    "content": {
+      "kind": "excerpt",
+      "text": "Crop duration is 170-200 days.",
+      "language": "en"
+    },
+    "publishedAt": null,
+    "availability": {
+      "effectiveAvailableAt": "2026-10-29T20:00:53.508Z",
+      "basis": "first_observed"
+    },
+    "ingestedAt": "2026-10-29T20:00:53.508Z",
+    "revisedAt": null,
+    "geography": {
+      "level": "state",
+      "ids": [
+        "IN-AS"
+      ]
+    },
+    "cropIds": [
+      "pigeon-pea"
+    ],
+    "productIds": [],
+    "units": [],
+    "sourceUnits": [],
+    "licence": {
+      "licence": "Public web page; publisher copyright. Excerpt (<=60 words) kept for provenance, full page not redistributed.",
+      "accessStatus": "open",
+      "redistributable": false,
+      "attribution": "Assam Agricultural University, KVK Chirang"
+    },
+    "extraction": {
+      "method": "native_text",
+      "version": "catalogue-build-1",
+      "reviewedBy": "rule_check"
+    },
+    "validationStatus": "pending"
+  },
+  {
+    "schemaVersion": "1.0",
+    "id": "cat.pigeon-pea.soil",
+    "mode": "live",
+    "sourceUrl": "https://kvkchirang.aau.ac.in/pdf/package_of_practice/kharif/Pigeonpea.pdf",
+    "publisher": "Assam Agricultural University, KVK Chirang",
+    "documentTitle": "Package of practices for Kharif crops of Assam: Pigeon pea",
+    "documentVersion": "2021",
+    "contentHash": "15e144e8d986a2600b731ff706f7fb4707a8c837d57b56635c600d082bd3d715",
+    "locator": {
+      "page": 1,
+      "section": "Soil type"
+    },
+    "content": {
+      "kind": "excerpt",
+      "text": "Soil Type: Well drained sandy loams to loamy soil are most suitable.",
+      "language": "en"
+    },
+    "publishedAt": null,
+    "availability": {
+      "effectiveAvailableAt": "2026-10-29T20:00:53.508Z",
+      "basis": "first_observed"
+    },
+    "ingestedAt": "2026-10-29T20:00:53.508Z",
+    "revisedAt": null,
+    "geography": {
+      "level": "state",
+      "ids": [
+        "IN-AS"
+      ]
+    },
+    "cropIds": [
+      "pigeon-pea"
+    ],
+    "productIds": [],
+    "units": [],
+    "sourceUnits": [],
+    "licence": {
+      "licence": "Public web page; publisher copyright. Excerpt (<=60 words) kept for provenance, full page not redistributed.",
+      "accessStatus": "open",
+      "redistributable": false,
+      "attribution": "Assam Agricultural University, KVK Chirang"
+    },
+    "extraction": {
+      "method": "native_text",
+      "version": "catalogue-build-1",
+      "reviewedBy": "rule_check"
+    },
+    "validationStatus": "pending"
+  },
+  {
+    "schemaVersion": "1.0",
+    "id": "cat.pigeon-pea.yld",
+    "mode": "live",
+    "sourceUrl": "https://kvkchirang.aau.ac.in/pdf/package_of_practice/kharif/Pigeonpea.pdf",
+    "publisher": "Assam Agricultural University, KVK Chirang",
+    "documentTitle": "Package of practices for Kharif crops of Assam: Pigeon pea",
+    "documentVersion": "2021",
+    "contentHash": "15e144e8d986a2600b731ff706f7fb4707a8c837d57b56635c600d082bd3d715",
+    "locator": {
+      "page": 1,
+      "section": "Average yield"
+    },
+    "content": {
+      "kind": "excerpt",
+      "text": "Average Yield: 12-15q/ha.",
+      "language": "en"
+    },
+    "publishedAt": null,
+    "availability": {
+      "effectiveAvailableAt": "2026-10-29T20:00:53.508Z",
+      "basis": "first_observed"
+    },
+    "ingestedAt": "2026-10-29T20:00:53.508Z",
+    "revisedAt": null,
+    "geography": {
+      "level": "state",
+      "ids": [
+        "IN-AS"
+      ]
+    },
+    "cropIds": [
+      "pigeon-pea"
+    ],
+    "productIds": [],
+    "units": [],
+    "sourceUnits": [],
+    "licence": {
+      "licence": "Public web page; publisher copyright. Excerpt (<=60 words) kept for provenance, full page not redistributed.",
+      "accessStatus": "open",
+      "redistributable": false,
+      "attribution": "Assam Agricultural University, KVK Chirang"
+    },
+    "extraction": {
+      "method": "native_text",
+      "version": "catalogue-build-1",
+      "reviewedBy": "rule_check"
+    },
+    "validationStatus": "pending"
+  }
+]

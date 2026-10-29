@@ -1,0 +1,91 @@
+{
+  "cropId": "black-gram",
+  "identityRef": "black-gram",
+  "group": "pulses",
+  "products": [
+    {
+      "productId": "black-gram-whole",
+      "name": "Black gram whole seed",
+      "productBasis": "whole"
+    },
+    {
+      "productId": "black-gram-split",
+      "name": "Black gram split (dal)",
+      "productBasis": "split"
+    }
+  ],
+  "regionalContexts": [
+    {
+      "contextId": "black-gram.AS.kharif",
+      "geography": {
+        "level": "state",
+        "ids": [
+          "IN-AS"
+        ]
+      },
+      "stateId": "IN-AS",
+      "districtIds": null,
+      "season": "kharif",
+      "plantingWindow": {
+        "fromMonth": 8,
+        "toMonth": 9,
+        "evidenceIds": [
+          "cat.black-gram.sow"
+        ]
+      },
+      "durationDays": {
+        "min": 80,
+        "max": 85,
+        "evidenceIds": [
+          "cat.black-gram.dur"
+        ]
+      },
+      "irrigation": "unspecified",
+      "irrigationEvidenceIds": [],
+      "waterNeedClass": null,
+      "soilNotes": {
+        "text": "Wide range of soils; sandy loam preferable.",
+        "evidenceIds": [
+          "cat.black-gram.soil"
+        ]
+      },
+      "yieldReference": {
+        "min": 1200,
+        "max": 1300,
+        "unit": "kg/ha",
+        "basis": "regional_reference",
+        "productId": "black-gram-whole",
+        "evidenceIds": [
+          "cat.black-gram.dur"
+        ]
+      },
+      "labourClass": null,
+      "harvestPattern": "single",
+      "notes": "Assam only; duration and yield are for delayed-sowing varieties."
+    }
+  ],
+  "exclusionsOrCautions": [
+    {
+      "text": "Provide surface drains for quick removal of excess water (Assam package).",
+      "evidenceIds": [
+        "cat.black-gram.drain"
+      ]
+    }
+  ],
+  "marketCoverageStatus": "unavailable_pending_price_access",
+  "evidenceIds": [
+    "cat.black-gram.sow",
+    "cat.black-gram.dur",
+    "cat.black-gram.soil",
+    "cat.black-gram.drain"
+  ],
+  "qualification": {
+    "identityResolved": true,
+    "hasRegionalContext": true,
+    "hasSourcedRequirements": true,
+    "hasSeasonInfo": true,
+    "marketStatusExplicit": true,
+    "qualified": true,
+    "missing": []
+  }
+}

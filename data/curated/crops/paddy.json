@@ -1,0 +1,217 @@
+{
+  "cropId": "paddy",
+  "identityRef": "paddy",
+  "group": "cereals",
+  "products": [
+    {
+      "productId": "paddy-grain",
+      "name": "Paddy (unmilled)",
+      "productBasis": "paddy"
+    },
+    {
+      "productId": "paddy-milled-rice",
+      "name": "Milled rice",
+      "productBasis": "milled"
+    }
+  ],
+  "regionalContexts": [
+    {
+      "contextId": "paddy.TN.kuruvai",
+      "geography": {
+        "level": "state",
+        "ids": [
+          "IN-TN"
+        ]
+      },
+      "stateId": "IN-TN",
+      "districtIds": null,
+      "season": "kharif",
+      "plantingWindow": {
+        "fromMonth": 6,
+        "toMonth": 7,
+        "evidenceIds": [
+          "cat.paddy.kuruvai"
+        ]
+      },
+      "durationDays": {
+        "min": null,
+        "max": 120,
+        "evidenceIds": [
+          "cat.paddy.kuruvai"
+        ]
+      },
+      "irrigation": "unspecified",
+      "irrigationEvidenceIds": [],
+      "waterNeedClass": null,
+      "soilNotes": null,
+      "yieldReference": null,
+      "labourClass": null,
+      "harvestPattern": "single",
+      "notes": "TN-only coverage: Tamil Nadu source; not generalised to other states. Kuruvai season; duration \"< 120\" days (upper bound only)."
+    },
+    {
+      "contextId": "paddy.TN.samba",
+      "geography": {
+        "level": "state",
+        "ids": [
+          "IN-TN"
+        ]
+      },
+      "stateId": "IN-TN",
+      "districtIds": null,
+      "season": "kharif",
+      "plantingWindow": {
+        "fromMonth": 8,
+        "toMonth": 8,
+        "evidenceIds": [
+          "cat.paddy.samba"
+        ]
+      },
+      "durationDays": {
+        "min": 145,
+        "max": null,
+        "evidenceIds": [
+          "cat.paddy.samba"
+        ]
+      },
+      "irrigation": "unspecified",
+      "irrigationEvidenceIds": [],
+      "waterNeedClass": null,
+      "soilNotes": null,
+      "yieldReference": null,
+      "labourClass": null,
+      "harvestPattern": "single",
+      "notes": "TN-only coverage: Tamil Nadu source; not generalised to other states. Samba season; duration \"> 145\" days (lower bound only)."
+    },
+    {
+      "contextId": "paddy.TN.thaladi",
+      "geography": {
+        "level": "state",
+        "ids": [
+          "IN-TN"
+        ]
+      },
+      "stateId": "IN-TN",
+      "districtIds": null,
+      "season": "rabi",
+      "plantingWindow": {
+        "fromMonth": 9,
+        "toMonth": 10,
+        "evidenceIds": [
+          "cat.paddy.thaladi"
+        ]
+      },
+      "durationDays": {
+        "min": 130,
+        "max": 135,
+        "evidenceIds": [
+          "cat.paddy.thaladi"
+        ]
+      },
+      "irrigation": "unspecified",
+      "irrigationEvidenceIds": [],
+      "waterNeedClass": null,
+      "soilNotes": null,
+      "yieldReference": null,
+      "labourClass": null,
+      "harvestPattern": "single",
+      "notes": "TN-only coverage: Tamil Nadu source; not generalised to other states."
+    },
+    {
+      "contextId": "paddy.TN.navarai",
+      "geography": {
+        "level": "state",
+        "ids": [
+          "IN-TN"
+        ]
+      },
+      "stateId": "IN-TN",
+      "districtIds": null,
+      "season": "rabi",
+      "plantingWindow": {
+        "fromMonth": 12,
+        "toMonth": 1,
+        "evidenceIds": [
+          "cat.paddy.navarai"
+        ]
+      },
+      "durationDays": {
+        "min": null,
+        "max": 120,
+        "evidenceIds": [
+          "cat.paddy.navarai"
+        ]
+      },
+      "irrigation": "unspecified",
+      "irrigationEvidenceIds": [],
+      "waterNeedClass": null,
+      "soilNotes": null,
+      "yieldReference": null,
+      "labourClass": null,
+      "harvestPattern": "single",
+      "notes": "TN-only coverage: Tamil Nadu source; not generalised to other states."
+    },
+    {
+      "contextId": "paddy.AS.sali",
+      "geography": {
+        "level": "state",
+        "ids": [
+          "IN-AS"
+        ]
+      },
+      "stateId": "IN-AS",
+      "districtIds": null,
+      "season": "kharif",
+      "plantingWindow": {
+        "fromMonth": 6,
+        "toMonth": 6,
+        "evidenceIds": [
+          "cat.paddy.sali"
+        ]
+      },
+      "durationDays": {
+        "min": 150,
+        "max": 160,
+        "evidenceIds": [
+          "cat.paddy.sali"
+        ]
+      },
+      "irrigation": "unspecified",
+      "irrigationEvidenceIds": [],
+      "waterNeedClass": null,
+      "soilNotes": null,
+      "yieldReference": {
+        "min": 4500,
+        "max": 5500,
+        "unit": "kg/ha",
+        "basis": "regional_reference",
+        "productId": "paddy-grain",
+        "evidenceIds": [
+          "cat.paddy.salyld"
+        ]
+      },
+      "labourClass": null,
+      "harvestPattern": "single",
+      "notes": "Assam sali; sowing June, transplanting July-Sep for staggered-planting varieties; yield is a varietal reference."
+    }
+  ],
+  "exclusionsOrCautions": [],
+  "marketCoverageStatus": "unavailable_pending_price_access",
+  "evidenceIds": [
+    "cat.paddy.kuruvai",
+    "cat.paddy.samba",
+    "cat.paddy.thaladi",
+    "cat.paddy.navarai",
+    "cat.paddy.sali",
+    "cat.paddy.salyld"
+  ],
+  "qualification": {
+    "identityResolved": true,
+    "hasRegionalContext": true,
+    "hasSourcedRequirements": true,
+    "hasSeasonInfo": true,
+    "marketStatusExplicit": true,
+    "qualified": true,
+    "missing": []
+  }
+}

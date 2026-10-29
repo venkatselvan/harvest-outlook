@@ -1,0 +1,301 @@
+[
+  {
+    "schemaVersion": "1.0",
+    "id": "cat.maize.tnadi",
+    "mode": "live",
+    "sourceUrl": "https://agritech.tnau.ac.in/agriculture/millets_maize_season.html",
+    "publisher": "Tamil Nadu Agricultural University (TNAU Agritech Portal)",
+    "documentTitle": "Maize: season",
+    "documentVersion": null,
+    "contentHash": "7cd2a90235e40bade717906ab06662707f7967a8c107efc662e11719be2cc553",
+    "locator": {
+      "section": "Season and Varieties"
+    },
+    "content": {
+      "kind": "excerpt",
+      "text": "Adipattam (July - August)",
+      "language": "en"
+    },
+    "publishedAt": null,
+    "availability": {
+      "effectiveAvailableAt": "2026-10-29T20:03:01.823Z",
+      "basis": "first_observed"
+    },
+    "ingestedAt": "2026-10-29T20:03:01.823Z",
+    "revisedAt": null,
+    "geography": {
+      "level": "state",
+      "ids": [
+        "IN-TN"
+      ]
+    },
+    "cropIds": [
+      "maize"
+    ],
+    "productIds": [],
+    "units": [],
+    "sourceUnits": [],
+    "licence": {
+      "licence": "Public web page; publisher copyright. Excerpt (<=60 words) kept for provenance, full page not redistributed.",
+      "accessStatus": "open",
+      "redistributable": false,
+      "attribution": "Tamil Nadu Agricultural University (TNAU Agritech Portal)"
+    },
+    "extraction": {
+      "method": "manual",
+      "version": "catalogue-build-1",
+      "reviewedBy": "rule_check"
+    },
+    "validationStatus": "pending"
+  },
+  {
+    "schemaVersion": "1.0",
+    "id": "cat.maize.kdur",
+    "mode": "live",
+    "sourceUrl": "https://kvkchirang.aau.ac.in/pdf/package_of_practice/kharif/Maize.pdf",
+    "publisher": "Assam Agricultural University, KVK Chirang",
+    "documentTitle": "Package of practices for Kharif crops of Assam: Maize",
+    "documentVersion": "2021",
+    "contentHash": "bb0d5616b8c3172967db73b5665eb9ed6c12bfe7c9cd338c30317c25d6abec59",
+    "locator": {
+      "page": 1,
+      "section": "Varieties"
+    },
+    "content": {
+      "kind": "excerpt",
+      "text": "Hybrid: Ganga 5 110-120 - 48 Vivek Maize Hybrid 47 80-90 Cob yellow with white cap, 69 Semi flint and moderately resistant to MLB and C. rust Vivek Maize Hybrid 53 70-80",
+      "language": "en"
+    },
+    "publishedAt": null,
+    "availability": {
+      "effectiveAvailableAt": "2026-10-29T20:00:52.781Z",
+      "basis": "first_observed"
+    },
+    "ingestedAt": "2026-10-29T20:00:52.781Z",
+    "revisedAt": null,
+    "geography": {
+      "level": "state",
+      "ids": [
+        "IN-AS"
+      ]
+    },
+    "cropIds": [
+      "maize"
+    ],
+    "productIds": [],
+    "units": [],
+    "sourceUnits": [],
+    "licence": {
+      "licence": "Public web page; publisher copyright. Excerpt (<=60 words) kept for provenance, full page not redistributed.",
+      "accessStatus": "open",
+      "redistributable": false,
+      "attribution": "Assam Agricultural University, KVK Chirang"
+    },
+    "extraction": {
+      "method": "native_text",
+      "version": "catalogue-build-1",
+      "reviewedBy": "rule_check"
+    },
+    "validationStatus": "pending"
+  },
+  {
+    "schemaVersion": "1.0",
+    "id": "cat.maize.ksow",
+    "mode": "live",
+    "sourceUrl": "https://kvkchirang.aau.ac.in/pdf/package_of_practice/kharif/Maize.pdf",
+    "publisher": "Assam Agricultural University, KVK Chirang",
+    "documentTitle": "Package of practices for Kharif crops of Assam: Maize",
+    "documentVersion": "2021",
+    "contentHash": "bb0d5616b8c3172967db73b5665eb9ed6c12bfe7c9cd338c30317c25d6abec59",
+    "locator": {
+      "page": 2,
+      "section": "Sowing Time"
+    },
+    "content": {
+      "kind": "excerpt",
+      "text": "Feb-Apr Mar-Apr Mar-May Feb-Apr Mar-May",
+      "language": "en"
+    },
+    "publishedAt": null,
+    "availability": {
+      "effectiveAvailableAt": "2026-10-29T20:00:52.781Z",
+      "basis": "first_observed"
+    },
+    "ingestedAt": "2026-10-29T20:00:52.781Z",
+    "revisedAt": null,
+    "geography": {
+      "level": "state",
+      "ids": [
+        "IN-AS"
+      ]
+    },
+    "cropIds": [
+      "maize"
+    ],
+    "productIds": [],
+    "units": [],
+    "sourceUnits": [],
+    "licence": {
+      "licence": "Public web page; publisher copyright. Excerpt (<=60 words) kept for provenance, full page not redistributed.",
+      "accessStatus": "open",
+      "redistributable": false,
+      "attribution": "Assam Agricultural University, KVK Chirang"
+    },
+    "extraction": {
+      "method": "native_text",
+      "version": "catalogue-build-1",
+      "reviewedBy": "rule_check"
+    },
+    "validationStatus": "pending"
+  },
+  {
+    "schemaVersion": "1.0",
+    "id": "cat.maize.kirr",
+    "mode": "live",
+    "sourceUrl": "https://kvkchirang.aau.ac.in/pdf/package_of_practice/kharif/Maize.pdf",
+    "publisher": "Assam Agricultural University, KVK Chirang",
+    "documentTitle": "Package of practices for Kharif crops of Assam: Maize",
+    "documentVersion": "2021",
+    "contentHash": "bb0d5616b8c3172967db73b5665eb9ed6c12bfe7c9cd338c30317c25d6abec59",
+    "locator": {
+      "page": 2,
+      "section": "Irrigation and Drainage"
+    },
+    "content": {
+      "kind": "excerpt",
+      "text": "Irrigation and Drainage: Maize is primarily grown as rainfed crop",
+      "language": "en"
+    },
+    "publishedAt": null,
+    "availability": {
+      "effectiveAvailableAt": "2026-10-29T20:00:52.781Z",
+      "basis": "first_observed"
+    },
+    "ingestedAt": "2026-10-29T20:00:52.781Z",
+    "revisedAt": null,
+    "geography": {
+      "level": "state",
+      "ids": [
+        "IN-AS"
+      ]
+    },
+    "cropIds": [
+      "maize"
+    ],
+    "productIds": [],
+    "units": [],
+    "sourceUnits": [],
+    "licence": {
+      "licence": "Public web page; publisher copyright. Excerpt (<=60 words) kept for provenance, full page not redistributed.",
+      "accessStatus": "open",
+      "redistributable": false,
+      "attribution": "Assam Agricultural University, KVK Chirang"
+    },
+    "extraction": {
+      "method": "native_text",
+      "version": "catalogue-build-1",
+      "reviewedBy": "rule_check"
+    },
+    "validationStatus": "pending"
+  },
+  {
+    "schemaVersion": "1.0",
+    "id": "cat.maize.rsow",
+    "mode": "live",
+    "sourceUrl": "https://kvkchirang.aau.ac.in/pdf/package_of_practice/Rabi/Rabimaize.pdf",
+    "publisher": "Assam Agricultural University, KVK Chirang",
+    "documentTitle": "Package of practices for Rabi crops of Assam: Rabi maize",
+    "documentVersion": "2021",
+    "contentHash": "05766e77a3361bc4966e5bc3a93b0266450b95ac13bdf3566fd754ba2ad488e3",
+    "locator": {
+      "page": 1,
+      "section": "Time of sowing"
+    },
+    "content": {
+      "kind": "excerpt",
+      "text": "The optimum time of sowing of rabi maize is middle of September to middle of October.",
+      "language": "en"
+    },
+    "publishedAt": null,
+    "availability": {
+      "effectiveAvailableAt": "2026-10-29T20:00:50.138Z",
+      "basis": "first_observed"
+    },
+    "ingestedAt": "2026-10-29T20:00:50.138Z",
+    "revisedAt": null,
+    "geography": {
+      "level": "state",
+      "ids": [
+        "IN-AS"
+      ]
+    },
+    "cropIds": [
+      "maize"
+    ],
+    "productIds": [],
+    "units": [],
+    "sourceUnits": [],
+    "licence": {
+      "licence": "Public web page; publisher copyright. Excerpt (<=60 words) kept for provenance, full page not redistributed.",
+      "accessStatus": "open",
+      "redistributable": false,
+      "attribution": "Assam Agricultural University, KVK Chirang"
+    },
+    "extraction": {
+      "method": "native_text",
+      "version": "catalogue-build-1",
+      "reviewedBy": "rule_check"
+    },
+    "validationStatus": "pending"
+  },
+  {
+    "schemaVersion": "1.0",
+    "id": "cat.maize.rdur",
+    "mode": "live",
+    "sourceUrl": "https://kvkchirang.aau.ac.in/pdf/package_of_practice/Rabi/Rabimaize.pdf",
+    "publisher": "Assam Agricultural University, KVK Chirang",
+    "documentTitle": "Package of practices for Rabi crops of Assam: Rabi maize",
+    "documentVersion": "2021",
+    "contentHash": "05766e77a3361bc4966e5bc3a93b0266450b95ac13bdf3566fd754ba2ad488e3",
+    "locator": {
+      "page": 1,
+      "section": "Varieties"
+    },
+    "content": {
+      "kind": "excerpt",
+      "text": "Duration (days) 145-150 150-155 150-155 155-160 155-160 Yield (q/ha) under assured irrigation 50-55 55-60 50-55 55-60 40-45",
+      "language": "en"
+    },
+    "publishedAt": null,
+    "availability": {
+      "effectiveAvailableAt": "2026-10-29T20:00:50.138Z",
+      "basis": "first_observed"
+    },
+    "ingestedAt": "2026-10-29T20:00:50.138Z",
+    "revisedAt": null,
+    "geography": {
+      "level": "state",
+      "ids": [
+        "IN-AS"
+      ]
+    },
+    "cropIds": [
+      "maize"
+    ],
+    "productIds": [],
+    "units": [],
+    "sourceUnits": [],
+    "licence": {
+      "licence": "Public web page; publisher copyright. Excerpt (<=60 words) kept for provenance, full page not redistributed.",
+      "accessStatus": "open",
+      "redistributable": false,
+      "attribution": "Assam Agricultural University, KVK Chirang"
+    },
+    "extraction": {
+      "method": "native_text",
+      "version": "catalogue-build-1",
+      "reviewedBy": "rule_check"
+    },
+    "validationStatus": "pending"
+  }
+]

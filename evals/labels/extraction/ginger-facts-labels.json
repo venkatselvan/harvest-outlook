@@ -1,0 +1,298 @@
+{
+  "schemaVersion": "1.0",
+  "labelSet": "ginger-facts",
+  "labeller": "claude-opus-5-5 (harvest-opus-builder, task T05b) - SAME MODEL THAT EXTRACTED THE FACTS",
+  "independentHumanReview": "pending",
+  "labelledAt": "2026-10-30",
+  "method": "Each claim read against the full extracted text of its cited page (pypdf, extractor version in cases file). Labels: correct | incorrect (claim not supported by the cited page) | unsupported. firstPassLabel is the label before the two defective claims were corrected.",
+  "labels": [
+    {
+      "evidenceId": "ev.ginger.iisr2025.p3.karnataka-major-producer",
+      "firstPassLabel": "correct",
+      "label": "correct",
+      "notes": "Claim matches the excerpt and the cited page."
+    },
+    {
+      "evidenceId": "ev.ginger.iisr2025.p3.altitude-and-water-regime",
+      "firstPassLabel": "correct",
+      "label": "correct",
+      "notes": "Claim matches the excerpt and the cited page."
+    },
+    {
+      "evidenceId": "ev.ginger.iisr2025.p3.rainfall-pattern",
+      "firstPassLabel": "correct",
+      "label": "correct",
+      "notes": "Claim matches the excerpt and the cited page."
+    },
+    {
+      "evidenceId": "ev.ginger.iisr2025.p3.soil-well-drained",
+      "firstPassLabel": "correct",
+      "label": "correct",
+      "notes": "Claim matches the excerpt and the cited page."
+    },
+    {
+      "evidenceId": "ev.ginger.iisr2025.p4.variety-varada",
+      "firstPassLabel": "correct",
+      "label": "correct",
+      "notes": "Column meaning taken from the Table 1 header on the same page (yield t/ha, maturity days, dry recovery %). Variety release data, not a regional yield."
+    },
+    {
+      "evidenceId": "ev.ginger.iisr2025.p4.variety-surasa",
+      "firstPassLabel": "correct",
+      "label": "correct",
+      "notes": "Claim matches the excerpt and the cited page."
+    },
+    {
+      "evidenceId": "ev.ginger.iisr2025.p10.planting-season-west-coast",
+      "firstPassLabel": "correct",
+      "label": "correct",
+      "notes": "Claim matches the excerpt and the cited page."
+    },
+    {
+      "evidenceId": "ev.ginger.iisr2025.p10.planting-irrigated-early",
+      "firstPassLabel": "correct",
+      "label": "correct",
+      "notes": "Regional scope (West Coast) is inherited from the preceding sentence, not restated."
+    },
+    {
+      "evidenceId": "ev.ginger.iisr2025.p10.seed-piece",
+      "firstPassLabel": "correct",
+      "label": "correct",
+      "notes": "Claim matches the excerpt and the cited page."
+    },
+    {
+      "evidenceId": "ev.ginger.iisr2025.p10.seed-rate-kerala",
+      "firstPassLabel": "correct",
+      "label": "correct",
+      "notes": "Claim matches the excerpt and the cited page."
+    },
+    {
+      "evidenceId": "ev.ginger.iisr2025.p11.spacing",
+      "firstPassLabel": "incorrect",
+      "label": "correct",
+      "notes": "FIRST PASS incorrect: claim stated the along-row spacing, which is on page 10, not the cited page 11. Claim corrected to the page-11 content only."
+    },
+    {
+      "evidenceId": "ev.ginger.iisr2025.p12.fertilizer-karnataka-row",
+      "firstPassLabel": "correct",
+      "label": "correct",
+      "notes": "Claim matches the excerpt and the cited page."
+    },
+    {
+      "evidenceId": "ev.ginger.iisr2025.p14.mulching-purpose",
+      "firstPassLabel": "correct",
+      "label": "correct",
+      "notes": "Claim matches the excerpt and the cited page."
+    },
+    {
+      "evidenceId": "ev.ginger.iisr2025.p14.mulching-repeat",
+      "firstPassLabel": "correct",
+      "label": "correct",
+      "notes": "Subject 'Green leaf mulching' precedes the excerpt on the same page with an extraction artifact ('m ulching'); claim supported by the cited page."
+    },
+    {
+      "evidenceId": "ev.ginger.iisr2025.p14.rainfed-vs-irrigated",
+      "firstPassLabel": "correct",
+      "label": "correct",
+      "notes": "Claim matches the excerpt and the cited page."
+    },
+    {
+      "evidenceId": "ev.ginger.iisr2025.p14.water-requirement",
+      "firstPassLabel": "correct",
+      "label": "correct",
+      "notes": "Claim matches the excerpt and the cited page."
+    },
+    {
+      "evidenceId": "ev.ginger.iisr2025.p14.critical-stages",
+      "firstPassLabel": "correct",
+      "label": "correct",
+      "notes": "Claim matches the excerpt and the cited page."
+    },
+    {
+      "evidenceId": "ev.ginger.iisr2025.p14.irrigation-interval",
+      "firstPassLabel": "correct",
+      "label": "correct",
+      "notes": "Claim matches the excerpt and the cited page."
+    },
+    {
+      "evidenceId": "ev.ginger.iisr2025.p15.drainage-channels",
+      "firstPassLabel": "correct",
+      "label": "correct",
+      "notes": "Claim matches the excerpt and the cited page."
+    },
+    {
+      "evidenceId": "ev.ginger.iisr2025.p15.karnataka-cropping",
+      "firstPassLabel": "correct",
+      "label": "correct",
+      "notes": "Claim matches the excerpt and the cited page."
+    },
+    {
+      "evidenceId": "ev.ginger.iisr2025.p15.rotation-wilt-hosts",
+      "firstPassLabel": "correct",
+      "label": "correct",
+      "notes": "Claim matches the excerpt and the cited page."
+    },
+    {
+      "evidenceId": "ev.ginger.iisr2025.p15.soft-rot-destructive",
+      "firstPassLabel": "correct",
+      "label": "correct",
+      "notes": "Claim matches the excerpt and the cited page."
+    },
+    {
+      "evidenceId": "ev.ginger.iisr2025.p15.soft-rot-monsoon-moisture",
+      "firstPassLabel": "correct",
+      "label": "correct",
+      "notes": "Claim matches the excerpt and the cited page."
+    },
+    {
+      "evidenceId": "ev.ginger.iisr2025.p16.soft-rot-foliar-symptom",
+      "firstPassLabel": "correct",
+      "label": "correct",
+      "notes": "Claim matches the excerpt and the cited page."
+    },
+    {
+      "evidenceId": "ev.ginger.iisr2025.p16.soft-rot-drainage",
+      "firstPassLabel": "correct",
+      "label": "correct",
+      "notes": "Claim matches the excerpt and the cited page."
+    },
+    {
+      "evidenceId": "ev.ginger.iisr2025.p18.bacterial-wilt",
+      "firstPassLabel": "correct",
+      "label": "correct",
+      "notes": "Claim matches the excerpt and the cited page."
+    },
+    {
+      "evidenceId": "ev.ginger.iisr2025.p21.shoot-borer-symptom",
+      "firstPassLabel": "correct",
+      "label": "correct",
+      "notes": "Claim matches the excerpt and the cited page."
+    },
+    {
+      "evidenceId": "ev.ginger.iisr2025.p25.maturity-days",
+      "firstPassLabel": "correct",
+      "label": "correct",
+      "notes": "Claim matches the excerpt and the cited page."
+    },
+    {
+      "evidenceId": "ev.ginger.iisr2025.p25.harvest-indicator-dry",
+      "firstPassLabel": "correct",
+      "label": "correct",
+      "notes": "Claim matches the excerpt and the cited page."
+    },
+    {
+      "evidenceId": "ev.ginger.iisr2025.p25.irrigation-stop",
+      "firstPassLabel": "correct",
+      "label": "correct",
+      "notes": "Claim matches the excerpt and the cited page."
+    },
+    {
+      "evidenceId": "ev.ginger.iisr2025.p25.late-harvest",
+      "firstPassLabel": "correct",
+      "label": "correct",
+      "notes": "Claim matches the excerpt and the cited page."
+    },
+    {
+      "evidenceId": "ev.ginger.iisr2025.p25.end-use-vegetable",
+      "firstPassLabel": "correct",
+      "label": "correct",
+      "notes": "Claim matches the excerpt and the cited page."
+    },
+    {
+      "evidenceId": "ev.ginger.iisr2025.p25.end-use-dry",
+      "firstPassLabel": "correct",
+      "label": "correct",
+      "notes": "Claim matches the excerpt and the cited page."
+    },
+    {
+      "evidenceId": "ev.ginger.iisr2025.p26.dry-recovery",
+      "firstPassLabel": "correct",
+      "label": "correct",
+      "notes": "Claim matches the excerpt and the cited page."
+    },
+    {
+      "evidenceId": "ev.ginger.iisr2025.p29.chemical-disclaimer",
+      "firstPassLabel": "incorrect",
+      "label": "correct",
+      "notes": "FIRST PASS incorrect: claim mixed a product policy ('no chemical prescriptions are carried into the product') into the source claim. Claim corrected to source wording only."
+    },
+    {
+      "evidenceId": "ev.ginger.crida2011.p1.district-identity",
+      "firstPassLabel": "correct",
+      "label": "correct",
+      "notes": "Claim matches the excerpt and the cited page."
+    },
+    {
+      "evidenceId": "ev.ginger.crida2011.p1.altitude",
+      "firstPassLabel": "correct",
+      "label": "correct",
+      "notes": "Claim matches the excerpt and the cited page."
+    },
+    {
+      "evidenceId": "ev.ginger.crida2011.p1.rainfall-kharif",
+      "firstPassLabel": "correct",
+      "label": "correct",
+      "notes": "Claim matches the excerpt and the cited page."
+    },
+    {
+      "evidenceId": "ev.ginger.crida2011.p1.rainfall-summer",
+      "firstPassLabel": "correct",
+      "label": "correct",
+      "notes": "Claim matches the excerpt and the cited page."
+    },
+    {
+      "evidenceId": "ev.ginger.crida2011.p1.rainfall-annual",
+      "firstPassLabel": "correct",
+      "label": "correct",
+      "notes": "Claim matches the excerpt and the cited page."
+    },
+    {
+      "evidenceId": "ev.ginger.crida2011.p2.soils-poorly-drained",
+      "firstPassLabel": "correct",
+      "label": "correct",
+      "notes": "Unit ('000 ha) from the table header on the same page."
+    },
+    {
+      "evidenceId": "ev.ginger.crida2011.p3.irrigation-area",
+      "firstPassLabel": "correct",
+      "label": "correct",
+      "notes": "Claim matches the excerpt and the cited page."
+    },
+    {
+      "evidenceId": "ev.ginger.crida2011.p6.horticulture-area-unit",
+      "firstPassLabel": "correct",
+      "label": "correct",
+      "notes": "Claim matches the excerpt and the cited page."
+    },
+    {
+      "evidenceId": "ev.ginger.crida2011.p7.ginger-area",
+      "firstPassLabel": "correct",
+      "label": "correct",
+      "notes": "Unit ('000 ha) is in the table header on page 6 (separate record). 'Largest spice' compares the four listed spices only."
+    },
+    {
+      "evidenceId": "ev.ginger.crida2011.p9.sowing-window-field-crops",
+      "firstPassLabel": "correct",
+      "label": "correct",
+      "notes": "Claim matches the excerpt and the cited page."
+    },
+    {
+      "evidenceId": "ev.ginger.crida2011.p9.drought-2003",
+      "firstPassLabel": "correct",
+      "label": "correct",
+      "notes": "Regular vs Occasional column of the tick is not recoverable from text; claim does not assert which."
+    },
+    {
+      "evidenceId": "ev.ginger.crida2011.p10.rain-onset",
+      "firstPassLabel": "correct",
+      "label": "correct",
+      "notes": "Claim matches the excerpt and the cited page."
+    },
+    {
+      "evidenceId": "ev.ginger.crida2011.p29.waterlogging-contingency",
+      "firstPassLabel": "correct",
+      "label": "correct",
+      "notes": "The 'ginger is not named' part is a document-wide negative claim, checked by text search of all 42 extracted pages (ginger occurs only on page 7)."
+    }
+  ]
+}

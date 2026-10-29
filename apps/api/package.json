@@ -10,7 +10,9 @@
     "worker": "tsx src/worker/main.ts",
     "db:migrate": "tsx src/db/migrate.ts",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "smoke:openmeteo": "tsx src/ingest/smoke-openmeteo.ts",
+    "probe:datagovin": "tsx ../../scripts/seed/probe-datagovin.ts"
   },
   "dependencies": {
     "@fastify/cookie": "11.1.5",

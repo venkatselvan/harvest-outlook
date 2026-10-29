@@ -1,0 +1,100 @@
+[
+  {
+    "schemaVersion": "1.0",
+    "id": "cat.chickpea.sow",
+    "mode": "live",
+    "sourceUrl": "https://agritech.tnau.ac.in/agriculture/agri_seasonandvarieties_bengalgram.html",
+    "publisher": "Tamil Nadu Agricultural University (TNAU Agritech Portal)",
+    "documentTitle": "Bengal gram: season and varieties",
+    "documentVersion": null,
+    "contentHash": "1b70b7cb8f5e7c34da841541afd2cd5ebb158d42b6b75f3737be7848bd2f3cdf",
+    "locator": {
+      "section": "Season and varieties"
+    },
+    "content": {
+      "kind": "excerpt",
+      "text": "November (Winter season) Rainfed Vellore, Tiruvannamalai",
+      "language": "en"
+    },
+    "publishedAt": null,
+    "availability": {
+      "effectiveAvailableAt": "2026-10-29T20:00:48.392Z",
+      "basis": "first_observed"
+    },
+    "ingestedAt": "2026-10-29T20:00:48.392Z",
+    "revisedAt": null,
+    "geography": {
+      "level": "state",
+      "ids": [
+        "IN-TN"
+      ]
+    },
+    "cropIds": [
+      "chickpea"
+    ],
+    "productIds": [],
+    "units": [],
+    "sourceUnits": [],
+    "licence": {
+      "licence": "Public web page; publisher copyright. Excerpt (<=60 words) kept for provenance, full page not redistributed.",
+      "accessStatus": "open",
+      "redistributable": false,
+      "attribution": "Tamil Nadu Agricultural University (TNAU Agritech Portal)"
+    },
+    "extraction": {
+      "method": "manual",
+      "version": "catalogue-build-1",
+      "reviewedBy": "rule_check"
+    },
+    "validationStatus": "pending"
+  },
+  {
+    "schemaVersion": "1.0",
+    "id": "cat.chickpea.dur",
+    "mode": "live",
+    "sourceUrl": "https://agritech.tnau.ac.in/agriculture/agri_seasonandvarieties_bengalgram.html",
+    "publisher": "Tamil Nadu Agricultural University (TNAU Agritech Portal)",
+    "documentTitle": "Bengal gram: season and varieties",
+    "documentVersion": null,
+    "contentHash": "1b70b7cb8f5e7c34da841541afd2cd5ebb158d42b6b75f3737be7848bd2f3cdf",
+    "locator": {
+      "section": "Description of varieties"
+    },
+    "content": {
+      "kind": "excerpt",
+      "text": "Duration (days) | 85 | Grain yield (Kg/ha) | | Rainfed | 1150",
+      "language": "en"
+    },
+    "publishedAt": null,
+    "availability": {
+      "effectiveAvailableAt": "2026-10-29T20:00:48.392Z",
+      "basis": "first_observed"
+    },
+    "ingestedAt": "2026-10-29T20:00:48.392Z",
+    "revisedAt": null,
+    "geography": {
+      "level": "state",
+      "ids": [
+        "IN-TN"
+      ]
+    },
+    "cropIds": [
+      "chickpea"
+    ],
+    "productIds": [],
+    "units": [],
+    "sourceUnits": [],
+    "licence": {
+      "licence": "Public web page; publisher copyright. Excerpt (<=60 words) kept for provenance, full page not redistributed.",
+      "accessStatus": "open",
+      "redistributable": false,
+      "attribution": "Tamil Nadu Agricultural University (TNAU Agritech Portal)"
+    },
+    "extraction": {
+      "method": "manual",
+      "version": "catalogue-build-1",
+      "reviewedBy": "rule_check"
+    },
+    "validationStatus": "pending"
+  }
+]

@@ -1,0 +1,4932 @@
+{
+  "schemaVersion": "1.0",
+  "generatedBy": "scripts/catalogue/build.ts",
+  "assessedAt": "2026-10-29T20:17:16.586Z",
+  "records": [
+    {
+      "schemaVersion": "1.0",
+      "mode": "live",
+      "cropId": "paddy",
+      "assessedAt": "2026-10-29T20:17:16.586Z",
+      "reviewBy": "2027-04-30",
+      "expiresAt": null,
+      "modelVersions": [],
+      "id": "cov.screening.paddy.TN.kuruvai",
+      "capability": "screening_supported",
+      "productId": null,
+      "region": {
+        "level": "state",
+        "ids": [
+          "IN-TN"
+        ]
+      },
+      "season": "kharif",
+      "irrigation": "unspecified",
+      "marketId": null,
+      "horizonDays": null,
+      "supportStatus": "unknown",
+      "sourceVersions": [
+        "sha256:830a4c1baa0b15f3",
+        "sha256:dcbd17e33c8decf6"
+      ],
+      "measuredQuality": null,
+      "missingReason": "fewer_than_two_sourced_requirements_in_context"
+    },
+    {
+      "schemaVersion": "1.0",
+      "mode": "live",
+      "cropId": "paddy",
+      "assessedAt": "2026-10-29T20:17:16.586Z",
+      "reviewBy": "2027-04-30",
+      "expiresAt": null,
+      "modelVersions": [],
+      "id": "cov.screening.paddy.TN.samba",
+      "capability": "screening_supported",
+      "productId": null,
+      "region": {
+        "level": "state",
+        "ids": [
+          "IN-TN"
+        ]
+      },
+      "season": "kharif",
+      "irrigation": "unspecified",
+      "marketId": null,
+      "horizonDays": null,
+      "supportStatus": "unknown",
+      "sourceVersions": [
+        "sha256:830a4c1baa0b15f3",
+        "sha256:dcbd17e33c8decf6"
+      ],
+      "measuredQuality": null,
+      "missingReason": "fewer_than_two_sourced_requirements_in_context"
+    },
+    {
+      "schemaVersion": "1.0",
+      "mode": "live",
+      "cropId": "paddy",
+      "assessedAt": "2026-10-29T20:17:16.586Z",
+      "reviewBy": "2027-04-30",
+      "expiresAt": null,
+      "modelVersions": [],
+      "id": "cov.screening.paddy.TN.thaladi",
+      "capability": "screening_supported",
+      "productId": null,
+      "region": {
+        "level": "state",
+        "ids": [
+          "IN-TN"
+        ]
+      },
+      "season": "rabi",
+      "irrigation": "unspecified",
+      "marketId": null,
+      "horizonDays": null,
+      "supportStatus": "unknown",
+      "sourceVersions": [
+        "sha256:830a4c1baa0b15f3",
+        "sha256:dcbd17e33c8decf6"
+      ],
+      "measuredQuality": null,
+      "missingReason": "fewer_than_two_sourced_requirements_in_context"
+    },
+    {
+      "schemaVersion": "1.0",
+      "mode": "live",
+      "cropId": "paddy",
+      "assessedAt": "2026-10-29T20:17:16.586Z",
+      "reviewBy": "2027-04-30",
+      "expiresAt": null,
+      "modelVersions": [],
+      "id": "cov.screening.paddy.TN.navarai",
+      "capability": "screening_supported",
+      "productId": null,
+      "region": {
+        "level": "state",
+        "ids": [
+          "IN-TN"
+        ]
+      },
+      "season": "rabi",
+      "irrigation": "unspecified",
+      "marketId": null,
+      "horizonDays": null,
+      "supportStatus": "unknown",
+      "sourceVersions": [
+        "sha256:830a4c1baa0b15f3",
+        "sha256:dcbd17e33c8decf6"
+      ],
+      "measuredQuality": null,
+      "missingReason": "fewer_than_two_sourced_requirements_in_context"
+    },
+    {
+      "schemaVersion": "1.0",
+      "mode": "live",
+      "cropId": "paddy",
+      "assessedAt": "2026-10-29T20:17:16.586Z",
+      "reviewBy": "2027-04-30",
+      "expiresAt": null,
+      "modelVersions": [],
+      "id": "cov.screening.paddy.AS.sali",
+      "capability": "screening_supported",
+      "productId": null,
+      "region": {
+        "level": "state",
+        "ids": [
+          "IN-AS"
+        ]
+      },
+      "season": "kharif",
+      "irrigation": "unspecified",
+      "marketId": null,
+      "horizonDays": null,
+      "supportStatus": "partial",
+      "sourceVersions": [
+        "sha256:830a4c1baa0b15f3",
+        "sha256:dcbd17e33c8decf6"
+      ],
+      "measuredQuality": {
+        "approvedRules": 0,
+        "candidateRules": 0,
+        "labelledChecksPassed": 0,
+        "labelledChecksTotal": 0
+      },
+      "missingReason": "agronomy_sourced_rules_not_yet_encoded_or_labelled"
+    },
+    {
+      "schemaVersion": "1.0",
+      "mode": "live",
+      "cropId": "paddy",
+      "assessedAt": "2026-10-29T20:17:16.586Z",
+      "reviewBy": "2027-04-30",
+      "expiresAt": null,
+      "modelVersions": [],
+      "id": "cov.historical_reference_available.paddy-grain",
+      "capability": "historical_reference_available",
+      "productId": "paddy-grain",
+      "region": {
+        "level": "national",
+        "ids": [
+          "IN"
+        ]
+      },
+      "season": null,
+      "irrigation": null,
+      "marketId": null,
+      "horizonDays": null,
+      "supportStatus": "unsupported",
+      "sourceVersions": [],
+      "measuredQuality": null,
+      "missingReason": "price_access_key_gated"
+    },
+    {
+      "schemaVersion": "1.0",
+      "mode": "live",
+      "cropId": "paddy",
+      "assessedAt": "2026-10-29T20:17:16.586Z",
+      "reviewBy": "2027-04-30",
+      "expiresAt": null,
+      "modelVersions": [],
+      "id": "cov.forecast_evaluated.paddy-grain",
+      "capability": "forecast_evaluated",
+      "productId": "paddy-grain",
+      "region": {
+        "level": "national",
+        "ids": [
+          "IN"
+        ]
+      },
+      "season": null,
+      "irrigation": null,
+      "marketId": null,
+      "horizonDays": null,
+      "supportStatus": "unsupported",
+      "sourceVersions": [],
+      "measuredQuality": null,
+      "missingReason": "no_evaluated_model_and_no_price_history"
+    },
+    {
+      "schemaVersion": "1.0",
+      "mode": "live",
+      "cropId": "paddy",
+      "assessedAt": "2026-10-29T20:17:16.586Z",
+      "reviewBy": "2027-04-30",
+      "expiresAt": null,
+      "modelVersions": [],
+      "id": "cov.historical_reference_available.paddy-milled-rice",
+      "capability": "historical_reference_available",
+      "productId": "paddy-milled-rice",
+      "region": {
+        "level": "national",
+        "ids": [
+          "IN"
+        ]
+      },
+      "season": null,
+      "irrigation": null,
+      "marketId": null,
+      "horizonDays": null,
+      "supportStatus": "unsupported",
+      "sourceVersions": [],
+      "measuredQuality": null,
+      "missingReason": "price_access_key_gated"
+    },
+    {
+      "schemaVersion": "1.0",
+      "mode": "live",
+      "cropId": "paddy",
+      "assessedAt": "2026-10-29T20:17:16.586Z",
+      "reviewBy": "2027-04-30",
+      "expiresAt": null,
+      "modelVersions": [],
+      "id": "cov.forecast_evaluated.paddy-milled-rice",
+      "capability": "forecast_evaluated",
+      "productId": "paddy-milled-rice",
+      "region": {
+        "level": "national",
+        "ids": [
+          "IN"
+        ]
+      },
+      "season": null,
+      "irrigation": null,
+      "marketId": null,
+      "horizonDays": null,
+      "supportStatus": "unsupported",
+      "sourceVersions": [],
+      "measuredQuality": null,
+      "missingReason": "no_evaluated_model_and_no_price_history"
+    },
+    {
+      "schemaVersion": "1.0",
+      "mode": "live",
+      "cropId": "paddy",
+      "assessedAt": "2026-10-29T20:17:16.586Z",
+      "reviewBy": "2027-04-30",
+      "expiresAt": null,
+      "modelVersions": [],
+      "id": "cov.visual_journey_supported.paddy",
+      "capability": "visual_journey_supported",
+      "productId": null,
+      "region": {
+        "level": "national",
+        "ids": [
+          "IN"
+        ]
+      },
+      "season": null,
+      "irrigation": null,
+      "marketId": null,
+      "horizonDays": null,
+      "supportStatus": "unsupported",
+      "sourceVersions": [],
+      "measuredQuality": null,
+      "missingReason": "no_sourced_stage_definitions_or_assets"
+    },
+    {
+      "schemaVersion": "1.0",
+      "mode": "live",
+      "cropId": "paddy",
+      "assessedAt": "2026-10-29T20:17:16.586Z",
+      "reviewBy": "2027-04-30",
+      "expiresAt": null,
+      "modelVersions": [],
+      "id": "cov.observation_interpretation_experimental.paddy",
+      "capability": "observation_interpretation_experimental",
+      "productId": null,
+      "region": {
+        "level": "national",
+        "ids": [
+          "IN"
+        ]
+      },
+      "season": null,
+      "irrigation": null,
+      "marketId": null,
+      "horizonDays": null,
+      "supportStatus": "unsupported",
+      "sourceVersions": [],
+      "measuredQuality": null,
+      "missingReason": "pending_evaluation"
+    },
+    {
+      "schemaVersion": "1.0",
+      "mode": "live",
+      "cropId": "wheat",
+      "assessedAt": "2026-10-29T20:17:16.586Z",
+      "reviewBy": "2027-04-30",
+      "expiresAt": null,
+      "modelVersions": [],
+      "id": "cov.screening.wheat.AS.rabi",
+      "capability": "screening_supported",
+      "productId": null,
+      "region": {
+        "level": "state",
+        "ids": [
+          "IN-AS"
+        ]
+      },
+      "season": "rabi",
+      "irrigation": "irrigated",
+      "marketId": null,
+      "horizonDays": null,
+      "supportStatus": "partial",
+      "sourceVersions": [
+        "sha256:3d659e4b599dfe3e"
+      ],
+      "measuredQuality": {
+        "approvedRules": 0,
+        "candidateRules": 0,
+        "labelledChecksPassed": 0,
+        "labelledChecksTotal": 0
+      },
+      "missingReason": "agronomy_sourced_rules_not_yet_encoded_or_labelled"
+    },
+    {
+      "schemaVersion": "1.0",
+      "mode": "live",
+      "cropId": "wheat",
+      "assessedAt": "2026-10-29T20:17:16.586Z",
+      "reviewBy": "2027-04-30",
+      "expiresAt": null,
+      "modelVersions": [],
+      "id": "cov.historical_reference_available.wheat-grain",
+      "capability": "historical_reference_available",
+      "productId": "wheat-grain",
+      "region": {
+        "level": "national",
+        "ids": [
+          "IN"
+        ]
+      },
+      "season": null,
+      "irrigation": null,
+      "marketId": null,
+      "horizonDays": null,
+      "supportStatus": "unsupported",
+      "sourceVersions": [],
+      "measuredQuality": null,
+      "missingReason": "price_access_key_gated"
+    },
+    {
+      "schemaVersion": "1.0",
+      "mode": "live",
+      "cropId": "wheat",
+      "assessedAt": "2026-10-29T20:17:16.586Z",
+      "reviewBy": "2027-04-30",
+      "expiresAt": null,
+      "modelVersions": [],
+      "id": "cov.forecast_evaluated.wheat-grain",
+      "capability": "forecast_evaluated",
+      "productId": "wheat-grain",
+      "region": {
+        "level": "national",
+        "ids": [
+          "IN"
+        ]
+      },
+      "season": null,
+      "irrigation": null,
+      "marketId": null,
+      "horizonDays": null,
+      "supportStatus": "unsupported",
+      "sourceVersions": [],
+      "measuredQuality": null,
+      "missingReason": "no_evaluated_model_and_no_price_history"
+    },
+    {
+      "schemaVersion": "1.0",
+      "mode": "live",
+      "cropId": "wheat",
+      "assessedAt": "2026-10-29T20:17:16.586Z",
+      "reviewBy": "2027-04-30",
+      "expiresAt": null,
+      "modelVersions": [],
+      "id": "cov.visual_journey_supported.wheat",
+      "capability": "visual_journey_supported",
+      "productId": null,
+      "region": {
+        "level": "national",
+        "ids": [
+          "IN"
+        ]
+      },
+      "season": null,
+      "irrigation": null,
+      "marketId": null,
+      "horizonDays": null,
+      "supportStatus": "unsupported",
+      "sourceVersions": [],
+      "measuredQuality": null,
+      "missingReason": "no_sourced_stage_definitions_or_assets"
+    },
+    {
+      "schemaVersion": "1.0",
+      "mode": "live",
+      "cropId": "wheat",
+      "assessedAt": "2026-10-29T20:17:16.586Z",
+      "reviewBy": "2027-04-30",
+      "expiresAt": null,
+      "modelVersions": [],
+      "id": "cov.observation_interpretation_experimental.wheat",
+      "capability": "observation_interpretation_experimental",
+      "productId": null,
+      "region": {
+        "level": "national",
+        "ids": [
+          "IN"
+        ]
+      },
+      "season": null,
+      "irrigation": null,
+      "marketId": null,
+      "horizonDays": null,
+      "supportStatus": "unsupported",
+      "sourceVersions": [],
+      "measuredQuality": null,
+      "missingReason": "pending_evaluation"
+    },
+    {
+      "schemaVersion": "1.0",
+      "mode": "live",
+      "cropId": "maize",
+      "assessedAt": "2026-10-29T20:17:16.586Z",
+      "reviewBy": "2027-04-30",
+      "expiresAt": null,
+      "modelVersions": [],
+      "id": "cov.screening.maize.TN.adipattam",
+      "capability": "screening_supported",
+      "productId": null,
+      "region": {
+        "level": "state",
+        "ids": [
+          "IN-TN"
+        ]
+      },
+      "season": "kharif",
+      "irrigation": "unspecified",
+      "marketId": null,
+      "horizonDays": null,
+      "supportStatus": "unknown",
+      "sourceVersions": [
+        "sha256:7cd2a90235e40bad",
+        "sha256:bb0d5616b8c31729",
+        "sha256:05766e77a3361bc4"
+      ],
+      "measuredQuality": null,
+      "missingReason": "fewer_than_two_sourced_requirements_in_context"
+    },
+    {
+      "schemaVersion": "1.0",
+      "mode": "live",
+      "cropId": "maize",
+      "assessedAt": "2026-10-29T20:17:16.586Z",
+      "reviewBy": "2027-04-30",
+      "expiresAt": null,
+      "modelVersions": [],
+      "id": "cov.screening.maize.AS.spring",
+      "capability": "screening_supported",
+      "productId": null,
+      "region": {
+        "level": "state",
+        "ids": [
+          "IN-AS"
+        ]
+      },
+      "season": "zaid",
+      "irrigation": "rainfed",
+      "marketId": null,
+      "horizonDays": null,
+      "supportStatus": "partial",
+      "sourceVersions": [
+        "sha256:7cd2a90235e40bad",
+        "sha256:bb0d5616b8c31729",
+        "sha256:05766e77a3361bc4"
+      ],
+      "measuredQuality": {
+        "approvedRules": 0,
+        "candidateRules": 0,
+        "labelledChecksPassed": 0,
+        "labelledChecksTotal": 0
+      },
+      "missingReason": "agronomy_sourced_rules_not_yet_encoded_or_labelled"
+    },
+    {
+      "schemaVersion": "1.0",
+      "mode": "live",
+      "cropId": "maize",
+      "assessedAt": "2026-10-29T20:17:16.586Z",
+      "reviewBy": "2027-04-30",
+      "expiresAt": null,
+      "modelVersions": [],
+      "id": "cov.screening.maize.AS.rabi",
+      "capability": "screening_supported",
+      "productId": null,
+      "region": {
+        "level": "state",
+        "ids": [
+          "IN-AS"
+        ]
+      },
+      "season": "rabi",
+      "irrigation": "irrigated",
+      "marketId": null,
+      "horizonDays": null,
+      "supportStatus": "partial",
+      "sourceVersions": [
+        "sha256:7cd2a90235e40bad",
+        "sha256:bb0d5616b8c31729",
+        "sha256:05766e77a3361bc4"
+      ],
+      "measuredQuality": {
+        "approvedRules": 0,
+        "candidateRules": 0,
+        "labelledChecksPassed": 0,
+        "labelledChecksTotal": 0
+      },
+      "missingReason": "agronomy_sourced_rules_not_yet_encoded_or_labelled"
+    },
+    {
+      "schemaVersion": "1.0",
+      "mode": "live",
+      "cropId": "maize",
+      "assessedAt": "2026-10-29T20:17:16.586Z",
+      "reviewBy": "2027-04-30",
+      "expiresAt": null,
+      "modelVersions": [],
+      "id": "cov.historical_reference_available.maize-grain",
+      "capability": "historical_reference_available",
+      "productId": "maize-grain",
+      "region": {
+        "level": "national",
+        "ids": [
+          "IN"
+        ]
+      },
+      "season": null,
+      "irrigation": null,
+      "marketId": null,
+      "horizonDays": null,
+      "supportStatus": "unsupported",
+      "sourceVersions": [],
+      "measuredQuality": null,
+      "missingReason": "price_access_key_gated"
+    },
+    {
+      "schemaVersion": "1.0",
+      "mode": "live",
+      "cropId": "maize",
+      "assessedAt": "2026-10-29T20:17:16.586Z",
+      "reviewBy": "2027-04-30",
+      "expiresAt": null,
+      "modelVersions": [],
+      "id": "cov.forecast_evaluated.maize-grain",
+      "capability": "forecast_evaluated",
+      "productId": "maize-grain",
+      "region": {
+        "level": "national",
+        "ids": [
+          "IN"
+        ]
+      },
+      "season": null,
+      "irrigation": null,
+      "marketId": null,
+      "horizonDays": null,
+      "supportStatus": "unsupported",
+      "sourceVersions": [],
+      "measuredQuality": null,
+      "missingReason": "no_evaluated_model_and_no_price_history"
+    },
+    {
+      "schemaVersion": "1.0",
+      "mode": "live",
+      "cropId": "maize",
+      "assessedAt": "2026-10-29T20:17:16.586Z",
+      "reviewBy": "2027-04-30",
+      "expiresAt": null,
+      "modelVersions": [],
+      "id": "cov.visual_journey_supported.maize",
+      "capability": "visual_journey_supported",
+      "productId": null,
+      "region": {
+        "level": "national",
+        "ids": [
+          "IN"
+        ]
+      },
+      "season": null,
+      "irrigation": null,
+      "marketId": null,
+      "horizonDays": null,
+      "supportStatus": "unsupported",
+      "sourceVersions": [],
+      "measuredQuality": null,
+      "missingReason": "no_sourced_stage_definitions_or_assets"
+    },
+    {
+      "schemaVersion": "1.0",
+      "mode": "live",
+      "cropId": "maize",
+      "assessedAt": "2026-10-29T20:17:16.586Z",
+      "reviewBy": "2027-04-30",
+      "expiresAt": null,
+      "modelVersions": [],
+      "id": "cov.observation_interpretation_experimental.maize",
+      "capability": "observation_interpretation_experimental",
+      "productId": null,
+      "region": {
+        "level": "national",
+        "ids": [
+          "IN"
+        ]
+      },
+      "season": null,
+      "irrigation": null,
+      "marketId": null,
+      "horizonDays": null,
+      "supportStatus": "unsupported",
+      "sourceVersions": [],
+      "measuredQuality": null,
+      "missingReason": "pending_evaluation"
+    },
+    {
+      "schemaVersion": "1.0",
+      "mode": "live",
+      "cropId": "sorghum",
+      "assessedAt": "2026-10-29T20:17:16.586Z",
+      "reviewBy": "2027-04-30",
+      "expiresAt": null,
+      "modelVersions": [],
+      "id": "cov.screening.sorghum.TN.rainfed",
+      "capability": "screening_supported",
+      "productId": null,
+      "region": {
+        "level": "state",
+        "ids": [
+          "IN-TN"
+        ]
+      },
+      "season": "kharif",
+      "irrigation": "rainfed",
+      "marketId": null,
+      "horizonDays": null,
+      "supportStatus": "partial",
+      "sourceVersions": [
+        "sha256:5b80dc603165d4f3",
+        "sha256:455c993561cb6709"
+      ],
+      "measuredQuality": {
+        "approvedRules": 0,
+        "candidateRules": 0,
+        "labelledChecksPassed": 0,
+        "labelledChecksTotal": 0
+      },
+      "missingReason": "agronomy_sourced_rules_not_yet_encoded_or_labelled"
+    },
+    {
+      "schemaVersion": "1.0",
+      "mode": "live",
+      "cropId": "sorghum",
+      "assessedAt": "2026-10-29T20:17:16.586Z",
+      "reviewBy": "2027-04-30",
+      "expiresAt": null,
+      "modelVersions": [],
+      "id": "cov.screening.sorghum.TN.irrigated",
+      "capability": "screening_supported",
+      "productId": null,
+      "region": {
+        "level": "state",
+        "ids": [
+          "IN-TN"
+        ]
+      },
+      "season": "zaid",
+      "irrigation": "irrigated",
+      "marketId": null,
+      "horizonDays": null,
+      "supportStatus": "partial",
+      "sourceVersions": [
+        "sha256:5b80dc603165d4f3",
+        "sha256:455c993561cb6709"
+      ],
+      "measuredQuality": {
+        "approvedRules": 0,
+        "candidateRules": 0,
+        "labelledChecksPassed": 0,
+        "labelledChecksTotal": 0
+      },
+      "missingReason": "agronomy_sourced_rules_not_yet_encoded_or_labelled"
+    },
+    {
+      "schemaVersion": "1.0",
+      "mode": "live",
+      "cropId": "sorghum",
+      "assessedAt": "2026-10-29T20:17:16.586Z",
+      "reviewBy": "2027-04-30",
+      "expiresAt": null,
+      "modelVersions": [],
+      "id": "cov.screening.sorghum.IN.kharif",
+      "capability": "screening_supported",
+      "productId": null,
+      "region": {
+        "level": "national",
+        "ids": [
+          "IN"
+        ]
+      },
+      "season": "kharif",
+      "irrigation": "unspecified",
+      "marketId": null,
+      "horizonDays": null,
+      "supportStatus": "unknown",
+      "sourceVersions": [
+        "sha256:5b80dc603165d4f3",
+        "sha256:455c993561cb6709"
+      ],
+      "measuredQuality": null,
+      "missingReason": "fewer_than_two_sourced_requirements_in_context"
+    },
+    {
+      "schemaVersion": "1.0",
+      "mode": "live",
+      "cropId": "sorghum",
+      "assessedAt": "2026-10-29T20:17:16.586Z",
+      "reviewBy": "2027-04-30",
+      "expiresAt": null,
+      "modelVersions": [],
+      "id": "cov.historical_reference_available.sorghum-grain",
+      "capability": "historical_reference_available",
+      "productId": "sorghum-grain",
+      "region": {
+        "level": "national",
+        "ids": [
+          "IN"
+        ]
+      },
+      "season": null,
+      "irrigation": null,
+      "marketId": null,
+      "horizonDays": null,
+      "supportStatus": "unsupported",
+      "sourceVersions": [],
+      "measuredQuality": null,
+      "missingReason": "price_access_key_gated"
+    },
+    {
+      "schemaVersion": "1.0",
+      "mode": "live",
+      "cropId": "sorghum",
+      "assessedAt": "2026-10-29T20:17:16.586Z",
+      "reviewBy": "2027-04-30",
+      "expiresAt": null,
+      "modelVersions": [],
+      "id": "cov.forecast_evaluated.sorghum-grain",
+      "capability": "forecast_evaluated",
+      "productId": "sorghum-grain",
+      "region": {
+        "level": "national",
+        "ids": [
+          "IN"
+        ]
+      },
+      "season": null,
+      "irrigation": null,
+      "marketId": null,
+      "horizonDays": null,
+      "supportStatus": "unsupported",
+      "sourceVersions": [],
+      "measuredQuality": null,
+      "missingReason": "no_evaluated_model_and_no_price_history"
+    },
+    {
+      "schemaVersion": "1.0",
+      "mode": "live",
+      "cropId": "sorghum",
+      "assessedAt": "2026-10-29T20:17:16.586Z",
+      "reviewBy": "2027-04-30",
+      "expiresAt": null,
+      "modelVersions": [],
+      "id": "cov.visual_journey_supported.sorghum",
+      "capability": "visual_journey_supported",
+      "productId": null,
+      "region": {
+        "level": "national",
+        "ids": [
+          "IN"
+        ]
+      },
+      "season": null,
+      "irrigation": null,
+      "marketId": null,
+      "horizonDays": null,
+      "supportStatus": "unsupported",
+      "sourceVersions": [],
+      "measuredQuality": null,
+      "missingReason": "no_sourced_stage_definitions_or_assets"
+    },
+    {
+      "schemaVersion": "1.0",
+      "mode": "live",
+      "cropId": "sorghum",
+      "assessedAt": "2026-10-29T20:17:16.586Z",
+      "reviewBy": "2027-04-30",
+      "expiresAt": null,
+      "modelVersions": [],
+      "id": "cov.observation_interpretation_experimental.sorghum",
+      "capability": "observation_interpretation_experimental",
+      "productId": null,
+      "region": {
+        "level": "national",
+        "ids": [
+          "IN"
+        ]
+      },
+      "season": null,
+      "irrigation": null,
+      "marketId": null,
+      "horizonDays": null,
+      "supportStatus": "unsupported",
+      "sourceVersions": [],
+      "measuredQuality": null,
+      "missingReason": "pending_evaluation"
+    },
+    {
+      "schemaVersion": "1.0",
+      "mode": "live",
+      "cropId": "pearl-millet",
+      "assessedAt": "2026-10-29T20:17:16.586Z",
+      "reviewBy": "2027-04-30",
+      "expiresAt": null,
+      "modelVersions": [],
+      "id": "cov.screening.pearl-millet.TN.irrigated",
+      "capability": "screening_supported",
+      "productId": null,
+      "region": {
+        "level": "state",
+        "ids": [
+          "IN-TN"
+        ]
+      },
+      "season": "zaid",
+      "irrigation": "irrigated",
+      "marketId": null,
+      "horizonDays": null,
+      "supportStatus": "partial",
+      "sourceVersions": [
+        "sha256:d5dce138123a53c1"
+      ],
+      "measuredQuality": {
+        "approvedRules": 0,
+        "candidateRules": 0,
+        "labelledChecksPassed": 0,
+        "labelledChecksTotal": 0
+      },
+      "missingReason": "agronomy_sourced_rules_not_yet_encoded_or_labelled"
+    },
+    {
+      "schemaVersion": "1.0",
+      "mode": "live",
+      "cropId": "pearl-millet",
+      "assessedAt": "2026-10-29T20:17:16.586Z",
+      "reviewBy": "2027-04-30",
+      "expiresAt": null,
+      "modelVersions": [],
+      "id": "cov.screening.pearl-millet.TN.rainfed",
+      "capability": "screening_supported",
+      "productId": null,
+      "region": {
+        "level": "state",
+        "ids": [
+          "IN-TN"
+        ]
+      },
+      "season": "kharif",
+      "irrigation": "rainfed",
+      "marketId": null,
+      "horizonDays": null,
+      "supportStatus": "partial",
+      "sourceVersions": [
+        "sha256:d5dce138123a53c1"
+      ],
+      "measuredQuality": {
+        "approvedRules": 0,
+        "candidateRules": 0,
+        "labelledChecksPassed": 0,
+        "labelledChecksTotal": 0
+      },
+      "missingReason": "agronomy_sourced_rules_not_yet_encoded_or_labelled"
+    },
+    {
+      "schemaVersion": "1.0",
+      "mode": "live",
+      "cropId": "pearl-millet",
+      "assessedAt": "2026-10-29T20:17:16.586Z",
+      "reviewBy": "2027-04-30",
+      "expiresAt": null,
+      "modelVersions": [],
+      "id": "cov.historical_reference_available.pearl-millet-grain",
+      "capability": "historical_reference_available",
+      "productId": "pearl-millet-grain",
+      "region": {
+        "level": "national",
+        "ids": [
+          "IN"
+        ]
+      },
+      "season": null,
+      "irrigation": null,
+      "marketId": null,
+      "horizonDays": null,
+      "supportStatus": "unsupported",
+      "sourceVersions": [],
+      "measuredQuality": null,
+      "missingReason": "price_access_key_gated"
+    },
+    {
+      "schemaVersion": "1.0",
+      "mode": "live",
+      "cropId": "pearl-millet",
+      "assessedAt": "2026-10-29T20:17:16.586Z",
+      "reviewBy": "2027-04-30",
+      "expiresAt": null,
+      "modelVersions": [],
+      "id": "cov.forecast_evaluated.pearl-millet-grain",
+      "capability": "forecast_evaluated",
+      "productId": "pearl-millet-grain",
+      "region": {
+        "level": "national",
+        "ids": [
+          "IN"
+        ]
+      },
+      "season": null,
+      "irrigation": null,
+      "marketId": null,
+      "horizonDays": null,
+      "supportStatus": "unsupported",
+      "sourceVersions": [],
+      "measuredQuality": null,
+      "missingReason": "no_evaluated_model_and_no_price_history"
+    },
+    {
+      "schemaVersion": "1.0",
+      "mode": "live",
+      "cropId": "pearl-millet",
+      "assessedAt": "2026-10-29T20:17:16.586Z",
+      "reviewBy": "2027-04-30",
+      "expiresAt": null,
+      "modelVersions": [],
+      "id": "cov.visual_journey_supported.pearl-millet",
+      "capability": "visual_journey_supported",
+      "productId": null,
+      "region": {
+        "level": "national",
+        "ids": [
+          "IN"
+        ]
+      },
+      "season": null,
+      "irrigation": null,
+      "marketId": null,
+      "horizonDays": null,
+      "supportStatus": "unsupported",
+      "sourceVersions": [],
+      "measuredQuality": null,
+      "missingReason": "no_sourced_stage_definitions_or_assets"
+    },
+    {
+      "schemaVersion": "1.0",
+      "mode": "live",
+      "cropId": "pearl-millet",
+      "assessedAt": "2026-10-29T20:17:16.586Z",
+      "reviewBy": "2027-04-30",
+      "expiresAt": null,
+      "modelVersions": [],
+      "id": "cov.observation_interpretation_experimental.pearl-millet",
+      "capability": "observation_interpretation_experimental",
+      "productId": null,
+      "region": {
+        "level": "national",
+        "ids": [
+          "IN"
+        ]
+      },
+      "season": null,
+      "irrigation": null,
+      "marketId": null,
+      "horizonDays": null,
+      "supportStatus": "unsupported",
+      "sourceVersions": [],
+      "measuredQuality": null,
+      "missingReason": "pending_evaluation"
+    },
+    {
+      "schemaVersion": "1.0",
+      "mode": "live",
+      "cropId": "finger-millet",
+      "assessedAt": "2026-10-29T20:17:16.586Z",
+      "reviewBy": "2027-04-30",
+      "expiresAt": null,
+      "modelVersions": [],
+      "id": "cov.screening.finger-millet.TN.irrigated",
+      "capability": "screening_supported",
+      "productId": null,
+      "region": {
+        "level": "state",
+        "ids": [
+          "IN-TN"
+        ]
+      },
+      "season": "rabi",
+      "irrigation": "irrigated",
+      "marketId": null,
+      "horizonDays": null,
+      "supportStatus": "partial",
+      "sourceVersions": [
+        "sha256:acddd24dab4f4f3e",
+        "sha256:b8f254492dc770fe"
+      ],
+      "measuredQuality": {
+        "approvedRules": 0,
+        "candidateRules": 0,
+        "labelledChecksPassed": 0,
+        "labelledChecksTotal": 0
+      },
+      "missingReason": "agronomy_sourced_rules_not_yet_encoded_or_labelled"
+    },
+    {
+      "schemaVersion": "1.0",
+      "mode": "live",
+      "cropId": "finger-millet",
+      "assessedAt": "2026-10-29T20:17:16.586Z",
+      "reviewBy": "2027-04-30",
+      "expiresAt": null,
+      "modelVersions": [],
+      "id": "cov.screening.finger-millet.TN.rainfed",
+      "capability": "screening_supported",
+      "productId": null,
+      "region": {
+        "level": "state",
+        "ids": [
+          "IN-TN"
+        ]
+      },
+      "season": "kharif",
+      "irrigation": "rainfed",
+      "marketId": null,
+      "horizonDays": null,
+      "supportStatus": "partial",
+      "sourceVersions": [
+        "sha256:acddd24dab4f4f3e",
+        "sha256:b8f254492dc770fe"
+      ],
+      "measuredQuality": {
+        "approvedRules": 0,
+        "candidateRules": 0,
+        "labelledChecksPassed": 0,
+        "labelledChecksTotal": 0
+      },
+      "missingReason": "agronomy_sourced_rules_not_yet_encoded_or_labelled"
+    },
+    {
+      "schemaVersion": "1.0",
+      "mode": "live",
+      "cropId": "finger-millet",
+      "assessedAt": "2026-10-29T20:17:16.586Z",
+      "reviewBy": "2027-04-30",
+      "expiresAt": null,
+      "modelVersions": [],
+      "id": "cov.screening.finger-millet.AS.kharif",
+      "capability": "screening_supported",
+      "productId": null,
+      "region": {
+        "level": "state",
+        "ids": [
+          "IN-AS"
+        ]
+      },
+      "season": "kharif",
+      "irrigation": "unspecified",
+      "marketId": null,
+      "horizonDays": null,
+      "supportStatus": "partial",
+      "sourceVersions": [
+        "sha256:acddd24dab4f4f3e",
+        "sha256:b8f254492dc770fe"
+      ],
+      "measuredQuality": {
+        "approvedRules": 0,
+        "candidateRules": 0,
+        "labelledChecksPassed": 0,
+        "labelledChecksTotal": 0
+      },
+      "missingReason": "agronomy_sourced_rules_not_yet_encoded_or_labelled"
+    },
+    {
+      "schemaVersion": "1.0",
+      "mode": "live",
+      "cropId": "finger-millet",
+      "assessedAt": "2026-10-29T20:17:16.586Z",
+      "reviewBy": "2027-04-30",
+      "expiresAt": null,
+      "modelVersions": [],
+      "id": "cov.historical_reference_available.finger-millet-grain",
+      "capability": "historical_reference_available",
+      "productId": "finger-millet-grain",
+      "region": {
+        "level": "national",
+        "ids": [
+          "IN"
+        ]
+      },
+      "season": null,
+      "irrigation": null,
+      "marketId": null,
+      "horizonDays": null,
+      "supportStatus": "unsupported",
+      "sourceVersions": [],
+      "measuredQuality": null,
+      "missingReason": "price_access_key_gated"
+    },
+    {
+      "schemaVersion": "1.0",
+      "mode": "live",
+      "cropId": "finger-millet",
+      "assessedAt": "2026-10-29T20:17:16.586Z",
+      "reviewBy": "2027-04-30",
+      "expiresAt": null,
+      "modelVersions": [],
+      "id": "cov.forecast_evaluated.finger-millet-grain",
+      "capability": "forecast_evaluated",
+      "productId": "finger-millet-grain",
+      "region": {
+        "level": "national",
+        "ids": [
+          "IN"
+        ]
+      },
+      "season": null,
+      "irrigation": null,
+      "marketId": null,
+      "horizonDays": null,
+      "supportStatus": "unsupported",
+      "sourceVersions": [],
+      "measuredQuality": null,
+      "missingReason": "no_evaluated_model_and_no_price_history"
+    },
+    {
+      "schemaVersion": "1.0",
+      "mode": "live",
+      "cropId": "finger-millet",
+      "assessedAt": "2026-10-29T20:17:16.586Z",
+      "reviewBy": "2027-04-30",
+      "expiresAt": null,
+      "modelVersions": [],
+      "id": "cov.visual_journey_supported.finger-millet",
+      "capability": "visual_journey_supported",
+      "productId": null,
+      "region": {
+        "level": "national",
+        "ids": [
+          "IN"
+        ]
+      },
+      "season": null,
+      "irrigation": null,
+      "marketId": null,
+      "horizonDays": null,
+      "supportStatus": "unsupported",
+      "sourceVersions": [],
+      "measuredQuality": null,
+      "missingReason": "no_sourced_stage_definitions_or_assets"
+    },
+    {
+      "schemaVersion": "1.0",
+      "mode": "live",
+      "cropId": "finger-millet",
+      "assessedAt": "2026-10-29T20:17:16.586Z",
+      "reviewBy": "2027-04-30",
+      "expiresAt": null,
+      "modelVersions": [],
+      "id": "cov.observation_interpretation_experimental.finger-millet",
+      "capability": "observation_interpretation_experimental",
+      "productId": null,
+      "region": {
+        "level": "national",
+        "ids": [
+          "IN"
+        ]
+      },
+      "season": null,
+      "irrigation": null,
+      "marketId": null,
+      "horizonDays": null,
+      "supportStatus": "unsupported",
+      "sourceVersions": [],
+      "measuredQuality": null,
+      "missingReason": "pending_evaluation"
+    },
+    {
+      "schemaVersion": "1.0",
+      "mode": "live",
+      "cropId": "chickpea",
+      "assessedAt": "2026-10-29T20:17:16.586Z",
+      "reviewBy": "2027-04-30",
+      "expiresAt": null,
+      "modelVersions": [],
+      "id": "cov.screening.chickpea.TN.rainfed",
+      "capability": "screening_supported",
+      "productId": null,
+      "region": {
+        "level": "state",
+        "ids": [
+          "IN-TN"
+        ]
+      },
+      "season": "rabi",
+      "irrigation": "rainfed",
+      "marketId": null,
+      "horizonDays": null,
+      "supportStatus": "partial",
+      "sourceVersions": [
+        "sha256:1b70b7cb8f5e7c34"
+      ],
+      "measuredQuality": {
+        "approvedRules": 0,
+        "candidateRules": 0,
+        "labelledChecksPassed": 0,
+        "labelledChecksTotal": 0
+      },
+      "missingReason": "agronomy_sourced_rules_not_yet_encoded_or_labelled"
+    },
+    {
+      "schemaVersion": "1.0",
+      "mode": "live",
+      "cropId": "chickpea",
+      "assessedAt": "2026-10-29T20:17:16.586Z",
+      "reviewBy": "2027-04-30",
+      "expiresAt": null,
+      "modelVersions": [],
+      "id": "cov.historical_reference_available.chickpea-whole",
+      "capability": "historical_reference_available",
+      "productId": "chickpea-whole",
+      "region": {
+        "level": "national",
+        "ids": [
+          "IN"
+        ]
+      },
+      "season": null,
+      "irrigation": null,
+      "marketId": null,
+      "horizonDays": null,
+      "supportStatus": "unsupported",
+      "sourceVersions": [],
+      "measuredQuality": null,
+      "missingReason": "price_access_key_gated"
+    },
+    {
+      "schemaVersion": "1.0",
+      "mode": "live",
+      "cropId": "chickpea",
+      "assessedAt": "2026-10-29T20:17:16.586Z",
+      "reviewBy": "2027-04-30",
+      "expiresAt": null,
+      "modelVersions": [],
+      "id": "cov.forecast_evaluated.chickpea-whole",
+      "capability": "forecast_evaluated",
+      "productId": "chickpea-whole",
+      "region": {
+        "level": "national",
+        "ids": [
+          "IN"
+        ]
+      },
+      "season": null,
+      "irrigation": null,
+      "marketId": null,
+      "horizonDays": null,
+      "supportStatus": "unsupported",
+      "sourceVersions": [],
+      "measuredQuality": null,
+      "missingReason": "no_evaluated_model_and_no_price_history"
+    },
+    {
+      "schemaVersion": "1.0",
+      "mode": "live",
+      "cropId": "chickpea",
+      "assessedAt": "2026-10-29T20:17:16.586Z",
+      "reviewBy": "2027-04-30",
+      "expiresAt": null,
+      "modelVersions": [],
+      "id": "cov.historical_reference_available.chickpea-split",
+      "capability": "historical_reference_available",
+      "productId": "chickpea-split",
+      "region": {
+        "level": "national",
+        "ids": [
+          "IN"
+        ]
+      },
+      "season": null,
+      "irrigation": null,
+      "marketId": null,
+      "horizonDays": null,
+      "supportStatus": "unsupported",
+      "sourceVersions": [],
+      "measuredQuality": null,
+      "missingReason": "price_access_key_gated"
+    },
+    {
+      "schemaVersion": "1.0",
+      "mode": "live",
+      "cropId": "chickpea",
+      "assessedAt": "2026-10-29T20:17:16.586Z",
+      "reviewBy": "2027-04-30",
+      "expiresAt": null,
+      "modelVersions": [],
+      "id": "cov.forecast_evaluated.chickpea-split",
+      "capability": "forecast_evaluated",
+      "productId": "chickpea-split",
+      "region": {
+        "level": "national",
+        "ids": [
+          "IN"
+        ]
+      },
+      "season": null,
+      "irrigation": null,
+      "marketId": null,
+      "horizonDays": null,
+      "supportStatus": "unsupported",
+      "sourceVersions": [],
+      "measuredQuality": null,
+      "missingReason": "no_evaluated_model_and_no_price_history"
+    },
+    {
+      "schemaVersion": "1.0",
+      "mode": "live",
+      "cropId": "chickpea",
+      "assessedAt": "2026-10-29T20:17:16.586Z",
+      "reviewBy": "2027-04-30",
+      "expiresAt": null,
+      "modelVersions": [],
+      "id": "cov.visual_journey_supported.chickpea",
+      "capability": "visual_journey_supported",
+      "productId": null,
+      "region": {
+        "level": "national",
+        "ids": [
+          "IN"
+        ]
+      },
+      "season": null,
+      "irrigation": null,
+      "marketId": null,
+      "horizonDays": null,
+      "supportStatus": "unsupported",
+      "sourceVersions": [],
+      "measuredQuality": null,
+      "missingReason": "no_sourced_stage_definitions_or_assets"
+    },
+    {
+      "schemaVersion": "1.0",
+      "mode": "live",
+      "cropId": "chickpea",
+      "assessedAt": "2026-10-29T20:17:16.586Z",
+      "reviewBy": "2027-04-30",
+      "expiresAt": null,
+      "modelVersions": [],
+      "id": "cov.observation_interpretation_experimental.chickpea",
+      "capability": "observation_interpretation_experimental",
+      "productId": null,
+      "region": {
+        "level": "national",
+        "ids": [
+          "IN"
+        ]
+      },
+      "season": null,
+      "irrigation": null,
+      "marketId": null,
+      "horizonDays": null,
+      "supportStatus": "unsupported",
+      "sourceVersions": [],
+      "measuredQuality": null,
+      "missingReason": "pending_evaluation"
+    },
+    {
+      "schemaVersion": "1.0",
+      "mode": "live",
+      "cropId": "pigeon-pea",
+      "assessedAt": "2026-10-29T20:17:16.586Z",
+      "reviewBy": "2027-04-30",
+      "expiresAt": null,
+      "modelVersions": [],
+      "id": "cov.screening.pigeon-pea.TN.vaigasi",
+      "capability": "screening_supported",
+      "productId": null,
+      "region": {
+        "level": "state",
+        "ids": [
+          "IN-TN"
+        ]
+      },
+      "season": "kharif",
+      "irrigation": "unspecified",
+      "marketId": null,
+      "horizonDays": null,
+      "supportStatus": "unknown",
+      "sourceVersions": [
+        "sha256:b900cb52434a6990",
+        "sha256:0f55a159f29efa69",
+        "sha256:15e144e8d986a260"
+      ],
+      "measuredQuality": null,
+      "missingReason": "fewer_than_two_sourced_requirements_in_context"
+    },
+    {
+      "schemaVersion": "1.0",
+      "mode": "live",
+      "cropId": "pigeon-pea",
+      "assessedAt": "2026-10-29T20:17:16.586Z",
+      "reviewBy": "2027-04-30",
+      "expiresAt": null,
+      "modelVersions": [],
+      "id": "cov.screening.pigeon-pea.AS.kharif",
+      "capability": "screening_supported",
+      "productId": null,
+      "region": {
+        "level": "state",
+        "ids": [
+          "IN-AS"
+        ]
+      },
+      "season": "kharif",
+      "irrigation": "unspecified",
+      "marketId": null,
+      "horizonDays": null,
+      "supportStatus": "partial",
+      "sourceVersions": [
+        "sha256:b900cb52434a6990",
+        "sha256:0f55a159f29efa69",
+        "sha256:15e144e8d986a260"
+      ],
+      "measuredQuality": {
+        "approvedRules": 0,
+        "candidateRules": 0,
+        "labelledChecksPassed": 0,
+        "labelledChecksTotal": 0
+      },
+      "missingReason": "agronomy_sourced_rules_not_yet_encoded_or_labelled"
+    },
+    {
+      "schemaVersion": "1.0",
+      "mode": "live",
+      "cropId": "pigeon-pea",
+      "assessedAt": "2026-10-29T20:17:16.586Z",
+      "reviewBy": "2027-04-30",
+      "expiresAt": null,
+      "modelVersions": [],
+      "id": "cov.historical_reference_available.pigeon-pea-whole",
+      "capability": "historical_reference_available",
+      "productId": "pigeon-pea-whole",
+      "region": {
+        "level": "national",
+        "ids": [
+          "IN"
+        ]
+      },
+      "season": null,
+      "irrigation": null,
+      "marketId": null,
+      "horizonDays": null,
+      "supportStatus": "unsupported",
+      "sourceVersions": [],
+      "measuredQuality": null,
+      "missingReason": "price_access_key_gated"
+    },
+    {
+      "schemaVersion": "1.0",
+      "mode": "live",
+      "cropId": "pigeon-pea",
+      "assessedAt": "2026-10-29T20:17:16.586Z",
+      "reviewBy": "2027-04-30",
+      "expiresAt": null,
+      "modelVersions": [],
+      "id": "cov.forecast_evaluated.pigeon-pea-whole",
+      "capability": "forecast_evaluated",
+      "productId": "pigeon-pea-whole",
+      "region": {
+        "level": "national",
+        "ids": [
+          "IN"
+        ]
+      },
+      "season": null,
+      "irrigation": null,
+      "marketId": null,
+      "horizonDays": null,
+      "supportStatus": "unsupported",
+      "sourceVersions": [],
+      "measuredQuality": null,
+      "missingReason": "no_evaluated_model_and_no_price_history"
+    },
+    {
+      "schemaVersion": "1.0",
+      "mode": "live",
+      "cropId": "pigeon-pea",
+      "assessedAt": "2026-10-29T20:17:16.586Z",
+      "reviewBy": "2027-04-30",
+      "expiresAt": null,
+      "modelVersions": [],
+      "id": "cov.historical_reference_available.pigeon-pea-split",
+      "capability": "historical_reference_available",
+      "productId": "pigeon-pea-split",
+      "region": {
+        "level": "national",
+        "ids": [
+          "IN"
+        ]
+      },
+      "season": null,
+      "irrigation": null,
+      "marketId": null,
+      "horizonDays": null,
+      "supportStatus": "unsupported",
+      "sourceVersions": [],
+      "measuredQuality": null,
+      "missingReason": "price_access_key_gated"
+    },
+    {
+      "schemaVersion": "1.0",
+      "mode": "live",
+      "cropId": "pigeon-pea",
+      "assessedAt": "2026-10-29T20:17:16.586Z",
+      "reviewBy": "2027-04-30",
+      "expiresAt": null,
+      "modelVersions": [],
+      "id": "cov.forecast_evaluated.pigeon-pea-split",
+      "capability": "forecast_evaluated",
+      "productId": "pigeon-pea-split",
+      "region": {
+        "level": "national",
+        "ids": [
+          "IN"
+        ]
+      },
+      "season": null,
+      "irrigation": null,
+      "marketId": null,
+      "horizonDays": null,
+      "supportStatus": "unsupported",
+      "sourceVersions": [],
+      "measuredQuality": null,
+      "missingReason": "no_evaluated_model_and_no_price_history"
+    },
+    {
+      "schemaVersion": "1.0",
+      "mode": "live",
+      "cropId": "pigeon-pea",
+      "assessedAt": "2026-10-29T20:17:16.586Z",
+      "reviewBy": "2027-04-30",
+      "expiresAt": null,
+      "modelVersions": [],
+      "id": "cov.visual_journey_supported.pigeon-pea",
+      "capability": "visual_journey_supported",
+      "productId": null,
+      "region": {
+        "level": "national",
+        "ids": [
+          "IN"
+        ]
+      },
+      "season": null,
+      "irrigation": null,
+      "marketId": null,
+      "horizonDays": null,
+      "supportStatus": "unsupported",
+      "sourceVersions": [],
+      "measuredQuality": null,
+      "missingReason": "no_sourced_stage_definitions_or_assets"
+    },
+    {
+      "schemaVersion": "1.0",
+      "mode": "live",
+      "cropId": "pigeon-pea",
+      "assessedAt": "2026-10-29T20:17:16.586Z",
+      "reviewBy": "2027-04-30",
+      "expiresAt": null,
+      "modelVersions": [],
+      "id": "cov.observation_interpretation_experimental.pigeon-pea",
+      "capability": "observation_interpretation_experimental",
+      "productId": null,
+      "region": {
+        "level": "national",
+        "ids": [
+          "IN"
+        ]
+      },
+      "season": null,
+      "irrigation": null,
+      "marketId": null,
+      "horizonDays": null,
+      "supportStatus": "unsupported",
+      "sourceVersions": [],
+      "measuredQuality": null,
+      "missingReason": "pending_evaluation"
+    },
+    {
+      "schemaVersion": "1.0",
+      "mode": "live",
+      "cropId": "green-gram",
+      "assessedAt": "2026-10-29T20:17:16.586Z",
+      "reviewBy": "2027-04-30",
+      "expiresAt": null,
+      "modelVersions": [],
+      "id": "cov.screening.green-gram.AS.kharif",
+      "capability": "screening_supported",
+      "productId": null,
+      "region": {
+        "level": "state",
+        "ids": [
+          "IN-AS"
+        ]
+      },
+      "season": "kharif",
+      "irrigation": "unspecified",
+      "marketId": null,
+      "horizonDays": null,
+      "supportStatus": "partial",
+      "sourceVersions": [
+        "sha256:bde6cfd393adfa65"
+      ],
+      "measuredQuality": {
+        "approvedRules": 0,
+        "candidateRules": 0,
+        "labelledChecksPassed": 0,
+        "labelledChecksTotal": 0
+      },
+      "missingReason": "agronomy_sourced_rules_not_yet_encoded_or_labelled"
+    },
+    {
+      "schemaVersion": "1.0",
+      "mode": "live",
+      "cropId": "green-gram",
+      "assessedAt": "2026-10-29T20:17:16.586Z",
+      "reviewBy": "2027-04-30",
+      "expiresAt": null,
+      "modelVersions": [],
+      "id": "cov.historical_reference_available.green-gram-whole",
+      "capability": "historical_reference_available",
+      "productId": "green-gram-whole",
+      "region": {
+        "level": "national",
+        "ids": [
+          "IN"
+        ]
+      },
+      "season": null,
+      "irrigation": null,
+      "marketId": null,
+      "horizonDays": null,
+      "supportStatus": "unsupported",
+      "sourceVersions": [],
+      "measuredQuality": null,
+      "missingReason": "price_access_key_gated"
+    },
+    {
+      "schemaVersion": "1.0",
+      "mode": "live",
+      "cropId": "green-gram",
+      "assessedAt": "2026-10-29T20:17:16.586Z",
+      "reviewBy": "2027-04-30",
+      "expiresAt": null,
+      "modelVersions": [],
+      "id": "cov.forecast_evaluated.green-gram-whole",
+      "capability": "forecast_evaluated",
+      "productId": "green-gram-whole",
+      "region": {
+        "level": "national",
+        "ids": [
+          "IN"
+        ]
+      },
+      "season": null,
+      "irrigation": null,
+      "marketId": null,
+      "horizonDays": null,
+      "supportStatus": "unsupported",
+      "sourceVersions": [],
+      "measuredQuality": null,
+      "missingReason": "no_evaluated_model_and_no_price_history"
+    },
+    {
+      "schemaVersion": "1.0",
+      "mode": "live",
+      "cropId": "green-gram",
+      "assessedAt": "2026-10-29T20:17:16.586Z",
+      "reviewBy": "2027-04-30",
+      "expiresAt": null,
+      "modelVersions": [],
+      "id": "cov.historical_reference_available.green-gram-split",
+      "capability": "historical_reference_available",
+      "productId": "green-gram-split",
+      "region": {
+        "level": "national",
+        "ids": [
+          "IN"
+        ]
+      },
+      "season": null,
+      "irrigation": null,
+      "marketId": null,
+      "horizonDays": null,
+      "supportStatus": "unsupported",
+      "sourceVersions": [],
+      "measuredQuality": null,
+      "missingReason": "price_access_key_gated"
+    },
+    {
+      "schemaVersion": "1.0",
+      "mode": "live",
+      "cropId": "green-gram",
+      "assessedAt": "2026-10-29T20:17:16.586Z",
+      "reviewBy": "2027-04-30",
+      "expiresAt": null,
+      "modelVersions": [],
+      "id": "cov.forecast_evaluated.green-gram-split",
+      "capability": "forecast_evaluated",
+      "productId": "green-gram-split",
+      "region": {
+        "level": "national",
+        "ids": [
+          "IN"
+        ]
+      },
+      "season": null,
+      "irrigation": null,
+      "marketId": null,
+      "horizonDays": null,
+      "supportStatus": "unsupported",
+      "sourceVersions": [],
+      "measuredQuality": null,
+      "missingReason": "no_evaluated_model_and_no_price_history"
+    },
+    {
+      "schemaVersion": "1.0",
+      "mode": "live",
+      "cropId": "green-gram",
+      "assessedAt": "2026-10-29T20:17:16.586Z",
+      "reviewBy": "2027-04-30",
+      "expiresAt": null,
+      "modelVersions": [],
+      "id": "cov.visual_journey_supported.green-gram",
+      "capability": "visual_journey_supported",
+      "productId": null,
+      "region": {
+        "level": "national",
+        "ids": [
+          "IN"
+        ]
+      },
+      "season": null,
+      "irrigation": null,
+      "marketId": null,
+      "horizonDays": null,
+      "supportStatus": "unsupported",
+      "sourceVersions": [],
+      "measuredQuality": null,
+      "missingReason": "no_sourced_stage_definitions_or_assets"
+    },
+    {
+      "schemaVersion": "1.0",
+      "mode": "live",
+      "cropId": "green-gram",
+      "assessedAt": "2026-10-29T20:17:16.586Z",
+      "reviewBy": "2027-04-30",
+      "expiresAt": null,
+      "modelVersions": [],
+      "id": "cov.observation_interpretation_experimental.green-gram",
+      "capability": "observation_interpretation_experimental",
+      "productId": null,
+      "region": {
+        "level": "national",
+        "ids": [
+          "IN"
+        ]
+      },
+      "season": null,
+      "irrigation": null,
+      "marketId": null,
+      "horizonDays": null,
+      "supportStatus": "unsupported",
+      "sourceVersions": [],
+      "measuredQuality": null,
+      "missingReason": "pending_evaluation"
+    },
+    {
+      "schemaVersion": "1.0",
+      "mode": "live",
+      "cropId": "black-gram",
+      "assessedAt": "2026-10-29T20:17:16.586Z",
+      "reviewBy": "2027-04-30",
+      "expiresAt": null,
+      "modelVersions": [],
+      "id": "cov.screening.black-gram.AS.kharif",
+      "capability": "screening_supported",
+      "productId": null,
+      "region": {
+        "level": "state",
+        "ids": [
+          "IN-AS"
+        ]
+      },
+      "season": "kharif",
+      "irrigation": "unspecified",
+      "marketId": null,
+      "horizonDays": null,
+      "supportStatus": "partial",
+      "sourceVersions": [
+        "sha256:4cf9d4c26bc1c1ca"
+      ],
+      "measuredQuality": {
+        "approvedRules": 0,
+        "candidateRules": 0,
+        "labelledChecksPassed": 0,
+        "labelledChecksTotal": 0
+      },
+      "missingReason": "agronomy_sourced_rules_not_yet_encoded_or_labelled"
+    },
+    {
+      "schemaVersion": "1.0",
+      "mode": "live",
+      "cropId": "black-gram",
+      "assessedAt": "2026-10-29T20:17:16.586Z",
+      "reviewBy": "2027-04-30",
+      "expiresAt": null,
+      "modelVersions": [],
+      "id": "cov.historical_reference_available.black-gram-whole",
+      "capability": "historical_reference_available",
+      "productId": "black-gram-whole",
+      "region": {
+        "level": "national",
+        "ids": [
+          "IN"
+        ]
+      },
+      "season": null,
+      "irrigation": null,
+      "marketId": null,
+      "horizonDays": null,
+      "supportStatus": "unsupported",
+      "sourceVersions": [],
+      "measuredQuality": null,
+      "missingReason": "price_access_key_gated"
+    },
+    {
+      "schemaVersion": "1.0",
+      "mode": "live",
+      "cropId": "black-gram",
+      "assessedAt": "2026-10-29T20:17:16.586Z",
+      "reviewBy": "2027-04-30",
+      "expiresAt": null,
+      "modelVersions": [],
+      "id": "cov.forecast_evaluated.black-gram-whole",
+      "capability": "forecast_evaluated",
+      "productId": "black-gram-whole",
+      "region": {
+        "level": "national",
+        "ids": [
+          "IN"
+        ]
+      },
+      "season": null,
+      "irrigation": null,
+      "marketId": null,
+      "horizonDays": null,
+      "supportStatus": "unsupported",
+      "sourceVersions": [],
+      "measuredQuality": null,
+      "missingReason": "no_evaluated_model_and_no_price_history"
+    },
+    {
+      "schemaVersion": "1.0",
+      "mode": "live",
+      "cropId": "black-gram",
+      "assessedAt": "2026-10-29T20:17:16.586Z",
+      "reviewBy": "2027-04-30",
+      "expiresAt": null,
+      "modelVersions": [],
+      "id": "cov.historical_reference_available.black-gram-split",
+      "capability": "historical_reference_available",
+      "productId": "black-gram-split",
+      "region": {
+        "level": "national",
+        "ids": [
+          "IN"
+        ]
+      },
+      "season": null,
+      "irrigation": null,
+      "marketId": null,
+      "horizonDays": null,
+      "supportStatus": "unsupported",
+      "sourceVersions": [],
+      "measuredQuality": null,
+      "missingReason": "price_access_key_gated"
+    },
+    {
+      "schemaVersion": "1.0",
+      "mode": "live",
+      "cropId": "black-gram",
+      "assessedAt": "2026-10-29T20:17:16.586Z",
+      "reviewBy": "2027-04-30",
+      "expiresAt": null,
+      "modelVersions": [],
+      "id": "cov.forecast_evaluated.black-gram-split",
+      "capability": "forecast_evaluated",
+      "productId": "black-gram-split",
+      "region": {
+        "level": "national",
+        "ids": [
+          "IN"
+        ]
+      },
+      "season": null,
+      "irrigation": null,
+      "marketId": null,
+      "horizonDays": null,
+      "supportStatus": "unsupported",
+      "sourceVersions": [],
+      "measuredQuality": null,
+      "missingReason": "no_evaluated_model_and_no_price_history"
+    },
+    {
+      "schemaVersion": "1.0",
+      "mode": "live",
+      "cropId": "black-gram",
+      "assessedAt": "2026-10-29T20:17:16.586Z",
+      "reviewBy": "2027-04-30",
+      "expiresAt": null,
+      "modelVersions": [],
+      "id": "cov.visual_journey_supported.black-gram",
+      "capability": "visual_journey_supported",
+      "productId": null,
+      "region": {
+        "level": "national",
+        "ids": [
+          "IN"
+        ]
+      },
+      "season": null,
+      "irrigation": null,
+      "marketId": null,
+      "horizonDays": null,
+      "supportStatus": "unsupported",
+      "sourceVersions": [],
+      "measuredQuality": null,
+      "missingReason": "no_sourced_stage_definitions_or_assets"
+    },
+    {
+      "schemaVersion": "1.0",
+      "mode": "live",
+      "cropId": "black-gram",
+      "assessedAt": "2026-10-29T20:17:16.586Z",
+      "reviewBy": "2027-04-30",
+      "expiresAt": null,
+      "modelVersions": [],
+      "id": "cov.observation_interpretation_experimental.black-gram",
+      "capability": "observation_interpretation_experimental",
+      "productId": null,
+      "region": {
+        "level": "national",
+        "ids": [
+          "IN"
+        ]
+      },
+      "season": null,
+      "irrigation": null,
+      "marketId": null,
+      "horizonDays": null,
+      "supportStatus": "unsupported",
+      "sourceVersions": [],
+      "measuredQuality": null,
+      "missingReason": "pending_evaluation"
+    },
+    {
+      "schemaVersion": "1.0",
+      "mode": "live",
+      "cropId": "lentil",
+      "assessedAt": "2026-10-29T20:17:16.586Z",
+      "reviewBy": "2027-04-30",
+      "expiresAt": null,
+      "modelVersions": [],
+      "id": "cov.screening.lentil.AS.rabi",
+      "capability": "screening_supported",
+      "productId": null,
+      "region": {
+        "level": "state",
+        "ids": [
+          "IN-AS"
+        ]
+      },
+      "season": "rabi",
+      "irrigation": "supplemental",
+      "marketId": null,
+      "horizonDays": null,
+      "supportStatus": "partial",
+      "sourceVersions": [
+        "sha256:818a45951301bd06"
+      ],
+      "measuredQuality": {
+        "approvedRules": 0,
+        "candidateRules": 0,
+        "labelledChecksPassed": 0,
+        "labelledChecksTotal": 0
+      },
+      "missingReason": "agronomy_sourced_rules_not_yet_encoded_or_labelled"
+    },
+    {
+      "schemaVersion": "1.0",
+      "mode": "live",
+      "cropId": "lentil",
+      "assessedAt": "2026-10-29T20:17:16.586Z",
+      "reviewBy": "2027-04-30",
+      "expiresAt": null,
+      "modelVersions": [],
+      "id": "cov.historical_reference_available.lentil-whole",
+      "capability": "historical_reference_available",
+      "productId": "lentil-whole",
+      "region": {
+        "level": "national",
+        "ids": [
+          "IN"
+        ]
+      },
+      "season": null,
+      "irrigation": null,
+      "marketId": null,
+      "horizonDays": null,
+      "supportStatus": "unsupported",
+      "sourceVersions": [],
+      "measuredQuality": null,
+      "missingReason": "price_access_key_gated"
+    },
+    {
+      "schemaVersion": "1.0",
+      "mode": "live",
+      "cropId": "lentil",
+      "assessedAt": "2026-10-29T20:17:16.586Z",
+      "reviewBy": "2027-04-30",
+      "expiresAt": null,
+      "modelVersions": [],
+      "id": "cov.forecast_evaluated.lentil-whole",
+      "capability": "forecast_evaluated",
+      "productId": "lentil-whole",
+      "region": {
+        "level": "national",
+        "ids": [
+          "IN"
+        ]
+      },
+      "season": null,
+      "irrigation": null,
+      "marketId": null,
+      "horizonDays": null,
+      "supportStatus": "unsupported",
+      "sourceVersions": [],
+      "measuredQuality": null,
+      "missingReason": "no_evaluated_model_and_no_price_history"
+    },
+    {
+      "schemaVersion": "1.0",
+      "mode": "live",
+      "cropId": "lentil",
+      "assessedAt": "2026-10-29T20:17:16.586Z",
+      "reviewBy": "2027-04-30",
+      "expiresAt": null,
+      "modelVersions": [],
+      "id": "cov.historical_reference_available.lentil-split",
+      "capability": "historical_reference_available",
+      "productId": "lentil-split",
+      "region": {
+        "level": "national",
+        "ids": [
+          "IN"
+        ]
+      },
+      "season": null,
+      "irrigation": null,
+      "marketId": null,
+      "horizonDays": null,
+      "supportStatus": "unsupported",
+      "sourceVersions": [],
+      "measuredQuality": null,
+      "missingReason": "price_access_key_gated"
+    },
+    {
+      "schemaVersion": "1.0",
+      "mode": "live",
+      "cropId": "lentil",
+      "assessedAt": "2026-10-29T20:17:16.586Z",
+      "reviewBy": "2027-04-30",
+      "expiresAt": null,
+      "modelVersions": [],
+      "id": "cov.forecast_evaluated.lentil-split",
+      "capability": "forecast_evaluated",
+      "productId": "lentil-split",
+      "region": {
+        "level": "national",
+        "ids": [
+          "IN"
+        ]
+      },
+      "season": null,
+      "irrigation": null,
+      "marketId": null,
+      "horizonDays": null,
+      "supportStatus": "unsupported",
+      "sourceVersions": [],
+      "measuredQuality": null,
+      "missingReason": "no_evaluated_model_and_no_price_history"
+    },
+    {
+      "schemaVersion": "1.0",
+      "mode": "live",
+      "cropId": "lentil",
+      "assessedAt": "2026-10-29T20:17:16.586Z",
+      "reviewBy": "2027-04-30",
+      "expiresAt": null,
+      "modelVersions": [],
+      "id": "cov.visual_journey_supported.lentil",
+      "capability": "visual_journey_supported",
+      "productId": null,
+      "region": {
+        "level": "national",
+        "ids": [
+          "IN"
+        ]
+      },
+      "season": null,
+      "irrigation": null,
+      "marketId": null,
+      "horizonDays": null,
+      "supportStatus": "unsupported",
+      "sourceVersions": [],
+      "measuredQuality": null,
+      "missingReason": "no_sourced_stage_definitions_or_assets"
+    },
+    {
+      "schemaVersion": "1.0",
+      "mode": "live",
+      "cropId": "lentil",
+      "assessedAt": "2026-10-29T20:17:16.586Z",
+      "reviewBy": "2027-04-30",
+      "expiresAt": null,
+      "modelVersions": [],
+      "id": "cov.observation_interpretation_experimental.lentil",
+      "capability": "observation_interpretation_experimental",
+      "productId": null,
+      "region": {
+        "level": "national",
+        "ids": [
+          "IN"
+        ]
+      },
+      "season": null,
+      "irrigation": null,
+      "marketId": null,
+      "horizonDays": null,
+      "supportStatus": "unsupported",
+      "sourceVersions": [],
+      "measuredQuality": null,
+      "missingReason": "pending_evaluation"
+    },
+    {
+      "schemaVersion": "1.0",
+      "mode": "live",
+      "cropId": "groundnut",
+      "assessedAt": "2026-10-29T20:17:16.586Z",
+      "reviewBy": "2027-04-30",
+      "expiresAt": null,
+      "modelVersions": [],
+      "id": "cov.screening.groundnut.AS.kharif",
+      "capability": "screening_supported",
+      "productId": null,
+      "region": {
+        "level": "state",
+        "ids": [
+          "IN-AS"
+        ]
+      },
+      "season": "kharif",
+      "irrigation": "unspecified",
+      "marketId": null,
+      "horizonDays": null,
+      "supportStatus": "partial",
+      "sourceVersions": [
+        "sha256:ad8c961964487e1e",
+        "sha256:a0438e32c51abe63"
+      ],
+      "measuredQuality": {
+        "approvedRules": 0,
+        "candidateRules": 0,
+        "labelledChecksPassed": 0,
+        "labelledChecksTotal": 0
+      },
+      "missingReason": "agronomy_sourced_rules_not_yet_encoded_or_labelled"
+    },
+    {
+      "schemaVersion": "1.0",
+      "mode": "live",
+      "cropId": "groundnut",
+      "assessedAt": "2026-10-29T20:17:16.586Z",
+      "reviewBy": "2027-04-30",
+      "expiresAt": null,
+      "modelVersions": [],
+      "id": "cov.screening.groundnut.AS.rabi",
+      "capability": "screening_supported",
+      "productId": null,
+      "region": {
+        "level": "state",
+        "ids": [
+          "IN-AS"
+        ]
+      },
+      "season": "rabi",
+      "irrigation": "supplemental",
+      "marketId": null,
+      "horizonDays": null,
+      "supportStatus": "partial",
+      "sourceVersions": [
+        "sha256:ad8c961964487e1e",
+        "sha256:a0438e32c51abe63"
+      ],
+      "measuredQuality": {
+        "approvedRules": 0,
+        "candidateRules": 0,
+        "labelledChecksPassed": 0,
+        "labelledChecksTotal": 0
+      },
+      "missingReason": "agronomy_sourced_rules_not_yet_encoded_or_labelled"
+    },
+    {
+      "schemaVersion": "1.0",
+      "mode": "live",
+      "cropId": "groundnut",
+      "assessedAt": "2026-10-29T20:17:16.586Z",
+      "reviewBy": "2027-04-30",
+      "expiresAt": null,
+      "modelVersions": [],
+      "id": "cov.historical_reference_available.groundnut-pod",
+      "capability": "historical_reference_available",
+      "productId": "groundnut-pod",
+      "region": {
+        "level": "national",
+        "ids": [
+          "IN"
+        ]
+      },
+      "season": null,
+      "irrigation": null,
+      "marketId": null,
+      "horizonDays": null,
+      "supportStatus": "unsupported",
+      "sourceVersions": [],
+      "measuredQuality": null,
+      "missingReason": "price_access_key_gated"
+    },
+    {
+      "schemaVersion": "1.0",
+      "mode": "live",
+      "cropId": "groundnut",
+      "assessedAt": "2026-10-29T20:17:16.586Z",
+      "reviewBy": "2027-04-30",
+      "expiresAt": null,
+      "modelVersions": [],
+      "id": "cov.forecast_evaluated.groundnut-pod",
+      "capability": "forecast_evaluated",
+      "productId": "groundnut-pod",
+      "region": {
+        "level": "national",
+        "ids": [
+          "IN"
+        ]
+      },
+      "season": null,
+      "irrigation": null,
+      "marketId": null,
+      "horizonDays": null,
+      "supportStatus": "unsupported",
+      "sourceVersions": [],
+      "measuredQuality": null,
+      "missingReason": "no_evaluated_model_and_no_price_history"
+    },
+    {
+      "schemaVersion": "1.0",
+      "mode": "live",
+      "cropId": "groundnut",
+      "assessedAt": "2026-10-29T20:17:16.586Z",
+      "reviewBy": "2027-04-30",
+      "expiresAt": null,
+      "modelVersions": [],
+      "id": "cov.historical_reference_available.groundnut-kernel",
+      "capability": "historical_reference_available",
+      "productId": "groundnut-kernel",
+      "region": {
+        "level": "national",
+        "ids": [
+          "IN"
+        ]
+      },
+      "season": null,
+      "irrigation": null,
+      "marketId": null,
+      "horizonDays": null,
+      "supportStatus": "unsupported",
+      "sourceVersions": [],
+      "measuredQuality": null,
+      "missingReason": "price_access_key_gated"
+    },
+    {
+      "schemaVersion": "1.0",
+      "mode": "live",
+      "cropId": "groundnut",
+      "assessedAt": "2026-10-29T20:17:16.586Z",
+      "reviewBy": "2027-04-30",
+      "expiresAt": null,
+      "modelVersions": [],
+      "id": "cov.forecast_evaluated.groundnut-kernel",
+      "capability": "forecast_evaluated",
+      "productId": "groundnut-kernel",
+      "region": {
+        "level": "national",
+        "ids": [
+          "IN"
+        ]
+      },
+      "season": null,
+      "irrigation": null,
+      "marketId": null,
+      "horizonDays": null,
+      "supportStatus": "unsupported",
+      "sourceVersions": [],
+      "measuredQuality": null,
+      "missingReason": "no_evaluated_model_and_no_price_history"
+    },
+    {
+      "schemaVersion": "1.0",
+      "mode": "live",
+      "cropId": "groundnut",
+      "assessedAt": "2026-10-29T20:17:16.586Z",
+      "reviewBy": "2027-04-30",
+      "expiresAt": null,
+      "modelVersions": [],
+      "id": "cov.visual_journey_supported.groundnut",
+      "capability": "visual_journey_supported",
+      "productId": null,
+      "region": {
+        "level": "national",
+        "ids": [
+          "IN"
+        ]
+      },
+      "season": null,
+      "irrigation": null,
+      "marketId": null,
+      "horizonDays": null,
+      "supportStatus": "unsupported",
+      "sourceVersions": [],
+      "measuredQuality": null,
+      "missingReason": "no_sourced_stage_definitions_or_assets"
+    },
+    {
+      "schemaVersion": "1.0",
+      "mode": "live",
+      "cropId": "groundnut",
+      "assessedAt": "2026-10-29T20:17:16.586Z",
+      "reviewBy": "2027-04-30",
+      "expiresAt": null,
+      "modelVersions": [],
+      "id": "cov.observation_interpretation_experimental.groundnut",
+      "capability": "observation_interpretation_experimental",
+      "productId": null,
+      "region": {
+        "level": "national",
+        "ids": [
+          "IN"
+        ]
+      },
+      "season": null,
+      "irrigation": null,
+      "marketId": null,
+      "horizonDays": null,
+      "supportStatus": "unsupported",
+      "sourceVersions": [],
+      "measuredQuality": null,
+      "missingReason": "pending_evaluation"
+    },
+    {
+      "schemaVersion": "1.0",
+      "mode": "live",
+      "cropId": "soybean",
+      "assessedAt": "2026-10-29T20:17:16.586Z",
+      "reviewBy": "2027-04-30",
+      "expiresAt": null,
+      "modelVersions": [],
+      "id": "cov.screening.soybean.TN.multi",
+      "capability": "screening_supported",
+      "productId": null,
+      "region": {
+        "level": "state",
+        "ids": [
+          "IN-TN"
+        ]
+      },
+      "season": "kharif",
+      "irrigation": "unspecified",
+      "marketId": null,
+      "horizonDays": null,
+      "supportStatus": "unknown",
+      "sourceVersions": [
+        "sha256:dbd6d16fc6da650c",
+        "sha256:7f40e2a5e8beba4c",
+        "sha256:eaa11628b84ac6bb",
+        "sha256:62ff5a5dfa3a50b7"
+      ],
+      "measuredQuality": null,
+      "missingReason": "fewer_than_two_sourced_requirements_in_context"
+    },
+    {
+      "schemaVersion": "1.0",
+      "mode": "live",
+      "cropId": "soybean",
+      "assessedAt": "2026-10-29T20:17:16.586Z",
+      "reviewBy": "2027-04-30",
+      "expiresAt": null,
+      "modelVersions": [],
+      "id": "cov.screening.soybean.AS.kharif",
+      "capability": "screening_supported",
+      "productId": null,
+      "region": {
+        "level": "state",
+        "ids": [
+          "IN-AS"
+        ]
+      },
+      "season": "kharif",
+      "irrigation": "unspecified",
+      "marketId": null,
+      "horizonDays": null,
+      "supportStatus": "partial",
+      "sourceVersions": [
+        "sha256:dbd6d16fc6da650c",
+        "sha256:7f40e2a5e8beba4c",
+        "sha256:eaa11628b84ac6bb",
+        "sha256:62ff5a5dfa3a50b7"
+      ],
+      "measuredQuality": {
+        "approvedRules": 0,
+        "candidateRules": 0,
+        "labelledChecksPassed": 0,
+        "labelledChecksTotal": 0
+      },
+      "missingReason": "agronomy_sourced_rules_not_yet_encoded_or_labelled"
+    },
+    {
+      "schemaVersion": "1.0",
+      "mode": "live",
+      "cropId": "soybean",
+      "assessedAt": "2026-10-29T20:17:16.586Z",
+      "reviewBy": "2027-04-30",
+      "expiresAt": null,
+      "modelVersions": [],
+      "id": "cov.screening.soybean.AS.rabi",
+      "capability": "screening_supported",
+      "productId": null,
+      "region": {
+        "level": "state",
+        "ids": [
+          "IN-AS"
+        ]
+      },
+      "season": "rabi",
+      "irrigation": "irrigated",
+      "marketId": null,
+      "horizonDays": null,
+      "supportStatus": "partial",
+      "sourceVersions": [
+        "sha256:dbd6d16fc6da650c",
+        "sha256:7f40e2a5e8beba4c",
+        "sha256:eaa11628b84ac6bb",
+        "sha256:62ff5a5dfa3a50b7"
+      ],
+      "measuredQuality": {
+        "approvedRules": 0,
+        "candidateRules": 0,
+        "labelledChecksPassed": 0,
+        "labelledChecksTotal": 0
+      },
+      "missingReason": "agronomy_sourced_rules_not_yet_encoded_or_labelled"
+    },
+    {
+      "schemaVersion": "1.0",
+      "mode": "live",
+      "cropId": "soybean",
+      "assessedAt": "2026-10-29T20:17:16.586Z",
+      "reviewBy": "2027-04-30",
+      "expiresAt": null,
+      "modelVersions": [],
+      "id": "cov.historical_reference_available.soybean-seed",
+      "capability": "historical_reference_available",
+      "productId": "soybean-seed",
+      "region": {
+        "level": "national",
+        "ids": [
+          "IN"
+        ]
+      },
+      "season": null,
+      "irrigation": null,
+      "marketId": null,
+      "horizonDays": null,
+      "supportStatus": "unsupported",
+      "sourceVersions": [],
+      "measuredQuality": null,
+      "missingReason": "price_access_key_gated"
+    },
+    {
+      "schemaVersion": "1.0",
+      "mode": "live",
+      "cropId": "soybean",
+      "assessedAt": "2026-10-29T20:17:16.586Z",
+      "reviewBy": "2027-04-30",
+      "expiresAt": null,
+      "modelVersions": [],
+      "id": "cov.forecast_evaluated.soybean-seed",
+      "capability": "forecast_evaluated",
+      "productId": "soybean-seed",
+      "region": {
+        "level": "national",
+        "ids": [
+          "IN"
+        ]
+      },
+      "season": null,
+      "irrigation": null,
+      "marketId": null,
+      "horizonDays": null,
+      "supportStatus": "unsupported",
+      "sourceVersions": [],
+      "measuredQuality": null,
+      "missingReason": "no_evaluated_model_and_no_price_history"
+    },
+    {
+      "schemaVersion": "1.0",
+      "mode": "live",
+      "cropId": "soybean",
+      "assessedAt": "2026-10-29T20:17:16.586Z",
+      "reviewBy": "2027-04-30",
+      "expiresAt": null,
+      "modelVersions": [],
+      "id": "cov.visual_journey_supported.soybean",
+      "capability": "visual_journey_supported",
+      "productId": null,
+      "region": {
+        "level": "national",
+        "ids": [
+          "IN"
+        ]
+      },
+      "season": null,
+      "irrigation": null,
+      "marketId": null,
+      "horizonDays": null,
+      "supportStatus": "unsupported",
+      "sourceVersions": [],
+      "measuredQuality": null,
+      "missingReason": "no_sourced_stage_definitions_or_assets"
+    },
+    {
+      "schemaVersion": "1.0",
+      "mode": "live",
+      "cropId": "soybean",
+      "assessedAt": "2026-10-29T20:17:16.586Z",
+      "reviewBy": "2027-04-30",
+      "expiresAt": null,
+      "modelVersions": [],
+      "id": "cov.observation_interpretation_experimental.soybean",
+      "capability": "observation_interpretation_experimental",
+      "productId": null,
+      "region": {
+        "level": "national",
+        "ids": [
+          "IN"
+        ]
+      },
+      "season": null,
+      "irrigation": null,
+      "marketId": null,
+      "horizonDays": null,
+      "supportStatus": "unsupported",
+      "sourceVersions": [],
+      "measuredQuality": null,
+      "missingReason": "pending_evaluation"
+    },
+    {
+      "schemaVersion": "1.0",
+      "mode": "live",
+      "cropId": "mustard",
+      "assessedAt": "2026-10-29T20:17:16.586Z",
+      "reviewBy": "2027-04-30",
+      "expiresAt": null,
+      "modelVersions": [],
+      "id": "cov.screening.mustard.AS.rabi",
+      "capability": "screening_supported",
+      "productId": null,
+      "region": {
+        "level": "state",
+        "ids": [
+          "IN-AS"
+        ]
+      },
+      "season": "rabi",
+      "irrigation": "supplemental",
+      "marketId": null,
+      "horizonDays": null,
+      "supportStatus": "partial",
+      "sourceVersions": [
+        "sha256:9409e137892a1c72"
+      ],
+      "measuredQuality": {
+        "approvedRules": 0,
+        "candidateRules": 0,
+        "labelledChecksPassed": 0,
+        "labelledChecksTotal": 0
+      },
+      "missingReason": "agronomy_sourced_rules_not_yet_encoded_or_labelled"
+    },
+    {
+      "schemaVersion": "1.0",
+      "mode": "live",
+      "cropId": "mustard",
+      "assessedAt": "2026-10-29T20:17:16.586Z",
+      "reviewBy": "2027-04-30",
+      "expiresAt": null,
+      "modelVersions": [],
+      "id": "cov.historical_reference_available.mustard-seed",
+      "capability": "historical_reference_available",
+      "productId": "mustard-seed",
+      "region": {
+        "level": "national",
+        "ids": [
+          "IN"
+        ]
+      },
+      "season": null,
+      "irrigation": null,
+      "marketId": null,
+      "horizonDays": null,
+      "supportStatus": "unsupported",
+      "sourceVersions": [],
+      "measuredQuality": null,
+      "missingReason": "price_access_key_gated"
+    },
+    {
+      "schemaVersion": "1.0",
+      "mode": "live",
+      "cropId": "mustard",
+      "assessedAt": "2026-10-29T20:17:16.586Z",
+      "reviewBy": "2027-04-30",
+      "expiresAt": null,
+      "modelVersions": [],
+      "id": "cov.forecast_evaluated.mustard-seed",
+      "capability": "forecast_evaluated",
+      "productId": "mustard-seed",
+      "region": {
+        "level": "national",
+        "ids": [
+          "IN"
+        ]
+      },
+      "season": null,
+      "irrigation": null,
+      "marketId": null,
+      "horizonDays": null,
+      "supportStatus": "unsupported",
+      "sourceVersions": [],
+      "measuredQuality": null,
+      "missingReason": "no_evaluated_model_and_no_price_history"
+    },
+    {
+      "schemaVersion": "1.0",
+      "mode": "live",
+      "cropId": "mustard",
+      "assessedAt": "2026-10-29T20:17:16.586Z",
+      "reviewBy": "2027-04-30",
+      "expiresAt": null,
+      "modelVersions": [],
+      "id": "cov.visual_journey_supported.mustard",
+      "capability": "visual_journey_supported",
+      "productId": null,
+      "region": {
+        "level": "national",
+        "ids": [
+          "IN"
+        ]
+      },
+      "season": null,
+      "irrigation": null,
+      "marketId": null,
+      "horizonDays": null,
+      "supportStatus": "unsupported",
+      "sourceVersions": [],
+      "measuredQuality": null,
+      "missingReason": "no_sourced_stage_definitions_or_assets"
+    },
+    {
+      "schemaVersion": "1.0",
+      "mode": "live",
+      "cropId": "mustard",
+      "assessedAt": "2026-10-29T20:17:16.586Z",
+      "reviewBy": "2027-04-30",
+      "expiresAt": null,
+      "modelVersions": [],
+      "id": "cov.observation_interpretation_experimental.mustard",
+      "capability": "observation_interpretation_experimental",
+      "productId": null,
+      "region": {
+        "level": "national",
+        "ids": [
+          "IN"
+        ]
+      },
+      "season": null,
+      "irrigation": null,
+      "marketId": null,
+      "horizonDays": null,
+      "supportStatus": "unsupported",
+      "sourceVersions": [],
+      "measuredQuality": null,
+      "missingReason": "pending_evaluation"
+    },
+    {
+      "schemaVersion": "1.0",
+      "mode": "live",
+      "cropId": "sesame",
+      "assessedAt": "2026-10-29T20:17:16.586Z",
+      "reviewBy": "2027-04-30",
+      "expiresAt": null,
+      "modelVersions": [],
+      "id": "cov.screening.sesame.TN.irrigated",
+      "capability": "screening_supported",
+      "productId": null,
+      "region": {
+        "level": "state",
+        "ids": [
+          "IN-TN"
+        ]
+      },
+      "season": "zaid",
+      "irrigation": "irrigated",
+      "marketId": null,
+      "horizonDays": null,
+      "supportStatus": "partial",
+      "sourceVersions": [
+        "sha256:fc01b6237a06f81b",
+        "sha256:f25896a9b10acec6"
+      ],
+      "measuredQuality": {
+        "approvedRules": 0,
+        "candidateRules": 0,
+        "labelledChecksPassed": 0,
+        "labelledChecksTotal": 0
+      },
+      "missingReason": "agronomy_sourced_rules_not_yet_encoded_or_labelled"
+    },
+    {
+      "schemaVersion": "1.0",
+      "mode": "live",
+      "cropId": "sesame",
+      "assessedAt": "2026-10-29T20:17:16.586Z",
+      "reviewBy": "2027-04-30",
+      "expiresAt": null,
+      "modelVersions": [],
+      "id": "cov.screening.sesame.TN.rainfed",
+      "capability": "screening_supported",
+      "productId": null,
+      "region": {
+        "level": "state",
+        "ids": [
+          "IN-TN"
+        ]
+      },
+      "season": "kharif",
+      "irrigation": "rainfed",
+      "marketId": null,
+      "horizonDays": null,
+      "supportStatus": "partial",
+      "sourceVersions": [
+        "sha256:fc01b6237a06f81b",
+        "sha256:f25896a9b10acec6"
+      ],
+      "measuredQuality": {
+        "approvedRules": 0,
+        "candidateRules": 0,
+        "labelledChecksPassed": 0,
+        "labelledChecksTotal": 0
+      },
+      "missingReason": "agronomy_sourced_rules_not_yet_encoded_or_labelled"
+    },
+    {
+      "schemaVersion": "1.0",
+      "mode": "live",
+      "cropId": "sesame",
+      "assessedAt": "2026-10-29T20:17:16.586Z",
+      "reviewBy": "2027-04-30",
+      "expiresAt": null,
+      "modelVersions": [],
+      "id": "cov.screening.sesame.AS.kharif",
+      "capability": "screening_supported",
+      "productId": null,
+      "region": {
+        "level": "state",
+        "ids": [
+          "IN-AS"
+        ]
+      },
+      "season": "kharif",
+      "irrigation": "unspecified",
+      "marketId": null,
+      "horizonDays": null,
+      "supportStatus": "partial",
+      "sourceVersions": [
+        "sha256:fc01b6237a06f81b",
+        "sha256:f25896a9b10acec6"
+      ],
+      "measuredQuality": {
+        "approvedRules": 0,
+        "candidateRules": 0,
+        "labelledChecksPassed": 0,
+        "labelledChecksTotal": 0
+      },
+      "missingReason": "agronomy_sourced_rules_not_yet_encoded_or_labelled"
+    },
+    {
+      "schemaVersion": "1.0",
+      "mode": "live",
+      "cropId": "sesame",
+      "assessedAt": "2026-10-29T20:17:16.586Z",
+      "reviewBy": "2027-04-30",
+      "expiresAt": null,
+      "modelVersions": [],
+      "id": "cov.historical_reference_available.sesame-seed",
+      "capability": "historical_reference_available",
+      "productId": "sesame-seed",
+      "region": {
+        "level": "national",
+        "ids": [
+          "IN"
+        ]
+      },
+      "season": null,
+      "irrigation": null,
+      "marketId": null,
+      "horizonDays": null,
+      "supportStatus": "unsupported",
+      "sourceVersions": [],
+      "measuredQuality": null,
+      "missingReason": "price_access_key_gated"
+    },
+    {
+      "schemaVersion": "1.0",
+      "mode": "live",
+      "cropId": "sesame",
+      "assessedAt": "2026-10-29T20:17:16.586Z",
+      "reviewBy": "2027-04-30",
+      "expiresAt": null,
+      "modelVersions": [],
+      "id": "cov.forecast_evaluated.sesame-seed",
+      "capability": "forecast_evaluated",
+      "productId": "sesame-seed",
+      "region": {
+        "level": "national",
+        "ids": [
+          "IN"
+        ]
+      },
+      "season": null,
+      "irrigation": null,
+      "marketId": null,
+      "horizonDays": null,
+      "supportStatus": "unsupported",
+      "sourceVersions": [],
+      "measuredQuality": null,
+      "missingReason": "no_evaluated_model_and_no_price_history"
+    },
+    {
+      "schemaVersion": "1.0",
+      "mode": "live",
+      "cropId": "sesame",
+      "assessedAt": "2026-10-29T20:17:16.586Z",
+      "reviewBy": "2027-04-30",
+      "expiresAt": null,
+      "modelVersions": [],
+      "id": "cov.visual_journey_supported.sesame",
+      "capability": "visual_journey_supported",
+      "productId": null,
+      "region": {
+        "level": "national",
+        "ids": [
+          "IN"
+        ]
+      },
+      "season": null,
+      "irrigation": null,
+      "marketId": null,
+      "horizonDays": null,
+      "supportStatus": "unsupported",
+      "sourceVersions": [],
+      "measuredQuality": null,
+      "missingReason": "no_sourced_stage_definitions_or_assets"
+    },
+    {
+      "schemaVersion": "1.0",
+      "mode": "live",
+      "cropId": "sesame",
+      "assessedAt": "2026-10-29T20:17:16.586Z",
+      "reviewBy": "2027-04-30",
+      "expiresAt": null,
+      "modelVersions": [],
+      "id": "cov.observation_interpretation_experimental.sesame",
+      "capability": "observation_interpretation_experimental",
+      "productId": null,
+      "region": {
+        "level": "national",
+        "ids": [
+          "IN"
+        ]
+      },
+      "season": null,
+      "irrigation": null,
+      "marketId": null,
+      "horizonDays": null,
+      "supportStatus": "unsupported",
+      "sourceVersions": [],
+      "measuredQuality": null,
+      "missingReason": "pending_evaluation"
+    },
+    {
+      "schemaVersion": "1.0",
+      "mode": "live",
+      "cropId": "sunflower",
+      "assessedAt": "2026-10-29T20:17:16.586Z",
+      "reviewBy": "2027-04-30",
+      "expiresAt": null,
+      "modelVersions": [],
+      "id": "cov.screening.sunflower.TN.rainfed",
+      "capability": "screening_supported",
+      "productId": null,
+      "region": {
+        "level": "state",
+        "ids": [
+          "IN-TN"
+        ]
+      },
+      "season": "rabi",
+      "irrigation": "rainfed",
+      "marketId": null,
+      "horizonDays": null,
+      "supportStatus": "partial",
+      "sourceVersions": [
+        "sha256:138536f79a0e84f5",
+        "sha256:5709f5bcd9334a5d"
+      ],
+      "measuredQuality": {
+        "approvedRules": 0,
+        "candidateRules": 0,
+        "labelledChecksPassed": 0,
+        "labelledChecksTotal": 0
+      },
+      "missingReason": "agronomy_sourced_rules_not_yet_encoded_or_labelled"
+    },
+    {
+      "schemaVersion": "1.0",
+      "mode": "live",
+      "cropId": "sunflower",
+      "assessedAt": "2026-10-29T20:17:16.586Z",
+      "reviewBy": "2027-04-30",
+      "expiresAt": null,
+      "modelVersions": [],
+      "id": "cov.screening.sunflower.TN.irrigated",
+      "capability": "screening_supported",
+      "productId": null,
+      "region": {
+        "level": "state",
+        "ids": [
+          "IN-TN"
+        ]
+      },
+      "season": "kharif",
+      "irrigation": "irrigated",
+      "marketId": null,
+      "horizonDays": null,
+      "supportStatus": "partial",
+      "sourceVersions": [
+        "sha256:138536f79a0e84f5",
+        "sha256:5709f5bcd9334a5d"
+      ],
+      "measuredQuality": {
+        "approvedRules": 0,
+        "candidateRules": 0,
+        "labelledChecksPassed": 0,
+        "labelledChecksTotal": 0
+      },
+      "missingReason": "agronomy_sourced_rules_not_yet_encoded_or_labelled"
+    },
+    {
+      "schemaVersion": "1.0",
+      "mode": "live",
+      "cropId": "sunflower",
+      "assessedAt": "2026-10-29T20:17:16.586Z",
+      "reviewBy": "2027-04-30",
+      "expiresAt": null,
+      "modelVersions": [],
+      "id": "cov.historical_reference_available.sunflower-seed",
+      "capability": "historical_reference_available",
+      "productId": "sunflower-seed",
+      "region": {
+        "level": "national",
+        "ids": [
+          "IN"
+        ]
+      },
+      "season": null,
+      "irrigation": null,
+      "marketId": null,
+      "horizonDays": null,
+      "supportStatus": "unsupported",
+      "sourceVersions": [],
+      "measuredQuality": null,
+      "missingReason": "price_access_key_gated"
+    },
+    {
+      "schemaVersion": "1.0",
+      "mode": "live",
+      "cropId": "sunflower",
+      "assessedAt": "2026-10-29T20:17:16.586Z",
+      "reviewBy": "2027-04-30",
+      "expiresAt": null,
+      "modelVersions": [],
+      "id": "cov.forecast_evaluated.sunflower-seed",
+      "capability": "forecast_evaluated",
+      "productId": "sunflower-seed",
+      "region": {
+        "level": "national",
+        "ids": [
+          "IN"
+        ]
+      },
+      "season": null,
+      "irrigation": null,
+      "marketId": null,
+      "horizonDays": null,
+      "supportStatus": "unsupported",
+      "sourceVersions": [],
+      "measuredQuality": null,
+      "missingReason": "no_evaluated_model_and_no_price_history"
+    },
+    {
+      "schemaVersion": "1.0",
+      "mode": "live",
+      "cropId": "sunflower",
+      "assessedAt": "2026-10-29T20:17:16.586Z",
+      "reviewBy": "2027-04-30",
+      "expiresAt": null,
+      "modelVersions": [],
+      "id": "cov.visual_journey_supported.sunflower",
+      "capability": "visual_journey_supported",
+      "productId": null,
+      "region": {
+        "level": "national",
+        "ids": [
+          "IN"
+        ]
+      },
+      "season": null,
+      "irrigation": null,
+      "marketId": null,
+      "horizonDays": null,
+      "supportStatus": "unsupported",
+      "sourceVersions": [],
+      "measuredQuality": null,
+      "missingReason": "no_sourced_stage_definitions_or_assets"
+    },
+    {
+      "schemaVersion": "1.0",
+      "mode": "live",
+      "cropId": "sunflower",
+      "assessedAt": "2026-10-29T20:17:16.586Z",
+      "reviewBy": "2027-04-30",
+      "expiresAt": null,
+      "modelVersions": [],
+      "id": "cov.observation_interpretation_experimental.sunflower",
+      "capability": "observation_interpretation_experimental",
+      "productId": null,
+      "region": {
+        "level": "national",
+        "ids": [
+          "IN"
+        ]
+      },
+      "season": null,
+      "irrigation": null,
+      "marketId": null,
+      "horizonDays": null,
+      "supportStatus": "unsupported",
+      "sourceVersions": [],
+      "measuredQuality": null,
+      "missingReason": "pending_evaluation"
+    },
+    {
+      "schemaVersion": "1.0",
+      "mode": "live",
+      "cropId": "potato",
+      "assessedAt": "2026-10-29T20:17:16.586Z",
+      "reviewBy": "2027-04-30",
+      "expiresAt": null,
+      "modelVersions": [],
+      "id": "cov.screening.potato.TN.plains",
+      "capability": "screening_supported",
+      "productId": null,
+      "region": {
+        "level": "state",
+        "ids": [
+          "IN-TN"
+        ]
+      },
+      "season": "rabi",
+      "irrigation": "unspecified",
+      "marketId": null,
+      "horizonDays": null,
+      "supportStatus": "partial",
+      "sourceVersions": [
+        "sha256:4137434ed7ddf0e4",
+        "sha256:a6103eb0ef62795d"
+      ],
+      "measuredQuality": {
+        "approvedRules": 0,
+        "candidateRules": 0,
+        "labelledChecksPassed": 0,
+        "labelledChecksTotal": 0
+      },
+      "missingReason": "agronomy_sourced_rules_not_yet_encoded_or_labelled"
+    },
+    {
+      "schemaVersion": "1.0",
+      "mode": "live",
+      "cropId": "potato",
+      "assessedAt": "2026-10-29T20:17:16.586Z",
+      "reviewBy": "2027-04-30",
+      "expiresAt": null,
+      "modelVersions": [],
+      "id": "cov.screening.potato.AS.rainfed",
+      "capability": "screening_supported",
+      "productId": null,
+      "region": {
+        "level": "state",
+        "ids": [
+          "IN-AS"
+        ]
+      },
+      "season": "rabi",
+      "irrigation": "rainfed",
+      "marketId": null,
+      "horizonDays": null,
+      "supportStatus": "partial",
+      "sourceVersions": [
+        "sha256:4137434ed7ddf0e4",
+        "sha256:a6103eb0ef62795d"
+      ],
+      "measuredQuality": {
+        "approvedRules": 0,
+        "candidateRules": 0,
+        "labelledChecksPassed": 0,
+        "labelledChecksTotal": 0
+      },
+      "missingReason": "agronomy_sourced_rules_not_yet_encoded_or_labelled"
+    },
+    {
+      "schemaVersion": "1.0",
+      "mode": "live",
+      "cropId": "potato",
+      "assessedAt": "2026-10-29T20:17:16.586Z",
+      "reviewBy": "2027-04-30",
+      "expiresAt": null,
+      "modelVersions": [],
+      "id": "cov.screening.potato.AS.irrigated",
+      "capability": "screening_supported",
+      "productId": null,
+      "region": {
+        "level": "state",
+        "ids": [
+          "IN-AS"
+        ]
+      },
+      "season": "rabi",
+      "irrigation": "irrigated",
+      "marketId": null,
+      "horizonDays": null,
+      "supportStatus": "partial",
+      "sourceVersions": [
+        "sha256:4137434ed7ddf0e4",
+        "sha256:a6103eb0ef62795d"
+      ],
+      "measuredQuality": {
+        "approvedRules": 0,
+        "candidateRules": 0,
+        "labelledChecksPassed": 0,
+        "labelledChecksTotal": 0
+      },
+      "missingReason": "agronomy_sourced_rules_not_yet_encoded_or_labelled"
+    },
+    {
+      "schemaVersion": "1.0",
+      "mode": "live",
+      "cropId": "potato",
+      "assessedAt": "2026-10-29T20:17:16.586Z",
+      "reviewBy": "2027-04-30",
+      "expiresAt": null,
+      "modelVersions": [],
+      "id": "cov.historical_reference_available.potato-fresh",
+      "capability": "historical_reference_available",
+      "productId": "potato-fresh",
+      "region": {
+        "level": "national",
+        "ids": [
+          "IN"
+        ]
+      },
+      "season": null,
+      "irrigation": null,
+      "marketId": null,
+      "horizonDays": null,
+      "supportStatus": "unsupported",
+      "sourceVersions": [],
+      "measuredQuality": null,
+      "missingReason": "price_access_key_gated"
+    },
+    {
+      "schemaVersion": "1.0",
+      "mode": "live",
+      "cropId": "potato",
+      "assessedAt": "2026-10-29T20:17:16.586Z",
+      "reviewBy": "2027-04-30",
+      "expiresAt": null,
+      "modelVersions": [],
+      "id": "cov.forecast_evaluated.potato-fresh",
+      "capability": "forecast_evaluated",
+      "productId": "potato-fresh",
+      "region": {
+        "level": "national",
+        "ids": [
+          "IN"
+        ]
+      },
+      "season": null,
+      "irrigation": null,
+      "marketId": null,
+      "horizonDays": null,
+      "supportStatus": "unsupported",
+      "sourceVersions": [],
+      "measuredQuality": null,
+      "missingReason": "no_evaluated_model_and_no_price_history"
+    },
+    {
+      "schemaVersion": "1.0",
+      "mode": "live",
+      "cropId": "potato",
+      "assessedAt": "2026-10-29T20:17:16.586Z",
+      "reviewBy": "2027-04-30",
+      "expiresAt": null,
+      "modelVersions": [],
+      "id": "cov.visual_journey_supported.potato",
+      "capability": "visual_journey_supported",
+      "productId": null,
+      "region": {
+        "level": "national",
+        "ids": [
+          "IN"
+        ]
+      },
+      "season": null,
+      "irrigation": null,
+      "marketId": null,
+      "horizonDays": null,
+      "supportStatus": "unsupported",
+      "sourceVersions": [],
+      "measuredQuality": null,
+      "missingReason": "no_sourced_stage_definitions_or_assets"
+    },
+    {
+      "schemaVersion": "1.0",
+      "mode": "live",
+      "cropId": "potato",
+      "assessedAt": "2026-10-29T20:17:16.586Z",
+      "reviewBy": "2027-04-30",
+      "expiresAt": null,
+      "modelVersions": [],
+      "id": "cov.observation_interpretation_experimental.potato",
+      "capability": "observation_interpretation_experimental",
+      "productId": null,
+      "region": {
+        "level": "national",
+        "ids": [
+          "IN"
+        ]
+      },
+      "season": null,
+      "irrigation": null,
+      "marketId": null,
+      "horizonDays": null,
+      "supportStatus": "unsupported",
+      "sourceVersions": [],
+      "measuredQuality": null,
+      "missingReason": "pending_evaluation"
+    },
+    {
+      "schemaVersion": "1.0",
+      "mode": "live",
+      "cropId": "onion",
+      "assessedAt": "2026-10-29T20:17:16.586Z",
+      "reviewBy": "2027-04-30",
+      "expiresAt": null,
+      "modelVersions": [],
+      "id": "cov.screening.onion.TN.bellary",
+      "capability": "screening_supported",
+      "productId": null,
+      "region": {
+        "level": "state",
+        "ids": [
+          "IN-TN"
+        ]
+      },
+      "season": "kharif",
+      "irrigation": "unspecified",
+      "marketId": null,
+      "horizonDays": null,
+      "supportStatus": "partial",
+      "sourceVersions": [
+        "sha256:7c0dcd654b4e9ed8",
+        "sha256:0fcd878aa071a6a0",
+        "sha256:ea5c1073d1d47db3"
+      ],
+      "measuredQuality": {
+        "approvedRules": 0,
+        "candidateRules": 0,
+        "labelledChecksPassed": 0,
+        "labelledChecksTotal": 0
+      },
+      "missingReason": "agronomy_sourced_rules_not_yet_encoded_or_labelled"
+    },
+    {
+      "schemaVersion": "1.0",
+      "mode": "live",
+      "cropId": "onion",
+      "assessedAt": "2026-10-29T20:17:16.586Z",
+      "reviewBy": "2027-04-30",
+      "expiresAt": null,
+      "modelVersions": [],
+      "id": "cov.screening.onion.TN.small",
+      "capability": "screening_supported",
+      "productId": null,
+      "region": {
+        "level": "state",
+        "ids": [
+          "IN-TN"
+        ]
+      },
+      "season": "rabi",
+      "irrigation": "unspecified",
+      "marketId": null,
+      "horizonDays": null,
+      "supportStatus": "unknown",
+      "sourceVersions": [
+        "sha256:7c0dcd654b4e9ed8",
+        "sha256:0fcd878aa071a6a0",
+        "sha256:ea5c1073d1d47db3"
+      ],
+      "measuredQuality": null,
+      "missingReason": "fewer_than_two_sourced_requirements_in_context"
+    },
+    {
+      "schemaVersion": "1.0",
+      "mode": "live",
+      "cropId": "onion",
+      "assessedAt": "2026-10-29T20:17:16.586Z",
+      "reviewBy": "2027-04-30",
+      "expiresAt": null,
+      "modelVersions": [],
+      "id": "cov.screening.onion.MH-GJ.kharif",
+      "capability": "screening_supported",
+      "productId": null,
+      "region": {
+        "level": "region",
+        "ids": [
+          "IN-MH",
+          "IN-GJ"
+        ]
+      },
+      "season": "kharif",
+      "irrigation": "unspecified",
+      "marketId": null,
+      "horizonDays": null,
+      "supportStatus": "unknown",
+      "sourceVersions": [
+        "sha256:7c0dcd654b4e9ed8",
+        "sha256:0fcd878aa071a6a0",
+        "sha256:ea5c1073d1d47db3"
+      ],
+      "measuredQuality": null,
+      "missingReason": "fewer_than_two_sourced_requirements_in_context"
+    },
+    {
+      "schemaVersion": "1.0",
+      "mode": "live",
+      "cropId": "onion",
+      "assessedAt": "2026-10-29T20:17:16.586Z",
+      "reviewBy": "2027-04-30",
+      "expiresAt": null,
+      "modelVersions": [],
+      "id": "cov.screening.onion.NORTH.rabi",
+      "capability": "screening_supported",
+      "productId": null,
+      "region": {
+        "level": "region",
+        "ids": [
+          "IN-RJ",
+          "IN-HR",
+          "IN-PB",
+          "IN-UP",
+          "IN-BR"
+        ]
+      },
+      "season": "rabi",
+      "irrigation": "unspecified",
+      "marketId": null,
+      "horizonDays": null,
+      "supportStatus": "unknown",
+      "sourceVersions": [
+        "sha256:7c0dcd654b4e9ed8",
+        "sha256:0fcd878aa071a6a0",
+        "sha256:ea5c1073d1d47db3"
+      ],
+      "measuredQuality": null,
+      "missingReason": "fewer_than_two_sourced_requirements_in_context"
+    },
+    {
+      "schemaVersion": "1.0",
+      "mode": "live",
+      "cropId": "onion",
+      "assessedAt": "2026-10-29T20:17:16.586Z",
+      "reviewBy": "2027-04-30",
+      "expiresAt": null,
+      "modelVersions": [],
+      "id": "cov.historical_reference_available.onion-bulb",
+      "capability": "historical_reference_available",
+      "productId": "onion-bulb",
+      "region": {
+        "level": "national",
+        "ids": [
+          "IN"
+        ]
+      },
+      "season": null,
+      "irrigation": null,
+      "marketId": null,
+      "horizonDays": null,
+      "supportStatus": "unsupported",
+      "sourceVersions": [],
+      "measuredQuality": null,
+      "missingReason": "price_access_key_gated"
+    },
+    {
+      "schemaVersion": "1.0",
+      "mode": "live",
+      "cropId": "onion",
+      "assessedAt": "2026-10-29T20:17:16.586Z",
+      "reviewBy": "2027-04-30",
+      "expiresAt": null,
+      "modelVersions": [],
+      "id": "cov.forecast_evaluated.onion-bulb",
+      "capability": "forecast_evaluated",
+      "productId": "onion-bulb",
+      "region": {
+        "level": "national",
+        "ids": [
+          "IN"
+        ]
+      },
+      "season": null,
+      "irrigation": null,
+      "marketId": null,
+      "horizonDays": null,
+      "supportStatus": "unsupported",
+      "sourceVersions": [],
+      "measuredQuality": null,
+      "missingReason": "no_evaluated_model_and_no_price_history"
+    },
+    {
+      "schemaVersion": "1.0",
+      "mode": "live",
+      "cropId": "onion",
+      "assessedAt": "2026-10-29T20:17:16.586Z",
+      "reviewBy": "2027-04-30",
+      "expiresAt": null,
+      "modelVersions": [],
+      "id": "cov.visual_journey_supported.onion",
+      "capability": "visual_journey_supported",
+      "productId": null,
+      "region": {
+        "level": "national",
+        "ids": [
+          "IN"
+        ]
+      },
+      "season": null,
+      "irrigation": null,
+      "marketId": null,
+      "horizonDays": null,
+      "supportStatus": "unsupported",
+      "sourceVersions": [],
+      "measuredQuality": null,
+      "missingReason": "no_sourced_stage_definitions_or_assets"
+    },
+    {
+      "schemaVersion": "1.0",
+      "mode": "live",
+      "cropId": "onion",
+      "assessedAt": "2026-10-29T20:17:16.586Z",
+      "reviewBy": "2027-04-30",
+      "expiresAt": null,
+      "modelVersions": [],
+      "id": "cov.observation_interpretation_experimental.onion",
+      "capability": "observation_interpretation_experimental",
+      "productId": null,
+      "region": {
+        "level": "national",
+        "ids": [
+          "IN"
+        ]
+      },
+      "season": null,
+      "irrigation": null,
+      "marketId": null,
+      "horizonDays": null,
+      "supportStatus": "unsupported",
+      "sourceVersions": [],
+      "measuredQuality": null,
+      "missingReason": "pending_evaluation"
+    },
+    {
+      "schemaVersion": "1.0",
+      "mode": "live",
+      "cropId": "tomato",
+      "assessedAt": "2026-10-29T20:17:16.586Z",
+      "reviewBy": "2027-04-30",
+      "expiresAt": null,
+      "modelVersions": [],
+      "id": "cov.screening.tomato.TN.main",
+      "capability": "screening_supported",
+      "productId": null,
+      "region": {
+        "level": "state",
+        "ids": [
+          "IN-TN"
+        ]
+      },
+      "season": "kharif",
+      "irrigation": "unspecified",
+      "marketId": null,
+      "horizonDays": null,
+      "supportStatus": "unknown",
+      "sourceVersions": [
+        "sha256:9bbcb4de2fa8274e",
+        "sha256:17a08899c3317ac2"
+      ],
+      "measuredQuality": null,
+      "missingReason": "fewer_than_two_sourced_requirements_in_context"
+    },
+    {
+      "schemaVersion": "1.0",
+      "mode": "live",
+      "cropId": "tomato",
+      "assessedAt": "2026-10-29T20:17:16.586Z",
+      "reviewBy": "2027-04-30",
+      "expiresAt": null,
+      "modelVersions": [],
+      "id": "cov.screening.tomato.AS.rabi",
+      "capability": "screening_supported",
+      "productId": null,
+      "region": {
+        "level": "state",
+        "ids": [
+          "IN-AS"
+        ]
+      },
+      "season": "rabi",
+      "irrigation": "irrigated",
+      "marketId": null,
+      "horizonDays": null,
+      "supportStatus": "partial",
+      "sourceVersions": [
+        "sha256:9bbcb4de2fa8274e",
+        "sha256:17a08899c3317ac2"
+      ],
+      "measuredQuality": {
+        "approvedRules": 0,
+        "candidateRules": 0,
+        "labelledChecksPassed": 0,
+        "labelledChecksTotal": 0
+      },
+      "missingReason": "agronomy_sourced_rules_not_yet_encoded_or_labelled"
+    },
+    {
+      "schemaVersion": "1.0",
+      "mode": "live",
+      "cropId": "tomato",
+      "assessedAt": "2026-10-29T20:17:16.586Z",
+      "reviewBy": "2027-04-30",
+      "expiresAt": null,
+      "modelVersions": [],
+      "id": "cov.historical_reference_available.tomato-fresh",
+      "capability": "historical_reference_available",
+      "productId": "tomato-fresh",
+      "region": {
+        "level": "national",
+        "ids": [
+          "IN"
+        ]
+      },
+      "season": null,
+      "irrigation": null,
+      "marketId": null,
+      "horizonDays": null,
+      "supportStatus": "unsupported",
+      "sourceVersions": [],
+      "measuredQuality": null,
+      "missingReason": "price_access_key_gated"
+    },
+    {
+      "schemaVersion": "1.0",
+      "mode": "live",
+      "cropId": "tomato",
+      "assessedAt": "2026-10-29T20:17:16.586Z",
+      "reviewBy": "2027-04-30",
+      "expiresAt": null,
+      "modelVersions": [],
+      "id": "cov.forecast_evaluated.tomato-fresh",
+      "capability": "forecast_evaluated",
+      "productId": "tomato-fresh",
+      "region": {
+        "level": "national",
+        "ids": [
+          "IN"
+        ]
+      },
+      "season": null,
+      "irrigation": null,
+      "marketId": null,
+      "horizonDays": null,
+      "supportStatus": "unsupported",
+      "sourceVersions": [],
+      "measuredQuality": null,
+      "missingReason": "no_evaluated_model_and_no_price_history"
+    },
+    {
+      "schemaVersion": "1.0",
+      "mode": "live",
+      "cropId": "tomato",
+      "assessedAt": "2026-10-29T20:17:16.586Z",
+      "reviewBy": "2027-04-30",
+      "expiresAt": null,
+      "modelVersions": [],
+      "id": "cov.visual_journey_supported.tomato",
+      "capability": "visual_journey_supported",
+      "productId": null,
+      "region": {
+        "level": "national",
+        "ids": [
+          "IN"
+        ]
+      },
+      "season": null,
+      "irrigation": null,
+      "marketId": null,
+      "horizonDays": null,
+      "supportStatus": "unsupported",
+      "sourceVersions": [],
+      "measuredQuality": null,
+      "missingReason": "no_sourced_stage_definitions_or_assets"
+    },
+    {
+      "schemaVersion": "1.0",
+      "mode": "live",
+      "cropId": "tomato",
+      "assessedAt": "2026-10-29T20:17:16.586Z",
+      "reviewBy": "2027-04-30",
+      "expiresAt": null,
+      "modelVersions": [],
+      "id": "cov.observation_interpretation_experimental.tomato",
+      "capability": "observation_interpretation_experimental",
+      "productId": null,
+      "region": {
+        "level": "national",
+        "ids": [
+          "IN"
+        ]
+      },
+      "season": null,
+      "irrigation": null,
+      "marketId": null,
+      "horizonDays": null,
+      "supportStatus": "unsupported",
+      "sourceVersions": [],
+      "measuredQuality": null,
+      "missingReason": "pending_evaluation"
+    },
+    {
+      "schemaVersion": "1.0",
+      "mode": "live",
+      "cropId": "brinjal",
+      "assessedAt": "2026-10-29T20:17:16.586Z",
+      "reviewBy": "2027-04-30",
+      "expiresAt": null,
+      "modelVersions": [],
+      "id": "cov.screening.brinjal.TN.main",
+      "capability": "screening_supported",
+      "productId": null,
+      "region": {
+        "level": "state",
+        "ids": [
+          "IN-TN"
+        ]
+      },
+      "season": "rabi",
+      "irrigation": "unspecified",
+      "marketId": null,
+      "horizonDays": null,
+      "supportStatus": "unknown",
+      "sourceVersions": [
+        "sha256:6c01c1189afe4273",
+        "sha256:85a114fce9e94a42"
+      ],
+      "measuredQuality": null,
+      "missingReason": "fewer_than_two_sourced_requirements_in_context"
+    },
+    {
+      "schemaVersion": "1.0",
+      "mode": "live",
+      "cropId": "brinjal",
+      "assessedAt": "2026-10-29T20:17:16.586Z",
+      "reviewBy": "2027-04-30",
+      "expiresAt": null,
+      "modelVersions": [],
+      "id": "cov.screening.brinjal.AS.winter",
+      "capability": "screening_supported",
+      "productId": null,
+      "region": {
+        "level": "state",
+        "ids": [
+          "IN-AS"
+        ]
+      },
+      "season": "rabi",
+      "irrigation": "unspecified",
+      "marketId": null,
+      "horizonDays": null,
+      "supportStatus": "partial",
+      "sourceVersions": [
+        "sha256:6c01c1189afe4273",
+        "sha256:85a114fce9e94a42"
+      ],
+      "measuredQuality": {
+        "approvedRules": 0,
+        "candidateRules": 0,
+        "labelledChecksPassed": 0,
+        "labelledChecksTotal": 0
+      },
+      "missingReason": "agronomy_sourced_rules_not_yet_encoded_or_labelled"
+    },
+    {
+      "schemaVersion": "1.0",
+      "mode": "live",
+      "cropId": "brinjal",
+      "assessedAt": "2026-10-29T20:17:16.586Z",
+      "reviewBy": "2027-04-30",
+      "expiresAt": null,
+      "modelVersions": [],
+      "id": "cov.historical_reference_available.brinjal-fresh",
+      "capability": "historical_reference_available",
+      "productId": "brinjal-fresh",
+      "region": {
+        "level": "national",
+        "ids": [
+          "IN"
+        ]
+      },
+      "season": null,
+      "irrigation": null,
+      "marketId": null,
+      "horizonDays": null,
+      "supportStatus": "unsupported",
+      "sourceVersions": [],
+      "measuredQuality": null,
+      "missingReason": "price_access_key_gated"
+    },
+    {
+      "schemaVersion": "1.0",
+      "mode": "live",
+      "cropId": "brinjal",
+      "assessedAt": "2026-10-29T20:17:16.586Z",
+      "reviewBy": "2027-04-30",
+      "expiresAt": null,
+      "modelVersions": [],
+      "id": "cov.forecast_evaluated.brinjal-fresh",
+      "capability": "forecast_evaluated",
+      "productId": "brinjal-fresh",
+      "region": {
+        "level": "national",
+        "ids": [
+          "IN"
+        ]
+      },
+      "season": null,
+      "irrigation": null,
+      "marketId": null,
+      "horizonDays": null,
+      "supportStatus": "unsupported",
+      "sourceVersions": [],
+      "measuredQuality": null,
+      "missingReason": "no_evaluated_model_and_no_price_history"
+    },
+    {
+      "schemaVersion": "1.0",
+      "mode": "live",
+      "cropId": "brinjal",
+      "assessedAt": "2026-10-29T20:17:16.586Z",
+      "reviewBy": "2027-04-30",
+      "expiresAt": null,
+      "modelVersions": [],
+      "id": "cov.visual_journey_supported.brinjal",
+      "capability": "visual_journey_supported",
+      "productId": null,
+      "region": {
+        "level": "national",
+        "ids": [
+          "IN"
+        ]
+      },
+      "season": null,
+      "irrigation": null,
+      "marketId": null,
+      "horizonDays": null,
+      "supportStatus": "unsupported",
+      "sourceVersions": [],
+      "measuredQuality": null,
+      "missingReason": "no_sourced_stage_definitions_or_assets"
+    },
+    {
+      "schemaVersion": "1.0",
+      "mode": "live",
+      "cropId": "brinjal",
+      "assessedAt": "2026-10-29T20:17:16.586Z",
+      "reviewBy": "2027-04-30",
+      "expiresAt": null,
+      "modelVersions": [],
+      "id": "cov.observation_interpretation_experimental.brinjal",
+      "capability": "observation_interpretation_experimental",
+      "productId": null,
+      "region": {
+        "level": "national",
+        "ids": [
+          "IN"
+        ]
+      },
+      "season": null,
+      "irrigation": null,
+      "marketId": null,
+      "horizonDays": null,
+      "supportStatus": "unsupported",
+      "sourceVersions": [],
+      "measuredQuality": null,
+      "missingReason": "pending_evaluation"
+    },
+    {
+      "schemaVersion": "1.0",
+      "mode": "live",
+      "cropId": "okra",
+      "assessedAt": "2026-10-29T20:17:16.586Z",
+      "reviewBy": "2027-04-30",
+      "expiresAt": null,
+      "modelVersions": [],
+      "id": "cov.screening.okra.TN.main",
+      "capability": "screening_supported",
+      "productId": null,
+      "region": {
+        "level": "state",
+        "ids": [
+          "IN-TN"
+        ]
+      },
+      "season": "kharif",
+      "irrigation": "irrigated",
+      "marketId": null,
+      "horizonDays": null,
+      "supportStatus": "partial",
+      "sourceVersions": [
+        "sha256:a73da506d43a3103",
+        "sha256:548b0d7163e3c547",
+        "sha256:4c2b8af94b5cc15a"
+      ],
+      "measuredQuality": {
+        "approvedRules": 0,
+        "candidateRules": 0,
+        "labelledChecksPassed": 0,
+        "labelledChecksTotal": 0
+      },
+      "missingReason": "agronomy_sourced_rules_not_yet_encoded_or_labelled"
+    },
+    {
+      "schemaVersion": "1.0",
+      "mode": "live",
+      "cropId": "okra",
+      "assessedAt": "2026-10-29T20:17:16.586Z",
+      "reviewBy": "2027-04-30",
+      "expiresAt": null,
+      "modelVersions": [],
+      "id": "cov.historical_reference_available.okra-fresh",
+      "capability": "historical_reference_available",
+      "productId": "okra-fresh",
+      "region": {
+        "level": "national",
+        "ids": [
+          "IN"
+        ]
+      },
+      "season": null,
+      "irrigation": null,
+      "marketId": null,
+      "horizonDays": null,
+      "supportStatus": "unsupported",
+      "sourceVersions": [],
+      "measuredQuality": null,
+      "missingReason": "price_access_key_gated"
+    },
+    {
+      "schemaVersion": "1.0",
+      "mode": "live",
+      "cropId": "okra",
+      "assessedAt": "2026-10-29T20:17:16.586Z",
+      "reviewBy": "2027-04-30",
+      "expiresAt": null,
+      "modelVersions": [],
+      "id": "cov.forecast_evaluated.okra-fresh",
+      "capability": "forecast_evaluated",
+      "productId": "okra-fresh",
+      "region": {
+        "level": "national",
+        "ids": [
+          "IN"
+        ]
+      },
+      "season": null,
+      "irrigation": null,
+      "marketId": null,
+      "horizonDays": null,
+      "supportStatus": "unsupported",
+      "sourceVersions": [],
+      "measuredQuality": null,
+      "missingReason": "no_evaluated_model_and_no_price_history"
+    },
+    {
+      "schemaVersion": "1.0",
+      "mode": "live",
+      "cropId": "okra",
+      "assessedAt": "2026-10-29T20:17:16.586Z",
+      "reviewBy": "2027-04-30",
+      "expiresAt": null,
+      "modelVersions": [],
+      "id": "cov.visual_journey_supported.okra",
+      "capability": "visual_journey_supported",
+      "productId": null,
+      "region": {
+        "level": "national",
+        "ids": [
+          "IN"
+        ]
+      },
+      "season": null,
+      "irrigation": null,
+      "marketId": null,
+      "horizonDays": null,
+      "supportStatus": "unsupported",
+      "sourceVersions": [],
+      "measuredQuality": null,
+      "missingReason": "no_sourced_stage_definitions_or_assets"
+    },
+    {
+      "schemaVersion": "1.0",
+      "mode": "live",
+      "cropId": "okra",
+      "assessedAt": "2026-10-29T20:17:16.586Z",
+      "reviewBy": "2027-04-30",
+      "expiresAt": null,
+      "modelVersions": [],
+      "id": "cov.observation_interpretation_experimental.okra",
+      "capability": "observation_interpretation_experimental",
+      "productId": null,
+      "region": {
+        "level": "national",
+        "ids": [
+          "IN"
+        ]
+      },
+      "season": null,
+      "irrigation": null,
+      "marketId": null,
+      "horizonDays": null,
+      "supportStatus": "unsupported",
+      "sourceVersions": [],
+      "measuredQuality": null,
+      "missingReason": "pending_evaluation"
+    },
+    {
+      "schemaVersion": "1.0",
+      "mode": "live",
+      "cropId": "chilli",
+      "assessedAt": "2026-10-29T20:17:16.586Z",
+      "reviewBy": "2027-04-30",
+      "expiresAt": null,
+      "modelVersions": [],
+      "id": "cov.screening.chilli.TN.main",
+      "capability": "screening_supported",
+      "productId": null,
+      "region": {
+        "level": "state",
+        "ids": [
+          "IN-TN"
+        ]
+      },
+      "season": "rabi",
+      "irrigation": "unspecified",
+      "marketId": null,
+      "horizonDays": null,
+      "supportStatus": "partial",
+      "sourceVersions": [
+        "sha256:2834815b1d2824f0",
+        "sha256:031943c39ece50d4"
+      ],
+      "measuredQuality": {
+        "approvedRules": 0,
+        "candidateRules": 0,
+        "labelledChecksPassed": 0,
+        "labelledChecksTotal": 0
+      },
+      "missingReason": "agronomy_sourced_rules_not_yet_encoded_or_labelled"
+    },
+    {
+      "schemaVersion": "1.0",
+      "mode": "live",
+      "cropId": "chilli",
+      "assessedAt": "2026-10-29T20:17:16.586Z",
+      "reviewBy": "2027-04-30",
+      "expiresAt": null,
+      "modelVersions": [],
+      "id": "cov.historical_reference_available.chilli-green",
+      "capability": "historical_reference_available",
+      "productId": "chilli-green",
+      "region": {
+        "level": "national",
+        "ids": [
+          "IN"
+        ]
+      },
+      "season": null,
+      "irrigation": null,
+      "marketId": null,
+      "horizonDays": null,
+      "supportStatus": "unsupported",
+      "sourceVersions": [],
+      "measuredQuality": null,
+      "missingReason": "price_access_key_gated"
+    },
+    {
+      "schemaVersion": "1.0",
+      "mode": "live",
+      "cropId": "chilli",
+      "assessedAt": "2026-10-29T20:17:16.586Z",
+      "reviewBy": "2027-04-30",
+      "expiresAt": null,
+      "modelVersions": [],
+      "id": "cov.forecast_evaluated.chilli-green",
+      "capability": "forecast_evaluated",
+      "productId": "chilli-green",
+      "region": {
+        "level": "national",
+        "ids": [
+          "IN"
+        ]
+      },
+      "season": null,
+      "irrigation": null,
+      "marketId": null,
+      "horizonDays": null,
+      "supportStatus": "unsupported",
+      "sourceVersions": [],
+      "measuredQuality": null,
+      "missingReason": "no_evaluated_model_and_no_price_history"
+    },
+    {
+      "schemaVersion": "1.0",
+      "mode": "live",
+      "cropId": "chilli",
+      "assessedAt": "2026-10-29T20:17:16.586Z",
+      "reviewBy": "2027-04-30",
+      "expiresAt": null,
+      "modelVersions": [],
+      "id": "cov.historical_reference_available.chilli-dry",
+      "capability": "historical_reference_available",
+      "productId": "chilli-dry",
+      "region": {
+        "level": "national",
+        "ids": [
+          "IN"
+        ]
+      },
+      "season": null,
+      "irrigation": null,
+      "marketId": null,
+      "horizonDays": null,
+      "supportStatus": "unsupported",
+      "sourceVersions": [],
+      "measuredQuality": null,
+      "missingReason": "price_access_key_gated"
+    },
+    {
+      "schemaVersion": "1.0",
+      "mode": "live",
+      "cropId": "chilli",
+      "assessedAt": "2026-10-29T20:17:16.586Z",
+      "reviewBy": "2027-04-30",
+      "expiresAt": null,
+      "modelVersions": [],
+      "id": "cov.forecast_evaluated.chilli-dry",
+      "capability": "forecast_evaluated",
+      "productId": "chilli-dry",
+      "region": {
+        "level": "national",
+        "ids": [
+          "IN"
+        ]
+      },
+      "season": null,
+      "irrigation": null,
+      "marketId": null,
+      "horizonDays": null,
+      "supportStatus": "unsupported",
+      "sourceVersions": [],
+      "measuredQuality": null,
+      "missingReason": "no_evaluated_model_and_no_price_history"
+    },
+    {
+      "schemaVersion": "1.0",
+      "mode": "live",
+      "cropId": "chilli",
+      "assessedAt": "2026-10-29T20:17:16.586Z",
+      "reviewBy": "2027-04-30",
+      "expiresAt": null,
+      "modelVersions": [],
+      "id": "cov.visual_journey_supported.chilli",
+      "capability": "visual_journey_supported",
+      "productId": null,
+      "region": {
+        "level": "national",
+        "ids": [
+          "IN"
+        ]
+      },
+      "season": null,
+      "irrigation": null,
+      "marketId": null,
+      "horizonDays": null,
+      "supportStatus": "unsupported",
+      "sourceVersions": [],
+      "measuredQuality": null,
+      "missingReason": "no_sourced_stage_definitions_or_assets"
+    },
+    {
+      "schemaVersion": "1.0",
+      "mode": "live",
+      "cropId": "chilli",
+      "assessedAt": "2026-10-29T20:17:16.586Z",
+      "reviewBy": "2027-04-30",
+      "expiresAt": null,
+      "modelVersions": [],
+      "id": "cov.observation_interpretation_experimental.chilli",
+      "capability": "observation_interpretation_experimental",
+      "productId": null,
+      "region": {
+        "level": "national",
+        "ids": [
+          "IN"
+        ]
+      },
+      "season": null,
+      "irrigation": null,
+      "marketId": null,
+      "horizonDays": null,
+      "supportStatus": "unsupported",
+      "sourceVersions": [],
+      "measuredQuality": null,
+      "missingReason": "pending_evaluation"
+    },
+    {
+      "schemaVersion": "1.0",
+      "mode": "live",
+      "cropId": "ginger",
+      "assessedAt": "2026-10-29T20:17:16.586Z",
+      "reviewBy": "2027-04-30",
+      "expiresAt": null,
+      "modelVersions": [],
+      "id": "cov.screening.ginger.WESTCOAST.kharif",
+      "capability": "screening_supported",
+      "productId": null,
+      "region": {
+        "level": "region",
+        "ids": [
+          "IN-region-west-coast"
+        ]
+      },
+      "season": "kharif",
+      "irrigation": "any",
+      "marketId": null,
+      "horizonDays": null,
+      "supportStatus": "partial",
+      "sourceVersions": [
+        "sha256:8393ee1db4947f4e"
+      ],
+      "measuredQuality": {
+        "approvedRules": 0,
+        "candidateRules": 0,
+        "labelledChecksPassed": 0,
+        "labelledChecksTotal": 0
+      },
+      "missingReason": "agronomy_sourced_rules_not_yet_encoded_or_labelled"
+    },
+    {
+      "schemaVersion": "1.0",
+      "mode": "live",
+      "cropId": "ginger",
+      "assessedAt": "2026-10-29T20:17:16.586Z",
+      "reviewBy": "2027-04-30",
+      "expiresAt": null,
+      "modelVersions": [],
+      "id": "cov.historical_reference_available.ginger-fresh",
+      "capability": "historical_reference_available",
+      "productId": "ginger-fresh",
+      "region": {
+        "level": "national",
+        "ids": [
+          "IN"
+        ]
+      },
+      "season": null,
+      "irrigation": null,
+      "marketId": null,
+      "horizonDays": null,
+      "supportStatus": "unsupported",
+      "sourceVersions": [],
+      "measuredQuality": null,
+      "missingReason": "price_access_key_gated"
+    },
+    {
+      "schemaVersion": "1.0",
+      "mode": "live",
+      "cropId": "ginger",
+      "assessedAt": "2026-10-29T20:17:16.586Z",
+      "reviewBy": "2027-04-30",
+      "expiresAt": null,
+      "modelVersions": [],
+      "id": "cov.forecast_evaluated.ginger-fresh",
+      "capability": "forecast_evaluated",
+      "productId": "ginger-fresh",
+      "region": {
+        "level": "national",
+        "ids": [
+          "IN"
+        ]
+      },
+      "season": null,
+      "irrigation": null,
+      "marketId": null,
+      "horizonDays": null,
+      "supportStatus": "unsupported",
+      "sourceVersions": [],
+      "measuredQuality": null,
+      "missingReason": "no_evaluated_model_and_no_price_history"
+    },
+    {
+      "schemaVersion": "1.0",
+      "mode": "live",
+      "cropId": "ginger",
+      "assessedAt": "2026-10-29T20:17:16.586Z",
+      "reviewBy": "2027-04-30",
+      "expiresAt": null,
+      "modelVersions": [],
+      "id": "cov.historical_reference_available.ginger-dry",
+      "capability": "historical_reference_available",
+      "productId": "ginger-dry",
+      "region": {
+        "level": "national",
+        "ids": [
+          "IN"
+        ]
+      },
+      "season": null,
+      "irrigation": null,
+      "marketId": null,
+      "horizonDays": null,
+      "supportStatus": "unsupported",
+      "sourceVersions": [],
+      "measuredQuality": null,
+      "missingReason": "price_access_key_gated"
+    },
+    {
+      "schemaVersion": "1.0",
+      "mode": "live",
+      "cropId": "ginger",
+      "assessedAt": "2026-10-29T20:17:16.586Z",
+      "reviewBy": "2027-04-30",
+      "expiresAt": null,
+      "modelVersions": [],
+      "id": "cov.forecast_evaluated.ginger-dry",
+      "capability": "forecast_evaluated",
+      "productId": "ginger-dry",
+      "region": {
+        "level": "national",
+        "ids": [
+          "IN"
+        ]
+      },
+      "season": null,
+      "irrigation": null,
+      "marketId": null,
+      "horizonDays": null,
+      "supportStatus": "unsupported",
+      "sourceVersions": [],
+      "measuredQuality": null,
+      "missingReason": "no_evaluated_model_and_no_price_history"
+    },
+    {
+      "schemaVersion": "1.0",
+      "mode": "live",
+      "cropId": "ginger",
+      "assessedAt": "2026-10-29T20:17:16.586Z",
+      "reviewBy": "2027-04-30",
+      "expiresAt": null,
+      "modelVersions": [],
+      "id": "cov.visual_journey_supported.ginger",
+      "capability": "visual_journey_supported",
+      "productId": null,
+      "region": {
+        "level": "national",
+        "ids": [
+          "IN"
+        ]
+      },
+      "season": null,
+      "irrigation": null,
+      "marketId": null,
+      "horizonDays": null,
+      "supportStatus": "partial",
+      "sourceVersions": [],
+      "measuredQuality": {
+        "stagesSourced": 0,
+        "stagesTotal": 0,
+        "assetsQaPassed": 0,
+        "assetsTotal": 0
+      },
+      "missingReason": "ginger_visual_journey_pending_T11_and_T05b_stage_sources"
+    },
+    {
+      "schemaVersion": "1.0",
+      "mode": "live",
+      "cropId": "ginger",
+      "assessedAt": "2026-10-29T20:17:16.586Z",
+      "reviewBy": "2027-04-30",
+      "expiresAt": null,
+      "modelVersions": [],
+      "id": "cov.observation_interpretation_experimental.ginger",
+      "capability": "observation_interpretation_experimental",
+      "productId": null,
+      "region": {
+        "level": "national",
+        "ids": [
+          "IN"
+        ]
+      },
+      "season": null,
+      "irrigation": null,
+      "marketId": null,
+      "horizonDays": null,
+      "supportStatus": "unsupported",
+      "sourceVersions": [],
+      "measuredQuality": null,
+      "missingReason": "pending_evaluation"
+    },
+    {
+      "schemaVersion": "1.0",
+      "mode": "live",
+      "cropId": "turmeric",
+      "assessedAt": "2026-10-29T20:17:16.586Z",
+      "reviewBy": "2027-04-30",
+      "expiresAt": null,
+      "modelVersions": [],
+      "id": "cov.screening.turmeric.IN.kharif",
+      "capability": "screening_supported",
+      "productId": null,
+      "region": {
+        "level": "national",
+        "ids": [
+          "IN"
+        ]
+      },
+      "season": "kharif",
+      "irrigation": "any",
+      "marketId": null,
+      "horizonDays": null,
+      "supportStatus": "partial",
+      "sourceVersions": [
+        "sha256:ae5c6a433e252aae"
+      ],
+      "measuredQuality": {
+        "approvedRules": 0,
+        "candidateRules": 0,
+        "labelledChecksPassed": 0,
+        "labelledChecksTotal": 0
+      },
+      "missingReason": "agronomy_sourced_rules_not_yet_encoded_or_labelled"
+    },
+    {
+      "schemaVersion": "1.0",
+      "mode": "live",
+      "cropId": "turmeric",
+      "assessedAt": "2026-10-29T20:17:16.586Z",
+      "reviewBy": "2027-04-30",
+      "expiresAt": null,
+      "modelVersions": [],
+      "id": "cov.historical_reference_available.turmeric-fresh",
+      "capability": "historical_reference_available",
+      "productId": "turmeric-fresh",
+      "region": {
+        "level": "national",
+        "ids": [
+          "IN"
+        ]
+      },
+      "season": null,
+      "irrigation": null,
+      "marketId": null,
+      "horizonDays": null,
+      "supportStatus": "unsupported",
+      "sourceVersions": [],
+      "measuredQuality": null,
+      "missingReason": "price_access_key_gated"
+    },
+    {
+      "schemaVersion": "1.0",
+      "mode": "live",
+      "cropId": "turmeric",
+      "assessedAt": "2026-10-29T20:17:16.586Z",
+      "reviewBy": "2027-04-30",
+      "expiresAt": null,
+      "modelVersions": [],
+      "id": "cov.forecast_evaluated.turmeric-fresh",
+      "capability": "forecast_evaluated",
+      "productId": "turmeric-fresh",
+      "region": {
+        "level": "national",
+        "ids": [
+          "IN"
+        ]
+      },
+      "season": null,
+      "irrigation": null,
+      "marketId": null,
+      "horizonDays": null,
+      "supportStatus": "unsupported",
+      "sourceVersions": [],
+      "measuredQuality": null,
+      "missingReason": "no_evaluated_model_and_no_price_history"
+    },
+    {
+      "schemaVersion": "1.0",
+      "mode": "live",
+      "cropId": "turmeric",
+      "assessedAt": "2026-10-29T20:17:16.586Z",
+      "reviewBy": "2027-04-30",
+      "expiresAt": null,
+      "modelVersions": [],
+      "id": "cov.historical_reference_available.turmeric-dry",
+      "capability": "historical_reference_available",
+      "productId": "turmeric-dry",
+      "region": {
+        "level": "national",
+        "ids": [
+          "IN"
+        ]
+      },
+      "season": null,
+      "irrigation": null,
+      "marketId": null,
+      "horizonDays": null,
+      "supportStatus": "unsupported",
+      "sourceVersions": [],
+      "measuredQuality": null,
+      "missingReason": "price_access_key_gated"
+    },
+    {
+      "schemaVersion": "1.0",
+      "mode": "live",
+      "cropId": "turmeric",
+      "assessedAt": "2026-10-29T20:17:16.586Z",
+      "reviewBy": "2027-04-30",
+      "expiresAt": null,
+      "modelVersions": [],
+      "id": "cov.forecast_evaluated.turmeric-dry",
+      "capability": "forecast_evaluated",
+      "productId": "turmeric-dry",
+      "region": {
+        "level": "national",
+        "ids": [
+          "IN"
+        ]
+      },
+      "season": null,
+      "irrigation": null,
+      "marketId": null,
+      "horizonDays": null,
+      "supportStatus": "unsupported",
+      "sourceVersions": [],
+      "measuredQuality": null,
+      "missingReason": "no_evaluated_model_and_no_price_history"
+    },
+    {
+      "schemaVersion": "1.0",
+      "mode": "live",
+      "cropId": "turmeric",
+      "assessedAt": "2026-10-29T20:17:16.586Z",
+      "reviewBy": "2027-04-30",
+      "expiresAt": null,
+      "modelVersions": [],
+      "id": "cov.visual_journey_supported.turmeric",
+      "capability": "visual_journey_supported",
+      "productId": null,
+      "region": {
+        "level": "national",
+        "ids": [
+          "IN"
+        ]
+      },
+      "season": null,
+      "irrigation": null,
+      "marketId": null,
+      "horizonDays": null,
+      "supportStatus": "unsupported",
+      "sourceVersions": [],
+      "measuredQuality": null,
+      "missingReason": "no_sourced_stage_definitions_or_assets"
+    },
+    {
+      "schemaVersion": "1.0",
+      "mode": "live",
+      "cropId": "turmeric",
+      "assessedAt": "2026-10-29T20:17:16.586Z",
+      "reviewBy": "2027-04-30",
+      "expiresAt": null,
+      "modelVersions": [],
+      "id": "cov.observation_interpretation_experimental.turmeric",
+      "capability": "observation_interpretation_experimental",
+      "productId": null,
+      "region": {
+        "level": "national",
+        "ids": [
+          "IN"
+        ]
+      },
+      "season": null,
+      "irrigation": null,
+      "marketId": null,
+      "horizonDays": null,
+      "supportStatus": "unsupported",
+      "sourceVersions": [],
+      "measuredQuality": null,
+      "missingReason": "pending_evaluation"
+    },
+    {
+      "schemaVersion": "1.0",
+      "mode": "live",
+      "cropId": "cotton",
+      "assessedAt": "2026-10-29T20:17:16.586Z",
+      "reviewBy": "2027-04-30",
+      "expiresAt": null,
+      "modelVersions": [],
+      "id": "cov.screening.cotton.TN.winter-irrigated",
+      "capability": "screening_supported",
+      "productId": null,
+      "region": {
+        "level": "state",
+        "ids": [
+          "IN-TN"
+        ]
+      },
+      "season": "rabi",
+      "irrigation": "irrigated",
+      "marketId": null,
+      "horizonDays": null,
+      "supportStatus": "partial",
+      "sourceVersions": [
+        "sha256:3ae8c3cecdb06e8f",
+        "sha256:202cfaa7fac5ef78"
+      ],
+      "measuredQuality": {
+        "approvedRules": 0,
+        "candidateRules": 0,
+        "labelledChecksPassed": 0,
+        "labelledChecksTotal": 0
+      },
+      "missingReason": "agronomy_sourced_rules_not_yet_encoded_or_labelled"
+    },
+    {
+      "schemaVersion": "1.0",
+      "mode": "live",
+      "cropId": "cotton",
+      "assessedAt": "2026-10-29T20:17:16.586Z",
+      "reviewBy": "2027-04-30",
+      "expiresAt": null,
+      "modelVersions": [],
+      "id": "cov.screening.cotton.TN.winter-rainfed",
+      "capability": "screening_supported",
+      "productId": null,
+      "region": {
+        "level": "state",
+        "ids": [
+          "IN-TN"
+        ]
+      },
+      "season": "rabi",
+      "irrigation": "rainfed",
+      "marketId": null,
+      "horizonDays": null,
+      "supportStatus": "partial",
+      "sourceVersions": [
+        "sha256:3ae8c3cecdb06e8f",
+        "sha256:202cfaa7fac5ef78"
+      ],
+      "measuredQuality": {
+        "approvedRules": 0,
+        "candidateRules": 0,
+        "labelledChecksPassed": 0,
+        "labelledChecksTotal": 0
+      },
+      "missingReason": "agronomy_sourced_rules_not_yet_encoded_or_labelled"
+    },
+    {
+      "schemaVersion": "1.0",
+      "mode": "live",
+      "cropId": "cotton",
+      "assessedAt": "2026-10-29T20:17:16.586Z",
+      "reviewBy": "2027-04-30",
+      "expiresAt": null,
+      "modelVersions": [],
+      "id": "cov.screening.cotton.TN.summer-irrigated",
+      "capability": "screening_supported",
+      "productId": null,
+      "region": {
+        "level": "state",
+        "ids": [
+          "IN-TN"
+        ]
+      },
+      "season": "zaid",
+      "irrigation": "irrigated",
+      "marketId": null,
+      "horizonDays": null,
+      "supportStatus": "partial",
+      "sourceVersions": [
+        "sha256:3ae8c3cecdb06e8f",
+        "sha256:202cfaa7fac5ef78"
+      ],
+      "measuredQuality": {
+        "approvedRules": 0,
+        "candidateRules": 0,
+        "labelledChecksPassed": 0,
+        "labelledChecksTotal": 0
+      },
+      "missingReason": "agronomy_sourced_rules_not_yet_encoded_or_labelled"
+    },
+    {
+      "schemaVersion": "1.0",
+      "mode": "live",
+      "cropId": "cotton",
+      "assessedAt": "2026-10-29T20:17:16.586Z",
+      "reviewBy": "2027-04-30",
+      "expiresAt": null,
+      "modelVersions": [],
+      "id": "cov.screening.cotton.AS.kharif",
+      "capability": "screening_supported",
+      "productId": null,
+      "region": {
+        "level": "state",
+        "ids": [
+          "IN-AS"
+        ]
+      },
+      "season": "kharif",
+      "irrigation": "unspecified",
+      "marketId": null,
+      "horizonDays": null,
+      "supportStatus": "partial",
+      "sourceVersions": [
+        "sha256:3ae8c3cecdb06e8f",
+        "sha256:202cfaa7fac5ef78"
+      ],
+      "measuredQuality": {
+        "approvedRules": 0,
+        "candidateRules": 0,
+        "labelledChecksPassed": 0,
+        "labelledChecksTotal": 0
+      },
+      "missingReason": "agronomy_sourced_rules_not_yet_encoded_or_labelled"
+    },
+    {
+      "schemaVersion": "1.0",
+      "mode": "live",
+      "cropId": "cotton",
+      "assessedAt": "2026-10-29T20:17:16.586Z",
+      "reviewBy": "2027-04-30",
+      "expiresAt": null,
+      "modelVersions": [],
+      "id": "cov.historical_reference_available.cotton-kapas",
+      "capability": "historical_reference_available",
+      "productId": "cotton-kapas",
+      "region": {
+        "level": "national",
+        "ids": [
+          "IN"
+        ]
+      },
+      "season": null,
+      "irrigation": null,
+      "marketId": null,
+      "horizonDays": null,
+      "supportStatus": "unsupported",
+      "sourceVersions": [],
+      "measuredQuality": null,
+      "missingReason": "price_access_key_gated"
+    },
+    {
+      "schemaVersion": "1.0",
+      "mode": "live",
+      "cropId": "cotton",
+      "assessedAt": "2026-10-29T20:17:16.586Z",
+      "reviewBy": "2027-04-30",
+      "expiresAt": null,
+      "modelVersions": [],
+      "id": "cov.forecast_evaluated.cotton-kapas",
+      "capability": "forecast_evaluated",
+      "productId": "cotton-kapas",
+      "region": {
+        "level": "national",
+        "ids": [
+          "IN"
+        ]
+      },
+      "season": null,
+      "irrigation": null,
+      "marketId": null,
+      "horizonDays": null,
+      "supportStatus": "unsupported",
+      "sourceVersions": [],
+      "measuredQuality": null,
+      "missingReason": "no_evaluated_model_and_no_price_history"
+    },
+    {
+      "schemaVersion": "1.0",
+      "mode": "live",
+      "cropId": "cotton",
+      "assessedAt": "2026-10-29T20:17:16.586Z",
+      "reviewBy": "2027-04-30",
+      "expiresAt": null,
+      "modelVersions": [],
+      "id": "cov.historical_reference_available.cotton-lint",
+      "capability": "historical_reference_available",
+      "productId": "cotton-lint",
+      "region": {
+        "level": "national",
+        "ids": [
+          "IN"
+        ]
+      },
+      "season": null,
+      "irrigation": null,
+      "marketId": null,
+      "horizonDays": null,
+      "supportStatus": "unsupported",
+      "sourceVersions": [],
+      "measuredQuality": null,
+      "missingReason": "price_access_key_gated"
+    },
+    {
+      "schemaVersion": "1.0",
+      "mode": "live",
+      "cropId": "cotton",
+      "assessedAt": "2026-10-29T20:17:16.586Z",
+      "reviewBy": "2027-04-30",
+      "expiresAt": null,
+      "modelVersions": [],
+      "id": "cov.forecast_evaluated.cotton-lint",
+      "capability": "forecast_evaluated",
+      "productId": "cotton-lint",
+      "region": {
+        "level": "national",
+        "ids": [
+          "IN"
+        ]
+      },
+      "season": null,
+      "irrigation": null,
+      "marketId": null,
+      "horizonDays": null,
+      "supportStatus": "unsupported",
+      "sourceVersions": [],
+      "measuredQuality": null,
+      "missingReason": "no_evaluated_model_and_no_price_history"
+    },
+    {
+      "schemaVersion": "1.0",
+      "mode": "live",
+      "cropId": "cotton",
+      "assessedAt": "2026-10-29T20:17:16.586Z",
+      "reviewBy": "2027-04-30",
+      "expiresAt": null,
+      "modelVersions": [],
+      "id": "cov.visual_journey_supported.cotton",
+      "capability": "visual_journey_supported",
+      "productId": null,
+      "region": {
+        "level": "national",
+        "ids": [
+          "IN"
+        ]
+      },
+      "season": null,
+      "irrigation": null,
+      "marketId": null,
+      "horizonDays": null,
+      "supportStatus": "unsupported",
+      "sourceVersions": [],
+      "measuredQuality": null,
+      "missingReason": "no_sourced_stage_definitions_or_assets"
+    },
+    {
+      "schemaVersion": "1.0",
+      "mode": "live",
+      "cropId": "cotton",
+      "assessedAt": "2026-10-29T20:17:16.586Z",
+      "reviewBy": "2027-04-30",
+      "expiresAt": null,
+      "modelVersions": [],
+      "id": "cov.observation_interpretation_experimental.cotton",
+      "capability": "observation_interpretation_experimental",
+      "productId": null,
+      "region": {
+        "level": "national",
+        "ids": [
+          "IN"
+        ]
+      },
+      "season": null,
+      "irrigation": null,
+      "marketId": null,
+      "horizonDays": null,
+      "supportStatus": "unsupported",
+      "sourceVersions": [],
+      "measuredQuality": null,
+      "missingReason": "pending_evaluation"
+    }
+  ]
+}

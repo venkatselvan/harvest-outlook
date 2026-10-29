@@ -1,0 +1,176 @@
+{
+  "cropId": "potato",
+  "identityRef": "potato",
+  "group": "vegetables",
+  "products": [
+    {
+      "productId": "potato-fresh",
+      "name": "Potato tubers (fresh)",
+      "productBasis": "fresh"
+    }
+  ],
+  "regionalContexts": [
+    {
+      "contextId": "potato.TN.plains",
+      "geography": {
+        "level": "state",
+        "ids": [
+          "IN-TN"
+        ]
+      },
+      "stateId": "IN-TN",
+      "districtIds": null,
+      "season": "rabi",
+      "plantingWindow": {
+        "fromMonth": 10,
+        "toMonth": 11,
+        "evidenceIds": [
+          "cat.potato.tnsow"
+        ]
+      },
+      "durationDays": null,
+      "irrigation": "unspecified",
+      "irrigationEvidenceIds": [],
+      "waterNeedClass": null,
+      "soilNotes": {
+        "text": "Friable, porous, well drained.",
+        "evidenceIds": [
+          "cat.potato.tnsoil"
+        ]
+      },
+      "yieldReference": {
+        "min": 15000,
+        "max": 20000,
+        "unit": "kg/ha",
+        "basis": "regional_reference",
+        "productId": "potato-fresh",
+        "evidenceIds": [
+          "cat.potato.tnyld"
+        ]
+      },
+      "labourClass": null,
+      "harvestPattern": "single",
+      "notes": "TN-only coverage: Tamil Nadu source; not generalised to other states. Plains planting; hills have separate summer (Mar-Apr) and autumn (Aug-Sep) seasons."
+    },
+    {
+      "contextId": "potato.AS.rainfed",
+      "geography": {
+        "level": "state",
+        "ids": [
+          "IN-AS"
+        ]
+      },
+      "stateId": "IN-AS",
+      "districtIds": null,
+      "season": "rabi",
+      "plantingWindow": {
+        "fromMonth": 10,
+        "toMonth": 11,
+        "evidenceIds": [
+          "cat.potato.sow"
+        ]
+      },
+      "durationDays": {
+        "min": 60,
+        "max": 120,
+        "evidenceIds": [
+          "cat.potato.dur"
+        ]
+      },
+      "irrigation": "rainfed",
+      "irrigationEvidenceIds": [
+        "cat.potato.yld"
+      ],
+      "waterNeedClass": null,
+      "soilNotes": {
+        "text": "Well drained sandy loam and loam rich in organic matter.",
+        "evidenceIds": [
+          "cat.potato.soil"
+        ]
+      },
+      "yieldReference": {
+        "min": 8500,
+        "max": 15000,
+        "unit": "kg/ha",
+        "basis": "regional_reference",
+        "productId": "potato-fresh",
+        "evidenceIds": [
+          "cat.potato.yld"
+        ]
+      },
+      "labourClass": null,
+      "harvestPattern": "single",
+      "notes": "Assam rainfed; varietal yields q/ha converted."
+    },
+    {
+      "contextId": "potato.AS.irrigated",
+      "geography": {
+        "level": "state",
+        "ids": [
+          "IN-AS"
+        ]
+      },
+      "stateId": "IN-AS",
+      "districtIds": null,
+      "season": "rabi",
+      "plantingWindow": {
+        "fromMonth": 10,
+        "toMonth": 11,
+        "evidenceIds": [
+          "cat.potato.sow"
+        ]
+      },
+      "durationDays": {
+        "min": 60,
+        "max": 120,
+        "evidenceIds": [
+          "cat.potato.dur"
+        ]
+      },
+      "irrigation": "irrigated",
+      "irrigationEvidenceIds": [
+        "cat.potato.yld"
+      ],
+      "waterNeedClass": null,
+      "soilNotes": {
+        "text": "Well drained sandy loam and loam rich in organic matter.",
+        "evidenceIds": [
+          "cat.potato.soil"
+        ]
+      },
+      "yieldReference": {
+        "min": 15000,
+        "max": 25000,
+        "unit": "kg/ha",
+        "basis": "regional_reference",
+        "productId": "potato-fresh",
+        "evidenceIds": [
+          "cat.potato.yld"
+        ]
+      },
+      "labourClass": null,
+      "harvestPattern": "single",
+      "notes": "Assam irrigated; varietal yields q/ha converted."
+    }
+  ],
+  "exclusionsOrCautions": [],
+  "marketCoverageStatus": "unavailable_pending_price_access",
+  "evidenceIds": [
+    "cat.potato.tnsow",
+    "cat.potato.tnsoil",
+    "cat.potato.tnyld",
+    "cat.potato.sow",
+    "cat.potato.dur",
+    "cat.potato.yld",
+    "cat.potato.soil"
+  ],
+  "qualification": {
+    "identityResolved": true,
+    "hasRegionalContext": true,
+    "hasSourcedRequirements": true,
+    "hasSeasonInfo": true,
+    "marketStatusExplicit": true,
+    "qualified": true,
+    "missing": []
+  }
+}

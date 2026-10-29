@@ -1,0 +1,300 @@
+[
+  {
+    "schemaVersion": "1.0",
+    "id": "cat.brinjal.tn",
+    "mode": "live",
+    "sourceUrl": "https://agritech.tnau.ac.in/horticulture/horti_vegetables_brinjal_season.html",
+    "publisher": "Tamil Nadu Agricultural University (TNAU Agritech Portal)",
+    "documentTitle": "Brinjal: season",
+    "documentVersion": null,
+    "contentHash": "6c01c1189afe4273bcdc20b3d07b974c9f904cd42ec0884275602cbd5f65138c",
+    "locator": {
+      "section": "Season"
+    },
+    "content": {
+      "kind": "excerpt",
+      "text": "Season of Sowing December - January and May - June.",
+      "language": "en"
+    },
+    "publishedAt": null,
+    "availability": {
+      "effectiveAvailableAt": "2026-10-29T20:03:02.193Z",
+      "basis": "first_observed"
+    },
+    "ingestedAt": "2026-10-29T20:03:02.193Z",
+    "revisedAt": null,
+    "geography": {
+      "level": "state",
+      "ids": [
+        "IN-TN"
+      ]
+    },
+    "cropIds": [
+      "brinjal"
+    ],
+    "productIds": [],
+    "units": [],
+    "sourceUnits": [],
+    "licence": {
+      "licence": "Public web page; publisher copyright. Excerpt (<=60 words) kept for provenance, full page not redistributed.",
+      "accessStatus": "open",
+      "redistributable": false,
+      "attribution": "Tamil Nadu Agricultural University (TNAU Agritech Portal)"
+    },
+    "extraction": {
+      "method": "manual",
+      "version": "catalogue-build-1",
+      "reviewedBy": "rule_check"
+    },
+    "validationStatus": "pending"
+  },
+  {
+    "schemaVersion": "1.0",
+    "id": "cat.brinjal.tnsoil",
+    "mode": "live",
+    "sourceUrl": "https://agritech.tnau.ac.in/horticulture/horti_vegetables_brinjal_season.html",
+    "publisher": "Tamil Nadu Agricultural University (TNAU Agritech Portal)",
+    "documentTitle": "Brinjal: season",
+    "documentVersion": null,
+    "contentHash": "6c01c1189afe4273bcdc20b3d07b974c9f904cd42ec0884275602cbd5f65138c",
+    "locator": {
+      "section": "Soil"
+    },
+    "content": {
+      "kind": "excerpt",
+      "text": "Well drained soil rich in organic matter with pH of 6.5-7.5.",
+      "language": "en"
+    },
+    "publishedAt": null,
+    "availability": {
+      "effectiveAvailableAt": "2026-10-29T20:03:02.193Z",
+      "basis": "first_observed"
+    },
+    "ingestedAt": "2026-10-29T20:03:02.193Z",
+    "revisedAt": null,
+    "geography": {
+      "level": "state",
+      "ids": [
+        "IN-TN"
+      ]
+    },
+    "cropIds": [
+      "brinjal"
+    ],
+    "productIds": [],
+    "units": [],
+    "sourceUnits": [],
+    "licence": {
+      "licence": "Public web page; publisher copyright. Excerpt (<=60 words) kept for provenance, full page not redistributed.",
+      "accessStatus": "open",
+      "redistributable": false,
+      "attribution": "Tamil Nadu Agricultural University (TNAU Agritech Portal)"
+    },
+    "extraction": {
+      "method": "manual",
+      "version": "catalogue-build-1",
+      "reviewedBy": "rule_check"
+    },
+    "validationStatus": "pending"
+  },
+  {
+    "schemaVersion": "1.0",
+    "id": "cat.brinjal.sow",
+    "mode": "live",
+    "sourceUrl": "https://kvkchirang.aau.ac.in/pdf/package_of_practice/vegetables/Brinjal.pdf",
+    "publisher": "Assam Agricultural University, KVK Chirang",
+    "documentTitle": "Package of practices for vegetables of Assam: Brinjal",
+    "documentVersion": "2021",
+    "contentHash": "85a114fce9e94a42c44491560e954895ad6c4860a5ab1929e5b2667842f1203d",
+    "locator": {
+      "page": 2,
+      "section": "Time of sowing"
+    },
+    "content": {
+      "kind": "excerpt",
+      "text": "Time of sowing: First week of September to October for winter crop and January to February for spring crop.",
+      "language": "en"
+    },
+    "publishedAt": null,
+    "availability": {
+      "effectiveAvailableAt": "2026-10-29T20:00:54.002Z",
+      "basis": "first_observed"
+    },
+    "ingestedAt": "2026-10-29T20:00:54.002Z",
+    "revisedAt": null,
+    "geography": {
+      "level": "state",
+      "ids": [
+        "IN-AS"
+      ]
+    },
+    "cropIds": [
+      "brinjal"
+    ],
+    "productIds": [],
+    "units": [],
+    "sourceUnits": [],
+    "licence": {
+      "licence": "Public web page; publisher copyright. Excerpt (<=60 words) kept for provenance, full page not redistributed.",
+      "accessStatus": "open",
+      "redistributable": false,
+      "attribution": "Assam Agricultural University, KVK Chirang"
+    },
+    "extraction": {
+      "method": "native_text",
+      "version": "catalogue-build-1",
+      "reviewedBy": "rule_check"
+    },
+    "validationStatus": "pending"
+  },
+  {
+    "schemaVersion": "1.0",
+    "id": "cat.brinjal.soil",
+    "mode": "live",
+    "sourceUrl": "https://kvkchirang.aau.ac.in/pdf/package_of_practice/vegetables/Brinjal.pdf",
+    "publisher": "Assam Agricultural University, KVK Chirang",
+    "documentTitle": "Package of practices for vegetables of Assam: Brinjal",
+    "documentVersion": "2021",
+    "contentHash": "85a114fce9e94a42c44491560e954895ad6c4860a5ab1929e5b2667842f1203d",
+    "locator": {
+      "page": 1,
+      "section": "Soil"
+    },
+    "content": {
+      "kind": "excerpt",
+      "text": "Soil: Well drained rich sandy loam for early and silt loam to clay loam for late crop.",
+      "language": "en"
+    },
+    "publishedAt": null,
+    "availability": {
+      "effectiveAvailableAt": "2026-10-29T20:00:54.002Z",
+      "basis": "first_observed"
+    },
+    "ingestedAt": "2026-10-29T20:00:54.002Z",
+    "revisedAt": null,
+    "geography": {
+      "level": "state",
+      "ids": [
+        "IN-AS"
+      ]
+    },
+    "cropIds": [
+      "brinjal"
+    ],
+    "productIds": [],
+    "units": [],
+    "sourceUnits": [],
+    "licence": {
+      "licence": "Public web page; publisher copyright. Excerpt (<=60 words) kept for provenance, full page not redistributed.",
+      "accessStatus": "open",
+      "redistributable": false,
+      "attribution": "Assam Agricultural University, KVK Chirang"
+    },
+    "extraction": {
+      "method": "native_text",
+      "version": "catalogue-build-1",
+      "reviewedBy": "rule_check"
+    },
+    "validationStatus": "pending"
+  },
+  {
+    "schemaVersion": "1.0",
+    "id": "cat.brinjal.d1",
+    "mode": "live",
+    "sourceUrl": "https://kvkchirang.aau.ac.in/pdf/package_of_practice/vegetables/Brinjal.pdf",
+    "publisher": "Assam Agricultural University, KVK Chirang",
+    "documentTitle": "Package of practices for vegetables of Assam: Brinjal",
+    "documentVersion": "2021",
+    "contentHash": "85a114fce9e94a42c44491560e954895ad6c4860a5ab1929e5b2667842f1203d",
+    "locator": {
+      "page": 1,
+      "section": "Varieties"
+    },
+    "content": {
+      "kind": "excerpt",
+      "text": "maturity 100-110 days",
+      "language": "en"
+    },
+    "publishedAt": null,
+    "availability": {
+      "effectiveAvailableAt": "2026-10-29T20:00:54.002Z",
+      "basis": "first_observed"
+    },
+    "ingestedAt": "2026-10-29T20:00:54.002Z",
+    "revisedAt": null,
+    "geography": {
+      "level": "state",
+      "ids": [
+        "IN-AS"
+      ]
+    },
+    "cropIds": [
+      "brinjal"
+    ],
+    "productIds": [],
+    "units": [],
+    "sourceUnits": [],
+    "licence": {
+      "licence": "Public web page; publisher copyright. Excerpt (<=60 words) kept for provenance, full page not redistributed.",
+      "accessStatus": "open",
+      "redistributable": false,
+      "attribution": "Assam Agricultural University, KVK Chirang"
+    },
+    "extraction": {
+      "method": "native_text",
+      "version": "catalogue-build-1",
+      "reviewedBy": "rule_check"
+    },
+    "validationStatus": "pending"
+  },
+  {
+    "schemaVersion": "1.0",
+    "id": "cat.brinjal.d2",
+    "mode": "live",
+    "sourceUrl": "https://kvkchirang.aau.ac.in/pdf/package_of_practice/vegetables/Brinjal.pdf",
+    "publisher": "Assam Agricultural University, KVK Chirang",
+    "documentTitle": "Package of practices for vegetables of Assam: Brinjal",
+    "documentVersion": "2021",
+    "contentHash": "85a114fce9e94a42c44491560e954895ad6c4860a5ab1929e5b2667842f1203d",
+    "locator": {
+      "page": 1,
+      "section": "Varieties"
+    },
+    "content": {
+      "kind": "excerpt",
+      "text": "maturity 75 days, relatively resistant",
+      "language": "en"
+    },
+    "publishedAt": null,
+    "availability": {
+      "effectiveAvailableAt": "2026-10-29T20:00:54.002Z",
+      "basis": "first_observed"
+    },
+    "ingestedAt": "2026-10-29T20:00:54.002Z",
+    "revisedAt": null,
+    "geography": {
+      "level": "state",
+      "ids": [
+        "IN-AS"
+      ]
+    },
+    "cropIds": [
+      "brinjal"
+    ],
+    "productIds": [],
+    "units": [],
+    "sourceUnits": [],
+    "licence": {
+      "licence": "Public web page; publisher copyright. Excerpt (<=60 words) kept for provenance, full page not redistributed.",
+      "accessStatus": "open",
+      "redistributable": false,
+      "attribution": "Assam Agricultural University, KVK Chirang"
+    },
+    "extraction": {
+      "method": "native_text",
+      "version": "catalogue-build-1",
+      "reviewedBy": "rule_check"
+    },
+    "validationStatus": "pending"
+  }
+]

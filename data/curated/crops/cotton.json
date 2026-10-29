@@ -1,0 +1,196 @@
+{
+  "cropId": "cotton",
+  "identityRef": "cotton",
+  "group": "fibre",
+  "products": [
+    {
+      "productId": "cotton-kapas",
+      "name": "Cotton kapas (seed cotton)",
+      "productBasis": "kapas"
+    },
+    {
+      "productId": "cotton-lint",
+      "name": "Cotton lint (ginned)",
+      "productBasis": "lint"
+    }
+  ],
+  "regionalContexts": [
+    {
+      "contextId": "cotton.TN.winter-irrigated",
+      "geography": {
+        "level": "state",
+        "ids": [
+          "IN-TN"
+        ]
+      },
+      "stateId": "IN-TN",
+      "districtIds": null,
+      "season": "rabi",
+      "plantingWindow": {
+        "fromMonth": 8,
+        "toMonth": 9,
+        "evidenceIds": [
+          "cat.cotton.wi"
+        ]
+      },
+      "durationDays": {
+        "min": 150,
+        "max": 160,
+        "evidenceIds": [
+          "cat.cotton.wi"
+        ]
+      },
+      "irrigation": "irrigated",
+      "irrigationEvidenceIds": [
+        "cat.cotton.wi"
+      ],
+      "waterNeedClass": null,
+      "soilNotes": null,
+      "yieldReference": null,
+      "labourClass": null,
+      "harvestPattern": "repeated_picking",
+      "notes": "TN-only coverage: Tamil Nadu source; not generalised to other states."
+    },
+    {
+      "contextId": "cotton.TN.winter-rainfed",
+      "geography": {
+        "level": "state",
+        "ids": [
+          "IN-TN"
+        ]
+      },
+      "stateId": "IN-TN",
+      "districtIds": null,
+      "season": "rabi",
+      "plantingWindow": {
+        "fromMonth": 8,
+        "toMonth": 9,
+        "evidenceIds": [
+          "cat.cotton.wr"
+        ]
+      },
+      "durationDays": {
+        "min": 140,
+        "max": 150,
+        "evidenceIds": [
+          "cat.cotton.wr"
+        ]
+      },
+      "irrigation": "rainfed",
+      "irrigationEvidenceIds": [
+        "cat.cotton.wr"
+      ],
+      "waterNeedClass": null,
+      "soilNotes": null,
+      "yieldReference": null,
+      "labourClass": null,
+      "harvestPattern": "repeated_picking",
+      "notes": "TN-only coverage: Tamil Nadu source; not generalised to other states."
+    },
+    {
+      "contextId": "cotton.TN.summer-irrigated",
+      "geography": {
+        "level": "state",
+        "ids": [
+          "IN-TN"
+        ]
+      },
+      "stateId": "IN-TN",
+      "districtIds": null,
+      "season": "zaid",
+      "plantingWindow": {
+        "fromMonth": 2,
+        "toMonth": 3,
+        "evidenceIds": [
+          "cat.cotton.si"
+        ]
+      },
+      "durationDays": {
+        "min": 150,
+        "max": 160,
+        "evidenceIds": [
+          "cat.cotton.si"
+        ]
+      },
+      "irrigation": "irrigated",
+      "irrigationEvidenceIds": [
+        "cat.cotton.si"
+      ],
+      "waterNeedClass": null,
+      "soilNotes": null,
+      "yieldReference": null,
+      "labourClass": null,
+      "harvestPattern": "repeated_picking",
+      "notes": "TN-only coverage: Tamil Nadu source; not generalised to other states."
+    },
+    {
+      "contextId": "cotton.AS.kharif",
+      "geography": {
+        "level": "state",
+        "ids": [
+          "IN-AS"
+        ]
+      },
+      "stateId": "IN-AS",
+      "districtIds": null,
+      "season": "kharif",
+      "plantingWindow": {
+        "fromMonth": 7,
+        "toMonth": 7,
+        "evidenceIds": [
+          "cat.cotton.sow"
+        ]
+      },
+      "durationDays": null,
+      "irrigation": "unspecified",
+      "irrigationEvidenceIds": [],
+      "waterNeedClass": null,
+      "soilNotes": {
+        "text": "Well drained; cannot tolerate waterlogging.",
+        "evidenceIds": [
+          "cat.cotton.soil"
+        ]
+      },
+      "yieldReference": {
+        "min": 400,
+        "max": 1200,
+        "unit": "kg/ha",
+        "basis": "regional_reference",
+        "productId": "cotton-kapas",
+        "evidenceIds": [
+          "cat.cotton.yld"
+        ]
+      },
+      "labourClass": null,
+      "harvestPattern": "repeated_picking",
+      "notes": "Assam; yields are seed cotton (kapas), not lint; 3-4 pickings, first picking end of November."
+    }
+  ],
+  "exclusionsOrCautions": [
+    {
+      "text": "Cotton cannot tolerate waterlogging (Assam package).",
+      "evidenceIds": [
+        "cat.cotton.soil"
+      ]
+    }
+  ],
+  "marketCoverageStatus": "unavailable_pending_price_access",
+  "evidenceIds": [
+    "cat.cotton.wi",
+    "cat.cotton.wr",
+    "cat.cotton.si",
+    "cat.cotton.sow",
+    "cat.cotton.soil",
+    "cat.cotton.yld",
+    "cat.cotton.pick"
+  ],
+  "qualification": {
+    "identityResolved": true,
+    "hasRegionalContext": true,
+    "hasSourcedRequirements": true,
+    "hasSeasonInfo": true,
+    "marketStatusExplicit": true,
+    "qualified": true,
+    "missing": []
+  }
+}

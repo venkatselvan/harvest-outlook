@@ -1,0 +1,248 @@
+[
+  {
+    "schemaVersion": "1.0",
+    "id": "cat.sorghum.adi",
+    "mode": "live",
+    "sourceUrl": "https://agritech.tnau.ac.in/agriculture/millets_sorghum.html",
+    "publisher": "Tamil Nadu Agricultural University (TNAU Agritech Portal)",
+    "documentTitle": "Millets: Sorghum crop production",
+    "documentVersion": null,
+    "contentHash": "5b80dc603165d4f3221ab0275cb38b5acdf53cb9ad3174e66f371ea26de9418e",
+    "locator": {
+      "section": "Season and varieties"
+    },
+    "content": {
+      "kind": "excerpt",
+      "text": "Adipattam | June - July | K Tall",
+      "language": "en"
+    },
+    "publishedAt": null,
+    "availability": {
+      "effectiveAvailableAt": "2026-10-29T20:00:48.156Z",
+      "basis": "first_observed"
+    },
+    "ingestedAt": "2026-10-29T20:00:48.156Z",
+    "revisedAt": null,
+    "geography": {
+      "level": "state",
+      "ids": [
+        "IN-TN"
+      ]
+    },
+    "cropIds": [
+      "sorghum"
+    ],
+    "productIds": [],
+    "units": [],
+    "sourceUnits": [],
+    "licence": {
+      "licence": "Public web page; publisher copyright. Excerpt (<=60 words) kept for provenance, full page not redistributed.",
+      "accessStatus": "open",
+      "redistributable": false,
+      "attribution": "Tamil Nadu Agricultural University (TNAU Agritech Portal)"
+    },
+    "extraction": {
+      "method": "manual",
+      "version": "catalogue-build-1",
+      "reviewedBy": "rule_check"
+    },
+    "validationStatus": "pending"
+  },
+  {
+    "schemaVersion": "1.0",
+    "id": "cat.sorghum.chi",
+    "mode": "live",
+    "sourceUrl": "https://agritech.tnau.ac.in/agriculture/millets_sorghum.html",
+    "publisher": "Tamil Nadu Agricultural University (TNAU Agritech Portal)",
+    "documentTitle": "Millets: Sorghum crop production",
+    "documentVersion": null,
+    "contentHash": "5b80dc603165d4f3221ab0275cb38b5acdf53cb9ad3174e66f371ea26de9418e",
+    "locator": {
+      "section": "Season and varieties"
+    },
+    "content": {
+      "kind": "excerpt",
+      "text": "Chithiraipattam | April - May | BSR 1",
+      "language": "en"
+    },
+    "publishedAt": null,
+    "availability": {
+      "effectiveAvailableAt": "2026-10-29T20:00:48.156Z",
+      "basis": "first_observed"
+    },
+    "ingestedAt": "2026-10-29T20:00:48.156Z",
+    "revisedAt": null,
+    "geography": {
+      "level": "state",
+      "ids": [
+        "IN-TN"
+      ]
+    },
+    "cropIds": [
+      "sorghum"
+    ],
+    "productIds": [],
+    "units": [],
+    "sourceUnits": [],
+    "licence": {
+      "licence": "Public web page; publisher copyright. Excerpt (<=60 words) kept for provenance, full page not redistributed.",
+      "accessStatus": "open",
+      "redistributable": false,
+      "attribution": "Tamil Nadu Agricultural University (TNAU Agritech Portal)"
+    },
+    "extraction": {
+      "method": "manual",
+      "version": "catalogue-build-1",
+      "reviewedBy": "rule_check"
+    },
+    "validationStatus": "pending"
+  },
+  {
+    "schemaVersion": "1.0",
+    "id": "cat.sorghum.dur",
+    "mode": "live",
+    "sourceUrl": "https://agritech.tnau.ac.in/agriculture/millets_sorghum.html",
+    "publisher": "Tamil Nadu Agricultural University (TNAU Agritech Portal)",
+    "documentTitle": "Millets: Sorghum crop production",
+    "documentVersion": null,
+    "contentHash": "5b80dc603165d4f3221ab0275cb38b5acdf53cb9ad3174e66f371ea26de9418e",
+    "locator": {
+      "section": "Particulars of varieties"
+    },
+    "content": {
+      "kind": "excerpt",
+      "text": "Duration (days) | 100-105 | 95-105 | 95-105 | Area (Districts)",
+      "language": "en"
+    },
+    "publishedAt": null,
+    "availability": {
+      "effectiveAvailableAt": "2026-10-29T20:00:48.156Z",
+      "basis": "first_observed"
+    },
+    "ingestedAt": "2026-10-29T20:00:48.156Z",
+    "revisedAt": null,
+    "geography": {
+      "level": "state",
+      "ids": [
+        "IN-TN"
+      ]
+    },
+    "cropIds": [
+      "sorghum"
+    ],
+    "productIds": [],
+    "units": [],
+    "sourceUnits": [],
+    "licence": {
+      "licence": "Public web page; publisher copyright. Excerpt (<=60 words) kept for provenance, full page not redistributed.",
+      "accessStatus": "open",
+      "redistributable": false,
+      "attribution": "Tamil Nadu Agricultural University (TNAU Agritech Portal)"
+    },
+    "extraction": {
+      "method": "manual",
+      "version": "catalogue-build-1",
+      "reviewedBy": "rule_check"
+    },
+    "validationStatus": "pending"
+  },
+  {
+    "schemaVersion": "1.0",
+    "id": "cat.sorghum.yld",
+    "mode": "live",
+    "sourceUrl": "https://agritech.tnau.ac.in/agriculture/millets_sorghum.html",
+    "publisher": "Tamil Nadu Agricultural University (TNAU Agritech Portal)",
+    "documentTitle": "Millets: Sorghum crop production",
+    "documentVersion": null,
+    "contentHash": "5b80dc603165d4f3221ab0275cb38b5acdf53cb9ad3174e66f371ea26de9418e",
+    "locator": {
+      "section": "Particulars of varieties"
+    },
+    "content": {
+      "kind": "excerpt",
+      "text": "Season (Pattam) | Rainfed | Adi, Puratasi | Adi, Puratasi | Adi, Puratasi | Irrigated | Thai, Chithirai | Thai, Chithirai | Thai, Chithirai | Grain yield kg/ha | Rainfed | 2493 | 2400 | 2770 | Irrigated | 4568 | 3360 | 4340",
+      "language": "en"
+    },
+    "publishedAt": null,
+    "availability": {
+      "effectiveAvailableAt": "2026-10-29T20:00:48.156Z",
+      "basis": "first_observed"
+    },
+    "ingestedAt": "2026-10-29T20:00:48.156Z",
+    "revisedAt": null,
+    "geography": {
+      "level": "state",
+      "ids": [
+        "IN-TN"
+      ]
+    },
+    "cropIds": [
+      "sorghum"
+    ],
+    "productIds": [],
+    "units": [],
+    "sourceUnits": [],
+    "licence": {
+      "licence": "Public web page; publisher copyright. Excerpt (<=60 words) kept for provenance, full page not redistributed.",
+      "accessStatus": "open",
+      "redistributable": false,
+      "attribution": "Tamil Nadu Agricultural University (TNAU Agritech Portal)"
+    },
+    "extraction": {
+      "method": "manual",
+      "version": "catalogue-build-1",
+      "reviewedBy": "rule_check"
+    },
+    "validationStatus": "pending"
+  },
+  {
+    "schemaVersion": "1.0",
+    "id": "cat.sorghum.kh",
+    "mode": "live",
+    "sourceUrl": "https://millets.res.in/farmer/Recommended_package_of_Practices_Kharif.pdf",
+    "publisher": "ICAR-Indian Institute of Millets Research",
+    "documentTitle": "Recommended package of practices: Kharif sorghum",
+    "documentVersion": null,
+    "contentHash": "455c993561cb6709d6f0f4f8addc2e5fde14f3f333146ccea4d7aeaeabea0a61",
+    "locator": {
+      "page": 1,
+      "section": "Time of sowing"
+    },
+    "content": {
+      "kind": "excerpt",
+      "text": "The optimum sowing time for Kharif sorghum is Last week of May to2nd fortnight of July.",
+      "language": "en"
+    },
+    "publishedAt": null,
+    "availability": {
+      "effectiveAvailableAt": "2026-10-29T20:06:30.444Z",
+      "basis": "first_observed"
+    },
+    "ingestedAt": "2026-10-29T20:06:30.444Z",
+    "revisedAt": null,
+    "geography": {
+      "level": "national",
+      "ids": [
+        "IN"
+      ]
+    },
+    "cropIds": [
+      "sorghum"
+    ],
+    "productIds": [],
+    "units": [],
+    "sourceUnits": [],
+    "licence": {
+      "licence": "Public web page; publisher copyright. Excerpt (<=60 words) kept for provenance, full page not redistributed.",
+      "accessStatus": "open",
+      "redistributable": false,
+      "attribution": "ICAR-Indian Institute of Millets Research"
+    },
+    "extraction": {
+      "method": "native_text",
+      "version": "catalogue-build-1",
+      "reviewedBy": "rule_check"
+    },
+    "validationStatus": "pending"
+  }
+]

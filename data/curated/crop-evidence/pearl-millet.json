@@ -1,0 +1,198 @@
+[
+  {
+    "schemaVersion": "1.0",
+    "id": "cat.pearl-millet.irr",
+    "mode": "live",
+    "sourceUrl": "https://agritech.tnau.ac.in/agriculture/millets_cumbu.html",
+    "publisher": "Tamil Nadu Agricultural University (TNAU Agritech Portal)",
+    "documentTitle": "Millets: Pearl millet (cumbu) crop production",
+    "documentVersion": null,
+    "contentHash": "d5dce138123a53c1b5257b9ca3b48c5f9c94c580808f3a03a0124bb947e4170f",
+    "locator": {
+      "section": "Season and varieties"
+    },
+    "content": {
+      "kind": "excerpt",
+      "text": "1. IRRIGATED | i. Chithiraipattam (March-April)",
+      "language": "en"
+    },
+    "publishedAt": null,
+    "availability": {
+      "effectiveAvailableAt": "2026-10-29T20:00:48.213Z",
+      "basis": "first_observed"
+    },
+    "ingestedAt": "2026-10-29T20:00:48.213Z",
+    "revisedAt": null,
+    "geography": {
+      "level": "state",
+      "ids": [
+        "IN-TN"
+      ]
+    },
+    "cropIds": [
+      "pearl-millet"
+    ],
+    "productIds": [],
+    "units": [],
+    "sourceUnits": [],
+    "licence": {
+      "licence": "Public web page; publisher copyright. Excerpt (<=60 words) kept for provenance, full page not redistributed.",
+      "accessStatus": "open",
+      "redistributable": false,
+      "attribution": "Tamil Nadu Agricultural University (TNAU Agritech Portal)"
+    },
+    "extraction": {
+      "method": "manual",
+      "version": "catalogue-build-1",
+      "reviewedBy": "rule_check"
+    },
+    "validationStatus": "pending"
+  },
+  {
+    "schemaVersion": "1.0",
+    "id": "cat.pearl-millet.rf",
+    "mode": "live",
+    "sourceUrl": "https://agritech.tnau.ac.in/agriculture/millets_cumbu.html",
+    "publisher": "Tamil Nadu Agricultural University (TNAU Agritech Portal)",
+    "documentTitle": "Millets: Pearl millet (cumbu) crop production",
+    "documentVersion": null,
+    "contentHash": "d5dce138123a53c1b5257b9ca3b48c5f9c94c580808f3a03a0124bb947e4170f",
+    "locator": {
+      "section": "Season and varieties"
+    },
+    "content": {
+      "kind": "excerpt",
+      "text": "2. RAINFED | i. Adipattam (June-July)",
+      "language": "en"
+    },
+    "publishedAt": null,
+    "availability": {
+      "effectiveAvailableAt": "2026-10-29T20:00:48.213Z",
+      "basis": "first_observed"
+    },
+    "ingestedAt": "2026-10-29T20:00:48.213Z",
+    "revisedAt": null,
+    "geography": {
+      "level": "state",
+      "ids": [
+        "IN-TN"
+      ]
+    },
+    "cropIds": [
+      "pearl-millet"
+    ],
+    "productIds": [],
+    "units": [],
+    "sourceUnits": [],
+    "licence": {
+      "licence": "Public web page; publisher copyright. Excerpt (<=60 words) kept for provenance, full page not redistributed.",
+      "accessStatus": "open",
+      "redistributable": false,
+      "attribution": "Tamil Nadu Agricultural University (TNAU Agritech Portal)"
+    },
+    "extraction": {
+      "method": "manual",
+      "version": "catalogue-build-1",
+      "reviewedBy": "rule_check"
+    },
+    "validationStatus": "pending"
+  },
+  {
+    "schemaVersion": "1.0",
+    "id": "cat.pearl-millet.dur",
+    "mode": "live",
+    "sourceUrl": "https://agritech.tnau.ac.in/agriculture/millets_cumbu.html",
+    "publisher": "Tamil Nadu Agricultural University (TNAU Agritech Portal)",
+    "documentTitle": "Millets: Pearl millet (cumbu) crop production",
+    "documentVersion": null,
+    "contentHash": "d5dce138123a53c1b5257b9ca3b48c5f9c94c580808f3a03a0124bb947e4170f",
+    "locator": {
+      "section": "Particulars of hybrids and varieties"
+    },
+    "content": {
+      "kind": "excerpt",
+      "text": "Duration (Days) | 90 - 100 | 90 | 80-85",
+      "language": "en"
+    },
+    "publishedAt": null,
+    "availability": {
+      "effectiveAvailableAt": "2026-10-29T20:00:48.213Z",
+      "basis": "first_observed"
+    },
+    "ingestedAt": "2026-10-29T20:00:48.213Z",
+    "revisedAt": null,
+    "geography": {
+      "level": "state",
+      "ids": [
+        "IN-TN"
+      ]
+    },
+    "cropIds": [
+      "pearl-millet"
+    ],
+    "productIds": [],
+    "units": [],
+    "sourceUnits": [],
+    "licence": {
+      "licence": "Public web page; publisher copyright. Excerpt (<=60 words) kept for provenance, full page not redistributed.",
+      "accessStatus": "open",
+      "redistributable": false,
+      "attribution": "Tamil Nadu Agricultural University (TNAU Agritech Portal)"
+    },
+    "extraction": {
+      "method": "manual",
+      "version": "catalogue-build-1",
+      "reviewedBy": "rule_check"
+    },
+    "validationStatus": "pending"
+  },
+  {
+    "schemaVersion": "1.0",
+    "id": "cat.pearl-millet.yld",
+    "mode": "live",
+    "sourceUrl": "https://agritech.tnau.ac.in/agriculture/millets_cumbu.html",
+    "publisher": "Tamil Nadu Agricultural University (TNAU Agritech Portal)",
+    "documentTitle": "Millets: Pearl millet (cumbu) crop production",
+    "documentVersion": null,
+    "contentHash": "d5dce138123a53c1b5257b9ca3b48c5f9c94c580808f3a03a0124bb947e4170f",
+    "locator": {
+      "section": "Particulars of hybrids and varieties"
+    },
+    "content": {
+      "kind": "excerpt",
+      "text": "Grain yield (kg/ha) | | | | Rainfed | 2500 - 2800 | 2513 | 2354 | Irrigated | 3000 - 3500 | 3295 | 2865",
+      "language": "en"
+    },
+    "publishedAt": null,
+    "availability": {
+      "effectiveAvailableAt": "2026-10-29T20:00:48.213Z",
+      "basis": "first_observed"
+    },
+    "ingestedAt": "2026-10-29T20:00:48.213Z",
+    "revisedAt": null,
+    "geography": {
+      "level": "state",
+      "ids": [
+        "IN-TN"
+      ]
+    },
+    "cropIds": [
+      "pearl-millet"
+    ],
+    "productIds": [],
+    "units": [],
+    "sourceUnits": [],
+    "licence": {
+      "licence": "Public web page; publisher copyright. Excerpt (<=60 words) kept for provenance, full page not redistributed.",
+      "accessStatus": "open",
+      "redistributable": false,
+      "attribution": "Tamil Nadu Agricultural University (TNAU Agritech Portal)"
+    },
+    "extraction": {
+      "method": "manual",
+      "version": "catalogue-build-1",
+      "reviewedBy": "rule_check"
+    },
+    "validationStatus": "pending"
+  }
+]

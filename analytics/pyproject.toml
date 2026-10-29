@@ -1,0 +1,22 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "harvest_analytics"
+version = "0.1.0"
+description = "Harvest Outlook analytics: fixed JSON-in/JSON-out entrypoints."
+requires-python = ">=3.12"
+dependencies = ["numpy", "pandas", "pyarrow", "jsonschema==4.26.0", "pypdf==6.21.4"]
+
+[project.optional-dependencies]
+dev = ["pytest"]
+
+[tool.setuptools.packages.find]
+include = ["harvest_analytics*"]
+
+[tool.setuptools.package-data]
+harvest_analytics = ["schemas/*.json"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

@@ -1,0 +1,81 @@
+{
+  "cropId": "wheat",
+  "identityRef": "wheat",
+  "group": "cereals",
+  "products": [
+    {
+      "productId": "wheat-grain",
+      "name": "Wheat grain",
+      "productBasis": "grain"
+    }
+  ],
+  "regionalContexts": [
+    {
+      "contextId": "wheat.AS.rabi",
+      "geography": {
+        "level": "state",
+        "ids": [
+          "IN-AS"
+        ]
+      },
+      "stateId": "IN-AS",
+      "districtIds": null,
+      "season": "rabi",
+      "plantingWindow": {
+        "fromMonth": 11,
+        "toMonth": 12,
+        "evidenceIds": [
+          "cat.wheat.sow"
+        ]
+      },
+      "durationDays": {
+        "min": 100,
+        "max": 110,
+        "evidenceIds": [
+          "cat.wheat.dur"
+        ]
+      },
+      "irrigation": "irrigated",
+      "irrigationEvidenceIds": [
+        "cat.wheat.dur"
+      ],
+      "waterNeedClass": null,
+      "soilNotes": {
+        "text": "Sandy loam to silty loam rich in organic matter; clayey soil not suitable.",
+        "evidenceIds": [
+          "cat.wheat.soil"
+        ]
+      },
+      "yieldReference": {
+        "min": 2500,
+        "max": 3500,
+        "unit": "kg/ha",
+        "basis": "regional_reference",
+        "productId": "wheat-grain",
+        "evidenceIds": [
+          "cat.wheat.yld"
+        ]
+      },
+      "labourClass": null,
+      "harvestPattern": "single",
+      "notes": "Assam, window varies by agro-climatic zone (Nov 5-Dec 15 for central/lower Brahmaputra; Nov 5-30 upper; Nov 5-20 north bank). Wheat is not a TN crop in the saved sources; no northern wheat belt source was reachable (T01: IIWBR home page only)."
+    }
+  ],
+  "exclusionsOrCautions": [],
+  "marketCoverageStatus": "unavailable_pending_price_access",
+  "evidenceIds": [
+    "cat.wheat.sow",
+    "cat.wheat.dur",
+    "cat.wheat.soil",
+    "cat.wheat.yld"
+  ],
+  "qualification": {
+    "identityResolved": true,
+    "hasRegionalContext": true,
+    "hasSourcedRequirements": true,
+    "hasSeasonInfo": true,
+    "marketStatusExplicit": true,
+    "qualified": true,
+    "missing": []
+  }
+}

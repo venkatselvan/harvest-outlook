@@ -1,0 +1,86 @@
+{
+  "cropId": "ginger",
+  "identityRef": "ginger",
+  "group": "spices",
+  "products": [
+    {
+      "productId": "ginger-fresh",
+      "name": "Fresh ginger rhizome",
+      "productBasis": "fresh"
+    },
+    {
+      "productId": "ginger-dry",
+      "name": "Dry ginger",
+      "productBasis": "dry"
+    }
+  ],
+  "regionalContexts": [
+    {
+      "contextId": "ginger.WESTCOAST.kharif",
+      "geography": {
+        "level": "region",
+        "ids": [
+          "IN-region-west-coast"
+        ]
+      },
+      "stateId": null,
+      "districtIds": null,
+      "season": "kharif",
+      "plantingWindow": {
+        "fromMonth": 5,
+        "toMonth": 5,
+        "evidenceIds": [
+          "cat.ginger.sow"
+        ]
+      },
+      "durationDays": {
+        "min": 200,
+        "max": 200,
+        "evidenceIds": [
+          "cat.ginger.dur"
+        ]
+      },
+      "irrigation": "any",
+      "irrigationEvidenceIds": [
+        "cat.ginger.irr"
+      ],
+      "waterNeedClass": null,
+      "soilNotes": {
+        "text": "Well drained sandy loam, clay loam, red loam or lateritic loam.",
+        "evidenceIds": [
+          "cat.ginger.soil"
+        ]
+      },
+      "yieldReference": {
+        "min": 22400,
+        "max": 23200,
+        "unit": "kg/ha",
+        "basis": "regional_reference",
+        "productId": "ginger-fresh",
+        "evidenceIds": [
+          "cat.ginger.dur"
+        ]
+      },
+      "labourClass": null,
+      "harvestPattern": "single",
+      "notes": "Spices Board / ICAR-IISR text says \"West Coast of India\"; irrigated planting can be mid Feb-early Mar (same page). Fresh yield is IISR variety means. Stage/rule detail for ginger is owned by T05b files (ginger.*)."
+    }
+  ],
+  "exclusionsOrCautions": [],
+  "marketCoverageStatus": "unavailable_pending_price_access",
+  "evidenceIds": [
+    "cat.ginger.sow",
+    "cat.ginger.irr",
+    "cat.ginger.soil",
+    "cat.ginger.dur"
+  ],
+  "qualification": {
+    "identityResolved": true,
+    "hasRegionalContext": true,
+    "hasSourcedRequirements": true,
+    "hasSeasonInfo": true,
+    "marketStatusExplicit": true,
+    "qualified": true,
+    "missing": []
+  }
+}

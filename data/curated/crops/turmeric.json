@@ -1,0 +1,79 @@
+{
+  "cropId": "turmeric",
+  "identityRef": "turmeric",
+  "group": "spices",
+  "products": [
+    {
+      "productId": "turmeric-fresh",
+      "name": "Fresh turmeric rhizome",
+      "productBasis": "fresh"
+    },
+    {
+      "productId": "turmeric-dry",
+      "name": "Dry (cured) turmeric",
+      "productBasis": "dry"
+    }
+  ],
+  "regionalContexts": [
+    {
+      "contextId": "turmeric.IN.kharif",
+      "geography": {
+        "level": "national",
+        "ids": [
+          "IN"
+        ]
+      },
+      "stateId": null,
+      "districtIds": null,
+      "season": "kharif",
+      "plantingWindow": {
+        "fromMonth": 4,
+        "toMonth": 5,
+        "evidenceIds": [
+          "cat.turmeric.sow"
+        ]
+      },
+      "durationDays": {
+        "min": 180,
+        "max": 270,
+        "evidenceIds": [
+          "cat.turmeric.d6",
+          "cat.turmeric.d9"
+        ]
+      },
+      "irrigation": "any",
+      "irrigationEvidenceIds": [
+        "cat.turmeric.irr"
+      ],
+      "waterNeedClass": null,
+      "soilNotes": {
+        "text": "Well-drained red or clay loam, pH 4.5-7.5, good organic status.",
+        "evidenceIds": [
+          "cat.turmeric.soil"
+        ]
+      },
+      "yieldReference": null,
+      "labourClass": null,
+      "harvestPattern": "single",
+      "notes": "Spices Board national guide; planting time \"varies with location and rainfall receipt\" (same text), so this is not a state schedule. 270 days is a catalogue conversion of \"9 months\"."
+    }
+  ],
+  "exclusionsOrCautions": [],
+  "marketCoverageStatus": "unavailable_pending_price_access",
+  "evidenceIds": [
+    "cat.turmeric.sow",
+    "cat.turmeric.soil",
+    "cat.turmeric.irr",
+    "cat.turmeric.d9",
+    "cat.turmeric.d6"
+  ],
+  "qualification": {
+    "identityResolved": true,
+    "hasRegionalContext": true,
+    "hasSourcedRequirements": true,
+    "hasSeasonInfo": true,
+    "marketStatusExplicit": true,
+    "qualified": true,
+    "missing": []
+  }
+}

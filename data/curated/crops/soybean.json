@@ -1,0 +1,156 @@
+{
+  "cropId": "soybean",
+  "identityRef": "soybean",
+  "group": "oilseeds",
+  "products": [
+    {
+      "productId": "soybean-seed",
+      "name": "Soybean seed",
+      "productBasis": "seed"
+    }
+  ],
+  "regionalContexts": [
+    {
+      "contextId": "soybean.TN.multi",
+      "geography": {
+        "level": "state",
+        "ids": [
+          "IN-TN"
+        ]
+      },
+      "stateId": "IN-TN",
+      "districtIds": null,
+      "season": "kharif",
+      "plantingWindow": {
+        "fromMonth": 6,
+        "toMonth": 7,
+        "evidenceIds": [
+          "cat.soybean.tns"
+        ]
+      },
+      "durationDays": {
+        "min": 80,
+        "max": 100,
+        "evidenceIds": [
+          "cat.soybean.tnd"
+        ]
+      },
+      "irrigation": "unspecified",
+      "irrigationEvidenceIds": [],
+      "waterNeedClass": null,
+      "soilNotes": null,
+      "yieldReference": null,
+      "labourClass": null,
+      "harvestPattern": "single",
+      "notes": "TN-only coverage: Tamil Nadu source; not generalised to other states. Also Sep-Oct and Feb-Mar sowings on the page."
+    },
+    {
+      "contextId": "soybean.AS.kharif",
+      "geography": {
+        "level": "state",
+        "ids": [
+          "IN-AS"
+        ]
+      },
+      "stateId": "IN-AS",
+      "districtIds": null,
+      "season": "kharif",
+      "plantingWindow": {
+        "fromMonth": 5,
+        "toMonth": 6,
+        "evidenceIds": [
+          "cat.soybean.ksow"
+        ]
+      },
+      "durationDays": {
+        "min": 90,
+        "max": 125,
+        "evidenceIds": [
+          "cat.soybean.kdur"
+        ]
+      },
+      "irrigation": "unspecified",
+      "irrigationEvidenceIds": [],
+      "waterNeedClass": null,
+      "soilNotes": {
+        "text": "Fertile well drained loam; waterlogging injurious.",
+        "evidenceIds": [
+          "cat.soybean.ksoil"
+        ]
+      },
+      "yieldReference": null,
+      "labourClass": null,
+      "harvestPattern": "single",
+      "notes": "Assam; May-June window is quoted for the north bank plain zone, other zones differ."
+    },
+    {
+      "contextId": "soybean.AS.rabi",
+      "geography": {
+        "level": "state",
+        "ids": [
+          "IN-AS"
+        ]
+      },
+      "stateId": "IN-AS",
+      "districtIds": null,
+      "season": "rabi",
+      "plantingWindow": {
+        "fromMonth": 1,
+        "toMonth": 1,
+        "evidenceIds": [
+          "cat.soybean.rsow"
+        ]
+      },
+      "durationDays": {
+        "min": 85,
+        "max": 100,
+        "evidenceIds": [
+          "cat.soybean.rdur"
+        ]
+      },
+      "irrigation": "irrigated",
+      "irrigationEvidenceIds": [
+        "cat.soybean.rsow"
+      ],
+      "waterNeedClass": null,
+      "soilNotes": {
+        "text": "Fertile well drained loam; waterlogging injurious.",
+        "evidenceIds": [
+          "cat.soybean.ksoil"
+        ]
+      },
+      "yieldReference": null,
+      "labourClass": null,
+      "harvestPattern": "single",
+      "notes": "Assam; irrigated January sowing between rice crops (rainfed: mid Jan to mid Feb per same page)."
+    }
+  ],
+  "exclusionsOrCautions": [
+    {
+      "text": "Sensitive to waterlogging/excess moisture (TNAU).",
+      "evidenceIds": [
+        "cat.soybean.tnw"
+      ]
+    }
+  ],
+  "marketCoverageStatus": "unavailable_pending_price_access",
+  "evidenceIds": [
+    "cat.soybean.tns",
+    "cat.soybean.tnd",
+    "cat.soybean.tnw",
+    "cat.soybean.ksow",
+    "cat.soybean.kdur",
+    "cat.soybean.ksoil",
+    "cat.soybean.rsow",
+    "cat.soybean.rdur"
+  ],
+  "qualification": {
+    "identityResolved": true,
+    "hasRegionalContext": true,
+    "hasSourcedRequirements": true,
+    "hasSeasonInfo": true,
+    "marketStatusExplicit": true,
+    "qualified": true,
+    "missing": []
+  }
+}

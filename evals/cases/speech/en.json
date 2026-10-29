@@ -1,0 +1,329 @@
+{
+ "language": "en",
+ "note": "Text utterances written by the build team; to be spoken by real farmers/testers (audio is not supplied) or synthesised for the round-trip harness. 'anyOf' lists accepted transcript surface forms for the normalised value; unit 'bigha'/'cent' vary regionally.",
+ "cases": [
+  {
+   "id": "en-01",
+   "text": "I planted ginger on 2 acres in April",
+   "tags": [
+    "number",
+    "unit",
+    "date",
+    "crop"
+   ],
+   "expect": [
+    {
+     "kind": "quantity",
+     "normalized": "2 acre",
+     "anyOf": [
+      "2 acres",
+      "2 acre",
+      "two acres"
+     ]
+    },
+    {
+     "kind": "crop",
+     "normalized": "ginger",
+     "anyOf": [
+      "ginger"
+     ]
+    },
+    {
+     "kind": "date",
+     "normalized": "month=04",
+     "anyOf": [
+      "april"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "en-02",
+   "text": "My field is 1.5 hectares",
+   "tags": [
+    "number",
+    "unit"
+   ],
+   "expect": [
+    {
+     "kind": "quantity",
+     "normalized": "1.5 ha",
+     "anyOf": [
+      "1.5 hectares",
+      "1.5 hectare",
+      "one and a half hectares",
+      "1 point 5 hectares"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "en-03",
+   "text": "I harvested 8 quintals of turmeric",
+   "tags": [
+    "number",
+    "unit",
+    "crop"
+   ],
+   "expect": [
+    {
+     "kind": "quantity",
+     "normalized": "8 quintal",
+     "anyOf": [
+      "8 quintals",
+      "8 quintal",
+      "eight quintals"
+     ]
+    },
+    {
+     "kind": "crop",
+     "normalized": "turmeric",
+     "anyOf": [
+      "turmeric"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "en-04",
+   "text": "Sowing was on 15 June 2026",
+   "tags": [
+    "number",
+    "date"
+   ],
+   "expect": [
+    {
+     "kind": "date",
+     "normalized": "2026-06-15",
+     "anyOf": [
+      "15 june 2026",
+      "june 15 2026",
+      "15th june 2026",
+      "15 june, 2026"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "en-05",
+   "text": "The price is 6500 rupees per quintal",
+   "tags": [
+    "number",
+    "unit"
+   ],
+   "expect": [
+    {
+     "kind": "price",
+     "normalized": "6500 INR/quintal",
+     "anyOf": [
+      "6500 rupees",
+      "6,500 rupees",
+      "65 hundred rupees",
+      "sixty five hundred rupees"
+     ]
+    },
+    {
+     "kind": "unit",
+     "normalized": "quintal",
+     "anyOf": [
+      "quintal"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "en-06",
+   "text": "Rain started on the 3rd of July",
+   "tags": [
+    "date"
+   ],
+   "expect": [
+    {
+     "kind": "date",
+     "normalized": "--07-03",
+     "anyOf": [
+      "3rd of july",
+      "3 july",
+      "july 3",
+      "july 3rd",
+      "third of july"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "en-07",
+   "text": "How much water does banana need in 40 days",
+   "tags": [
+    "number",
+    "crop"
+   ],
+   "expect": [
+    {
+     "kind": "quantity",
+     "normalized": "40 day",
+     "anyOf": [
+      "40 days",
+      "forty days"
+     ]
+    },
+    {
+     "kind": "crop",
+     "normalized": "banana",
+     "anyOf": [
+      "banana"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "en-08",
+   "text": "I have half an acre of paddy",
+   "tags": [
+    "number",
+    "unit",
+    "crop"
+   ],
+   "expect": [
+    {
+     "kind": "quantity",
+     "normalized": "0.5 acre",
+     "anyOf": [
+      "half an acre",
+      "half acre",
+      "0.5 acre",
+      "0.5 acres"
+     ]
+    },
+    {
+     "kind": "crop",
+     "normalized": "rice",
+     "anyOf": [
+      "paddy",
+      "rice"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "en-09",
+   "text": "Plot size is 20 cents near Wayanad",
+   "tags": [
+    "number",
+    "unit"
+   ],
+   "expect": [
+    {
+     "kind": "quantity",
+     "normalized": "20 cent",
+     "anyOf": [
+      "20 cents",
+      "20 cent",
+      "twenty cents"
+     ]
+    },
+    {
+     "kind": "place",
+     "normalized": "Wayanad",
+     "anyOf": [
+      "wayanad",
+      "wynad"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "en-10",
+   "text": "My khet is 3 acres and I want to grow ginger",
+   "tags": [
+    "codeswitch",
+    "number",
+    "unit",
+    "crop"
+   ],
+   "expect": [
+    {
+     "kind": "quantity",
+     "normalized": "3 acre",
+     "anyOf": [
+      "3 acres",
+      "three acres",
+      "3 acre"
+     ]
+    },
+    {
+     "kind": "crop",
+     "normalized": "ginger",
+     "anyOf": [
+      "ginger"
+     ]
+    },
+    {
+     "kind": "token",
+     "normalized": "khet",
+     "anyOf": [
+      "khet",
+      "kheth",
+      "field"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "en-11",
+   "text": "I got 2 tonnes from 1 acre of sugarcane",
+   "tags": [
+    "number",
+    "unit",
+    "crop"
+   ],
+   "expect": [
+    {
+     "kind": "quantity",
+     "normalized": "2 tonne",
+     "anyOf": [
+      "2 tonnes",
+      "2 tons",
+      "two tonnes",
+      "two tons"
+     ]
+    },
+    {
+     "kind": "quantity",
+     "normalized": "1 acre",
+     "anyOf": [
+      "1 acre",
+      "one acre"
+     ]
+    },
+    {
+     "kind": "crop",
+     "normalized": "sugarcane",
+     "anyOf": [
+      "sugarcane",
+      "sugar cane"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "en-12",
+   "text": "Fertiliser cost was 12000 rupees",
+   "tags": [
+    "number"
+   ],
+   "expect": [
+    {
+     "kind": "price",
+     "normalized": "12000 INR",
+     "anyOf": [
+      "12000 rupees",
+      "12,000 rupees",
+      "twelve thousand rupees",
+      "12 thousand rupees"
+     ]
+    }
+   ]
+  }
+ ]
+}

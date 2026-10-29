@@ -1,0 +1,298 @@
+[
+  {
+    "schemaVersion": "1.0",
+    "id": "cat.paddy.kuruvai",
+    "mode": "live",
+    "sourceUrl": "https://agritech.tnau.ac.in/agriculture/agri_seasonandvarieties_rice.html",
+    "publisher": "Tamil Nadu Agricultural University (TNAU Agritech Portal)",
+    "documentTitle": "Rice: season and varieties",
+    "documentVersion": null,
+    "contentHash": "830a4c1baa0b15f38a7dc1024b8f15c953977510146fd1dcd4c3886806ee1c19",
+    "locator": {
+      "section": "Rice Seasons of Tamil Nadu table"
+    },
+    "content": {
+      "kind": "excerpt",
+      "text": "June - July | Kuruvai | < 120",
+      "language": "en"
+    },
+    "publishedAt": null,
+    "availability": {
+      "effectiveAvailableAt": "2026-10-29T20:00:47.944Z",
+      "basis": "first_observed"
+    },
+    "ingestedAt": "2026-10-29T20:00:47.944Z",
+    "revisedAt": null,
+    "geography": {
+      "level": "state",
+      "ids": [
+        "IN-TN"
+      ]
+    },
+    "cropIds": [
+      "paddy"
+    ],
+    "productIds": [],
+    "units": [],
+    "sourceUnits": [],
+    "licence": {
+      "licence": "Public web page; publisher copyright. Excerpt (<=60 words) kept for provenance, full page not redistributed.",
+      "accessStatus": "open",
+      "redistributable": false,
+      "attribution": "Tamil Nadu Agricultural University (TNAU Agritech Portal)"
+    },
+    "extraction": {
+      "method": "manual",
+      "version": "catalogue-build-1",
+      "reviewedBy": "rule_check"
+    },
+    "validationStatus": "pending"
+  },
+  {
+    "schemaVersion": "1.0",
+    "id": "cat.paddy.samba",
+    "mode": "live",
+    "sourceUrl": "https://agritech.tnau.ac.in/agriculture/agri_seasonandvarieties_rice.html",
+    "publisher": "Tamil Nadu Agricultural University (TNAU Agritech Portal)",
+    "documentTitle": "Rice: season and varieties",
+    "documentVersion": null,
+    "contentHash": "830a4c1baa0b15f38a7dc1024b8f15c953977510146fd1dcd4c3886806ee1c19",
+    "locator": {
+      "section": "Rice Seasons of Tamil Nadu table"
+    },
+    "content": {
+      "kind": "excerpt",
+      "text": "August | Samba | > 145",
+      "language": "en"
+    },
+    "publishedAt": null,
+    "availability": {
+      "effectiveAvailableAt": "2026-10-29T20:00:47.944Z",
+      "basis": "first_observed"
+    },
+    "ingestedAt": "2026-10-29T20:00:47.944Z",
+    "revisedAt": null,
+    "geography": {
+      "level": "state",
+      "ids": [
+        "IN-TN"
+      ]
+    },
+    "cropIds": [
+      "paddy"
+    ],
+    "productIds": [],
+    "units": [],
+    "sourceUnits": [],
+    "licence": {
+      "licence": "Public web page; publisher copyright. Excerpt (<=60 words) kept for provenance, full page not redistributed.",
+      "accessStatus": "open",
+      "redistributable": false,
+      "attribution": "Tamil Nadu Agricultural University (TNAU Agritech Portal)"
+    },
+    "extraction": {
+      "method": "manual",
+      "version": "catalogue-build-1",
+      "reviewedBy": "rule_check"
+    },
+    "validationStatus": "pending"
+  },
+  {
+    "schemaVersion": "1.0",
+    "id": "cat.paddy.thaladi",
+    "mode": "live",
+    "sourceUrl": "https://agritech.tnau.ac.in/agriculture/agri_seasonandvarieties_rice.html",
+    "publisher": "Tamil Nadu Agricultural University (TNAU Agritech Portal)",
+    "documentTitle": "Rice: season and varieties",
+    "documentVersion": null,
+    "contentHash": "830a4c1baa0b15f38a7dc1024b8f15c953977510146fd1dcd4c3886806ee1c19",
+    "locator": {
+      "section": "Rice Seasons of Tamil Nadu table"
+    },
+    "content": {
+      "kind": "excerpt",
+      "text": "Sep - Oct | Late Samba Thaladi Pishanam | 130 - 135",
+      "language": "en"
+    },
+    "publishedAt": null,
+    "availability": {
+      "effectiveAvailableAt": "2026-10-29T20:00:47.944Z",
+      "basis": "first_observed"
+    },
+    "ingestedAt": "2026-10-29T20:00:47.944Z",
+    "revisedAt": null,
+    "geography": {
+      "level": "state",
+      "ids": [
+        "IN-TN"
+      ]
+    },
+    "cropIds": [
+      "paddy"
+    ],
+    "productIds": [],
+    "units": [],
+    "sourceUnits": [],
+    "licence": {
+      "licence": "Public web page; publisher copyright. Excerpt (<=60 words) kept for provenance, full page not redistributed.",
+      "accessStatus": "open",
+      "redistributable": false,
+      "attribution": "Tamil Nadu Agricultural University (TNAU Agritech Portal)"
+    },
+    "extraction": {
+      "method": "manual",
+      "version": "catalogue-build-1",
+      "reviewedBy": "rule_check"
+    },
+    "validationStatus": "pending"
+  },
+  {
+    "schemaVersion": "1.0",
+    "id": "cat.paddy.navarai",
+    "mode": "live",
+    "sourceUrl": "https://agritech.tnau.ac.in/agriculture/agri_seasonandvarieties_rice.html",
+    "publisher": "Tamil Nadu Agricultural University (TNAU Agritech Portal)",
+    "documentTitle": "Rice: season and varieties",
+    "documentVersion": null,
+    "contentHash": "830a4c1baa0b15f38a7dc1024b8f15c953977510146fd1dcd4c3886806ee1c19",
+    "locator": {
+      "section": "Rice Seasons of Tamil Nadu table"
+    },
+    "content": {
+      "kind": "excerpt",
+      "text": "Dec - Jan | Navarai | < 120",
+      "language": "en"
+    },
+    "publishedAt": null,
+    "availability": {
+      "effectiveAvailableAt": "2026-10-29T20:00:47.944Z",
+      "basis": "first_observed"
+    },
+    "ingestedAt": "2026-10-29T20:00:47.944Z",
+    "revisedAt": null,
+    "geography": {
+      "level": "state",
+      "ids": [
+        "IN-TN"
+      ]
+    },
+    "cropIds": [
+      "paddy"
+    ],
+    "productIds": [],
+    "units": [],
+    "sourceUnits": [],
+    "licence": {
+      "licence": "Public web page; publisher copyright. Excerpt (<=60 words) kept for provenance, full page not redistributed.",
+      "accessStatus": "open",
+      "redistributable": false,
+      "attribution": "Tamil Nadu Agricultural University (TNAU Agritech Portal)"
+    },
+    "extraction": {
+      "method": "manual",
+      "version": "catalogue-build-1",
+      "reviewedBy": "rule_check"
+    },
+    "validationStatus": "pending"
+  },
+  {
+    "schemaVersion": "1.0",
+    "id": "cat.paddy.sali",
+    "mode": "live",
+    "sourceUrl": "https://kvkchirang.aau.ac.in/pdf/package_of_practice/kharif/Salirice.pdf",
+    "publisher": "Assam Agricultural University, KVK Chirang",
+    "documentTitle": "Package of practices for Kharif crops of Assam: Sali rice",
+    "documentVersion": "2021",
+    "contentHash": "dcbd17e33c8decf63f3408e9420eb82060f8ac9bdd4afdb44db4cfbd1173db86",
+    "locator": {
+      "page": 2,
+      "section": "Varieties for staggered planting in sali season"
+    },
+    "content": {
+      "kind": "excerpt",
+      "text": "134 150-160 June Gitesh 2017 130 150-160 June Transplanting time July-Sep July-Aug",
+      "language": "en"
+    },
+    "publishedAt": null,
+    "availability": {
+      "effectiveAvailableAt": "2026-10-29T20:00:52.452Z",
+      "basis": "first_observed"
+    },
+    "ingestedAt": "2026-10-29T20:00:52.452Z",
+    "revisedAt": null,
+    "geography": {
+      "level": "state",
+      "ids": [
+        "IN-AS"
+      ]
+    },
+    "cropIds": [
+      "paddy"
+    ],
+    "productIds": [],
+    "units": [],
+    "sourceUnits": [],
+    "licence": {
+      "licence": "Public web page; publisher copyright. Excerpt (<=60 words) kept for provenance, full page not redistributed.",
+      "accessStatus": "open",
+      "redistributable": false,
+      "attribution": "Assam Agricultural University, KVK Chirang"
+    },
+    "extraction": {
+      "method": "native_text",
+      "version": "catalogue-build-1",
+      "reviewedBy": "rule_check"
+    },
+    "validationStatus": "pending"
+  },
+  {
+    "schemaVersion": "1.0",
+    "id": "cat.paddy.salyld",
+    "mode": "live",
+    "sourceUrl": "https://kvkchirang.aau.ac.in/pdf/package_of_practice/kharif/Salirice.pdf",
+    "publisher": "Assam Agricultural University, KVK Chirang",
+    "documentTitle": "Package of practices for Kharif crops of Assam: Sali rice",
+    "documentVersion": "2021",
+    "contentHash": "dcbd17e33c8decf63f3408e9420eb82060f8ac9bdd4afdb44db4cfbd1173db86",
+    "locator": {
+      "page": 2,
+      "section": "Varieties for staggered planting in sali season"
+    },
+    "content": {
+      "kind": "excerpt",
+      "text": "Age of seedlings 30-75 30-60 Yield (t/ha) 4.5- 5.0 5-5.5",
+      "language": "en"
+    },
+    "publishedAt": null,
+    "availability": {
+      "effectiveAvailableAt": "2026-10-29T20:00:52.452Z",
+      "basis": "first_observed"
+    },
+    "ingestedAt": "2026-10-29T20:00:52.452Z",
+    "revisedAt": null,
+    "geography": {
+      "level": "state",
+      "ids": [
+        "IN-AS"
+      ]
+    },
+    "cropIds": [
+      "paddy"
+    ],
+    "productIds": [],
+    "units": [],
+    "sourceUnits": [],
+    "licence": {
+      "licence": "Public web page; publisher copyright. Excerpt (<=60 words) kept for provenance, full page not redistributed.",
+      "accessStatus": "open",
+      "redistributable": false,
+      "attribution": "Assam Agricultural University, KVK Chirang"
+    },
+    "extraction": {
+      "method": "native_text",
+      "version": "catalogue-build-1",
+      "reviewedBy": "rule_check"
+    },
+    "validationStatus": "pending"
+  }
+]

@@ -1,0 +1,302 @@
+{
+ "language": "hi",
+ "note": "Text utterances written by the build team; to be spoken by real farmers/testers (audio is not supplied) or synthesised for the round-trip harness. 'anyOf' lists accepted transcript surface forms for the normalised value; unit 'bigha'/'cent' vary regionally.",
+ "cases": [
+  {
+   "id": "hi-01",
+   "text": "मैंने दो एकड़ में अदरक लगाई है",
+   "tags": [
+    "number",
+    "unit",
+    "crop"
+   ],
+   "expect": [
+    {
+     "kind": "quantity",
+     "normalized": "2 acre",
+     "anyOf": [
+      "दो एकड़",
+      "2 एकड़",
+      "दो एकड",
+      "2 एकड"
+     ]
+    },
+    {
+     "kind": "crop",
+     "normalized": "ginger",
+     "anyOf": [
+      "अदरक"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "hi-02",
+   "text": "मेरा खेत डेढ़ हेक्टेयर है",
+   "tags": [
+    "number",
+    "unit"
+   ],
+   "expect": [
+    {
+     "kind": "quantity",
+     "normalized": "1.5 ha",
+     "anyOf": [
+      "डेढ़ हेक्टेयर",
+      "1.5 हेक्टेयर",
+      "डेढ हेक्टेयर",
+      "1.5 हेक्टर"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "hi-03",
+   "text": "मैंने आठ क्विंटल हल्दी काटी",
+   "tags": [
+    "number",
+    "unit",
+    "crop"
+   ],
+   "expect": [
+    {
+     "kind": "quantity",
+     "normalized": "8 quintal",
+     "anyOf": [
+      "आठ क्विंटल",
+      "8 क्विंटल"
+     ]
+    },
+    {
+     "kind": "crop",
+     "normalized": "turmeric",
+     "anyOf": [
+      "हल्दी"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "hi-04",
+   "text": "बुवाई 15 जून 2026 को हुई",
+   "tags": [
+    "number",
+    "date"
+   ],
+   "expect": [
+    {
+     "kind": "date",
+     "normalized": "2026-06-15",
+     "anyOf": [
+      "15 जून 2026",
+      "पंद्रह जून 2026",
+      "15 जून, 2026",
+      "15 जून दो हज़ार छब्बीस"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "hi-05",
+   "text": "भाव 6500 रुपये प्रति क्विंटल है",
+   "tags": [
+    "number",
+    "unit"
+   ],
+   "expect": [
+    {
+     "kind": "price",
+     "normalized": "6500 INR/quintal",
+     "anyOf": [
+      "6500 रुपये",
+      "6,500 रुपये",
+      "साढ़े छह हज़ार रुपये",
+      "65 सौ रुपये"
+     ]
+    },
+    {
+     "kind": "unit",
+     "normalized": "quintal",
+     "anyOf": [
+      "क्विंटल"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "hi-06",
+   "text": "केले को कितना पानी चाहिए",
+   "tags": [
+    "crop"
+   ],
+   "expect": [
+    {
+     "kind": "crop",
+     "normalized": "banana",
+     "anyOf": [
+      "केले",
+      "केला"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "hi-07",
+   "text": "आधा एकड़ में धान है",
+   "tags": [
+    "number",
+    "unit",
+    "crop"
+   ],
+   "expect": [
+    {
+     "kind": "quantity",
+     "normalized": "0.5 acre",
+     "anyOf": [
+      "आधा एकड़",
+      "0.5 एकड़",
+      "आधा एकड"
+     ]
+    },
+    {
+     "kind": "crop",
+     "normalized": "rice",
+     "anyOf": [
+      "धान"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "hi-08",
+   "text": "मेरे पास 3 एकड़ है, क्या ginger लगा सकता हूँ",
+   "tags": [
+    "codeswitch",
+    "number",
+    "unit",
+    "crop"
+   ],
+   "expect": [
+    {
+     "kind": "quantity",
+     "normalized": "3 acre",
+     "anyOf": [
+      "3 एकड़",
+      "तीन एकड़",
+      "3 acres",
+      "3 acre"
+     ]
+    },
+    {
+     "kind": "crop",
+     "normalized": "ginger",
+     "anyOf": [
+      "ginger",
+      "जिंजर",
+      "अदरक"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "hi-09",
+   "text": "खाद पर 12000 रुपये खर्च हुए",
+   "tags": [
+    "number"
+   ],
+   "expect": [
+    {
+     "kind": "price",
+     "normalized": "12000 INR",
+     "anyOf": [
+      "12000 रुपये",
+      "12,000 रुपये",
+      "बारह हज़ार रुपये",
+      "12 हज़ार रुपये"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "hi-10",
+   "text": "बारिश 3 जुलाई को शुरू हुई",
+   "tags": [
+    "number",
+    "date"
+   ],
+   "expect": [
+    {
+     "kind": "date",
+     "normalized": "--07-03",
+     "anyOf": [
+      "3 जुलाई",
+      "तीन जुलाई"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "hi-11",
+   "text": "एक एकड़ से दो टन गन्ना मिला",
+   "tags": [
+    "number",
+    "unit",
+    "crop"
+   ],
+   "expect": [
+    {
+     "kind": "quantity",
+     "normalized": "1 acre",
+     "anyOf": [
+      "एक एकड़",
+      "1 एकड़"
+     ]
+    },
+    {
+     "kind": "quantity",
+     "normalized": "2 tonne",
+     "anyOf": [
+      "दो टन",
+      "2 टन"
+     ]
+    },
+    {
+     "kind": "crop",
+     "normalized": "sugarcane",
+     "anyOf": [
+      "गन्ना"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "hi-12",
+   "text": "पाँच बीघा गेहूं बोया है",
+   "tags": [
+    "number",
+    "unit",
+    "crop",
+    "ambiguous_unit"
+   ],
+   "expect": [
+    {
+     "kind": "quantity",
+     "normalized": "5 bigha",
+     "anyOf": [
+      "पाँच बीघा",
+      "5 बीघा",
+      "पांच बीघा"
+     ]
+    },
+    {
+     "kind": "crop",
+     "normalized": "wheat",
+     "anyOf": [
+      "गेहूं",
+      "गेहूँ"
+     ]
+    }
+   ]
+  }
+ ]
+}

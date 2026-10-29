@@ -1,0 +1,8 @@
+{
+  "_comment": "Agmarknet commodity name -> product slug. verified:false until real rows from the keyed data.gov.in API have been inspected (run scripts/seed/probe-datagovin.ts). Unverified rows are stored with a commodity_mapping_unverified flag.",
+  "schemaVersion": 1,
+  "entries": [
+    { "sourceCommodity": "Ginger(Green)", "productSlug": "ginger-fresh", "verified": false, "note": "Candidate name, not yet observed in API rows." },
+    { "sourceCommodity": "Ginger(Dry)", "productSlug": "ginger-dry", "verified": false, "note": "Candidate name, not yet observed in API rows. Dry/wet basis must not be mixed with fresh." }
+  ]
+}

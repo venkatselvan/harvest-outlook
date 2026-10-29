@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://harvest-outlook.local/analytics/schema/input_row.schema.json",
+  "title": "Exogenous feature input row (weather or satellite)",
+  "description": "A value over [periodStart, periodEnd] for a region. Periods are at most 7 days so they aggregate into one ISO week (keyed by periodStart). availableAt is when the value (this revision) could first be known.",
+  "type": "object",
+  "required": ["rowId", "regionId", "periodStart", "periodEnd", "variable", "value", "unit", "sourceId", "availableAt", "revisionOf"],
+  "additionalProperties": false,
+  "properties": {
+    "rowId": {"$ref": "observation_row.schema.json#/$defs/id"},
+    "regionId": {"$ref": "observation_row.schema.json#/$defs/id"},
+    "periodStart": {"$ref": "observation_row.schema.json#/$defs/date"},
+    "periodEnd": {"$ref": "observation_row.schema.json#/$defs/date"},
+    "variable": {"type": "string", "minLength": 1, "maxLength": 100},
+    "value": {"type": ["number", "null"]},
+    "unit": {"type": "string", "minLength": 1, "maxLength": 50},
+    "sourceId": {"$ref": "observation_row.schema.json#/$defs/id"},
+    "availableAt": {"$ref": "observation_row.schema.json#/$defs/dateTime"},
+    "availableAtBasis": {"enum": ["recorded", "conservative_upper_bound", "estimated"]},
+    "revisionOf": {"anyOf": [{"$ref": "observation_row.schema.json#/$defs/id"}, {"type": "null"}]}
+  }
+}

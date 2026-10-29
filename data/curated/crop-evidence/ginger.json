@@ -1,0 +1,202 @@
+[
+  {
+    "schemaVersion": "1.0",
+    "id": "cat.ginger.sow",
+    "mode": "live",
+    "sourceUrl": "https://www.indianspices.com/sites/default/files/cultivation_practices-ginger.pdf",
+    "publisher": "Spices Board India",
+    "documentTitle": "Cultivation practices: Ginger",
+    "documentVersion": null,
+    "contentHash": "8393ee1db4947f4e576ca45ad48d5aa8769d179cb557fd5faa06c0e58c23d8d4",
+    "locator": {
+      "page": 3,
+      "section": "Season"
+    },
+    "content": {
+      "kind": "excerpt",
+      "text": "The best time for planting ginger in the West Coast of India is during the first fortnight of May with the receipt of pre-monsoon showers.",
+      "language": "en"
+    },
+    "publishedAt": null,
+    "availability": {
+      "effectiveAvailableAt": "2026-10-29T20:03:02.541Z",
+      "basis": "first_observed"
+    },
+    "ingestedAt": "2026-10-29T20:03:02.541Z",
+    "revisedAt": null,
+    "geography": {
+      "level": "national",
+      "ids": [
+        "IN"
+      ]
+    },
+    "cropIds": [
+      "ginger"
+    ],
+    "productIds": [],
+    "units": [],
+    "sourceUnits": [],
+    "licence": {
+      "licence": "Public web page; publisher copyright. Excerpt (<=60 words) kept for provenance, full page not redistributed.",
+      "accessStatus": "open",
+      "redistributable": false,
+      "attribution": "Spices Board India"
+    },
+    "extraction": {
+      "method": "native_text",
+      "version": "catalogue-build-1",
+      "reviewedBy": "rule_check"
+    },
+    "validationStatus": "pending"
+  },
+  {
+    "schemaVersion": "1.0",
+    "id": "cat.ginger.irr",
+    "mode": "live",
+    "sourceUrl": "https://www.indianspices.com/sites/default/files/cultivation_practices-ginger.pdf",
+    "publisher": "Spices Board India",
+    "documentTitle": "Cultivation practices: Ginger",
+    "documentVersion": null,
+    "contentHash": "8393ee1db4947f4e576ca45ad48d5aa8769d179cb557fd5faa06c0e58c23d8d4",
+    "locator": {
+      "page": 3,
+      "section": "Climate and soil"
+    },
+    "content": {
+      "kind": "excerpt",
+      "text": "Ginger can be grown both under rain fed and irrigated conditions.",
+      "language": "en"
+    },
+    "publishedAt": null,
+    "availability": {
+      "effectiveAvailableAt": "2026-10-29T20:03:02.541Z",
+      "basis": "first_observed"
+    },
+    "ingestedAt": "2026-10-29T20:03:02.541Z",
+    "revisedAt": null,
+    "geography": {
+      "level": "national",
+      "ids": [
+        "IN"
+      ]
+    },
+    "cropIds": [
+      "ginger"
+    ],
+    "productIds": [],
+    "units": [],
+    "sourceUnits": [],
+    "licence": {
+      "licence": "Public web page; publisher copyright. Excerpt (<=60 words) kept for provenance, full page not redistributed.",
+      "accessStatus": "open",
+      "redistributable": false,
+      "attribution": "Spices Board India"
+    },
+    "extraction": {
+      "method": "native_text",
+      "version": "catalogue-build-1",
+      "reviewedBy": "rule_check"
+    },
+    "validationStatus": "pending"
+  },
+  {
+    "schemaVersion": "1.0",
+    "id": "cat.ginger.soil",
+    "mode": "live",
+    "sourceUrl": "https://www.indianspices.com/sites/default/files/cultivation_practices-ginger.pdf",
+    "publisher": "Spices Board India",
+    "documentTitle": "Cultivation practices: Ginger",
+    "documentVersion": null,
+    "contentHash": "8393ee1db4947f4e576ca45ad48d5aa8769d179cb557fd5faa06c0e58c23d8d4",
+    "locator": {
+      "page": 3,
+      "section": "Climate and soil"
+    },
+    "content": {
+      "kind": "excerpt",
+      "text": "Ginger thrives best in well drained soils like sandy loam, clay loam, red loam or lateritic loam.",
+      "language": "en"
+    },
+    "publishedAt": null,
+    "availability": {
+      "effectiveAvailableAt": "2026-10-29T20:03:02.541Z",
+      "basis": "first_observed"
+    },
+    "ingestedAt": "2026-10-29T20:03:02.541Z",
+    "revisedAt": null,
+    "geography": {
+      "level": "national",
+      "ids": [
+        "IN"
+      ]
+    },
+    "cropIds": [
+      "ginger"
+    ],
+    "productIds": [],
+    "units": [],
+    "sourceUnits": [],
+    "licence": {
+      "licence": "Public web page; publisher copyright. Excerpt (<=60 words) kept for provenance, full page not redistributed.",
+      "accessStatus": "open",
+      "redistributable": false,
+      "attribution": "Spices Board India"
+    },
+    "extraction": {
+      "method": "native_text",
+      "version": "catalogue-build-1",
+      "reviewedBy": "rule_check"
+    },
+    "validationStatus": "pending"
+  },
+  {
+    "schemaVersion": "1.0",
+    "id": "cat.ginger.dur",
+    "mode": "live",
+    "sourceUrl": "https://www.indianspices.com/sites/default/files/cultivation_practices-ginger.pdf",
+    "publisher": "Spices Board India",
+    "documentTitle": "Cultivation practices: Ginger",
+    "documentVersion": null,
+    "contentHash": "8393ee1db4947f4e576ca45ad48d5aa8769d179cb557fd5faa06c0e58c23d8d4",
+    "locator": {
+      "page": 4,
+      "section": "Table 1 improved varieties"
+    },
+    "content": {
+      "kind": "excerpt",
+      "text": "IISR Varada 22.6 IISR Mahima 23.2 IISR Rejatha 22.4 200 20.7 4.5 6.7 200 23.0 3.3 4.5 200 19.0 4.0 6.3",
+      "language": "en"
+    },
+    "publishedAt": null,
+    "availability": {
+      "effectiveAvailableAt": "2026-10-29T20:03:02.541Z",
+      "basis": "first_observed"
+    },
+    "ingestedAt": "2026-10-29T20:03:02.541Z",
+    "revisedAt": null,
+    "geography": {
+      "level": "national",
+      "ids": [
+        "IN"
+      ]
+    },
+    "cropIds": [
+      "ginger"
+    ],
+    "productIds": [],
+    "units": [],
+    "sourceUnits": [],
+    "licence": {
+      "licence": "Public web page; publisher copyright. Excerpt (<=60 words) kept for provenance, full page not redistributed.",
+      "accessStatus": "open",
+      "redistributable": false,
+      "attribution": "Spices Board India"
+    },
+    "extraction": {
+      "method": "native_text",
+      "version": "catalogue-build-1",
+      "reviewedBy": "rule_check"
+    },
+    "validationStatus": "pending"
+  }
+]

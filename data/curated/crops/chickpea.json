@@ -1,0 +1,79 @@
+{
+  "cropId": "chickpea",
+  "identityRef": "chickpea",
+  "group": "pulses",
+  "products": [
+    {
+      "productId": "chickpea-whole",
+      "name": "Chickpea whole seed",
+      "productBasis": "whole"
+    },
+    {
+      "productId": "chickpea-split",
+      "name": "Chickpea split (dal)",
+      "productBasis": "split"
+    }
+  ],
+  "regionalContexts": [
+    {
+      "contextId": "chickpea.TN.rainfed",
+      "geography": {
+        "level": "state",
+        "ids": [
+          "IN-TN"
+        ]
+      },
+      "stateId": "IN-TN",
+      "districtIds": null,
+      "season": "rabi",
+      "plantingWindow": {
+        "fromMonth": 11,
+        "toMonth": 11,
+        "evidenceIds": [
+          "cat.chickpea.sow"
+        ]
+      },
+      "durationDays": {
+        "min": 85,
+        "max": 85,
+        "evidenceIds": [
+          "cat.chickpea.dur"
+        ]
+      },
+      "irrigation": "rainfed",
+      "irrigationEvidenceIds": [
+        "cat.chickpea.sow"
+      ],
+      "waterNeedClass": null,
+      "soilNotes": null,
+      "yieldReference": {
+        "min": 1150,
+        "max": 1150,
+        "unit": "kg/ha",
+        "basis": "regional_reference",
+        "productId": "chickpea-whole",
+        "evidenceIds": [
+          "cat.chickpea.dur"
+        ]
+      },
+      "labourClass": null,
+      "harvestPattern": "single",
+      "notes": "TN-only coverage: Tamil Nadu source; not generalised to other states. One variety (CO 4); duration and yield are for that variety."
+    }
+  ],
+  "exclusionsOrCautions": [],
+  "marketCoverageStatus": "unavailable_pending_price_access",
+  "evidenceIds": [
+    "cat.chickpea.sow",
+    "cat.chickpea.dur"
+  ],
+  "qualification": {
+    "identityResolved": true,
+    "hasRegionalContext": true,
+    "hasSourcedRequirements": true,
+    "hasSeasonInfo": true,
+    "marketStatusExplicit": true,
+    "qualified": true,
+    "missing": []
+  }
+}

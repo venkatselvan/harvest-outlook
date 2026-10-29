@@ -1,0 +1,142 @@
+{
+  "cropId": "maize",
+  "identityRef": "maize",
+  "group": "cereals",
+  "products": [
+    {
+      "productId": "maize-grain",
+      "name": "Maize grain",
+      "productBasis": "grain"
+    }
+  ],
+  "regionalContexts": [
+    {
+      "contextId": "maize.TN.adipattam",
+      "geography": {
+        "level": "state",
+        "ids": [
+          "IN-TN"
+        ]
+      },
+      "stateId": "IN-TN",
+      "districtIds": null,
+      "season": "kharif",
+      "plantingWindow": {
+        "fromMonth": 7,
+        "toMonth": 8,
+        "evidenceIds": [
+          "cat.maize.tnadi"
+        ]
+      },
+      "durationDays": null,
+      "irrigation": "unspecified",
+      "irrigationEvidenceIds": [],
+      "waterNeedClass": null,
+      "soilNotes": null,
+      "yieldReference": null,
+      "labourClass": null,
+      "harvestPattern": "single",
+      "notes": "TN-only coverage: Tamil Nadu source; not generalised to other states. Season only; no duration on the saved page."
+    },
+    {
+      "contextId": "maize.AS.spring",
+      "geography": {
+        "level": "state",
+        "ids": [
+          "IN-AS"
+        ]
+      },
+      "stateId": "IN-AS",
+      "districtIds": null,
+      "season": "zaid",
+      "plantingWindow": {
+        "fromMonth": 2,
+        "toMonth": 5,
+        "evidenceIds": [
+          "cat.maize.ksow"
+        ]
+      },
+      "durationDays": {
+        "min": 70,
+        "max": 120,
+        "evidenceIds": [
+          "cat.maize.kdur"
+        ]
+      },
+      "irrigation": "rainfed",
+      "irrigationEvidenceIds": [
+        "cat.maize.kirr"
+      ],
+      "waterNeedClass": null,
+      "soilNotes": null,
+      "yieldReference": null,
+      "labourClass": null,
+      "harvestPattern": "single",
+      "notes": "Assam (listed in the kharif package); zone-wise Feb-May sowing; hybrid durations."
+    },
+    {
+      "contextId": "maize.AS.rabi",
+      "geography": {
+        "level": "state",
+        "ids": [
+          "IN-AS"
+        ]
+      },
+      "stateId": "IN-AS",
+      "districtIds": null,
+      "season": "rabi",
+      "plantingWindow": {
+        "fromMonth": 9,
+        "toMonth": 10,
+        "evidenceIds": [
+          "cat.maize.rsow"
+        ]
+      },
+      "durationDays": {
+        "min": 145,
+        "max": 160,
+        "evidenceIds": [
+          "cat.maize.rdur"
+        ]
+      },
+      "irrigation": "irrigated",
+      "irrigationEvidenceIds": [
+        "cat.maize.rdur"
+      ],
+      "waterNeedClass": null,
+      "soilNotes": null,
+      "yieldReference": {
+        "min": 4000,
+        "max": 6000,
+        "unit": "kg/ha",
+        "basis": "regional_reference",
+        "productId": "maize-grain",
+        "evidenceIds": [
+          "cat.maize.rdur"
+        ]
+      },
+      "labourClass": null,
+      "harvestPattern": "single",
+      "notes": "Assam rabi maize; sowing may extend to mid November, none after Nov 15 (same page)."
+    }
+  ],
+  "exclusionsOrCautions": [],
+  "marketCoverageStatus": "unavailable_pending_price_access",
+  "evidenceIds": [
+    "cat.maize.tnadi",
+    "cat.maize.kdur",
+    "cat.maize.ksow",
+    "cat.maize.kirr",
+    "cat.maize.rsow",
+    "cat.maize.rdur"
+  ],
+  "qualification": {
+    "identityResolved": true,
+    "hasRegionalContext": true,
+    "hasSourcedRequirements": true,
+    "hasSeasonInfo": true,
+    "marketStatusExplicit": true,
+    "qualified": true,
+    "missing": []
+  }
+}

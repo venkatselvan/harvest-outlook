@@ -1,0 +1,385 @@
+[
+  {
+    "schemaVersion": "1.0",
+    "id": "rule.ginger.soil-drainage-poor",
+    "version": 1,
+    "mode": "live",
+    "cropId": "ginger",
+    "productId": "ginger.fresh",
+    "scope": {
+      "regionIds": [
+        "IN"
+      ],
+      "seasons": [],
+      "irrigation": []
+    },
+    "when": {
+      "field": "soil.drainage",
+      "op": "eq",
+      "value": "poor"
+    },
+    "exceptions": [],
+    "effect": {
+      "type": "requires_review",
+      "reasonCode": "poor_drainage_soft_rot_risk"
+    },
+    "alternatives": [],
+    "evidenceIds": [
+      "ev.ginger.iisr2025.p3.soil-well-drained",
+      "ev.ginger.iisr2025.p16.soft-rot-drainage",
+      "ev.ginger.iisr2025.p15.drainage-channels"
+    ],
+    "reviewStatus": "candidate"
+  },
+  {
+    "schemaVersion": "1.0",
+    "id": "rule.ginger.soil-drainage-unknown",
+    "version": 1,
+    "mode": "live",
+    "cropId": "ginger",
+    "productId": "ginger.fresh",
+    "scope": {
+      "regionIds": [
+        "IN"
+      ],
+      "seasons": [],
+      "irrigation": []
+    },
+    "when": {
+      "field": "soil.drainage",
+      "op": "known",
+      "value": false
+    },
+    "exceptions": [],
+    "effect": {
+      "type": "requires_review",
+      "reasonCode": "drainage_unknown_soft_rot_risk"
+    },
+    "alternatives": [],
+    "evidenceIds": [
+      "ev.ginger.iisr2025.p16.soft-rot-drainage"
+    ],
+    "reviewStatus": "candidate"
+  },
+  {
+    "schemaVersion": "1.0",
+    "id": "rule.ginger.soil-drainage-good",
+    "version": 1,
+    "mode": "live",
+    "cropId": "ginger",
+    "productId": "ginger.fresh",
+    "scope": {
+      "regionIds": [
+        "IN"
+      ],
+      "seasons": [],
+      "irrigation": []
+    },
+    "when": {
+      "field": "soil.drainage",
+      "op": "eq",
+      "value": "good"
+    },
+    "exceptions": [],
+    "effect": {
+      "type": "prefer",
+      "reasonCode": "well_drained_soil"
+    },
+    "alternatives": [],
+    "evidenceIds": [
+      "ev.ginger.iisr2025.p3.soil-well-drained"
+    ],
+    "reviewStatus": "candidate"
+  },
+  {
+    "schemaVersion": "1.0",
+    "id": "rule.ginger.soil-texture-listed",
+    "version": 1,
+    "mode": "live",
+    "cropId": "ginger",
+    "productId": "ginger.fresh",
+    "scope": {
+      "regionIds": [
+        "IN"
+      ],
+      "seasons": [],
+      "irrigation": []
+    },
+    "when": {
+      "field": "soil.texture",
+      "op": "in",
+      "value": [
+        "sandy_loam",
+        "clay_loam",
+        "loam"
+      ]
+    },
+    "exceptions": [],
+    "effect": {
+      "type": "prefer",
+      "reasonCode": "source_listed_soil_texture"
+    },
+    "alternatives": [],
+    "evidenceIds": [
+      "ev.ginger.iisr2025.p3.soil-well-drained"
+    ],
+    "reviewStatus": "candidate"
+  },
+  {
+    "schemaVersion": "1.0",
+    "id": "rule.ginger.soil-texture-unlisted",
+    "version": 1,
+    "mode": "live",
+    "cropId": "ginger",
+    "productId": "ginger.fresh",
+    "scope": {
+      "regionIds": [
+        "IN"
+      ],
+      "seasons": [],
+      "irrigation": []
+    },
+    "when": {
+      "field": "soil.texture",
+      "op": "in",
+      "value": [
+        "sand",
+        "loamy_sand",
+        "silt_loam",
+        "silty_clay",
+        "clay"
+      ]
+    },
+    "exceptions": [],
+    "effect": {
+      "type": "caution",
+      "reasonCode": "soil_texture_not_listed_by_source"
+    },
+    "alternatives": [],
+    "evidenceIds": [
+      "ev.ginger.iisr2025.p3.soil-well-drained"
+    ],
+    "reviewStatus": "candidate"
+  },
+  {
+    "schemaVersion": "1.0",
+    "id": "rule.ginger.elevation-above-source-range",
+    "version": 1,
+    "mode": "live",
+    "cropId": "ginger",
+    "productId": "ginger.fresh",
+    "scope": {
+      "regionIds": [
+        "IN"
+      ],
+      "seasons": [],
+      "irrigation": []
+    },
+    "when": {
+      "not": {
+        "field": "elevation.m",
+        "op": "lte",
+        "value": 1500
+      }
+    },
+    "exceptions": [],
+    "effect": {
+      "type": "requires_review",
+      "reasonCode": "elevation_above_source_cultivation_range"
+    },
+    "alternatives": [],
+    "evidenceIds": [
+      "ev.ginger.iisr2025.p3.altitude-and-water-regime"
+    ],
+    "reviewStatus": "candidate"
+  },
+  {
+    "schemaVersion": "1.0",
+    "id": "rule.ginger.rainfed-rainfall-below-requirement",
+    "version": 1,
+    "mode": "live",
+    "cropId": "ginger",
+    "productId": "ginger.fresh",
+    "scope": {
+      "regionIds": [
+        "IN"
+      ],
+      "seasons": [],
+      "irrigation": [
+        "rainfed"
+      ]
+    },
+    "when": {
+      "not": {
+        "field": "rainfall.seasonalMm",
+        "op": "gte",
+        "value": 1300
+      }
+    },
+    "exceptions": [],
+    "effect": {
+      "type": "caution",
+      "reasonCode": "rainfed_rainfall_below_crop_water_requirement"
+    },
+    "alternatives": [],
+    "evidenceIds": [
+      "ev.ginger.iisr2025.p14.water-requirement",
+      "ev.ginger.iisr2025.p14.rainfed-vs-irrigated"
+    ],
+    "reviewStatus": "candidate"
+  },
+  {
+    "schemaVersion": "1.0",
+    "id": "rule.ginger.ka.rainfed-rainfall-unknown",
+    "version": 1,
+    "mode": "live",
+    "cropId": "ginger",
+    "productId": "ginger.fresh",
+    "scope": {
+      "regionIds": [
+        "IN-KA"
+      ],
+      "seasons": [],
+      "irrigation": [
+        "rainfed"
+      ]
+    },
+    "when": {
+      "field": "rainfall.seasonalMm",
+      "op": "known",
+      "value": false
+    },
+    "exceptions": [
+      {
+        "id": "exc.ginger.hassan-district-normal-rainfall",
+        "when": {
+          "field": "location.districtId",
+          "op": "eq",
+          "value": "IN-KA-hassan"
+        },
+        "effect": {
+          "type": "caution",
+          "reasonCode": "hassan_normal_annual_rainfall_below_crop_requirement"
+        },
+        "evidenceIds": [
+          "ev.ginger.crida2011.p1.rainfall-annual",
+          "ev.ginger.iisr2025.p14.water-requirement"
+        ],
+        "note": "CRIDA Hassan district normal annual rainfall 1031.2 mm (p1) is below the IISR crop-cycle water requirement of 1300-1500 mm (p14). Annual rain exceeds crop-cycle rain, so the comparison is conservative. District normal; intra-district variation not sourced."
+      }
+    ],
+    "effect": {
+      "type": "requires_review",
+      "reasonCode": "rainfed_rainfall_unknown"
+    },
+    "alternatives": [],
+    "evidenceIds": [
+      "ev.ginger.iisr2025.p14.rainfed-vs-irrigated",
+      "ev.ginger.iisr2025.p14.water-requirement"
+    ],
+    "reviewStatus": "candidate"
+  },
+  {
+    "schemaVersion": "1.0",
+    "id": "rule.ginger.planting-month-outside-sourced-window",
+    "version": 1,
+    "mode": "live",
+    "cropId": "ginger",
+    "productId": "ginger.fresh",
+    "scope": {
+      "regionIds": [
+        "IN"
+      ],
+      "seasons": [],
+      "irrigation": [
+        "rainfed"
+      ]
+    },
+    "when": {
+      "not": {
+        "field": "planting.month",
+        "op": "eq",
+        "value": 5
+      }
+    },
+    "exceptions": [],
+    "effect": {
+      "type": "requires_review",
+      "reasonCode": "planting_month_outside_sourced_window"
+    },
+    "alternatives": [],
+    "evidenceIds": [
+      "ev.ginger.iisr2025.p10.planting-season-west-coast"
+    ],
+    "reviewStatus": "candidate"
+  },
+  {
+    "schemaVersion": "1.0",
+    "id": "rule.ginger.hassan.may-premonsoon-planting",
+    "version": 1,
+    "mode": "live",
+    "cropId": "ginger",
+    "productId": "ginger.fresh",
+    "scope": {
+      "regionIds": [
+        "IN-KA-hassan"
+      ],
+      "seasons": [],
+      "irrigation": [
+        "rainfed"
+      ]
+    },
+    "when": {
+      "field": "planting.month",
+      "op": "eq",
+      "value": 5
+    },
+    "exceptions": [],
+    "effect": {
+      "type": "prefer",
+      "reasonCode": "may_premonsoon_planting"
+    },
+    "alternatives": [],
+    "evidenceIds": [
+      "ev.ginger.iisr2025.p10.planting-season-west-coast",
+      "ev.ginger.crida2011.p10.rain-onset",
+      "ev.ginger.crida2011.p1.rainfall-summer"
+    ],
+    "reviewStatus": "candidate"
+  },
+  {
+    "schemaVersion": "1.0",
+    "id": "rule.ginger.irrigated-early-planting",
+    "version": 1,
+    "mode": "live",
+    "cropId": "ginger",
+    "productId": "ginger.fresh",
+    "scope": {
+      "regionIds": [
+        "IN"
+      ],
+      "seasons": [],
+      "irrigation": [
+        "irrigated"
+      ]
+    },
+    "when": {
+      "field": "planting.month",
+      "op": "in",
+      "value": [
+        2,
+        3
+      ]
+    },
+    "exceptions": [],
+    "effect": {
+      "type": "prefer",
+      "reasonCode": "irrigated_early_planting_feb_mar"
+    },
+    "alternatives": [],
+    "evidenceIds": [
+      "ev.ginger.iisr2025.p10.planting-irrigated-early"
+    ],
+    "reviewStatus": "candidate"
+  }
+]

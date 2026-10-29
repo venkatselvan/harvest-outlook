@@ -1,0 +1,350 @@
+[
+  {
+    "schemaVersion": "1.0",
+    "id": "cat.tomato.tn",
+    "mode": "live",
+    "sourceUrl": "https://agritech.tnau.ac.in/horticulture/horti_vegetables_tomato_Soil.html",
+    "publisher": "Tamil Nadu Agricultural University (TNAU Agritech Portal)",
+    "documentTitle": "Tomato: season and field preparation",
+    "documentVersion": null,
+    "contentHash": "9bbcb4de2fa8274ee0ceea5620cbcd1b1eca1e6dcf65b5eec1ee68481416f0e9",
+    "locator": {
+      "section": "Season and field preparation"
+    },
+    "content": {
+      "kind": "excerpt",
+      "text": "Season of Sowing May - June and November - December",
+      "language": "en"
+    },
+    "publishedAt": null,
+    "availability": {
+      "effectiveAvailableAt": "2026-10-29T20:03:02.238Z",
+      "basis": "first_observed"
+    },
+    "ingestedAt": "2026-10-29T20:03:02.238Z",
+    "revisedAt": null,
+    "geography": {
+      "level": "state",
+      "ids": [
+        "IN-TN"
+      ]
+    },
+    "cropIds": [
+      "tomato"
+    ],
+    "productIds": [],
+    "units": [],
+    "sourceUnits": [],
+    "licence": {
+      "licence": "Public web page; publisher copyright. Excerpt (<=60 words) kept for provenance, full page not redistributed.",
+      "accessStatus": "open",
+      "redistributable": false,
+      "attribution": "Tamil Nadu Agricultural University (TNAU Agritech Portal)"
+    },
+    "extraction": {
+      "method": "manual",
+      "version": "catalogue-build-1",
+      "reviewedBy": "rule_check"
+    },
+    "validationStatus": "pending"
+  },
+  {
+    "schemaVersion": "1.0",
+    "id": "cat.tomato.tnsoil",
+    "mode": "live",
+    "sourceUrl": "https://agritech.tnau.ac.in/horticulture/horti_vegetables_tomato_Soil.html",
+    "publisher": "Tamil Nadu Agricultural University (TNAU Agritech Portal)",
+    "documentTitle": "Tomato: season and field preparation",
+    "documentVersion": null,
+    "contentHash": "9bbcb4de2fa8274ee0ceea5620cbcd1b1eca1e6dcf65b5eec1ee68481416f0e9",
+    "locator": {
+      "section": "Season and field preparation"
+    },
+    "content": {
+      "kind": "excerpt",
+      "text": "Well drained loamy soils rich in organic matter with a pH range of 6.5 - 7.5.",
+      "language": "en"
+    },
+    "publishedAt": null,
+    "availability": {
+      "effectiveAvailableAt": "2026-10-29T20:03:02.238Z",
+      "basis": "first_observed"
+    },
+    "ingestedAt": "2026-10-29T20:03:02.238Z",
+    "revisedAt": null,
+    "geography": {
+      "level": "state",
+      "ids": [
+        "IN-TN"
+      ]
+    },
+    "cropIds": [
+      "tomato"
+    ],
+    "productIds": [],
+    "units": [],
+    "sourceUnits": [],
+    "licence": {
+      "licence": "Public web page; publisher copyright. Excerpt (<=60 words) kept for provenance, full page not redistributed.",
+      "accessStatus": "open",
+      "redistributable": false,
+      "attribution": "Tamil Nadu Agricultural University (TNAU Agritech Portal)"
+    },
+    "extraction": {
+      "method": "manual",
+      "version": "catalogue-build-1",
+      "reviewedBy": "rule_check"
+    },
+    "validationStatus": "pending"
+  },
+  {
+    "schemaVersion": "1.0",
+    "id": "cat.tomato.sow",
+    "mode": "live",
+    "sourceUrl": "https://kvkchirang.aau.ac.in/pdf/package_of_practice/vegetables/Tomato.pdf",
+    "publisher": "Assam Agricultural University, KVK Chirang",
+    "documentTitle": "Package of practices for vegetables of Assam: Tomato",
+    "documentVersion": "2021",
+    "contentHash": "17a08899c3317ac2ba57c69e19eb49467f5bf3381e65b035dea854f5f5b0d4ee",
+    "locator": {
+      "page": 2,
+      "section": "Time of sowing"
+    },
+    "content": {
+      "kind": "excerpt",
+      "text": "Time of Sowing: October - November.",
+      "language": "en"
+    },
+    "publishedAt": null,
+    "availability": {
+      "effectiveAvailableAt": "2026-10-29T20:00:54.130Z",
+      "basis": "first_observed"
+    },
+    "ingestedAt": "2026-10-29T20:00:54.130Z",
+    "revisedAt": null,
+    "geography": {
+      "level": "state",
+      "ids": [
+        "IN-AS"
+      ]
+    },
+    "cropIds": [
+      "tomato"
+    ],
+    "productIds": [],
+    "units": [],
+    "sourceUnits": [],
+    "licence": {
+      "licence": "Public web page; publisher copyright. Excerpt (<=60 words) kept for provenance, full page not redistributed.",
+      "accessStatus": "open",
+      "redistributable": false,
+      "attribution": "Assam Agricultural University, KVK Chirang"
+    },
+    "extraction": {
+      "method": "native_text",
+      "version": "catalogue-build-1",
+      "reviewedBy": "rule_check"
+    },
+    "validationStatus": "pending"
+  },
+  {
+    "schemaVersion": "1.0",
+    "id": "cat.tomato.soil",
+    "mode": "live",
+    "sourceUrl": "https://kvkchirang.aau.ac.in/pdf/package_of_practice/vegetables/Tomato.pdf",
+    "publisher": "Assam Agricultural University, KVK Chirang",
+    "documentTitle": "Package of practices for vegetables of Assam: Tomato",
+    "documentVersion": "2021",
+    "contentHash": "17a08899c3317ac2ba57c69e19eb49467f5bf3381e65b035dea854f5f5b0d4ee",
+    "locator": {
+      "page": 1,
+      "section": "Soil"
+    },
+    "content": {
+      "kind": "excerpt",
+      "text": "Soil: Well drained sandy loam rich in organic matter with pH 5.0-7.0",
+      "language": "en"
+    },
+    "publishedAt": null,
+    "availability": {
+      "effectiveAvailableAt": "2026-10-29T20:00:54.130Z",
+      "basis": "first_observed"
+    },
+    "ingestedAt": "2026-10-29T20:00:54.130Z",
+    "revisedAt": null,
+    "geography": {
+      "level": "state",
+      "ids": [
+        "IN-AS"
+      ]
+    },
+    "cropIds": [
+      "tomato"
+    ],
+    "productIds": [],
+    "units": [],
+    "sourceUnits": [],
+    "licence": {
+      "licence": "Public web page; publisher copyright. Excerpt (<=60 words) kept for provenance, full page not redistributed.",
+      "accessStatus": "open",
+      "redistributable": false,
+      "attribution": "Assam Agricultural University, KVK Chirang"
+    },
+    "extraction": {
+      "method": "native_text",
+      "version": "catalogue-build-1",
+      "reviewedBy": "rule_check"
+    },
+    "validationStatus": "pending"
+  },
+  {
+    "schemaVersion": "1.0",
+    "id": "cat.tomato.dur",
+    "mode": "live",
+    "sourceUrl": "https://kvkchirang.aau.ac.in/pdf/package_of_practice/vegetables/Tomato.pdf",
+    "publisher": "Assam Agricultural University, KVK Chirang",
+    "documentTitle": "Package of practices for vegetables of Assam: Tomato",
+    "documentVersion": "2021",
+    "contentHash": "17a08899c3317ac2ba57c69e19eb49467f5bf3381e65b035dea854f5f5b0d4ee",
+    "locator": {
+      "page": 1,
+      "section": "Varieties"
+    },
+    "content": {
+      "kind": "excerpt",
+      "text": "pericarp thick; maturity 120 days; suitable for distant transport",
+      "language": "en"
+    },
+    "publishedAt": null,
+    "availability": {
+      "effectiveAvailableAt": "2026-10-29T20:00:54.130Z",
+      "basis": "first_observed"
+    },
+    "ingestedAt": "2026-10-29T20:00:54.130Z",
+    "revisedAt": null,
+    "geography": {
+      "level": "state",
+      "ids": [
+        "IN-AS"
+      ]
+    },
+    "cropIds": [
+      "tomato"
+    ],
+    "productIds": [],
+    "units": [],
+    "sourceUnits": [],
+    "licence": {
+      "licence": "Public web page; publisher copyright. Excerpt (<=60 words) kept for provenance, full page not redistributed.",
+      "accessStatus": "open",
+      "redistributable": false,
+      "attribution": "Assam Agricultural University, KVK Chirang"
+    },
+    "extraction": {
+      "method": "native_text",
+      "version": "catalogue-build-1",
+      "reviewedBy": "rule_check"
+    },
+    "validationStatus": "pending"
+  },
+  {
+    "schemaVersion": "1.0",
+    "id": "cat.tomato.yld",
+    "mode": "live",
+    "sourceUrl": "https://kvkchirang.aau.ac.in/pdf/package_of_practice/vegetables/Tomato.pdf",
+    "publisher": "Assam Agricultural University, KVK Chirang",
+    "documentTitle": "Package of practices for vegetables of Assam: Tomato",
+    "documentVersion": "2021",
+    "contentHash": "17a08899c3317ac2ba57c69e19eb49467f5bf3381e65b035dea854f5f5b0d4ee",
+    "locator": {
+      "page": 1,
+      "section": "Varieties"
+    },
+    "content": {
+      "kind": "excerpt",
+      "text": "av. yield 175-280 q/ha",
+      "language": "en"
+    },
+    "publishedAt": null,
+    "availability": {
+      "effectiveAvailableAt": "2026-10-29T20:00:54.130Z",
+      "basis": "first_observed"
+    },
+    "ingestedAt": "2026-10-29T20:00:54.130Z",
+    "revisedAt": null,
+    "geography": {
+      "level": "state",
+      "ids": [
+        "IN-AS"
+      ]
+    },
+    "cropIds": [
+      "tomato"
+    ],
+    "productIds": [],
+    "units": [],
+    "sourceUnits": [],
+    "licence": {
+      "licence": "Public web page; publisher copyright. Excerpt (<=60 words) kept for provenance, full page not redistributed.",
+      "accessStatus": "open",
+      "redistributable": false,
+      "attribution": "Assam Agricultural University, KVK Chirang"
+    },
+    "extraction": {
+      "method": "native_text",
+      "version": "catalogue-build-1",
+      "reviewedBy": "rule_check"
+    },
+    "validationStatus": "pending"
+  },
+  {
+    "schemaVersion": "1.0",
+    "id": "cat.tomato.irr",
+    "mode": "live",
+    "sourceUrl": "https://kvkchirang.aau.ac.in/pdf/package_of_practice/vegetables/Tomato.pdf",
+    "publisher": "Assam Agricultural University, KVK Chirang",
+    "documentTitle": "Package of practices for vegetables of Assam: Tomato",
+    "documentVersion": "2021",
+    "contentHash": "17a08899c3317ac2ba57c69e19eb49467f5bf3381e65b035dea854f5f5b0d4ee",
+    "locator": {
+      "page": 2,
+      "section": "Interculture"
+    },
+    "content": {
+      "kind": "excerpt",
+      "text": "The first irrigation is to be given immediately after transplanting and subsequent irrigations at 10-15 days interval",
+      "language": "en"
+    },
+    "publishedAt": null,
+    "availability": {
+      "effectiveAvailableAt": "2026-10-29T20:00:54.130Z",
+      "basis": "first_observed"
+    },
+    "ingestedAt": "2026-10-29T20:00:54.130Z",
+    "revisedAt": null,
+    "geography": {
+      "level": "state",
+      "ids": [
+        "IN-AS"
+      ]
+    },
+    "cropIds": [
+      "tomato"
+    ],
+    "productIds": [],
+    "units": [],
+    "sourceUnits": [],
+    "licence": {
+      "licence": "Public web page; publisher copyright. Excerpt (<=60 words) kept for provenance, full page not redistributed.",
+      "accessStatus": "open",
+      "redistributable": false,
+      "attribution": "Assam Agricultural University, KVK Chirang"
+    },
+    "extraction": {
+      "method": "native_text",
+      "version": "catalogue-build-1",
+      "reviewedBy": "rule_check"
+    },
+    "validationStatus": "pending"
+  }
+]

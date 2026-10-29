@@ -1,0 +1,74 @@
+{
+  "cropId": "okra",
+  "identityRef": "okra",
+  "group": "vegetables",
+  "products": [
+    {
+      "productId": "okra-fresh",
+      "name": "Okra pods (fresh)",
+      "productBasis": "pod"
+    }
+  ],
+  "regionalContexts": [
+    {
+      "contextId": "okra.TN.main",
+      "geography": {
+        "level": "state",
+        "ids": [
+          "IN-TN"
+        ]
+      },
+      "stateId": "IN-TN",
+      "districtIds": null,
+      "season": "kharif",
+      "plantingWindow": {
+        "fromMonth": 6,
+        "toMonth": 8,
+        "evidenceIds": [
+          "cat.okra.sow"
+        ]
+      },
+      "durationDays": {
+        "min": 90,
+        "max": 110,
+        "evidenceIds": [
+          "cat.okra.dur90",
+          "cat.okra.dur110"
+        ]
+      },
+      "irrigation": "irrigated",
+      "irrigationEvidenceIds": [
+        "cat.okra.irr"
+      ],
+      "waterNeedClass": null,
+      "soilNotes": {
+        "text": "Wide range of soils, sandy loam to clayey loam.",
+        "evidenceIds": [
+          "cat.okra.soil"
+        ]
+      },
+      "yieldReference": null,
+      "labourClass": null,
+      "harvestPattern": "repeated_picking",
+      "notes": "TN-only coverage: Tamil Nadu source; not generalised to other states. Second window February. Duration 90-110 days is the range of two named varieties/hybrids (CO.2, CO 4), not a crop-wide figure. TNAU says irrigate at weekly intervals after germination; it does not state whether rainfed cultivation is possible, so irrigation is labelled irrigated as practice, not as a proven requirement."
+    }
+  ],
+  "exclusionsOrCautions": [],
+  "marketCoverageStatus": "unavailable_pending_price_access",
+  "evidenceIds": [
+    "cat.okra.sow",
+    "cat.okra.soil",
+    "cat.okra.dur90",
+    "cat.okra.dur110",
+    "cat.okra.irr"
+  ],
+  "qualification": {
+    "identityResolved": true,
+    "hasRegionalContext": true,
+    "hasSourcedRequirements": true,
+    "hasSeasonInfo": true,
+    "marketStatusExplicit": true,
+    "qualified": true,
+    "missing": []
+  }
+}

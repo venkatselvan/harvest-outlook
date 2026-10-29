@@ -1,0 +1,198 @@
+[
+  {
+    "schemaVersion": "1.0",
+    "id": "cat.chilli.sow",
+    "mode": "live",
+    "sourceUrl": "https://agritech.tnau.ac.in/horticulture/horti_vegetables_chilli_season_seed.html",
+    "publisher": "Tamil Nadu Agricultural University (TNAU Agritech Portal)",
+    "documentTitle": "Chilli: season and seed",
+    "documentVersion": null,
+    "contentHash": "2834815b1d2824f0faf0f5e3adcf6db30b05a25299d55c78ce6c3770b8e40594",
+    "locator": {
+      "section": "Season and seed"
+    },
+    "content": {
+      "kind": "excerpt",
+      "text": "Season of sowing 1. January - February 2. June - July 3. September- October",
+      "language": "en"
+    },
+    "publishedAt": null,
+    "availability": {
+      "effectiveAvailableAt": "2026-10-29T20:06:30.250Z",
+      "basis": "first_observed"
+    },
+    "ingestedAt": "2026-10-29T20:06:30.250Z",
+    "revisedAt": null,
+    "geography": {
+      "level": "state",
+      "ids": [
+        "IN-TN"
+      ]
+    },
+    "cropIds": [
+      "chilli"
+    ],
+    "productIds": [],
+    "units": [],
+    "sourceUnits": [],
+    "licence": {
+      "licence": "Public web page; publisher copyright. Excerpt (<=60 words) kept for provenance, full page not redistributed.",
+      "accessStatus": "open",
+      "redistributable": false,
+      "attribution": "Tamil Nadu Agricultural University (TNAU Agritech Portal)"
+    },
+    "extraction": {
+      "method": "manual",
+      "version": "catalogue-build-1",
+      "reviewedBy": "rule_check"
+    },
+    "validationStatus": "pending"
+  },
+  {
+    "schemaVersion": "1.0",
+    "id": "cat.chilli.soil",
+    "mode": "live",
+    "sourceUrl": "https://agritech.tnau.ac.in/horticulture/horti_vegetables_chilli_season_seed.html",
+    "publisher": "Tamil Nadu Agricultural University (TNAU Agritech Portal)",
+    "documentTitle": "Chilli: season and seed",
+    "documentVersion": null,
+    "contentHash": "2834815b1d2824f0faf0f5e3adcf6db30b05a25299d55c78ce6c3770b8e40594",
+    "locator": {
+      "section": "Season and seed"
+    },
+    "content": {
+      "kind": "excerpt",
+      "text": "Well drained loamy soils rich in organic matter with pH range 6.5-7.5.",
+      "language": "en"
+    },
+    "publishedAt": null,
+    "availability": {
+      "effectiveAvailableAt": "2026-10-29T20:06:30.250Z",
+      "basis": "first_observed"
+    },
+    "ingestedAt": "2026-10-29T20:06:30.250Z",
+    "revisedAt": null,
+    "geography": {
+      "level": "state",
+      "ids": [
+        "IN-TN"
+      ]
+    },
+    "cropIds": [
+      "chilli"
+    ],
+    "productIds": [],
+    "units": [],
+    "sourceUnits": [],
+    "licence": {
+      "licence": "Public web page; publisher copyright. Excerpt (<=60 words) kept for provenance, full page not redistributed.",
+      "accessStatus": "open",
+      "redistributable": false,
+      "attribution": "Tamil Nadu Agricultural University (TNAU Agritech Portal)"
+    },
+    "extraction": {
+      "method": "manual",
+      "version": "catalogue-build-1",
+      "reviewedBy": "rule_check"
+    },
+    "validationStatus": "pending"
+  },
+  {
+    "schemaVersion": "1.0",
+    "id": "cat.chilli.yld",
+    "mode": "live",
+    "sourceUrl": "https://agritech.tnau.ac.in/horticulture/horti_vegetables_chilli_Yield_new.html",
+    "publisher": "Tamil Nadu Agricultural University (TNAU Agritech Portal)",
+    "documentTitle": "Horticulture: Chilli",
+    "documentVersion": null,
+    "contentHash": "031943c39ece50d4f78dec8f3acc7b900a8170d22260df5af751f99ebd731032",
+    "locator": {
+      "section": "Harvest and yield"
+    },
+    "content": {
+      "kind": "excerpt",
+      "text": "Varieties : 2 - 3 t/ha of dry pods or 10 - 15 t/ha of green chillies.",
+      "language": "en"
+    },
+    "publishedAt": null,
+    "availability": {
+      "effectiveAvailableAt": "2026-10-29T20:00:49.205Z",
+      "basis": "first_observed"
+    },
+    "ingestedAt": "2026-10-29T20:00:49.205Z",
+    "revisedAt": null,
+    "geography": {
+      "level": "state",
+      "ids": [
+        "IN-TN"
+      ]
+    },
+    "cropIds": [
+      "chilli"
+    ],
+    "productIds": [],
+    "units": [],
+    "sourceUnits": [],
+    "licence": {
+      "licence": "Public web page; publisher copyright. Excerpt (<=60 words) kept for provenance, full page not redistributed.",
+      "accessStatus": "open",
+      "redistributable": false,
+      "attribution": "Tamil Nadu Agricultural University (TNAU Agritech Portal)"
+    },
+    "extraction": {
+      "method": "manual",
+      "version": "catalogue-build-1",
+      "reviewedBy": "rule_check"
+    },
+    "validationStatus": "pending"
+  },
+  {
+    "schemaVersion": "1.0",
+    "id": "cat.chilli.pick",
+    "mode": "live",
+    "sourceUrl": "https://agritech.tnau.ac.in/horticulture/horti_vegetables_chilli_Yield_new.html",
+    "publisher": "Tamil Nadu Agricultural University (TNAU Agritech Portal)",
+    "documentTitle": "Horticulture: Chilli",
+    "documentVersion": null,
+    "contentHash": "031943c39ece50d4f78dec8f3acc7b900a8170d22260df5af751f99ebd731032",
+    "locator": {
+      "section": "Harvest and yield"
+    },
+    "content": {
+      "kind": "excerpt",
+      "text": "Harvesting can be done 75 days after transplanting. First two picking yield green chilli and subsequently yield red ripe fruits.",
+      "language": "en"
+    },
+    "publishedAt": null,
+    "availability": {
+      "effectiveAvailableAt": "2026-10-29T20:00:49.205Z",
+      "basis": "first_observed"
+    },
+    "ingestedAt": "2026-10-29T20:00:49.205Z",
+    "revisedAt": null,
+    "geography": {
+      "level": "state",
+      "ids": [
+        "IN-TN"
+      ]
+    },
+    "cropIds": [
+      "chilli"
+    ],
+    "productIds": [],
+    "units": [],
+    "sourceUnits": [],
+    "licence": {
+      "licence": "Public web page; publisher copyright. Excerpt (<=60 words) kept for provenance, full page not redistributed.",
+      "accessStatus": "open",
+      "redistributable": false,
+      "attribution": "Tamil Nadu Agricultural University (TNAU Agritech Portal)"
+    },
+    "extraction": {
+      "method": "manual",
+      "version": "catalogue-build-1",
+      "reviewedBy": "rule_check"
+    },
+    "validationStatus": "pending"
+  }
+]

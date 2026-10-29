@@ -1,0 +1,214 @@
+[
+  {
+    "schemaVersion": "1.0",
+    "id": "stage.ginger.hassan-kharif.sprouting_vegetative",
+    "mode": "live",
+    "cropId": "ginger",
+    "varietyId": null,
+    "scope": {
+      "level": "district",
+      "ids": [
+        "IN-KA-hassan"
+      ]
+    },
+    "seasons": [
+      "kharif"
+    ],
+    "stageId": "sprouting_vegetative",
+    "name": "Sprouting and vegetative growth (planting to rhizome initiation)",
+    "order": 0,
+    "startsAfter": null,
+    "prerequisites": [
+      "planting_confirmed"
+    ],
+    "method": "calendar_days",
+    "durationDays": {
+      "min": 90,
+      "max": 90
+    },
+    "thermal": null,
+    "isHarvest": false,
+    "repeat": null,
+    "evidenceIds": [
+      "ev.ginger.iisr2025.p14.critical-stages",
+      "ev.ginger.iisr2025.p3.rainfall-pattern",
+      "ev.ginger.iisr2025.p15.soft-rot-monsoon-moisture"
+    ],
+    "limitations": [
+      "Durations are calendar-day values from the national ICAR-IISR guide (Feb 2025), not Hassan-specific measurements; actual growth must be confirmed by field observations.",
+      "Thermal-time (degree-day) timing is unsupported: no validated base temperature or GDD parameters were sourced.",
+      "The source gives rhizome initiation as a single point (90 DAP), not a range; min = max = 90 is the source value, not a precision claim.",
+      "Sprouting/emergence duration is not stated in the sources."
+    ],
+    "reviewStatus": "candidate"
+  },
+  {
+    "schemaVersion": "1.0",
+    "id": "stage.ginger.hassan-kharif.rhizome_initiation",
+    "mode": "live",
+    "cropId": "ginger",
+    "varietyId": null,
+    "scope": {
+      "level": "district",
+      "ids": [
+        "IN-KA-hassan"
+      ]
+    },
+    "seasons": [
+      "kharif"
+    ],
+    "stageId": "rhizome_initiation",
+    "name": "Rhizome initiation (90 to 135 DAP)",
+    "order": 1,
+    "startsAfter": "sprouting_vegetative",
+    "prerequisites": [
+      "sprouting_vegetative"
+    ],
+    "method": "calendar_days",
+    "durationDays": {
+      "min": 45,
+      "max": 45
+    },
+    "thermal": null,
+    "isHarvest": false,
+    "repeat": null,
+    "evidenceIds": [
+      "ev.ginger.iisr2025.p14.critical-stages",
+      "ev.ginger.iisr2025.p14.mulching-repeat"
+    ],
+    "limitations": [
+      "Durations are calendar-day values from the national ICAR-IISR guide (Feb 2025), not Hassan-specific measurements; actual growth must be confirmed by field observations.",
+      "Thermal-time (degree-day) timing is unsupported: no validated base temperature or GDD parameters were sourced.",
+      "Bounded by two single-point source values (90 and 135 DAP); no range is sourced."
+    ],
+    "reviewStatus": "candidate"
+  },
+  {
+    "schemaVersion": "1.0",
+    "id": "stage.ginger.hassan-kharif.rhizome_development",
+    "mode": "live",
+    "cropId": "ginger",
+    "varietyId": null,
+    "scope": {
+      "level": "district",
+      "ids": [
+        "IN-KA-hassan"
+      ]
+    },
+    "seasons": [
+      "kharif"
+    ],
+    "stageId": "rhizome_development",
+    "name": "Rhizome development (135 to 180 DAP)",
+    "order": 2,
+    "startsAfter": "rhizome_initiation",
+    "prerequisites": [
+      "rhizome_initiation"
+    ],
+    "method": "calendar_days",
+    "durationDays": {
+      "min": 45,
+      "max": 45
+    },
+    "thermal": null,
+    "isHarvest": false,
+    "repeat": null,
+    "evidenceIds": [
+      "ev.ginger.iisr2025.p14.critical-stages",
+      "ev.ginger.iisr2025.p25.maturity-days"
+    ],
+    "limitations": [
+      "Durations are calendar-day values from the national ICAR-IISR guide (Feb 2025), not Hassan-specific measurements; actual growth must be confirmed by field observations.",
+      "Thermal-time (degree-day) timing is unsupported: no validated base temperature or GDD parameters were sourced.",
+      "Ends where the source says vegetable-purpose harvest may start (after 180 days); Table 5 gives 5-6 months for vegetable purpose, which is earlier than 180 days."
+    ],
+    "reviewStatus": "candidate"
+  },
+  {
+    "schemaVersion": "1.0",
+    "id": "stage.ginger.hassan-kharif.maturation",
+    "mode": "live",
+    "cropId": "ginger",
+    "varietyId": null,
+    "scope": {
+      "level": "district",
+      "ids": [
+        "IN-KA-hassan"
+      ]
+    },
+    "seasons": [
+      "kharif"
+    ],
+    "stageId": "maturation",
+    "name": "Maturation (180 DAP to full maturity); fresh vegetable-purpose harvest possible on demand",
+    "order": 3,
+    "startsAfter": "rhizome_development",
+    "prerequisites": [
+      "rhizome_development"
+    ],
+    "method": "calendar_days",
+    "durationDays": {
+      "min": 30,
+      "max": 60
+    },
+    "thermal": null,
+    "isHarvest": false,
+    "repeat": null,
+    "evidenceIds": [
+      "ev.ginger.iisr2025.p25.maturity-days",
+      "ev.ginger.iisr2025.p25.irrigation-stop",
+      "ev.ginger.iisr2025.p3.rainfall-pattern",
+      "ev.ginger.iisr2025.p25.end-use-dry"
+    ],
+    "limitations": [
+      "Durations are calendar-day values from the national ICAR-IISR guide (Feb 2025), not Hassan-specific measurements; actual growth must be confirmed by field observations.",
+      "Thermal-time (degree-day) timing is unsupported: no validated base temperature or GDD parameters were sourced.",
+      "Range 30-60 days = full maturity 210-240 DAP minus 180 DAP.",
+      "Source: irrigation is stopped one month before harvest and dry weather for about a month before harvest is necessary."
+    ],
+    "reviewStatus": "candidate"
+  },
+  {
+    "schemaVersion": "1.0",
+    "id": "stage.ginger.hassan-kharif.harvest_full_maturity",
+    "mode": "live",
+    "cropId": "ginger",
+    "varietyId": null,
+    "scope": {
+      "level": "district",
+      "ids": [
+        "IN-KA-hassan"
+      ]
+    },
+    "seasons": [
+      "kharif"
+    ],
+    "stageId": "harvest_full_maturity",
+    "name": "Harvest at full maturity (leaves turn yellow and start drying)",
+    "order": 4,
+    "startsAfter": "maturation",
+    "prerequisites": [
+      "maturation"
+    ],
+    "method": "calendar_days",
+    "durationDays": {
+      "min": 0,
+      "max": 0
+    },
+    "thermal": null,
+    "isHarvest": true,
+    "repeat": null,
+    "evidenceIds": [
+      "ev.ginger.iisr2025.p25.maturity-days",
+      "ev.ginger.iisr2025.p25.harvest-indicator-dry",
+      "ev.ginger.iisr2025.p25.late-harvest"
+    ],
+    "limitations": [
+      "Durations are calendar-day values from the national ICAR-IISR guide (Feb 2025), not Hassan-specific measurements; actual growth must be confirmed by field observations.",
+      "Thermal-time (degree-day) timing is unsupported: no validated base temperature or GDD parameters were sourced.",
+      "Harvest window opens at 210-240 DAP. The leaf yellowing/drying indicator is stated for dry-ginger harvest at full maturity.",
+      "Late harvest is practiced for 'some months' per source; that duration is not quantified, so the window length is 0 days here and must not be read as a deadline."
+    ],
+    "reviewStatus": "candidate"
+  }
+]

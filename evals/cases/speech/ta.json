@@ -1,0 +1,312 @@
+{
+ "language": "ta",
+ "note": "Text utterances written by the build team; to be spoken by real farmers/testers (audio is not supplied) or synthesised for the round-trip harness. 'anyOf' lists accepted transcript surface forms for the normalised value; unit 'bigha'/'cent' vary regionally.",
+ "cases": [
+  {
+   "id": "ta-01",
+   "text": "நான் இரண்டு ஏக்கரில் இஞ்சி நட்டேன்",
+   "tags": [
+    "number",
+    "unit",
+    "crop"
+   ],
+   "expect": [
+    {
+     "kind": "quantity",
+     "normalized": "2 acre",
+     "anyOf": [
+      "இரண்டு ஏக்கர்",
+      "2 ஏக்கர்",
+      "இரண்டு ஏக்கரில்",
+      "2 ஏக்கரில்"
+     ]
+    },
+    {
+     "kind": "crop",
+     "normalized": "ginger",
+     "anyOf": [
+      "இஞ்சி",
+      "ஜிஞ்சர்"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "ta-02",
+   "text": "என் நிலம் ஒன்றரை ஹெக்டேர்",
+   "tags": [
+    "number",
+    "unit"
+   ],
+   "expect": [
+    {
+     "kind": "quantity",
+     "normalized": "1.5 ha",
+     "anyOf": [
+      "ஒன்றரை ஹெக்டேர்",
+      "1.5 ஹெக்டேர்",
+      "ஒன்றரை ஹெக்டர்",
+      "1.5 ஹெக்டர்"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "ta-03",
+   "text": "எட்டு குவிண்டால் மஞ்சள் அறுவடை செய்தேன்",
+   "tags": [
+    "number",
+    "unit",
+    "crop"
+   ],
+   "expect": [
+    {
+     "kind": "quantity",
+     "normalized": "8 quintal",
+     "anyOf": [
+      "எட்டு குவிண்டால்",
+      "8 குவிண்டால்",
+      "எட்டு குயின்டால்",
+      "8 குயின்டால்"
+     ]
+    },
+    {
+     "kind": "crop",
+     "normalized": "turmeric",
+     "anyOf": [
+      "மஞ்சள்"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "ta-04",
+   "text": "ஏப்ரல் மாதம் 15ஆம் தேதி விதைத்தேன்",
+   "tags": [
+    "number",
+    "date"
+   ],
+   "expect": [
+    {
+     "kind": "date",
+     "normalized": "--04-15",
+     "anyOf": [
+      "ஏப்ரல்"
+     ]
+    },
+    {
+     "kind": "number",
+     "normalized": "15",
+     "anyOf": [
+      "15",
+      "பதினைந்து",
+      "15ஆம்",
+      "15 ஆம்",
+      "15 ம் தேதி",
+      "பதினைந்தாம்"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "ta-05",
+   "text": "ஒரு குவிண்டாலுக்கு 6500 ரூபாய் விலை",
+   "tags": [
+    "number",
+    "unit"
+   ],
+   "expect": [
+    {
+     "kind": "price",
+     "normalized": "6500 INR/quintal",
+     "anyOf": [
+      "6500 ரூபாய்",
+      "6,500 ரூபாய்",
+      "ஆறாயிரத்து ஐநூறு ரூபாய்"
+     ]
+    },
+    {
+     "kind": "unit",
+     "normalized": "quintal",
+     "anyOf": [
+      "குவிண்டால்",
+      "குயின்டால்",
+      "குவிண்டாலுக்கு",
+      "குயின்டாலுக்கு"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "ta-06",
+   "text": "வாழைக்கு எவ்வளவு தண்ணீர் வேண்டும்",
+   "tags": [
+    "crop"
+   ],
+   "expect": [
+    {
+     "kind": "crop",
+     "normalized": "banana",
+     "anyOf": [
+      "வாழை"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "ta-07",
+   "text": "அரை ஏக்கரில் நெல் பயிரிட்டுள்ளேன்",
+   "tags": [
+    "number",
+    "unit",
+    "crop"
+   ],
+   "expect": [
+    {
+     "kind": "quantity",
+     "normalized": "0.5 acre",
+     "anyOf": [
+      "அரை ஏக்கர்",
+      "0.5 ஏக்கர்",
+      "அரை ஏக்கரில்",
+      "0.5 ஏக்கரில்"
+     ]
+    },
+    {
+     "kind": "crop",
+     "normalized": "rice",
+     "anyOf": [
+      "நெல்"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "ta-08",
+   "text": "இருபது சென்ட் நிலத்தில் மிளகு உள்ளது",
+   "tags": [
+    "number",
+    "unit",
+    "crop"
+   ],
+   "expect": [
+    {
+     "kind": "quantity",
+     "normalized": "20 cent",
+     "anyOf": [
+      "இருபது சென்ட்",
+      "20 சென்ட்"
+     ]
+    },
+    {
+     "kind": "crop",
+     "normalized": "pepper",
+     "anyOf": [
+      "மிளகு"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "ta-09",
+   "text": "My field is 3 acres, இஞ்சி போடலாமா",
+   "tags": [
+    "codeswitch",
+    "number",
+    "unit",
+    "crop"
+   ],
+   "expect": [
+    {
+     "kind": "quantity",
+     "normalized": "3 acre",
+     "anyOf": [
+      "3 acres",
+      "three acres",
+      "3 acre",
+      "3 ஏக்கர்",
+      "மூன்று ஏக்கர்"
+     ]
+    },
+    {
+     "kind": "crop",
+     "normalized": "ginger",
+     "anyOf": [
+      "இஞ்சி",
+      "ginger"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "ta-10",
+   "text": "ஜூன் 2026 இல் மழை தொடங்கியது",
+   "tags": [
+    "number",
+    "date"
+   ],
+   "expect": [
+    {
+     "kind": "date",
+     "normalized": "2026-06",
+     "anyOf": [
+      "ஜூன்"
+     ]
+    },
+    {
+     "kind": "number",
+     "normalized": "2026",
+     "anyOf": [
+      "2026",
+      "இரண்டாயிரத்து இருபத்தாறு"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "ta-11",
+   "text": "உரம் 12000 ரூபாய் செலவு ஆனது",
+   "tags": [
+    "number"
+   ],
+   "expect": [
+    {
+     "kind": "price",
+     "normalized": "12000 INR",
+     "anyOf": [
+      "12000 ரூபாய்",
+      "12,000 ரூபாய்",
+      "பன்னிரண்டாயிரம் ரூபாய்",
+      "12 ஆயிரம் ரூபாய்"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "ta-12",
+   "text": "மூன்று டன் கரும்பு கிடைத்தது",
+   "tags": [
+    "number",
+    "unit",
+    "crop"
+   ],
+   "expect": [
+    {
+     "kind": "quantity",
+     "normalized": "3 tonne",
+     "anyOf": [
+      "மூன்று டன்",
+      "3 டன்"
+     ]
+    },
+    {
+     "kind": "crop",
+     "normalized": "sugarcane",
+     "anyOf": [
+      "கரும்பு"
+     ]
+    }
+   ]
+  }
+ ]
+}

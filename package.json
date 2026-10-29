@@ -14,10 +14,13 @@
     "lint": "pnpm -r --if-present lint",
     "dev": "pnpm --parallel --filter @harvest/api --filter @harvest/web run dev",
     "db:migrate": "pnpm --filter @harvest/api run db:migrate",
-    "db:seed": "echo 'db:seed: no seed data yet (synthetic fixtures arrive with later tasks)'",
+    "db:seed": "pnpm --filter @harvest/api exec tsx ../../scripts/seed/seed.ts",
     "test:e2e": "pnpm --filter @harvest/web exec playwright test",
     "smoke:live": "echo 'smoke:live: not implemented; requires provider credentials and RUNTIME_MODE=live' && exit 1",
-    "audit:data": "echo 'audit:data: not implemented yet (data pipeline task)' && exit 1",
-    "analytics:test": "analytics/.venv/bin/python -m pytest analytics/tests -q"
+    "smoke:elevenlabs": "pnpm --filter @harvest/api exec tsx ../../scripts/smoke/elevenlabs-smoke.ts",
+    "audit:data": "pnpm --filter @harvest/scripts exec tsx catalogue/validate.ts && echo \"See docs/DATA_AUDIT.md and docs/CROP_CATALOGUE.md\"",
+    "analytics:test": "analytics/.venv/bin/python -m pytest analytics/tests -q",
+    "catalogue:validate": "pnpm --filter @harvest/scripts exec tsx catalogue/validate.ts",
+    "catalogue:build": "pnpm --filter @harvest/scripts exec tsx catalogue/build.ts"
   }
 }

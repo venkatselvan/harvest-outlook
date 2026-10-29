@@ -1,0 +1,120 @@
+{
+  "cropId": "pigeon-pea",
+  "identityRef": "pigeon-pea",
+  "group": "pulses",
+  "products": [
+    {
+      "productId": "pigeon-pea-whole",
+      "name": "Pigeon pea whole seed",
+      "productBasis": "whole"
+    },
+    {
+      "productId": "pigeon-pea-split",
+      "name": "Pigeon pea split (dal)",
+      "productBasis": "split"
+    }
+  ],
+  "regionalContexts": [
+    {
+      "contextId": "pigeon-pea.TN.vaigasi",
+      "geography": {
+        "level": "state",
+        "ids": [
+          "IN-TN"
+        ]
+      },
+      "stateId": "IN-TN",
+      "districtIds": null,
+      "season": "kharif",
+      "plantingWindow": {
+        "fromMonth": 5,
+        "toMonth": 6,
+        "evidenceIds": [
+          "cat.pigeon-pea.tnsow"
+        ]
+      },
+      "durationDays": {
+        "min": 95,
+        "max": 180,
+        "evidenceIds": [
+          "cat.pigeon-pea.tndur"
+        ]
+      },
+      "irrigation": "unspecified",
+      "irrigationEvidenceIds": [],
+      "waterNeedClass": null,
+      "soilNotes": null,
+      "yieldReference": null,
+      "labourClass": null,
+      "harvestPattern": "single",
+      "notes": "TN-only coverage: Tamil Nadu source; not generalised to other states. Duration spans two listed varieties (short and long)."
+    },
+    {
+      "contextId": "pigeon-pea.AS.kharif",
+      "geography": {
+        "level": "state",
+        "ids": [
+          "IN-AS"
+        ]
+      },
+      "stateId": "IN-AS",
+      "districtIds": null,
+      "season": "kharif",
+      "plantingWindow": {
+        "fromMonth": 6,
+        "toMonth": 7,
+        "evidenceIds": [
+          "cat.pigeon-pea.sow"
+        ]
+      },
+      "durationDays": {
+        "min": 170,
+        "max": 200,
+        "evidenceIds": [
+          "cat.pigeon-pea.dur"
+        ]
+      },
+      "irrigation": "unspecified",
+      "irrigationEvidenceIds": [],
+      "waterNeedClass": null,
+      "soilNotes": {
+        "text": "Well drained sandy loams to loamy soil.",
+        "evidenceIds": [
+          "cat.pigeon-pea.soil"
+        ]
+      },
+      "yieldReference": {
+        "min": 1200,
+        "max": 1500,
+        "unit": "kg/ha",
+        "basis": "regional_reference",
+        "productId": "pigeon-pea-whole",
+        "evidenceIds": [
+          "cat.pigeon-pea.yld"
+        ]
+      },
+      "labourClass": null,
+      "harvestPattern": "staggered",
+      "notes": "Assam; variety T-21."
+    }
+  ],
+  "exclusionsOrCautions": [],
+  "marketCoverageStatus": "unavailable_pending_price_access",
+  "evidenceIds": [
+    "cat.pigeon-pea.tnsow",
+    "cat.pigeon-pea.tndur",
+    "cat.pigeon-pea.sow",
+    "cat.pigeon-pea.dur",
+    "cat.pigeon-pea.soil",
+    "cat.pigeon-pea.yld"
+  ],
+  "qualification": {
+    "identityResolved": true,
+    "hasRegionalContext": true,
+    "hasSourcedRequirements": true,
+    "hasSeasonInfo": true,
+    "marketStatusExplicit": true,
+    "qualified": true,
+    "missing": []
+  }
+}
