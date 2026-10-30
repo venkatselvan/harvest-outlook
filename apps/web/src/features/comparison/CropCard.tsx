@@ -1,7 +1,7 @@
 import { For, Show } from "solid-js";
 import { OutcomeBadge, StateBadge } from "./badges";
 import { EvidenceDetails } from "./EvidenceDetails";
-import { OUTCOME_HELP, dimensionState, fieldLabel, humanize, monthRange, priceLabel, yieldBasisLabel } from "./logic";
+import { OUTCOME_HELP, dimensionState, fieldLabel, humanize, monthRange, priceBadgeState, priceLabel, priceReferenceLines, yieldBasisLabel } from "./logic";
 import type { CompareItem, ScenarioRow } from "./types";
 
 type Harvest = { earliest: string; latest: string; plantingDate: string; plantingDateBasis: string; repeatedPicking: boolean | null };
@@ -77,7 +77,10 @@ export function CropCard(props: CropCardProps) {
             {(w) => <>{WATER_TEXT[w().fit] ?? humanize(w().fit)}</>}
           </Show>
         </Row>
-        <Row label="Price reference" testid="price-reference" badge={<StateBadge state="unavailable" />}>{priceLabel(it())}</Row>
+        <Row label="Price reference" testid="price-reference" badge={<><StateBadge state={priceBadgeState(it())} /> {it().priceReference.state === "historical_reference" ? <StateBadge state="derived" /> : null}</>}>
+          <p>{priceLabel(it())}</p>
+          <For each={priceReferenceLines(it())}>{(line) => <p>{line}</p>}</For>
+        </Row>
         <Row label="Yield basis" testid="yield-basis" badge={<StateBadge state={it().yieldReference?.appliesToProduct ? "reference" : "unavailable"} />}>
           <Show when={it().yieldReference} fallback={<>No sourced yield reference for this product and region</>}>
             {(y) => (

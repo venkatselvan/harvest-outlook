@@ -53,11 +53,28 @@ export interface CompareItem {
   completeness: { known: number; total: number };
   yieldReference: { minKgPerHa: number; maxKgPerHa: number; basis: string; productId: string; appliesToProduct: boolean; label: string; evidenceIds: string[] } | null;
   costBasis: { state: "unavailable"; label: string };
-  priceReference: { state: "unavailable"; label: string; missingReason: string };
+  priceReference: PriceReference;
   downside: { computable: boolean; text: string };
   mostConsequentialMissingInput: { field: string; why: string } | null;
   evidenceCoverage: { sourcedRequirements: number; evidenceRecords: number; validationPending: boolean };
 }
+
+/** Mirrors the API PriceReferenceBlock. Historical mandi reference from stored quotes; never a forecast. */
+export type PriceReference =
+  | { state: "unavailable"; label: string; missingReason: string; text?: string }
+  | {
+      state: "historical_reference";
+      evidenceState: "observed";
+      label: string;
+      notForecast: true;
+      marketId: string;
+      marketName: string;
+      stateName: string | null;
+      lastQuote: { inrPerKg: string; date: string; variety: string | null; grade: string | null; sourceUnit: string | null; evidenceState: "observed"; evidenceIds: string[] };
+      weeklyRange: { lowInrPerKg: string; highInrPerKg: string; label: string; weeks: number; evidenceState: "derived" } | null;
+      fallbackNote: string | null;
+      otherMarkets: number;
+    };
 
 export interface ComparisonResult {
   asOf: string;

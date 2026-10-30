@@ -89,3 +89,31 @@ describe("CropCard yield row for another product's reference (L6)", () => {
     expect(t).not.toMatch(/2000 to 3000 kg\/ha/);
   });
 });
+
+describe("CropCard price reference (L3)", () => {
+  const base = find(hassanFixture.items, "ginger-fresh");
+  const withRef = (priceReference: CompareItem["priceReference"]): CompareItem => ({ ...base, priceReference });
+  it("shows the last quote with date and market, the weekly-median range and the wholesale label, never as a forecast", () => {
+    const t = card(withRef({
+      state: "historical_reference", evidenceState: "observed", label: "Mandi reference (wholesale), not a farm-gate price", notForecast: true, marketId: "belur", marketName: "Belur", stateName: "Karnataka",
+      lastQuote: { inrPerKg: "120", date: "2026-10-29", variety: "Local", grade: null, sourceUnit: "INR/quintal", evidenceState: "observed", evidenceIds: [] },
+      weeklyRange: { lowInrPerKg: "70", highInrPerKg: "110", label: "r", weeks: 7, evidenceState: "derived" }, fallbackNote: "No quotes for this market; showing Karnataka markets", otherMarkets: 0,
+    }));
+    expect(t).toContain("Mandi reference (wholesale), not a farm-gate price");
+    expect(t).toContain("Last quote INR 120.00/kg on 2026-10-29 at Belur (Local)");
+    expect(t).toContain("Range of weekly medians, last 52 weeks (7 weeks): INR 70.00/kg to INR 110.00/kg. Not a prediction interval.");
+    expect(t).toContain("No quotes for this market; showing Karnataka markets");
+    expect(t).not.toMatch(/forecast price|predicted/i);
+  });
+  it.each([
+    ["price_history_not_ingested", "Price history not ingested yet"],
+    ["price_history_insufficient", "Too few recent quotes"],
+    ["market_not_in_history", "No quotes for this market"],
+    ["price_access_key_gated", "Unavailable — price access pending"],
+  ])("renders the real cause for %s", (reason, text) => {
+    const t = card(withRef({ state: "unavailable", label: "x", missingReason: reason }));
+    expect(t).toContain(text);
+    if (reason !== "price_access_key_gated") expect(t).not.toContain("price access pending");
+  });
+});
+

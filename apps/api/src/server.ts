@@ -26,7 +26,9 @@ import { REDACT_PATHS, makeReqSerializer } from "./security/logging";
 import { ToolSchemas } from "@harvest/contracts";
 import { allBindings } from "./agent/bindings";
 import { createWeatherSource } from "./plans/adapters/weather-source";
-import { defaultSources, PlanService, unavailableOutlookSource, type PlanSources } from "./plans";
+import { defaultSources, PlanService, type PlanSources } from "./plans";
+import { PgMarketOutlookSource, type PriceDeps } from "./plans/adapters/market-outlook";
+import { loadProviderConfig } from "./providers/config";
 import { PgVisualAssetSource } from "./visuals";
 import { JournalService, journalTaskCompletionSource } from "./journal";
 import { CatalogueStore } from "./catalogue/snapshot";
@@ -81,6 +83,19 @@ export interface ServerDeps {
   speech?: RouteDeps["speech"];
   /** fetch used by the weather adapter's bounded live ingest (tests). */
   weatherFetch?: FetchLike;
+  /** Overrides whether a data.gov.in key is configured (tests). Default: read from the environment; the key itself is never exposed. */
+  priceKeyConfigured?: boolean;
+  /** Clock for the price reference source and comparison endpoint (tests). */
+  priceNow?: () => Date;
+}
+
+/** Whether a data.gov.in key is present in the environment. Boolean only; a malformed provider config counts as not configured. */
+function dataGovKeyConfigured(): boolean {
+  try {
+    return !!loadProviderConfig().DATA_GOV_IN_API_KEY;
+  } catch {
+    return false;
+  }
 }
 
 export async function buildServer(config: Config, pool: Pool, deps: ServerDeps = {}): Promise<FastifyInstance> {
@@ -93,6 +108,9 @@ export async function buildServer(config: Config, pool: Pool, deps: ServerDeps =
     climatologyEndYear: config.WEATHER_CLIMATOLOGY_END_YEAR,
     ...(deps.weatherFetch ? { fetchImpl: deps.weatherFetch } : {}),
   });
+  const priceKeyConfigured = deps.priceKeyConfigured ?? dataGovKeyConfigured();
+  const outlookSource = deps.sources?.outlook ?? new PgMarketOutlookSource({ pool, mode: config.RUNTIME_MODE, keyConfigured: priceKeyConfigured, ...(deps.priceNow ? { now: deps.priceNow } : {}) });
+  const prices: PriceDeps = { source: outlookSource, keyConfigured: priceKeyConfigured, ...(deps.priceNow ? { now: deps.priceNow } : {}) };
   const plans = new PlanService({
     pool,
     mode: config.RUNTIME_MODE,
@@ -101,13 +119,13 @@ export async function buildServer(config: Config, pool: Pool, deps: ServerDeps =
       weather,
       visuals: new PgVisualAssetSource(pool),
       completions: journalTaskCompletionSource(pool),
-      outlook: unavailableOutlookSource("price_access_key_gated"),
+      outlook: outlookSource,
       ...deps.sources,
     },
   });
   const journal = new JournalService({ pool, mode: config.RUNTIME_MODE, plans });
   const catalogue = new CatalogueStore(pool);
-  const toolBindings = allBindings({ pool, plans, budget, segmentModel: config.META_SEGMENT_MODEL, int2: { config, catalogue }, journal });
+  const toolBindings = allBindings({ pool, plans, budget, segmentModel: config.META_SEGMENT_MODEL, int2: { config, catalogue, prices }, journal });
   const boundTools = Object.keys(toolBindings);
   const toolNames = Object.keys(ToolSchemas);
   const speechConfig = deps.speech?.speech ?? speechConfigFor(config);
@@ -228,6 +246,7 @@ export async function buildServer(config: Config, pool: Pool, deps: ServerDeps =
     plans,
     journal,
     catalogue,
+    prices,
     toolBindings,
     assistant: deps.assistant,
     speech: { ...deps.speech, speech: speechConfig, provider: speechProvider },

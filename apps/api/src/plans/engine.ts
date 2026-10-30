@@ -509,10 +509,10 @@ export class PlanService {
     let outlook: OutlookOutput;
     if (need("market_outlook")) {
       this.assertSourceMode("market outlook", this.sources.outlook.modes, a.mode);
-      const result = await this.sources.outlook.getOutlook(a.productId, p.economics?.marketIds ?? [], harvest.periods.map((h) => h.period), a.decidedAt);
+      const result = await this.sources.outlook.getOutlook(a.productId, p.economics?.marketIds ?? [], harvest.periods.map((h) => h.period), a.decidedAt, { stateId: a.scope.stateId });
       outlook = bindOutlook({ result, harvest, productId: a.productId, mode: a.mode, issueDate: a.decidedAt, cutoff: a.cutoff });
-      dataFingerprint.outlook = hashOf({ state: outlook.state, artifactId: outlook.artifactId, issuedAt: outlook.issuedAt, missingReason: outlook.missingReason });
-      dataVersions.outlook = { state: outlook.state, artifactId: outlook.artifactId, issuedAt: outlook.issuedAt, missingReason: outlook.missingReason };
+      dataFingerprint.outlook = hashOf({ state: outlook.state, artifactId: outlook.artifactId, issuedAt: outlook.issuedAt, missingReason: outlook.missingReason, reference: outlook.reference ? hashOf(outlook.reference) : null });
+      dataVersions.outlook = { state: outlook.state, artifactId: outlook.artifactId, issuedAt: outlook.issuedAt, missingReason: outlook.missingReason, referenceHash: outlook.reference ? hashOf(outlook.reference) : null };
       newKinds.push("market_outlook");
     } else outlook = a.reuse!.outlook;
 

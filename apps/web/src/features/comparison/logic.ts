@@ -88,8 +88,34 @@ export function monthRange(from: number, to: number): string {
 
 /** Plain-language price state. The label comes from the API; the gated reason gets the fixed wording. */
 export function priceLabel(item: Pick<CompareItem, "priceReference">): string {
-  return item.priceReference.missingReason === "price_access_key_gated" ? "Unavailable — price access pending" : item.priceReference.label;
+  const p = item.priceReference;
+  if (p.state === "historical_reference") return p.label;
+  return PRICE_MISSING_TEXT[p.missingReason] ?? p.label;
 }
+
+/** Honest text per missing-price reason. The gated wording is shown only when no price key is configured. */
+export const PRICE_MISSING_TEXT: Record<string, string> = {
+  price_access_key_gated: "Unavailable — price access pending",
+  price_history_not_ingested: "Price history not ingested yet",
+  price_history_insufficient: "Too few recent quotes",
+  market_not_in_history: "No quotes for this market",
+};
+
+const inr = (v: string) => `INR ${Number(v).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}/kg`;
+
+/** Lines for the price row when a historical reference exists; empty otherwise. Wholesale mandi quotes, not a forecast or a farm-gate price. */
+export function priceReferenceLines(item: Pick<CompareItem, "priceReference">): string[] {
+  const p = item.priceReference;
+  if (p.state !== "historical_reference") return [];
+  const q = p.lastQuote;
+  const variety = [q.variety, q.grade].filter(Boolean).join(", ");
+  const lines = [`Last quote ${inr(q.inrPerKg)} on ${q.date} at ${p.marketName}${variety ? ` (${variety})` : ""}.`];
+  if (p.weeklyRange) lines.push(`Range of weekly medians, last 52 weeks (${p.weeklyRange.weeks} weeks): ${inr(p.weeklyRange.lowInrPerKg)} to ${inr(p.weeklyRange.highInrPerKg)}. Not a prediction interval.`);
+  if (p.fallbackNote) lines.push(`${p.fallbackNote}.`);
+  return lines;
+}
+
+export const priceBadgeState = (item: Pick<CompareItem, "priceReference">): "observed" | "unavailable" => (item.priceReference.state === "historical_reference" ? "observed" : "unavailable");
 
 export function yieldBasisLabel(item: Pick<CompareItem, "yieldReference">): string | null {
   const y = item.yieldReference;

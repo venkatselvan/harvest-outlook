@@ -102,7 +102,7 @@ export interface PlanOutputs {
     notes: string[];
   };
   market_outlook?: {
-    state: "forecast" | "unavailable";
+    state: "forecast" | "historical_reference" | "unavailable";
     missingReason: string | null;
     issueDate: string;
     issuedAt: string | null;
@@ -111,10 +111,10 @@ export interface PlanOutputs {
   economics?: {
     status: "computed" | "unavailable";
     missingReason: string | null;
-    price: { state: "forecast" | "farmer_reported" | "unavailable"; sources: string[]; missingReason: string | null };
+    price: { state: "forecast" | "historical_reference" | "farmer_reported" | "unavailable"; sources: string[]; missingReason: string | null };
     equalSharesAssumed: boolean;
     priceIndependent: { status: string; missingInputs: string[]; scenarios: { name: string; perHa: { marketableKgTotal: string; cashProductionCostInr: string | null; harvestCostInr: string | null; saleAndTransportCostInr: string | null; breakEvenPriceInrPerKg: string | null } }[] } | null;
-    variants: { priceSource: "forecast" | "farmer_reported"; assumptions: string[]; result: { status: string; scenarios: { name: string; perHa: EconomicsFiguresOut }[]; unpricedItems: string[] } }[];
+    variants: { priceSource: "forecast" | "historical_reference" | "farmer_reported"; assumptions: string[]; result: { status: string; scenarios: { name: string; perHa: EconomicsFiguresOut }[]; unpricedItems: string[] } }[];
   };
   change_summary?: {
     changes: { type: string }[];

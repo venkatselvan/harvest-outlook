@@ -500,6 +500,44 @@ describe("economics and harvest", () => {
     expect(p.snapshot.modelVersions.some((m) => m.id === "synthetic-artifact-1")).toBe(true);
   });
 
+  ifDb("historical price reference feeds a reference scenario labelled historical_reference, never forecast (L3)", async () => {
+    const owner = await newOwner();
+    const farm = await newFarm(owner);
+    // Synthetic reference built from the harvest windows the engine asks for: weekly medians 40/50/60 INR/kg.
+    const outlook: MarketOutlookSource = {
+      modes: ["synthetic"],
+      getOutlook: async (productId, _m, windows, issueDate) => {
+        const rec = (value: string | null, extra: object = {}) => ({ schemaVersion: "1.0" as const, kind: "quantity" as const, unit: "INR/kg" as const, value, evidenceState: value ? ("derived" as const) : ("unavailable" as const), scope: { level: "market" as const, ids: ["synth-m"] }, validFrom: null, validTo: null, issuedAt: null, evidenceIds: ["synth-source-doc"], assumptionIds: [], methodVersion: "t", validationStatus: "pending" as const, missingReason: value ? null : "x", ...extra });
+        return {
+          kind: "historical_reference" as const, mode: "synthetic" as const, productId, issueDate: issueDate.slice(0, 10), label: "Mandi reference (wholesale), not a farm-gate price", notForecast: true as const, methodVersion: "t",
+          primaryMarketId: "synth-m", fallback: null, skippedMarkets: [],
+          markets: [{
+            marketId: "synth-m", marketName: "synth-m", stateName: null, districtName: null, lastQuote: rec("45.00"), lastQuoteMeta: { date: "2026-01-01", marketName: "synth-m", variety: null, grade: null, rowsOnDate: 1 },
+            weeklyRange: { ...rec(null), kind: "range" as const, value: { low: "40.00", high: "60.00" }, evidenceState: "derived" as const, missingReason: null }, weeklyRangeLabel: "x", weeksInRange: 10, validDaysLast365: 30,
+            seasonal: windows.map((w) => ({ window: w, reference: rec("50.00"), yearsUsed: [2024, 2025], weeklyMedianRange: { low: "40.00", high: "60.00" } })),
+          }],
+        };
+      },
+    };
+    const svc = service("synthetic", sources("synthetic", outlook).s);
+    const p = await svc.createPlan(createArgs(ginger, owner, farm));
+    const e = outputOf(p, "economics");
+    expect(e.price).toMatchObject({ state: "historical_reference", sources: ["historical_reference"], missingReason: null });
+    expect(e.variants).toHaveLength(1);
+    expect(e.variants[0].priceSource).toBe("historical_reference");
+    expect(e.variants[0].assumptions.join(" ")).toMatch(/not a forecast/i);
+    const central = e.variants[0].result.scenarios.find((x: any) => x.name === "central");
+    // 12750 kg marketable per ha * 50 INR/kg = 637500 gross per ha (synthetic arithmetic check).
+    expect(central.perHa.grossRevenueInr).toBe("637500.00");
+    const ol = outputOf(p, "market_outlook");
+    expect(ol).toMatchObject({ state: "historical_reference", artifactId: null });
+    expect(JSON.stringify(e)).not.toMatch(/"priceSource":"forecast"/);
+    expect(p.snapshot.modelVersions.some((m) => m.id === "synth-source-doc")).toBe(false);
+    const t = await svc.getTimeline(owner, p.snapshot.id, {});
+    const day = t.days.find((d) => d.outlook.harvestPeriodId !== null)!;
+    expect(day.outlook).toMatchObject({ state: "unavailable", missingReason: "historical_reference_only_no_forecast" });
+  });
+
   ifDb("repeated picking yields one harvest window per occurrence with equal-share assumption", async () => {
     const owner = await newOwner();
     const farm = await newFarm(owner);

@@ -235,12 +235,12 @@ export function EconomicsPanel(props: { outputs: SeasonState["outputs"]; selecte
               )}
             </Show>
             <p data-testid="economics-price">
-              Price basis: <Badge state={ec().price.state === "unavailable" ? "unavailable" : ec().price.state} /> {ec().price.state === "unavailable" ? "Net proceeds need a price: unavailable until price access or a price you enter." : ""}
+              Price basis: <Badge state={ec().price.state === "unavailable" ? "unavailable" : ec().price.state === "historical_reference" ? "derived" : ec().price.state} />{ec().price.state === "historical_reference" ? " Historical mandi reference from stored quotes, not a forecast." : ""} {ec().price.state === "unavailable" ? "Net proceeds need a price: unavailable until price access or a price you enter." : ""}
             </p>
             <For each={ec().variants}>
               {(v) => (
                 <>
-                  <h3 class="se-h3">Net cash return per hectare ({v.priceSource === "forecast" ? "forecast price" : "your price"})</h3>
+                  <h3 class="se-h3">Net cash return per hectare ({v.priceSource === "forecast" ? "forecast price" : v.priceSource === "historical_reference" ? "historical reference, not a forecast" : "your price"})</h3>
                   <ul class="se-list">
                     <For each={v.result.scenarios.filter((s) => s.name !== "yield_shortfall_price_rise")}>
                       {(s) => <li><strong>{s.name}</strong>: {fmtInr(s.perHa.netCashReturnInr)}</li>}

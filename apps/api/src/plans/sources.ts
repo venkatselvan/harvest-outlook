@@ -1,4 +1,4 @@
-import type { DateRange, ForecastArtifact, Mode } from "@harvest/contracts";
+import type { DateRange, ForecastArtifact, Mode, ValueRecord } from "@harvest/contracts";
 
 /**
  * Injected data sources for the plan engine. The engine never performs network
@@ -55,11 +55,53 @@ export interface WeatherSource {
   dataVersion(scope: WeatherScope, range: DateRange, asOf: string): Promise<string>;
 }
 
-export type OutlookResult = ForecastArtifact | { state: "unavailable"; missingReason: string };
+/** Missing-price reasons (L3). `market_not_in_history` is also carried as a fallback note when state-level markets are shown instead. */
+export type PriceMissingReason = "price_access_key_gated" | "price_history_not_ingested" | "price_history_insufficient" | "market_not_in_history";
+
+/** Optional location hint so a requested market that is absent from history can fall back to state-level markets. */
+export interface OutlookScopeHint {
+  stateId?: string | null;
+  stateName?: string | null;
+  districtName?: string | null;
+}
+
+export interface MarketReferenceMarket {
+  marketId: string;
+  marketName: string;
+  stateName: string | null;
+  districtName: string | null;
+  /** Last valid modal quote, INR/kg (source INR/quintal preserved in sourceUnit). evidenceState observed. */
+  lastQuote: ValueRecord;
+  lastQuoteMeta: { date: string; marketName: string; variety: string | null; grade: string | null; rowsOnDate: number };
+  /** Range of weekly medians over the last 52 weeks. NOT a prediction interval; mandi min/max are not used. evidenceState derived. */
+  weeklyRange: ValueRecord;
+  weeklyRangeLabel: string;
+  weeksInRange: number;
+  validDaysLast365: number;
+  /** Corresponding-season reference per harvest window: median of weekly medians in the same ISO weeks of prior years (>= 2 years). */
+  seasonal: { window: DateRange; reference: ValueRecord; yearsUsed: number[]; weeklyMedianRange: { low: string; high: string } | null }[];
+}
+
+/** HISTORICAL REFERENCE from stored quotes. Never a forecast; `notForecast` is always true. */
+export interface MarketReference {
+  kind: "historical_reference";
+  mode: Mode;
+  productId: string;
+  issueDate: string;
+  label: string;
+  notForecast: true;
+  methodVersion: string;
+  primaryMarketId: string;
+  fallback: { reason: "market_not_in_history"; requestedMarketIds: string[]; scope: "state"; stateName: string | null; note: string } | null;
+  markets: MarketReferenceMarket[];
+  skippedMarkets: { marketId: string; reason: "price_history_insufficient" }[];
+}
+
+export type OutlookResult = ForecastArtifact | { state: "unavailable"; missingReason: string } | MarketReference;
 
 export interface MarketOutlookSource {
   readonly modes: readonly Mode[];
-  getOutlook(productId: string, marketIds: string[], harvestWindows: DateRange[], issueDate: string): Promise<OutlookResult>;
+  getOutlook(productId: string, marketIds: string[], harvestWindows: DateRange[], issueDate: string, hint?: OutlookScopeHint): Promise<OutlookResult>;
 }
 
 export interface VisualAssetRef {

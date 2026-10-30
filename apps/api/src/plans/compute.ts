@@ -24,7 +24,7 @@ import {
   type StageWindow,
 } from "@harvest/domain";
 import { invalidPlanInput, modeMismatch, ReplayLeakError } from "./errors";
-import type { OutlookResult } from "./sources";
+import type { MarketReference, OutlookResult } from "./sources";
 import {
   HARVEST_METHOD_VERSION,
   INPUT_KEYS,
@@ -481,20 +481,36 @@ export function computeWater(args: {
 
 export interface OutlookOutput {
   methodVersion: string;
-  state: "forecast" | "unavailable";
+  /** historical_reference = stored-quote reference (L3); never a forecast. */
+  state: "forecast" | "historical_reference" | "unavailable";
   missingReason: string | null;
   issueDate: string;
   artifactId: string | null;
   issuedAt: string | null;
   modelId: string | null;
   /** Per harvest period: price triple from forecast quantiles, or null with a reason. */
-  periods: { periodId: string; period: DateRange; price: { low: number; central: number; high: number; levels: [number, number, number] } | null; missingReason: string | null }[];
+  periods: { periodId: string; period: DateRange; price: { low: number; central: number; high: number; levels: [number, number, number] | null } | null; missingReason: string | null }[];
   artifact: ForecastArtifact | null;
+  /** Present only for state historical_reference. */
+  reference?: MarketReference | null;
 }
 
 export function bindOutlook(args: { result: OutlookResult; harvest: HarvestOutput; productId: string; mode: Mode; issueDate: string; cutoff: string | null }): OutlookOutput {
   const { result, harvest, productId, mode, issueDate, cutoff } = args;
   const base = { methodVersion: OUTLOOK_METHOD_VERSION, issueDate };
+  if ("kind" in result && result.kind === "historical_reference") {
+    if (result.mode !== mode) throw modeMismatch(`market reference mode ${result.mode} cannot feed a ${mode} plan`);
+    if (result.productId !== productId) throw invalidPlanInput("market reference is for a different product");
+    const primary = result.markets.find((m) => m.marketId === result.primaryMarketId) ?? result.markets[0];
+    // Reference scenario per harvest period: low/central/high = min / median / max of the weekly medians observed in the same ISO
+    // weeks of prior years (>= 2 years). This is a historical spread, not a forecast interval; it is labelled historical_reference.
+    const periods = harvest.periods.map((p) => {
+      const s = primary?.seasonal.find((x) => x.window.start === p.period.start && x.window.end === p.period.end);
+      if (!s || s.reference.value === null || typeof s.reference.value !== "string" || !s.weeklyMedianRange) return { periodId: p.periodId, period: p.period, price: null, missingReason: "no_corresponding_season_reference" };
+      return { periodId: p.periodId, period: p.period, price: { low: Number(s.weeklyMedianRange.low), central: Number(s.reference.value), high: Number(s.weeklyMedianRange.high), levels: null }, missingReason: null };
+    });
+    return { ...base, state: "historical_reference", missingReason: null, artifactId: null, issuedAt: null, modelId: null, periods, artifact: null, reference: result };
+  }
   if ("state" in result) {
     return { ...base, state: "unavailable", missingReason: result.missingReason, artifactId: null, issuedAt: null, modelId: null, periods: harvest.periods.map((p) => ({ periodId: p.periodId, period: p.period, price: null, missingReason: result.missingReason })), artifact: null };
   }
@@ -531,7 +547,7 @@ export interface EconomicsOutput {
   methodVersion: string;
   status: "computed" | "unavailable";
   missingReason: string | null;
-  price: { state: "forecast" | "farmer_reported" | "unavailable"; sources: ("forecast" | "farmer_reported")[]; missingReason: string | null };
+  price: { state: "forecast" | "historical_reference" | "farmer_reported" | "unavailable"; sources: ("forecast" | "historical_reference" | "farmer_reported")[]; missingReason: string | null };
   harvestShares: { periodId: string; share: number }[];
   equalSharesAssumed: boolean;
   /** Figures that do not depend on any price (marketable quantity, costs, break-even price). */
@@ -545,7 +561,7 @@ export interface EconomicsOutput {
     }[];
   } | null;
   /** Full scenario economics per price basis; empty when no price basis exists. */
-  variants: { priceSource: "forecast" | "farmer_reported"; priceEvidenceIds: string[]; assumptions: string[]; result: EconomicsResult }[];
+  variants: { priceSource: "forecast" | "historical_reference" | "farmer_reported"; priceEvidenceIds: string[]; assumptions: string[]; result: EconomicsResult }[];
 }
 
 export function computeEconomics(args: {
@@ -614,10 +630,36 @@ export function computeEconomics(args: {
       marketId: null,
       evidenceIds: [outlook.artifactId!],
     }));
-    variants.push({ priceSource: "forecast", priceEvidenceIds: [outlook.artifactId!], assumptions: [`Price triple = forecast quantiles ${outlook.periods[0]!.price!.levels.join("/")} from artifact ${outlook.artifactId}; quantiles are not mandi min/max.`], result: calculateScenarios(baseInput(prices)) });
+    variants.push({ priceSource: "forecast", priceEvidenceIds: [outlook.artifactId!], assumptions: [`Price triple = forecast quantiles ${outlook.periods[0]!.price!.levels!.join("/")} from artifact ${outlook.artifactId}; quantiles are not mandi min/max.`], result: calculateScenarios(baseInput(prices)) });
     priceState.sources.push("forecast");
   } else if (outlook.state === "forecast") {
     priceState.missingReason = "forecast_does_not_cover_all_harvest_periods";
+  }
+  if (outlook.state === "historical_reference") {
+    const ref = outlook.reference!;
+    const primary = ref.markets.find((m) => m.marketId === ref.primaryMarketId) ?? ref.markets[0]!;
+    if (outlook.periods.every((p) => p.price !== null)) {
+      const evidenceIds = [...new Set(primary.seasonal.flatMap((s) => s.reference.evidenceIds))];
+      const prices = outlook.periods.map((p) => ({
+        periodId: p.periodId,
+        productBasis: params.priceProductBasis,
+        unit: "INR/kg" as const,
+        amount: { low: p.price!.low, central: p.price!.central, high: p.price!.high },
+        evidenceState: "derived" as const,
+        marketId: null,
+        evidenceIds,
+      }));
+      variants.push({
+        priceSource: "historical_reference",
+        priceEvidenceIds: evidenceIds,
+        assumptions: [
+          `Reference scenario, not a forecast: price = median of weekly medians of modal quotes in the same ISO weeks of prior years (market ${primary.marketId}); low/high = min/max of those weekly medians.`,
+          "Modal price is a wholesale mandi reference, not a farm-gate price; mandi min/max are not used.",
+        ],
+        result: calculateScenarios(baseInput(prices)),
+      });
+      priceState.sources.push("historical_reference");
+    } else priceState.missingReason = "no_corresponding_season_reference_for_all_harvest_periods";
   }
   if (assumedPrice) {
     const kg = (v: number) => convertDecimal(v, assumedPrice.unit, "INR/kg");
@@ -631,7 +673,7 @@ export function computeEconomics(args: {
     variants.push({ priceSource: "farmer_reported", priceEvidenceIds: [], assumptions, result: calculateScenarios(baseInput(prices)) });
     priceState.sources.push("farmer_reported");
   }
-  priceState.state = priceState.sources.includes("forecast") ? "forecast" : priceState.sources.includes("farmer_reported") ? "farmer_reported" : "unavailable";
+  priceState.state = priceState.sources.includes("forecast") ? "forecast" : priceState.sources.includes("farmer_reported") ? "farmer_reported" : priceState.sources.includes("historical_reference") ? "historical_reference" : "unavailable";
   if (priceState.state !== "unavailable") priceState.missingReason = null;
   return { methodVersion: ECONOMICS_METHOD_VERSION, status: "computed", missingReason: null, price: priceState, harvestShares: shares, equalSharesAssumed: equal, priceIndependent, variants };
 }

@@ -217,3 +217,25 @@ describe("F4 screening semantics: HARD/SOFT aggregation, product and region scop
     expect(Object.keys(g.screening.reasons[0]!)).toEqual(expect.arrayContaining(["ruleId", "effect", "truth", "reasonCodes", "appliedExceptionId", "reviewStatus", "reviewer", "regionIds", "evidenceIds", "unknownFields", "ruleEffect"]));
   });
 });
+
+describe("price reference (L3)", () => {
+  const ginger = (o: Parameters<typeof compareCrops>[2]) => item(compareCrops(snap, base({ location: { stateId: "IN-KA" }, planting: { month: 5 } }), o).items, "ginger-fresh");
+  const block = {
+    state: "historical_reference", evidenceState: "observed", label: "Mandi reference (wholesale), not a farm-gate price", notForecast: true, marketId: "synth-a", marketName: "Synth A", stateName: "Karnataka",
+    lastQuote: { inrPerKg: "120.00", date: "2026-10-29", variety: "Synth Variety", grade: "Local", sourceUnit: "INR/quintal", evidenceState: "observed", evidenceIds: ["doc"] },
+    weeklyRange: { lowInrPerKg: "70.00", highInrPerKg: "110.00", label: "Range of weekly medians (last 52 weeks); not a prediction interval", weeks: 7, evidenceState: "derived" }, fallbackNote: null, otherMarkets: 0,
+  } as const;
+  it("default and config-driven missing reasons come from the caller, never hard-wired", () => {
+    expect(ginger({ mode: "live", now: NOW }).priceReference).toMatchObject({ state: "unavailable", missingReason: "price_access_key_gated", text: expect.stringMatching(/Price access pending/) });
+    const g = ginger({ mode: "live", now: NOW, priceMissingReason: "price_history_not_ingested" });
+    expect(g.priceReference).toMatchObject({ state: "unavailable", missingReason: "price_history_not_ingested", text: "Price history not ingested yet" });
+    expect(g.dimensions.marketAccess.missingReason).toBe("price_history_not_ingested");
+  });
+  it("carries a supplied reference with its labels, and a reference never becomes the farmer's price or an economics figure", () => {
+    const g = ginger({ mode: "live", now: NOW, priceReferences: { "ginger-fresh": block as never } });
+    expect(g.priceReference).toMatchObject({ state: "historical_reference", notForecast: true, label: "Mandi reference (wholesale), not a farm-gate price" });
+    expect(g.dimensions.economics.status).toBe("unknown"); // no assumed price supplied: the mandi quote is not used as one
+    expect(JSON.stringify(g.dimensions.economics)).not.toMatch(/120\.00/);
+    expect(g.downside.computable).toBe(false);
+  });
+});

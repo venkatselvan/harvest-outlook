@@ -13,6 +13,7 @@ import type { StorageAdapter } from "../storage/types";
 import type { JournalService } from "../journal";
 import { registerJournalRoutes } from "./journal";
 import { registerCropRoutes } from "./crops";
+import type { PriceDeps } from "../plans/adapters/market-outlook";
 import { registerVisualRoutes } from "./visuals";
 import type { CatalogueStore } from "../catalogue/snapshot";
 import { farmRoutes } from "./farms";
@@ -32,6 +33,8 @@ export interface RouteDeps {
   plans: PlanService;
   journal: JournalService;
   catalogue?: Pick<CatalogueStore, "get"> | undefined;
+  /** Historical price reference wiring for the comparison endpoint. */
+  prices?: PriceDeps | undefined;
   /** Merged over the T09 bindings by the assistant plugin. */
   toolBindings: ToolBindings;
   /** Test/override hooks; production passes none. */
@@ -71,7 +74,7 @@ export async function registerRoutes(app: FastifyInstance, deps: RouteDeps): Pro
   await app.register(registerVisionRoutes, { config, pool, storage: deps.storage });
   await registerSpeechRoutes(app, { config, pool, ...deps.speech });
 
-  await registerCropRoutes(app, { config, pool, ...(deps.catalogue ? { store: deps.catalogue } : {}) });
+  await registerCropRoutes(app, { config, pool, ...(deps.catalogue ? { store: deps.catalogue } : {}), ...(deps.prices ? { prices: deps.prices } : {}) });
   await app.register(registerVisualRoutes, { config, pool, storage: deps.storage });
   await registerJournalRoutes(app, {
     config,

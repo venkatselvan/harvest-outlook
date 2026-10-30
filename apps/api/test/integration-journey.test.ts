@@ -233,8 +233,9 @@ describe("synthetic journey: farm -> photo -> region -> plan -> timeline -> revi
     const { Budget } = await import("../src/services/budget");
     const { CatalogueStore } = await import("../src/catalogue/snapshot");
     const { JournalService } = await import("../src/journal");
+    const { PgMarketOutlookSource } = await import("../src/plans/adapters/market-outlook");
     const ps = new PlanService({ pool: h.pool, mode: "synthetic", sources: defaultSources() });
-    const b = allBindings({ pool: h.pool, plans: ps, budget: Budget.fromConfig(h.pool, h.config), segmentModel: h.config.META_SEGMENT_MODEL, int2: { config: h.config, catalogue: new CatalogueStore(h.pool) }, journal: new JournalService({ pool: h.pool, mode: "synthetic", plans: ps }) });
+    const b = allBindings({ pool: h.pool, plans: ps, budget: Budget.fromConfig(h.pool, h.config), segmentModel: h.config.META_SEGMENT_MODEL, int2: { config: h.config, catalogue: new CatalogueStore(h.pool), prices: { source: new PgMarketOutlookSource({ pool: h.pool, mode: "synthetic", keyConfigured: false }), keyConfigured: false } }, journal: new JournalService({ pool: h.pool, mode: "synthetic", plans: ps }) });
     const owner = (await h.pool.query("SELECT owner_id FROM farms WHERE id=$1", [farmId])).rows[0].owner_id as string;
     const stranger = (await h.pool.query("INSERT INTO owners DEFAULT VALUES RETURNING id")).rows[0].id as string;
     const ctx = (ownerId: string) => ({ ownerId, mode: "synthetic" as const, requestId: "req-int2", pool: h.pool, agentRunId: "run-int2", asOf: new Date().toISOString() });
@@ -249,7 +250,16 @@ describe("synthetic journey: farm -> photo -> region -> plan -> timeline -> revi
     await expect(b.screen_crops!({ contextId: farmId }, ctx(stranger))).rejects.toMatchObject({ statusCode: 404 });
     const mk = await b.get_market_outlook!({ productId: "ginger-fresh", marketIds: ["hassan-apmc"], issueDate: today, harvestWindows: [{ start: addDays(today, 100), end: addDays(today, 120) }] }, ctx(owner));
     expect(mk.forecasts).toEqual([]);
-    expect(mk.missing[0]!.reason).toMatch(/price_access_key_gated.*unverified/);
+    expect(mk.references).toEqual([]);
+    // L3: with no key and no rows the reason is the real cause; with a key and no rows it is "not ingested".
+    expect(mk.missing[0]!.reason).toMatch(/^price_access_key_gated:/);
+    const keyed = allBindings({ pool: h.pool, plans: ps, budget: Budget.fromConfig(h.pool, h.config), segmentModel: h.config.META_SEGMENT_MODEL, int2: { config: h.config, catalogue: new CatalogueStore(h.pool), prices: { source: new PgMarketOutlookSource({ pool: h.pool, mode: "synthetic", keyConfigured: true }), keyConfigured: true } } });
+    const mk2 = await keyed.get_market_outlook!({ productId: "ginger-fresh", marketIds: ["hassan-apmc"], issueDate: today, harvestWindows: [{ start: addDays(today, 100), end: addDays(today, 120) }] }, ctx(owner));
+    expect(mk2.missing[0]!.reason).toMatch(/^price_history_not_ingested: Price history not ingested yet/);
+    // The comparison endpoint (server built without a key in this environment) must not claim a price either.
+    const cmpGinger = res.json().data.items.find((i: any) => i.productId === "ginger-fresh");
+    expect(cmpGinger.priceReference.state).toBe("unavailable");
+    expect(["price_access_key_gated", "price_history_not_ingested"]).toContain(cmpGinger.priceReference.missingReason);
     const seg = await b.request_segmentation!({ mediaId, prompt: { kind: "concept", text: "field" } }, ctx(owner));
     expect(seg.budgetGate).toBe("checked");
     const vk = await b.request_visual_keyframes!({ planId: plan.snapshot.id, briefId: "ginger", stageIds: [PLAN_FIXTURE.stageDefinitions[0].stageId] }, ctx(owner));

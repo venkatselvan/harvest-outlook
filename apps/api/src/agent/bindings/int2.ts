@@ -12,6 +12,7 @@ import { buildContext } from "../../visuals/context";
 import { loadBriefs, type VisualBrief } from "../../visuals/brief";
 import { VISUAL_JOB_TYPE } from "../../visuals/labels";
 import type { ToolHandler } from "../tools/registry";
+import { MANDI_LABEL, MARKET_REFERENCE_METHOD, missingReasonText, noRowsReason, referenceRecords, type PriceDeps } from "../../plans/adapters/market-outlook";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -21,6 +22,8 @@ export interface Int2Deps {
   budget: Budget;
   catalogue: Pick<CatalogueStore, "get">;
   briefs?: Map<string, VisualBrief>;
+  /** Historical price reference wiring (L3). Absent: tools report the key-gated reason. */
+  prices?: PriceDeps;
 }
 
 const DIM_NAME: Partial<Record<DimensionKey, ToolOutput<"screen_crops">["results"][number]["dimensions"][number]["dimension"]>> = {
@@ -69,7 +72,7 @@ export function bindScreenCrops(deps: Int2Deps): ToolHandler<"screen_crops"> {
       excludedCropIds: Array.isArray(excluded) ? (excluded as string[]) : [],
       cropIds: input.cropIds,
     };
-    const out = compareCrops(snap, cmp, { mode: ctx.mode, now: asOf });
+    const out = compareCrops(snap, cmp, { mode: ctx.mode, now: asOf, priceMissingReason: noRowsReason(deps.prices?.keyConfigured ?? false) });
     const ruleCtx = buildRuleContext(cmp);
     const { rules } = executableRules(snap.rules, ctx.mode);
     // One result per (crop, product): outcomes, rules and dimensions differ by product form, so a crop-level entry
@@ -98,16 +101,32 @@ export function bindScreenCrops(deps: Int2Deps): ToolHandler<"screen_crops"> {
   };
 }
 
-/** Live price access is key-gated (T01). The two provisional markets are audit-selected and unverified (D21); no price is inferred. */
-export function bindMarketOutlook(): ToolHandler<"get_market_outlook"> {
-  return async (input) => ({
-    forecasts: [],
-    references: [],
-    missing: input.marketIds.map((marketId) => ({
-      marketId,
-      reason: `price_access_key_gated: no qualified price series is retrievable; market ${marketId} is audit-selected and unverified (provisional, D21)`,
-    })),
-  });
+/**
+ * Historical mandi reference, never a forecast: `forecasts` is always empty. `references` are ValueRecords (INR/kg; the last
+ * quote is observed, the weekly-median range and corresponding-season references are derived) followed by one text record
+ * carrying the label, so numeric references resolve their unit and the label is citable. Reasons are the real cause (L3).
+ */
+export function bindMarketOutlook(deps?: Pick<Int2Deps, "prices">): ToolHandler<"get_market_outlook"> {
+  return async (input, ctx) => {
+    const keyConfigured = deps?.prices?.keyConfigured ?? false;
+    const gone = (reason: string) => ({ forecasts: [], references: [], missing: input.marketIds.map((marketId) => ({ marketId, reason: `${reason}: ${missingReasonText(reason)}` })) });
+    if (!deps?.prices) return gone(noRowsReason(keyConfigured));
+    const res = await deps.prices.source.getOutlook(input.productId, input.marketIds, input.harvestWindows, input.issueDate);
+    if ("state" in res) return gone(res.missingReason);
+    if (!("kind" in res) || res.kind !== "historical_reference") return gone(noRowsReason(keyConfigured));
+    const label: ValueRecord = {
+      schemaVersion: "1.0", kind: "text", unit: null, value: `Historical reference from stored quotes, not a forecast. ${MANDI_LABEL}. The weekly-median range is not a prediction interval.`,
+      evidenceState: "derived", scope: { level: "market", ids: [res.primaryMarketId] }, validFrom: null, validTo: null, issuedAt: null, evidenceIds: [], assumptionIds: [],
+      methodVersion: MARKET_REFERENCE_METHOD, validationStatus: "pending", missingReason: null,
+    };
+    const shown = new Set(res.markets.map((m) => m.marketId));
+    const missing = input.marketIds.filter((m) => !shown.has(m)).map((marketId) => {
+      const reason = res.fallback ? "market_not_in_history" : res.skippedMarkets.some((s) => s.marketId === marketId) ? "price_history_insufficient" : "market_not_in_history";
+      return { marketId, reason: `${reason}: ${missingReasonText(reason, res.fallback?.stateName)}` };
+    });
+    void ctx;
+    return { forecasts: [], references: [...referenceRecords(res), label], missing };
+  };
 }
 
 /** Same enqueue path as POST /plans/:id/visuals (content-derived key). The photo is the plan farm's newest photo with a confirmed region. */

@@ -2,6 +2,10 @@ import type { CropRule, Mode, RuleContext, RuleEvaluationResult, RuleField, Stag
 import { addDays, calculateScenarios, computeStageWindows, convertDecimal, screenCrop, type VerdictBasis } from "@harvest/domain";
 import type { CropProfile, RegionalContext } from "./files";
 import type { CatalogueSnapshot } from "./snapshot";
+import { toPriceReferenceBlock, type PriceReferenceBlock } from "../plans/adapters/market-outlook";
+
+export type { PriceReferenceBlock };
+const unavailablePrice = (missingReason: string): PriceReferenceBlock => toPriceReferenceBlock({ state: "unavailable", missingReason }, false);
 
 export const DIMENSION_KEYS = ["waterFit", "timeToFirstIncome", "harvestWindows", "evidenceQuality", "marketAccess", "economics"] as const;
 export type DimensionKey = (typeof DIMENSION_KEYS)[number];
@@ -95,7 +99,7 @@ export interface CompareItem {
   completeness: { known: number; total: number };
   yieldReference: { minKgPerHa: number; maxKgPerHa: number; basis: string; productId: string; appliesToProduct: boolean; label: string; evidenceIds: string[] } | null;
   costBasis: { state: "unavailable"; label: string };
-  priceReference: { state: "unavailable"; label: string; missingReason: string };
+  priceReference: PriceReferenceBlock;
   downside: { computable: boolean; text: string };
   mostConsequentialMissingInput: { field: string; why: string } | null;
   evidenceCoverage: { sourcedRequirements: number; evidenceRecords: number; validationPending: boolean };
@@ -209,7 +213,16 @@ function waterFit(c: RegionalContext | null, irrigation: ComparisonInput["irriga
   return known({ fit: v, sourceContextIrrigation: c.irrigation, farmerIrrigation: irrigation }, "source_context_irrigation_not_water_requirement", c.irrigationEvidenceIds);
 }
 
-export function compareCrops(snap: CatalogueSnapshot, input: ComparisonInput, opts: { mode: Mode; now?: Date }): ComparisonOutput {
+export interface CompareOptions {
+  mode: Mode;
+  now?: Date;
+  /** Precomputed historical price references per productId (L3). */
+  priceReferences?: Record<string, PriceReferenceBlock>;
+  /** Reason shown when a product has no precomputed reference. Config-driven by the caller; defaults to the key-gated reason. */
+  priceMissingReason?: string;
+}
+
+export function compareCrops(snap: CatalogueSnapshot, input: ComparisonInput, opts: CompareOptions): ComparisonOutput {
   const now = opts.now ?? new Date();
   const ruleCtx = buildRuleContext(input);
   const { rules, reviewOf, candidateIds } = executableRules(snap.rules, opts.mode);
@@ -282,7 +295,8 @@ export function compareCrops(snap: CatalogueSnapshot, input: ComparisonInput, op
       const ctxEvidence = ctx ? [...new Set([...ctx.plantingWindow.evidenceIds, ...(ctx.durationDays?.evidenceIds ?? []), ...(ctx.soilNotes?.evidenceIds ?? []), ...ctx.irrigationEvidenceIds, ...(ctx.yieldReference?.evidenceIds ?? [])])] : [];
       const pending = ctxEvidence.some((id) => snap.evidence.get(id)?.validationStatus !== "validated");
       dims.evidenceQuality = known({ sourcedRequirements: sourced, of: 5, evidenceRecords: ctxEvidence.length, validationPending: ctx ? pending : true, regionalContext: ctx !== null }, "count_of_sourced_requirements_in_context", ctxEvidence);
-      dims.marketAccess = unknown("price_access_key_gated", "unavailable");
+      const priceRef: PriceReferenceBlock = opts.priceReferences?.[prod.productId] ?? unavailablePrice(opts.priceMissingReason ?? "price_access_key_gated");
+      dims.marketAccess = unknown(priceRef.state === "unavailable" ? priceRef.missingReason : "market_access_not_assessed_price_reference_only", "unavailable");
 
       // ---- yield and economics
       const y = ctx?.yieldReference ?? null;
@@ -312,7 +326,7 @@ export function compareCrops(snap: CatalogueSnapshot, input: ComparisonInput, op
           downside = { computable: true, text: `Low scenario: ${y.min} kg/ha at INR ${price.lowInrPerKg ?? price.amountInrPerKg}/kg gives a gross harvest value of INR ${low.grossHarvestValueInrPerHa} per ha before any cost. Costs are not sourced, so net return is not computed.` };
         } else dims.economics = unknown(`economics_${res.status}`);
       } else {
-        dims.economics = unknown(!y ? "no_sourced_yield_reference" : !yieldApplies ? "yield_basis_differs_from_product_conversion_not_sourced" : "no_price_supplied_and_price_access_pending");
+        dims.economics = unknown(!y ? "no_sourced_yield_reference" : !yieldApplies ? "yield_basis_differs_from_product_conversion_not_sourced" : priceRef.state === "unavailable" && priceRef.missingReason === "price_access_key_gated" ? "no_price_supplied_and_price_access_pending" : "no_price_supplied_historical_reference_not_used_for_economics");
         downside = {
           computable: false,
           text: y && yieldApplies ? `A downside scenario needs a price. Source yield reference spans ${y.min}-${y.max} kg/ha; no price series is available, and no price was supplied.` : "A downside scenario is not computable: no yield reference for this product in the matching context.",
@@ -346,7 +360,7 @@ export function compareCrops(snap: CatalogueSnapshot, input: ComparisonInput, op
         dimensions: dims, completeness: { known: completenessKnown, total: DIMENSION_KEYS.length },
         yieldReference: y ? { minKgPerHa: y.min, maxKgPerHa: y.max, basis: y.basis, productId: y.productId, appliesToProduct: yieldApplies, label: yieldApplies ? "Source-backed regional or varietal reference, not a farm yield" : `Reference is for ${y.productId}; not applied to ${prod.productId} (no sourced conversion)`, evidenceIds: y.evidenceIds } : null,
         costBasis: { state: "unavailable", label: "Cost of cultivation: not sourced in the catalogue" },
-        priceReference: { state: "unavailable", label: "Unavailable — price access pending", missingReason: "price_access_key_gated" },
+        priceReference: priceRef,
         downside, mostConsequentialMissingInput: missing,
         evidenceCoverage: { sourcedRequirements: sourced, evidenceRecords: ctxEvidence.length, validationPending: pending },
       });

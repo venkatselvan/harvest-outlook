@@ -157,7 +157,7 @@ export function buildTimeline(inp: TimelineInputs): TimelineDay[] {
       } else if (inp.economics?.price.sources.includes("farmer_reported")) {
         outlook = { state: "farmer_reported", harvestPeriodId: hp.periodId, artifactId: null, issuedAt: null, missingReason: null };
       } else {
-        outlook = { state: "unavailable", harvestPeriodId: hp.periodId, artifactId: null, issuedAt: null, missingReason: op?.missingReason ?? inp.outlook?.missingReason ?? "no_outlook" };
+        outlook = { state: "unavailable", harvestPeriodId: hp.periodId, artifactId: null, issuedAt: null, missingReason: op?.missingReason ?? inp.outlook?.missingReason ?? (inp.outlook?.state === "historical_reference" ? "historical_reference_only_no_forecast" : "no_outlook") };
       }
     }
     // Visual: a dated photo is the only actual image; past dates without one show nothing.

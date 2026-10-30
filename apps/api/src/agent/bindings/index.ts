@@ -99,7 +99,7 @@ export function allBindings(deps: BindingDeps): ToolBindings {
   if (deps.int2) {
     const d = { pool: deps.pool, budget: deps.budget, ...deps.int2 };
     extra.screen_crops = bindScreenCrops(d);
-    extra.get_market_outlook = bindMarketOutlook();
+    extra.get_market_outlook = bindMarketOutlook(d);
     extra.request_visual_keyframes = bindVisualKeyframes(d);
   }
   if (deps.journal) Object.assign(extra, journalToolBindings({ pool: deps.pool, service: deps.journal, plans: deps.plans }));

@@ -9,6 +9,7 @@ import { requireAuth } from "../security/session";
 import { ApiError, notFound } from "../services/errors";
 import { getFarm } from "../services/farms";
 import { compareCrops, type ComparisonInput } from "../catalogue/compare";
+import { noRowsReason, priceReferencesFor, type PriceDeps } from "../plans/adapters/market-outlook";
 import { buildCropDetail, buildCropSummaries, coverageFor, listAreas } from "../catalogue/views";
 import { CatalogueNotLoadedError, CatalogueStore, type CatalogueSnapshot } from "../catalogue/snapshot";
 import { envelopeSchema } from "./schemas/common";
@@ -20,6 +21,8 @@ export interface CropRouteDeps {
   /** Tests may inject a store or a fixed clock. */
   store?: Pick<CatalogueStore, "get">;
   now?: () => Date;
+  /** Historical price reference wiring; absent: comparison cards carry the key-gated reason. */
+  prices?: PriceDeps | undefined;
 }
 
 /** Registers GET /crops, /crops/:id, /crops/:id/coverage, /districts and POST /crop-comparisons. Public browsing; farm-linked comparison needs a session. */
@@ -103,9 +106,18 @@ export async function registerCropRoutes(app: FastifyInstance, deps: CropRouteDe
         rainfallSeasonalMm: body.rainfallSeasonalMm, elevationM: body.elevationM, area, budgetInrPerHa: body.budgetInrPerHa,
         excludedCropIds: body.excludedCropIds, assumedPrices: body.assumedPrices, cropIds: body.cropIds, weights: body.preferencePolicy?.weights,
       };
-      const out = compareCrops(snap, input, { mode, ...(deps.now ? { now: deps.now() } : {}) });
+      const now = deps.now ? deps.now() : (deps.prices?.now?.() ?? new Date());
+      const keyConfigured = deps.prices?.keyConfigured ?? false;
+      let priceReferences: Awaited<ReturnType<typeof priceReferencesFor>> | undefined;
+      if (deps.prices) {
+        const districtName = location.districtId ? (snap.areas.find((a) => a.id === location.districtId)?.names.en ?? null) : null;
+        const productIds = snap.profiles.filter((pr) => !body.cropIds || body.cropIds.includes(pr.cropId)).flatMap((pr) => pr.products.map((x) => x.productId));
+        priceReferences = await priceReferencesFor(deps.prices.source, pool, mode, { productIds, issueDate: now.toISOString().slice(0, 10), stateId: location.stateId, districtName, keyConfigured });
+      }
+      const out = compareCrops(snap, input, { mode, now, ...(priceReferences ? { priceReferences } : {}), priceMissingReason: noRowsReason(keyConfigured) });
       if (mode === "synthetic") warnings.push("synthetic_mode: candidate (unreviewed) rules are executed and marked in the result");
-      warnings.push("price_access_key_gated: no price reference is available; no price is inferred");
+      const refs = out.items.filter((i) => i.priceReference.state === "historical_reference").length;
+      warnings.push(refs > 0 ? `price_reference: ${refs} item(s) carry a historical mandi reference from stored quotes (not a forecast); items without one show the reason` : `${noRowsReason(keyConfigured)}: no price reference is available; no price is inferred`);
       return envelope(req.id, mode, out, warnings);
     },
   );
