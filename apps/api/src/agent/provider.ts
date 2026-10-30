@@ -16,6 +16,8 @@ export interface TextRequest {
   previousResponseId?: string;
   maxOutputTokens: number;
   reasoningEffort?: ReasoningEffort | undefined;
+  /** L5: `false` for single, never-chained calls (provider keeps nothing). Omitted = provider default (stored). */
+  store?: boolean | undefined;
   /** Tool result ids stored so far in this run, in order; fixtures use them to fill `{{toolResultId:N}}` placeholders. */
   toolResultIds?: string[];
   signal?: AbortSignal | undefined;
@@ -51,6 +53,11 @@ export interface TextModelProvider {
   /** Fixture replays are free and skip budget reservation. */
   readonly billable: boolean;
   call(req: TextRequest): Promise<ProviderOutcome>;
+  /**
+   * L5 privacy: delete a stored provider response after the run. Optional (fixtures and the unavailable provider
+   * store nothing). Must never throw.
+   */
+  deleteResponse?(id: string): Promise<{ ok: boolean; code: string | null }>;
 }
 
 export class MetaProvider implements TextModelProvider {
@@ -72,6 +79,7 @@ export class MetaProvider implements TextModelProvider {
       ...(req.textFormat ? { textFormat: req.textFormat } : {}),
       ...(req.previousResponseId ? { previousResponseId: req.previousResponseId } : {}),
       ...(req.reasoningEffort ? { reasoningEffort: req.reasoningEffort } : {}),
+      ...(req.store !== undefined ? { store: req.store } : {}),
     };
     try {
       const r = await this.client.createResponse(params, req.signal);
@@ -83,6 +91,15 @@ export class MetaProvider implements TextModelProvider {
         return { ok: false, error: { code, message: redactSecrets(e.message, this.apiKey), retryable: e.retryable, outcomeUncertain: e.outcomeUncertain, requestId: e.requestId, retries: e.retries } };
       }
       return { ok: false, error: { code: "provider_error", message: redactSecrets(String((e as Error).message ?? e).slice(0, 200), this.apiKey), retryable: false, outcomeUncertain: true, requestId: null, retries: 0 } };
+    }
+  }
+
+  async deleteResponse(id: string): Promise<{ ok: boolean; code: string | null }> {
+    try {
+      const r = await this.client.deleteResponse(id);
+      return { ok: r.ok, code: r.code };
+    } catch {
+      return { ok: false, code: "delete_failed" };
     }
   }
 }

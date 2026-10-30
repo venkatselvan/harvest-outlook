@@ -33,6 +33,11 @@ export interface CreateResponseParams {
   previousResponseId?: string;
   maxOutputTokens: number;
   reasoningEffort?: ReasoningEffort;
+  /**
+   * Sent as `store` when set. Verified live 2026-10-30: `store:false` is accepted but the response cannot then be
+   * chained with previous_response_id (HTTP 400), so only single (unchained) calls may use it. Omitted = provider default (true).
+   */
+  store?: boolean;
 }
 
 export interface ParsedUsage {

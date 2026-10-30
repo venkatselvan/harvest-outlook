@@ -68,7 +68,7 @@ export const TOOL_UNIT_MAP: Partial<Record<ToolName, UnitRule[]>> = {
  * "category", no unit); no handler copies a model-supplied {value, unit} object into its result.
  */
 export const UNIT_RECORD_OWNERS: Partial<Record<ToolName, string[]>> = {
-  get_farm_context: ["/farm/area/value"],
+  get_farm_context: ["/farm/area/value", "/farm/monitoring/references/*"],
   screen_crops: ["/results/*/dimensions/*/value"],
   get_market_outlook: ["/references/*"],
 };

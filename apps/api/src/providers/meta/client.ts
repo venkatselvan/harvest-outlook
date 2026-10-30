@@ -122,6 +122,7 @@ export class MetaClient {
     if (p.textFormat) body.text = { format: { type: "json_schema", name: p.textFormat.name, strict: true, schema: p.textFormat.schema } };
     if (p.previousResponseId) body.previous_response_id = p.previousResponseId;
     if (p.reasoningEffort) body.reasoning = { effort: p.reasoningEffort };
+    if (p.store !== undefined) body.store = p.store;
     return body;
   }
 
@@ -172,6 +173,30 @@ export class MetaClient {
       }
       const kind = res.status === 401 || res.status === 403 ? "unauthorized" : res.status === 429 ? "rate_limited" : res.status >= 500 ? "server_error" : "bad_request";
       throw new MetaError(kind, `Provider returned HTTP ${res.status}${detail ? `: ${detail}` : ""}`, { status: res.status, requestId, retries });
+    }
+  }
+
+  /**
+   * L5 privacy: delete a stored response (`DELETE /v1/responses/{id}`, verified live 2026-10-30: 200
+   * `{object:"response.deleted", deleted:true}`, later GET 404). Never retried, never throws: returns the outcome
+   * so the caller can log it. 404 counts as already gone.
+   */
+  async deleteResponse(id: string, signal?: AbortSignal): Promise<{ ok: boolean; status: number | null; code: string | null }> {
+    const key = this.opts.apiKey;
+    if (!key) return { ok: false, status: null, code: "provider_unavailable" };
+    if (!/^[A-Za-z0-9_.:-]{1,200}$/.test(id)) return { ok: false, status: null, code: "invalid_id" };
+    const timeoutSignal = AbortSignal.timeout(Math.min(this.timeoutMs, 10_000));
+    try {
+      const res = await this.fetchImpl(`${this.opts.baseUrl.replace(/\/$/, "")}/responses/${encodeURIComponent(id)}`, {
+        method: "DELETE",
+        headers: { authorization: `Bearer ${key}` },
+        signal: signal ? AbortSignal.any([signal, timeoutSignal]) : timeoutSignal,
+      });
+      await res.body?.cancel().catch(() => undefined);
+      if (res.ok) return { ok: true, status: res.status, code: null };
+      return { ok: res.status === 404, status: res.status, code: res.status === 404 ? "already_absent" : `http_${res.status}` };
+    } catch (e) {
+      return { ok: false, status: null, code: timeoutSignal.aborted ? "timeout" : (e as Error).name === "AbortError" ? "aborted" : "network" };
     }
   }
 

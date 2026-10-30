@@ -15,6 +15,8 @@ import { AgentClaimEvidenceRef, ProposedProfile, attachClaimExtras, splitClaimEx
 import { TEMPLATE_LIMITATION, WITHHELD_LIMITATION, templateBlock, templateLanguage } from "./templates";
 import type { ToolContext, ToolRegistry } from "./tools/registry";
 import { AgentTrace, redactForTrace } from "./trace";
+import { resolveTurnProduct, type ProductResolution } from "./product-resolution";
+import { COMPACT_VIEWS } from "./tool-views";
 
 export interface AgentTurnInput {
   ownerId: string;
@@ -69,6 +71,10 @@ export interface AgentRunResult {
   gateReport: GateResult["report"] | null;
   error?: { code: string; message: string } | undefined;
   cost: { estimatedUsd: number; settledUsd: number; providerCalls: number; billable: boolean; cachedInputTokensObserved: number };
+  /** L5 privacy: provider-stored responses of this run deleted after the run (best effort). */
+  providerCleanup?: { attempted: number; deleted: number; failedCodes: string[] } | undefined;
+  /** L5: tools the server called itself (for example screen_crops for a crop-choice question the model left unscreened). */
+  serverInitiatedTools?: string[] | undefined;
   usage: ParsedUsage;
   toolRounds: number;
   toolCalls: number;
@@ -87,6 +93,7 @@ class Stop extends Error {
 
 const OUTPUT_FORMAT_NAME = "assistant_output";
 const MAX_TOOL_VIEW_CHARS = 60_000;
+const RESPONSE_CLEANUP_TIMEOUT_MS = 8_000;
 
 const claimRefsArray = z.array(AgentClaimEvidenceRef);
 const outputSchemaStrict = (): JsonSchema =>
@@ -146,6 +153,8 @@ export async function runAgentTurn(deps: AgentDeps, input: AgentTurnInput): Prom
       if (row.product_ref) planProductIds.push(row.product_ref);
     }
   }
+  // L5: plan product slugs mapped to catalogue product ids (what resolve_crop_identity returns).
+  const planProductUuids: string[] = planProductIds.length > 0 ? (await pool.query<{ id: string }>("SELECT id::text AS id FROM crop_products WHERE slug = ANY($1::text[]) OR id::text = ANY($1::text[])", [planProductIds])).rows.map((r) => r.id) : [];
   let farmGeo = input.farmGeography;
   if (!farmGeo && farmUuid) {
     const farm = await getFarm(pool, input.ownerId, farmUuid).catch(() => null);
@@ -169,8 +178,14 @@ export async function runAgentTurn(deps: AgentDeps, input: AgentTurnInput): Prom
   let toolCalls = 0;
   let escalations = 0;
   let repairs = 0;
+  let chainRecoveries = 0;
   let chainTokens = 0;
   const toolResultIds: string[] = [];
+  const responseIds: string[] = [];
+  /** Tools that returned an ok result in this run. */
+  const calledTools = new Set<string>();
+  const serverInitiated: string[] = [];
+  const productResolutions = new Map<string, ProductResolution>();
   const toolResultViews: string[] = [];
   const unboundUsed = new Set<string>();
   let profile: ProposedProfile | null = null;
@@ -222,11 +237,23 @@ export async function runAgentTurn(deps: AgentDeps, input: AgentTurnInput): Prom
         }
       }
       trace.add("provider_error", { pass, model: req.model, requestId: f.requestId, retries: f.retries, detail: { code: f.code, message: f.message } });
+      // L5: observed live once (2026-10-30): a chained call failed with HTTP 400 "referenced response not found or
+      // expired" 3 s after the referenced response was created (not deleted by us). Recover once per run by
+      // re-sending the same pass unchained, with the request context and every stored tool result as text.
+      if (f.code === "bad_request" && req.previousResponseId && /referenced response not found/i.test(f.message) && chainRecoveries < 1) {
+        chainRecoveries++;
+        const kept = (Array.isArray(req.input) ? req.input : [userMsg(req.input)]).filter((i) => (i as { type?: string }).type !== "function_call_output");
+        const recovered: InputItem[] = [userMsg(`${contextMessage()}\n<stored_tool_results>${toolResultViews.join("\n")}</stored_tool_results>`), ...kept];
+        trace.add("chain_recovery", { pass, detail: { reason: "previous_response_not_found", resentToolResults: toolResultViews.length } });
+        const { previousResponseId: _drop, ...rest } = req;
+        return call(pass, { ...rest, input: recovered }, { chained: false });
+      }
       if (f.code === "aborted") throw new Stop("cancelled", "cancelled", "Request cancelled");
       if (f.code === "provider_unavailable") throw new Stop("provider_unavailable", "provider_unavailable", f.message);
       throw new Stop("failed", f.code, f.message);
     }
     const r = outcome.result;
+    if (r.responseId && !responseIds.includes(r.responseId)) responseIds.push(r.responseId);
     usage.inputTokens += r.usage.inputTokens;
     usage.outputTokens += r.usage.outputTokens;
     usage.cachedInputTokens += r.usage.cachedInputTokens;
@@ -248,7 +275,10 @@ export async function runAgentTurn(deps: AgentDeps, input: AgentTurnInput): Prom
   }
 
   const contextMessage = (): string => {
-    const rc = { runtimeMode: input.mode, farmId: input.farmId ?? null, planId: input.planId ?? null, selectedDate: input.selectedDate ?? null, scenarioId: input.scenarioId ?? null, today: asOf.slice(0, 10) };
+    const rc = {
+      runtimeMode: input.mode, farmId: input.farmId ?? null, planId: input.planId ?? null, selectedDate: input.selectedDate ?? null, scenarioId: input.scenarioId ?? null, today: asOf.slice(0, 10),
+      ...(productResolutions.size > 0 ? { productResolution: [...productResolutions.values()] } : {}),
+    };
     return `<farmer_input language="${input.language}">\n${input.text}\n</farmer_input>\n<request_context>${JSON.stringify(rc)}</request_context>` + (profile ? `\n<interpretation>${JSON.stringify(profile)}</interpretation>` : "");
   };
 
@@ -374,6 +404,7 @@ export async function runAgentTurn(deps: AgentDeps, input: AgentTurnInput): Prom
           if (outcome.status === "unavailable") unboundUsed.add(name);
         }
       }
+      if (name && outcome.status === "ok") calledTools.add(name);
       const toolName = (name ?? `invalid:${rawName.replace(/[^A-Za-z0-9_.-]/g, "").slice(0, 40)}`);
       const ins = await pool.query<{ id: string }>(
         `INSERT INTO tool_results (owner_id, agent_run_id, tool_name, args_hash, result, error, duration_ms, status, call_id, redacted_args, ordinal)
@@ -397,11 +428,45 @@ export async function runAgentTurn(deps: AgentDeps, input: AgentTurnInput): Prom
       trace.add("tool_call", { pass: "tool_round", detail: { tool: toolName, callId, status: outcome.status, toolResultId: id, durationMs: Date.now() - started, ...(outcome.status !== "ok" ? { outcome } : {}) } });
       let view: string;
       if (outcome.status === "ok") {
-        view = JSON.stringify({ toolResultId: id, status: "ok", result: outcome.output });
+        const pr = name === "resolve_crop_identity" ? productResolutionFor(outcome.output) : null;
+        view = JSON.stringify({ toolResultId: id, status: "ok", result: outcome.output, ...(pr ? { serverProductResolution: pr } : {}) });
+        const compact = name ? COMPACT_VIEWS[name] : undefined;
+        if (view.length > MAX_TOOL_VIEW_CHARS && compact) view = JSON.stringify({ toolResultId: id, status: "ok", result: compact(outcome.output), ...(pr ? { serverProductResolution: pr } : {}) });
         if (view.length > MAX_TOOL_VIEW_CHARS) view = JSON.stringify({ toolResultId: id, status: "ok", truncated: true, note: "result too large to display; do not reference values you cannot see", preview: JSON.stringify(outcome.output).slice(0, 4000) });
       } else view = JSON.stringify({ toolResultId: id, ...outcome });
       toolResultViews.push(view);
       return view;
+    }
+
+    /**
+     * L5 product rule: a single-crop identity result without a product gets the server's product choice
+     * (plan -> explicit fresh/dry mention -> single product -> crop level). Attached outside "result", so
+     * JSON pointers into the stored tool result are unaffected.
+     */
+    function productResolutionFor(output: unknown): ProductResolution | null {
+      const cands = (output as { candidates?: { cropId: string; productId: string | null; products: { productId: string; productBasis: string }[] }[] }).candidates ?? [];
+      const crops = new Set(cands.map((c) => c.cropId));
+      if (crops.size !== 1 || cands.some((c) => c.productId !== null)) return null;
+      const c = cands[0]!;
+      const pr = resolveTurnProduct(c.cropId, c.products, { planProductIds: planProductUuids, userText: input.text, intent: profile?.intent ?? null });
+      productResolutions.set(c.cropId, pr);
+      trace.add("product_resolution", { pass: "tool_round", detail: pr });
+      return pr;
+    }
+
+    // ------------------------------------------------------------ L5 server-initiated screening
+    // A crop-choice question must be answered from screen_crops. If the model ended its tool rounds without
+    // calling it, the server calls it once with the owned farm as context and hands the result to synthesis.
+    let serverToolMessage: InputItem | null = null;
+    const SCREEN_INTENTS = new Set(["compare_crops", "explore_crops"]);
+    if (!skipTools && profile && SCREEN_INTENTS.has(profile.intent) && !calledTools.has("screen_crops") && farmUuid && advertised.some((t) => t.name === "screen_crops") && toolCalls < limits.maxToolCalls) {
+      if (deps.signal?.aborted) throw new Stop("cancelled", "cancelled", "Request cancelled");
+      toolCalls++;
+      const callId = `server_screen_crops_${toolResultIds.length + 1}`;
+      const view = await executeCall("screen_crops", JSON.stringify({ contextId: farmUuid }), callId);
+      serverInitiated.push("screen_crops");
+      trace.add("server_initiated_tool", { pass: "tool_round", detail: { tool: "screen_crops", reason: "crop_choice_intent_without_screening", intent: profile.intent, callId, toolResultId: toolResultIds[toolResultIds.length - 1] } });
+      serverToolMessage = userMsg(`<server_initiated_tool_result tool="screen_crops" reason="crop choice question; screening is required">\n${view}\n</server_initiated_tool_result>`);
     }
 
     // ------------------------------------------------------------ synthesis + gate with bounded repair
@@ -412,7 +477,8 @@ export async function runAgentTurn(deps: AgentDeps, input: AgentTurnInput): Prom
         (unboundUsed.size > 0 ? ` Unavailable tools (say so in limitations): ${[...unboundUsed].join(", ")}.` : ""),
     );
     let prevId: string | undefined = lastResponseId;
-    let nextInput: InputItem[] = skipTools || !prevId ? [userMsg(contextMessage()), synthesisMessage] : [...pendingOutputs, synthesisMessage];
+    const serverMsgs = serverToolMessage ? [serverToolMessage] : [];
+    let nextInput: InputItem[] = skipTools || !prevId ? [userMsg(contextMessage()), ...serverMsgs, synthesisMessage] : [...pendingOutputs, ...serverMsgs, synthesisMessage];
     let pass: AgentPass = "synthesis";
     let model = profile!.needsEscalation && canEscalate() ? models.escalation : models.text;
     if (model === models.escalation) {
@@ -584,6 +650,25 @@ export async function runAgentTurn(deps: AgentDeps, input: AgentTurnInput): Prom
     trace,
   };
   if (stop?.status === "cancelled") trace.add("cancelled", { detail: { reason: stop.code } });
+  // L5 privacy: delete every provider-stored response of this run (success or failure). Best effort and bounded:
+  // a failure is logged, never changes the answer, and is never retried.
+  if (responseIds.length > 0 && provider.deleteResponse) {
+    const del = provider.deleteResponse.bind(provider);
+    const settled = await Promise.race([
+      Promise.allSettled(responseIds.map((id) => del(id))),
+      new Promise<null>((resolve) => setTimeout(() => resolve(null), RESPONSE_CLEANUP_TIMEOUT_MS).unref?.()),
+    ]);
+    const failedCodes: string[] = [];
+    let deleted = 0;
+    if (settled === null) failedCodes.push("cleanup_timeout");
+    else for (const s of settled) {
+      if (s.status === "fulfilled" && s.value.ok) deleted++;
+      else failedCodes.push(s.status === "fulfilled" ? (s.value.code ?? "delete_failed") : "delete_threw");
+    }
+    result.providerCleanup = { attempted: responseIds.length, deleted, failedCodes };
+    trace.add("response_cleanup", { detail: result.providerCleanup });
+  }
+  if (serverInitiated.length > 0) result.serverInitiatedTools = [...serverInitiated];
   trace.add("run_finished", { detail: { status, gateStatus: result.gateStatus, providerCalls, toolRounds, toolCalls, repairs, escalations } });
 
   const dbStatus = status === "approved" || status === "partial" ? "succeeded" : status === "cancelled" ? "cancelled" : "failed";

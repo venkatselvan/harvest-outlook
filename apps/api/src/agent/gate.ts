@@ -102,6 +102,8 @@ export interface GateFacts {
    * a crop outside the claim's crops. Missing/empty = no crop-name check possible (recorded as a limitation).
    */
   cropNames?: Map<string, string[]>;
+  /** L5: catalogue slug -> crop UUID for claim cropIds given as slugs (screen_crops reports slugs). */
+  cropUuidBySlug?: Map<string, string>;
 }
 
 export interface GateIssue {
@@ -566,7 +568,14 @@ export function evaluateGate(raw: unknown, ctxIn: GateContext, facts: GateFacts)
       }
     }
     const presentedOf = (ids: string[]): Presented[] =>
-      ids.filter((id) => refPresented.has(id)).map((id) => ({ id, value: refPresented.get(id)!, unit: refById.get(id)!.presentation.unit, yieldField: isYieldPointer(refTool.get(id) ?? "", refById.get(id)!.jsonPointer), forecast: isForecastTool(refTool.get(id) ?? "") }));
+      ids.filter((id) => refPresented.has(id)).map((id) => {
+        const ref = refById.get(id)!;
+        const tr = facts.toolResults.get(ref.toolResultId);
+        const monitorRecord = tr?.toolName === 'get_farm_context' && /^\/farm\/monitoring\/references\/\d+\/value$/.test(ref.jsonPointer)
+          ? resolvePointer(tr.result, ref.jsonPointer.replace(/\/value$/, '')) : null;
+        const monitorForecast = monitorRecord?.found && (monitorRecord.value as { evidenceState?: string } | null)?.evidenceState === 'forecast';
+        return { id, value: refPresented.get(id)!, unit: ref.presentation.unit, yieldField: isYieldPointer(refTool.get(id) ?? "", ref.jsonPointer), forecast: isForecastTool(refTool.get(id) ?? "") || !!monitorForecast };
+      });
 
     // Step 4: claim evidence resolution, crop scope, granularity, and the claim text itself.
     const claimProblem = new Map<string, { code: string; message: string }[]>();
@@ -586,8 +595,10 @@ export function evaluateGate(raw: unknown, ctxIn: GateContext, facts: GateFacts)
         const outside = (ex.cropIds ?? []).filter((x) => !crops.includes(x));
         if (outside.length > 0) probs.push({ code: "claim_crop_outside_scope", message: `claim ${c.claimId} declares crops outside the plan's crop` });
       } else if (ex.cropIds && ex.cropIds.length > 0) {
-        if (!ex.cropIds.every((x) => knownCrops.has(x))) probs.push({ code: "claim_crop_unknown", message: `claim ${c.claimId} declares a crop id that is not in the catalogue` });
-        crops = ex.cropIds;
+        // L5: a catalogue slug ("ginger", as screen_crops reports it) is the same crop as its UUID.
+        const declared = ex.cropIds.map((x) => facts.cropUuidBySlug?.get(x) ?? x);
+        if (!declared.every((x) => knownCrops.has(x))) probs.push({ code: "claim_crop_unknown", message: `claim ${c.claimId} declares a crop id that is not in the catalogue` });
+        crops = declared;
       } else probs.push({ code: "claim_crop_scope_missing", message: `claim ${c.claimId} must declare cropIds (no plan crop is in scope)` });
       // F8 product scope: a claim that names a product form, or declares productIds, is product-specific.
       const citingTexts = [c.text, ...out.answerBlocks.filter((b) => b.claimIds.includes(c.claimId)).map((b) => b.text)];
@@ -781,7 +792,12 @@ export async function loadGateFacts(pool: Pool, raw: unknown, scopeProductIds: s
       `SELECT id, mode, validation_status, geography_level, geography_ids, crop_ids, product_ids, effective_available_at, availability_basis FROM evidence_records WHERE id = ANY($1::uuid[])`,
       [ev],
     );
+    // L5: curated evidence rows store catalogue slugs ("ginger") while claims declare crop UUIDs; both forms count.
+    const idsBySlug = new Map<string, string>();
+    const slugs = [...new Set(r.rows.flatMap((x) => x.crop_ids))];
+    if (slugs.length > 0) for (const c of (await pool.query<{ id: string; slug: string }>("SELECT id::text AS id, slug FROM crop_identities WHERE slug = ANY($1::text[])", [slugs])).rows) idsBySlug.set(c.slug, c.id);
     for (const row of r.rows) {
+      row.crop_ids = [...new Set([...row.crop_ids, ...row.crop_ids.flatMap((c) => (idsBySlug.has(c) ? [idsBySlug.get(c)!] : []))])];
       facts.evidence.set(row.id, {
         id: row.id,
         mode: row.mode,
@@ -798,6 +814,15 @@ export async function loadGateFacts(pool: Pool, raw: unknown, scopeProductIds: s
   if (crops.length > 0) {
     const r = await pool.query<{ id: string }>("SELECT id FROM crop_identities WHERE id = ANY($1::uuid[])", [crops]);
     for (const row of r.rows) facts.knownCropIds!.add(row.id);
+  }
+  const slugIds = [...cropIds].filter((x) => !UUID.test(x));
+  if (slugIds.length > 0) {
+    facts.cropUuidBySlug = new Map();
+    const r = await pool.query<{ id: string; slug: string }>("SELECT id::text AS id, slug FROM crop_identities WHERE slug = ANY($1::text[])", [slugIds]);
+    for (const row of r.rows) {
+      facts.cropUuidBySlug.set(row.slug, row.id);
+      facts.knownCropIds!.add(row.id);
+    }
   }
   if (productIds.size > 0) {
     const r = await pool.query<{ slug: string; form: string }>("SELECT slug, form FROM crop_products WHERE slug = ANY($1::text[])", [[...productIds]]);

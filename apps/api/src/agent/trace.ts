@@ -43,6 +43,10 @@ export type TraceStepKind =
   | "cancelled"
   | "provider_error"
   | "escalation"
+  | "server_initiated_tool"
+  | "product_resolution"
+  | "response_cleanup"
+  | "chain_recovery"
   | "run_finished";
 
 export interface TraceStep {

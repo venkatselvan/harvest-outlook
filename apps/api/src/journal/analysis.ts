@@ -1,7 +1,8 @@
 import { z } from "zod";
-import type { Config } from "../config";
+import { agentEnvFromConfig, type Config } from "../config";
 import { withTransaction, type Pool } from "../db/pool";
 import { AgentTrace } from "../agent/trace";
+import { loadAgentLimits } from "../agent/limits";
 import { FixtureProvider } from "../agent/fixture-provider";
 import { selectProvider, type TextModelProvider, type TextResult } from "../agent/provider";
 import { imageInputPart } from "../providers/meta/client";
@@ -24,6 +25,12 @@ import { InterpretationOutput, JOURNAL_JOB_TYPE, PROMPT_NAME, PROMPT_VERSION } f
 export const DEFAULT_FIXTURE_SCENARIO = "journal_waterlogging";
 const DISPATCH_STAGE = "interpretation";
 const MAX_OUTPUT_TOKENS = 1500;
+/**
+ * Same effort as the assistant loop (AGENT_REASONING_EFFORT, default "low"). Without it the server reasons at
+ * "high" and hidden reasoning tokens share MAX_OUTPUT_TOKENS (verified live 2026-10-30; see META_API_NOTES.md),
+ * which can end the call `incomplete` with no observation. A 64 px image used ~150 reasoning tokens at "low".
+ */
+const journalReasoningEffort = (config: Config) => loadAgentLimits(agentEnvFromConfig(config)).reasoningEffort;
 /** Conservative per-photo input estimate for the budget reservation (photos are at most 1280 px on the long side). */
 const TOKENS_PER_IMAGE_ESTIMATE = 1600;
 
@@ -196,7 +203,7 @@ export async function runJournalAnalysis(
       await finishRun("failed", { error: "provider_outcome_uncertain", estimated: estimate });
       throw new AnalysisFailure("provider_outcome_uncertain", "failed", false);
     }
-    const outcome = await provider.call({ pass: "interpretation", model, instructions: INSTRUCTIONS, input, textFormat: { name: "journal_observation", schema: strictSchema() }, maxOutputTokens: MAX_OUTPUT_TOKENS, reasoningEffort: undefined });
+    const outcome = await provider.call({ pass: "interpretation", model, instructions: INSTRUCTIONS, input, textFormat: { name: "journal_observation", schema: strictSchema() }, maxOutputTokens: MAX_OUTPUT_TOKENS, reasoningEffort: journalReasoningEffort(deps.config), store: false }); // L5: single unchained call, nothing kept by the provider
     await ctx.heartbeat(0.7);
     if (!outcome.ok) {
       const err = outcome.error;

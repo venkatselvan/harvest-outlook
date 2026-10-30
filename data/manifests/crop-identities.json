@@ -15,7 +15,64 @@
           "sourceIds": []
         }
       ],
-      "aliases": [],
+      "aliases": [
+        {
+          "text": "धान",
+          "language": "hi",
+          "script": "Deva",
+          "kind": "local",
+          "sourceIds": []
+        },
+        {
+          "text": "चावल",
+          "language": "hi",
+          "script": "Deva",
+          "kind": "local",
+          "sourceIds": []
+        },
+        {
+          "text": "நெல்",
+          "language": "ta",
+          "script": "Taml",
+          "kind": "local",
+          "sourceIds": []
+        },
+        {
+          "text": "அரிசி",
+          "language": "ta",
+          "script": "Taml",
+          "kind": "local",
+          "sourceIds": []
+        },
+        {
+          "text": "dhan",
+          "language": "hi",
+          "script": "Latn",
+          "kind": "transliteration",
+          "sourceIds": []
+        },
+        {
+          "text": "chawal",
+          "language": "hi",
+          "script": "Latn",
+          "kind": "transliteration",
+          "sourceIds": []
+        },
+        {
+          "text": "nel",
+          "language": "ta",
+          "script": "Latn",
+          "kind": "transliteration",
+          "sourceIds": []
+        },
+        {
+          "text": "arisi",
+          "language": "ta",
+          "script": "Latn",
+          "kind": "transliteration",
+          "sourceIds": []
+        }
+      ],
       "varieties": [],
       "productIds": [
         "paddy-grain",
@@ -36,7 +93,50 @@
           "sourceIds": []
         }
       ],
-      "aliases": [],
+      "aliases": [
+        {
+          "text": "गेहूं",
+          "language": "hi",
+          "script": "Deva",
+          "kind": "local",
+          "sourceIds": []
+        },
+        {
+          "text": "गेहूँ",
+          "language": "hi",
+          "script": "Deva",
+          "kind": "local",
+          "sourceIds": []
+        },
+        {
+          "text": "கோதுமை",
+          "language": "ta",
+          "script": "Taml",
+          "kind": "local",
+          "sourceIds": []
+        },
+        {
+          "text": "gehun",
+          "language": "hi",
+          "script": "Latn",
+          "kind": "transliteration",
+          "sourceIds": []
+        },
+        {
+          "text": "gehu",
+          "language": "hi",
+          "script": "Latn",
+          "kind": "transliteration",
+          "sourceIds": []
+        },
+        {
+          "text": "godhumai",
+          "language": "ta",
+          "script": "Latn",
+          "kind": "transliteration",
+          "sourceIds": []
+        }
+      ],
       "varieties": [],
       "productIds": [
         "wheat-grain"
@@ -56,7 +156,43 @@
           "sourceIds": []
         }
       ],
-      "aliases": [],
+      "aliases": [
+        {
+          "text": "मक्का",
+          "language": "hi",
+          "script": "Deva",
+          "kind": "local",
+          "sourceIds": []
+        },
+        {
+          "text": "மக்காச்சோளம்",
+          "language": "ta",
+          "script": "Taml",
+          "kind": "local",
+          "sourceIds": []
+        },
+        {
+          "text": "makka",
+          "language": "hi",
+          "script": "Latn",
+          "kind": "transliteration",
+          "sourceIds": []
+        },
+        {
+          "text": "makkai",
+          "language": "hi",
+          "script": "Latn",
+          "kind": "transliteration",
+          "sourceIds": []
+        },
+        {
+          "text": "makkacholam",
+          "language": "ta",
+          "script": "Latn",
+          "kind": "transliteration",
+          "sourceIds": []
+        }
+      ],
       "varieties": [],
       "productIds": [
         "maize-grain"
@@ -76,7 +212,37 @@
           "sourceIds": []
         }
       ],
-      "aliases": [],
+      "aliases": [
+        {
+          "text": "Jowar",
+          "language": "en",
+          "kind": "local",
+          "sourceIds": [
+            "raw:crops/tnau-sorghum"
+          ]
+        },
+        {
+          "text": "ज्वार",
+          "language": "hi",
+          "script": "Deva",
+          "kind": "local",
+          "sourceIds": []
+        },
+        {
+          "text": "சோளம்",
+          "language": "ta",
+          "script": "Taml",
+          "kind": "local",
+          "sourceIds": []
+        },
+        {
+          "text": "cholam",
+          "language": "ta",
+          "script": "Latn",
+          "kind": "transliteration",
+          "sourceIds": []
+        }
+      ],
       "varieties": [],
       "productIds": [
         "sorghum-grain"
@@ -104,6 +270,35 @@
           "sourceIds": [
             "tnau-cumbu"
           ]
+        },
+        {
+          "text": "Bajra",
+          "language": "en",
+          "kind": "local",
+          "sourceIds": [
+            "raw:crops/tnau-cumbu"
+          ]
+        },
+        {
+          "text": "बाजरा",
+          "language": "hi",
+          "script": "Deva",
+          "kind": "local",
+          "sourceIds": []
+        },
+        {
+          "text": "கம்பு",
+          "language": "ta",
+          "script": "Taml",
+          "kind": "local",
+          "sourceIds": []
+        },
+        {
+          "text": "kambu",
+          "language": "ta",
+          "script": "Latn",
+          "kind": "transliteration",
+          "sourceIds": []
         }
       ],
       "varieties": [],
@@ -141,6 +336,48 @@
           "sourceIds": [
             "aau-fingermillet"
           ]
+        },
+        {
+          "text": "रागी",
+          "language": "hi",
+          "script": "Deva",
+          "kind": "local",
+          "sourceIds": []
+        },
+        {
+          "text": "मंडुआ",
+          "language": "hi",
+          "script": "Deva",
+          "kind": "local",
+          "sourceIds": []
+        },
+        {
+          "text": "கேழ்வரகு",
+          "language": "ta",
+          "script": "Taml",
+          "kind": "local",
+          "sourceIds": []
+        },
+        {
+          "text": "ராகி",
+          "language": "ta",
+          "script": "Taml",
+          "kind": "local",
+          "sourceIds": []
+        },
+        {
+          "text": "mandua",
+          "language": "hi",
+          "script": "Latn",
+          "kind": "transliteration",
+          "sourceIds": []
+        },
+        {
+          "text": "kezhvaragu",
+          "language": "ta",
+          "script": "Latn",
+          "kind": "transliteration",
+          "sourceIds": []
         }
       ],
       "varieties": [],
@@ -170,6 +407,34 @@
           "sourceIds": [
             "tnau-bengalgram-season"
           ]
+        },
+        {
+          "text": "चना",
+          "language": "hi",
+          "script": "Deva",
+          "kind": "local",
+          "sourceIds": []
+        },
+        {
+          "text": "கொண்டைக்கடலை",
+          "language": "ta",
+          "script": "Taml",
+          "kind": "local",
+          "sourceIds": []
+        },
+        {
+          "text": "chana",
+          "language": "hi",
+          "script": "Latn",
+          "kind": "transliteration",
+          "sourceIds": []
+        },
+        {
+          "text": "kondaikadalai",
+          "language": "ta",
+          "script": "Latn",
+          "kind": "transliteration",
+          "sourceIds": []
         }
       ],
       "varieties": [],
@@ -208,6 +473,48 @@
           "sourceIds": [
             "aau-pigeonpea"
           ]
+        },
+        {
+          "text": "अरहर",
+          "language": "hi",
+          "script": "Deva",
+          "kind": "local",
+          "sourceIds": []
+        },
+        {
+          "text": "तूर",
+          "language": "hi",
+          "script": "Deva",
+          "kind": "local",
+          "sourceIds": []
+        },
+        {
+          "text": "துவரை",
+          "language": "ta",
+          "script": "Taml",
+          "kind": "local",
+          "sourceIds": []
+        },
+        {
+          "text": "tur",
+          "language": "hi",
+          "script": "Latn",
+          "kind": "transliteration",
+          "sourceIds": []
+        },
+        {
+          "text": "toor",
+          "language": "hi",
+          "script": "Latn",
+          "kind": "transliteration",
+          "sourceIds": []
+        },
+        {
+          "text": "thuvarai",
+          "language": "ta",
+          "script": "Latn",
+          "kind": "transliteration",
+          "sourceIds": []
         }
       ],
       "varieties": [],
@@ -230,7 +537,36 @@
           "sourceIds": []
         }
       ],
-      "aliases": [],
+      "aliases": [
+        {
+          "text": "मूंग",
+          "language": "hi",
+          "script": "Deva",
+          "kind": "local",
+          "sourceIds": []
+        },
+        {
+          "text": "பாசிப்பயறு",
+          "language": "ta",
+          "script": "Taml",
+          "kind": "local",
+          "sourceIds": []
+        },
+        {
+          "text": "moong",
+          "language": "hi",
+          "script": "Latn",
+          "kind": "transliteration",
+          "sourceIds": []
+        },
+        {
+          "text": "pasipayaru",
+          "language": "ta",
+          "script": "Latn",
+          "kind": "transliteration",
+          "sourceIds": []
+        }
+      ],
       "varieties": [],
       "productIds": [
         "green-gram-whole",
@@ -251,7 +587,36 @@
           "sourceIds": []
         }
       ],
-      "aliases": [],
+      "aliases": [
+        {
+          "text": "उड़द",
+          "language": "hi",
+          "script": "Deva",
+          "kind": "local",
+          "sourceIds": []
+        },
+        {
+          "text": "உளுந்து",
+          "language": "ta",
+          "script": "Taml",
+          "kind": "local",
+          "sourceIds": []
+        },
+        {
+          "text": "urad",
+          "language": "hi",
+          "script": "Latn",
+          "kind": "transliteration",
+          "sourceIds": []
+        },
+        {
+          "text": "ulundu",
+          "language": "ta",
+          "script": "Latn",
+          "kind": "transliteration",
+          "sourceIds": []
+        }
+      ],
       "varieties": [],
       "productIds": [
         "black-gram-whole",
@@ -280,6 +645,20 @@
           "sourceIds": [
             "aau-lentil"
           ]
+        },
+        {
+          "text": "मसूर",
+          "language": "hi",
+          "script": "Deva",
+          "kind": "local",
+          "sourceIds": []
+        },
+        {
+          "text": "மசூர் பருப்பு",
+          "language": "ta",
+          "script": "Taml",
+          "kind": "local",
+          "sourceIds": []
         }
       ],
       "varieties": [],
@@ -302,7 +681,50 @@
           "sourceIds": []
         }
       ],
-      "aliases": [],
+      "aliases": [
+        {
+          "text": "मूंगफली",
+          "language": "hi",
+          "script": "Deva",
+          "kind": "local",
+          "sourceIds": []
+        },
+        {
+          "text": "நிலக்கடலை",
+          "language": "ta",
+          "script": "Taml",
+          "kind": "local",
+          "sourceIds": []
+        },
+        {
+          "text": "வேர்க்கடலை",
+          "language": "ta",
+          "script": "Taml",
+          "kind": "local",
+          "sourceIds": []
+        },
+        {
+          "text": "moongphali",
+          "language": "hi",
+          "script": "Latn",
+          "kind": "transliteration",
+          "sourceIds": []
+        },
+        {
+          "text": "nilakadalai",
+          "language": "ta",
+          "script": "Latn",
+          "kind": "transliteration",
+          "sourceIds": []
+        },
+        {
+          "text": "verkadalai",
+          "language": "ta",
+          "script": "Latn",
+          "kind": "transliteration",
+          "sourceIds": []
+        }
+      ],
       "varieties": [],
       "productIds": [
         "groundnut-pod",
@@ -331,6 +753,20 @@
           "sourceIds": [
             "aau-soyabean"
           ]
+        },
+        {
+          "text": "सोयाबीन",
+          "language": "hi",
+          "script": "Deva",
+          "kind": "local",
+          "sourceIds": []
+        },
+        {
+          "text": "சோயாபீன்ஸ்",
+          "language": "ta",
+          "script": "Taml",
+          "kind": "local",
+          "sourceIds": []
         }
       ],
       "varieties": [],
@@ -368,6 +804,34 @@
           "sourceIds": [
             "aau-rapeseed"
           ]
+        },
+        {
+          "text": "सरसों",
+          "language": "hi",
+          "script": "Deva",
+          "kind": "local",
+          "sourceIds": []
+        },
+        {
+          "text": "கடுகு",
+          "language": "ta",
+          "script": "Taml",
+          "kind": "local",
+          "sourceIds": []
+        },
+        {
+          "text": "sarson",
+          "language": "hi",
+          "script": "Latn",
+          "kind": "transliteration",
+          "sourceIds": []
+        },
+        {
+          "text": "kadugu",
+          "language": "ta",
+          "script": "Latn",
+          "kind": "transliteration",
+          "sourceIds": []
         }
       ],
       "varieties": [],
@@ -405,6 +869,34 @@
           "sourceIds": [
             "aau-sesamum"
           ]
+        },
+        {
+          "text": "तिल",
+          "language": "hi",
+          "script": "Deva",
+          "kind": "local",
+          "sourceIds": []
+        },
+        {
+          "text": "எள்",
+          "language": "ta",
+          "script": "Taml",
+          "kind": "local",
+          "sourceIds": []
+        },
+        {
+          "text": "til",
+          "language": "hi",
+          "script": "Latn",
+          "kind": "transliteration",
+          "sourceIds": []
+        },
+        {
+          "text": "ellu",
+          "language": "ta",
+          "script": "Latn",
+          "kind": "transliteration",
+          "sourceIds": []
         }
       ],
       "varieties": [],
@@ -426,7 +918,36 @@
           "sourceIds": []
         }
       ],
-      "aliases": [],
+      "aliases": [
+        {
+          "text": "सूरजमुखी",
+          "language": "hi",
+          "script": "Deva",
+          "kind": "local",
+          "sourceIds": []
+        },
+        {
+          "text": "சூரியகாந்தி",
+          "language": "ta",
+          "script": "Taml",
+          "kind": "local",
+          "sourceIds": []
+        },
+        {
+          "text": "surajmukhi",
+          "language": "hi",
+          "script": "Latn",
+          "kind": "transliteration",
+          "sourceIds": []
+        },
+        {
+          "text": "suryakanthi",
+          "language": "ta",
+          "script": "Latn",
+          "kind": "transliteration",
+          "sourceIds": []
+        }
+      ],
       "varieties": [],
       "productIds": [
         "sunflower-seed"
@@ -446,7 +967,36 @@
           "sourceIds": []
         }
       ],
-      "aliases": [],
+      "aliases": [
+        {
+          "text": "आलू",
+          "language": "hi",
+          "script": "Deva",
+          "kind": "local",
+          "sourceIds": []
+        },
+        {
+          "text": "உருளைக்கிழங்கு",
+          "language": "ta",
+          "script": "Taml",
+          "kind": "local",
+          "sourceIds": []
+        },
+        {
+          "text": "aloo",
+          "language": "hi",
+          "script": "Latn",
+          "kind": "transliteration",
+          "sourceIds": []
+        },
+        {
+          "text": "urulaikizhangu",
+          "language": "ta",
+          "script": "Latn",
+          "kind": "transliteration",
+          "sourceIds": []
+        }
+      ],
       "varieties": [],
       "productIds": [
         "potato-fresh"
@@ -466,7 +1016,50 @@
           "sourceIds": []
         }
       ],
-      "aliases": [],
+      "aliases": [
+        {
+          "text": "प्याज़",
+          "language": "hi",
+          "script": "Deva",
+          "kind": "local",
+          "sourceIds": []
+        },
+        {
+          "text": "प्याज",
+          "language": "hi",
+          "script": "Deva",
+          "kind": "local",
+          "sourceIds": []
+        },
+        {
+          "text": "வெங்காயம்",
+          "language": "ta",
+          "script": "Taml",
+          "kind": "local",
+          "sourceIds": []
+        },
+        {
+          "text": "pyaz",
+          "language": "hi",
+          "script": "Latn",
+          "kind": "transliteration",
+          "sourceIds": []
+        },
+        {
+          "text": "pyaaz",
+          "language": "hi",
+          "script": "Latn",
+          "kind": "transliteration",
+          "sourceIds": []
+        },
+        {
+          "text": "vengayam",
+          "language": "ta",
+          "script": "Latn",
+          "kind": "transliteration",
+          "sourceIds": []
+        }
+      ],
       "varieties": [],
       "productIds": [
         "onion-bulb"
@@ -486,7 +1079,36 @@
           "sourceIds": []
         }
       ],
-      "aliases": [],
+      "aliases": [
+        {
+          "text": "टमाटर",
+          "language": "hi",
+          "script": "Deva",
+          "kind": "local",
+          "sourceIds": []
+        },
+        {
+          "text": "தக்காளி",
+          "language": "ta",
+          "script": "Taml",
+          "kind": "local",
+          "sourceIds": []
+        },
+        {
+          "text": "tamatar",
+          "language": "hi",
+          "script": "Latn",
+          "kind": "transliteration",
+          "sourceIds": []
+        },
+        {
+          "text": "thakkali",
+          "language": "ta",
+          "script": "Latn",
+          "kind": "transliteration",
+          "sourceIds": []
+        }
+      ],
       "varieties": [],
       "productIds": [
         "tomato-fresh"
@@ -506,7 +1128,43 @@
           "sourceIds": []
         }
       ],
-      "aliases": [],
+      "aliases": [
+        {
+          "text": "बैंगन",
+          "language": "hi",
+          "script": "Deva",
+          "kind": "local",
+          "sourceIds": []
+        },
+        {
+          "text": "கத்தரிக்காய்",
+          "language": "ta",
+          "script": "Taml",
+          "kind": "local",
+          "sourceIds": []
+        },
+        {
+          "text": "கத்தரி",
+          "language": "ta",
+          "script": "Taml",
+          "kind": "local",
+          "sourceIds": []
+        },
+        {
+          "text": "baingan",
+          "language": "hi",
+          "script": "Latn",
+          "kind": "transliteration",
+          "sourceIds": []
+        },
+        {
+          "text": "kathirikai",
+          "language": "ta",
+          "script": "Latn",
+          "kind": "transliteration",
+          "sourceIds": []
+        }
+      ],
       "varieties": [],
       "productIds": [
         "brinjal-fresh"
@@ -534,6 +1192,48 @@
           "sourceIds": [
             "tnau-bhendi-soil"
           ]
+        },
+        {
+          "text": "भिंडी",
+          "language": "hi",
+          "script": "Deva",
+          "kind": "local",
+          "sourceIds": []
+        },
+        {
+          "text": "வெண்டைக்காய்",
+          "language": "ta",
+          "script": "Taml",
+          "kind": "local",
+          "sourceIds": []
+        },
+        {
+          "text": "வெண்டை",
+          "language": "ta",
+          "script": "Taml",
+          "kind": "local",
+          "sourceIds": []
+        },
+        {
+          "text": "bhindi",
+          "language": "hi",
+          "script": "Latn",
+          "kind": "transliteration",
+          "sourceIds": []
+        },
+        {
+          "text": "vendakkai",
+          "language": "ta",
+          "script": "Latn",
+          "kind": "transliteration",
+          "sourceIds": []
+        },
+        {
+          "text": "vendaikai",
+          "language": "ta",
+          "script": "Latn",
+          "kind": "transliteration",
+          "sourceIds": []
         }
       ],
       "varieties": [],
@@ -555,7 +1255,57 @@
           "sourceIds": []
         }
       ],
-      "aliases": [],
+      "aliases": [
+        {
+          "text": "मिर्च",
+          "language": "hi",
+          "script": "Deva",
+          "kind": "local",
+          "sourceIds": []
+        },
+        {
+          "text": "मिर्ची",
+          "language": "hi",
+          "script": "Deva",
+          "kind": "local",
+          "sourceIds": []
+        },
+        {
+          "text": "மிளகாய்",
+          "language": "ta",
+          "script": "Taml",
+          "kind": "local",
+          "sourceIds": []
+        },
+        {
+          "text": "mirch",
+          "language": "hi",
+          "script": "Latn",
+          "kind": "transliteration",
+          "sourceIds": []
+        },
+        {
+          "text": "mirchi",
+          "language": "hi",
+          "script": "Latn",
+          "kind": "transliteration",
+          "sourceIds": []
+        },
+        {
+          "text": "milagai",
+          "language": "ta",
+          "script": "Latn",
+          "kind": "transliteration",
+          "sourceIds": []
+        },
+        {
+          "text": "molagai",
+          "language": "ta",
+          "script": "Latn",
+          "kind": "transliteration",
+          "sourceIds": []
+        }
+      ],
       "varieties": [],
       "productIds": [
         "chilli-green",
@@ -576,7 +1326,50 @@
           "sourceIds": []
         }
       ],
-      "aliases": [],
+      "aliases": [
+        {
+          "text": "अदरक",
+          "language": "hi",
+          "script": "Deva",
+          "kind": "local",
+          "sourceIds": []
+        },
+        {
+          "text": "இஞ்சி",
+          "language": "ta",
+          "script": "Taml",
+          "kind": "local",
+          "sourceIds": []
+        },
+        {
+          "text": "adrak",
+          "language": "hi",
+          "script": "Latn",
+          "kind": "transliteration",
+          "sourceIds": []
+        },
+        {
+          "text": "adrakh",
+          "language": "hi",
+          "script": "Latn",
+          "kind": "transliteration",
+          "sourceIds": []
+        },
+        {
+          "text": "inji",
+          "language": "ta",
+          "script": "Latn",
+          "kind": "transliteration",
+          "sourceIds": []
+        },
+        {
+          "text": "inchi",
+          "language": "ta",
+          "script": "Latn",
+          "kind": "transliteration",
+          "sourceIds": []
+        }
+      ],
       "varieties": [],
       "productIds": [
         "ginger-fresh",
@@ -597,7 +1390,36 @@
           "sourceIds": []
         }
       ],
-      "aliases": [],
+      "aliases": [
+        {
+          "text": "हल्दी",
+          "language": "hi",
+          "script": "Deva",
+          "kind": "local",
+          "sourceIds": []
+        },
+        {
+          "text": "மஞ்சள்",
+          "language": "ta",
+          "script": "Taml",
+          "kind": "local",
+          "sourceIds": []
+        },
+        {
+          "text": "haldi",
+          "language": "hi",
+          "script": "Latn",
+          "kind": "transliteration",
+          "sourceIds": []
+        },
+        {
+          "text": "manjal",
+          "language": "ta",
+          "script": "Latn",
+          "kind": "transliteration",
+          "sourceIds": []
+        }
+      ],
       "varieties": [],
       "productIds": [
         "turmeric-fresh",
@@ -618,7 +1440,36 @@
           "sourceIds": []
         }
       ],
-      "aliases": [],
+      "aliases": [
+        {
+          "text": "कपास",
+          "language": "hi",
+          "script": "Deva",
+          "kind": "local",
+          "sourceIds": []
+        },
+        {
+          "text": "பருத்தி",
+          "language": "ta",
+          "script": "Taml",
+          "kind": "local",
+          "sourceIds": []
+        },
+        {
+          "text": "kapas",
+          "language": "hi",
+          "script": "Latn",
+          "kind": "transliteration",
+          "sourceIds": []
+        },
+        {
+          "text": "paruthi",
+          "language": "ta",
+          "script": "Latn",
+          "kind": "transliteration",
+          "sourceIds": []
+        }
+      ],
       "varieties": [],
       "productIds": [
         "cotton-kapas",
@@ -1097,5 +1948,733 @@
       "sourceMappings": [],
       "mode": "live"
     }
-  ]
+  ],
+  "aliasSourcing": {
+    "addedBy": "task L5 (2026-10-30)",
+    "note": "Hindi/Tamil and romanised local names. basis \"sourced\" = the saved page under data/raw/crops states the name (sourceIds point at it). basis \"common_unsourced\" = widely used local name added without a saved source page in data/raw/crops or data/raw/iisr (no Devanagari or Tamil script occurs in those saved pages); the Alias contract has no unsourced kind, so these carry kind \"local\"/\"transliteration\" with empty sourceIds and are listed here. They support name resolution only and are not evidence for any agronomic claim. scripts/catalogue/build.ts regenerates this manifest and does not yet reproduce these entries.",
+    "counts": {
+      "sourced": 2,
+      "common_unsourced": 117
+    },
+    "entries": [
+      {
+        "cropId": "sorghum",
+        "text": "Jowar",
+        "language": "en",
+        "basis": "sourced",
+        "sourceId": "raw:crops/tnau-sorghum",
+        "locator": "data/raw/crops/tnau-sorghum.txt, section 7 Post Harvest Technology: \"In India, sorghum grain is known as \\\"jowar\\\"\""
+      },
+      {
+        "cropId": "pearl-millet",
+        "text": "Bajra",
+        "language": "en",
+        "basis": "sourced",
+        "sourceId": "raw:crops/tnau-cumbu",
+        "locator": "data/raw/crops/tnau-cumbu.txt, Post Harvest Technology: \"Bajra also known as cumbu, pearl millet ...\""
+      },
+      {
+        "cropId": "paddy",
+        "text": "धान",
+        "language": "hi",
+        "basis": "common_unsourced"
+      },
+      {
+        "cropId": "paddy",
+        "text": "चावल",
+        "language": "hi",
+        "basis": "common_unsourced"
+      },
+      {
+        "cropId": "paddy",
+        "text": "நெல்",
+        "language": "ta",
+        "basis": "common_unsourced"
+      },
+      {
+        "cropId": "paddy",
+        "text": "அரிசி",
+        "language": "ta",
+        "basis": "common_unsourced"
+      },
+      {
+        "cropId": "paddy",
+        "text": "dhan",
+        "language": "hi",
+        "basis": "common_unsourced"
+      },
+      {
+        "cropId": "paddy",
+        "text": "chawal",
+        "language": "hi",
+        "basis": "common_unsourced"
+      },
+      {
+        "cropId": "paddy",
+        "text": "nel",
+        "language": "ta",
+        "basis": "common_unsourced"
+      },
+      {
+        "cropId": "paddy",
+        "text": "arisi",
+        "language": "ta",
+        "basis": "common_unsourced"
+      },
+      {
+        "cropId": "wheat",
+        "text": "गेहूं",
+        "language": "hi",
+        "basis": "common_unsourced"
+      },
+      {
+        "cropId": "wheat",
+        "text": "गेहूँ",
+        "language": "hi",
+        "basis": "common_unsourced"
+      },
+      {
+        "cropId": "wheat",
+        "text": "கோதுமை",
+        "language": "ta",
+        "basis": "common_unsourced"
+      },
+      {
+        "cropId": "wheat",
+        "text": "gehun",
+        "language": "hi",
+        "basis": "common_unsourced"
+      },
+      {
+        "cropId": "wheat",
+        "text": "gehu",
+        "language": "hi",
+        "basis": "common_unsourced"
+      },
+      {
+        "cropId": "wheat",
+        "text": "godhumai",
+        "language": "ta",
+        "basis": "common_unsourced"
+      },
+      {
+        "cropId": "maize",
+        "text": "मक्का",
+        "language": "hi",
+        "basis": "common_unsourced"
+      },
+      {
+        "cropId": "maize",
+        "text": "மக்காச்சோளம்",
+        "language": "ta",
+        "basis": "common_unsourced"
+      },
+      {
+        "cropId": "maize",
+        "text": "makka",
+        "language": "hi",
+        "basis": "common_unsourced"
+      },
+      {
+        "cropId": "maize",
+        "text": "makkai",
+        "language": "hi",
+        "basis": "common_unsourced"
+      },
+      {
+        "cropId": "maize",
+        "text": "makkacholam",
+        "language": "ta",
+        "basis": "common_unsourced"
+      },
+      {
+        "cropId": "sorghum",
+        "text": "ज्वार",
+        "language": "hi",
+        "basis": "common_unsourced"
+      },
+      {
+        "cropId": "sorghum",
+        "text": "சோளம்",
+        "language": "ta",
+        "basis": "common_unsourced"
+      },
+      {
+        "cropId": "sorghum",
+        "text": "cholam",
+        "language": "ta",
+        "basis": "common_unsourced"
+      },
+      {
+        "cropId": "pearl-millet",
+        "text": "बाजरा",
+        "language": "hi",
+        "basis": "common_unsourced"
+      },
+      {
+        "cropId": "pearl-millet",
+        "text": "கம்பு",
+        "language": "ta",
+        "basis": "common_unsourced"
+      },
+      {
+        "cropId": "pearl-millet",
+        "text": "kambu",
+        "language": "ta",
+        "basis": "common_unsourced"
+      },
+      {
+        "cropId": "finger-millet",
+        "text": "रागी",
+        "language": "hi",
+        "basis": "common_unsourced"
+      },
+      {
+        "cropId": "finger-millet",
+        "text": "मंडुआ",
+        "language": "hi",
+        "basis": "common_unsourced"
+      },
+      {
+        "cropId": "finger-millet",
+        "text": "கேழ்வரகு",
+        "language": "ta",
+        "basis": "common_unsourced"
+      },
+      {
+        "cropId": "finger-millet",
+        "text": "ராகி",
+        "language": "ta",
+        "basis": "common_unsourced"
+      },
+      {
+        "cropId": "finger-millet",
+        "text": "mandua",
+        "language": "hi",
+        "basis": "common_unsourced"
+      },
+      {
+        "cropId": "finger-millet",
+        "text": "kezhvaragu",
+        "language": "ta",
+        "basis": "common_unsourced"
+      },
+      {
+        "cropId": "chickpea",
+        "text": "चना",
+        "language": "hi",
+        "basis": "common_unsourced"
+      },
+      {
+        "cropId": "chickpea",
+        "text": "கொண்டைக்கடலை",
+        "language": "ta",
+        "basis": "common_unsourced"
+      },
+      {
+        "cropId": "chickpea",
+        "text": "chana",
+        "language": "hi",
+        "basis": "common_unsourced"
+      },
+      {
+        "cropId": "chickpea",
+        "text": "kondaikadalai",
+        "language": "ta",
+        "basis": "common_unsourced"
+      },
+      {
+        "cropId": "pigeon-pea",
+        "text": "अरहर",
+        "language": "hi",
+        "basis": "common_unsourced"
+      },
+      {
+        "cropId": "pigeon-pea",
+        "text": "तूर",
+        "language": "hi",
+        "basis": "common_unsourced"
+      },
+      {
+        "cropId": "pigeon-pea",
+        "text": "துவரை",
+        "language": "ta",
+        "basis": "common_unsourced"
+      },
+      {
+        "cropId": "pigeon-pea",
+        "text": "tur",
+        "language": "hi",
+        "basis": "common_unsourced"
+      },
+      {
+        "cropId": "pigeon-pea",
+        "text": "toor",
+        "language": "hi",
+        "basis": "common_unsourced"
+      },
+      {
+        "cropId": "pigeon-pea",
+        "text": "thuvarai",
+        "language": "ta",
+        "basis": "common_unsourced"
+      },
+      {
+        "cropId": "green-gram",
+        "text": "मूंग",
+        "language": "hi",
+        "basis": "common_unsourced"
+      },
+      {
+        "cropId": "green-gram",
+        "text": "பாசிப்பயறு",
+        "language": "ta",
+        "basis": "common_unsourced"
+      },
+      {
+        "cropId": "green-gram",
+        "text": "moong",
+        "language": "hi",
+        "basis": "common_unsourced"
+      },
+      {
+        "cropId": "green-gram",
+        "text": "pasipayaru",
+        "language": "ta",
+        "basis": "common_unsourced"
+      },
+      {
+        "cropId": "black-gram",
+        "text": "उड़द",
+        "language": "hi",
+        "basis": "common_unsourced"
+      },
+      {
+        "cropId": "black-gram",
+        "text": "உளுந்து",
+        "language": "ta",
+        "basis": "common_unsourced"
+      },
+      {
+        "cropId": "black-gram",
+        "text": "urad",
+        "language": "hi",
+        "basis": "common_unsourced"
+      },
+      {
+        "cropId": "black-gram",
+        "text": "ulundu",
+        "language": "ta",
+        "basis": "common_unsourced"
+      },
+      {
+        "cropId": "lentil",
+        "text": "मसूर",
+        "language": "hi",
+        "basis": "common_unsourced"
+      },
+      {
+        "cropId": "lentil",
+        "text": "மசூர் பருப்பு",
+        "language": "ta",
+        "basis": "common_unsourced"
+      },
+      {
+        "cropId": "groundnut",
+        "text": "मूंगफली",
+        "language": "hi",
+        "basis": "common_unsourced"
+      },
+      {
+        "cropId": "groundnut",
+        "text": "நிலக்கடலை",
+        "language": "ta",
+        "basis": "common_unsourced"
+      },
+      {
+        "cropId": "groundnut",
+        "text": "வேர்க்கடலை",
+        "language": "ta",
+        "basis": "common_unsourced"
+      },
+      {
+        "cropId": "groundnut",
+        "text": "moongphali",
+        "language": "hi",
+        "basis": "common_unsourced"
+      },
+      {
+        "cropId": "groundnut",
+        "text": "nilakadalai",
+        "language": "ta",
+        "basis": "common_unsourced"
+      },
+      {
+        "cropId": "groundnut",
+        "text": "verkadalai",
+        "language": "ta",
+        "basis": "common_unsourced"
+      },
+      {
+        "cropId": "soybean",
+        "text": "सोयाबीन",
+        "language": "hi",
+        "basis": "common_unsourced"
+      },
+      {
+        "cropId": "soybean",
+        "text": "சோயாபீன்ஸ்",
+        "language": "ta",
+        "basis": "common_unsourced"
+      },
+      {
+        "cropId": "mustard",
+        "text": "सरसों",
+        "language": "hi",
+        "basis": "common_unsourced"
+      },
+      {
+        "cropId": "mustard",
+        "text": "கடுகு",
+        "language": "ta",
+        "basis": "common_unsourced"
+      },
+      {
+        "cropId": "mustard",
+        "text": "sarson",
+        "language": "hi",
+        "basis": "common_unsourced"
+      },
+      {
+        "cropId": "mustard",
+        "text": "kadugu",
+        "language": "ta",
+        "basis": "common_unsourced"
+      },
+      {
+        "cropId": "sesame",
+        "text": "तिल",
+        "language": "hi",
+        "basis": "common_unsourced"
+      },
+      {
+        "cropId": "sesame",
+        "text": "எள்",
+        "language": "ta",
+        "basis": "common_unsourced"
+      },
+      {
+        "cropId": "sesame",
+        "text": "til",
+        "language": "hi",
+        "basis": "common_unsourced"
+      },
+      {
+        "cropId": "sesame",
+        "text": "ellu",
+        "language": "ta",
+        "basis": "common_unsourced"
+      },
+      {
+        "cropId": "sunflower",
+        "text": "सूरजमुखी",
+        "language": "hi",
+        "basis": "common_unsourced"
+      },
+      {
+        "cropId": "sunflower",
+        "text": "சூரியகாந்தி",
+        "language": "ta",
+        "basis": "common_unsourced"
+      },
+      {
+        "cropId": "sunflower",
+        "text": "surajmukhi",
+        "language": "hi",
+        "basis": "common_unsourced"
+      },
+      {
+        "cropId": "sunflower",
+        "text": "suryakanthi",
+        "language": "ta",
+        "basis": "common_unsourced"
+      },
+      {
+        "cropId": "potato",
+        "text": "आलू",
+        "language": "hi",
+        "basis": "common_unsourced"
+      },
+      {
+        "cropId": "potato",
+        "text": "உருளைக்கிழங்கு",
+        "language": "ta",
+        "basis": "common_unsourced"
+      },
+      {
+        "cropId": "potato",
+        "text": "aloo",
+        "language": "hi",
+        "basis": "common_unsourced"
+      },
+      {
+        "cropId": "potato",
+        "text": "urulaikizhangu",
+        "language": "ta",
+        "basis": "common_unsourced"
+      },
+      {
+        "cropId": "onion",
+        "text": "प्याज़",
+        "language": "hi",
+        "basis": "common_unsourced"
+      },
+      {
+        "cropId": "onion",
+        "text": "प्याज",
+        "language": "hi",
+        "basis": "common_unsourced"
+      },
+      {
+        "cropId": "onion",
+        "text": "வெங்காயம்",
+        "language": "ta",
+        "basis": "common_unsourced"
+      },
+      {
+        "cropId": "onion",
+        "text": "pyaz",
+        "language": "hi",
+        "basis": "common_unsourced"
+      },
+      {
+        "cropId": "onion",
+        "text": "pyaaz",
+        "language": "hi",
+        "basis": "common_unsourced"
+      },
+      {
+        "cropId": "onion",
+        "text": "vengayam",
+        "language": "ta",
+        "basis": "common_unsourced"
+      },
+      {
+        "cropId": "tomato",
+        "text": "टमाटर",
+        "language": "hi",
+        "basis": "common_unsourced"
+      },
+      {
+        "cropId": "tomato",
+        "text": "தக்காளி",
+        "language": "ta",
+        "basis": "common_unsourced"
+      },
+      {
+        "cropId": "tomato",
+        "text": "tamatar",
+        "language": "hi",
+        "basis": "common_unsourced"
+      },
+      {
+        "cropId": "tomato",
+        "text": "thakkali",
+        "language": "ta",
+        "basis": "common_unsourced"
+      },
+      {
+        "cropId": "brinjal",
+        "text": "बैंगन",
+        "language": "hi",
+        "basis": "common_unsourced"
+      },
+      {
+        "cropId": "brinjal",
+        "text": "கத்தரிக்காய்",
+        "language": "ta",
+        "basis": "common_unsourced"
+      },
+      {
+        "cropId": "brinjal",
+        "text": "கத்தரி",
+        "language": "ta",
+        "basis": "common_unsourced"
+      },
+      {
+        "cropId": "brinjal",
+        "text": "baingan",
+        "language": "hi",
+        "basis": "common_unsourced"
+      },
+      {
+        "cropId": "brinjal",
+        "text": "kathirikai",
+        "language": "ta",
+        "basis": "common_unsourced"
+      },
+      {
+        "cropId": "okra",
+        "text": "भिंडी",
+        "language": "hi",
+        "basis": "common_unsourced"
+      },
+      {
+        "cropId": "okra",
+        "text": "வெண்டைக்காய்",
+        "language": "ta",
+        "basis": "common_unsourced"
+      },
+      {
+        "cropId": "okra",
+        "text": "வெண்டை",
+        "language": "ta",
+        "basis": "common_unsourced"
+      },
+      {
+        "cropId": "okra",
+        "text": "bhindi",
+        "language": "hi",
+        "basis": "common_unsourced"
+      },
+      {
+        "cropId": "okra",
+        "text": "vendakkai",
+        "language": "ta",
+        "basis": "common_unsourced"
+      },
+      {
+        "cropId": "okra",
+        "text": "vendaikai",
+        "language": "ta",
+        "basis": "common_unsourced"
+      },
+      {
+        "cropId": "chilli",
+        "text": "मिर्च",
+        "language": "hi",
+        "basis": "common_unsourced"
+      },
+      {
+        "cropId": "chilli",
+        "text": "मिर्ची",
+        "language": "hi",
+        "basis": "common_unsourced"
+      },
+      {
+        "cropId": "chilli",
+        "text": "மிளகாய்",
+        "language": "ta",
+        "basis": "common_unsourced"
+      },
+      {
+        "cropId": "chilli",
+        "text": "mirch",
+        "language": "hi",
+        "basis": "common_unsourced"
+      },
+      {
+        "cropId": "chilli",
+        "text": "mirchi",
+        "language": "hi",
+        "basis": "common_unsourced"
+      },
+      {
+        "cropId": "chilli",
+        "text": "milagai",
+        "language": "ta",
+        "basis": "common_unsourced"
+      },
+      {
+        "cropId": "chilli",
+        "text": "molagai",
+        "language": "ta",
+        "basis": "common_unsourced"
+      },
+      {
+        "cropId": "ginger",
+        "text": "अदरक",
+        "language": "hi",
+        "basis": "common_unsourced"
+      },
+      {
+        "cropId": "ginger",
+        "text": "இஞ்சி",
+        "language": "ta",
+        "basis": "common_unsourced"
+      },
+      {
+        "cropId": "ginger",
+        "text": "adrak",
+        "language": "hi",
+        "basis": "common_unsourced"
+      },
+      {
+        "cropId": "ginger",
+        "text": "adrakh",
+        "language": "hi",
+        "basis": "common_unsourced"
+      },
+      {
+        "cropId": "ginger",
+        "text": "inji",
+        "language": "ta",
+        "basis": "common_unsourced"
+      },
+      {
+        "cropId": "ginger",
+        "text": "inchi",
+        "language": "ta",
+        "basis": "common_unsourced"
+      },
+      {
+        "cropId": "turmeric",
+        "text": "हल्दी",
+        "language": "hi",
+        "basis": "common_unsourced"
+      },
+      {
+        "cropId": "turmeric",
+        "text": "மஞ்சள்",
+        "language": "ta",
+        "basis": "common_unsourced"
+      },
+      {
+        "cropId": "turmeric",
+        "text": "haldi",
+        "language": "hi",
+        "basis": "common_unsourced"
+      },
+      {
+        "cropId": "turmeric",
+        "text": "manjal",
+        "language": "ta",
+        "basis": "common_unsourced"
+      },
+      {
+        "cropId": "cotton",
+        "text": "कपास",
+        "language": "hi",
+        "basis": "common_unsourced"
+      },
+      {
+        "cropId": "cotton",
+        "text": "பருத்தி",
+        "language": "ta",
+        "basis": "common_unsourced"
+      },
+      {
+        "cropId": "cotton",
+        "text": "kapas",
+        "language": "hi",
+        "basis": "common_unsourced"
+      },
+      {
+        "cropId": "cotton",
+        "text": "paruthi",
+        "language": "ta",
+        "basis": "common_unsourced"
+      }
+    ]
+  }
 }
