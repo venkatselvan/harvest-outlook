@@ -98,3 +98,16 @@ Rows of non-scored markets are kept in the export but are outside the scored set
 Subset of upstream rows (the L2 ingest was page-capped and the API order is not chronological); availability assumed, not
 recorded; unit assumed INR/quintal; Hassan-district level anomaly unexplained; market renames joined by name inference;
 modal price is a wholesale reference, not farm-gate; 5 seasons x 3 markets is a small sample; weather is reanalysis.
+
+## Amendment 1 (2026-10-30, before any replay or score was computed)
+
+Reason: running the export showed that exclusion rule 3 (modal > 3.5x or < 0.25x the Karnataka-wide monthly median)
+removes 441 rows in the scored markets (Binny Mill 220, Ramanagara 186, Belur 35). They cluster in Bengaluru-area markets
+in years when their level sat far above the state median, which is dominated by low Hassan-district quotes (for example
+Ramanagara 2018: 142 rows averaging ~5,900 INR/quintal against a state median of ~1,270). The rule may therefore remove
+genuine terminal-market prices rather than scaling errors. This was seen in exclusion counts and row levels only; no
+forecast or score existed.
+
+Change: none to the primary run. The registered rule stays and the primary run (all release decisions) uses it. One
+secondary sensitivity run is added, identical except that rule 3 is not applied (rules 1, 2, 4 and 5 still apply). It is
+reported next to the primary and is **not** used for the release choice. No other variant will be run.

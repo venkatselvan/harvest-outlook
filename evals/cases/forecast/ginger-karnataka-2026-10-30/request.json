@@ -168,5 +168,15 @@
    "C_base",
    "C_weather"
   ]
- }
+ },
+ "sensitivityRuns": [
+  {
+   "id": "no-scaling-rule",
+   "skipExclusionRules": [
+    "scaling_flag_3_5x_or_0_25x_ka_month_median"
+   ],
+   "usedForRelease": false,
+   "amendment": "holdout-policy.md Amendment 1"
+  }
+ ]
 }
