@@ -6,6 +6,7 @@ import { MetaError } from "../src/providers/meta/types";
 import { restoreOptionals, strictViolations, toRawJsonSchema, toStrictJsonSchema } from "../src/providers/meta/strict-schema";
 import { FixtureProvider, loadScenario } from "../src/agent/fixture-provider";
 import { MetaProvider, selectProvider, UnavailableProvider } from "../src/agent/provider";
+import { ProposedProfile } from "../src/agent/schemas";
 
 const KEY = "sk-test-SECRET-1234567890";
 const ok = (body: unknown, headers: Record<string, string> = { "x-request-id": "req-abc" }) => new Response(JSON.stringify(body), { status: 200, headers: { "content-type": "application/json", ...headers } });
@@ -43,9 +44,9 @@ describe("Meta Responses client: documented shapes", () => {
   });
 
   it("parses usage defensively: missing, negative, wrong types and alternate names", () => {
-    expect(parseUsage(undefined)).toEqual({ inputTokens: 0, outputTokens: 0, cachedInputTokens: 0 });
-    expect(parseUsage({ input_tokens: "12", output_tokens: -3 })).toEqual({ inputTokens: 0, outputTokens: 0, cachedInputTokens: 0 });
-    expect(parseUsage({ prompt_tokens: 7, completion_tokens: 2, prompt_tokens_details: { cached_tokens: 5 } })).toEqual({ inputTokens: 7, outputTokens: 2, cachedInputTokens: 5 });
+    expect(parseUsage(undefined)).toEqual({ inputTokens: 0, outputTokens: 0, cachedInputTokens: 0, reasoningTokens: 0 });
+    expect(parseUsage({ input_tokens: "12", output_tokens: -3 })).toEqual({ inputTokens: 0, outputTokens: 0, cachedInputTokens: 0, reasoningTokens: 0 });
+    expect(parseUsage({ prompt_tokens: 7, completion_tokens: 2, prompt_tokens_details: { cached_tokens: 5 } })).toEqual({ inputTokens: 7, outputTokens: 2, cachedInputTokens: 5, reasoningTokens: 0 });
   });
 
   it("sends the documented request shape: flat function tools, text.format fields, previous_response_id, Bearer key", async () => {
@@ -157,12 +158,35 @@ describe("strict-mode schema post-processing", () => {
   });
 
   it("optional properties become nullable-required and are restored to absent before zod validation", () => {
-    const strict = toStrictJsonSchema(StructuredAssistantOutput) as { properties: Record<string, { anyOf?: unknown[] }> };
-    expect(strict.properties.proposedPlanChange!.anyOf).toContainEqual({ type: "null" });
+    const strict = toStrictJsonSchema(StructuredAssistantOutput) as { properties: Record<string, { anyOf?: unknown[]; type?: unknown }> };
+    // Live 2026-10-30: nullable is emitted as a type array (`["object","null"]`) when the schema has one type.
+    const p = strict.properties.proposedPlanChange!;
+    expect(Array.isArray(p.type) ? p.type : (p.anyOf ?? [])).toContainEqual(Array.isArray(p.type) ? "null" : { type: "null" });
     const modelOut = { schemaVersion: "1.0", intent: "explore_crops", language: "en", proposedFacts: [], clarifications: [], toolRequests: [], answerBlocks: [], numericRefs: [], claimEvidenceRefs: [], proposedPlanChange: null, limitations: [] };
     expect(StructuredAssistantOutput.safeParse(modelOut).success).toBe(false); // null is not a valid optional
     const restored = restoreOptionals(toRawJsonSchema(StructuredAssistantOutput), modelOut);
     expect(StructuredAssistantOutput.safeParse(restored).success).toBe(true);
+  });
+
+  it("emits nullable optionals as type arrays (live finding) and adds null to enums", () => {
+    const strict = toStrictJsonSchema(ToolSchemas.resolve_crop_identity.input) as { properties: Record<string, Record<string, unknown>> };
+    expect(strict.properties.context!.type).toEqual(["object", "null"]);
+    expect((strict.properties.context!.properties as Record<string, { type: unknown }>).districtId!.type).toEqual(["string", "null"]);
+    const profile = toStrictJsonSchema(ProposedProfile) as { properties: { facts: { items: { properties: Record<string, Record<string, unknown>> } } } };
+    const unit = profile.properties.facts.items.properties.unit!;
+    expect(unit.type).toEqual(["string", "null"]);
+    expect(unit.enum).toContain(null);
+    expect(strictViolations(profile)).toEqual([]);
+  });
+
+  it('treats the string "null" as absent only for optional properties that cannot be strings', () => {
+    const raw = toRawJsonSchema(ToolSchemas.resolve_crop_identity.input);
+    // Recorded from live 2026-10-30: {"context":"null","language":"en","text":"ginger"}
+    const restored = restoreOptionals(raw, { context: "null", language: "en", text: "ginger" });
+    expect(restored).toEqual({ language: "en", text: "ginger" });
+    expect(ToolSchemas.resolve_crop_identity.input.safeParse(restored).success).toBe(true);
+    // A required string field keeps a literal "null".
+    expect(restoreOptionals(raw, { language: "en", text: "null" })).toEqual({ language: "en", text: "null" });
   });
 
   it("does not strip an explicit null where the contract requires a nullable field", () => {

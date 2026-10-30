@@ -1,0 +1,135 @@
+{
+  "recordedFromLive": true,
+  "recordedAt": "2026-10-30",
+  "endpoint": "POST https://api.meta.ai/v1/responses",
+  "description": "text.format json_schema strict, 2 fields incl. anyOf nullable integer",
+  "sanitization": "response/item/call ids replaced with stable placeholders; timestamps zeroed; request id header not kept",
+  "request": {
+    "model": "muse-spark-1.3",
+    "instructions": "Extract the city and the number of people.",
+    "input": "Three of us are travelling to Pune next week.",
+    "max_output_tokens": 200,
+    "reasoning": {
+      "effort": "minimal"
+    },
+    "text": {
+      "format": {
+        "type": "json_schema",
+        "name": "trip",
+        "strict": true,
+        "schema": {
+          "type": "object",
+          "properties": {
+            "city": {
+              "type": "string"
+            },
+            "people": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": [
+            "city",
+            "people"
+          ],
+          "additionalProperties": false
+        }
+      }
+    }
+  },
+  "httpStatus": 200,
+  "response": {
+    "top_logprobs": 0,
+    "temperature": 1.0,
+    "top_p": 1.0,
+    "service_tier": "auto",
+    "model": "muse-spark-1.3",
+    "reasoning": {
+      "effort": "minimal"
+    },
+    "background": false,
+    "text": {
+      "format": {
+        "type": "json_schema",
+        "name": "trip",
+        "schema": {
+          "properties": {
+            "city": {
+              "type": "string"
+            },
+            "people": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "city",
+            "people"
+          ]
+        },
+        "strict": true
+      }
+    },
+    "tools": [],
+    "tool_choice": "auto",
+    "truncation": "disabled",
+    "id": "resp_redacted1",
+    "object": "response",
+    "status": "completed",
+    "created_at": 0,
+    "completed_at": 0,
+    "error": null,
+    "incomplete_details": null,
+    "output": [
+      {
+        "type": "reasoning",
+        "id": "rs_redacted2:rs_redacted3",
+        "summary": [],
+        "status": "completed"
+      },
+      {
+        "type": "message",
+        "id": "msg_redacted4",
+        "role": "assistant",
+        "content": [
+          {
+            "type": "output_text",
+            "text": "{\"city\": \"Pune\", \"people\": 3}",
+            "annotations": [],
+            "logprobs": []
+          }
+        ],
+        "status": "completed"
+      }
+    ],
+    "instructions": "Extract the city and the number of people.",
+    "usage": {
+      "input_tokens": 87,
+      "input_tokens_details": {
+        "cached_tokens": 0
+      },
+      "output_tokens": 93,
+      "output_tokens_details": {
+        "reasoning_tokens": 71
+      },
+      "total_tokens": 180
+    },
+    "parallel_tool_calls": true,
+    "store": true,
+    "max_output_tokens": 200
+  }
+}

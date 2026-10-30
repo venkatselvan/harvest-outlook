@@ -11,6 +11,7 @@ const { exitCode } = await runLiveSmoke(
     META_BASE_URL: process.env.META_BASE_URL,
     META_TEXT_MODEL: process.env.META_TEXT_MODEL,
     PRICE_TABLE_JSON: process.env.PRICE_TABLE_JSON,
+    META_SMOKE_REASONING_EFFORT: process.env.META_SMOKE_REASONING_EFFORT,
   },
   { outDir: fileURLToPath(new URL("../../evals/results/live-smoke", import.meta.url)) },
 );

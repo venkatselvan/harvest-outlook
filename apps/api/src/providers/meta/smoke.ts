@@ -7,7 +7,7 @@ import { ProposedProfile } from "../../agent/schemas";
 import { DEFAULT_PRICE_TABLE, estimateCost, loadPriceTable } from "../../services/pricing";
 import { MetaClient, imageUserMessage, redactSecrets } from "./client";
 import { restoreOptionals, toRawJsonSchema, toStrictJsonSchema } from "./strict-schema";
-import type { InputItem, MetaResponse, ParsedUsage } from "./types";
+import type { InputItem, MetaResponse, ParsedUsage, ReasoningEffort } from "./types";
 import { MetaError } from "./types";
 
 /** Opt-in live smoke (BUILD_SPEC 10.3). Only the account integration is confirmed here; nothing about agronomic accuracy. */
@@ -19,6 +19,8 @@ export interface SmokeEnv {
   META_BASE_URL?: string | undefined;
   META_TEXT_MODEL?: string | undefined;
   PRICE_TABLE_JSON?: string | undefined;
+  /** Reasoning effort for the smoke calls; defaults to "low" (the server default is "high"). */
+  META_SMOKE_REASONING_EFFORT?: string | undefined;
 }
 
 interface StepRecord {
@@ -38,6 +40,8 @@ export interface SmokeReport {
   generatedAt: string;
   baseUrl: string;
   model: string;
+  reasoningEffort: ReasoningEffort;
+  maxOutputTokens: number;
   capUsd: number;
   totalEstimatedUsd: number;
   costBasis: "estimated_from_reported_usage_not_billed";
@@ -59,7 +63,11 @@ export async function runLiveSmoke(env: SmokeEnv, opts: { fetchImpl?: typeof fet
   const client = new MetaClient({ apiKey: key, baseUrl, ...(opts.fetchImpl ? { fetchImpl: opts.fetchImpl } : {}), timeoutMs: 60_000 });
   let spent = 0;
   const steps: StepRecord[] = [];
-  const maxOut = 400;
+  // Verified live 2026-10-30: muse-spark-1.3 defaults to reasoning effort "high" and hidden reasoning tokens count
+  // against max_output_tokens; the first smoke (cap 400/100) ended `incomplete` with only a reasoning item.
+  const maxOut = 2000;
+  const effortEnv = env.META_SMOKE_REASONING_EFFORT;
+  const effort: ReasoningEffort = effortEnv === "minimal" || effortEnv === "low" || effortEnv === "medium" || effortEnv === "high" ? effortEnv : "low";
 
   const price = (u: ParsedUsage) => estimateCost(prices, "meta", model, { inputTokens: u.inputTokens, outputTokens: u.outputTokens }).usd ?? 0;
   /** Refuses any call whose worst case could cross the hard cap. */
@@ -73,6 +81,14 @@ export async function runLiveSmoke(env: SmokeEnv, opts: { fetchImpl?: typeof fet
       await fn(rec);
       rec.ok = true;
     } catch (e) {
+      if (e instanceof MetaError && e.info.usage) {
+        const cost = price(e.info.usage);
+        spent += cost;
+        rec.requestIds.push(e.requestId);
+        rec.usage.push(e.info.usage);
+        rec.estimatedUsd = Math.round((rec.estimatedUsd + cost) * 1e6) / 1e6;
+        rec.observations.incompleteReason = e.info.incompleteReason ?? null;
+      }
       rec.error = redactSecrets(e instanceof MetaError ? `${e.kind}: ${e.message}` : String((e as Error).message ?? e), key).slice(0, 300);
     }
     steps.push(rec);
@@ -86,6 +102,9 @@ export async function runLiveSmoke(env: SmokeEnv, opts: { fetchImpl?: typeof fet
     rec.estimatedUsd = Math.round((rec.estimatedUsd + cost) * 1e6) / 1e6;
     rec.latencyMs += r.latencyMs;
     rec.retries += r.retries;
+    const calls = Array.isArray(rec.observations.calls) ? (rec.observations.calls as unknown[]) : [];
+    calls.push({ status: r.status, incompleteReason: r.incompleteReason, reasoningTokens: r.usage.reasoningTokens ?? 0, outputChars: r.outputText?.length ?? 0, functionCalls: r.functionCalls.map((c) => c.name), refusal: r.refusal !== null });
+    rec.observations.calls = calls;
   };
 
   // 1. Structured profile extraction (strict json_schema via text.format).
@@ -98,9 +117,10 @@ export async function runLiveSmoke(env: SmokeEnv, opts: { fetchImpl?: typeof fet
       input: text,
       textFormat: { name: "proposed_profile", schema: toStrictJsonSchema(ProposedProfile) },
       maxOutputTokens: maxOut,
+      reasoningEffort: effort,
     });
     record(rec, r);
-    rec.observations = { responseHasOutputText: r.outputText !== null, status: r.status, incompleteReason: r.incompleteReason };
+    Object.assign(rec.observations, { responseHasOutputText: r.outputText !== null, status: r.status, incompleteReason: r.incompleteReason });
     const parsed = ProposedProfile.safeParse(restoreOptionals(toRawJsonSchema(ProposedProfile), JSON.parse(r.outputText ?? "null")));
     rec.observations.schemaValid = parsed.success;
     if (!parsed.success) throw new Error("structured output did not validate against ProposedProfile");
@@ -112,19 +132,20 @@ export async function runLiveSmoke(env: SmokeEnv, opts: { fetchImpl?: typeof fet
     const tool = { type: "function" as const, name: "resolve_crop_identity", description: "Resolve a crop name or alias to catalogue candidates.", parameters: toStrictJsonSchema(ToolSchemas.resolve_crop_identity.input), strict: true };
     const prompt = "Which catalogue crop is 'ginger'? Use the tool resolve_crop_identity with text 'ginger' and language 'en'.";
     guard(prompt.length + JSON.stringify(tool).length);
-    const first = await client.createResponse({ model, instructions: "Call tools when needed, then answer in one sentence.", input: prompt, tools: [tool], maxOutputTokens: maxOut });
+    const first = await client.createResponse({ model, instructions: "Call tools when needed, then answer in one sentence.", input: prompt, tools: [tool], maxOutputTokens: maxOut, reasoningEffort: effort });
     record(rec, first);
     const fc = first.functionCalls[0];
-    rec.observations = { functionCallCount: first.functionCalls.length, callIdLength: fc?.callId.length ?? null };
+    Object.assign(rec.observations, { functionCallCount: first.functionCalls.length, callIdLength: fc?.callId.length ?? null });
     if (!fc || fc.name !== "resolve_crop_identity") throw new Error("model did not call resolve_crop_identity");
     const args = ToolSchemas.resolve_crop_identity.input.safeParse(restoreOptionals(toRawJsonSchema(ToolSchemas.resolve_crop_identity.input), JSON.parse(fc.arguments)));
     rec.observations.argumentsValid = args.success;
+    if (!args.success) rec.observations.argumentIssues = args.error.issues.map((i) => `${i.path.join(".")}: ${i.code}`).slice(0, 5);
     if (!args.success) throw new Error("tool arguments failed contract validation");
     if (!first.responseId) throw new Error("response id missing; cannot continue with previous_response_id");
     const output = resolveCropIdentity(args.data.text, [syntheticCrop()], [], { language: args.data.language });
     const followUp: InputItem[] = [{ type: "function_call_output", call_id: fc.callId, output: JSON.stringify(output) }];
     guard(JSON.stringify(followUp).length + (first.usage.inputTokens + first.usage.outputTokens) * 2);
-    const second = await client.createResponse({ model, instructions: "Call tools when needed, then answer in one sentence.", input: followUp, tools: [tool], previousResponseId: first.responseId, maxOutputTokens: maxOut });
+    const second = await client.createResponse({ model, instructions: "Call tools when needed, then answer in one sentence.", input: followUp, tools: [tool], previousResponseId: first.responseId, maxOutputTokens: maxOut, reasoningEffort: effort });
     record(rec, second);
     rec.observations.finalHasText = second.outputText !== null;
     rec.observations.toolOutputCandidates = output.candidates.length;
@@ -139,10 +160,11 @@ export async function runLiveSmoke(env: SmokeEnv, opts: { fetchImpl?: typeof fet
       model,
       instructions: "Answer in one word.",
       input: [await imageUserMessage("What is the dominant colour of this image?", png)],
-      maxOutputTokens: 100,
+      maxOutputTokens: 1000,
+      reasoningEffort: effort,
     });
     record(rec, r);
-    rec.observations = { answeredText: r.outputText?.slice(0, 40) ?? null, mentionsRed: /red/i.test(r.outputText ?? ""), imageSentAs: "data_url_base64" };
+    Object.assign(rec.observations, { answeredText: r.outputText?.slice(0, 40) ?? null, mentionsRed: /red/i.test(r.outputText ?? ""), imageSentAs: "data_url_base64" });
     if (r.outputText === null) throw new Error("no text answer for the image");
   });
 
@@ -151,6 +173,8 @@ export async function runLiveSmoke(env: SmokeEnv, opts: { fetchImpl?: typeof fet
     generatedAt: (opts.now ?? new Date()).toISOString(),
     baseUrl,
     model,
+    reasoningEffort: effort,
+    maxOutputTokens: maxOut,
     capUsd: SMOKE_CAP_USD,
     totalEstimatedUsd: Math.round(spent * 1e6) / 1e6,
     costBasis: "estimated_from_reported_usage_not_billed",

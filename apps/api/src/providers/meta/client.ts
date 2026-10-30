@@ -34,28 +34,45 @@ export function parseUsage(u: unknown): ParsedUsage {
     inputTokens: num(o.input_tokens ?? o.prompt_tokens),
     outputTokens: num(o.output_tokens ?? o.completion_tokens),
     cachedInputTokens: num(details.cached_tokens ?? o.cached_input_tokens),
+    // Verified live 2026-10-30: `output_tokens_details.reasoning_tokens` is included in `output_tokens`.
+    reasoningTokens: num(obj(o.output_tokens_details ?? o.completion_tokens_details).reasoning_tokens),
   };
 }
 
 export interface ParsedOutput {
   outputText: string | null;
   functionCalls: ParsedFunctionCall[];
+  refusal: string | null;
 }
 
-/** Reads `message` (output_text) and `function_call` items; ignores reasoning and unknown item types. */
+/**
+ * Reads `message` (output_text) and `function_call` items; ignores reasoning and unknown item types.
+ *
+ * Verified live 2026-10-30 (muse-spark-1.3): `output` starts with a `reasoning` item (empty summary), then
+ * `message` items whose `content[]` holds `{type: "output_text", text}`. When tools are offered, the model may
+ * emit a preamble `message` with `phase: "commentary"` before its `function_call` items; that preamble is not
+ * the answer (and would corrupt a JSON payload if concatenated), so commentary text is used only when the
+ * response has no other message text and no function calls. Function calls whose item status is
+ * `incomplete` (truncated arguments) are dropped. `refusal` content parts are surfaced separately.
+ */
 export function parseOutputItems(body: Record<string, unknown>): ParsedOutput {
   const texts: string[] = [];
+  const commentary: string[] = [];
+  const refusals: string[] = [];
   const functionCalls: ParsedFunctionCall[] = [];
   const output = Array.isArray(body.output) ? body.output : [];
   for (const raw of output) {
     const item = obj(raw);
     if (item.type === "message") {
       const content = Array.isArray(item.content) ? item.content : [];
+      const sink = item.phase === "commentary" ? commentary : texts;
       for (const c of content) {
         const part = obj(c);
-        if (part.type === "output_text" && typeof part.text === "string") texts.push(part.text);
+        if (part.type === "output_text" && typeof part.text === "string") sink.push(part.text);
+        else if (part.type === "refusal" && typeof part.refusal === "string") refusals.push(part.refusal);
       }
     } else if (item.type === "function_call") {
+      if (item.status === "incomplete") continue;
       const name = item.name;
       const callId = item.call_id ?? item.id;
       if (typeof name === "string" && typeof callId === "string" && callId.length >= 1 && callId.length <= 64) {
@@ -64,8 +81,9 @@ export function parseOutputItems(body: Record<string, unknown>): ParsedOutput {
     }
   }
   let outputText: string | null = texts.length > 0 ? texts.join("") : null;
+  if (outputText === null && functionCalls.length === 0 && commentary.length > 0) outputText = commentary.join("");
   if (outputText === null && typeof body.output_text === "string") outputText = body.output_text;
-  return { outputText, functionCalls };
+  return { outputText, functionCalls, refusal: refusals.length > 0 ? refusals.join(" ").slice(0, 500) : null };
 }
 
 export class MetaClient {
@@ -162,17 +180,32 @@ export class MetaClient {
     if (Object.keys(body).length === 0) throw new MetaError("invalid_response", "Provider returned an empty or non-object body", { requestId, retries, outcomeUncertain: true });
     const parsed = parseOutputItems(body);
     const incomplete = obj(body.incomplete_details);
+    const usage = parseUsage(body.usage);
+    const status = typeof body.status === "string" ? body.status : null;
+    const incompleteReason = typeof incomplete.reason === "string" ? incomplete.reason : null;
+    if (status === "incomplete") {
+      // Verified live 2026-10-30: with the server-default reasoning effort ("high") a small max_output_tokens is
+      // spent entirely on hidden reasoning and the response ends `incomplete` / `max_output_tokens` with only a
+      // reasoning item. Tokens were billed, so the error is marked outcome-uncertain (callers keep the reservation).
+      throw new MetaError("incomplete", `Provider response incomplete: ${incompleteReason ?? "unknown reason"} (output tokens ${usage.outputTokens}, reasoning tokens ${usage.reasoningTokens ?? 0})`, { requestId, retries, outcomeUncertain: true, usage, incompleteReason });
+    }
+    if (status === "failed") {
+      const err = obj(body.error);
+      const msg = [err.code, err.message].filter((x): x is string => typeof x === "string").join(" / ").slice(0, 200);
+      throw new MetaError("server_error", `Provider response failed${msg ? `: ${msg}` : ""}`, { requestId, retries, outcomeUncertain: true, usage });
+    }
     return {
       responseId: typeof body.id === "string" ? body.id : null,
       requestId,
       model: typeof body.model === "string" ? body.model : "unknown",
-      status: typeof body.status === "string" ? body.status : null,
+      status,
       outputText: parsed.outputText,
       functionCalls: parsed.functionCalls,
-      usage: parseUsage(body.usage),
+      refusal: parsed.refusal,
+      usage,
       latencyMs,
       retries,
-      incompleteReason: typeof incomplete.reason === "string" ? incomplete.reason : null,
+      incompleteReason,
     };
   }
 

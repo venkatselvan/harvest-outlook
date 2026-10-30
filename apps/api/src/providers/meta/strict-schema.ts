@@ -54,7 +54,7 @@ function strictify(node: unknown): unknown {
     const props = out.properties;
     const required = new Set(Array.isArray(out.required) ? (out.required as string[]) : []);
     for (const key of Object.keys(props)) {
-      if (!required.has(key)) props[key] = { anyOf: [props[key], { type: "null" }] };
+      if (!required.has(key)) props[key] = nullable(props[key]);
     }
     out.required = Object.keys(props);
     out.additionalProperties = false;
@@ -63,6 +63,42 @@ function strictify(node: unknown): unknown {
     out.required = [];
     out.additionalProperties = false;
   }
+  return collapseNullableAnyOf(out);
+}
+
+const isNullType = (b: unknown): boolean => isObj(b) && b.type === "null" && Object.keys(b).length === 1;
+const singleType = (n: JsonSchema): string | null => (typeof n.type === "string" && n.type !== "null" && n.anyOf === undefined && n.allOf === undefined && n.const === undefined ? n.type : null);
+
+/**
+ * Makes a schema nullable using a type array (`type: [T, "null"]`) when it has a single primitive/object type,
+ * falling back to `anyOf [schema, {type: "null"}]` otherwise.
+ *
+ * Verified live 2026-10-30 (muse-spark-1.3, strict function tool): with `anyOf [object, null]` the model
+ * returned the *string* `"null"` for an omitted optional object (`{"context":"null",...}`), which fails the
+ * contract; with `type: ["object", "null"]` it returned a JSON `null`. Both forms are accepted by the API.
+ */
+function nullable(node: unknown): JsonSchema {
+  if (isObj(node)) {
+    const t = singleType(node);
+    if (t !== null) {
+      const out: JsonSchema = { ...node, type: [t, "null"] };
+      if (Array.isArray(node.enum) && !node.enum.includes(null)) out.enum = [...node.enum, null];
+      return out;
+    }
+    if (Array.isArray(node.anyOf) && node.anyOf.some(isNullType)) return node;
+  }
+  return { anyOf: [node, { type: "null" }] };
+}
+
+/** Rewrites `anyOf [T, {type: "null"}]` (zod `.nullable()`) into the type-array form when T has a single type. */
+function collapseNullableAnyOf(node: JsonSchema): JsonSchema {
+  const keys = Object.keys(node);
+  if (!Array.isArray(node.anyOf) || node.anyOf.length !== 2 || keys.some((k) => k !== "anyOf" && k !== "description")) return node;
+  const [a, b] = node.anyOf as unknown[];
+  const other = isNullType(a) ? b : isNullType(b) ? a : null;
+  if (!isObj(other) || singleType(other) === null) return node;
+  const out = nullable(other);
+  if (typeof node.description === "string" && out.description === undefined) out.description = node.description;
   return out;
 }
 
@@ -95,6 +131,15 @@ const pickBranch = (branches: unknown[], value: JsonSchema): JsonSchema | null =
   return byConst[0] ?? fits[0] ?? null;
 };
 
+const acceptsString = (n: unknown): boolean => {
+  if (!isObj(n)) return true; // unknown schema: be conservative and keep the value
+  const t = n.type;
+  if (t === "string" || (Array.isArray(t) && t.includes("string"))) return true;
+  const branches = (Array.isArray(n.anyOf) ? n.anyOf : Array.isArray(n.oneOf) ? n.oneOf : null) as unknown[] | null;
+  if (branches) return branches.some(acceptsString);
+  return t === undefined && n.properties === undefined && n.enum === undefined && n.const === undefined;
+};
+
 /**
  * Removes `null` values for properties that the original (non-strict) schema marks optional.
  * Guided by the raw JSON Schema so required nullable fields keep their explicit null.
@@ -115,6 +160,9 @@ export function restoreOptionals(raw: unknown, value: unknown): unknown {
   const out: JsonSchema = {};
   for (const [k, v] of Object.entries(value)) {
     if (v === null && !required.has(k) && k in raw.properties) continue;
+    // Live quirk (2026-10-30): the string "null" was emitted for an omitted optional object. Treat it as absent
+    // only when the property's schema cannot accept a string, so a real string value is never discarded.
+    if (v === "null" && !required.has(k) && k in raw.properties && !acceptsString((raw.properties as JsonSchema)[k])) continue;
     out[k] = restoreOptionals((raw.properties as JsonSchema)[k], v);
   }
   return out;

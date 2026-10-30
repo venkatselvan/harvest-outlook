@@ -39,6 +39,8 @@ export interface ParsedUsage {
   inputTokens: number;
   outputTokens: number;
   cachedInputTokens: number;
+  /** Hidden reasoning tokens; already counted inside outputTokens (do not add twice). */
+  reasoningTokens?: number;
 }
 
 export interface ParsedFunctionCall {
@@ -58,19 +60,21 @@ export interface MetaResponse {
   /** Concatenated output_text of all assistant message items, or null when none. */
   outputText: string | null;
   functionCalls: ParsedFunctionCall[];
+  /** Text of any `refusal` content part, or null. */
+  refusal: string | null;
   usage: ParsedUsage;
   latencyMs: number;
   retries: number;
   incompleteReason: string | null;
 }
 
-export type MetaErrorKind = "provider_unavailable" | "unauthorized" | "bad_request" | "rate_limited" | "server_error" | "network" | "timeout" | "aborted" | "invalid_response";
+export type MetaErrorKind = "provider_unavailable" | "unauthorized" | "bad_request" | "rate_limited" | "server_error" | "network" | "timeout" | "aborted" | "invalid_response" | "incomplete";
 
 export class MetaError extends Error {
   constructor(
     public readonly kind: MetaErrorKind,
     message: string,
-    public readonly info: { status?: number; requestId?: string | null; retries?: number; outcomeUncertain?: boolean } = {},
+    public readonly info: { status?: number; requestId?: string | null; retries?: number; outcomeUncertain?: boolean; usage?: ParsedUsage; incompleteReason?: string | null } = {},
   ) {
     super(message);
     this.name = "MetaError";

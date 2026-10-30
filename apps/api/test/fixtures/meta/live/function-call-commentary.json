@@ -1,0 +1,125 @@
+{
+  "recordedFromLive": true,
+  "recordedAt": "2026-10-30",
+  "endpoint": "POST https://api.meta.ai/v1/responses",
+  "description": "Strict function tool get_weather, tool_choice auto; commentary message precedes function_call",
+  "sanitization": "response/item/call ids replaced with stable placeholders; timestamps zeroed; request id header not kept",
+  "request": {
+    "model": "muse-spark-1.3",
+    "instructions": "Call tools when needed, then answer in one sentence.",
+    "input": "What is the weather in Pune right now? Use the get_weather tool.",
+    "max_output_tokens": 200,
+    "reasoning": {
+      "effort": "minimal"
+    },
+    "tools": [
+      {
+        "type": "function",
+        "name": "get_weather",
+        "description": "Current weather for a city.",
+        "strict": true,
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "city": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "city"
+          ],
+          "additionalProperties": false
+        }
+      }
+    ],
+    "tool_choice": "auto",
+    "parallel_tool_calls": false
+  },
+  "httpStatus": 200,
+  "response": {
+    "top_logprobs": 0,
+    "temperature": 1.0,
+    "top_p": 1.0,
+    "service_tier": "auto",
+    "model": "muse-spark-1.3",
+    "reasoning": {
+      "effort": "minimal"
+    },
+    "background": false,
+    "tools": [
+      {
+        "type": "function",
+        "name": "get_weather",
+        "description": "Current weather for a city.",
+        "parameters": {
+          "required": [
+            "city"
+          ],
+          "additionalProperties": false,
+          "type": "object",
+          "properties": {
+            "city": {
+              "type": "string"
+            }
+          }
+        },
+        "strict": true
+      }
+    ],
+    "tool_choice": "auto",
+    "truncation": "disabled",
+    "id": "resp_redacted1",
+    "object": "response",
+    "status": "completed",
+    "created_at": 0,
+    "completed_at": 0,
+    "error": null,
+    "incomplete_details": null,
+    "output": [
+      {
+        "type": "reasoning",
+        "id": "rs_redacted2:rs_redacted3",
+        "summary": [],
+        "status": "completed"
+      },
+      {
+        "type": "message",
+        "id": "rs_redacted4",
+        "role": "assistant",
+        "content": [
+          {
+            "type": "output_text",
+            "text": "I'll check Pune's current weather for you.",
+            "annotations": [],
+            "logprobs": []
+          }
+        ],
+        "phase": "commentary",
+        "status": "completed"
+      },
+      {
+        "type": "function_call",
+        "id": "fc_redacted5",
+        "call_id": "call_redacted6",
+        "name": "get_weather",
+        "arguments": "{\"city\":\"Pune\"}",
+        "status": "completed"
+      }
+    ],
+    "instructions": "Call tools when needed, then answer in one sentence.",
+    "usage": {
+      "input_tokens": 551,
+      "input_tokens_details": {
+        "cached_tokens": 0
+      },
+      "output_tokens": 87,
+      "output_tokens_details": {
+        "reasoning_tokens": 19
+      },
+      "total_tokens": 638
+    },
+    "parallel_tool_calls": false,
+    "store": true,
+    "max_output_tokens": 200
+  }
+}
