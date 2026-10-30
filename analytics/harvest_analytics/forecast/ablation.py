@@ -87,7 +87,11 @@ def _jsonable(obj: Any) -> Any:
 def run_ablation(case: dict[str, Any], *, seasons: list[dict[str, Any]] | None = None,
                  model_config: dict[str, Any] | None = None, training_policy: dict[str, Any] | None = None,
                  run_id: str | None = None, results_dir: Path | None = None, write: bool = True,
-                 run_date: str | None = None) -> dict[str, Any]:
+                 run_date: str | None = None, real_data: dict[str, Any] | None = None,
+                 extra_limitations: list[str] | None = None,
+                 real_data_hook: Any = None) -> dict[str, Any]:
+    """real_data / extra_limitations / real_data_hook(records, report) -> dict are used by real_loader for
+    non-synthetic runs; the hook's output is merged into report["realData"] before schema validation."""
     synthetic = bool(case.get("synthetic"))
     mode = "synthetic" if synthetic else "replay"
     obs = observations_frame(case["observations"])
@@ -162,7 +166,9 @@ def run_ablation(case: dict[str, Any], *, seasons: list[dict[str, Any]] | None =
     n_seasons = len({r.get("seasonId") for r in records if r.get("scored")})
     if n_seasons < 5:
         limitations.append(f"Only {n_seasons} scored season(s): no uncertainty interval is reported for MAE and no broad accuracy claim is supported.")
-    limitations += BASE_LIMITATIONS
+    limitations += list(extra_limitations or [])
+    # The synthetic model-selection caveat says no real data was evaluated; real runs state their own version instead.
+    limitations += [x for x in BASE_LIMITATIONS if synthetic or not x.startswith("Selection on the evaluation set")]
     report = {
         "schemaVersion": "1.0",
         "runId": run_id,
@@ -184,6 +190,13 @@ def run_ablation(case: dict[str, Any], *, seasons: list[dict[str, Any]] | None =
         "leakageChecks": {"passed": passed, "nChecks": len(checks), "checks": checks},
         "limitations": limitations,
     }
+    if real_data is not None:
+        if synthetic:
+            raise ContractError("realData is only valid for non-synthetic runs")
+        rd = dict(real_data)
+        if real_data_hook is not None:
+            rd.update(real_data_hook(records, report))
+        report["realData"] = rd
     report = _jsonable(report)
     validate(report, "replay_report", what="replay report")
     if write:
@@ -216,16 +229,59 @@ def aggregate_table(report: dict[str, Any]) -> str:
     return "\n".join(lines)
 
 
+def real_data_markdown(report: dict[str, Any]) -> str:
+    rd = report["realData"]
+    out = [f"## Real data run: mode {report['mode']} (real source data, not synthetic)\n"]
+    pr = rd["preRegistration"]
+    out.append(f"- Pre-registered policy: `{pr['policyPath']}`, commit {pr.get('commit') or 'n/a'}; amendments: {', '.join(pr.get('amendments') or []) or 'none'}")
+    out.append(f"- Variant: **{rd.get('variant', 'primary')}**; used for release decision: {rd.get('usedForRelease')}")
+    for k, v in rd["availabilityAssumptions"].items():
+        out.append(f"- Availability ({k}): {v}")
+    em = rd["exportManifest"]
+    out.append(f"- Export: {em.get('path')} sha256(json) {em.get('sha256Json', '')[:16]}..., price rows exported {em.get('pricesExported')}, weather rows {em.get('weatherExported')}")
+    out.append(f"- Exclusions before replay (by reason): {json.dumps(em.get('excludedByReason'), sort_keys=True)}")
+    out.append(f"- Exclusions before replay (by market): {json.dumps(em.get('excludedByMarket'), sort_keys=True)}\n")
+    if rd.get("perMarket"):
+        out.append("### Per market (all scored seasons)\n")
+        out.append("| market | model | targets | abstained | scored | MAE INR/kg | MASE | WIS80 | coverage80 | width80 |\n| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |")
+        for mk, models in rd["perMarket"].items():
+            for m, s in models.items():
+                out.append(f"| {mk} | {m} | {s['nTargets']} | {s['nAbstained']} | {s['nScored']} | {_f(s['mae'])} | {_f(s['mase'])} | {_f(s['wis80'])} | {_f(s['coverage80'])} | {_f(s['meanWidth80'])} |")
+        out.append("")
+    if rd.get("perMarketSeason"):
+        out.append("### Per market and season: MAE INR/kg (n scored / abstained)\n")
+        seasons = [c["seasonId"] for c in report["perCutoff"]]
+        out.append("| market | model | " + " | ".join(seasons) + " |\n| --- | --- |" + " --- |" * len(seasons))
+        for mk, models in rd["perMarketSeason"].items():
+            for m, by in models.items():
+                out.append(f"| {mk} | {m} | " + " | ".join(
+                    (f"{_f(by[s]['mae'], 2)} ({by[s]['nScored']}/{by[s]['nAbstained']})" if s in by else "n/a") for s in seasons) + " |")
+        out.append("")
+    dec = rd["releaseDecision"]
+    out.append("### Release decision under the registered rule\n")
+    out.append(f"Rule: {dec['rule']}\n")
+    out.append("| market | release model | best baseline | C choice | common n | reason |\n| --- | --- | --- | --- | --- | --- |")
+    for mk, d in dec["perMarket"].items():
+        out.append(f"| {mk} | **{d['releaseModel']}** | {d.get('bestBaseline')} | {d.get('cChoice')} | {d.get('nCommon')} | {d['reason']} |")
+    out.append("")
+    if rd.get("leakagePerturbation"):
+        lp = rd["leakagePerturbation"]
+        out.append(f"### Post-cutoff perturbation check\n\n{lp['description']} Result: {'passed' if lp['passed'] else 'FAILED'} ({lp['nCutoffs']} cutoffs).\n")
+    return "\n".join(out) + "\n"
+
+
 def markdown_summary(report: dict[str, Any]) -> str:
     out = []
     if report["synthetic"]:
         out.append("> **SYNTHETIC DATA - NOT A MARKET EVALUATION.** Generated series for code verification only; not ginger data and not any real market.\n")
     out.append(f"# Forecast ablation report `{report['runId']}`\n")
     cv = report["codeVersion"]
-    out.append(f"- mode: **{report['mode']}**\n- runDate: {report['runDate']}\n- codeVersion: git {cv['gitSha'] or 'none'}, sourceHash {cv['sourceHash']}, package {cv['packageVersion']}\n"
+    out.append(f"- mode: **{report['mode']}{' (real)' if not report['synthetic'] else ''}**\n- runDate: {report['runDate']}\n- codeVersion: git {cv['gitSha'] or 'none'}, sourceHash {cv['sourceHash']}, package {cv['packageVersion']}\n"
                f"- dataSnapshotId: {report['dataSnapshotId']}\n- product: {report['productId']}; markets: {', '.join(report['marketIds'])}\n"
                f"- target: {report['target']['statistic']} ({report['target']['unit']})\n- training policy: {json.dumps(report['trainingPolicy'], sort_keys=True)}\n"
                f"- cutoffs: {', '.join(c['decisionCutoff'] for c in report['perCutoff'])}\n- leakage checks: {'passed' if report['leakageChecks']['passed'] else 'FAILED'} ({report['leakageChecks']['nChecks']} checks)\n")
+    if report.get("realData"):
+        out.append(real_data_markdown(report))
     out.append("## Aggregate (all cutoffs, all markets)\n")
     out.append(aggregate_table(report) + "\n")
     cs = report["aggregate"]["commonSet"]

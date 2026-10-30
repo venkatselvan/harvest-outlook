@@ -13,6 +13,7 @@
     "synthetic": {"type": "boolean"},
     "banner": {"type": "string", "minLength": 1},
     "inputLabel": {"type": ["string", "null"]},
+    "realData": {"type": "object", "required": ["preRegistration", "availabilityAssumptions", "exportManifest", "releaseDecision"], "description": "Real-data run context: pre-registration, availability assumptions, pre-replay exclusions, per market x season tables, release decision under the registered rule."},
     "runDate": {"$ref": "observation_row.schema.json#/$defs/dateTime"},
     "codeVersion": {
       "type": "object",

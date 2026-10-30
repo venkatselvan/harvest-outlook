@@ -1,0 +1,118 @@
+{
+ "caseId": "ginger-karnataka-2026-10-30",
+ "generatedAt": "2026-10-30T06:55:28.515Z",
+ "requestSha256": "2928571fc591806bd7a088575ffd5a70ebfefd65700fd109f6c291378693ff9c",
+ "sensitivity": {
+  "id": "no-scaling-rule",
+  "skipExclusionRules": [
+   "scaling_flag_3_5x_or_0_25x_ka_month_median"
+  ],
+  "usedForRelease": false,
+  "amendment": "holdout-policy.md Amendment 1"
+ },
+ "export": {
+  "path": "data/replay/ginger-karnataka-2026-10-30/rows-no-scaling-rule.json.gz",
+  "bytesGzip": 515559,
+  "bytesJson": 6332256,
+  "sha256Gzip": "5629f2c6888acfd2ffc326de196e4ace1f7a83a190700eabb771655d8eab2c46",
+  "sha256Json": "6d38b9142e1b71f889039efe7672d51fbbf1f29bb3cd13ae3eae60d203f0b9f8",
+  "committed": false,
+  "note": "regenerate with pnpm replay:export; the DB rows are the source"
+ },
+ "source": {
+  "manifestId": "MKT02-dgi-mandi-variety",
+  "state": "Karnataka",
+  "productId": "ginger-fresh",
+  "storedUnits": [
+   "INR/quintal"
+  ],
+  "unitBasis": "agmarknet_convention_inr_per_quintal (assumed, not confirmed)"
+ },
+ "prices": {
+  "rowsReadAllKarnataka": 60324,
+  "rowsOutsideScoredMarkets": 48535,
+  "exported": 9960,
+  "excludedByReason": {
+   "observed_before_training_start": 1826,
+   "price_order_violation": 2,
+   "modal_below_300_inr_per_quintal": 1
+  },
+  "excludedByMarket": {
+   "agmarknet:ka:binny-mill-fv-bengaluru": {
+    "observed_before_training_start": 1231
+   },
+   "agmarknet:ka:ramanagara": {
+    "observed_before_training_start": 58,
+    "price_order_violation": 2
+   },
+   "agmarknet:ka:belur": {
+    "observed_before_training_start": 537,
+    "modal_below_300_inr_per_quintal": 1
+   }
+  },
+  "perMarket": {
+   "agmarknet:ka:binny-mill-fv-bengaluru": {
+    "sourceMarketIds": {
+     "agmarknet:karnataka-bangalore-binny-mill-f-v-bangalore": 5133,
+     "agmarknet:karnataka-bangalore-binny-mill-f-v-bangalore-apmc": 132,
+     "agmarknet:karnataka-bengaluru-binny-mill-f-v-bengaluru-apmc": 83,
+     "agmarknet:karnataka-bengaluru-binny-mill-ff-v-bengaluru-apmc": 110
+    },
+    "exported": 4227,
+    "first": "2010-01-01",
+    "last": "2026-10-29",
+    "revisions": 0
+   },
+   "agmarknet:ka:belur": {
+    "sourceMarketIds": {
+     "agmarknet:karnataka-hassan-belur": 2948,
+     "agmarknet:karnataka-hassan-belur-apmc": 193
+    },
+    "exported": 2603,
+    "first": "2010-01-01",
+    "last": "2026-10-28",
+    "revisions": 1
+   },
+   "agmarknet:ka:ramanagara": {
+    "sourceMarketIds": {
+     "agmarknet:karnataka-bangalore-ramanagara": 2788,
+     "agmarknet:karnataka-bangalore-ramanagara-apmc": 198,
+     "agmarknet:karnataka-bengaluru-south-ramanagara-apmc": 204
+    },
+    "exported": 3130,
+    "first": "2011-12-29",
+    "last": "2026-10-29",
+    "revisions": 0
+   }
+  }
+ },
+ "weather": {
+  "locationKey": "open-meteo:12.970,76.091",
+  "regionId": "open-meteo:hassan-13.00-76.10",
+  "measurementKind": "reanalysis",
+  "daysRead": 6147,
+  "nullPrecipDropped": 0,
+  "exported": 6147,
+  "first": "2010-01-01",
+  "last": "2026-10-30"
+ },
+ "availability": {
+  "prices": {
+   "basis": "assumed_publication_lag_1d",
+   "lagDays": 1,
+   "localTime": "00:00+05:30"
+  },
+  "weather": {
+   "basis": "assumed_reanalysis_lag_6d",
+   "lagDays": 6,
+   "localTime": "00:00+05:30"
+  },
+  "revisions": "vintage 1 at assumed availability; later vintages at their recorded fetch time with revisionOf"
+ },
+ "rules": {
+  "lowFloorInrPerQuintal": 300,
+  "scalingHighX": 3.5,
+  "scalingLowX": 0.25,
+  "monthMedianBasis": "Karnataka ginger-fresh valid vintage-1 rows, all markets, same calendar month"
+ }
+}

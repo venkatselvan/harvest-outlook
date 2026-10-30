@@ -2,6 +2,11 @@
  * L2: ingest real Karnataka ginger mandi prices from the data.gov.in VARIETY-WISE resource (history back to 2002/2014).
  *
  *   pnpm ingest:ginger-ka [-- --products "Ginger(Green),Ginger(Dry)" --max-pages 60 --start-offset 0 --dry-run]
+ *   pnpm ingest:ginger-ka -- --products "Ginger(Green)" --markets "Belur|Belur APMC" --max-pages 10 --label markets
+ *
+ * T07b extension: --markets adds filters[Market] (exact source name; "|"-separated because names contain commas) and
+ * loops products x markets under the same global page cap; --label makes the summary filename unique so a later run
+ * never overwrites an earlier run's summary.
  *
  * - Capitalised fields (Arrival_Date, Modal_Price ...) and filters[State]/filters[Commodity] (exact case).
  * - The API cannot filter by date range and its default order is NOT chronological (observed), and
@@ -35,6 +40,8 @@ const state = arg("state", "Karnataka");
 const maxPages = Number(arg("max-pages", "60"));
 const startOffset = Number(arg("start-offset", "0"));
 const dryRun = process.argv.includes("--dry-run");
+const markets = arg("markets", "").split("|").map((s) => s.trim()).filter(Boolean);
+const label = arg("label", "").replace(/[^a-z0-9-]/gi, "");
 
 const config = loadProviderConfig();
 if (!config.DATA_GOV_IN_API_KEY) {
@@ -56,7 +63,7 @@ if (!process.env.DATABASE_URL && !dryRun) {
 
 const pool = dryRun ? null : createPool(process.env.DATABASE_URL!);
 const startedAt = new Date();
-const hash = payloadHash({ resourceId: RESOURCE, state, products, startOffset, maxPages });
+const hash = payloadHash({ resourceId: RESOURCE, state, products, markets, startOffset, maxPages });
 const runId = pool ? await startRun(pool, { jobId: null, jobType: "ingest.market_prices", hash, provider: "data.gov.in", mode: "live" }) : null;
 const sourceId = pool
   ? await ensureSource(pool, MANDI_RESOURCES[RESOURCE]!.manifestId, { title: MANDI_RESOURCES[RESOURCE]!.title, publisher: "Open Government Data Platform India", url: `https://api.data.gov.in/resource/${RESOURCE}`, licence: "see manifest" })
@@ -64,20 +71,22 @@ const sourceId = pool
 
 const seen = new Map<string, string>();
 const sig = (r: MandiRow) => [r.priceMin, r.priceModal, r.priceMax].join("|");
-const summary: Record<string, unknown> = { resourceId: RESOURCE, state, startedAt: startedAt.toISOString(), maxPages, startOffset, dryRun, perProduct: {} as Record<string, unknown> };
+const summary: Record<string, unknown> = { resourceId: RESOURCE, state, markets: markets.length ? markets : null, label: label || null, startedAt: startedAt.toISOString(), maxPages, startOffset, dryRun, perProduct: {} as Record<string, unknown> };
 let pagesUsed = 0;
 let fatal: string | null = null;
 
-for (const commodity of products) {
-  const p: Record<string, unknown> = { commodity, pages: 0, recordsRead: 0, normalized: 0, rejected: 0, rejectedReasons: {} as Record<string, number>, duplicatesIgnored: 0, conflictsKeptFirst: 0, stored: { inserted: 0, revisions: 0, unchanged: 0, skippedNoProduct: 0, skippedUnmapped: 0 }, total: null, dates: { min: null, max: null }, truncated: false, nextOffset: startOffset };
-  (summary.perProduct as Record<string, unknown>)[commodity] = p;
+const jobs: { commodity: string; market: string | null }[] = products.flatMap((commodity): { commodity: string; market: string | null }[] => (markets.length ? markets.map((market) => ({ commodity, market })) : [{ commodity, market: null }]));
+for (const { commodity, market } of jobs) {
+  const jobKey = market ? `${commodity} @ ${market}` : commodity;
+  const p: Record<string, unknown> = { commodity, market, pages: 0, recordsRead: 0, normalized: 0, rejected: 0, rejectedReasons: {} as Record<string, number>, duplicatesIgnored: 0, conflictsKeptFirst: 0, stored: { inserted: 0, revisions: 0, unchanged: 0, skippedNoProduct: 0, skippedUnmapped: 0 }, total: null, dates: { min: null, max: null }, truncated: false, nextOffset: startOffset };
+  (summary.perProduct as Record<string, unknown>)[jobKey] = p;
   let offset = startOffset;
   let minD: string | null = null;
   let maxD: string | null = null;
   while (pagesUsed < maxPages) {
-    const res = await fetchMandiPrices({ resourceId: RESOURCE, rawFilters: { State: state, Commodity: commodity }, limit: 1000, offset, maxPages: 1, maxRecords: 1000 }, { config });
+    const res = await fetchMandiPrices({ resourceId: RESOURCE, rawFilters: market ? { State: state, Commodity: commodity, Market: market } : { State: state, Commodity: commodity }, limit: 1000, offset, maxPages: 1, maxRecords: 1000 }, { config });
     if (res.status !== "ok") {
-      fatal = `${commodity} offset ${offset}: ${res.status === "unavailable" ? `${res.reason}: ${res.detail}` : res.status}`;
+      fatal = `${jobKey} offset ${offset}: ${res.status === "unavailable" ? `${res.reason}: ${res.detail}` : res.status}`;
       break;
     }
     pagesUsed++;
@@ -105,12 +114,12 @@ for (const commodity of products) {
     p.normalized = (p.normalized as number) + fresh.length;
     if (pool && sourceId) {
       const c: MarketStoreCounts = await storeMarketRows(pool, fresh, { sourceId, mode: "live", availableAt: new Date(res.fetchedAt) });
-      const s = p.stored as Record<string, number>;
+      const s = p.stored as { inserted: number; revisions: number; unchanged: number; skippedNoProduct: number; skippedUnmapped: number };
       s.inserted += c.inserted; s.revisions += c.revisions; s.unchanged += c.unchanged; s.skippedNoProduct += c.skippedNoProduct; s.skippedUnmapped += c.skippedUnmapped;
     }
     offset += res.records.length;
     p.nextOffset = offset;
-    console.log(`${commodity} page ${pagesUsed}/${maxPages}: offset ${offset}/${res.total ?? "?"}, +${res.records.length} read, ${fresh.length} new identities`);
+    console.log(`${jobKey} page ${pagesUsed}/${maxPages}: offset ${offset}/${res.total ?? "?"}, +${res.records.length} read, ${fresh.length} new identities`);
     if (res.records.length < 1000 || (res.total !== null && offset >= res.total)) break;
   }
   p.dates = { min: minD, max: maxD };
@@ -127,10 +136,10 @@ summary.note = "API default order is not chronological, so a capped run is a ran
 
 const outDir = resolve(dirname(fileURLToPath(import.meta.url)), "../../data/raw/datagovin");
 mkdirSync(outDir, { recursive: true });
-const file = resolve(outDir, `ingest-ginger-karnataka-${startedAt.toISOString().slice(0, 10)}.json`);
+const file = resolve(outDir, `ingest-ginger-karnataka-${startedAt.toISOString().slice(0, 10)}${label ? `-${label}` : ""}.json`);
 writeFileSync(file, JSON.stringify(summary, null, 1) + "\n");
 if (pool && runId) {
-  await finishRun(pool, runId, fatal ? "failed" : "succeeded", { pagesUsed, perProduct: summary.perProduct }, { startOffset, resourceId: RESOURCE, state, products });
+  await finishRun(pool, runId, fatal ? "failed" : "succeeded", { pagesUsed, perProduct: summary.perProduct }, { startOffset, resourceId: RESOURCE, state, products, markets });
   await pool.end();
 }
 console.log(JSON.stringify(summary, null, 1));

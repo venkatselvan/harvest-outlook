@@ -9,6 +9,7 @@ from typing import Any
 from .ablation import REPO_ROOT, run_ablation
 from .contracts import inputs_frame, normalize_source_rows, observations_frame
 from .errors import ContractError
+from .real_loader import run_real
 from .replay import run_replay
 from .synthetic import generate
 
@@ -51,15 +52,25 @@ def synthetic_series(payload: dict[str, Any]) -> dict[str, Any]:
 
 
 def ablation(payload: dict[str, Any]) -> dict[str, Any]:
-    case = _case(payload)
-    report = run_ablation(case, seasons=payload.get("seasons"), model_config=payload.get("modelConfig"),
-                          training_policy=payload.get("trainingPolicy"), run_id=payload.get("runId"),
-                          write=bool(payload.get("writeReport", False)), run_date=payload.get("runDate"))
+    if "requestPath" in payload:
+        # Real-data run under a pre-registered request (real_loader); no inline overrides of the registered config.
+        if any(k in payload for k in ("case", "casePath", "seasons", "modelConfig", "trainingPolicy")):
+            raise ContractError("requestPath runs take seasons, model and training policy only from the registered request")
+        report = run_real(payload)
+    else:
+        report = _ablation_case(payload)
     if payload.get("summaryOnly"):
         return {k: report[k] for k in ("runId", "mode", "synthetic", "banner", "runDate", "codeVersion", "dataSnapshotId",
-                                       "aggregate", "leakageChecks", "limitations") if k in report} | (
+                                       "aggregate", "leakageChecks", "limitations", "realData") if k in report} | (
             {"_written": report["_written"]} if "_written" in report else {})
     return report
+
+
+def _ablation_case(payload: dict[str, Any]) -> dict[str, Any]:
+    case = _case(payload)
+    return run_ablation(case, seasons=payload.get("seasons"), model_config=payload.get("modelConfig"),
+                          training_policy=payload.get("trainingPolicy"), run_id=payload.get("runId"),
+                          write=bool(payload.get("writeReport", False)), run_date=payload.get("runDate"))
 
 
 def replay(payload: dict[str, Any]) -> dict[str, Any]:

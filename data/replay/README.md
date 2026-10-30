@@ -1,0 +1,3 @@
+# Replay exports
+
+`ginger-karnataka-2026-10-30/rows.json.gz` is the frozen input to the real-data forecast replay (evals/results/ginger-ka-20261030-766fc001). Rows are Agmarknet mandi quotes redistributed from data.gov.in (GODL-India per portal; licence text not verified verbatim) plus Open-Meteo ERA5 reanalysis (CC BY 4.0, "Weather data by Open-Meteo.com"). Prices are in INR/quintal as published; availability times are ASSUMED (next-day publication; reanalysis +6 days) as declared in evals/cases/forecast/ginger-karnataka-2026-10-30/holdout-policy.md. The export is a subset of upstream rows (API paging repeats rows). No private data.

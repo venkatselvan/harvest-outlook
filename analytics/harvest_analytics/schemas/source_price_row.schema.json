@@ -19,7 +19,7 @@
     "arrivalsUnit": {"enum": ["tonnes", "quintal", null]},
     "sourceId": {"$ref": "observation_row.schema.json#/$defs/id"},
     "availableAt": {"$ref": "observation_row.schema.json#/$defs/dateTime"},
-    "availableAtBasis": {"enum": ["recorded", "conservative_upper_bound", "estimated"]},
+    "availableAtBasis": {"enum": ["recorded", "conservative_upper_bound", "estimated", "assumed_publication_lag_1d", "assumed_reanalysis_lag_6d"]},
     "revisionOf": {"anyOf": [{"$ref": "observation_row.schema.json#/$defs/id"}, {"type": "null"}]}
   }
 }

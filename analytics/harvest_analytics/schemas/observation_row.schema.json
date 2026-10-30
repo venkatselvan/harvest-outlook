@@ -17,7 +17,7 @@
     "arrivalsTonnes": {"type": ["number", "null"], "minimum": 0},
     "sourceId": {"$ref": "#/$defs/id"},
     "availableAt": {"$ref": "#/$defs/dateTime"},
-    "availableAtBasis": {"enum": ["recorded", "conservative_upper_bound", "estimated"], "description": "recorded = observed publication/first-seen time; conservative_upper_bound = latest possible time, used as-is; estimated = unverifiable, rejected from strict replay."},
+    "availableAtBasis": {"enum": ["recorded", "conservative_upper_bound", "estimated", "assumed_publication_lag_1d", "assumed_reanalysis_lag_6d"], "description": "recorded = observed publication/first-seen time; conservative_upper_bound = latest possible time, used as-is; estimated = unverifiable, rejected from strict replay; assumed_* = availability assigned by a declared, disclosed replay policy (observation date + a stated lag), accepted by strict replay and counted in the feature audit, never a recorded time."},
     "revisionOf": {"anyOf": [{"$ref": "#/$defs/id"}, {"type": "null"}]},
     "sourceUnit": {"enum": ["INR/kg", "INR/quintal"]}
   },
