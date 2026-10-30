@@ -25,6 +25,11 @@ export interface MandiFilters {
 export interface MandiRequest {
   resourceId: string;
   filters?: MandiFilters;
+  /**
+   * Exact-case filter names for resources whose fields are Capitalised (the variety-wise resource uses
+   * filters[State], filters[Commodity], filters[Arrival_Date] ...). Merged after `filters`.
+   */
+  rawFilters?: Record<string, string>;
   /** Page size, 1..1000. */
   limit?: number;
   offset?: number;
@@ -70,6 +75,7 @@ const RESOURCE_ID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{1
 export function buildMandiUrl(base: string, apiKey: string, req: MandiRequest, offset: number, limit: number): string {
   const p = new URLSearchParams({ "api-key": apiKey, format: "json", limit: String(limit), offset: String(offset) });
   for (const [k, v] of Object.entries(req.filters ?? {})) if (v) p.set(`filters[${k}]`, v);
+  for (const [k, v] of Object.entries(req.rawFilters ?? {})) if (v) p.set(`filters[${k}]`, v);
   return `${base.replace(/\/$/, "")}/resource/${req.resourceId}?${p}`;
 }
 

@@ -11,6 +11,8 @@ export interface CommodityMapEntry {
   sourceCommodity: string;
   productSlug: string;
   verified: boolean;
+  /** The source name does not identify the product (e.g. unqualified "Ginger"); rows carry the unresolved_product flag. */
+  unresolved?: boolean;
   note?: string;
 }
 
@@ -25,6 +27,7 @@ export const FIELD_CANDIDATES = {
   district: ["district", "district_name"],
   market: ["market", "market_name", "mandi"],
   commodity: ["commodity", "commodity_name"],
+  commodityCode: ["commodity_code"],
   variety: ["variety"],
   grade: ["grade"],
   arrivalDate: ["arrival_date", "arrivaldate", "price_date", "date", "reported_date"],
@@ -73,6 +76,8 @@ export interface MandiRow {
   state: string | null;
   district: string | null;
   commodity: string;
+  /** Source Commodity_Code as a string when present (variety-wise resource; 103 = Ginger(Green), 27 = Ginger(Dry)). */
+  commodityCode: string | null;
   productSlug: string | null;
   mappingVerified: boolean;
   variety: string | null;
@@ -150,7 +155,8 @@ export function normalizeMandiRecords(records: Array<Record<string, unknown>>, o
     if (nums.some((n) => n.lte(0))) return void report.rejected.push({ reason: "non_positive_price", index });
 
     const flags: string[] = [];
-    if (!opts.sourceUnitVerified) flags.push("source_unit_assumed_inr_per_quintal");
+    // Field metadata states no unit; INR/quintal is the Agmarknet convention, supported by magnitudes but not confirmed.
+    if (!opts.sourceUnitVerified) flags.push("source_unit_assumed_inr_per_quintal", "unit_basis:agmarknet_convention_inr_per_quintal");
     const { min, modal, max } = prices as { min: Dec | null; modal: Dec | null; max: Dec | null };
     if ((min && max && min.gt(max)) || (min && modal && min.gt(modal)) || (modal && max && modal.gt(max))) flags.push("price_order_violation");
 
@@ -158,7 +164,10 @@ export function normalizeMandiRecords(records: Array<Record<string, unknown>>, o
     if (!entry) {
       unmappedCommodities.add(commodity);
       flags.push("commodity_unmapped");
-    } else if (!entry.verified) flags.push("commodity_mapping_unverified");
+    } else {
+      if (!entry.verified) flags.push("commodity_mapping_unverified");
+      if (entry.unresolved) flags.push("unresolved_product");
+    }
 
     const arrivalsPick = pick(rec, "arrivals");
     const arrivalsDec = arrivalsPick ? parseNumber(arrivalsPick.value) : null;
@@ -170,6 +179,7 @@ export function normalizeMandiRecords(records: Array<Record<string, unknown>>, o
       state,
       district,
       commodity,
+      commodityCode: str(pick(rec, "commodityCode")?.value),
       productSlug: entry?.productSlug ?? null,
       mappingVerified: entry?.verified ?? false,
       variety: str(pick(rec, "variety")?.value),

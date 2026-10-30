@@ -63,8 +63,8 @@ describe("source manifest loader", () => {
     expect(await count("source_documents", "manifest_id IS NOT NULL")).toBe(n1);
     const row = (await pool.query("SELECT * FROM source_documents WHERE manifest_id='MKT02-dgi-mandi-current'")).rows[0];
     expect(row.access_class).toBe("public");
-    expect(row.metadata.accessRoute).toBe("api_key_required_free");
-    expect(row.metadata.validation).toBe("retrieval_failed");
+    expect(row.metadata.accessRoute).toBe("retrieved_ok");
+    expect(row.metadata.validation).toBe("retrieved_ok_snapshot_only");
   });
 
   ifDb("a changed record is updated in place, not duplicated", async () => {
@@ -301,7 +301,7 @@ describe("ingest job handlers", () => {
     expect(calls).toBe(0);
   });
 
-  ifDb("market_prices with a key normalises, flags unverified mapping, skips unknown products, and never stores on cancel", async () => {
+  ifDb("market_prices with a key normalises, stores verified mappings as valid, skips unknown products, and never stores on cancel", async () => {
     const crop = (await pool.query("INSERT INTO crop_identities (slug) VALUES ('ginger') RETURNING id")).rows[0].id;
     await pool.query("INSERT INTO crop_products (crop_id, slug, name) VALUES ($1,'ginger-fresh','Ginger (fresh)')", [crop]);
     const rec = (i: number, c = "Ginger(Green)") => ({ state: "Karnataka", district: "Hassan", market: "Hassan", commodity: c, variety: "Other", grade: "FAQ", arrival_date: `${String(10 + i).padStart(2, "0")}/10/2026`, min_price: "6000", max_price: "7000", modal_price: "6500" });
@@ -317,9 +317,11 @@ describe("ingest job handlers", () => {
     expect(JSON.stringify(r)).not.toContain("k-test-key-123");
     const stored = (await pool.query("SELECT * FROM market_observations WHERE mode='live' AND market_id LIKE 'agmarknet:%' ORDER BY observed_on")).rows;
     expect(stored).toHaveLength(2);
-    expect(stored[0].flags).toContain("commodity_mapping_unverified");
-    expect(stored[0].validation_status).toBe("unverified_mapping");
-    expect(r.counts.storedUnverifiedMapping).toBe(2);
+    // Ginger(Green) was observed in real rows (2026-10-30) and is verified in the shipped map: readable, not flagged.
+    expect(stored[0].flags).not.toContain("commodity_mapping_unverified");
+    expect(stored[0].flags).toContain("unit_basis:agmarknet_convention_inr_per_quintal");
+    expect(stored[0].validation_status).toBe("valid");
+    expect(r.counts.storedUnverifiedMapping).toBe(0);
     expect(stored[0].unit).toBe("INR/quintal");
     expect(Number(stored[0].price_modal_inr_per_kg)).toBe(65);
 

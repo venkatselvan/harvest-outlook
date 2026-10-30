@@ -152,3 +152,57 @@ describe("mandi normalisation", () => {
     expect(q.rows[0]!.arrivalsUnit).toBe("quintal");
   });
 });
+
+describe("variety-wise resource (capitalised fields, Commodity_Code)", () => {
+  const VARIETY = "35985678-0d79-46b4-9ed6-6f13308a1d24";
+  const cap = (over: Record<string, unknown> = {}) => ({
+    Arrival_Date: "07/01/2014", Commodity: "Ginger(Green)", Commodity_Code: "103", District: "Bangalore", Grade: "FAQ", Market: "Bangalore",
+    Max_Price: "6600", Min_Price: "4100", Modal_Price: "5200", State: "Karnataka", Variety: "Green Ginger", ...over,
+  });
+
+  it("builds exact-case filters[State]/filters[Commodity] via rawFilters", () => {
+    const u = new URL(buildMandiUrl("https://api.data.gov.in", KEY, { resourceId: VARIETY, rawFilters: { State: "Karnataka", Commodity: "Ginger(Green)", Arrival_Date: "07/01/2014" } }, 0, 1000));
+    expect(u.searchParams.get("filters[State]")).toBe("Karnataka");
+    expect(u.searchParams.get("filters[Commodity]")).toBe("Ginger(Green)");
+    expect(u.searchParams.get("filters[Arrival_Date]")).toBe("07/01/2014");
+    expect(u.searchParams.has("filters[state]")).toBe(false);
+  });
+
+  it("normalises Capitalised fields, numeric or string commodity code, with the verified shipped map", () => {
+    const r = normalizeMandiRecords([cap(), cap({ Commodity_Code: 103, Grade: "Medium", Modal_Price: 5300 })]);
+    expect(r.rows).toHaveLength(2);
+    const row = r.rows[0]!;
+    expect([row.marketName, row.district, row.state, row.observedOn, row.productSlug, row.mappingVerified, row.commodityCode]).toEqual(["Bangalore", "Bangalore", "Karnataka", "2014-01-07", "ginger-fresh", true, "103"]);
+    expect([row.priceMin, row.priceModal, row.priceMax, row.priceModalPerKg]).toEqual(["4100", "5200", "6600", "52"]);
+    expect(row.flags).not.toContain("commodity_mapping_unverified");
+    expect(row.flags).toContain("unit_basis:agmarknet_convention_inr_per_quintal");
+    expect(r.rows[1]!.commodityCode).toBe("103");
+    expect(r.unmappedFields).toEqual([]); // Commodity_Code is a known field, not "unmapped"
+  });
+
+  it("maps Ginger(Dry) verified to ginger-dry but unqualified Ginger stays unresolved and unverified", () => {
+    const r = normalizeMandiRecords([cap({ Commodity: "Ginger(Dry)", Commodity_Code: "27" }), cap({ Commodity: "Ginger", Commodity_Code: undefined })]);
+    expect(r.rows[0]).toMatchObject({ productSlug: "ginger-dry", mappingVerified: true });
+    const g = r.rows[1]!;
+    expect(g.mappingVerified).toBe(false);
+    expect(g.flags).toEqual(expect.arrayContaining(["commodity_mapping_unverified", "unresolved_product"]));
+    expect(r.rows[0]!.flags).not.toContain("unresolved_product");
+  });
+
+  it("dedupes capitalised rows by market+product+date+variety+grade", () => {
+    const r = normalizeMandiRecords([cap(), cap(), cap({ Grade: "Medium" })]);
+    expect(r.rows).toHaveLength(2);
+    expect(r.duplicatesIgnored).toBe(1);
+  });
+});
+
+describe("canonicalMarketKey (source renames from Nov 2025)", () => {
+  it("joins legacy and renamed market names but keeps different markets apart", async () => {
+    const { canonicalMarketKey: k } = await import("../src/providers/datagovin/market-alias");
+    expect(k("Hassan APMC")).toBe(k("Hassan"));
+    expect(k("Binny Mill (FF&V) Bengaluru APMC")).toBe(k("Binny Mill (F&V), Bangalore"));
+    expect(k("Bengaluru APMC")).toBe(k("Bangalore"));
+    expect(k("Mysuru APMC")).not.toBe(k("Mysore (Bandipalya)")); // different market labels: not merged by guess
+    expect(k("Belur APMC")).not.toBe(k("Hassan"));
+  });
+});

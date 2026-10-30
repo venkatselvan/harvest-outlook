@@ -8,22 +8,24 @@
    "url": "https://api.data.gov.in/resource/9ef84268-d588-465a-a308-a864a43d0070",
    "publisher": "Open Government Data Platform India / Directorate of Marketing and Inspection (AGMARKNET)",
    "title": "Current Daily Price of Various Commodities from Various Markets (Mandi)",
-   "accessRoute": "api_key_required_free",
+   "accessRoute": "retrieved_ok",
    "licence": "unstated on retrieved artifacts; portal states GODL-India but licence page returned HTTP 403 to automated fetch (not verified verbatim)",
-   "retrievedAt": "2026-10-29T19:34:42+00:00",
+   "retrievedAt": "2026-10-30T06:35:16Z",
    "sha256": null,
-   "rowOrPageCount": null,
+   "rowOrPageCount": 1306,
    "coverage": {
-    "timeFrom": null,
-    "timeTo": null,
-    "geography": "All India (catalog metadata)",
+    "timeFrom": "2026-10-30",
+    "timeTo": "2026-10-30",
+    "geography": "All India, all markets reporting that day",
     "products": [
-     "all AGMARKNET commodities (unverified)"
+     "Ginger(Green)",
+     "Ginger(Dry)",
+     "Ginger (unqualified, product identity unresolved)"
     ]
    },
-   "availabilityPolicy": "Daily; title says 'Current' - history depth NOT verified. Resource UUID taken from portal backend metadata for catalog nid 86944 (data/raw/datagovin/catalog_86944_resources.json).",
-   "validation": "retrieval_failed",
-   "notes": "Keyless request returns HTTP 400 {\"error\": \"Authorization field missing\"}. Catalog metadata embeds a portal-published sample key in datafile_url; use of that key was denied by the session permission policy and was not attempted. Registration for a personal free key was not performed (out of scope). Field names, units (INR/quintal is typical but unverified here) and ginger rows NOT observed.",
+   "availabilityPolicy": "Today's snapshot only (arrival date from=to=retrieval date observed 2026-10-30); NOT a history source. Fields lowercase: state, district, market, commodity, variety, grade, arrival_date, min_price, max_price, modal_price. Field metadata states no unit.",
+   "validation": "retrieved_ok_snapshot_only",
+   "notes": "Retrieved with a registered free key by scripts/seed/probe-datagovin.ts (data/raw/datagovin/probe-2026-10-30.json, gitignored). Commodity names Ginger(Green) and Ginger(Dry) observed and mapped as verified in providers/datagovin/commodity-map.json; unqualified 'Ginger' stays unresolved. Unit is the Agmarknet convention INR/quintal (not stated by the API). Row count 1306 = 964 Ginger(Green) + 172 Ginger(Dry) + 170 unqualified Ginger reported for 2026-10-30; the probe sampled 50 rows per name.",
    "httpStatus": 400,
    "rawArtifact": "data/raw/datagovin/api_probe_nokey.json"
   },
@@ -32,24 +34,26 @@
    "url": "https://api.data.gov.in/resource/35985678-0d79-46b4-9ed6-6f13308a1d24",
    "publisher": "Open Government Data Platform India / DMI",
    "title": "Variety-wise Daily Market Prices Data of Commodity",
-   "accessRoute": "api_key_required_free",
+   "accessRoute": "retrieved_ok",
    "licence": "unstated on retrieved artifacts; portal states GODL-India but licence page returned HTTP 403 to automated fetch (not verified verbatim)",
-   "retrievedAt": "2026-10-29T19:35:29+00:00",
+   "retrievedAt": "2026-10-30T06:42:13Z",
    "sha256": "9ccfc1246ebb2451794305d6792ce24e55345dd01ea12c3e9d6567baf99a9d57",
-   "rowOrPageCount": null,
+   "rowOrPageCount": 52853,
    "coverage": {
-    "timeFrom": "2024-05-21",
-    "timeTo": null,
-    "geography": "All India (catalog metadata)",
+    "timeFrom": "2002-02-07",
+    "timeTo": "2026-10-29",
+    "geography": "All India (Karnataka ingested)",
     "products": [
-     "variety-wise commodity prices (unverified)"
+     "Ginger(Green) Commodity_Code 103",
+     "Ginger(Dry) Commodity_Code 27",
+     "other commodities not examined"
     ]
    },
-   "availabilityPolicy": "Catalog metadata: created 2024-05-21, data_time_period_from=to=2024-05-21, changed 2026-10-28. Whether the API holds accumulated history since 2024-05-21 is NOT verified.",
-   "validation": "not_attempted",
-   "notes": "Same key gate as 9ef84268. Most promising candidate for >1 season of history; must be measured once a key is available. sha256/retrievedAt refer to the metadata listing, not to price rows.",
+   "availabilityPolicy": "Holds history back to 2002 for Karnataka ginger (not 2024 as the catalog metadata suggested). Default row order is NOT chronological; sort[Arrival_Date] sorts the dd/mm/yyyy string. Filters are exact-case: filters[State], filters[Commodity], filters[Arrival_Date]=dd/mm/yyyy, filters[Market]. The source publishes no first-seen time: available_at is stored as fetch time (conservative upper bound). From Nov 2025 market and district labels changed (for example 'Hassan' -> 'Hassan APMC', 'Mysore' -> 'Mysuru').",
+   "validation": "retrieved_ok_partial_ingest",
+   "notes": "Fields Capitalised: Arrival_Date, Commodity, Commodity_Code, District, Grade, Market, Max_Price, Min_Price, Modal_Price, State, Variety. Field metadata states no unit; INR/quintal assumed by Agmarknet convention (flag unit_basis:agmarknet_convention_inr_per_quintal). Ingest: scripts/seed/ingest-ginger-karnataka.ts; audit: docs/MARKET_AUDIT_GINGER.md. rowOrPageCount 52853 = stored Karnataka Ginger(Green) identities. Upstream totals 2026-10-30: Ginger(Green) all India 1,016,139 rows; Karnataka Ginger(Green) 66,070 rows, Karnataka Ginger(Dry) 8,000 rows. Ingested: 60 pages x 1,000 = 60,000 Karnataka Ginger(Green) rows read, 52,853 unique identities stored (6,978 exact duplicates, 3 conflicting duplicates, 166 non-positive-price rows rejected). Ginger(Dry) not ingested.",
    "httpStatus": 200,
-   "rawArtifact": "data/raw/datagovin/catalog_86944_resources.json"
+   "rawArtifact": "data/raw/datagovin/ingest-ginger-karnataka-2026-10-30.json"
   },
   {
    "id": "MKT02-dgi-catalog-86944",

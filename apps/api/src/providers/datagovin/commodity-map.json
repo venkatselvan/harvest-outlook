@@ -1,8 +1,9 @@
 {
-  "_comment": "Agmarknet commodity name -> product slug. verified:false until real rows from the keyed data.gov.in API have been inspected (run scripts/seed/probe-datagovin.ts). Unverified rows are stored with a commodity_mapping_unverified flag.",
-  "schemaVersion": 1,
+  "_comment": "Agmarknet commodity name -> product slug. Names marked verified:true were observed in real rows from the keyed data.gov.in API (data/raw/datagovin/probe-2026-10-30.json; variety-wise resource 35985678-0d79-46b4-9ed6-6f13308a1d24 queried 2026-10-30). Unverified or unresolved rows are stored with validation_status='unverified_mapping' and hidden from default reads.",
+  "schemaVersion": 2,
   "entries": [
-    { "sourceCommodity": "Ginger(Green)", "productSlug": "ginger-fresh", "verified": false, "note": "Candidate name, not yet observed in API rows." },
-    { "sourceCommodity": "Ginger(Dry)", "productSlug": "ginger-dry", "verified": false, "note": "Candidate name, not yet observed in API rows. Dry/wet basis must not be mixed with fresh." }
+    { "sourceCommodity": "Ginger(Green)", "productSlug": "ginger-fresh", "verified": true, "note": "Observed 2026-10-30: current-daily resource (964 rows that day) and variety-wise resource (Commodity_Code 103, 66,070 Karnataka rows 2002-2026)." },
+    { "sourceCommodity": "Ginger(Dry)", "productSlug": "ginger-dry", "verified": true, "note": "Observed 2026-10-30: current-daily resource (172 rows that day) and variety-wise resource (Commodity_Code 27, 8,000 Karnataka rows). Dry/wet basis must not be mixed with fresh." },
+    { "sourceCommodity": "Ginger", "productSlug": "ginger-fresh", "verified": false, "unresolved": true, "note": "Unqualified 'Ginger' (170 rows in the 2026-10-30 current-daily snapshot) does not say green or dry; the slug is only a storage carrier, flagged unresolved_product and hidden from default reads until a person resolves it. Not present in the variety-wise resource for Karnataka (0 rows)." }
   ]
 }

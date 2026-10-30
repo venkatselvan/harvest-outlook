@@ -26,6 +26,8 @@
     "catalogue:build": "pnpm --filter @harvest/scripts exec tsx catalogue/build.ts",
     "catalogue:derive-rules": "pnpm --filter @harvest/scripts exec tsx catalogue/derive-rules.ts",
     "catalogue:districts": "pnpm --filter @harvest/scripts exec tsx catalogue/build-districts.ts",
-    "catalogue:load": "pnpm --filter @harvest/scripts exec tsx catalogue/load-db.ts"
+    "catalogue:load": "pnpm --filter @harvest/scripts exec tsx catalogue/load-db.ts",
+    "ingest:ginger-ka": "pnpm --filter @harvest/api exec tsx ../../scripts/seed/ingest-ginger-karnataka.ts",
+    "audit:ginger-prices": "pnpm --filter @harvest/api exec tsx ../../scripts/seed/audit-ginger-prices.ts"
   }
 }
