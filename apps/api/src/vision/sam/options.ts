@@ -10,11 +10,15 @@ export interface SamOptions {
   maxImageSide: number;
   /** Request `stream: true` and concatenate response.output_text.delta (the docs' stated mode). */
   stream: boolean;
-  /** UNVERIFIED placement: sent as top-level `metadata.mask_encoding`. null = do not send. */
+  /** Sent as `metadata.mask_encoding` ("onebit" goes on the wire as "one_bit"; verified live 2026-10-30). null = do not send (server default '~' lossless). */
   maskEncoding: "onebit" | "lossless" | null;
-  /** UNVERIFIED placement: sent as top-level `include_confidence: "true"`. */
+  /** Sent as `metadata.include_confidence: "true"` (verified live 2026-10-30); `c=` then appears on box and mask. */
   includeConfidence: boolean;
-  /** Base85 alphabet; 'auto' chooses by alphabet membership, else base85Fallback. UNVERIFIED variant. */
+  /**
+   * Base85 alphabet; 'auto' chooses by alphabet membership, else base85Fallback. Live 2026-10-30: SAM payloads use none
+   * of these three alphabets (see base85.ts `SAM_MASK_ALPHABET`) and carry a length-prefixed compressed stream whose
+   * codec is not identified, so masks are currently undecodable and the adapter falls back to the (exact) box.
+   */
   base85Variant: Base85Variant | "auto";
   base85Fallback: Base85Variant;
   /** Bit order inside a onebit byte; numpy.packbits default is msb. UNVERIFIED. */

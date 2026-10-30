@@ -1,0 +1,55 @@
+{
+  "recordedFromLive": true,
+  "recordedAt": "2026-10-30",
+  "endpoint": "POST https://api.meta.ai/v1/images/edits",
+  "model": "muse-image-1.0",
+  "description": "Reference edit of a synthetic 768x512 JPEG data URL with the ginger sprouting_vegetative brief prompt; n=1, response_format b64_json, output_format png",
+  "sanitization": "b64_json replaced by a 48x32 downscale of the returned 1920x1280 PNG (original was 2485344 base64 chars); all other fields verbatim; request id header not kept",
+  "request": {
+    "model": "muse-image-1.0",
+    "images": [
+      {
+        "image_url": "data:image/jpeg;base64,[synthetic base]"
+      }
+    ],
+    "n": 1,
+    "size": "768x512",
+    "response_format": "b64_json",
+    "output_format": "png",
+    "tool_enablement": {
+      "enable_image_search": false,
+      "enable_web_search": false,
+      "enable_shell": false
+    }
+  },
+  "httpStatus": 200,
+  "response": {
+    "created": 1793343544,
+    "data": [
+      {
+        "b64_json": "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"
+      }
+    ],
+    "output_format": "png",
+    "background": "opaque",
+    "usage": {
+      "input_tokens": 28681,
+      "output_tokens": 1758,
+      "total_tokens": 30439
+    }
+  },
+  "observed": {
+    "outputWidth": 1920,
+    "outputHeight": 1280,
+    "latencyMs": 22027,
+    "qa": {
+      "outsideMeanAbsDiff": 0.00831343415583291,
+      "insideMeanAbsDiff": 0.13059279525763828,
+      "aspectError": 0,
+      "outsideFraction": 0.6928308823529412,
+      "outputWidth": 1920,
+      "outputHeight": 1280
+    },
+    "qaPassed": true
+  }
+}

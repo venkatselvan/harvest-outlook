@@ -12,6 +12,13 @@ export interface AgentLimits {
   wonderEnabled: boolean;
   maxOutputTokens: number;
   interpretationMaxOutputTokens: number;
+  /**
+   * Sent as `reasoning.effort` on every Spark call. Default "low" when AGENT_REASONING_EFFORT is unset or invalid:
+   * verified live 2026-10-30 that muse-spark-1.3 otherwise reasons at "high", and hidden reasoning tokens count
+   * against max_output_tokens (a 200-token cap ended `incomplete` with only a reasoning item). At "low" the observed
+   * reasoning use was 42-675 tokens per pass (docs/research/META_API_NOTES.md), inside the default caps below.
+   * `undefined` is only reachable through an explicit override and means "omit the field" (server default "high").
+   */
   reasoningEffort: "minimal" | "low" | "medium" | "high" | "max" | undefined;
   /** Forecast horizon beyond which exact daily rain claims are blocked (days). */
   rainHorizonDays: number;
@@ -26,7 +33,7 @@ export const DEFAULT_LIMITS: AgentLimits = {
   wonderEnabled: false,
   maxOutputTokens: 3000,
   interpretationMaxOutputTokens: 1200,
-  reasoningEffort: undefined,
+  reasoningEffort: "low",
   rainHorizonDays: 7,
   turnsPerMinute: 20,
 };
@@ -51,7 +58,7 @@ export function loadAgentLimits(env: Record<string, string | undefined> = proces
     wonderEnabled: env.AGENT_WONDER_ENABLED === "true",
     maxOutputTokens: pick(posInt, "AGENT_MAX_OUTPUT_TOKENS", DEFAULT_LIMITS.maxOutputTokens),
     interpretationMaxOutputTokens: pick(posInt, "AGENT_INTERPRETATION_MAX_OUTPUT_TOKENS", DEFAULT_LIMITS.interpretationMaxOutputTokens),
-    reasoningEffort: effort === "minimal" || effort === "low" || effort === "medium" || effort === "high" || effort === "max" ? effort : undefined,
+    reasoningEffort: effort === "minimal" || effort === "low" || effort === "medium" || effort === "high" || effort === "max" ? effort : DEFAULT_LIMITS.reasoningEffort,
     rainHorizonDays: pick(posInt, "AGENT_RAIN_HORIZON_DAYS", DEFAULT_LIMITS.rainHorizonDays),
     turnsPerMinute: pick(posInt, "ASSISTANT_TURNS_PER_MINUTE", DEFAULT_LIMITS.turnsPerMinute),
     ...over,

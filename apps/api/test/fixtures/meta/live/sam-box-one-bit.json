@@ -1,0 +1,48 @@
+{
+  "recordedFromLive": true,
+  "recordedAt": "2026-10-30",
+  "endpoint": "POST https://api.meta.ai/v1/responses (stream:true, SSE output_text deltas concatenated)",
+  "model": "sam-3.1",
+  "description": "Box token prompt around the red rectangle, one_bit + confidence",
+  "sanitization": "none needed: synthetic test image; request id header and response id not kept",
+  "image": {
+    "width": 512,
+    "height": 384,
+    "synthetic": "two solid rectangles on #e8e8e8 (scripts/smoke/sam-smoke.ts)",
+    "groundTruthInclusive": {
+      "red": {
+        "x1": 60,
+        "y1": 80,
+        "x2": 219,
+        "y2": 299
+      },
+      "blue": {
+        "x1": 300,
+        "y1": 60,
+        "x2": 459,
+        "y2": 199
+      }
+    }
+  },
+  "request": {
+    "inputText": "<0f>1<|box;x1=56;y1=76;x2=223;y2=303;w=512;h=384|>",
+    "metadata": {
+      "mask_encoding": "one_bit",
+      "include_confidence": "true"
+    },
+    "store": false
+  },
+  "usage": {
+    "images_processed": 1,
+    "input_tokens": 0,
+    "input_tokens_details": {
+      "cached_tokens": 0
+    },
+    "output_tokens": 0,
+    "output_tokens_details": {
+      "reasoning_tokens": 0
+    },
+    "total_tokens": 0
+  },
+  "outputText": "<0f>1<|box;x1=60;y1=80;x2=219;y2=299;w=512;h=384;c=0.99609375|><|mask;x=0;y=0;c=0.99609375;data=220,160,!!!!!/O.`F9r?&5ux.feY|>\n"
+}

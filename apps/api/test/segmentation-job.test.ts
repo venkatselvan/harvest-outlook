@@ -81,7 +81,7 @@ describe("segmentation job: provider call", () => {
     expect(f).toHaveBeenCalledTimes(1);
     expect(seen!.url).toBe("https://api.meta.ai/v1/responses");
     expect(seen!.headers.authorization).toBe(`Bearer ${KEY}`);
-    expect(seen!.body).toMatchObject({ model: "sam-3.1", stream: false, metadata: { mask_encoding: "onebit" }, include_confidence: "true" });
+    expect(seen!.body).toMatchObject({ model: "sam-3.1", stream: false, metadata: { mask_encoding: "one_bit", include_confidence: "true" }, store: false });
     const parts = seen!.body.input[0].content;
     expect(parts[0]).toMatchObject({ type: "input_text" });
     const img = Buffer.from(parts[1].image_url.split(",")[1], "base64");

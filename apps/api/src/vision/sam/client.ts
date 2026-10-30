@@ -46,9 +46,17 @@ export function buildRequestBody(i: Pick<SamCallInput, "model" | "text" | "image
     ],
     stream: i.options.stream,
   };
-  // UNVERIFIED parameter placement (see SamOptions).
-  if (i.options.maskEncoding) body.metadata = { mask_encoding: i.options.maskEncoding };
-  if (i.options.includeConfidence) body.include_confidence = "true";
+  // Verified live 2026-10-30 (task L4, evals/results/live-smoke/sam-2026-10-30.json): both switches live inside
+  // `metadata` as strings. Top-level `include_confidence` is a 400 ("unknown parameter"); the accepted
+  // mask_encoding values are 'lossless' | 'one_bit' (`onebit` is a 400). Without mask_encoding the server returns
+  // '~' lossless masks (~16 KB of text for two objects vs ~300 chars with one_bit).
+  const metadata: Record<string, string> = {};
+  if (i.options.maskEncoding) metadata.mask_encoding = i.options.maskEncoding === "onebit" ? "one_bit" : i.options.maskEncoding;
+  if (i.options.includeConfidence) metadata.include_confidence = "true";
+  if (Object.keys(metadata).length > 0) body.metadata = metadata;
+  // Single-shot call: nothing chains from it, so the response is not stored provider-side (store:false verified
+  // accepted on sam-3.1 2026-10-30).
+  body.store = false;
   return body;
 }
 

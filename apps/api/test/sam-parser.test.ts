@@ -120,18 +120,19 @@ describe("prompt grammar and request body", () => {
       "<0f>1<|point;x=50;y=25;w=100;h=50|>,-1<|point;x=0;y=49;w=100;h=50|>",
     );
   });
-  it("request body follows the documented Responses shape and flags", () => {
+  it("request body follows the live-verified Responses shape and flags (L4: both switches inside metadata)", () => {
     const b = buildRequestBody({ model: "sam-3.1", text: "field", imageDataUrl: "data:image/jpeg;base64,AA==", options: DEFAULT_SAM_OPTIONS }) as Record<string, unknown>;
     expect(b).toMatchObject({
       model: "sam-3.1",
       stream: true,
-      metadata: { mask_encoding: "onebit" },
-      include_confidence: "true",
+      metadata: { mask_encoding: "one_bit", include_confidence: "true" },
+      store: false,
       input: [{ type: "message", role: "user", content: [{ type: "input_text", text: "field" }, { type: "input_image", image_url: "data:image/jpeg;base64,AA==" }] }],
     });
     const off = buildRequestBody({ model: "m", text: "t", imageDataUrl: "d", options: { ...DEFAULT_SAM_OPTIONS, stream: false, maskEncoding: null, includeConfidence: false } });
     expect(off).not.toHaveProperty("metadata");
     expect(off).not.toHaveProperty("include_confidence");
+    expect(b).not.toHaveProperty("include_confidence");
   });
   it("extracts text from both common non-streaming shapes and concatenates SSE deltas", async () => {
     expect(extractOutputText({ output_text: "abc" })).toBe("abc");

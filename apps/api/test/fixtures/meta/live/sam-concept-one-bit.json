@@ -1,0 +1,48 @@
+{
+  "recordedFromLive": true,
+  "recordedAt": "2026-10-30",
+  "endpoint": "POST https://api.meta.ai/v1/responses (stream:true, SSE output_text deltas concatenated)",
+  "model": "sam-3.1",
+  "description": "Concept prompt \"rectangle\", metadata {mask_encoding:one_bit, include_confidence:true}",
+  "sanitization": "none needed: synthetic test image; request id header and response id not kept",
+  "image": {
+    "width": 512,
+    "height": 384,
+    "synthetic": "two solid rectangles on #e8e8e8 (scripts/smoke/sam-smoke.ts)",
+    "groundTruthInclusive": {
+      "red": {
+        "x1": 60,
+        "y1": 80,
+        "x2": 219,
+        "y2": 299
+      },
+      "blue": {
+        "x1": 300,
+        "y1": 60,
+        "x2": 459,
+        "y2": 199
+      }
+    }
+  },
+  "request": {
+    "inputText": "rectangle",
+    "metadata": {
+      "mask_encoding": "one_bit",
+      "include_confidence": "true"
+    },
+    "store": false
+  },
+  "usage": {
+    "images_processed": 1,
+    "input_tokens": 0,
+    "input_tokens_details": {
+      "cached_tokens": 0
+    },
+    "output_tokens": 0,
+    "output_tokens_details": {
+      "reasoning_tokens": 0
+    },
+    "total_tokens": 0
+  },
+  "outputText": "<0f>0<|box;x1=60;y1=80;x2=219;y2=299;w=512;h=384;c=0.6995305418968201|><|mask;x=0;y=0;c=0.6995305418968201;data=220,160,!!!!!JK+54tRytnU*).^k#UyOm%e&eus#y%c`-F?emXz_a#CGlZ|>,1<|box;x1=300;y1=60;x2=459;y2=199;w=512;h=384;c=0.5038759708404541|><|mask;x=0;y=0;c=0.5038759708404541;data=140,160,!!!!!5LCgG8NJ5wD^C(6964aQ-RD!|>\n"
+}

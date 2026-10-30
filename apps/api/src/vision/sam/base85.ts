@@ -137,3 +137,45 @@ export function resolveVariant(payload: string, configured: Base85Variant | "aut
   const c = compatibleVariants(payload);
   return c.length === 1 ? c[0]! : c.includes(fallback) ? fallback : (c[0] ?? fallback);
 }
+
+/**
+ * Alphabet observed in live sam-3.1 mask payloads (2026-10-30, task L4): the 85 printable ASCII characters from '!'
+ * (0x21) to '{' (0x7b) excluding the grammar delimiters `"` `,` `;` `<` `>` and `\`, in ascending code order. Exactly
+ * these 85 characters occurred across two '~' payloads (16,223 chars). Ascending order is confirmed by the length
+ * prefix below decoding consistently on all five recorded masks; it is an observation, not a documented contract.
+ */
+export const SAM_MASK_ALPHABET = Array.from({ length: 0x7b - 0x21 + 1 }, (_, i) => String.fromCharCode(0x21 + i))
+  .filter((c) => !'",;<>\\'.includes(c))
+  .join("");
+
+/**
+ * Live sam-3.1 masks ('!' one_bit and '~' lossless alike) decode, in SAM_MASK_ALPHABET with 5-chars-to-4-bytes
+ * big-endian groups (a short final group padded with the top digit, as in Ascii85), to a 4-byte big-endian length
+ * followed by exactly that many bytes. The body is a compressed stream (12 bytes for a solid 220x160 one_bit mask)
+ * whose codec is not zlib/deflate/gzip/lzma/bz2/brotli and is not documented. Returns null when the payload does not
+ * have this envelope.
+ */
+export function samMaskEnvelope(payload: string): { declaredLength: number; body: Uint8Array } | null {
+  const s = payload.trim();
+  if (s.length < 5) return null;
+  const idx = new Int16Array(128).fill(-1);
+  for (let i = 0; i < 85; i++) idx[SAM_MASK_ALPHABET.charCodeAt(i)] = i;
+  const out: number[] = [];
+  for (let i = 0; i < s.length; i += 5) {
+    const n = Math.min(5, s.length - i);
+    if (n === 1) return null;
+    let v = 0;
+    for (let k = 0; k < 5; k++) {
+      const c = k < n ? s.charCodeAt(i + k) : -1;
+      const d = c === -1 ? 84 : c < 128 ? idx[c]! : -1;
+      if (d < 0) return null;
+      v = v * 85 + d;
+    }
+    if (v > 0xffffffff) return null;
+    for (let k = 0; k < n - 1; k++) out.push(Math.floor(v / 2 ** (24 - 8 * k)) & 0xff);
+  }
+  if (out.length < 4) return null;
+  const declaredLength = ((out[0]! << 24) >>> 0) + (out[1]! << 16) + (out[2]! << 8) + out[3]!;
+  if (declaredLength !== out.length - 4) return null;
+  return { declaredLength, body: Uint8Array.from(out.slice(4)) };
+}

@@ -1,4 +1,4 @@
-import { Base85Error, decodeBase85, resolveVariant } from "./base85";
+import { Base85Error, decodeBase85, resolveVariant, samMaskEnvelope } from "./base85";
 import type { SamOptions } from "./options";
 
 export class SamParseError extends Error {
@@ -175,6 +175,9 @@ export interface MaskRaster {
 export function decodeMask(mask: RawMask, options: Pick<SamOptions, "base85Variant" | "base85Fallback" | "bitOrder">): MaskRaster {
   const { width: W, height: H } = mask;
   if (!Number.isInteger(W) || !Number.isInteger(H) || W < 1 || H < 1 || W * H > 16_000_000) throw new SamParseError("mask_payload_invalid", "mask dimensions invalid");
+  // Live sam-3.1 payloads (2026-10-30) are a length-prefixed compressed stream with an unidentified codec: refuse
+  // explicitly instead of letting another alphabet decode them into a plausible-looking wrong mask.
+  if (samMaskEnvelope(mask.payload)) throw new SamParseError("mask_encoding_unsupported", "SAM mask is a length-prefixed compressed stream (codec not identified); using the box");
   let bytes: Uint8Array;
   try {
     bytes = decodeBase85(mask.payload, resolveVariant(mask.payload, options.base85Variant, options.base85Fallback));
