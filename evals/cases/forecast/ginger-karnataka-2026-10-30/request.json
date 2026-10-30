@@ -1,0 +1,172 @@
+{
+ "caseId": "ginger-karnataka-2026-10-30",
+ "policy": "holdout-policy.md",
+ "dataMode": "replay",
+ "synthetic": false,
+ "exportPath": "data/replay/ginger-karnataka-2026-10-30/rows.json.gz",
+ "exportManifestPath": "evals/cases/forecast/ginger-karnataka-2026-10-30/export-manifest.json",
+ "productId": "ginger-fresh",
+ "sourceCommodity": "Ginger(Green)",
+ "marketIds": [
+  "agmarknet:ka:binny-mill-fv-bengaluru",
+  "agmarknet:ka:belur",
+  "agmarknet:ka:ramanagara"
+ ],
+ "marketAliases": {
+  "agmarknet:ka:binny-mill-fv-bengaluru": [
+   "agmarknet:karnataka-bangalore-binny-mill-f-v-bangalore",
+   "agmarknet:karnataka-bangalore-binny-mill-f-v-bangalore-apmc",
+   "agmarknet:karnataka-bengaluru-binny-mill-f-v-bengaluru-apmc",
+   "agmarknet:karnataka-bengaluru-binny-mill-ff-v-bengaluru-apmc"
+  ],
+  "agmarknet:ka:belur": [
+   "agmarknet:karnataka-hassan-belur",
+   "agmarknet:karnataka-hassan-belur-apmc"
+  ],
+  "agmarknet:ka:ramanagara": [
+   "agmarknet:karnataka-bangalore-ramanagara",
+   "agmarknet:karnataka-bangalore-ramanagara-apmc",
+   "agmarknet:karnataka-bengaluru-south-ramanagara-apmc"
+  ]
+ },
+ "trainingStart": "2010-01-01",
+ "availabilityPolicy": {
+  "prices": {
+   "basis": "assumed_publication_lag_1d",
+   "lagDays": 1,
+   "localTime": "00:00+05:30"
+  },
+  "weather": {
+   "basis": "assumed_reanalysis_lag_6d",
+   "lagDays": 6,
+   "localTime": "00:00+05:30"
+  },
+  "revisions": "vintage 1 at assumed availability; later vintages at their recorded fetch time with revisionOf"
+ },
+ "exclusionRules": [
+  "validation_status_not_valid",
+  "modal_below_300_inr_per_quintal",
+  "scaling_flag_3_5x_or_0_25x_ka_month_median",
+  "price_order_violation",
+  "observed_before_training_start"
+ ],
+ "weatherRegionId": "open-meteo:hassan-13.00-76.10",
+ "seasons": [
+  {
+   "seasonId": "2021-22",
+   "decisionCutoff": "2021-05-01T00:00:00+05:30",
+   "plantingWindow": {
+    "start": "2021-05-01",
+    "end": "2021-05-31"
+   },
+   "harvestWindow": {
+    "start": "2021-11-29",
+    "end": "2022-02-27"
+   },
+   "horizonWeeks": 45
+  },
+  {
+   "seasonId": "2022-23",
+   "decisionCutoff": "2022-05-01T00:00:00+05:30",
+   "plantingWindow": {
+    "start": "2022-05-01",
+    "end": "2022-05-31"
+   },
+   "harvestWindow": {
+    "start": "2022-11-28",
+    "end": "2023-02-26"
+   },
+   "horizonWeeks": 45
+  },
+  {
+   "seasonId": "2023-24",
+   "decisionCutoff": "2023-05-01T00:00:00+05:30",
+   "plantingWindow": {
+    "start": "2023-05-01",
+    "end": "2023-05-31"
+   },
+   "harvestWindow": {
+    "start": "2023-11-27",
+    "end": "2024-02-25"
+   },
+   "horizonWeeks": 45
+  },
+  {
+   "seasonId": "2024-25",
+   "decisionCutoff": "2024-05-01T00:00:00+05:30",
+   "plantingWindow": {
+    "start": "2024-05-01",
+    "end": "2024-05-31"
+   },
+   "harvestWindow": {
+    "start": "2024-11-25",
+    "end": "2025-02-23"
+   },
+   "horizonWeeks": 45
+  },
+  {
+   "seasonId": "2025-26",
+   "decisionCutoff": "2025-05-01T00:00:00+05:30",
+   "plantingWindow": {
+    "start": "2025-05-01",
+    "end": "2025-05-31"
+   },
+   "harvestWindow": {
+    "start": "2025-11-24",
+    "end": "2026-02-22"
+   },
+   "horizonWeeks": 45
+  }
+ ],
+ "trainingPolicy": {
+  "kind": "expanding",
+  "minTrainWeeks": 80
+ },
+ "modelConfig": {
+  "candidate": {
+   "weatherRegionByMarket": {
+    "agmarknet:ka:binny-mill-fv-bengaluru": "open-meteo:hassan-13.00-76.10",
+    "agmarknet:ka:belur": "open-meteo:hassan-13.00-76.10",
+    "agmarknet:ka:ramanagara": "open-meteo:hassan-13.00-76.10"
+   }
+  },
+  "candidates": [
+   {
+    "id": "C_snaive",
+    "anchor": "seasonal_naive",
+    "featureGroups": {}
+   },
+   {
+    "id": "C_base",
+    "featureGroups": {}
+   },
+   {
+    "id": "C_weather",
+    "featureGroups": {
+     "weather_climatology": true
+    }
+   },
+   {
+    "id": "C_satellite",
+    "featureGroups": {
+     "satellite_anomaly": true
+    }
+   }
+  ]
+ },
+ "releaseRule": {
+  "minCommonTargets": 20,
+  "minCoverage80": 0.6,
+  "candidateMustBeatBestBaselineOn": [
+   "mae",
+   "wis80"
+  ],
+  "baselineChoice": "lower wis80, mae tie-break",
+  "releaseEligible": [
+   "A_last_value",
+   "B_seasonal_reference",
+   "C_base",
+   "C_weather"
+  ]
+ }
+}
