@@ -1,0 +1,246 @@
+/* Shared primitives: Chip, ScoreRing, Sparkline, PriceTrendChart, Sheet. Theme tokens only (apps/web/src/theme.css). */
+.ui-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 24px;
+  max-width: 100%;
+  padding: 3px 9px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface-soft);
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.3;
+  text-align: left;
+}
+.ui-chip-growing,
+.ui-chip-done,
+.ui-chip-observed,
+.ui-chip-legume {
+  background: var(--accent-soft);
+  border-color: var(--accent-border);
+  color: var(--accent);
+}
+.ui-chip-forecast,
+.ui-chip-info,
+.ui-chip-model {
+  background: var(--info-soft);
+  border-color: color-mix(in srgb, var(--info) 35%, transparent);
+  color: var(--info);
+}
+.ui-chip-due,
+.ui-chip-watch {
+  background: var(--surface);
+  border-color: var(--border-strong);
+  color: var(--text);
+}
+.ui-chip-overdue,
+.ui-chip-warning {
+  background: var(--danger-soft);
+  border-color: color-mix(in srgb, var(--danger) 40%, transparent);
+  color: var(--danger);
+}
+.ui-chip-typical,
+.ui-chip-illustration {
+  border-style: dashed;
+  border-color: var(--border-strong);
+}
+.ui-chip-dot {
+  width: 7px;
+  height: 7px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: currentColor;
+  animation: ui-pulse 1.2s ease-in-out infinite;
+}
+@keyframes ui-pulse {
+  50% {
+    opacity: 0.25;
+  }
+}
+
+.ui-score-ring {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+.ui-score-ring svg {
+  position: absolute;
+  inset: 0;
+}
+.ui-score-ring-track {
+  stroke: var(--border);
+}
+.ui-score-ring-value {
+  stroke: var(--accent-ui);
+}
+:root[data-theme="dark"] .ui-score-ring-value {
+  stroke: var(--accent);
+}
+.ui-score-ring-num {
+  position: relative;
+  color: var(--text);
+  font-family: "Manrope", sans-serif;
+  font-weight: 750;
+  line-height: 1;
+}
+
+.ui-sparkline {
+  display: block;
+  width: 100%;
+  height: 56px;
+  overflow: visible;
+}
+.ui-sparkline-line {
+  stroke: var(--accent);
+  stroke-width: 2;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+.ui-sparkline-mark {
+  stroke: var(--border-strong);
+  stroke-width: 1;
+  stroke-dasharray: 2 3;
+}
+.ui-trend {
+  margin: 8px 0 0;
+}
+.ui-trend figcaption {
+  display: grid;
+  gap: 2px;
+  margin-top: 6px;
+  color: var(--text-secondary);
+  font-size: 12px;
+  line-height: 1.45;
+}
+.ui-trend-range {
+  color: var(--text);
+}
+.ui-trend-empty {
+  margin-top: 6px;
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+
+.ui-sheet-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1050;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  background: var(--overlay);
+}
+.ui-sheet {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 640px;
+  max-height: 90dvh;
+  border: 1px solid var(--border);
+  border-bottom: 0;
+  border-radius: 18px 18px 0 0;
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: 0 -12px 40px var(--shadow-color);
+  animation: ui-sheet-in 0.18s ease-out;
+}
+.ui-sheet-handle {
+  width: 40px;
+  height: 4px;
+  margin: 8px auto 0;
+  border-radius: 4px;
+  background: var(--border-strong);
+}
+.ui-sheet-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 8px 16px 12px;
+  border-bottom: 1px solid var(--border);
+}
+.ui-sheet-titles {
+  flex: 1;
+  min-width: 0;
+}
+.ui-sheet-head h2 {
+  font-size: 19px;
+  line-height: 1.3;
+}
+.ui-sheet-subtitle {
+  margin-top: 4px;
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+.ui-sheet-close {
+  display: grid;
+  flex-shrink: 0;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  background: var(--surface-soft);
+  color: var(--text);
+}
+.ui-sheet-close:hover {
+  background: var(--surface-hover);
+}
+.ui-sheet-body {
+  flex: 1;
+  min-height: 0;
+  padding: 14px 16px 20px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.ui-sheet-foot {
+  display: flex;
+  gap: 10px;
+  padding: 12px 16px calc(12px + env(safe-area-inset-bottom));
+  border-top: 1px solid var(--border);
+  background: var(--surface);
+}
+.ui-sheet-foot > * {
+  flex: 1;
+}
+@keyframes ui-sheet-in {
+  from {
+    transform: translateY(24px);
+    opacity: 0;
+  }
+}
+@keyframes ui-panel-in {
+  from {
+    transform: translateX(24px);
+    opacity: 0;
+  }
+}
+@media (min-width: 900px) {
+  .ui-sheet-backdrop {
+    align-items: stretch;
+    justify-content: flex-end;
+  }
+  .ui-sheet {
+    max-width: 480px;
+    max-height: none;
+    height: 100%;
+    border: 0;
+    border-left: 1px solid var(--border);
+    border-radius: 0;
+    animation-name: ui-panel-in;
+  }
+  .ui-sheet-handle {
+    display: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ui-sheet,
+  .ui-chip-dot {
+    animation: none;
+  }
+}
