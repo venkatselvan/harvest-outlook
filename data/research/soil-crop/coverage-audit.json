@@ -1,0 +1,255 @@
+{
+  "checkedAt": "2026-10-30",
+  "checksPassed": [
+    "257exact inventory identities",
+    "177unique profiles",
+    "all regional facts have source/locator/scope",
+    "all evidence non-executable",
+    "species alternatives unselected",
+    "numeric envelopes validated and equal preserved source cells",
+    "soil groups cannot create measurements"
+  ],
+  "coverage": {
+    "observedCommodityNames": 257,
+    "distinctProfileGroups": 177,
+    "profilesWithEcocrop": 110,
+    "profilesWithEcocropVariants": 24,
+    "profilesWithAnyEcologicalReference": 134,
+    "profilesWithRegionalEvidence": 69,
+    "profilesWithSourceQualityFlags": 0,
+    "completeAgronomicCoverage": false,
+    "soilTypeReferences": 8,
+    "regionalEvidenceFacts": 303
+  },
+  "commodityClassifications": {
+    "crop": 86,
+    "crop_group": 26,
+    "identity_pending": 51,
+    "crop_product": 62,
+    "processed_crop_product": 22,
+    "livestock": 6,
+    "aquaculture": 2,
+    "fungus_group": 1,
+    "animal_product": 1
+  },
+  "regionalFactsByParameter": {
+    "soil_texture": 24,
+    "water_management": 20,
+    "harvest_onset": 5,
+    "fertilizer_reference": 50,
+    "planting_window": 57,
+    "harvest_duration": 20,
+    "climate": 19,
+    "soil_ph_range": 46,
+    "irrigation_reference": 7,
+    "harvest_reference": 11,
+    "temperature_range": 11,
+    "water_reference": 4,
+    "photoperiod": 2,
+    "climate_reference": 3,
+    "crop_period_rainfall_range": 2,
+    "nutrient_reference": 10,
+    "substrate_reference": 1,
+    "cultivar_scope": 3,
+    "regional_crop_reference": 1,
+    "flowering_reference": 1,
+    "salinity_reference": 1,
+    "harvest_stage": 2,
+    "harvest_window": 1,
+    "temperature_reference": 1,
+    "annual_rainfall_range": 1
+  },
+  "profileGroupsWithoutAnyAgronomicReference": [
+    {
+      "profileId": "akarkara",
+      "botanicalCandidate": "Anacyclus pyrethrum",
+      "sourceCommodities": [
+        "Akarkara"
+      ],
+      "identityStatus": "identity_unresolved"
+    },
+    {
+      "profileId": "beans-unspecified",
+      "botanicalCandidate": null,
+      "sourceCommodities": [
+        "Beans"
+      ],
+      "identityStatus": "identity_unresolved"
+    },
+    {
+      "profileId": "bunch-beans-unspecified",
+      "botanicalCandidate": null,
+      "sourceCommodities": [
+        "Bunch Beans"
+      ],
+      "identityStatus": "identity_unresolved"
+    },
+    {
+      "profileId": "buttery-unspecified",
+      "botanicalCandidate": null,
+      "sourceCommodities": [
+        "buttery"
+      ],
+      "identityStatus": "identity_unresolved"
+    },
+    {
+      "profileId": "chennangi-unspecified",
+      "botanicalCandidate": null,
+      "sourceCommodities": [
+        "Chennangi Dal"
+      ],
+      "identityStatus": "identity_unresolved"
+    },
+    {
+      "profileId": "duster-beans-unspecified",
+      "botanicalCandidate": null,
+      "sourceCommodities": [
+        "Duster Beans"
+      ],
+      "identityStatus": "identity_unresolved"
+    },
+    {
+      "profileId": "flowers-unspecified",
+      "botanicalCandidate": null,
+      "sourceCommodities": [
+        "Flowers-Others"
+      ],
+      "identityStatus": "identity_unresolved"
+    },
+    {
+      "profileId": "fodder-unspecified",
+      "botanicalCandidate": null,
+      "sourceCommodities": [
+        "Dry Fodder",
+        "Green Fodder"
+      ],
+      "identityStatus": "identity_unresolved"
+    },
+    {
+      "profileId": "gram-unspecified",
+      "botanicalCandidate": null,
+      "sourceCommodities": [
+        "Big Gram"
+      ],
+      "identityStatus": "identity_unresolved"
+    },
+    {
+      "profileId": "gulli-unspecified",
+      "botanicalCandidate": null,
+      "sourceCommodities": [
+        "gulli"
+      ],
+      "identityStatus": "identity_unresolved"
+    },
+    {
+      "profileId": "kutki-unspecified",
+      "botanicalCandidate": null,
+      "sourceCommodities": [
+        "Kutki"
+      ],
+      "identityStatus": "identity_unresolved"
+    },
+    {
+      "profileId": "leafy-vegetable-unspecified",
+      "botanicalCandidate": null,
+      "sourceCommodities": [
+        "Leafy Vegetable"
+      ],
+      "identityStatus": "identity_unresolved"
+    },
+    {
+      "profileId": "leaves-unspecified",
+      "botanicalCandidate": null,
+      "sourceCommodities": [
+        "Season Leaves"
+      ],
+      "identityStatus": "identity_unresolved"
+    },
+    {
+      "profileId": "lily-unspecified",
+      "botanicalCandidate": null,
+      "sourceCommodities": [
+        "Lilly"
+      ],
+      "identityStatus": "identity_unresolved"
+    },
+    {
+      "profileId": "mushroom-unspecified",
+      "botanicalCandidate": null,
+      "sourceCommodities": [
+        "Mushroom"
+      ],
+      "identityStatus": "identity_unresolved"
+    },
+    {
+      "profileId": "pulses-unspecified",
+      "botanicalCandidate": null,
+      "sourceCommodities": [
+        "Other Pulses"
+      ],
+      "identityStatus": "identity_unresolved"
+    },
+    {
+      "profileId": "pundi-unspecified",
+      "botanicalCandidate": null,
+      "sourceCommodities": [
+        "Pundi Seed"
+      ],
+      "identityStatus": "identity_unresolved"
+    },
+    {
+      "profileId": "sago-unspecified",
+      "botanicalCandidate": null,
+      "sourceCommodities": [
+        "Sabu Dan"
+      ],
+      "identityStatus": "identity_unresolved"
+    },
+    {
+      "profileId": "sweet-saag-unspecified",
+      "botanicalCandidate": null,
+      "sourceCommodities": [
+        "Sweet Saag"
+      ],
+      "identityStatus": "identity_unresolved"
+    },
+    {
+      "profileId": "tube-flower-unspecified",
+      "botanicalCandidate": null,
+      "sourceCommodities": [
+        "Tube Flower"
+      ],
+      "identityStatus": "identity_unresolved"
+    },
+    {
+      "profileId": "vegetables-unspecified",
+      "botanicalCandidate": null,
+      "sourceCommodities": [
+        "Other green and fresh vegetables"
+      ],
+      "identityStatus": "identity_unresolved"
+    },
+    {
+      "profileId": "wild-cucumber-unspecified",
+      "botanicalCandidate": null,
+      "sourceCommodities": [
+        "Wild Cucumber"
+      ],
+      "identityStatus": "identity_unresolved"
+    },
+    {
+      "profileId": "wood-unspecified",
+      "botanicalCandidate": null,
+      "sourceCommodities": [
+        "Wood"
+      ],
+      "identityStatus": "identity_unresolved"
+    }
+  ],
+  "limitations": [
+    "Current available daily price snapshot is not the full historical AGMARKNET universe.",
+    "Full cultivar/geography/method-specific agronomic coverage is incomplete.",
+    "No universal numerical OC/N/P/K/micronutrient soil targets or automatic fertilizer prescription.",
+    "Source references include historical material and uneven expert ecological envelopes."
+  ]
+}

@@ -33,7 +33,7 @@ describe("api server", () => {
   it("capabilities exposes provider booleans but never secrets", async () => {
     const res = await app.inject({ url: "/api/v1/capabilities" });
     const body = res.json();
-    expect(body.data.providers).toEqual({ meta: true, elevenlabs: false });
+    expect(body.data.providers).toEqual({ meta: true });
     expect(body.data.languages).toEqual(["en", "ta", "hi"]);
     expect(body.warnings.map((w: { message: string }) => w.message).join(" ")).toMatch(/Synthetic/);
     expect(res.body).not.toContain("sk-secret-123");

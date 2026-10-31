@@ -1,6 +1,7 @@
 import type { FastifyInstance } from "fastify";
 import type { ZodTypeProvider } from "fastify-type-provider-zod";
 import { z } from "zod";
+import { FarmWorkspace, PutFarmWorkspace,CurrentMandiQuotes } from '@harvest/contracts';
 import type { Config } from "../config";
 import type { Pool } from "../db/pool";
 import { envelope } from "../envelope";
@@ -12,11 +13,60 @@ import { parseIdempotencyKey, runIdempotent } from "../services/idempotency";
 import type { StorageAdapter } from "../storage/types";
 import { envelopeSchema, uuidParam } from "./schemas/common";
 import { createFarmBody, deleteFarmOut, farmListOut, farmOut, patchFarmBody } from "./schemas/farms";
+import { getWorkspace, putWorkspace } from '../services/workspace';
+import { monitoringSnapshot } from '../services/monitoring';
+import type { PriceDeps } from '../plans/adapters/market-outlook';
+import type { FetchLike } from '../ingest/http';
+import {currentMandiQuotes} from '../services/market-quotes';
+import {ensurePlanningReview,type PlanningDeps} from '../services/planning-review';
+import { MonitorSettings, readMonitorSettings, saveMonitorSnapshot, updateMonitorSettings } from '../services/monitor-schedule';
 
-export async function farmRoutes(app: FastifyInstance, opts: { config: Config; pool: Pool; storage: StorageAdapter }) {
+export async function farmRoutes(app: FastifyInstance, opts: { config: Config; pool: Pool; storage: StorageAdapter; prices?: PriceDeps | undefined; weatherFetch?: FetchLike | undefined; planning?:PlanningDeps|undefined }) {
   const { config, pool, storage } = opts;
   app.addHook("onRequest", privateRouteGuard(config, pool));
   const r = app.withTypeProvider<ZodTypeProvider>();
+
+  r.get('/api/v1/farms/:id/market-quotes',{schema:{tags:['farms'],params:uuidParam,response:{200:envelopeSchema(CurrentMandiQuotes)}}},async req=>envelope(req.id,config.RUNTIME_MODE,await currentMandiQuotes({config,pool,fetchImpl:opts.weatherFetch as unknown as typeof fetch},requireAuth(req).ownerId,req.params.id)));
+  r.post('/api/v1/farms/:id/market-quotes',{config:{rateLimit:{max:6,timeWindow:'1 minute'}},schema:{tags:['farms'],params:uuidParam,body:z.object({productIds:z.array(z.string().min(1).max(200)).max(8).optional()}).strict(),response:{200:envelopeSchema(CurrentMandiQuotes)}}},async req=>envelope(req.id,config.RUNTIME_MODE,await currentMandiQuotes({config,pool,fetchImpl:opts.weatherFetch as unknown as typeof fetch},requireAuth(req).ownerId,req.params.id,{refresh:true,...(req.body.productIds?{productIds:req.body.productIds}:{})})));
+
+  r.get('/api/v1/farms/:id/workspace', {
+    schema: { tags: ['farms'], params: uuidParam, response: { 200: envelopeSchema(FarmWorkspace) } },
+  }, async (req) => envelope(req.id, config.RUNTIME_MODE, await getWorkspace(pool, requireAuth(req).ownerId, req.params.id)));
+
+  r.put('/api/v1/farms/:id/workspace', {
+    schema: { tags: ['farms'], params: uuidParam, body: PutFarmWorkspace, response: { 200: envelopeSchema(FarmWorkspace) } },
+  }, async (req) => {
+    const auth=requireAuth(req);const saved=await putWorkspace(pool,auth.ownerId,req.params.id,req.body);
+    // Initial unknown history is collected in a follow-up form. Explicitly submitted unknown uses POST ensure.
+    if(opts.planning&&saved.previousHarvest.status!=='unknown')await ensurePlanningReview(opts.planning,auth,req.params.id).catch(()=>req.log.warn({code:'planning_enqueue_unavailable'},'Workspace saved; automatic planning enqueue unavailable'));
+    return envelope(req.id,config.RUNTIME_MODE,saved);
+  });
+
+  r.get('/api/v1/farms/:id/monitoring', {
+    schema: { tags: ['farms'], params: uuidParam, response: { 200: envelopeSchema(z.unknown()) } },
+  }, async (req) => {
+    const ownerId = requireAuth(req).ownerId;
+    const snapshot = await monitoringSnapshot({ config, pool, prices: opts.prices, fetchImpl: opts.weatherFetch }, ownerId, req.params.id);
+    await saveMonitorSnapshot(pool, ownerId, snapshot);
+    return envelope(req.id, config.RUNTIME_MODE, { ...snapshot, schedule: await readMonitorSettings(pool, ownerId, req.params.id, config.RUNTIME_MODE) });
+  });
+
+  r.put('/api/v1/farms/:id/monitoring', {
+    schema: { tags: ['farms'], params: uuidParam, body: MonitorSettings, response: { 200: envelopeSchema(z.unknown()) } },
+  }, async (req) => {
+    const auth = requireAuth(req);
+    return envelope(req.id, config.RUNTIME_MODE, await updateMonitorSettings(pool, auth.ownerId, req.params.id, auth.sessionId, req.body, config.RUNTIME_MODE));
+  });
+
+  r.get('/api/v1/farms/:id/plans', {
+    schema: { tags: ['farms'], params: uuidParam, querystring:z.object({includeArchived:z.enum(['true','false']).default('false')}),response: { 200: envelopeSchema(z.unknown()) } },
+  }, async (req) => {
+    const ownerId = requireAuth(req).ownerId;
+    if (!await getFarm(pool, ownerId, req.params.id)) throw notFound('Farm');
+    const plans = await pool.query<{ id: string; parent_plan_id: string | null; snapshot: Record<string, unknown>; created_at: Date }>(
+      'SELECT id,parent_plan_id,snapshot,created_at FROM plans p WHERE farm_id=$1 AND owner_id=$2 AND ($3 OR NOT EXISTS(SELECT 1 FROM archived_plans a WHERE a.plan_id=p.id AND a.owner_id=$2)) ORDER BY created_at DESC,id DESC LIMIT 100', [req.params.id, ownerId,req.query.includeArchived==='true']);
+    return envelope(req.id, config.RUNTIME_MODE, { plans: plans.rows.map((p) => ({ id: p.id, parentId: p.parent_plan_id, cropId: p.snapshot.cropId, productId: p.snapshot.productId, createdAt: p.created_at.toISOString() })) });
+  });
 
   r.post(
     "/api/v1/farms",

@@ -123,7 +123,8 @@ describe("price estimator", () => {
     expect(estimateCost(t, "meta", "muse-wonder-1.0", { inputTokens: 10_000, outputTokens: 2_000 }).usd).toBeCloseTo(0.08, 9);
     expect(estimateCost(t, "meta", "muse-image-1.0", { images: 3 }).usd).toBeCloseTo(0.03, 9);
     expect(estimateCost(t, "meta", "sam-3.1", { images: 1 }).usd).toBe(0.0025);
-    expect(estimateCost(t, "elevenlabs", "any-model", { characters: 1200 })).toEqual({ usd: null, units: { characters: 1200 } });
+    expect(estimateCost(t, "meta", "muse-voice-transcribe-1.0", { seconds: 60 }).usd).toBe(.003);
+    expect(() => estimateCost(t, "elevenlabs", "any-model", { characters: 1200 })).toThrow(/No price configured/);
   });
   it("refuses unpriced models and bad inputs; the override table merges over defaults", () => {
     expect(() => estimateCost(DEFAULT_PRICE_TABLE, "meta", "mystery-9", { images: 1 })).toThrow(/No price configured/);

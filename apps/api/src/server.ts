@@ -33,7 +33,7 @@ import { PgVisualAssetSource } from "./visuals";
 import { JournalService, journalTaskCompletionSource } from "./journal";
 import { CatalogueStore } from "./catalogue/snapshot";
 import { registerRoutes, type RouteDeps } from "./routes";
-import { createSpeechProvider, speechConfigFor } from "./routes/speech";
+import { MetaSpeech } from "./speech/meta";
 import { resolveSession } from "./security/session";
 import type { FetchLike } from "./ingest/http";
 import { envelopeSchema, MODES } from "./routes/schemas/common";
@@ -51,7 +51,7 @@ const capabilitiesData = z.object({
     speechToText: z.string().nullable(),
     textToSpeech: z.string().nullable(),
   }),
-  providers: z.object({ meta: z.boolean(), elevenlabs: z.boolean() }),
+  providers: z.object({ meta: z.boolean() }),
   languages: z.array(z.string()),
   database: z.object({ reachable: z.boolean(), postgis: z.boolean() }),
   limits: z.object({ maxUploadImageBytes: z.number(), maxVoiceSeconds: z.number() }),
@@ -128,8 +128,7 @@ export async function buildServer(config: Config, pool: Pool, deps: ServerDeps =
   const toolBindings = allBindings({ pool, plans, budget, segmentModel: config.META_SEGMENT_MODEL, int2: { config, catalogue, prices }, journal });
   const boundTools = Object.keys(toolBindings);
   const toolNames = Object.keys(ToolSchemas);
-  const speechConfig = deps.speech?.speech ?? speechConfigFor(config);
-  const speechProvider = deps.speech?.provider ?? createSpeechProvider(config, speechConfig);
+  const speechService = deps.speech?.service ?? new MetaSpeech({config,pool,budget,...(deps.speech?.fetchImpl?{fetchImpl:deps.speech.fetchImpl}:{})});
   const app = Fastify({
     logger: {
       level: config.LOG_LEVEL,
@@ -206,6 +205,7 @@ export async function buildServer(config: Config, pool: Pool, deps: ServerDeps =
     { schema: { tags: ["system"], response: { 200: envelopeSchema(capabilitiesData) } } },
     async (req) => {
       const db = await databaseStatus(pool);
+      const speechStatus = await speechService.status();
       const summary = db.reachable ? await budget.summary().catch(() => null) : null;
       const session = summary ? await resolveSession(pool, config, req).catch(() => null) : null;
       const budgetSummary = summary ? (session ? summary : { exhausted: summary.exhausted }) : null;
@@ -222,15 +222,15 @@ export async function buildServer(config: Config, pool: Pool, deps: ServerDeps =
             escalation: config.META_ESCALATION_MODEL,
             image: config.META_IMAGE_MODEL,
             segment: config.META_SEGMENT_MODEL,
-            speechToText: config.ELEVENLABS_STT_MODEL ?? null,
-            textToSpeech: config.ELEVENLABS_TTS_MODEL ?? null,
+            speechToText: speechStatus.available ? config.META_STT_MODEL : null,
+            textToSpeech: null,
           },
-          providers: { meta: !!config.MODEL_API_KEY, elevenlabs: !!config.ELEVENLABS_API_KEY },
+          providers: { meta: !!config.MODEL_API_KEY },
           languages: [...LANGUAGES],
           database: db,
           limits: { maxUploadImageBytes: config.MAX_UPLOAD_IMAGE_BYTES, maxVoiceSeconds: config.MAX_VOICE_SECONDS },
           budget: budgetSummary,
-          speech: { available: speechProvider.live, qualified: false as const },
+          speech: { available: speechStatus.available, qualified: false as const },
           tools: { bound: toolNames.filter((n) => boundTools.includes(n)), unbound: toolNames.filter((n) => !boundTools.includes(n)) },
         },
         warnings,
@@ -249,7 +249,8 @@ export async function buildServer(config: Config, pool: Pool, deps: ServerDeps =
     prices,
     toolBindings,
     assistant: deps.assistant,
-    speech: { ...deps.speech, speech: speechConfig, provider: speechProvider },
+    weatherFetch: deps.weatherFetch,
+    speech: { service: speechService },
   });
   await budget.init().catch((e) => app.log.warn({ err: { type: (e as Error).name } }, "budget_state not initialised (database unavailable or unmigrated)"));
 

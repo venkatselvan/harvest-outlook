@@ -1,5 +1,6 @@
 import { setTimeout as sleepTimer } from "node:timers/promises";
 import sharp from "sharp";
+import {trackMetaInvocation} from '../../services/model-activity';
 import { MetaError, type CreateResponseParams, type InputItem, type MetaResponse, type ParsedFunctionCall, type ParsedUsage } from "./types";
 
 export const MAX_RETRIES = 2;
@@ -127,6 +128,11 @@ export class MetaClient {
   }
 
   async createResponse(p: CreateResponseParams, signal?: AbortSignal): Promise<MetaResponse> {
+    if(!this.opts.apiKey)throw new MetaError('provider_unavailable','MODEL_API_KEY is not configured');
+    return trackMetaInvocation(p.model,()=>this.createResponseTransport(p,signal),result=>result.model);
+  }
+
+  private async createResponseTransport(p: CreateResponseParams, signal?: AbortSignal): Promise<MetaResponse> {
     const key = this.opts.apiKey;
     if (!key) throw new MetaError("provider_unavailable", "MODEL_API_KEY is not configured");
     const body = JSON.stringify(this.buildBody(p));

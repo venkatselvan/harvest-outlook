@@ -1,0 +1,117 @@
+/* Shared UI palette. Photos, map tiles and source documents retain their colors. */
+:root {
+  color-scheme: light;
+  --text: #171a1d;
+  --text-secondary: #4b5058;
+  --fg: var(--text);
+  --muted: #5d626a;
+  --bg: #f5f6f7;
+  --surface: #ffffff;
+  --surface-soft: #f1f3f5;
+  --surface-hover: #e9edf0;
+  --surface-glass: rgb(255 255 255 / 95%);
+  --border: #dce0e4;
+  --border-strong: #87909a;
+  --primary: #355e41;
+  --primary-hover: #254c31;
+  --accent: #285338;
+  --accent-ui: #477153;
+  --accent-soft: #edf5ef;
+  --accent-border: #b4ccb9;
+  --on-accent: #ffffff;
+  --focus: #3b7750;
+  --danger: #9c2222;
+  --danger-soft: #fff2f2;
+  --info: #264f86;
+  --info-soft: #edf3fc;
+  --overlay: rgb(12 17 22 / 55%);
+  --shadow-color: rgb(12 17 22 / 12%);
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --text: #f2f4f6;
+  --text-secondary: #c5cbd2;
+  --muted: #b0b8c2;
+  --bg: #111417;
+  --surface: #1b1f24;
+  --surface-soft: #242a31;
+  --surface-hover: #303842;
+  --surface-glass: rgb(27 31 36 / 96%);
+  --border: #3a434d;
+  --border-strong: #74818f;
+  --accent: #a8dbb5;
+  --accent-ui: #497456;
+  --accent-soft: #20372a;
+  --accent-border: #496d53;
+  --focus: #abdbb5;
+  --danger: #ffb1b1;
+  --danger-soft: #3b2528;
+  --info: #a9cdfa;
+  --info-soft: #213249;
+  --overlay: rgb(0 0 0 / 70%);
+  --shadow-color: rgb(0 0 0 / 30%);
+}
+html,
+body {
+  background: var(--bg);
+  color: var(--text);
+}
+input,
+select,
+textarea {
+  color-scheme: inherit;
+  color: var(--text);
+  background-color: var(--surface);
+}
+input::placeholder,
+textarea::placeholder {
+  color: var(--muted);
+  opacity: 1;
+}
+input[type="checkbox"],
+input[type="radio"],
+input[type="range"],
+progress {
+  accent-color: var(--accent-ui);
+}
+option,
+optgroup {
+  background: var(--surface);
+  color: var(--text);
+}
+::selection {
+  background: var(--accent);
+  color: var(--surface);
+}
+.theme-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-width: 40px;
+  min-height: 40px;
+  padding: 8px 11px;
+  border: 1px solid var(--border-strong);
+  border-radius: 7px;
+  background: var(--surface);
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+.theme-toggle:hover {
+  background: var(--surface-soft);
+}
+.theme-toggle[aria-pressed="true"] {
+  background: var(--accent-soft);
+  border-color: var(--accent-border);
+  color: var(--accent);
+}
+@media (max-width: 760px) {
+  .theme-toggle {
+    padding: 8px;
+  }
+  .theme-toggle > span {
+    display: none;
+  }
+}

@@ -1,13 +1,74 @@
-.ask-page { display: grid; gap: 12px; max-width: 40rem; }
-.ask-form { display: grid; gap: 8px; }
-.ask-form textarea, .ask-form select, .ask-reply input { width: 100%; font: inherit; padding: 8px 12px; min-height: 44px; border: 1px solid var(--border); border-radius: 8px; box-sizing: border-box; }
-.ask-badge { display: inline-block; padding: 2px 8px; border-radius: 999px; background: #fff3cd; color: #5c4400; font-size: 0.85rem; font-weight: 600; }
-.ask-badge.live { background: #dff3e4; color: #124a22; }
-.ask-block { margin: 0 0 8px; }
-.ask-block.warning, .ask-block.limitation { padding: 8px 12px; background: #fff3cd; border-radius: 8px; }
-.ask-withheld { margin: 0; padding: 8px 12px; background: #e8eefc; color: #12306b; border-radius: 8px; }
-.ask-error { margin: 0; padding: 8px 12px; background: #fde0e0; color: #6b1010; border-radius: 8px; }
-.ask-meta { color: var(--muted); font-size: 0.9rem; margin: 4px 0; overflow-wrap: anywhere; }
-.ask-refs { margin: 4px 0; font-size: 0.9rem; }
-.ask-refs code { overflow-wrap: anywhere; }
-.ask-options { display: flex; flex-wrap: wrap; gap: 8px; }
+.ask-page {
+  display: grid;
+  gap: 12px;
+  max-width: 40rem;
+}
+.ask-form {
+  display: grid;
+  gap: 8px;
+}
+.ask-form textarea,
+.ask-form select,
+.ask-reply input {
+  width: 100%;
+  font: inherit;
+  padding: 8px 12px;
+  min-height: 44px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-sizing: border-box;
+}
+.ask-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--surface-soft);
+  color: var(--text);
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+.ask-badge.live {
+  background: var(--surface-soft);
+  color: var(--accent);
+}
+.ask-block {
+  margin: 0 0 8px;
+}
+.ask-block.warning,
+.ask-block.limitation {
+  padding: 8px 12px;
+  background: var(--surface-soft);
+  border-radius: 8px;
+}
+.ask-withheld {
+  margin: 0;
+  padding: 8px 12px;
+  background: var(--surface-soft);
+  color: var(--info);
+  border-radius: 8px;
+}
+.ask-error {
+  margin: 0;
+  padding: 8px 12px;
+  background: var(--surface-soft);
+  color: var(--danger);
+  border-radius: 8px;
+}
+.ask-meta {
+  color: var(--muted);
+  font-size: 0.9rem;
+  margin: 4px 0;
+  overflow-wrap: anywhere;
+}
+.ask-refs {
+  margin: 4px 0;
+  font-size: 0.9rem;
+}
+.ask-refs code {
+  overflow-wrap: anywhere;
+}
+.ask-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}

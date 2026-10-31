@@ -1,0 +1,1602 @@
+{
+  "schemaVersion": "1.0",
+  "sources": [
+    {
+      "label": "chia",
+      "url": "https://niam.res.in/sites/default/files/pdfs/Chia%20technical%20folder%20English%20final.pdf",
+      "sha256": "115339595ee349556f6118e1b2bdb7fbf84ec493536aa00d1a9d88d4057e5ff6",
+      "retrievedAt": "2026-10-30",
+      "localResearchPath": "/tmp/harvest-gap/chia.pdf",
+      "status": "retrieved"
+    },
+    {
+      "label": "safed-musli",
+      "url": "https://www.dmapr.org.in/Publications/bulletine/Good%20Agricultural%20Practices%20for%20Safed%20musli.pdf",
+      "sha256": "6f4d5ad6a95b1351baccb6d3fa165778eb5fd19f707aacd733a39a67886c7f80",
+      "retrievedAt": "2026-10-30",
+      "localResearchPath": "/tmp/harvest-gap/safed-musli.pdf",
+      "status": "retrieved"
+    },
+    {
+      "label": "spiny-gourd",
+      "url": "https://epubs.icar.org.in/index.php/IndHort/article/download/123802/46864",
+      "sha256": "4d557ca62e3770e904af3df77da57f3ae87086bf230f61282617f717bf49039a",
+      "retrievedAt": "2026-10-30",
+      "localResearchPath": "/tmp/harvest-gap/spiny-gourd.pdf",
+      "status": "retrieved"
+    },
+    {
+      "label": "homegarden",
+      "url": "https://www.indiascienceandtechnology.gov.in/sites/default/files/Compendium%20HomeGarden.pdf",
+      "sha256": "6d86b0179ec24a2f704bd0fecfd040426d62efea587ad480e87f3f82faa0a616",
+      "retrievedAt": "2026-10-30",
+      "localResearchPath": "/tmp/harvest-gap/homegarden.pdf",
+      "status": "retrieved"
+    },
+    {
+      "label": "Arecanut",
+      "url": "https://agritech.tnau.ac.in/horticulture/horti_plantation%20crops_arecanut.html",
+      "sha256": "e579080200b076405f4799f0cbdcfc36202d53f646e73d9421b8b4007485701c",
+      "retrievedAt": "2026-10-30",
+      "localResearchPath": "/tmp/harvest-gap/Arecanut.html",
+      "status": "retrieved"
+    },
+    {
+      "label": "Fennel",
+      "url": "https://agritech.tnau.ac.in/horticulture/horti_spice%20crops_fennel.html",
+      "sha256": "1cc9aad05ae8fc56f20ec78b686f3605658fc2380252cf02917f44af3ac0a51c",
+      "retrievedAt": "2026-10-30",
+      "localResearchPath": "/tmp/harvest-gap/Fennel.html",
+      "status": "retrieved"
+    },
+    {
+      "label": "Fenugreek",
+      "url": "https://agritech.tnau.ac.in/horticulture/horti_spice%20crops_fenugreek.html",
+      "sha256": "4b82073c4b2ee0cedcb7d7866bf9b5f75d764e14a078250248c64fa893635ea6",
+      "retrievedAt": "2026-10-30",
+      "localResearchPath": "/tmp/harvest-gap/Fenugreek.html",
+      "status": "retrieved"
+    },
+    {
+      "label": "Lablab",
+      "url": "https://agritech.tnau.ac.in/horticulture/horti_vegetables_lab%20lab.html",
+      "sha256": "88630dc8142bd56a7f08e2a0aa68a48de4d5029bb6ea6835064484e39a7a4eda",
+      "retrievedAt": "2026-10-30",
+      "localResearchPath": "/tmp/harvest-gap/Lablab.html",
+      "status": "retrieved"
+    },
+    {
+      "url": "https://icfre.gov.in/pdf/books-file/book13.pdf",
+      "title": "ICFRE tree establishment reference; printed page52",
+      "sha256": null,
+      "retrievedAt": "2026-10-30",
+      "retrievalNote": "Official publication read through web extraction or independently verified by collaborating researcher; local download unavailable."
+    },
+    {
+      "url": "https://document.kerala.gov.in/Porteddata/extensionpdf/documents/10180/5cb0a853-82a7-4426-b6be-eba7c3dda668.pdf",
+      "title": "Kerala Calling October2007; KAU author; printed page39",
+      "sha256": null,
+      "retrievedAt": "2026-10-30",
+      "retrievalNote": "Official publication read through web extraction or independently verified by collaborating researcher; local download unavailable."
+    },
+    {
+      "url": "https://www.pau.edu/content/ccil/pf/pp_fruits.pdf",
+      "title": "PAU Package of Practices for Fruits2021, Punjab",
+      "sha256": null,
+      "retrievedAt": "2026-10-30",
+      "retrievalNote": "Official publication read through web extraction or independently verified by collaborating researcher; local download unavailable."
+    }
+  ],
+  "profiles": [
+    {
+      "profileId": "chia",
+      "evidence": [
+        {
+          "id": "primary-chia-1",
+          "parameter": "soil_texture",
+          "value": "Light soils preferred; heavy-soil compaction can impair emergence. Neutral reaction preferred; sensitive to saline soil and irrigation water.",
+          "unit": null,
+          "scope": {
+            "geography": "ICAR-NIASM2025; semi-arid Indian production reference",
+            "cropOrProductAsPublished": "chia",
+            "conditions": "Published reference; local applicability and actual soil/water tests require review."
+          },
+          "sourceUrl": "https://niam.res.in/sites/default/files/pdfs/Chia%20technical%20folder%20English%20final.pdf",
+          "locator": "PDFp1 Soil",
+          "sourceSha256": "115339595ee349556f6118e1b2bdb7fbf84ec493536aa00d1a9d88d4057e5ff6",
+          "retrievedAt": "2026-10-30",
+          "evidenceType": "published_regional_extension_reference",
+          "reviewStatus": "source_reviewed_reference_only",
+          "executableRecommendation": false
+        },
+        {
+          "id": "primary-chia-2",
+          "parameter": "photoperiod",
+          "value": "Flower induction requires day length below12hours.",
+          "unit": null,
+          "scope": {
+            "geography": "ICAR-NIASM2025; semi-arid Indian production reference",
+            "cropOrProductAsPublished": "chia",
+            "conditions": "Published reference; local applicability and actual soil/water tests require review."
+          },
+          "sourceUrl": "https://niam.res.in/sites/default/files/pdfs/Chia%20technical%20folder%20English%20final.pdf",
+          "locator": "PDFp1 Botanical description",
+          "sourceSha256": "115339595ee349556f6118e1b2bdb7fbf84ec493536aa00d1a9d88d4057e5ff6",
+          "retrievedAt": "2026-10-30",
+          "evidenceType": "published_regional_extension_reference",
+          "reviewStatus": "source_reviewed_reference_only",
+          "executableRecommendation": false
+        },
+        {
+          "id": "primary-chia-3",
+          "parameter": "climate_reference",
+          "value": "Published mean maximum30\u201331\u00b0C, meanRH67\u201375%; not an absolute survival envelope.",
+          "unit": null,
+          "scope": {
+            "geography": "ICAR-NIASM2025; semi-arid Indian production reference",
+            "cropOrProductAsPublished": "chia",
+            "conditions": "Published reference; local applicability and actual soil/water tests require review."
+          },
+          "sourceUrl": "https://niam.res.in/sites/default/files/pdfs/Chia%20technical%20folder%20English%20final.pdf",
+          "locator": "PDFp1 Climate",
+          "sourceSha256": "115339595ee349556f6118e1b2bdb7fbf84ec493536aa00d1a9d88d4057e5ff6",
+          "retrievedAt": "2026-10-30",
+          "evidenceType": "published_regional_extension_reference",
+          "reviewStatus": "source_reviewed_reference_only",
+          "executableRecommendation": false
+        },
+        {
+          "id": "primary-chia-4",
+          "parameter": "crop_period_rainfall_range",
+          "value": [
+            250,
+            350
+          ],
+          "unit": "mm",
+          "scope": {
+            "geography": "ICAR-NIASM2025; semi-arid Indian production reference",
+            "cropOrProductAsPublished": "chia",
+            "conditions": "Published reference; local applicability and actual soil/water tests require review."
+          },
+          "sourceUrl": "https://niam.res.in/sites/default/files/pdfs/Chia%20technical%20folder%20English%20final.pdf",
+          "locator": "PDFp1 Climate",
+          "sourceSha256": "115339595ee349556f6118e1b2bdb7fbf84ec493536aa00d1a9d88d4057e5ff6",
+          "retrievedAt": "2026-10-30",
+          "evidenceType": "published_regional_extension_reference",
+          "reviewStatus": "source_reviewed_reference_only",
+          "executableRecommendation": false
+        },
+        {
+          "id": "primary-chia-5",
+          "parameter": "irrigation_reference",
+          "value": "Fully irrigated context reports300\u2013350mm; interval depends on shallow basaltic versus black soils.",
+          "unit": null,
+          "scope": {
+            "geography": "ICAR-NIASM2025; semi-arid Indian production reference",
+            "cropOrProductAsPublished": "chia",
+            "conditions": "Published reference; local applicability and actual soil/water tests require review."
+          },
+          "sourceUrl": "https://niam.res.in/sites/default/files/pdfs/Chia%20technical%20folder%20English%20final.pdf",
+          "locator": "PDFp1 Irrigation",
+          "sourceSha256": "115339595ee349556f6118e1b2bdb7fbf84ec493536aa00d1a9d88d4057e5ff6",
+          "retrievedAt": "2026-10-30",
+          "evidenceType": "published_regional_extension_reference",
+          "reviewStatus": "source_reviewed_reference_only",
+          "executableRecommendation": false
+        },
+        {
+          "id": "primary-chia-6",
+          "parameter": "planting_window",
+          "value": "15August\u201315September semi-arid window.",
+          "unit": null,
+          "scope": {
+            "geography": "ICAR-NIASM2025; semi-arid Indian production reference",
+            "cropOrProductAsPublished": "chia",
+            "conditions": "Published reference; local applicability and actual soil/water tests require review."
+          },
+          "sourceUrl": "https://niam.res.in/sites/default/files/pdfs/Chia%20technical%20folder%20English%20final.pdf",
+          "locator": "PDFp1 Sowing window",
+          "sourceSha256": "115339595ee349556f6118e1b2bdb7fbf84ec493536aa00d1a9d88d4057e5ff6",
+          "retrievedAt": "2026-10-30",
+          "evidenceType": "published_regional_extension_reference",
+          "reviewStatus": "source_reviewed_reference_only",
+          "executableRecommendation": false
+        },
+        {
+          "id": "primary-chia-7",
+          "parameter": "nutrient_reference",
+          "value": "90:60:75kg/ha N:P2O5:K2O; halfN basal, remainingN split30/45DAS.",
+          "unit": null,
+          "scope": {
+            "geography": "ICAR-NIASM2025; semi-arid Indian production reference",
+            "cropOrProductAsPublished": "chia",
+            "conditions": "Published reference; local applicability and actual soil/water tests require review."
+          },
+          "sourceUrl": "https://niam.res.in/sites/default/files/pdfs/Chia%20technical%20folder%20English%20final.pdf",
+          "locator": "PDFpp1\u20132 Nutrient",
+          "sourceSha256": "115339595ee349556f6118e1b2bdb7fbf84ec493536aa00d1a9d88d4057e5ff6",
+          "retrievedAt": "2026-10-30",
+          "evidenceType": "published_regional_extension_reference",
+          "reviewStatus": "source_reviewed_reference_only",
+          "executableRecommendation": false
+        },
+        {
+          "id": "primary-chia-8",
+          "parameter": "harvest_reference",
+          "value": "July/August sowing:130days; January:60\u201370days. Intercropping section separately states100\u2013110days; do not collapse contexts.",
+          "unit": null,
+          "scope": {
+            "geography": "ICAR-NIASM2025; semi-arid Indian production reference",
+            "cropOrProductAsPublished": "chia",
+            "conditions": "Published reference; local applicability and actual soil/water tests require review."
+          },
+          "sourceUrl": "https://niam.res.in/sites/default/files/pdfs/Chia%20technical%20folder%20English%20final.pdf",
+          "locator": "PDFp2 Harvesting and Intercropping",
+          "sourceSha256": "115339595ee349556f6118e1b2bdb7fbf84ec493536aa00d1a9d88d4057e5ff6",
+          "retrievedAt": "2026-10-30",
+          "evidenceType": "published_regional_extension_reference",
+          "reviewStatus": "source_reviewed_reference_only",
+          "executableRecommendation": false
+        }
+      ]
+    },
+    {
+      "profileId": "safed-musli",
+      "evidence": [
+        {
+          "id": "primary-safed-musli-1",
+          "parameter": "temperature_range",
+          "value": [
+            15,
+            35
+          ],
+          "unit": "\u00b0C",
+          "scope": {
+            "geography": "ICAR-DMAPR2015 Indian cultivation reference",
+            "cropOrProductAsPublished": "safed-musli",
+            "conditions": "Published reference; local applicability and actual soil/water tests require review."
+          },
+          "sourceUrl": "https://www.dmapr.org.in/Publications/bulletine/Good%20Agricultural%20Practices%20for%20Safed%20musli.pdf",
+          "locator": "Printedp3 Climate",
+          "sourceSha256": "6f4d5ad6a95b1351baccb6d3fa165778eb5fd19f707aacd733a39a67886c7f80",
+          "retrievedAt": "2026-10-30",
+          "evidenceType": "published_regional_extension_reference",
+          "reviewStatus": "source_reviewed_reference_only",
+          "executableRecommendation": false
+        },
+        {
+          "id": "primary-safed-musli-2",
+          "parameter": "crop_period_rainfall_range",
+          "value": [
+            500,
+            1500
+          ],
+          "unit": "mm",
+          "scope": {
+            "geography": "ICAR-DMAPR2015 Indian cultivation reference",
+            "cropOrProductAsPublished": "safed-musli",
+            "conditions": "Published reference; local applicability and actual soil/water tests require review."
+          },
+          "sourceUrl": "https://www.dmapr.org.in/Publications/bulletine/Good%20Agricultural%20Practices%20for%20Safed%20musli.pdf",
+          "locator": "Printedp3 June-end\u2013October-end rainfall; converted50\u2013150cm",
+          "sourceSha256": "6f4d5ad6a95b1351baccb6d3fa165778eb5fd19f707aacd733a39a67886c7f80",
+          "retrievedAt": "2026-10-30",
+          "evidenceType": "published_regional_extension_reference",
+          "reviewStatus": "source_reviewed_reference_only",
+          "executableRecommendation": false
+        },
+        {
+          "id": "primary-safed-musli-3",
+          "parameter": "soil_texture",
+          "value": "Drained organic-rich loam preferred; water stagnation harmful. HighpH/calcium carbonate can induce iron chlorosis; no numerical threshold supplied.",
+          "unit": null,
+          "scope": {
+            "geography": "ICAR-DMAPR2015 Indian cultivation reference",
+            "cropOrProductAsPublished": "safed-musli",
+            "conditions": "Published reference; local applicability and actual soil/water tests require review."
+          },
+          "sourceUrl": "https://www.dmapr.org.in/Publications/bulletine/Good%20Agricultural%20Practices%20for%20Safed%20musli.pdf",
+          "locator": "Printedp3 Soil",
+          "sourceSha256": "6f4d5ad6a95b1351baccb6d3fa165778eb5fd19f707aacd733a39a67886c7f80",
+          "retrievedAt": "2026-10-30",
+          "evidenceType": "published_regional_extension_reference",
+          "reviewStatus": "source_reviewed_reference_only",
+          "executableRecommendation": false
+        },
+        {
+          "id": "primary-safed-musli-4",
+          "parameter": "planting_window",
+          "value": "June\u2013July monsoon planting; cited sprouting optimum25June\u20135July.",
+          "unit": null,
+          "scope": {
+            "geography": "ICAR-DMAPR2015 Indian cultivation reference",
+            "cropOrProductAsPublished": "safed-musli",
+            "conditions": "Published reference; local applicability and actual soil/water tests require review."
+          },
+          "sourceUrl": "https://www.dmapr.org.in/Publications/bulletine/Good%20Agricultural%20Practices%20for%20Safed%20musli.pdf",
+          "locator": "Printedp3 Planting time",
+          "sourceSha256": "6f4d5ad6a95b1351baccb6d3fa165778eb5fd19f707aacd733a39a67886c7f80",
+          "retrievedAt": "2026-10-30",
+          "evidenceType": "published_regional_extension_reference",
+          "reviewStatus": "source_reviewed_reference_only",
+          "executableRecommendation": false
+        },
+        {
+          "id": "primary-safed-musli-5",
+          "parameter": "nutrient_reference",
+          "value": "Land preparation15\u201330t/ha FYM or5t/ha vermicompost/poultry manure. Nutrition section separately15tFYM plus50:40:40kgNPK/ha; P/K forms unspecified.",
+          "unit": null,
+          "scope": {
+            "geography": "ICAR-DMAPR2015 Indian cultivation reference",
+            "cropOrProductAsPublished": "safed-musli",
+            "conditions": "Published reference; local applicability and actual soil/water tests require review."
+          },
+          "sourceUrl": "https://www.dmapr.org.in/Publications/bulletine/Good%20Agricultural%20Practices%20for%20Safed%20musli.pdf",
+          "locator": "Printedpp3,5",
+          "sourceSha256": "6f4d5ad6a95b1351baccb6d3fa165778eb5fd19f707aacd733a39a67886c7f80",
+          "retrievedAt": "2026-10-30",
+          "evidenceType": "published_regional_extension_reference",
+          "reviewStatus": "source_reviewed_reference_only",
+          "executableRecommendation": false
+        },
+        {
+          "id": "primary-safed-musli-6",
+          "parameter": "irrigation_reference",
+          "value": "After monsoon or erratic rainfall:15\u201320day intervals, conditional on soil and weather.",
+          "unit": null,
+          "scope": {
+            "geography": "ICAR-DMAPR2015 Indian cultivation reference",
+            "cropOrProductAsPublished": "safed-musli",
+            "conditions": "Published reference; local applicability and actual soil/water tests require review."
+          },
+          "sourceUrl": "https://www.dmapr.org.in/Publications/bulletine/Good%20Agricultural%20Practices%20for%20Safed%20musli.pdf",
+          "locator": "Printedp5 Irrigation",
+          "sourceSha256": "6f4d5ad6a95b1351baccb6d3fa165778eb5fd19f707aacd733a39a67886c7f80",
+          "retrievedAt": "2026-10-30",
+          "evidenceType": "published_regional_extension_reference",
+          "reviewStatus": "source_reviewed_reference_only",
+          "executableRecommendation": false
+        },
+        {
+          "id": "primary-safed-musli-7",
+          "parameter": "harvest_reference",
+          "value": "Raw-drug roots around4months/October; planting-material roots retained throughJanuary\u2013February, harvestedMarch\u2013April.",
+          "unit": null,
+          "scope": {
+            "geography": "ICAR-DMAPR2015 Indian cultivation reference",
+            "cropOrProductAsPublished": "safed-musli",
+            "conditions": "Published reference; local applicability and actual soil/water tests require review."
+          },
+          "sourceUrl": "https://www.dmapr.org.in/Publications/bulletine/Good%20Agricultural%20Practices%20for%20Safed%20musli.pdf",
+          "locator": "Printedp7 Harvesting",
+          "sourceSha256": "6f4d5ad6a95b1351baccb6d3fa165778eb5fd19f707aacd733a39a67886c7f80",
+          "retrievedAt": "2026-10-30",
+          "evidenceType": "published_regional_extension_reference",
+          "reviewStatus": "source_reviewed_reference_only",
+          "executableRecommendation": false
+        }
+      ]
+    },
+    {
+      "profileId": "spiny-gourd",
+      "evidence": [
+        {
+          "id": "primary-spiny-gourd-1",
+          "parameter": "soil_ph_range",
+          "value": [
+            5.5,
+            7
+          ],
+          "unit": "pH",
+          "scope": {
+            "geography": "ICAR Indian Horticulture2022; regional varieties separately scoped",
+            "cropOrProductAsPublished": "spiny-gourd",
+            "conditions": "Published reference; local applicability and actual soil/water tests require review."
+          },
+          "sourceUrl": "https://epubs.icar.org.in/index.php/IndHort/article/download/123802/46864",
+          "locator": "Printedp18 Soil; method unspecified",
+          "sourceSha256": "4d557ca62e3770e904af3df77da57f3ae87086bf230f61282617f717bf49039a",
+          "retrievedAt": "2026-10-30",
+          "evidenceType": "published_regional_extension_reference",
+          "reviewStatus": "source_reviewed_reference_only",
+          "executableRecommendation": false
+        },
+        {
+          "id": "primary-spiny-gourd-2",
+          "parameter": "temperature_range",
+          "value": [
+            25,
+            35
+          ],
+          "unit": "\u00b0C",
+          "scope": {
+            "geography": "ICAR Indian Horticulture2022; regional varieties separately scoped",
+            "cropOrProductAsPublished": "spiny-gourd",
+            "conditions": "Published reference; local applicability and actual soil/water tests require review."
+          },
+          "sourceUrl": "https://epubs.icar.org.in/index.php/IndHort/article/download/123802/46864",
+          "locator": "Printedp18 Climate",
+          "sourceSha256": "4d557ca62e3770e904af3df77da57f3ae87086bf230f61282617f717bf49039a",
+          "retrievedAt": "2026-10-30",
+          "evidenceType": "published_regional_extension_reference",
+          "reviewStatus": "source_reviewed_reference_only",
+          "executableRecommendation": false
+        },
+        {
+          "id": "primary-spiny-gourd-3",
+          "parameter": "annual_rainfall_range",
+          "value": [
+            600,
+            4500
+          ],
+          "unit": "mm/year",
+          "scope": {
+            "geography": "ICAR Indian Horticulture2022; regional varieties separately scoped",
+            "cropOrProductAsPublished": "spiny-gourd",
+            "conditions": "Published reference; local applicability and actual soil/water tests require review."
+          },
+          "sourceUrl": "https://epubs.icar.org.in/index.php/IndHort/article/download/123802/46864",
+          "locator": "Printedp18 Climate",
+          "sourceSha256": "4d557ca62e3770e904af3df77da57f3ae87086bf230f61282617f717bf49039a",
+          "retrievedAt": "2026-10-30",
+          "evidenceType": "published_regional_extension_reference",
+          "reviewStatus": "source_reviewed_reference_only",
+          "executableRecommendation": false
+        },
+        {
+          "id": "primary-spiny-gourd-4",
+          "parameter": "soil_texture",
+          "value": "Drained sandy loam with organic matter.",
+          "unit": null,
+          "scope": {
+            "geography": "ICAR Indian Horticulture2022; regional varieties separately scoped",
+            "cropOrProductAsPublished": "spiny-gourd",
+            "conditions": "Published reference; local applicability and actual soil/water tests require review."
+          },
+          "sourceUrl": "https://epubs.icar.org.in/index.php/IndHort/article/download/123802/46864",
+          "locator": "Printedp18 Soil",
+          "sourceSha256": "4d557ca62e3770e904af3df77da57f3ae87086bf230f61282617f717bf49039a",
+          "retrievedAt": "2026-10-30",
+          "evidenceType": "published_regional_extension_reference",
+          "reviewStatus": "source_reviewed_reference_only",
+          "executableRecommendation": false
+        },
+        {
+          "id": "primary-spiny-gourd-5",
+          "parameter": "planting_window",
+          "value": "June\u2013July monsoon establishment;115\u2013125day crop duration. Perennial tubers may persist4\u20135years.",
+          "unit": null,
+          "scope": {
+            "geography": "ICAR Indian Horticulture2022; regional varieties separately scoped",
+            "cropOrProductAsPublished": "spiny-gourd",
+            "conditions": "Published reference; local applicability and actual soil/water tests require review."
+          },
+          "sourceUrl": "https://epubs.icar.org.in/index.php/IndHort/article/download/123802/46864",
+          "locator": "Printedp18 Time of sowing",
+          "sourceSha256": "4d557ca62e3770e904af3df77da57f3ae87086bf230f61282617f717bf49039a",
+          "retrievedAt": "2026-10-30",
+          "evidenceType": "published_regional_extension_reference",
+          "reviewStatus": "source_reviewed_reference_only",
+          "executableRecommendation": false
+        },
+        {
+          "id": "primary-spiny-gourd-6",
+          "parameter": "harvest_reference",
+          "value": "First picking:40\u201350days from tubers,60\u201370from cuttings,65\u201375from seed; not total crop duration.",
+          "unit": null,
+          "scope": {
+            "geography": "ICAR Indian Horticulture2022; regional varieties separately scoped",
+            "cropOrProductAsPublished": "spiny-gourd",
+            "conditions": "Published reference; local applicability and actual soil/water tests require review."
+          },
+          "sourceUrl": "https://epubs.icar.org.in/index.php/IndHort/article/download/123802/46864",
+          "locator": "Printedp20 Harvesting",
+          "sourceSha256": "4d557ca62e3770e904af3df77da57f3ae87086bf230f61282617f717bf49039a",
+          "retrievedAt": "2026-10-30",
+          "evidenceType": "published_regional_extension_reference",
+          "reviewStatus": "source_reviewed_reference_only",
+          "executableRecommendation": false
+        },
+        {
+          "id": "primary-spiny-gourd-7",
+          "parameter": "nutrient_reference",
+          "value": "FYM15\u201320t/ha andNPK100:60:40kg/ha; P/K chemical forms unspecified.",
+          "unit": null,
+          "scope": {
+            "geography": "ICAR Indian Horticulture2022; regional varieties separately scoped",
+            "cropOrProductAsPublished": "spiny-gourd",
+            "conditions": "Published reference; local applicability and actual soil/water tests require review."
+          },
+          "sourceUrl": "https://epubs.icar.org.in/index.php/IndHort/article/download/123802/46864",
+          "locator": "Printedp19 Fertilizer",
+          "sourceSha256": "4d557ca62e3770e904af3df77da57f3ae87086bf230f61282617f717bf49039a",
+          "retrievedAt": "2026-10-30",
+          "evidenceType": "published_regional_extension_reference",
+          "reviewStatus": "source_reviewed_reference_only",
+          "executableRecommendation": false
+        },
+        {
+          "id": "primary-spiny-gourd-8",
+          "parameter": "irrigation_reference",
+          "value": "Need-based after establishment; dry spells weekly, rainy-season irrigation may be unnecessary; drain excess water.",
+          "unit": null,
+          "scope": {
+            "geography": "ICAR Indian Horticulture2022; regional varieties separately scoped",
+            "cropOrProductAsPublished": "spiny-gourd",
+            "conditions": "Published reference; local applicability and actual soil/water tests require review."
+          },
+          "sourceUrl": "https://epubs.icar.org.in/index.php/IndHort/article/download/123802/46864",
+          "locator": "Printedp19 Irrigation",
+          "sourceSha256": "4d557ca62e3770e904af3df77da57f3ae87086bf230f61282617f717bf49039a",
+          "retrievedAt": "2026-10-30",
+          "evidenceType": "published_regional_extension_reference",
+          "reviewStatus": "source_reviewed_reference_only",
+          "executableRecommendation": false
+        },
+        {
+          "id": "primary-spiny-gourd-9",
+          "parameter": "cultivar_scope",
+          "value": "Indira Kankoda1:Chhattisgarh/UP/Maharashtra; Kankoda2 addsJharkhand; ChhattisgarhKankoda2 state release.",
+          "unit": null,
+          "scope": {
+            "geography": "ICAR Indian Horticulture2022; regional varieties separately scoped",
+            "cropOrProductAsPublished": "spiny-gourd",
+            "conditions": "Published reference; local applicability and actual soil/water tests require review."
+          },
+          "sourceUrl": "https://epubs.icar.org.in/index.php/IndHort/article/download/123802/46864",
+          "locator": "Printedp18 Table2",
+          "sourceSha256": "4d557ca62e3770e904af3df77da57f3ae87086bf230f61282617f717bf49039a",
+          "retrievedAt": "2026-10-30",
+          "evidenceType": "published_regional_extension_reference",
+          "reviewStatus": "source_reviewed_reference_only",
+          "executableRecommendation": false
+        }
+      ]
+    },
+    {
+      "profileId": "pointed-gourd",
+      "evidence": [
+        {
+          "id": "primary-pointed-gourd-1",
+          "parameter": "soil_texture",
+          "value": "Sandy loam with organic matter.",
+          "unit": null,
+          "scope": {
+            "geography": "VigyanPrasar2019 homegarden reference forJharkhand and adjoining tribal belts",
+            "cropOrProductAsPublished": "pointed-gourd",
+            "conditions": "Published reference; local applicability and actual soil/water tests require review."
+          },
+          "sourceUrl": "https://www.indiascienceandtechnology.gov.in/sites/default/files/Compendium%20HomeGarden.pdf",
+          "locator": "Printedp34",
+          "sourceSha256": "6d86b0179ec24a2f704bd0fecfd040426d62efea587ad480e87f3f82faa0a616",
+          "retrievedAt": "2026-10-30",
+          "evidenceType": "published_regional_extension_reference",
+          "reviewStatus": "source_reviewed_reference_only",
+          "executableRecommendation": false
+        },
+        {
+          "id": "primary-pointed-gourd-2",
+          "parameter": "planting_window",
+          "value": "June\u2013August sowing; October\u2013November transplanting.",
+          "unit": null,
+          "scope": {
+            "geography": "VigyanPrasar2019 homegarden reference forJharkhand and adjoining tribal belts",
+            "cropOrProductAsPublished": "pointed-gourd",
+            "conditions": "Published reference; local applicability and actual soil/water tests require review."
+          },
+          "sourceUrl": "https://www.indiascienceandtechnology.gov.in/sites/default/files/Compendium%20HomeGarden.pdf",
+          "locator": "Printedp34",
+          "sourceSha256": "6d86b0179ec24a2f704bd0fecfd040426d62efea587ad480e87f3f82faa0a616",
+          "retrievedAt": "2026-10-30",
+          "evidenceType": "published_regional_extension_reference",
+          "reviewStatus": "source_reviewed_reference_only",
+          "executableRecommendation": false
+        },
+        {
+          "id": "primary-pointed-gourd-3",
+          "parameter": "nutrient_reference",
+          "value": "FYM20\u201325t/ha,N60\u201380,P40,potash40\u201350kg/ha; P/potash chemical forms unspecified.",
+          "unit": null,
+          "scope": {
+            "geography": "VigyanPrasar2019 homegarden reference forJharkhand and adjoining tribal belts",
+            "cropOrProductAsPublished": "pointed-gourd",
+            "conditions": "Published reference; local applicability and actual soil/water tests require review."
+          },
+          "sourceUrl": "https://www.indiascienceandtechnology.gov.in/sites/default/files/Compendium%20HomeGarden.pdf",
+          "locator": "Printedp34 Nutrient management",
+          "sourceSha256": "6d86b0179ec24a2f704bd0fecfd040426d62efea587ad480e87f3f82faa0a616",
+          "retrievedAt": "2026-10-30",
+          "evidenceType": "published_regional_extension_reference",
+          "reviewStatus": "source_reviewed_reference_only",
+          "executableRecommendation": false
+        },
+        {
+          "id": "primary-pointed-gourd-4",
+          "parameter": "irrigation_reference",
+          "value": "Published interval10\u201312days; not a weather-adjusted schedule.",
+          "unit": null,
+          "scope": {
+            "geography": "VigyanPrasar2019 homegarden reference forJharkhand and adjoining tribal belts",
+            "cropOrProductAsPublished": "pointed-gourd",
+            "conditions": "Published reference; local applicability and actual soil/water tests require review."
+          },
+          "sourceUrl": "https://www.indiascienceandtechnology.gov.in/sites/default/files/Compendium%20HomeGarden.pdf",
+          "locator": "Printedp34",
+          "sourceSha256": "6d86b0179ec24a2f704bd0fecfd040426d62efea587ad480e87f3f82faa0a616",
+          "retrievedAt": "2026-10-30",
+          "evidenceType": "published_regional_extension_reference",
+          "reviewStatus": "source_reviewed_reference_only",
+          "executableRecommendation": false
+        },
+        {
+          "id": "primary-pointed-gourd-5",
+          "parameter": "harvest_reference",
+          "value": "Tender fruit10\u201315days after setting;80\u201390days after planting.",
+          "unit": null,
+          "scope": {
+            "geography": "VigyanPrasar2019 homegarden reference forJharkhand and adjoining tribal belts",
+            "cropOrProductAsPublished": "pointed-gourd",
+            "conditions": "Published reference; local applicability and actual soil/water tests require review."
+          },
+          "sourceUrl": "https://www.indiascienceandtechnology.gov.in/sites/default/files/Compendium%20HomeGarden.pdf",
+          "locator": "Printedp35",
+          "sourceSha256": "6d86b0179ec24a2f704bd0fecfd040426d62efea587ad480e87f3f82faa0a616",
+          "retrievedAt": "2026-10-30",
+          "evidenceType": "published_regional_extension_reference",
+          "reviewStatus": "source_reviewed_reference_only",
+          "executableRecommendation": false
+        }
+      ]
+    },
+    {
+      "profileId": "long-melon",
+      "evidence": [
+        {
+          "id": "primary-long-melon-1",
+          "parameter": "soil_texture",
+          "value": "Drained upland sandy loam or clay loam with organic matter.",
+          "unit": null,
+          "scope": {
+            "geography": "VigyanPrasar2019 Jharkhand/adjoining tribal belts; source namesCucumis melo var.utilissimus",
+            "cropOrProductAsPublished": "long-melon",
+            "conditions": "Published reference; local applicability and actual soil/water tests require review."
+          },
+          "sourceUrl": "https://www.indiascienceandtechnology.gov.in/sites/default/files/Compendium%20HomeGarden.pdf",
+          "locator": "Printedp30",
+          "sourceSha256": "6d86b0179ec24a2f704bd0fecfd040426d62efea587ad480e87f3f82faa0a616",
+          "retrievedAt": "2026-10-30",
+          "evidenceType": "published_regional_extension_reference",
+          "reviewStatus": "source_reviewed_reference_only",
+          "executableRecommendation": false
+        },
+        {
+          "id": "primary-long-melon-2",
+          "parameter": "planting_window",
+          "value": "February\u2013March orJune\u2013July.",
+          "unit": null,
+          "scope": {
+            "geography": "VigyanPrasar2019 Jharkhand/adjoining tribal belts; source namesCucumis melo var.utilissimus",
+            "cropOrProductAsPublished": "long-melon",
+            "conditions": "Published reference; local applicability and actual soil/water tests require review."
+          },
+          "sourceUrl": "https://www.indiascienceandtechnology.gov.in/sites/default/files/Compendium%20HomeGarden.pdf",
+          "locator": "Printedp30",
+          "sourceSha256": "6d86b0179ec24a2f704bd0fecfd040426d62efea587ad480e87f3f82faa0a616",
+          "retrievedAt": "2026-10-30",
+          "evidenceType": "published_regional_extension_reference",
+          "reviewStatus": "source_reviewed_reference_only",
+          "executableRecommendation": false
+        },
+        {
+          "id": "primary-long-melon-3",
+          "parameter": "harvest_reference",
+          "value": "Tender fruit60\u201370days after sowing.",
+          "unit": null,
+          "scope": {
+            "geography": "VigyanPrasar2019 Jharkhand/adjoining tribal belts; source namesCucumis melo var.utilissimus",
+            "cropOrProductAsPublished": "long-melon",
+            "conditions": "Published reference; local applicability and actual soil/water tests require review."
+          },
+          "sourceUrl": "https://www.indiascienceandtechnology.gov.in/sites/default/files/Compendium%20HomeGarden.pdf",
+          "locator": "Printedp31",
+          "sourceSha256": "6d86b0179ec24a2f704bd0fecfd040426d62efea587ad480e87f3f82faa0a616",
+          "retrievedAt": "2026-10-30",
+          "evidenceType": "published_regional_extension_reference",
+          "reviewStatus": "source_reviewed_reference_only",
+          "executableRecommendation": false
+        },
+        {
+          "id": "primary-long-melon-4",
+          "parameter": "nutrient_reference",
+          "value": "FYM15\u201320t/ha,N100,P75,potash50kg/ha; chemical forms unspecified.",
+          "unit": null,
+          "scope": {
+            "geography": "VigyanPrasar2019 Jharkhand/adjoining tribal belts; source namesCucumis melo var.utilissimus",
+            "cropOrProductAsPublished": "long-melon",
+            "conditions": "Published reference; local applicability and actual soil/water tests require review."
+          },
+          "sourceUrl": "https://www.indiascienceandtechnology.gov.in/sites/default/files/Compendium%20HomeGarden.pdf",
+          "locator": "Printedp30",
+          "sourceSha256": "6d86b0179ec24a2f704bd0fecfd040426d62efea587ad480e87f3f82faa0a616",
+          "retrievedAt": "2026-10-30",
+          "evidenceType": "published_regional_extension_reference",
+          "reviewStatus": "source_reviewed_reference_only",
+          "executableRecommendation": false
+        }
+      ]
+    },
+    {
+      "profileId": "ivy-gourd",
+      "evidence": [
+        {
+          "id": "primary-ivy-gourd-1",
+          "parameter": "planting_window",
+          "value": "May\u2013June orSeptember\u2013October; propagated by cuttings.",
+          "unit": null,
+          "scope": {
+            "geography": "Kerala; KAU author inKeralaCallingOctober2007",
+            "cropOrProductAsPublished": "ivy-gourd",
+            "conditions": "Published reference; local applicability and actual soil/water tests require review."
+          },
+          "sourceUrl": "https://document.kerala.gov.in/Porteddata/extensionpdf/documents/10180/5cb0a853-82a7-4426-b6be-eba7c3dda668.pdf",
+          "locator": "Printedp39",
+          "sourceSha256": null,
+          "retrievedAt": "2026-10-30",
+          "evidenceType": "published_regional_extension_reference",
+          "reviewStatus": "source_reviewed_reference_only",
+          "executableRecommendation": false
+        },
+        {
+          "id": "primary-ivy-gourd-2",
+          "parameter": "harvest_reference",
+          "value": "First harvest45\u201350days; maintained4\u20135years. First harvest is not complete perennial cycle.",
+          "unit": null,
+          "scope": {
+            "geography": "Kerala; KAU author inKeralaCallingOctober2007",
+            "cropOrProductAsPublished": "ivy-gourd",
+            "conditions": "Published reference; local applicability and actual soil/water tests require review."
+          },
+          "sourceUrl": "https://document.kerala.gov.in/Porteddata/extensionpdf/documents/10180/5cb0a853-82a7-4426-b6be-eba7c3dda668.pdf",
+          "locator": "Printedp39",
+          "sourceSha256": null,
+          "retrievedAt": "2026-10-30",
+          "evidenceType": "published_regional_extension_reference",
+          "reviewStatus": "source_reviewed_reference_only",
+          "executableRecommendation": false
+        }
+      ]
+    },
+    {
+      "profileId": "mahua",
+      "evidence": [
+        {
+          "id": "primary-mahua-1",
+          "parameter": "soil_texture",
+          "value": "Alluvial, shallow bouldery or lateritic sites described; no laboratory fertility target.",
+          "unit": null,
+          "scope": {
+            "geography": "ICFRE forestry establishment guidance; not an annual farm crop calendar",
+            "cropOrProductAsPublished": "mahua",
+            "conditions": "Published reference; local applicability and actual soil/water tests require review."
+          },
+          "sourceUrl": "https://icfre.gov.in/pdf/books-file/book13.pdf",
+          "locator": "Printedp52",
+          "sourceSha256": null,
+          "retrievedAt": "2026-10-30",
+          "evidenceType": "published_regional_extension_reference",
+          "reviewStatus": "source_reviewed_reference_only",
+          "executableRecommendation": false
+        },
+        {
+          "id": "primary-mahua-2",
+          "parameter": "climate_reference",
+          "value": "Young seedlings require protection from exposure, drought and frost.",
+          "unit": null,
+          "scope": {
+            "geography": "ICFRE forestry establishment guidance; not an annual farm crop calendar",
+            "cropOrProductAsPublished": "mahua",
+            "conditions": "Published reference; local applicability and actual soil/water tests require review."
+          },
+          "sourceUrl": "https://icfre.gov.in/pdf/books-file/book13.pdf",
+          "locator": "Printedp52",
+          "sourceSha256": null,
+          "retrievedAt": "2026-10-30",
+          "evidenceType": "published_regional_extension_reference",
+          "reviewStatus": "source_reviewed_reference_only",
+          "executableRecommendation": false
+        },
+        {
+          "id": "primary-mahua-3",
+          "parameter": "planting_window",
+          "value": "Direct sowJune\u2013July or establish one-year nursery seedlings with monsoon.",
+          "unit": null,
+          "scope": {
+            "geography": "ICFRE forestry establishment guidance; not an annual farm crop calendar",
+            "cropOrProductAsPublished": "mahua",
+            "conditions": "Published reference; local applicability and actual soil/water tests require review."
+          },
+          "sourceUrl": "https://icfre.gov.in/pdf/books-file/book13.pdf",
+          "locator": "Printedp52",
+          "sourceSha256": null,
+          "retrievedAt": "2026-10-30",
+          "evidenceType": "published_regional_extension_reference",
+          "reviewStatus": "source_reviewed_reference_only",
+          "executableRecommendation": false
+        }
+      ]
+    },
+    {
+      "profileId": "kinnow",
+      "evidence": [
+        {
+          "id": "primary-kinnow-1",
+          "parameter": "soil_texture",
+          "value": "Deep drained soil without root-zone hardpan; avoid waterlogging and high fluctuating water table.",
+          "unit": null,
+          "scope": {
+            "geography": "Punjab; PAU2021 citrus/Kinnow package, not a current parcel assessment",
+            "cropOrProductAsPublished": "kinnow",
+            "conditions": "Published reference; local applicability and actual soil/water tests require review."
+          },
+          "sourceUrl": "https://www.pau.edu/content/ccil/pf/pp_fruits.pdf",
+          "locator": "Printedp13",
+          "sourceSha256": null,
+          "retrievedAt": "2026-10-30",
+          "evidenceType": "published_regional_extension_reference",
+          "reviewStatus": "source_reviewed_reference_only",
+          "executableRecommendation": false
+        },
+        {
+          "id": "primary-kinnow-2",
+          "parameter": "soil_ph_range",
+          "value": [
+            5.5,
+            7.5
+          ],
+          "unit": "pH",
+          "scope": {
+            "geography": "Punjab; PAU2021 citrus/Kinnow package, not a current parcel assessment",
+            "cropOrProductAsPublished": "kinnow",
+            "conditions": "Published reference; local applicability and actual soil/water tests require review."
+          },
+          "sourceUrl": "https://www.pau.edu/content/ccil/pf/pp_fruits.pdf",
+          "locator": "Printedp13 Citrus optimum; method unspecified",
+          "sourceSha256": null,
+          "retrievedAt": "2026-10-30",
+          "evidenceType": "published_regional_extension_reference",
+          "reviewStatus": "source_reviewed_reference_only",
+          "executableRecommendation": false
+        },
+        {
+          "id": "primary-kinnow-3",
+          "parameter": "salinity_reference",
+          "value": "Citrus reference EC ceiling0.5mmhos/cm; extraction method omitted, so not directly comparable toECe or1:5 tests.",
+          "unit": null,
+          "scope": {
+            "geography": "Punjab; PAU2021 citrus/Kinnow package, not a current parcel assessment",
+            "cropOrProductAsPublished": "kinnow",
+            "conditions": "Published reference; local applicability and actual soil/water tests require review."
+          },
+          "sourceUrl": "https://www.pau.edu/content/ccil/pf/pp_fruits.pdf",
+          "locator": "Printedp13",
+          "sourceSha256": null,
+          "retrievedAt": "2026-10-30",
+          "evidenceType": "published_regional_extension_reference",
+          "reviewStatus": "source_reviewed_reference_only",
+          "executableRecommendation": false
+        },
+        {
+          "id": "primary-kinnow-4",
+          "parameter": "climate_reference",
+          "value": "Prolonged\u22122to0\u00b0C injures citrus; dry Punjab conditions require adequate irrigation.",
+          "unit": null,
+          "scope": {
+            "geography": "Punjab; PAU2021 citrus/Kinnow package, not a current parcel assessment",
+            "cropOrProductAsPublished": "kinnow",
+            "conditions": "Published reference; local applicability and actual soil/water tests require review."
+          },
+          "sourceUrl": "https://www.pau.edu/content/ccil/pf/pp_fruits.pdf",
+          "locator": "Printedp13",
+          "sourceSha256": null,
+          "retrievedAt": "2026-10-30",
+          "evidenceType": "published_regional_extension_reference",
+          "reviewStatus": "source_reviewed_reference_only",
+          "executableRecommendation": false
+        },
+        {
+          "id": "primary-kinnow-5",
+          "parameter": "harvest_reference",
+          "value": "Kinnow picking generallymidJanuary\u2013midFebruary, locality/season dependent; PAUKinnow1 maturesJanuary.",
+          "unit": null,
+          "scope": {
+            "geography": "Punjab; PAU2021 citrus/Kinnow package, not a current parcel assessment",
+            "cropOrProductAsPublished": "kinnow",
+            "conditions": "Published reference; local applicability and actual soil/water tests require review."
+          },
+          "sourceUrl": "https://www.pau.edu/content/ccil/pf/pp_fruits.pdf",
+          "locator": "Printedpp14,26",
+          "sourceSha256": null,
+          "retrievedAt": "2026-10-30",
+          "evidenceType": "published_regional_extension_reference",
+          "reviewStatus": "source_reviewed_reference_only",
+          "executableRecommendation": false
+        },
+        {
+          "id": "primary-kinnow-6",
+          "parameter": "nutrient_reference",
+          "value": "Age-specific fertilizer/fertigation tables; N splitFebruary andApril\u2013May, phosphorus with firstN. Requires tree age and soil/leaf tests.",
+          "unit": null,
+          "scope": {
+            "geography": "Punjab; PAU2021 citrus/Kinnow package, not a current parcel assessment",
+            "cropOrProductAsPublished": "kinnow",
+            "conditions": "Published reference; local applicability and actual soil/water tests require review."
+          },
+          "sourceUrl": "https://www.pau.edu/content/ccil/pf/pp_fruits.pdf",
+          "locator": "Printedpp21\u201322",
+          "sourceSha256": null,
+          "retrievedAt": "2026-10-30",
+          "evidenceType": "published_regional_extension_reference",
+          "reviewStatus": "source_reviewed_reference_only",
+          "executableRecommendation": false
+        }
+      ]
+    },
+    {
+      "profileId": "arecanut",
+      "evidence": [
+        {
+          "id": "primary-arecanut-1",
+          "parameter": "soil_texture",
+          "value": "Drainage and protection from southwestern sun are important.",
+          "unit": null,
+          "scope": {
+            "geography": "Tamil Nadu extension reference; system/cultivar applicability requires confirmation",
+            "cropOrProductAsPublished": "arecanut",
+            "conditions": "Published reference; local applicability and actual soil/water tests require review."
+          },
+          "sourceUrl": "https://agritech.tnau.ac.in/horticulture/horti_plantation%20crops_arecanut.html",
+          "locator": "Soil and climate",
+          "sourceSha256": "e579080200b076405f4799f0cbdcfc36202d53f646e73d9421b8b4007485701c",
+          "retrievedAt": "2026-10-30",
+          "evidenceType": "published_regional_extension_reference",
+          "reviewStatus": "source_reviewed_reference_only",
+          "executableRecommendation": false
+        },
+        {
+          "id": "primary-arecanut-2",
+          "parameter": "planting_window",
+          "value": "June\u2013December.",
+          "unit": null,
+          "scope": {
+            "geography": "Tamil Nadu extension reference; system/cultivar applicability requires confirmation",
+            "cropOrProductAsPublished": "arecanut",
+            "conditions": "Published reference; local applicability and actual soil/water tests require review."
+          },
+          "sourceUrl": "https://agritech.tnau.ac.in/horticulture/horti_plantation%20crops_arecanut.html",
+          "locator": "Planting",
+          "sourceSha256": "e579080200b076405f4799f0cbdcfc36202d53f646e73d9421b8b4007485701c",
+          "retrievedAt": "2026-10-30",
+          "evidenceType": "published_regional_extension_reference",
+          "reviewStatus": "source_reviewed_reference_only",
+          "executableRecommendation": false
+        },
+        {
+          "id": "primary-arecanut-3",
+          "parameter": "irrigation_reference",
+          "value": "Reference intervals weeklyNovember\u2013February and4daysMarch\u2013May; local demand must be measured.",
+          "unit": null,
+          "scope": {
+            "geography": "Tamil Nadu extension reference; system/cultivar applicability requires confirmation",
+            "cropOrProductAsPublished": "arecanut",
+            "conditions": "Published reference; local applicability and actual soil/water tests require review."
+          },
+          "sourceUrl": "https://agritech.tnau.ac.in/horticulture/horti_plantation%20crops_arecanut.html",
+          "locator": "Irrigation",
+          "sourceSha256": "e579080200b076405f4799f0cbdcfc36202d53f646e73d9421b8b4007485701c",
+          "retrievedAt": "2026-10-30",
+          "evidenceType": "published_regional_extension_reference",
+          "reviewStatus": "source_reviewed_reference_only",
+          "executableRecommendation": false
+        },
+        {
+          "id": "primary-arecanut-4",
+          "parameter": "harvest_reference",
+          "value": "Bearing begins around5years; multiple yearly harvests.",
+          "unit": null,
+          "scope": {
+            "geography": "Tamil Nadu extension reference; system/cultivar applicability requires confirmation",
+            "cropOrProductAsPublished": "arecanut",
+            "conditions": "Published reference; local applicability and actual soil/water tests require review."
+          },
+          "sourceUrl": "https://agritech.tnau.ac.in/horticulture/horti_plantation%20crops_arecanut.html",
+          "locator": "Harvest",
+          "sourceSha256": "e579080200b076405f4799f0cbdcfc36202d53f646e73d9421b8b4007485701c",
+          "retrievedAt": "2026-10-30",
+          "evidenceType": "published_regional_extension_reference",
+          "reviewStatus": "source_reviewed_reference_only",
+          "executableRecommendation": false
+        }
+      ]
+    },
+    {
+      "profileId": "fennel",
+      "evidence": [
+        {
+          "id": "primary-fennel-1",
+          "parameter": "soil_texture",
+          "value": "Drained loam, black or sandy soil with organic matter; mild frost-free climate.",
+          "unit": null,
+          "scope": {
+            "geography": "Tamil Nadu extension reference; system/cultivar applicability requires confirmation",
+            "cropOrProductAsPublished": "fennel",
+            "conditions": "Published reference; local applicability and actual soil/water tests require review."
+          },
+          "sourceUrl": "https://agritech.tnau.ac.in/horticulture/horti_spice%20crops_fennel.html",
+          "locator": "Soil and climate",
+          "sourceSha256": "1cc9aad05ae8fc56f20ec78b686f3605658fc2380252cf02917f44af3ac0a51c",
+          "retrievedAt": "2026-10-30",
+          "evidenceType": "published_regional_extension_reference",
+          "reviewStatus": "source_reviewed_reference_only",
+          "executableRecommendation": false
+        },
+        {
+          "id": "primary-fennel-2",
+          "parameter": "planting_window",
+          "value": "HillsMay\u2013June; plainsOctober\u2013November.",
+          "unit": null,
+          "scope": {
+            "geography": "Tamil Nadu extension reference; system/cultivar applicability requires confirmation",
+            "cropOrProductAsPublished": "fennel",
+            "conditions": "Published reference; local applicability and actual soil/water tests require review."
+          },
+          "sourceUrl": "https://agritech.tnau.ac.in/horticulture/horti_spice%20crops_fennel.html",
+          "locator": "Season",
+          "sourceSha256": "1cc9aad05ae8fc56f20ec78b686f3605658fc2380252cf02917f44af3ac0a51c",
+          "retrievedAt": "2026-10-30",
+          "evidenceType": "published_regional_extension_reference",
+          "reviewStatus": "source_reviewed_reference_only",
+          "executableRecommendation": false
+        },
+        {
+          "id": "primary-fennel-3",
+          "parameter": "irrigation_reference",
+          "value": "Published7\u201310day interval.",
+          "unit": null,
+          "scope": {
+            "geography": "Tamil Nadu extension reference; system/cultivar applicability requires confirmation",
+            "cropOrProductAsPublished": "fennel",
+            "conditions": "Published reference; local applicability and actual soil/water tests require review."
+          },
+          "sourceUrl": "https://agritech.tnau.ac.in/horticulture/horti_spice%20crops_fennel.html",
+          "locator": "Irrigation",
+          "sourceSha256": "1cc9aad05ae8fc56f20ec78b686f3605658fc2380252cf02917f44af3ac0a51c",
+          "retrievedAt": "2026-10-30",
+          "evidenceType": "published_regional_extension_reference",
+          "reviewStatus": "source_reviewed_reference_only",
+          "executableRecommendation": false
+        },
+        {
+          "id": "primary-fennel-4",
+          "parameter": "nutrient_reference",
+          "value": "BasalN25,P10,K0kg/ha; topN25kg/ha. P form unspecified.",
+          "unit": null,
+          "scope": {
+            "geography": "Tamil Nadu extension reference; system/cultivar applicability requires confirmation",
+            "cropOrProductAsPublished": "fennel",
+            "conditions": "Published reference; local applicability and actual soil/water tests require review."
+          },
+          "sourceUrl": "https://agritech.tnau.ac.in/horticulture/horti_spice%20crops_fennel.html",
+          "locator": "Manuring",
+          "sourceSha256": "1cc9aad05ae8fc56f20ec78b686f3605658fc2380252cf02917f44af3ac0a51c",
+          "retrievedAt": "2026-10-30",
+          "evidenceType": "published_regional_extension_reference",
+          "reviewStatus": "source_reviewed_reference_only",
+          "executableRecommendation": false
+        },
+        {
+          "id": "primary-fennel-5",
+          "parameter": "harvest_reference",
+          "value": "7\u20138months; umbels harvested successively.",
+          "unit": null,
+          "scope": {
+            "geography": "Tamil Nadu extension reference; system/cultivar applicability requires confirmation",
+            "cropOrProductAsPublished": "fennel",
+            "conditions": "Published reference; local applicability and actual soil/water tests require review."
+          },
+          "sourceUrl": "https://agritech.tnau.ac.in/horticulture/horti_spice%20crops_fennel.html",
+          "locator": "Harvest",
+          "sourceSha256": "1cc9aad05ae8fc56f20ec78b686f3605658fc2380252cf02917f44af3ac0a51c",
+          "retrievedAt": "2026-10-30",
+          "evidenceType": "published_regional_extension_reference",
+          "reviewStatus": "source_reviewed_reference_only",
+          "executableRecommendation": false
+        }
+      ]
+    },
+    {
+      "profileId": "fenugreek",
+      "evidence": [
+        {
+          "id": "primary-fenugreek-1",
+          "parameter": "soil_texture",
+          "value": "Drained rich loam; cool dry frost-free weather.",
+          "unit": null,
+          "scope": {
+            "geography": "Tamil Nadu extension reference; system/cultivar applicability requires confirmation",
+            "cropOrProductAsPublished": "fenugreek",
+            "conditions": "Published reference; local applicability and actual soil/water tests require review."
+          },
+          "sourceUrl": "https://agritech.tnau.ac.in/horticulture/horti_spice%20crops_fenugreek.html",
+          "locator": "Soil and climate",
+          "sourceSha256": "4b82073c4b2ee0cedcb7d7866bf9b5f75d764e14a078250248c64fa893635ea6",
+          "retrievedAt": "2026-10-30",
+          "evidenceType": "published_regional_extension_reference",
+          "reviewStatus": "source_reviewed_reference_only",
+          "executableRecommendation": false
+        },
+        {
+          "id": "primary-fenugreek-2",
+          "parameter": "planting_window",
+          "value": "June\u2013July orOctober\u2013November.",
+          "unit": null,
+          "scope": {
+            "geography": "Tamil Nadu extension reference; system/cultivar applicability requires confirmation",
+            "cropOrProductAsPublished": "fenugreek",
+            "conditions": "Published reference; local applicability and actual soil/water tests require review."
+          },
+          "sourceUrl": "https://agritech.tnau.ac.in/horticulture/horti_spice%20crops_fenugreek.html",
+          "locator": "Season",
+          "sourceSha256": "4b82073c4b2ee0cedcb7d7866bf9b5f75d764e14a078250248c64fa893635ea6",
+          "retrievedAt": "2026-10-30",
+          "evidenceType": "published_regional_extension_reference",
+          "reviewStatus": "source_reviewed_reference_only",
+          "executableRecommendation": false
+        },
+        {
+          "id": "primary-fenugreek-3",
+          "parameter": "harvest_reference",
+          "value": "Greens20\u201325days; general grain90\u2013100days, RMt143 separately140\u2013150days.",
+          "unit": null,
+          "scope": {
+            "geography": "Tamil Nadu extension reference; system/cultivar applicability requires confirmation",
+            "cropOrProductAsPublished": "fenugreek",
+            "conditions": "Published reference; local applicability and actual soil/water tests require review."
+          },
+          "sourceUrl": "https://agritech.tnau.ac.in/horticulture/horti_spice%20crops_fenugreek.html",
+          "locator": "Harvest and varieties",
+          "sourceSha256": "4b82073c4b2ee0cedcb7d7866bf9b5f75d764e14a078250248c64fa893635ea6",
+          "retrievedAt": "2026-10-30",
+          "evidenceType": "published_regional_extension_reference",
+          "reviewStatus": "source_reviewed_reference_only",
+          "executableRecommendation": false
+        },
+        {
+          "id": "primary-fenugreek-4",
+          "parameter": "nutrient_reference",
+          "value": "FYM20\u201325t/ha; basalNPK30:25:40kg/ha plusN20day30; P/K forms unspecified.",
+          "unit": null,
+          "scope": {
+            "geography": "Tamil Nadu extension reference; system/cultivar applicability requires confirmation",
+            "cropOrProductAsPublished": "fenugreek",
+            "conditions": "Published reference; local applicability and actual soil/water tests require review."
+          },
+          "sourceUrl": "https://agritech.tnau.ac.in/horticulture/horti_spice%20crops_fenugreek.html",
+          "locator": "Manuring",
+          "sourceSha256": "4b82073c4b2ee0cedcb7d7866bf9b5f75d764e14a078250248c64fa893635ea6",
+          "retrievedAt": "2026-10-30",
+          "evidenceType": "published_regional_extension_reference",
+          "reviewStatus": "source_reviewed_reference_only",
+          "executableRecommendation": false
+        }
+      ]
+    },
+    {
+      "profileId": "lablab",
+      "evidence": [
+        {
+          "id": "primary-lablab-1",
+          "parameter": "soil_ph_range",
+          "value": [
+            6.5,
+            8.5
+          ],
+          "unit": "pH",
+          "scope": {
+            "geography": "Tamil Nadu extension reference; system/cultivar applicability requires confirmation",
+            "cropOrProductAsPublished": "lablab",
+            "conditions": "Published reference; local applicability and actual soil/water tests require review."
+          },
+          "sourceUrl": "https://agritech.tnau.ac.in/horticulture/horti_vegetables_lab%20lab.html",
+          "locator": "Soil and climate; method unspecified",
+          "sourceSha256": "88630dc8142bd56a7f08e2a0aa68a48de4d5029bb6ea6835064484e39a7a4eda",
+          "retrievedAt": "2026-10-30",
+          "evidenceType": "published_regional_extension_reference",
+          "reviewStatus": "source_reviewed_reference_only",
+          "executableRecommendation": false
+        },
+        {
+          "id": "primary-lablab-2",
+          "parameter": "soil_texture",
+          "value": "Drained loam; frost and extreme heat sensitive.",
+          "unit": null,
+          "scope": {
+            "geography": "Tamil Nadu extension reference; system/cultivar applicability requires confirmation",
+            "cropOrProductAsPublished": "lablab",
+            "conditions": "Published reference; local applicability and actual soil/water tests require review."
+          },
+          "sourceUrl": "https://agritech.tnau.ac.in/horticulture/horti_vegetables_lab%20lab.html",
+          "locator": "Soil and climate",
+          "sourceSha256": "88630dc8142bd56a7f08e2a0aa68a48de4d5029bb6ea6835064484e39a7a4eda",
+          "retrievedAt": "2026-10-30",
+          "evidenceType": "published_regional_extension_reference",
+          "reviewStatus": "source_reviewed_reference_only",
+          "executableRecommendation": false
+        },
+        {
+          "id": "primary-lablab-3",
+          "parameter": "planting_window",
+          "value": "Bush typesyear-round; pandalJuly\u2013August under describedTNconditions.",
+          "unit": null,
+          "scope": {
+            "geography": "Tamil Nadu extension reference; system/cultivar applicability requires confirmation",
+            "cropOrProductAsPublished": "lablab",
+            "conditions": "Published reference; local applicability and actual soil/water tests require review."
+          },
+          "sourceUrl": "https://agritech.tnau.ac.in/horticulture/horti_vegetables_lab%20lab.html",
+          "locator": "Season",
+          "sourceSha256": "88630dc8142bd56a7f08e2a0aa68a48de4d5029bb6ea6835064484e39a7a4eda",
+          "retrievedAt": "2026-10-30",
+          "evidenceType": "published_regional_extension_reference",
+          "reviewStatus": "source_reviewed_reference_only",
+          "executableRecommendation": false
+        },
+        {
+          "id": "primary-lablab-4",
+          "parameter": "irrigation_reference",
+          "value": "Published weekly interval.",
+          "unit": null,
+          "scope": {
+            "geography": "Tamil Nadu extension reference; system/cultivar applicability requires confirmation",
+            "cropOrProductAsPublished": "lablab",
+            "conditions": "Published reference; local applicability and actual soil/water tests require review."
+          },
+          "sourceUrl": "https://agritech.tnau.ac.in/horticulture/horti_vegetables_lab%20lab.html",
+          "locator": "Irrigation",
+          "sourceSha256": "88630dc8142bd56a7f08e2a0aa68a48de4d5029bb6ea6835064484e39a7a4eda",
+          "retrievedAt": "2026-10-30",
+          "evidenceType": "published_regional_extension_reference",
+          "reviewStatus": "source_reviewed_reference_only",
+          "executableRecommendation": false
+        },
+        {
+          "id": "primary-lablab-5",
+          "parameter": "nutrient_reference",
+          "value": "Bush irrigatedN25/P50versus dryN12.5/P25kg/ha; FYM12.5t/ha. P form unspecified; pandal regimen differs.",
+          "unit": null,
+          "scope": {
+            "geography": "Tamil Nadu extension reference; system/cultivar applicability requires confirmation",
+            "cropOrProductAsPublished": "lablab",
+            "conditions": "Published reference; local applicability and actual soil/water tests require review."
+          },
+          "sourceUrl": "https://agritech.tnau.ac.in/horticulture/horti_vegetables_lab%20lab.html",
+          "locator": "Manuring",
+          "sourceSha256": "88630dc8142bd56a7f08e2a0aa68a48de4d5029bb6ea6835064484e39a7a4eda",
+          "retrievedAt": "2026-10-30",
+          "evidenceType": "published_regional_extension_reference",
+          "reviewStatus": "source_reviewed_reference_only",
+          "executableRecommendation": false
+        }
+      ]
+    },
+    {
+      "profileId": "china-aster",
+      "evidence": [
+        {
+          "id": "primary-china-aster-1",
+          "parameter": "substrate_reference",
+          "value": "Six-inch plastic pots with soil:sand:FYM1:1:1 byvolume performed best among tested substrates; not a field soil classification.",
+          "unit": null,
+          "scope": {
+            "geography": "ICAR-IIHR Bengaluru2019\u201320 trial; ArkaArchana potted production only",
+            "cropOrProductAsPublished": "china-aster",
+            "conditions": "Candidate species/cultivar reference only; provider identity is not automatically confirmed."
+          },
+          "sourceUrl": "https://jhs.iihr.res.in/index.php/jhs/article/view/1543",
+          "locator": "Abstract",
+          "sourceSha256": null,
+          "retrievedAt": "2026-10-30",
+          "evidenceType": "published_regional_extension_reference",
+          "reviewStatus": "source_reviewed_reference_only",
+          "executableRecommendation": false
+        },
+        {
+          "id": "primary-china-aster-2",
+          "parameter": "nutrient_reference",
+          "value": "Study nutrient solution96:18:108ppm N:P:K weekly; solution concentration, not mg/kg soil or kg/ha fertilizer.",
+          "unit": null,
+          "scope": {
+            "geography": "ICAR-IIHR Bengaluru2019\u201320 trial; ArkaArchana potted production only",
+            "cropOrProductAsPublished": "china-aster",
+            "conditions": "Candidate species/cultivar reference only; provider identity is not automatically confirmed."
+          },
+          "sourceUrl": "https://jhs.iihr.res.in/index.php/jhs/article/view/1543",
+          "locator": "Abstract",
+          "sourceSha256": null,
+          "retrievedAt": "2026-10-30",
+          "evidenceType": "published_regional_extension_reference",
+          "reviewStatus": "source_reviewed_reference_only",
+          "executableRecommendation": false
+        },
+        {
+          "id": "primary-china-aster-3",
+          "parameter": "cultivar_scope",
+          "value": "Callistephus chinensis var.ArkaArchana; do not substitute TNAU Aster amellus guidance.",
+          "unit": null,
+          "scope": {
+            "geography": "ICAR-IIHR Bengaluru2019\u201320 trial; ArkaArchana potted production only",
+            "cropOrProductAsPublished": "china-aster",
+            "conditions": "Candidate species/cultivar reference only; provider identity is not automatically confirmed."
+          },
+          "sourceUrl": "https://jhs.iihr.res.in/index.php/jhs/article/view/1543",
+          "locator": "Title and Abstract",
+          "sourceSha256": null,
+          "retrievedAt": "2026-10-30",
+          "evidenceType": "published_regional_extension_reference",
+          "reviewStatus": "source_reviewed_reference_only",
+          "executableRecommendation": false
+        }
+      ]
+    },
+    {
+      "profileId": "gladiolus",
+      "evidence": [
+        {
+          "id": "primary-gladiolus-1",
+          "parameter": "soil_texture",
+          "value": "Deep drained sandy loam; excess moisture and poorly drained clay can injure roots.",
+          "unit": null,
+          "scope": {
+            "geography": "NHB Gladiolus spp.reference; cultivar unspecified",
+            "cropOrProductAsPublished": "gladiolus",
+            "conditions": "Candidate species/cultivar reference only; provider identity is not automatically confirmed."
+          },
+          "sourceUrl": "https://nhb.gov.in/pdf/flowers/gladiolus/gla011.pdf",
+          "locator": "PDFp1 Soil",
+          "sourceSha256": null,
+          "retrievedAt": "2026-10-30",
+          "evidenceType": "published_regional_extension_reference",
+          "reviewStatus": "source_reviewed_reference_only",
+          "executableRecommendation": false
+        },
+        {
+          "id": "primary-gladiolus-2",
+          "parameter": "soil_ph_range",
+          "value": [
+            5.5,
+            6.5
+          ],
+          "unit": "pH",
+          "scope": {
+            "geography": "NHB Gladiolus spp.reference; cultivar unspecified",
+            "cropOrProductAsPublished": "gladiolus",
+            "conditions": "Candidate species/cultivar reference only; provider identity is not automatically confirmed."
+          },
+          "sourceUrl": "https://nhb.gov.in/pdf/flowers/gladiolus/gla011.pdf",
+          "locator": "PDFp1 Soil; method unspecified",
+          "sourceSha256": null,
+          "retrievedAt": "2026-10-30",
+          "evidenceType": "published_regional_extension_reference",
+          "reviewStatus": "source_reviewed_reference_only",
+          "executableRecommendation": false
+        },
+        {
+          "id": "primary-gladiolus-3",
+          "parameter": "temperature_range",
+          "value": [
+            10,
+            25
+          ],
+          "unit": "\u00b0C",
+          "scope": {
+            "geography": "NHB Gladiolus spp.reference; cultivar unspecified",
+            "cropOrProductAsPublished": "gladiolus",
+            "conditions": "Candidate species/cultivar reference only; provider identity is not automatically confirmed."
+          },
+          "sourceUrl": "https://nhb.gov.in/pdf/flowers/gladiolus/gla011.pdf",
+          "locator": "PDFp1 Climate; optimum growth reference",
+          "sourceSha256": null,
+          "retrievedAt": "2026-10-30",
+          "evidenceType": "published_regional_extension_reference",
+          "reviewStatus": "source_reviewed_reference_only",
+          "executableRecommendation": false
+        },
+        {
+          "id": "primary-gladiolus-4",
+          "parameter": "photoperiod",
+          "value": "Long days improve spikes; at least8hours/day illumination for most varieties.",
+          "unit": null,
+          "scope": {
+            "geography": "NHB Gladiolus spp.reference; cultivar unspecified",
+            "cropOrProductAsPublished": "gladiolus",
+            "conditions": "Candidate species/cultivar reference only; provider identity is not automatically confirmed."
+          },
+          "sourceUrl": "https://nhb.gov.in/pdf/flowers/gladiolus/gla011.pdf",
+          "locator": "PDFp1 Climate",
+          "sourceSha256": null,
+          "retrievedAt": "2026-10-30",
+          "evidenceType": "published_regional_extension_reference",
+          "reviewStatus": "source_reviewed_reference_only",
+          "executableRecommendation": false
+        },
+        {
+          "id": "tnau-gladiolus-1",
+          "parameter": "soil_ph_range",
+          "value": [
+            6,
+            7
+          ],
+          "unit": "pH",
+          "scope": {
+            "geography": "Tamil Nadu extension reference",
+            "cropOrProductAsPublished": "Gladiolus spp.",
+            "conditions": "Disagrees with NHB temperature/pH envelope; source-specific conditions unresolved, do not average or drive matching."
+          },
+          "sourceUrl": "https://www.agritech.tnau.ac.in/horticulture/horti_flower%20crops_gladioli.html",
+          "locator": "Soil; method unspecified",
+          "sourceSha256": null,
+          "retrievedAt": "2026-10-30",
+          "evidenceType": "published_regional_extension_reference",
+          "reviewStatus": "source_reviewed_reference_only",
+          "executableRecommendation": false
+        },
+        {
+          "id": "tnau-gladiolus-2",
+          "parameter": "temperature_range",
+          "value": [
+            27,
+            30
+          ],
+          "unit": "\u00b0C",
+          "scope": {
+            "geography": "Tamil Nadu extension reference",
+            "cropOrProductAsPublished": "Gladiolus spp.",
+            "conditions": "Disagrees with NHB temperature/pH envelope; source-specific conditions unresolved, do not average or drive matching."
+          },
+          "sourceUrl": "https://www.agritech.tnau.ac.in/horticulture/horti_flower%20crops_gladioli.html",
+          "locator": "Climate",
+          "sourceSha256": null,
+          "retrievedAt": "2026-10-30",
+          "evidenceType": "published_regional_extension_reference",
+          "reviewStatus": "source_reviewed_reference_only",
+          "executableRecommendation": false
+        },
+        {
+          "id": "tnau-gladiolus-3",
+          "parameter": "planting_window",
+          "value": "October plains; March\u2013April hills.",
+          "unit": null,
+          "scope": {
+            "geography": "Tamil Nadu extension reference",
+            "cropOrProductAsPublished": "Gladiolus spp.",
+            "conditions": "Disagrees with NHB temperature/pH envelope; source-specific conditions unresolved, do not average or drive matching."
+          },
+          "sourceUrl": "https://www.agritech.tnau.ac.in/horticulture/horti_flower%20crops_gladioli.html",
+          "locator": "Planting season",
+          "sourceSha256": null,
+          "retrievedAt": "2026-10-30",
+          "evidenceType": "published_regional_extension_reference",
+          "reviewStatus": "source_reviewed_reference_only",
+          "executableRecommendation": false
+        },
+        {
+          "id": "tnau-gladiolus-4",
+          "parameter": "harvest_reference",
+          "value": "Spike production110\u2013120days; corm development differs.",
+          "unit": null,
+          "scope": {
+            "geography": "Tamil Nadu extension reference",
+            "cropOrProductAsPublished": "Gladiolus spp.",
+            "conditions": "Disagrees with NHB temperature/pH envelope; source-specific conditions unresolved, do not average or drive matching."
+          },
+          "sourceUrl": "https://www.agritech.tnau.ac.in/horticulture/horti_flower%20crops_gladioli.html",
+          "locator": "Spike harvest",
+          "sourceSha256": null,
+          "retrievedAt": "2026-10-30",
+          "evidenceType": "published_regional_extension_reference",
+          "reviewStatus": "source_reviewed_reference_only",
+          "executableRecommendation": false
+        }
+      ]
+    },
+    {
+      "profileId": "kakada",
+      "evidence": [
+        {
+          "id": "primary-kakada-1",
+          "parameter": "cultivar_scope",
+          "value": "Jasminum multiflorum selectionAcc.Jm-1(KMD) evaluated againstLocalWhiteKakada in sixTNAU centres and17farmers fields.",
+          "unit": null,
+          "scope": {
+            "geography": "TNAU2020 multi-location/adaptive trials; selectionAcc.Jm-1(KMD), not all Kakada",
+            "cropOrProductAsPublished": "kakada",
+            "conditions": "Candidate species/cultivar reference only; provider identity is not automatically confirmed."
+          },
+          "sourceUrl": "https://tnau.ac.in/site/research/wp-content/uploads/sites/60/2021/08/7.-36th-CSM-Horticulture-Proceedings-1.pdf",
+          "locator": "PDFp57 / printedp57",
+          "sourceSha256": null,
+          "retrievedAt": "2026-10-30",
+          "evidenceType": "published_regional_extension_reference",
+          "reviewStatus": "source_reviewed_reference_only",
+          "executableRecommendation": false
+        },
+        {
+          "id": "primary-kakada-2",
+          "parameter": "flowering_reference",
+          "value": "The trial selection flowered year-round with stronger winter flowering; cannot transfer this phenotype or fertilizer regimes from other jasmine species.",
+          "unit": null,
+          "scope": {
+            "geography": "TNAU2020 multi-location/adaptive trials; selectionAcc.Jm-1(KMD), not all Kakada",
+            "cropOrProductAsPublished": "kakada",
+            "conditions": "Candidate species/cultivar reference only; provider identity is not automatically confirmed."
+          },
+          "sourceUrl": "https://tnau.ac.in/site/research/wp-content/uploads/sites/60/2021/08/7.-36th-CSM-Horticulture-Proceedings-1.pdf",
+          "locator": "PDFp57 / printedp57",
+          "sourceSha256": null,
+          "retrievedAt": "2026-10-30",
+          "evidenceType": "published_regional_extension_reference",
+          "reviewStatus": "source_reviewed_reference_only",
+          "executableRecommendation": false
+        }
+      ]
+    },
+    {
+      "profileId": "galgal",
+      "evidence": [
+        {
+          "id": "primary-galgal-1",
+          "parameter": "regional_crop_reference",
+          "value": "Galgal identified among important fruits for Punjab Kandi areas. This does not establish suitability for other districts.",
+          "unit": null,
+          "scope": {
+            "geography": "PAU2021 Punjab Kandi-area fruit guidance",
+            "cropOrProductAsPublished": "galgal",
+            "conditions": "Candidate species/cultivar reference only; provider identity is not automatically confirmed."
+          },
+          "sourceUrl": "https://www.pau.edu/content/ccil/pf/pp_fruits.pdf",
+          "locator": "Printedp2 Special areas",
+          "sourceSha256": null,
+          "retrievedAt": "2026-10-30",
+          "evidenceType": "published_regional_extension_reference",
+          "reviewStatus": "source_reviewed_reference_only",
+          "executableRecommendation": false
+        }
+      ]
+    }
+  ],
+  "identityEvidence": [
+    {
+      "profileId": "akarkara",
+      "botanicalCandidate": "Anacyclus pyrethrum",
+      "sourceUrl": "https://www.nmpb.nic.in/sites/default/files/OperationalGuidlines2024Eng.pdf",
+      "locator": "Printedp55 AnnexureII item16",
+      "value": "NMPB lists Akarkara with Anacyclus pyrethrum; no field cultivation parameters inferred.",
+      "identitySelected": false
+    },
+    {
+      "profileId": "sweet-lime",
+      "botanicalCandidate": "Citrus limettioides",
+      "sourceUrl": "https://nhb.gov.in/pdf/fruits/citrus/cit013.pdf",
+      "locator": "PDFp1 SweetLime",
+      "value": "NHB uses SweetLime forC.limettioides; one possible interpretation of provider naming.",
+      "identitySelected": false
+    },
+    {
+      "profileId": "sweet-lime",
+      "botanicalCandidate": "Citrus sinensis",
+      "sourceUrl": "https://indiaflora-ces.iisc.ac.in/FloraPeninsular/herbsheet.php?cat=7&id=8745",
+      "locator": "Common and vernacular names",
+      "value": "IISc listsMusambi/Mosambi andSweetlime amongC.sinensis names; identity conflict remains unresolved.",
+      "identitySelected": false
+    }
+  ]
+}

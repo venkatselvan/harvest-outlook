@@ -1,0 +1,40 @@
+{
+  "reports": [
+    {
+      "title": "ANACON laboratory soil report \u2014 Pune project site (2017)",
+      "sourceUrl": "https://environmentclearance.nic.in/writereaddata/Online/EDS/19_Feb_2018_165612747QRIW7YXIResponse-ADS-Infosys-PhaseIIcompressed.pdf",
+      "localPath": "data/research/soil-crop/samples/anacon-pune-soil-report-2017.pdf",
+      "sourcePages": [
+        85,
+        86
+      ],
+      "reportPrintedPages": [
+        4,
+        5
+      ],
+      "retrievedAt": "2026-10-30T17:47:48.189449+00:00",
+      "sourceSha256": "76d39c582597cf5e774017492e959d7f4607ec56739a911eb0a46d4e8cd1496c",
+      "fileSha256": "82d1d1b64811e56afa43cb272c3730d3259e1baa84a1efec656b160463d3d6b3",
+      "sourcePublisher": "Government of India environmental-clearance public filing repository",
+      "reportIssuer": "ANACON Laboratories Pvt. Ltd.",
+      "reportDate": "2017-10-31",
+      "sampleDate": "2017-10-23",
+      "sampleCode": "S-1",
+      "sampleInwardNumber": "1718/Mon-172-1",
+      "location": "Project site, Village Mann, Taluka Mulshi, Pune, Maharashtra",
+      "limitations": [
+        "Public environmental laboratory report hosted in a government filing; not a government-issued agricultural Soil Health Card.",
+        "Historical reference sample from a Pune project site; not a soil measurement of the demo field or any user farm.",
+        "The complete two-page S-1 laboratory report is preserved without changing its reported values.",
+        "The report includes water-extract, available-nutrient, exchangeable-cation and digested-soil results. These methods and analyte pools must remain separate.",
+        "Printed note states 1:5 water extract, while sections separately label available nutrients and digested soil; extraction must retain this ambiguity.",
+        "Absent is a qualitative result with no stated detection limit; it must not be converted to zero.",
+        "No crop-specific laboratory interpretation bands, field sampling depth or current nutrient recommendation are supplied."
+      ],
+      "registryId": "anacon-pune-construction-2017",
+      "status": "retired",
+      "retirementReason": "Construction-project environmental soil report is not an agricultural-land soil reference.",
+      "retiredAt": "2026-10-30T18:40:29.006721+00:00"
+    }
+  ]
+}

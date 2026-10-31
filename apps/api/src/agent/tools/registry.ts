@@ -60,7 +60,7 @@ const META: Record<ToolName, { description: string; modes: Mode[]; readsCurrentD
   interpret_observation: { description: "Propose observations from owned photos with uncertainty; proposals need farmer confirmation.", modes: NOT_REPLAY, readsCurrentData: true },
   propose_plan_revision: { description: "Validate typed plan changes and return a diff; nothing is committed without the farmer's explicit confirmation.", modes: ALL, readsCurrentData: false },
   request_segmentation: { description: "Request a segmentation job for an owned photo (budget gated, manual fallback always available).", modes: NOT_REPLAY, readsCurrentData: true },
-  request_visual_keyframes: { description: "Request illustrative growth keyframes for a confirmed plan (deduplicated job).", modes: NOT_REPLAY, readsCurrentData: true },
+  request_visual_keyframes: { description: "Synthetic-mode visual test tool; current field views use dated owner photos only.", modes: ["synthetic"], readsCurrentData: true },
   get_job_status: { description: "Read the sanitized status of an owned job.", modes: NOT_REPLAY, readsCurrentData: true },
 };
 

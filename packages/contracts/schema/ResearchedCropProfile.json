@@ -1,0 +1,378 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "profileId": {
+      "type": "string"
+    },
+    "botanicalName": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "sourceCommodities": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "identityStatus": {
+      "type": "string"
+    },
+    "ecocrop": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "ecoportCode": {
+              "type": "string"
+            },
+            "sourceUrl": {
+              "type": "string",
+              "format": "uri"
+            },
+            "evidenceType": {
+              "type": "string",
+              "const": "legacy_global_ecological_reference"
+            },
+            "sourceScientificName": {
+              "type": "string"
+            },
+            "parameters": {
+              "type": "object",
+              "properties": {
+                "temperatureC": {
+                  "type": "object",
+                  "properties": {
+                    "optimalMin": {
+                      "type": [
+                        "number",
+                        "null"
+                      ]
+                    },
+                    "optimalMax": {
+                      "type": [
+                        "number",
+                        "null"
+                      ]
+                    },
+                    "absoluteMin": {
+                      "type": [
+                        "number",
+                        "null"
+                      ]
+                    },
+                    "absoluteMax": {
+                      "type": [
+                        "number",
+                        "null"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "optimalMin",
+                    "optimalMax",
+                    "absoluteMin",
+                    "absoluteMax"
+                  ],
+                  "additionalProperties": false
+                },
+                "annualRainfallMm": {
+                  "type": "object",
+                  "properties": {
+                    "optimalMin": {
+                      "type": [
+                        "number",
+                        "null"
+                      ]
+                    },
+                    "optimalMax": {
+                      "type": [
+                        "number",
+                        "null"
+                      ]
+                    },
+                    "absoluteMin": {
+                      "type": [
+                        "number",
+                        "null"
+                      ]
+                    },
+                    "absoluteMax": {
+                      "type": [
+                        "number",
+                        "null"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "optimalMin",
+                    "optimalMax",
+                    "absoluteMin",
+                    "absoluteMax"
+                  ],
+                  "additionalProperties": false
+                },
+                "soilPh": {
+                  "type": "object",
+                  "properties": {
+                    "optimalMin": {
+                      "type": [
+                        "number",
+                        "null"
+                      ]
+                    },
+                    "optimalMax": {
+                      "type": [
+                        "number",
+                        "null"
+                      ]
+                    },
+                    "absoluteMin": {
+                      "type": [
+                        "number",
+                        "null"
+                      ]
+                    },
+                    "absoluteMax": {
+                      "type": [
+                        "number",
+                        "null"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "optimalMin",
+                    "optimalMax",
+                    "absoluteMin",
+                    "absoluteMax"
+                  ],
+                  "additionalProperties": false
+                },
+                "soilTexture": {
+                  "type": "object",
+                  "properties": {
+                    "optimal": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "absolute": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "optimal",
+                    "absolute"
+                  ],
+                  "additionalProperties": false
+                },
+                "soilDepth": {
+                  "type": "object",
+                  "properties": {
+                    "optimal": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "absolute": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "optimal",
+                    "absolute"
+                  ],
+                  "additionalProperties": false
+                },
+                "soilSalinity": {
+                  "type": "object",
+                  "properties": {
+                    "optimal": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "absolute": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "optimal",
+                    "absolute"
+                  ],
+                  "additionalProperties": false
+                },
+                "soilDrainage": {
+                  "type": "object",
+                  "properties": {
+                    "optimal": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "absolute": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "optimal",
+                    "absolute"
+                  ],
+                  "additionalProperties": false
+                },
+                "light": {
+                  "type": "object",
+                  "properties": {
+                    "optimalMin": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "optimalMax": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "absoluteMin": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "absoluteMax": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "optimalMin",
+                    "optimalMax",
+                    "absoluteMin",
+                    "absoluteMax"
+                  ],
+                  "additionalProperties": false
+                },
+                "photoperiod": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "cropCycleDays": {
+                  "type": "object",
+                  "properties": {
+                    "min": {
+                      "type": [
+                        "number",
+                        "null"
+                      ]
+                    },
+                    "max": {
+                      "type": [
+                        "number",
+                        "null"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "min",
+                    "max"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "required": [
+                "temperatureC",
+                "annualRainfallMm",
+                "soilPh",
+                "soilTexture",
+                "soilDepth",
+                "soilSalinity",
+                "soilDrainage",
+                "light",
+                "photoperiod",
+                "cropCycleDays"
+              ],
+              "additionalProperties": {}
+            },
+            "qualityFlags": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "limitations": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          "required": [
+            "ecoportCode",
+            "sourceUrl",
+            "evidenceType",
+            "sourceScientificName",
+            "parameters",
+            "qualityFlags",
+            "limitations"
+          ],
+          "additionalProperties": {}
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "regionalEvidence": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "propertyNames": {
+          "type": "string"
+        },
+        "additionalProperties": {}
+      }
+    },
+    "gaps": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  },
+  "required": [
+    "profileId",
+    "botanicalName",
+    "sourceCommodities",
+    "identityStatus",
+    "ecocrop",
+    "regionalEvidence",
+    "gaps"
+  ],
+  "additionalProperties": {},
+  "$id": "https://harvest-outlook.local/schema/1.0/ResearchedCropProfile.json",
+  "x-schemaVersion": "1.0"
+}

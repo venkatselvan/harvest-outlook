@@ -25,11 +25,16 @@ export async function ensureSource(pool: Pool, manifestId: string, fallback: Sou
   const r = await pool.query<{ id: string }>(
     `INSERT INTO source_documents (content_hash, manifest_id, title, publisher, url, licence, metadata)
      VALUES ($1,$2,$3,$4,$5,$6,$7::jsonb)
-     ON CONFLICT (manifest_id) WHERE manifest_id IS NOT NULL DO UPDATE SET manifest_id = EXCLUDED.manifest_id
+     ON CONFLICT DO NOTHING
      RETURNING id`,
     [manifestContentHash(manifestId), manifestId, fallback.title, fallback.publisher, fallback.url, fallback.licence, JSON.stringify({ createdBy: "ensureSource", ...fallback.metadata })],
   );
-  return r.rows[0]!.id;
+  if(r.rows[0])return r.rows[0].id;
+  // Concurrent first readers can collide on either the manifest or deterministic hash index.
+  // A separate READ COMMITTED statement sees the winner without rewriting its richer provenance.
+  const winner=await pool.query<{id:string}>('SELECT id FROM source_documents WHERE manifest_id=$1 OR content_hash=$2 ORDER BY (manifest_id=$1) DESC LIMIT 1',[manifestId,manifestContentHash(manifestId)]);
+  if(!winner.rows[0])throw new Error('source_resolution_failed');
+  return winner.rows[0].id;
 }
 
 export const OPENMETEO_SOURCES = {

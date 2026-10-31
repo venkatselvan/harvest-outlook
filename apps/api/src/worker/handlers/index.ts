@@ -12,6 +12,10 @@ import { PgVisualAssetSource } from "../../visuals";
 import { createWeatherSource } from "../../plans/adapters/weather-source";
 import type { JobHandler } from "../main";
 import { createIngestHandlers } from "./ingest";
+import {createSoilHandler} from './soil-reports';
+import {createPlanningReviewHandler} from './planning-review';
+import { createMonitorHandler } from './monitoring';
+import {withModelActivity} from '../../services/model-activity';
 
 /** Job-type -> handler registry for T05a. Imported by worker/main.ts. */
 export const ingestHandlers = createIngestHandlers();
@@ -29,7 +33,11 @@ export interface WorkerDeps {
  * ingest handlers). Called once by the worker entry point after configuration is loaded.
  */
 export function registerWorkerHandlers(registry: Record<string, JobHandler>, deps: WorkerDeps): void {
+  const previous=new Map(Object.entries(registry));
   const { config, pool, storage, budget } = deps;
+  registry['soil.extract']=createSoilHandler({config,pool,storage,budget,...(deps.fetchImpl?{fetchImpl:deps.fetchImpl}:{})});
+  registry['farm.planning-review']=createPlanningReviewHandler({config,pool,budget,...(deps.fetchImpl?{fetchImpl:deps.fetchImpl}:{})});
+  registry['farm.monitor'] = createMonitorHandler({ config, pool, budget, fetchImpl: deps.fetchImpl });
   // T10: vision.segment. Returns status 'unavailable' without any network call in synthetic/replay mode or without a credential.
   registerSegmentationHandler(registry, { pool, config, storage, budget, options: samOptionsFromEnv(samEnvFromConfig(config)), ...(deps.fetchImpl ? { fetchImpl: deps.fetchImpl } : {}) });
   registerVisualHandlers(registry, { pool, config, storage, budget });
@@ -45,4 +53,13 @@ export function registerWorkerHandlers(registry: Record<string, JobHandler>, dep
     },
   });
   registerJournalHandlers(registry as never, { pool, config, storage, budget, plans, ...(deps.fetchImpl ? { fetchImpl: deps.fetchImpl } : {}) });
+  for(const[name,handler]of Object.entries(registry)){
+    if(previous.get(name)===handler)continue;
+    registry[name]=(job,ctx)=>{
+      if(!job.owner_id)return handler(job,ctx);
+      const payload=job.payload as {sessionId?:unknown}|null;
+      const sessionId=name==='farm.monitor'?null:typeof payload?.sessionId==='string'&&/^[0-9a-f-]{36}$/i.test(payload.sessionId)?payload.sessionId:null;
+      return withModelActivity({pool,ownerId:job.owner_id,sessionId,mode:config.RUNTIME_MODE,purpose:name},()=>handler(job,ctx));
+    };
+  }
 }

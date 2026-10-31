@@ -1,0 +1,122 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "label": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 300
+    },
+    "rawText": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 1000
+    },
+    "rawUnit": {
+      "anyOf": [
+        {
+          "type": "string",
+          "maxLength": 300
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "qualifier": {
+      "type": "string",
+      "enum": [
+        "exact",
+        "less_than",
+        "less_or_equal",
+        "greater_than",
+        "greater_or_equal",
+        "range",
+        "text"
+      ]
+    },
+    "numericValue": {
+      "type": [
+        "number",
+        "null"
+      ]
+    },
+    "range": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "low": {
+              "type": "number"
+            },
+            "high": {
+              "type": "number"
+            },
+            "lowInclusive": {
+              "type": [
+                "boolean",
+                "null"
+              ]
+            },
+            "highInclusive": {
+              "type": [
+                "boolean",
+                "null"
+              ]
+            }
+          },
+          "required": [
+            "low",
+            "high",
+            "lowInclusive",
+            "highInclusive"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "evidence": {
+      "type": "object",
+      "properties": {
+        "page": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 8
+        },
+        "quote": {
+          "type": "string",
+          "maxLength": 1500
+        },
+        "nativeTextCheck": {
+          "type": "string",
+          "enum": [
+            "matched",
+            "not_matched",
+            "image_review_required"
+          ]
+        }
+      },
+      "required": [
+        "page",
+        "quote",
+        "nativeTextCheck"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "required": [
+    "label",
+    "rawText",
+    "rawUnit",
+    "qualifier",
+    "numericValue",
+    "range",
+    "evidence"
+  ],
+  "additionalProperties": false,
+  "$id": "https://harvest-outlook.local/schema/1.0/SoilReportedReference.json",
+  "x-schemaVersion": "1.0"
+}

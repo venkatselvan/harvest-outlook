@@ -1,0 +1,173 @@
+{
+  "schemaVersion": "1.0",
+  "references": [
+    {
+      "id": "alluvial",
+      "label": "Alluvial",
+      "classificationAxis": "parent_material",
+      "texture": "Variable sand/silt/clay mixtures",
+      "drainage": "Variable; river-basin origin does not guarantee drainage",
+      "waterRetention": "Variable with texture and depth",
+      "chemistry": "Sodium salts and chemistry vary; no fixed nutrient values.",
+      "scope": "India; national descriptive category",
+      "sourceUrl": "https://mospi.gov.in/sites/default/files/publication_reports/EnviStats_India_2024.pdf",
+      "locator": "Table4.1 printedp68",
+      "retrievedAt": "2026-10-30",
+      "evidenceType": "published_soil_group_reference",
+      "measuredValueInferenceAllowed": false,
+      "matchingEligible": false,
+      "limitations": [
+        "Descriptive soil group, texture and salinity are different axes; do not use as interchangeable categories.",
+        "No automatic farm assignment from colour, photograph, boundary or district.",
+        "No fertilizer dose, numeric nutrient target or crop suitability score follows from this reference alone."
+      ]
+    },
+    {
+      "id": "black",
+      "label": "Black / regur",
+      "classificationAxis": "descriptive_soil_group",
+      "texture": "Clayey through loamy variants",
+      "drainage": "Heavy-clay variants may drain poorly",
+      "waterRetention": "Shrink\u2013swell behaviour; moisture retention varies with structure",
+      "chemistry": "Often base-rich; published broad chemistry is not a parcel test.",
+      "scope": "India; national descriptive category",
+      "sourceUrl": "https://mospi.gov.in/sites/default/files/publication_reports/EnviStats_India_2024.pdf",
+      "locator": "Table4.1 printedp68",
+      "retrievedAt": "2026-10-30",
+      "evidenceType": "published_soil_group_reference",
+      "measuredValueInferenceAllowed": false,
+      "matchingEligible": false,
+      "limitations": [
+        "Descriptive soil group, texture and salinity are different axes; do not use as interchangeable categories.",
+        "No automatic farm assignment from colour, photograph, boundary or district.",
+        "No fertilizer dose, numeric nutrient target or crop suitability score follows from this reference alone."
+      ]
+    },
+    {
+      "id": "red",
+      "label": "Red and yellow",
+      "classificationAxis": "descriptive_soil_group",
+      "texture": "Porous/friable; texture not established by colour",
+      "drainage": "Site-dependent",
+      "waterRetention": "No numeric storage capacity inferred",
+      "chemistry": "Iron-related colour does not measure available iron or NPK.",
+      "scope": "India; national descriptive category",
+      "sourceUrl": "https://mospi.gov.in/sites/default/files/publication_reports/EnviStats_India_2024.pdf",
+      "locator": "Table4.1 printedp68",
+      "retrievedAt": "2026-10-30",
+      "evidenceType": "published_soil_group_reference",
+      "measuredValueInferenceAllowed": false,
+      "matchingEligible": false,
+      "limitations": [
+        "Descriptive soil group, texture and salinity are different axes; do not use as interchangeable categories.",
+        "No automatic farm assignment from colour, photograph, boundary or district.",
+        "No fertilizer dose, numeric nutrient target or crop suitability score follows from this reference alone."
+      ]
+    },
+    {
+      "id": "lateritic",
+      "label": "Lateritic",
+      "classificationAxis": "descriptive_soil_group",
+      "texture": "Weathered, frequently gravelly; depth variable",
+      "drainage": "Often drained; local induration can constrain roots",
+      "waterRetention": "Published low retention; gravel/depth matter",
+      "chemistry": "Leaching and acidity common; laboratory pH still required.",
+      "scope": "India; national reference with local variation",
+      "sourceUrl": "https://mospi.gov.in/sites/default/files/publication_reports/EnviStats_India_2024.pdf",
+      "locator": "Table4.1 printedp68",
+      "retrievedAt": "2026-10-30",
+      "evidenceType": "published_soil_group_reference",
+      "measuredValueInferenceAllowed": false,
+      "matchingEligible": false,
+      "limitations": [
+        "Descriptive soil group, texture and salinity are different axes; do not use as interchangeable categories.",
+        "No automatic farm assignment from colour, photograph, boundary or district.",
+        "No fertilizer dose, numeric nutrient target or crop suitability score follows from this reference alone."
+      ]
+    },
+    {
+      "id": "arid-sandy",
+      "label": "Arid sandy",
+      "classificationAxis": "climate_texture_association",
+      "texture": "Sandy reference",
+      "drainage": "No parcel drainage inference",
+      "waterRetention": "Generally low retention",
+      "chemistry": "Fertility cannot be quantified from the label.",
+      "scope": "Arid Rajasthan/Gujarat reference",
+      "sourceUrl": "https://www.manage.gov.in/publications/eBooks/DAESI_%20Vol%20I_Study%20Material.pdf",
+      "locator": "Table10 printedp12",
+      "retrievedAt": "2026-10-30",
+      "evidenceType": "published_soil_group_reference",
+      "measuredValueInferenceAllowed": false,
+      "matchingEligible": false,
+      "limitations": [
+        "Descriptive soil group, texture and salinity are different axes; do not use as interchangeable categories.",
+        "No automatic farm assignment from colour, photograph, boundary or district.",
+        "No fertilizer dose, numeric nutrient target or crop suitability score follows from this reference alone."
+      ]
+    },
+    {
+      "id": "coastal-sandy",
+      "label": "Coastal sandy alluvium",
+      "classificationAxis": "parent_material_texture",
+      "texture": "Sand to loamy sand",
+      "drainage": "High seasonal water table can coexist with sandy texture",
+      "waterRetention": "Low retention despite high water table",
+      "chemistry": "Marine origin does not prove current salinity.",
+      "scope": "Kerala coastal plains only",
+      "sourceUrl": "https://www.keralasoils.gov.in/index.php/en/soils-kerala",
+      "locator": "Coastal Alluvium",
+      "retrievedAt": "2026-10-30",
+      "evidenceType": "published_soil_group_reference",
+      "measuredValueInferenceAllowed": false,
+      "matchingEligible": false,
+      "limitations": [
+        "Descriptive soil group, texture and salinity are different axes; do not use as interchangeable categories.",
+        "No automatic farm assignment from colour, photograph, boundary or district.",
+        "No fertilizer dose, numeric nutrient target or crop suitability score follows from this reference alone."
+      ]
+    },
+    {
+      "id": "coastal-acid-saline",
+      "label": "Coastal acid saline",
+      "classificationAxis": "chemical_hydrological_condition",
+      "texture": "Sandy loam to clay",
+      "drainage": "Tidal, poorly drained lowlands",
+      "waterRetention": "Flooding is not usable irrigation storage",
+      "chemistry": "Salinity varies with tidal intrusion and monsoon flushing; measure EC and pH separately.",
+      "scope": "Kerala coastal patches only",
+      "sourceUrl": "https://www.keralasoils.gov.in/index.php/en/soils-kerala",
+      "locator": "Acid Saline Soils",
+      "retrievedAt": "2026-10-30",
+      "evidenceType": "published_soil_group_reference",
+      "measuredValueInferenceAllowed": false,
+      "matchingEligible": false,
+      "limitations": [
+        "Descriptive soil group, texture and salinity are different axes; do not use as interchangeable categories.",
+        "No automatic farm assignment from colour, photograph, boundary or district.",
+        "No fertilizer dose, numeric nutrient target or crop suitability score follows from this reference alone."
+      ]
+    },
+    {
+      "id": "peaty-kari",
+      "label": "Peaty / kari",
+      "classificationAxis": "organic_hydrological_condition",
+      "texture": "Sandy clay to clay with organic subsurface material",
+      "drainage": "Poor drainage",
+      "waterRetention": "Waterlogging; no numerical available-water value",
+      "chemistry": "Acidity and salinity risks; buried organic material is not a measured surfaceOC value.",
+      "scope": "Alappuzha/Kottayam Kerala",
+      "sourceUrl": "https://www.keralasoils.gov.in/index.php/en/soils-kerala",
+      "locator": "Kari Soils",
+      "retrievedAt": "2026-10-30",
+      "evidenceType": "published_soil_group_reference",
+      "measuredValueInferenceAllowed": false,
+      "matchingEligible": false,
+      "limitations": [
+        "Descriptive soil group, texture and salinity are different axes; do not use as interchangeable categories.",
+        "No automatic farm assignment from colour, photograph, boundary or district.",
+        "No fertilizer dose, numeric nutrient target or crop suitability score follows from this reference alone."
+      ]
+    }
+  ]
+}

@@ -611,6 +611,7 @@ export class PlanService {
     ownerId: string;
     parentId?: string;
   }): Promise<PlanView> {
+    p.inputHash=await repo.activeInputHash(this.pool,p.ownerId,p.inputHash);
     const existing = await repo.findPlanByInputHash(this.pool, p.ownerId, p.inputHash);
     if (existing) return this.view(existing, true);
     try {

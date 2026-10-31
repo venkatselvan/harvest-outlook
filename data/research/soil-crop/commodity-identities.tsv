@@ -1,0 +1,258 @@
+sourceCommodity	profileKey	botanicalCandidate	classification	identityNote
+Ajwan	ajwain	Trachyspermum ammi	crop	Trade spelling normalized; botanical match requires source verification
+Amaranthus	amaranth-leafy	Amaranthus spp.	crop_group	Species not specified; leafy and grain use are distinct
+Amla(Nelli Kai)	amla	Phyllanthus emblica	crop	Also published as Emblica officinalis
+Apple	apple	Malus domestica	crop	Cultivar not identified by commodity
+Arecanut(Betelnut/Supari)	arecanut	Areca catechu	crop	Harvest and processed grades remain product-specific
+Asalia	garden-cress	Lepidium sativum	identity_pending	Regional trade name requires authoritative confirmation
+Ashgourd	ash-gourd	Benincasa hispida	crop	
+Baby Corn	maize	Zea mays	crop_product	Immature ear harvest; grain duration must not transfer
+Bajra(Pearl Millet/Cumbu)	pearl-millet	Pennisetum glaucum	crop	Current synonym Cenchrus americanus
+Banana	banana	Musa spp.	crop_group	Cultivar and genome group required
+Banana - Green	banana	Musa spp.	crop_product	Green fruit product; not distinct botanical crop
+Barley(Jau)	barley	Hordeum vulgare	crop	
+Beans	beans-unspecified		identity_pending	Many species; do not map to French bean without variety evidence
+Beetroot	beetroot	Beta vulgaris	crop	Root beet group, not sugar beet requirement by default
+Bengal Gram Dal(Chana Dal)	chickpea	Cicer arietinum	processed_crop_product	Split grain
+Bengal Gram(Gram)(Whole)	chickpea	Cicer arietinum	crop_product	Whole grain
+Betal Leaves	betel	Piper betle	crop	Spelling retained in source
+Bhindi(Ladies Finger)	okra	Abelmoschus esculentus	crop	
+Bitter gourd	bitter-gourd	Momordica charantia	crop	
+Black Gram Dal(Urd Dal)	black-gram	Vigna mungo	processed_crop_product	Split grain
+Black Gram(Urd Beans)(Whole)	black-gram	Vigna mungo	crop_product	Whole grain
+Black pepper	black-pepper	Piper nigrum	crop	
+Bottle gourd	bottle-gourd	Lagenaria siceraria	crop	
+Brinjal	brinjal	Solanum melongena	crop	
+Bunch Beans	bunch-beans-unspecified		identity_pending	Source name insufficient for species
+buttery	buttery-unspecified		identity_pending	Do not silently treat as grass pea
+Cabbage	cabbage	Brassica oleracea var. capitata	crop	
+Capsicum	sweet-pepper	Capsicum annuum	crop	Sweet pepper product group; cultivars matter
+Cardamom	cardamom-unspecified		identity_pending	Small and large cardamom are different species
+Carrot	carrot	Daucus carota	crop	
+Cashewnuts	cashew	Anacardium occidentale	crop_product	Nut product
+Castor Seed	castor	Ricinus communis	crop_product	
+Cauliflower	cauliflower	Brassica oleracea var. botrytis	crop	
+Chiaseeds	chia	Salvia hispanica	crop_product	
+Chikoos(Sapota)	sapota	Manilkara zapota	crop	Also published as Achras sapota
+Chili Red	chilli	Capsicum spp.	crop_group	Species and dry/fresh form need confirmation
+Chilly Capsicum	capsicum-unspecified	Capsicum spp.	identity_pending	Hot versus sweet form unresolved
+Chow Chow	chayote	Sechium edule	crop	
+Cluster beans	cluster-bean	Cyamopsis tetragonoloba	crop	Vegetable pods; seed profile distinct
+Cock			livestock	Not a plant crop
+Coconut	coconut	Cocos nucifera	crop_product	
+Coconut Oil	coconut	Cocos nucifera	processed_crop_product	No planting or harvest duration for oil itself
+Colacasia	taro	Colocasia esculenta	crop	Source spelling retained
+Copra	coconut	Cocos nucifera	processed_crop_product	Dried kernel
+Coriander(Leaves)	coriander	Coriandrum sativum	crop_product	Leaf harvest
+Corriander seed	coriander	Coriandrum sativum	crop_product	Seed harvest; source spelling retained
+Cotton	cotton	Gossypium spp.	crop_group	Species/hybrid and lint vs seed cotton unresolved
+Cotton Seed	cotton	Gossypium spp.	crop_product	
+Cow			livestock	Not a plant crop
+Cowpea(Lobia/Karamani)	cowpea	Vigna unguiculata	crop_product	Dry grain
+Cowpea(Veg)	cowpea	Vigna unguiculata	crop_product	Green pods; cultivar matters
+Cucumbar(Kheera)	cucumber	Cucumis sativus	crop	
+Cummin Seed(Jeera)	cumin	Cuminum cyminum	crop_product	
+Custard Apple(Sharifa)	custard-apple	Annona squamosa	crop	
+Dhaincha	dhaincha	Sesbania spp.	crop_group	Species unresolved; green manure versus seed differs
+Drumstick	moringa	Moringa oleifera	crop	Annual versus perennial cultivar differs
+Dry Chillies	chilli	Capsicum spp.	crop_product	Dry fruit; species unresolved
+Elephant Yam(Suran)/Amorphophallus	elephant-foot-yam	Amorphophallus paeoniifolius	crop	Not Dioscorea yam
+Field Pea	pea	Pisum sativum	crop_product	Dry grain group
+Fig(Anjura/Anjeer)	fig	Ficus carica	crop	
+Fish			aquaculture	Not a plant crop
+Foxtail Millet(Navane)	foxtail-millet	Setaria italica	crop	
+French Beans(Frasbean)	french-bean	Phaseolus vulgaris	crop	
+Garlic	garlic	Allium sativum	crop	
+Ginger(Dry)	ginger	Zingiber officinale	processed_crop_product	Dried rhizome
+Ginger(Green)	ginger	Zingiber officinale	crop_product	Fresh rhizome
+Grapes	grape	Vitis vinifera	crop	Rootstock and cultivar unresolved
+Green Avare(W)	lablab	Lablab purpureus	identity_pending	Regional trade name; verify species
+Green Chilli	chilli	Capsicum spp.	crop_product	Fresh fruit; species unresolved
+Green Gram Dal(Moong Dal)	green-gram	Vigna radiata	processed_crop_product	Split grain
+Green Gram(Moong)(Whole)	green-gram	Vigna radiata	crop_product	Whole grain
+Green Peas	pea	Pisum sativum	crop_product	Green seed harvest
+Ground Nut Seed	groundnut	Arachis hypogaea	crop_product	
+Groundnut	groundnut	Arachis hypogaea	crop	
+Guar	cluster-bean	Cyamopsis tetragonoloba	crop_product	Trade form needs confirmation
+Guar Seed(Cluster Beans Seed)	cluster-bean	Cyamopsis tetragonoloba	crop_product	Dry seed
+Guava	guava	Psidium guajava	crop	
+Gur(Jaggery)	sugarcane	Saccharum spp.	processed_crop_product	Usually sugarcane; botanical origin not guaranteed by trade name
+Hen			livestock	Not a plant crop
+Indian Beans(Seam)	lablab	Lablab purpureus	crop	
+Isabgul(Psyllium)	isabgol	Plantago ovata	crop	
+Jasmine	jasmine	Jasminum spp.	crop_group	Several species; requirements not interchangeable
+Jowar(Sorghum)	sorghum	Sorghum bicolor	crop	
+Jute	jute	Corchorus spp.	crop_group	C. capsularis vs C. olitorius unresolved
+Kabuli Chana(Chickpeas-White)	chickpea	Cicer arietinum	crop_product	Kabuli market class
+Kakada	kakada	Jasminum multiflorum	identity_pending	Regional flower identity requires source
+Karbuja(Musk Melon)	muskmelon	Cucumis melo	crop	
+Kinnow	kinnow	Citrus reticulata hybrid	crop	King x Willowleaf mandarin hybrid
+Knool Khol	knol-khol	Brassica oleracea var. gongylodes	crop	
+Kodo Millet(Varagu)	kodo-millet	Paspalum scrobiculatum	crop	
+Kulthi(Horse Gram)	horse-gram	Macrotyloma uniflorum	crop	
+Ladies Finger	okra	Abelmoschus esculentus	crop	Source duplicate common name retained
+Lak(Teora)	grass-pea	Lathyrus sativus	identity_pending	Regional trade spelling requires verification
+Leafy Vegetable	leafy-vegetable-unspecified		identity_pending	Not a single crop
+Lemon	lemon	Citrus limon	crop	Not acid lime
+Lentil(Masur)(Whole)	lentil	Lens culinaris	crop_product	Whole grain
+Lime	acid-lime	Citrus aurantiifolia	crop	Species/cultivar requires local verification
+Linseed	linseed	Linum usitatissimum	crop	Oilseed use versus fibre flax differs
+Lint	cotton	Gossypium spp.	processed_crop_product	Ginned fibre
+Little gourd(Kundru)	ivy-gourd	Coccinia grandis	crop	
+Mahua	mahua	Madhuca longifolia	crop_product	Flower versus seed product unresolved
+Maida Atta	wheat	Triticum aestivum	processed_crop_product	Refined flour; raw species not guaranteed
+Maize	maize	Zea mays	crop	Grain product
+Mango	mango	Mangifera indica	crop	
+Mango(Raw-Ripe)	mango	Mangifera indica	crop_product	Harvest use differs
+Marigold(Calcutta)	marigold	Tagetes spp.	crop_group	Species unresolved
+Masur Dal	lentil	Lens culinaris	processed_crop_product	Split grain
+Mataki	moth-bean	Vigna aconitifolia	identity_pending	Regional name needs source verification
+Methi Seeds	fenugreek	Trigonella foenum-graecum	crop_product	Seed use
+Methi(Leaves)	fenugreek	Trigonella foenum-graecum	crop_product	Leaf use
+Mint(Pudina)	mint	Mentha spp.	crop_group	Species/chemotype unresolved
+Moath Dal	moth-bean	Vigna aconitifolia	processed_crop_product	Split grain; trade mapping provisional
+Mousambi(Sweet Lime)	sweet-lime	Citrus limettioides	identity_pending	Mousambi/sweet-lime naming varies among official sources (C.limettioides versus C.sinensis); candidate is unconfirmed. Do not substitute C.limetta or match without product identity.
+Mushroom	mushroom-unspecified		fungus_group	Species/substrate unresolved; not ordinary soil crop
+Mustard	mustard	Brassica spp.	crop_group	B. juncea/rapa/napus and market class unresolved
+Mustard Oil	mustard	Brassica spp.	processed_crop_product	No crop duration for oil
+nigella seeds	nigella	Nigella sativa	crop_product	
+Onion	onion	Allium cepa	crop	Bulb onion
+Onion Green	onion	Allium cepa	crop_product	Green harvest; may include other Allium species
+Orange	orange-unspecified	Citrus spp.	identity_pending	Mandarin versus sweet orange unresolved
+Paddy(Basmati)	paddy	Oryza sativa	crop_product	Basmati cultivar class
+Paddy(Common)	paddy	Oryza sativa	crop_product	
+Paddy(Fine/Superfine/Grade A)	paddy	Oryza sativa	crop_product	Grade not cultivar
+Papaya	papaya	Carica papaya	crop	
+Papaya(Raw)	papaya	Carica papaya	crop_product	Unripe product
+Pea Pod/Pea Cod/हरी मटर	pea	Pisum sativum	crop_product	Green pods
+Pear(Marasebu)	pear	Pyrus spp.	crop_group	Species/cultivar unresolved
+Peas Wet	pea	Pisum sativum	crop_product	Fresh product
+Persimon(Japani Fal)	persimmon	Diospyros kaki	crop	
+Pigs			livestock	Not a plant crop
+Pineapple	pineapple	Ananas comosus	crop	
+Plum	plum	Prunus spp.	crop_group	Species/cultivar unresolved
+Pointed gourd(Parval)	pointed-gourd	Trichosanthes dioica	crop	
+Pomegranate	pomegranate	Punica granatum	crop	
+poppy seeds	poppy	Papaver somniferum	crop_product	Cultivation legality/authorization not established by market listing
+Potato	potato	Solanum tuberosum	crop	
+Pumpkin	pumpkin	Cucurbita spp.	crop_group	Species/cultivar unresolved
+Raddish	radish	Raphanus sativus	crop	
+Ragi(Finger Millet)	finger-millet	Eleusine coracana	crop	
+Rajgir	amaranth-grain	Amaranthus spp.	crop_group	Grain amaranth; species unresolved
+Red gram split/Arhar dal/Tur dal	pigeon-pea	Cajanus cajan	processed_crop_product	Split grain
+Red gram/Arhar/Tur(whole)	pigeon-pea	Cajanus cajan	crop_product	Whole grain
+Rice	paddy	Oryza sativa	processed_crop_product	Milled grain
+Rice(Fine/Superfine/Grade A)	paddy	Oryza sativa	processed_crop_product	Milled grain grade
+Ridgeguard(Tori)	ridge-gourd	Luffa acutangula	crop	
+Rose(Local)	rose	Rosa spp.	crop_group	Species/cultivar unresolved
+Rose(Loose))	rose	Rosa spp.	crop_product	Loose flowers
+Round gourd	tinda	Praecitrullus fistulosus	crop	
+Rubber	rubber	Hevea brasiliensis	crop_product	Processed latex; plantation crop
+Safflower	safflower	Carthamus tinctorius	crop	
+Same/Savi	little-millet	Panicum sumatrense	identity_pending	Regional trade name requires source
+Seemebadnekai	chayote	Sechium edule	identity_pending	Regional trade name requires source
+Seetapal	custard-apple	Annona squamosa	identity_pending	Regional spelling requires source
+Sesamum(Sesame,Gingelly,Til)	sesame	Sesamum indicum	crop	
+She Buffalo			livestock	Not a plant crop
+Snakeguard	snake-gourd	Trichosanthes cucumerina	crop	Long-fruited vegetable type
+Soanf	fennel	Foeniculum vulgare	identity_pending	Trade spelling requires source
+Soyabean	soybean	Glycine max	crop	
+Spinach	spinach	Spinacia oleracea	crop	Do not substitute other locally named greens
+Sponge gourd	sponge-gourd	Luffa aegyptiaca	crop	Synonym Luffa cylindrica
+Squash(Chappal Kadoo)	squash	Cucurbita pepo	identity_pending	Trade species and cultivar unresolved
+Sugar	sugarcane	Saccharum spp.	processed_crop_product	May derive from sugar beet; origin unresolved
+Sunflower/Sunflower Seed	sunflower	Helianthus annuus	crop_product	
+Suva(Dill Seed)	dill	Anethum graveolens	crop_product	
+Sweet Corn	sweet-corn	Zea mays ssp. saccharata	crop_product	Sweet corn distinct harvest use
+Sweet Potato	sweet-potato	Ipomoea batatas	crop	
+Sweet Pumpkin	pumpkin	Cucurbita spp.	crop_group	Species unresolved
+Sweet Saag	sweet-saag-unspecified		identity_pending	Unknown mixed/local green identity
+Tamarind Fruit	tamarind	Tamarindus indica	crop_product	
+Tapioca	cassava	Manihot esculenta	crop	
+Taramira	taramira	Eruca sativa	crop	Oilseed use
+Tender Coconut	coconut	Cocos nucifera	crop_product	Immature drinking nut; mature nut duration differs
+Thondekai	ivy-gourd	Coccinia grandis	identity_pending	Regional trade name requires source
+Tinda	tinda	Praecitrullus fistulosus	crop	
+Tomato	tomato	Solanum lycopersicum	crop	Also published as Lycopersicon esculentum
+Tube Rose(Loose)	tuberose	Polianthes tuberosa	crop_product	Current synonym Agave amica
+Turmeric	turmeric	Curcuma longa	crop_product	Processed state requires variety evidence
+Turmeric(raw)	turmeric	Curcuma longa	crop_product	Fresh rhizome
+Turnip	turnip	Brassica rapa var. rapa	crop	
+Walnut	walnut	Juglans regia	crop	
+Water Melon	watermelon	Citrullus lanatus	crop	
+Wheat	wheat	Triticum spp.	crop_group	Bread/durum species and cultivar unresolved
+White Muesli	safed-musli	Chlorophytum borivilianum	identity_pending	Trade spelling/species requires source
+Wood	wood-unspecified		identity_pending	Multiple tree species; inspect variety rather than assign generic requirements
+Yam(Ratalu)	yam	Dioscorea spp.	crop_group	Not elephant-foot yam; species unresolved
+Absinthe	wormwood	Artemisia absinthium	identity_pending	Verify source trade identity and product
+Akarkara	akarkara	Anacyclus pyrethrum	identity_pending	Trade species may differ; authoritative mapping required
+Alasande Gram	cowpea	Vigna unguiculata	identity_pending	Regional grain name requires source
+Almond(Badam)	almond	Prunus dulcis	crop	
+Alsandikai	cowpea	Vigna unguiculata	identity_pending	Regional vegetable name requires source
+Amranthas Red	amaranth-leafy	Amaranthus spp.	crop_group	Red leafy group not a resolved species
+Ashwagandha	ashwagandha	Withania somnifera	crop	
+Astera	china-aster	Callistephus chinensis	identity_pending	Trade spelling requires source
+Avare Dal	lablab	Lablab purpureus	processed_crop_product	Split grain; identity conditional
+Avocado	avocado	Persea americana	crop	
+basil	basil	Ocimum spp.	crop_group	Sweet and holy basil must not be conflated
+Beaten Rice	paddy	Oryza sativa	processed_crop_product	Flattened rice
+Ber(Zizyphus/Borehannu)	ber	Ziziphus mauritiana	crop	
+Big Gram	gram-unspecified		identity_pending	Ambiguous pulse trade label
+Broomstick(Flower Broom)	broom-grass	Thysanolaena maxima	identity_pending	Trade material and species require source
+Carnation	carnation	Dianthus caryophyllus	crop	
+Chakotha	pomelo	Citrus maxima	identity_pending	Regional name requires source
+Chapparad Avare	lablab	Lablab purpureus	identity_pending	Regional name requires source
+Chennangi Dal	chennangi-unspecified		identity_pending	Do not invent pulse species from local label
+Cinamon(Dalchini)	cinnamon	Cinnamomum spp.	crop_group	True cinnamon and cassia unresolved
+Coconut Seed	coconut	Cocos nucifera	crop_product	Planting seednut product
+Coffee	coffee	Coffea spp.	crop_group	Arabica versus robusta unresolved
+Dry Fodder	fodder-unspecified		identity_pending	Mixed crop origin unresolved
+Dry Grapes	grape	Vitis vinifera	processed_crop_product	Raisins
+Duster Beans	duster-beans-unspecified		identity_pending	Do not autocorrect spelling into another crop
+Field Bean(Anumulu)	lablab	Lablab purpureus	identity_pending	Regional species needs verification
+Flowers-Others	flowers-unspecified		identity_pending	Mixed flower species
+Galgal(Lemon)	galgal	Citrus pseudolimon	identity_pending	Distinct Himalayan citrus; source verification required
+Ghee			animal_product	Dairy product, not crop
+Gladiolus Cut Flower	gladiolus	Gladiolus spp.	crop_group	Cultivar group unresolved
+Goat			livestock	Not a plant crop
+Gram Raw(Chholia)	chickpea	Cicer arietinum	crop_product	Green chickpea
+Green Fodder	fodder-unspecified		identity_pending	Mixed species and harvest ages
+Groundnut pods(raw)	groundnut	Arachis hypogaea	crop_product	Fresh pods
+Groundnut(Split)	groundnut	Arachis hypogaea	processed_crop_product	Split kernels
+gulli	gulli-unspecified		identity_pending	Trade species unresolved
+Indian Colza(Sarson)	indian-colza	Brassica rapa	crop_group	Oilseed group; variety and species confirmation needed
+Jack Fruit(Ripe)	jackfruit	Artocarpus heterophyllus	crop_product	Ripe fruit
+Jarbara	gerbera	Gerbera jamesonii	identity_pending	Trade spelling and hybrid group require verification
+Kankambra	crossandra	Crossandra infundibuliformis	identity_pending	Regional flower name requires source
+Kiwi Fruit	kiwifruit	Actinidia spp.	crop_group	Species and cultivar unresolved
+Kutki	kutki-unspecified		identity_pending	Can refer to little millet or medicinal Picrorhiza; do not guess
+Lilly	lily-unspecified		identity_pending	Unresolved flower genus
+Litchi	litchi	Litchi chinensis	crop	
+Long Melon(Kakri)	long-melon	Cucumis melo var. flexuosus	crop	
+Mahua Seed(Hippe seed)	mahua	Madhuca longifolia	crop_product	Seed product
+Marigold(loose)	marigold	Tagetes spp.	crop_product	Loose flowers
+Neem Seed	neem	Azadirachta indica	crop_product	
+nigella	nigella	Nigella sativa	crop	
+Niger Seed(Ramtil)	niger	Guizotia abyssinica	crop_product	
+Other green and fresh vegetables	vegetables-unspecified		identity_pending	Mixed unspecified vegetables
+Other Pulses	pulses-unspecified		identity_pending	Mixed unspecified pulse species
+Peas(Dry)	pea	Pisum sativum	crop_product	Dry grain
+Pegeon Pea(Arhar Fali)	pigeon-pea	Cajanus cajan	crop_product	Green pods
+Prawn			aquaculture	Not a plant crop
+Pundi Seed	pundi-unspecified		identity_pending	Regional seed may represent Hibiscus; do not guess
+Quinoa	quinoa	Chenopodium quinoa	crop	
+Ridge Gourd(Permal/Hybrid Gourd)	ridge-gourd	Luffa acutangula	crop	Hybrid identity unspecified
+Sabu Dan	sago-unspecified		processed_crop_product	Starch pearls may derive from cassava or palm; origin unresolved
+Saffron	saffron	Crocus sativus	crop	
+Season Leaves	leaves-unspecified		identity_pending	Unspecified seasonal leaves
+Spiny Gourd / Kartali(Kantola)	spiny-gourd	Momordica dioica	crop	
+Strawberry	strawberry	Fragaria x ananassa	crop	Cultivar unresolved
+Surat Beans(Papadi)	lablab	Lablab purpureus	identity_pending	Regional cultivar/species requires verification
+Taro (Arvi) Leaves	taro	Colocasia esculenta	crop_product	Leaf harvest, not corm harvest
+Taro (Arvi) Stem	taro	Colocasia esculenta	crop_product	Petiole harvest
+Thogrikai	pigeon-pea	Cajanus cajan	identity_pending	Regional name requires source
+Tube Flower	tube-flower-unspecified		identity_pending	Do not assume tuberose from ambiguous label
+Wheat Atta	wheat	Triticum spp.	processed_crop_product	Flour
+White Peas	pea	Pisum sativum	crop_product	Dry grain class
+Wild Cucumber	wild-cucumber-unspecified		identity_pending	Species unresolved
+Yam	yam	Dioscorea spp.	crop_group	Species unresolved

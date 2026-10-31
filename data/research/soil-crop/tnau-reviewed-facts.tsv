@@ -1,0 +1,228 @@
+profileId	sourceLabel	parameter	value	unit	locator	scopeNote
+mango	Mango	soil_texture	Red loam; drainage is important for establishment.		Soil and climate	Tamil Nadu extension reference
+mango	Mango	soil_ph_range	6.5,8.0	pH	Soil and climate	Method not specified
+mango	Mango	planting_window	July–December	months	Season of planting	Tamil Nadu; not a national calendar
+mango	Mango	water_management	Establishment watering and weekly conventional irrigation are described; source separately discusses micro-irrigation.		Irrigation	Not a current farm schedule
+mango	Mango	fertilizer_reference	Sixth-year conventional tree table: FYM50kg, N1kg, P1kg, K1.5kg per tree; HDP has a different fertigation schedule.	per tree	Manures and fertilizers	P/K chemical form not established; age/system-specific reference only
+banana	Banana	soil_texture	Drained loam; saline and alkaline soils discouraged.		Soil and Climate	Musa cultivar group
+banana	Banana	planting_window	Garden lands: January–February or November–December; wetland and hill varieties have different windows.	months	Season of planting	Do not collapse wetland/hill/cultivar schedules
+banana	Banana	water_management	Weekly garden-land versus 10–15day wetland irrigation; drip table varies by growth stage.		Irrigation	Historical extension schedule, not measured demand
+banana	Banana	harvest_duration	100–150days after flowering, conditional on cultivar, soil, weather and elevation.	days after flowering	Harvest	Not days after planting
+sapota	Sapota	climate	Tropical setting; source altitude ceiling1000m.		Soil and climate	Tamil Nadu extension reference
+sapota	Sapota	planting_window	June–December	months	Season of planting	Grafted orchard establishment
+sapota	Sapota	water_management	Water at planting, day3, then about10day intervals during establishment.		Irrigation	Establishment only
+sapota	Sapota	fertilizer_reference	Sixth-year table: FYM50kg, N1kg, P1kg, K1.5kg per tree; application September–October.	per tree	Manures and fertilizers	P/K form unspecified; not a prescription
+papaya	Papaya	soil_texture	Uniform-textured soil with good drainage is preferred to limit collar-rot conditions.		Soil and climate	Frost-tolerance sentence withheld as uncorroborated
+papaya	Papaya	water_management	Weekly irrigation described after establishment.		Irrigation	Not measured farm demand
+papaya	Papaya	fertilizer_reference	Source describes FYM10kg/plant basal and N/P/K50g each per plant every two months starting month3.	per plant	Application of fertilizers	P/K form not specified; planting material/sex selection context
+papaya	Papaya	harvest_stage	Fruit picked when colour begins to change; papain uses separate immature-fruit criteria.		Harvest and Papain extraction	Ripe fruit and latex products differ
+guava	Guava	soil_texture	Drainage preferred; both wet and dry regions described, with irrigation in dry tracts.		Soil and climate	No numeric salinity threshold established
+guava	Guava	planting_window	June–December	months	Season of planting	Tamil Nadu extension reference
+guava	Guava	water_management	Planting and day3 watering; later approximately10day intervals or as needed.		Irrigation	Not an unconditional watering command
+guava	Guava	fertilizer_reference	Reference tree schedule lists FYM50kg and N/P/K1kg each, split March/October.	per tree	Manures and fertilizers	P/K chemical form unspecified
+acid-lime	Acid Lime	soil_texture	Deep drained loam; tropical/subtropical reference up to1000m elevation.		Soil and climate	Not lemon or sweet lime
+acid-lime	Acid Lime	water_management	Established-tree irrigation7–10days; avoid stagnant water.		Irrigation	Site-weather dependent
+acid-lime	Acid Lime	harvest_onset	Bearing starts in year3 in this extension reference.	years after planting	Harvest	Not a farm prediction
+acid-lime	Acid Lime	fertilizer_reference	Sixth-year reference per plant: FYM30kg, N600g, P200g, K300g; prose identifies phosphate/potash oxide forms.	per plant	Manures and fertilizers	Retain table/prose distinction; N split March/October
+orange-unspecified	Sweet Orange	soil_ph_range	6.5,7.5	pH	Soil and climate	Not generic Orange identity
+orange-unspecified	Sweet Orange	climate	Dry climate with distinct summer/winter; rainfall500–750mm June–September and elevation below500m described.		Soil and climate	Seasonal rainfall; not annual total
+orange-unspecified	Sweet Orange	planting_window	July–September	months	Season	Tamil Nadu extension reference
+orange-unspecified	Sweet Orange	fertilizer_reference	From year6: FYM30kg,N0.6kg,P2O50.2kg,K2O0.3kg per plant; N split March/October.	per plant	Manures and fertilizers	Chemical forms explicitly given; reference not prescription
+orange-unspecified	Sweet Orange	harvest_onset	Year5 bearing onset in source.	years after planting	Harvest	Not a current orchard observation
+orange-unspecified	Mandarin Orange	soil_ph_range	5.5,6.5	pH	Soil and climate	Mandarin species reference, not all Orange or Kinnow
+orange-unspecified	Mandarin Orange	climate	Subtropical500–1500m; rainfall1500–2500mm; mild winter and protection from hot winds.		Soil and climate	Source does not establish rainfall period
+orange-unspecified	Mandarin Orange	harvest_onset	Budded plants3–5years; seedlings5–7years.	years after planting	Harvest	Propagation-specific
+orange-unspecified	Mandarin Orange	fertilizer_reference	Separate Palani and Shervaroyan hill schedules; age-specific quantities must not be blended.		Manures and Fertilizers	Tamil Nadu hill-specific reference
+grape	Grapes	soil_ph_range	6.5,7.0	pH	Soil and climate	Drainage/low water table and at least1m soil depth
+grape	Grapes	water_management	Weekly irrigation after establishment; source withholds irrigation before pruning and harvest.		Irrigation	Cultivar and pruning regime matter
+grape	Grapes	fertilizer_reference	N/P/K schedule differs for Muscat, Thompson seedless and other cultivars and vine age.		Manures and fertilizers	Do not flatten cultivar table into universal dose
+pineapple	Pineapple	soil_ph_range	5.5,7.0	pH	Soil and climate	Light drained soil; heavy soil conditional on drainage
+pineapple	Pineapple	climate	Mild tropical humid hills500–700m; shaded plains intercrop also described.		Soil and climate	System-specific
+pineapple	Pineapple	fertilizer_reference	Reference lists N16g,P4g,K12g per plant, in equal applications at months6/12; FYM40–50t/ha.	per plant	Manures and fertilizers	P/K form unspecified; not soil concentration
+pineapple	Pineapple	harvest_duration	18–24months after planting.	months	Harvest	Plant crop; ratoon cycles differ
+pomegranate	Pomegranate	climate	Cool winters and dry summers; source describes tolerance of dry conditions and varied soils.		Soil and climate	No field-level tolerance guarantee
+pomegranate	Pomegranate	planting_window	June–December	months	Planting	Rooted cuttings/layers12–18months old
+pomegranate	Pomegranate	fertilizer_reference	From year6 reference: FYM30kg,N600g,P500g,K1200g per plant.	per plant	Application of fertilizers	Age-specific; P/K form unspecified
+jackfruit	Jack	soil_texture	Deep drained soil; planting pH near5.5 and elevation up to1200m described.		Soil and climate	Soil-amendment treatment not activated
+jackfruit	Jack	water_management	Weekly establishment irrigation, then need-based watering.		Irrigation	Not an unconditional schedule
+jackfruit	Jack	harvest_onset	Grafts begin around year5; seedlings around year8; harvest season March–July.	years after planting	Harvest	Reference chronology, not observed orchard status
+jackfruit	Jack	fertilizer_reference	Age-based table and split applications May–June/September–October.		Manures and fertilizers	Keep age/system scope
+ber	Ber	climate	Arid/semi-arid reference; source describes salt/alkali tolerance without a numeric threshold.		Soil and climate	No laboratory EC comparison possible
+ber	Ber	planting_window	July–August	months	Planting	Budded plants
+ber	Ber	fertilizer_reference	From year2: FYM50kg,N500g,P200g,K500g per plant/year after pruning.	per plant/year	Manures and fertilizers	P/K chemical form unspecified
+amla	Amla	climate	Dry subtropical conditions; broad soil adaptation described without numeric thresholds.		Soil and climate	No parcel suitability conclusion
+amla	Amla	planting_window	July–August	months	Planting	Tamil Nadu extension reference
+amla	Amla	fertilizer_reference	Bearing-tree reference: FYM10kg,N200g,P500g,K200g per plant/year after pruning.	per plant/year	Manures and fertilizers	P/K form unspecified
+apple	Apple	soil_ph_range	5.8,6.2	pH	Soil and climate	Drained red laterite with organic matter;1200–2000m
+apple	Apple	planting_window	June–December	months	Season	Tamil Nadu hill/rootstock context; not Kashmir calendar
+apple	Apple	fertilizer_reference	Bearing-tree reference: FYM25kg,N500g,P1kg,K1kg.	per bearing tree	Application of fertilizer	P/K form unspecified; local reference
+pear	Pear	soil_ph_range	5.8,6.2	pH	Soil and climate	Pyrus communis reference; above1200m, drained red laterite
+pear	Pear	planting_window	June–December	months	Planting season	Tamil Nadu hill cultivars
+pear	Pear	harvest_window	Early varieties May–June; late varieties July–October.	months	Harvest	Established bearing trees, not planting duration
+pear	Pear	fertilizer_reference	Bearing-tree/year reference: FYM25kg,N500g,P1kg,K1kg.	per tree/year	Application of fertilizers	P/K form unspecified
+plum	Plum	soil_ph_range	5.8,6.2	pH	Soil and climate	Prunus salicina reference; above1200m, drained red laterite
+plum	Plum	fertilizer_reference	Bearing-tree reference: FYM30kg,N500g,P1kg,K1kg during October–November.	per bearing tree	Application of fertilizer	P/K form unspecified; planting-window prose conflicts not resolved
+ashwagandha	Aswagandha	soil_ph_range	7.5,8.0	pH	Soil and Climate	Sandy loam reference
+ashwagandha	Aswagandha	temperature_range	20,35	degC	Soil and Climate	600–1200m altitude reference
+ashwagandha	Aswagandha	fertilizer_reference	Source describes use of residual fertility with no fertilizer/manure recommendation.		Manuring	Specific extension practice, not universal nutrient requirement
+ashwagandha	Aswagandha	harvest_duration	150–170days from sowing; source's separate May-harvest prose conflicts with January–March harvest section.	days	Harvest	Conflict retained; no automatic calendar generated
+rubber	Rubber	soil_ph_range	4.5,6.0	pH	Soil and climate	Deep fertile lateritic soil; Hevea reference
+rubber	Rubber	climate	Annual rain2000–4500mm,temperature25–34°C,RH80%; avoid heavy-wind sites.		Soil and climate	Regional extension envelope
+rubber	Rubber	planting_window	June–July	months	Season	Budded plantation establishment
+rubber	Rubber	fertilizer_reference	Nursery and established plantation schedules differ; phosphorus-deficiency wording is not a desired soil target.		Nursery; Manuring	No crop-specific deficiency target inferred
+cashew	Cashewnut	soil_texture	Red sandy loam preferred; plains and low hill slopes described.		Soil and climate	Do not misread source altitude feet as metres
+cashew	Cashewnut	planting_window	June–December	months	Season	Tamil Nadu extension reference
+cashew	Cashewnut	fertilizer_reference	Year5+ table lists FYM50kg,N500g,P200g,K300g per tree; separate East Coast schedule also exists.	per tree	Manuring	Conflict/system context prevents universal dose
+cashew	Cashewnut	harvest_onset	Year3 onward; March/May peak picking in source.	years after planting	Harvest	Reference, not actual orchard record
+betel	Betelvine	soil_texture	Fertile drained clay loam; saline/alkaline conditions discouraged.		Soil and climate	Piper betle reference
+betel	Betelvine	climate	Humid conditions and regular soil moisture; support/shade system described.		Soil and climate	Not dryland crop inference
+betel	Betelvine	planting_window	November–February	months	Season	Two source windows November–December and January–February
+betel	Betelvine	water_management	Weekly irrigation after planting described.		Irrigation	Need local weather/soil adjustment
+betel	Betelvine	fertilizer_reference	Neem-cake/urea N and superphosphate are identified, but potassium quantities differ between prose/table.		Manuring	No single numeric dose promoted
+mint	Mint	soil_ph_range	6.5,7.0	pH	Soil and climate	Mentha species group; drained organic-rich loam
+mint	Mint	climate	Subtropical; annual rain1000–1500mm.		Soil and climate	Species/chemotype not interchangeable
+mint	Mint	planting_window	June–July	months	Planting	Rooted-cutting system
+mint	Mint	water_management	Twice-weekly irrigation described.		Irrigation	Not a measured field requirement
+mint	Mint	harvest_duration	First cut about5months, subsequent cuts about3months apart.	months	Harvest	Herbage/oil production; not leaf market product equivalence
+pumpkin	Pumpkin	soil_ph_range	6.5,7.5	pH	Soil	Cucurbita moschata reference; drained sandy loam
+pumpkin	Pumpkin	planting_window	June–July; December–January	months	Season	Tamil Nadu extension reference
+pumpkin	Pumpkin	fertilizer_reference	Basal10kgFYM and100g6:12:12NPK mixture per pit; additional10gN/pit at day30.	per pit	Application of fertilizers	Product grade is not soil concentration; hybrid schedule separate
+pumpkin	Pumpkin	harvest_duration	CO2 cultivar described at135days.	days	Varieties	Cultivar-specific, not all pumpkin
+bottle-gourd	Bottle Gourd	soil_ph_range	6.5,7.5	pH	Soil	Organic-rich drained sandy loam
+bottle-gourd	Bottle Gourd	planting_window	July; January	months	Season	Tamil Nadu extension reference
+bottle-gourd	Bottle Gourd	water_management	Weekly basin irrigation after sowing described.		Irrigation	Not rainfall-adjusted farm demand
+bottle-gourd	Bottle Gourd	fertilizer_reference	Conventional pit mixture differs from200:100:100kgNPK/ha hybrid fertigation table.		Application of fertilizers; Fertigation	P/K form and system context retained; no universal dose
+bitter-gourd	Bitter Gourd	soil_ph_range	6.5,7.5	pH	Soil	Drained sandy loam, organic matter; moderate warmth
+bitter-gourd	Bitter Gourd	planting_window	July; January	months	Season	Tamil Nadu extension reference
+bitter-gourd	Bitter Gourd	water_management	Weekly basin irrigation after sowing described.		Irrigation	Local weather/soil adjustment required
+bitter-gourd	Bitter Gourd	harvest_duration	CO1:115days;MDU1:120–130days;COBgoH1:115–120days. Later general yield section gives different durations.	days	Varieties; Yield	Cultivar-specific and source conflict retained
+ash-gourd	Ash Gourd	soil_ph_range	6.5,7.5	pH	Soil	Deep loam
+ash-gourd	Ash Gourd	planting_window	July; January	months	Season	Tamil Nadu extension reference
+ash-gourd	Ash Gourd	harvest_duration	CO2 and CO1hybrid:120–130days;CO1variety:140–150days.	days	Varieties	Do not conflate hybrid CO1 with variety CO1
+ash-gourd	Ash Gourd	fertilizer_reference	Conventional pit application and hybrid fertigation are separate; prose60:30:30 and table200:100:100kg/ha conflict.		Application of fertilizers; Fertigation	Conflicting totals not promoted to an executable rate
+cucumber	Cucumber	soil_ph_range	6.5,7.5	pH	Soil	Organic-rich drained sandy loam
+cucumber	Cucumber	planting_window	June; January–April	months	Season	Tamil Nadu extension reference
+cucumber	Cucumber	water_management	Weekly irrigation after sowing described.		Irrigation	Reference only
+cucumber	Cucumber	fertilizer_reference	Conventional reference: FYM40t/ha basal and N35kg/ha at day30; separate hybrid fertigation schedule exists.	kg/ha	Application of fertilizers	Do not combine systems
+watermelon	Watermelon	soil_ph_range	6.5,7.5	pH	Soil	Drained sandy loam with organic matter
+watermelon	Watermelon	planting_window	November–December	months	Season	Tamil Nadu extension reference
+watermelon	Watermelon	water_management	Maintain regular moisture; source warns that watering after prolonged dryness can crack fruit.		Irrigation	Not a fixed volume prescription
+watermelon	Watermelon	fertilizer_reference	Conventional table: FYM20t/ha, basal P55/K55kg/ha, N55kg/ha at day30; hybrid fertigation separate.	kg/ha	Application of fertilizers	P/K form not specified
+muskmelon	Muskmelon	soil_ph_range	6.5,7.5	pH	Soil	Drained sandy loam with organic matter
+muskmelon	Muskmelon	planting_window	November–February	months	Season of sowing	Tamil Nadu extension reference
+muskmelon	Muskmelon	water_management	Weekly irrigation after sowing described.		Irrigation	Reference schedule only
+muskmelon	Muskmelon	fertilizer_reference	Conventional reference: FYM20t/ha,NPK40:60:30kg/ha basal, then N40kg/ha at day30.	kg/ha	Application of fertilizers	P/K form unspecified; hybrid system separate
+tinda	Tinda	soil_ph_range	6.5,7.5	pH	Soil	Drained organic-rich sandy loam
+tinda	Tinda	planting_window	January–February	months	Season	Tamil Nadu extension reference
+tinda	Tinda	fertilizer_reference	FYM10t/ha and N20kg/ha basal; further N20kg/ha after30days.	kg/ha	Application of fertilizers	Reference, not a farm recommendation
+chayote	Chow Chow	soil_ph_range	5.5,6.5	pH	Soil	Drained acidic soil
+chayote	Chow Chow	temperature_range	18,22	degC	Soil	1200–1500m reference; plains in winter
+chayote	Chow Chow	planting_window	April–May	months	Season	Hill production context
+chayote	Chow Chow	fertilizer_reference	Pit preparation lists FYM10kg,urea250g,superphosphate500g,MOP500g.	per pit	Preparation of field	Fertilizer product mass, not elemental NPK
+cluster-bean	Cluster Bean	soil_ph_range	7.5,8.0	pH	Soil	Vegetable cluster bean; drained sandy loam
+cluster-bean	Cluster Bean	climate	Low-rainfall, high-temperature adaptation described; numeric tolerance not established.		Soil	Not a farm drought-resilience guarantee
+cluster-bean	Cluster Bean	planting_window	June–July; October–November	months	Season	Tamil Nadu vegetable product
+cluster-bean	Cluster Bean	fertilizer_reference	N25/P50/K25kg/ha basal plusN25kg/ha at day30, withFYM25t/ha.	kg/ha	Application of fertilizers	P/K form unspecified; not guar-seed dosage automatically
+cowpea	Vegetable Cowpea	climate	Warm-season vegetable; low-temperature intolerance and drained organic-rich soil described.		Soil	Green-pod product, not dry grain
+cowpea	Vegetable Cowpea	planting_window	RainfedJune–July; irrigatedFebruary–March.	months	Season	Management-specific
+cowpea	Vegetable Cowpea	fertilizer_reference	IrrigatedN25/P50kg/ha+FYM25t/ha; rainfedN12.5/P25kg/ha+FYM12.5t/ha.	kg/ha	Application of fertilizers	P chemical form unspecified; distinct systems
+pea	Peas	soil_ph_range	6.0,7.5	pH	Soil	Drained loam; green-pod reference
+pea	Peas	temperature_range	12,15	degC	Soil	Flowering and pod-set stage only
+pea	Peas	planting_window	PlainsFebruary–March andOctober–November.	months	Season	Tamil Nadu reference
+pea	Peas	harvest_duration	75days after sowing.	days	Harvest	Green pods, not dry grain
+moringa	Annual Moringa	soil_ph_range	6.5,8.0	pH	Soil	Annual cultivar; deep sandy loam
+moringa	Annual Moringa	temperature_range	25,30	degC	Soil	Annual moringa reference
+moringa	Annual Moringa	planting_window	July–October	months	Season	Tamil Nadu annual cultivar
+moringa	Annual Moringa	water_management	10–15day interval after establishment, adjusted for soil type.		Irrigation	Not measured parcel demand
+moringa	Annual Moringa	harvest_duration	Harvest begins in month4 after transplanting.	months after transplant	Harvest and yield	Not days from seed; perennial types differ
+moringa	Annual Moringa	fertilizer_reference	NPK45:15:30g/pit at month3; N45g/pit again at month6 bearing stage.	g/pit	Manuring	P/K form unspecified
+carrot	Carrot	soil_ph_range	6.0,7.0	pH	Soil	Deep loose loam
+carrot	Carrot	temperature_range	15,20	degC	Soil	Root colour development context
+carrot	Carrot	planting_window	Above1500m year-round with irrigation;1000–1500m July–February;plainsAugust.	months	Season	Elevation/irrigation-specific
+carrot	Carrot	fertilizer_reference	NPK90:90:90kg/ha basal,45:45:45kg/ha day45;FYM30t/ha.	kg/ha	Application of fertilizers	P/K form unspecified; source reference
+beetroot	Beetroot	soil_ph_range	6.0,7.0	pH	Soil	Friable soil; cool-weather crop
+beetroot	Beetroot	planting_window	July–August	months	Season	Tamil Nadu reference
+beetroot	Beetroot	fertilizer_reference	NPK60:160:100kg/ha basal, N60kg/ha day30;FYM20t/ha.	kg/ha	Application of fertilizers	P/K form unspecified
+radish	Radish	soil_ph_range	5.5,6.8	pH	Soil	Organic-rich sandy loam
+radish	Radish	temperature_reference	15	degC	Soil	Root quality reference, not whole-cycle absolute range
+radish	Radish	planting_window	HillsJune–July; plainsSeptember.	months	Season of sowing	Tamil Nadu reference
+radish	Radish	fertilizer_reference	PlainsN25/P100/K50kg/ha basal, N25kg/ha day30;FYM25t/ha.	kg/ha	Application of fertilizers	P/K form unspecified; plains scope
+taro	Colocasia	soil_ph_range	5.5,7.0	pH	Soil	Loamy soil; corm production
+taro	Colocasia	temperature_range	21,27	degC	Soil	Mean temperature reference
+taro	Colocasia	water_reference	1000mm well-distributed rain during growth; supplemental irrigation where insufficient.	mm/growth period	Soil	Not annual rainfall or fixed irrigation amount
+taro	Colocasia	planting_window	June–July; February–March	months	Season	Tamil Nadu reference
+taro	Colocasia	harvest_duration	6–8months after planting.	months	Harvesting	Corm harvest; not leaf/petiole market products
+potato	Potato	soil_ph_range	4.8,5.4	pH	Soil	Friable porous drained soil
+potato	Potato	planting_window	HillsMarch–April,August–September,irrigatedJanuary–February;plainsOctober–November.	months	Season	Tamil Nadu; not Hassan calendar
+potato	Potato	water_reference	Rainfed cultivation in1200–2000mm annual-rain regions described; weekly irrigation alternative.	mm/year	Soil; Irrigation	Rainfall envelope not seasonal irrigation volume
+potato	Potato	fertilizer_reference	N120/P240/K120kg/ha in two splits, plusFYM15t/ha.	kg/ha	Application of fertilizers	P/K form unspecified; source-specific reference
+sweet-potato	Sweet Potato	soil_ph_range	5.6,6.6	pH	Soil	Loam; at least30cm soil depth
+sweet-potato	Sweet Potato	climate	Warm humid production context.		Soil	Tamil Nadu reference
+sweet-potato	Sweet Potato	planting_window	June–July; September	months	Season	Tamil Nadu reference
+sweet-potato	Sweet Potato	fertilizer_reference	NPK20:40:60kg/ha basal and again day30;FYM25t/ha.	kg/ha	Application of fertilizers	P/K form unspecified; biofertilizer conditional branch not merged
+sweet-potato	Sweet Potato	harvest_duration	110–120days.	days	Yield	Source reference, not a predicted farm date
+cassava	Tapioca	soil_ph_range	5.5,7.0	pH	Climate and Soil	Drained red lateritic loam
+cassava	Tapioca	climate	Warm humid tropical;annual rainfall above1000mm;altitude up to1000m.		Climate and Soil	Rainfall not irrigation
+cassava	Tapioca	planting_window	Irrigated year-round;rainfedApril.	months	Season and planting	Management-specific
+cassava	Tapioca	water_management	Intervals change from7–10days early to20–30days later, conditional on soil moisture; avoid excess.		Irrigation	Not measured demand
+cassava	Tapioca	harvest_duration	9–11months general; culinary and industrial varieties differ.	months	Harvest	Keep product/cultivar scope
+cassava	Tapioca	fertilizer_reference	Rainfed referenceN50/P65/K125kg/ha basal+FYM12.5t/ha; irrigated split schedule differs.	kg/ha	Manuring	P/K form unspecified; do not combine systems
+elephant-foot-yam	Elephant Foot Yam	soil_ph_range	5.5,7.0	pH	Soil	Rich red loam
+elephant-foot-yam	Elephant Foot Yam	climate	Warm humid vegetative phase; cooler drier corm development.		Soil	Stage-specific
+elephant-foot-yam	Elephant Foot Yam	water_management	Usually rainfed; supplementary irrigation when monsoon fails; stagnant water harmful.		Irrigation	No universal weekly command
+elephant-foot-yam	Elephant Foot Yam	fertilizer_reference	NPK80:60:100kg/ha split across45days and one month later;FYM25t/ha.	kg/ha	Application of fertilizers	P/K form unspecified
+elephant-foot-yam	Elephant Foot Yam	harvest_duration	8months/240days after planting.	days	Harvest; Yield	Corm product
+amaranth-leafy	Amaranthus	soil_texture	Drained slightly acidic loam; warm climate.		Soil	Amaranthus species group
+amaranth-leafy	Amaranthus	planting_window	Year-round in source region.	months	Season and sowing	Tamil Nadu; not all climates
+amaranth-leafy	Amaranthus	harvest_duration	Mulaikeerai25days;Thandukeerai40days;clipping type repeated weekly harvests.	days after sowing	Harvest and yield	Leaf types distinct from grainCo4
+amaranth-leafy	Amaranthus	fertilizer_reference	BasalN75/K25kg/ha andFYM25t/ha listed.	kg/ha	Application of fertilizers	K form unspecified; not universal grain-amaranth rate
+cabbage	Cabbage	soil_ph_range	5.5,6.5	pH	Soil	Sandy-loam to clay; cool moist climate
+cabbage	Cabbage	planting_window	HillsJanuary–February,July–August,September–October;plainsAugust–November.	months	Season of sowing	Tamil Nadu reference
+cabbage	Cabbage	water_management	Continuous moisture supply is advised; not a measured volume.		Irrigation	Drainage and weather still required
+cabbage	Cabbage	fertilizer_reference	Separate hill,plains andF1hybrid schedules; plainsN50/P125/K25kg/ha basal+N50kg/ha one month later.	kg/ha	Application of fertilizers	P/K form unspecified
+cauliflower	Cauliflower	soil_ph_range	5.5,6.6	pH	Soil	Deep drained organic-rich loam
+cauliflower	Cauliflower	climate	Cool moist conditions; early varieties tolerate greater heat/day length.		Soil	Cultivar-dependent
+cauliflower	Cauliflower	planting_window	PlainsSeptember–February.	months	Soil	Tamil Nadu reference
+cauliflower	Cauliflower	fertilizer_reference	PlainsN50/P100/K50kg/ha basal+N50kg/ha at45days;hill schedule differs.	kg/ha	Application of fertilizers	P/K form unspecified
+onion	Small Onion	soil_ph_range	6.0,7.0	pH	Soil	Small-onion type; drainage and mild climate
+onion	Small Onion	planting_window	April–May;October–November.	months	Season	Small onion, not Bellary onion
+onion	Small Onion	harvest_duration	70–90days;CO(On)5 approximately90days.	days	Harvest and Yield	Bulb harvest; not green onion
+onion	Small Onion	fertilizer_reference	N30/P60/K30kg/ha basal+N30kg/ha day30;FYM25t/ha.	kg/ha	Application of fertilizers	P/K form unspecified
+onion	Bellary Onion	soil_ph_range	5.8,6.5	pH	Soil	Bellary onion type; separate from small onion
+onion	Bellary Onion	planting_window	May–June	months	Season	Tamil Nadu Bellary reference
+onion	Bellary Onion	harvest_duration	140–150days.	days	Yield	Bulb harvest
+onion	Bellary Onion	fertilizer_reference	N50/P150/K75kg/ha basal+N50kg/ha day30;FYM25t/ha.	kg/ha	Application of fertilizers	P/K form unspecified
+carnation	Carnation	soil_ph_range	5.5,6.5	pH	Soil	Protected carnation production; drained red loam
+carnation	Carnation	climate	Day20–25°C,night10–15°C,RH50–60%,critical photoperiod13hours.		Growing condition	Polyhouse-specific reference
+carnation	Carnation	planting_window	Year-round under controlled conditions.		Season	Not an open-field national calendar
+carnation	Carnation	water_reference	5–6litres/m²/day via drip described.	L/m2/day	Irrigation	Protected production reference, not measured demand
+carnation	Carnation	harvest_duration	Flowering starts110–120days after planting.	days	Harvest	Standard/spray harvest stage differs
+gerbera	Gerbera	soil_ph_range	5.5,7.0	pH	Soil	Light drained soil; source also says neutral/slightly alkaline, a wording inconsistency
+gerbera	Gerbera	climate	Day22–25°C,night12–16°C;50%shade house or ventilated polyhouse.		Climate	Gerbera jamesonii/hybrids protected production
+gerbera	Gerbera	water_reference	Source average500–700ml/plant/day; separate dripper-rate prose is ambiguous.	ml/plant/day	Irrigation	Do not combine average with ambiguous emitter statement
+gerbera	Gerbera	fertilizer_reference	Fertigation starts week3, with separate A/B tank salts including calcium nitrate, potassium nitrate,MAP,SOP and magnesium sulphate.		Nutrition	Original table required for quantities/compatibility; no automatic mixing prescription
+rose	Rose	soil_ph_range	6.0,7.0	pH	Soil and climate	Commercial loose-flower roses; drained sandy loam
+rose	Rose	climate	At least6hours bright sunshine;day26°C/night15°C reference.		Soil and climate	Tamil Nadu suitable plains; not every Rosa species
+rose	Rose	water_management	Every2days during establishment then weekly; saline irrigation discouraged.		Irrigation	Reference only
+rose	Rose	harvest_duration	Flowering begins45days after pruning.	days after pruning	Season of flowering and harvesting	Not days from planting
+jasmine	Malligai	soil_texture	Fertile drained loam/red loam;warm summer,mild winter,sunny days.		Soil and climate	Jasminum sambac only
+jasmine	Malligai	planting_window	June–November	months	Preparation and planting	Jasminum sambac only
+jasmine	Malligai	fertilizer_reference	NPK60:120:120g/plant/year in two splits after pruning andJune–July,withFYM.	g/plant/year	Manuring	J.sambac;P/K form unspecified
+jasmine	Mullai	soil_texture	Drained red/sandy loam in tropical conditions.		Soil and climate	Jasminum auriculatum only
+jasmine	Mullai	planting_window	June–November	months	Season of planting	Jasminum auriculatum only
+jasmine	Mullai	fertilizer_reference	NPK120:240:120g/plant/year in six bimonthly splits.	g/plant/year	Manuring	J.auriculatum;do not merge with sambac rate
+jasmine	Jathi Malli	soil_texture	Drained red loam and tropical climate.		Soil and climate	Jasminum grandiflorum only
+jasmine	Jathi Malli	planting_window	June–November	months	Season of planting	Jasminum grandiflorum only
+jasmine	Jathi Malli	fertilizer_reference	NPK60:120:120g/plant/year in two splits December/June–July.	g/plant/year	Manuring	J.grandiflorum;P/K form unspecified
+crossandra	Crossandra	soil_ph_range	6.0,7.5	pH	Soil	Drained sandy loam/red soil
+crossandra	Crossandra	temperature_range	30,35	degC	Climate	Low-temperature/frost sensitivity; partial shade tolerance
+crossandra	Crossandra	fertilizer_reference	Tetraploid reference NPK75:50:125kg/ha at month3, then six-month intervals;triploid Delhi type has separate schedule.	kg/ha	Manuring	Ploidy-specific;P/K form unspecified
+crossandra	Crossandra	harvest_duration	Flowering about1month after transplanting.	months	Harvest	Fully opened flowers;source reference
+marigold	Marigold	soil_ph_range	7.0,7.5	pH	Soil	Tagetes erecta only;drained loam
+marigold	Marigold	planting_window	Year-round sowing in source region.		Seeds and sowing	Tamil Nadu African marigold reference
+marigold	Marigold	fertilizer_reference	NPK45:90:75kg/ha basal+N45kg/ha day45;FYM25t/ha.	kg/ha	Manuring	P/K form unspecified;hybrid precision system separate
+marigold	Marigold	harvest_duration	Picking starts60days after planting,then about every3days.	days	Harvest	Tagetes erecta;not all species
+tuberose	Tuberrose	soil_ph_range	6.5,7.5	pH	Soil	Drained loam
+tuberose	Tuberrose	planting_window	June–July	months	Propagation and planting	Bulb planting
+tuberose	Tuberrose	fertilizer_reference	IIHR-attributed reference NPK200:200:200kg/ha withFYM25t/ha;N split basal/day60/day90.	kg/ha	Manuring and after cultivation	P/K form unspecified;not a farm prescription
+tuberose	Tuberrose	harvest_stage	Loose florets versus whole cut spikes use different harvest stages.		Harvest	Product-specific

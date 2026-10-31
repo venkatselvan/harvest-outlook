@@ -20,11 +20,8 @@ export const configSchema = z.object({
   META_TEXT_MODEL: z.string().default("muse-spark-1.3"),
   META_ESCALATION_MODEL: z.string().default("muse-wonder-1.0"),
   META_IMAGE_MODEL: z.string().default("muse-image-1.0"),
+  META_STT_MODEL: z.literal("muse-voice-transcribe-1.0").default("muse-voice-transcribe-1.0"),
   META_SEGMENT_MODEL: z.string().default("sam-3.1"),
-  ELEVENLABS_API_KEY: optionalString,
-  ELEVENLABS_STT_MODEL: optionalString,
-  ELEVENLABS_TTS_MODEL: optionalString,
-  ELEVENLABS_VOICE_ID: optionalString,
   BUDGET_TOTAL_USD: positiveNum(150),
   BUDGET_DEV_ALLOCATION_USD: positiveNum(120),
   BUDGET_DEMO_RESERVE_USD: positiveNum(30),
@@ -136,6 +133,6 @@ export function samEnvFromConfig(c: Config): Record<string, string | undefined> 
 
 /** Log-safe view: secrets replaced by booleans. */
 export function sanitizedConfig(c: Config): Record<string, unknown> {
-  const { SESSION_SECRET: _s, MODEL_API_KEY, ELEVENLABS_API_KEY, DATABASE_URL: _d, ...rest } = c;
-  return { ...rest, MODEL_API_KEY_configured: !!MODEL_API_KEY, ELEVENLABS_API_KEY_configured: !!ELEVENLABS_API_KEY };
+  const { SESSION_SECRET: _s, MODEL_API_KEY, DATABASE_URL: _d, ...rest } = c;
+  return { ...rest, MODEL_API_KEY_configured: !!MODEL_API_KEY };
 }

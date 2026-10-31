@@ -1,0 +1,219 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "cropId": {
+      "type": "string"
+    },
+    "displayName": {
+      "type": "string"
+    },
+    "botanicalName": {
+      "type": "string"
+    },
+    "productionType": {
+      "type": "string",
+      "enum": [
+        "annual",
+        "long_duration",
+        "perennial"
+      ]
+    },
+    "establishmentMethods": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "products": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "productId": {
+            "type": "string"
+          },
+          "productName": {
+            "type": "string"
+          },
+          "sourceCommodities": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "mappingStatus": {
+            "type": "string",
+            "enum": [
+              "verified",
+              "unavailable"
+            ]
+          }
+        },
+        "required": [
+          "productId",
+          "productName",
+          "sourceCommodities",
+          "mappingStatus"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "soilEffects": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "topic": {
+            "type": "string"
+          },
+          "direction": {
+            "type": "string"
+          },
+          "text": {
+            "type": "string"
+          },
+          "conditions": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "sourceRefs": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "sourceId": {
+                  "type": "string"
+                },
+                "locator": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "sourceId",
+                "locator"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "quantifiedDelta": {
+            "type": "null"
+          }
+        },
+        "required": [
+          "topic",
+          "direction",
+          "text",
+          "conditions",
+          "sourceRefs",
+          "quantifiedDelta"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "endUses": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "use": {
+            "type": "string"
+          },
+          "sourceRefs": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "sourceId": {
+                  "type": "string"
+                },
+                "locator": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "sourceId",
+                "locator"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "limitations": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "use",
+          "sourceRefs",
+          "limitations"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "sequenceConstraints": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "text": {
+            "type": "string"
+          },
+          "conditions": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "sourceRefs": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "sourceId": {
+                  "type": "string"
+                },
+                "locator": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "sourceId",
+                "locator"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "text",
+          "conditions",
+          "sourceRefs"
+        ],
+        "additionalProperties": {}
+      }
+    },
+    "limitations": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  },
+  "required": [
+    "cropId",
+    "displayName",
+    "botanicalName",
+    "productionType",
+    "establishmentMethods",
+    "products",
+    "limitations"
+  ],
+  "additionalProperties": false,
+  "$id": "https://harvest-outlook.local/schema/1.0/FocusedCrop.json",
+  "x-schemaVersion": "1.0"
+}

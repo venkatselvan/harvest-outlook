@@ -3,7 +3,10 @@ import { registerSW } from "virtual:pwa-register";
 import { App } from "./App";
 import { installOffline } from "./features/offline/install";
 import { ensureSession } from "./lib/session";
+import { installTheme } from "./lib/theme";
 import "./styles.css";
+
+installTheme();
 
 registerSW({ immediate: true });
 

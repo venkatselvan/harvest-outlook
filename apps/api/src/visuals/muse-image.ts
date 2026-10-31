@@ -1,4 +1,5 @@
 import { setTimeout as sleepTimer } from "node:timers/promises";
+import {trackMetaInvocation} from '../services/model-activity';
 
 /**
  * Minimal Muse Image reference-edit client (POST {base}/images/edits). Own fetch wrapper; independent of the
@@ -65,6 +66,9 @@ export function buildEditBody(p: Pick<MuseImageParams, "model" | "prompt" | "ima
 }
 
 export async function editImage(p: MuseImageParams): Promise<MuseImageResult> {
+  return trackMetaInvocation(p.model,()=>editImageTransport(p));
+}
+async function editImageTransport(p:MuseImageParams):Promise<MuseImageResult>{
   const fetchImpl = p.fetchImpl ?? fetch;
   const sleep = p.sleep ?? ((ms: number) => sleepTimer(ms).then(() => undefined));
   const url = `${p.baseUrl.replace(/\/+$/, "")}/images/edits`;

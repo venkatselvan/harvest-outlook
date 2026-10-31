@@ -1,13 +1,29 @@
 import { ApiError, parseEnvelope } from "../../lib/api";
 import { csrfHeaders, ensureSession } from "../../lib/session";
 import type { SpeechLang, TranscriptResult } from "./speechMachine";
+import { apiRequest } from "../photo-region/http";
+import { trackForegroundModelRequest } from "../../lib/model-activity";
 
 interface TranscriptionData {
   transcript: string;
   detectedLanguage: string | null;
   languageProbability: number | null;
   synthetic: boolean;
-  provider: { name: string };
+  provider: { name: string; model?: string | null };
+  model?: string;
+}
+
+export async function fetchSpeechStatus() {
+  return (
+    await apiRequest<{
+      available: boolean;
+      qualified?: boolean;
+      provider: string | null;
+      model?: string | null;
+      maxSeconds?: number;
+      disabledReason?: string | null;
+    }>("/api/v1/speech/status")
+  ).data;
 }
 
 export interface UploadHandle {
@@ -20,7 +36,16 @@ interface XhrLike {
   setRequestHeader(k: string, v: string): void;
   send(body: FormData): void;
   abort(): void;
-  upload: { onprogress: ((e: { lengthComputable: boolean; loaded: number; total: number }) => void) | null; onload: (() => void) | null };
+  upload: {
+    onprogress:
+      | ((e: {
+          lengthComputable: boolean;
+          loaded: number;
+          total: number;
+        }) => void)
+      | null;
+    onload: (() => void) | null;
+  };
   onload: (() => void) | null;
   onerror: (() => void) | null;
   onabort: (() => void) | null;
@@ -37,32 +62,55 @@ export interface UploadDeps {
 export function uploadTranscription(
   audio: Blob,
   language: SpeechLang,
-  opts: { farmId?: string; onProgress?: (fraction: number) => void; onSent?: () => void } = {},
+  opts: {
+    farmId?: string;
+    onProgress?: (fraction: number) => void;
+    onSent?: () => void;
+  } = {},
   deps: UploadDeps = {},
 ): UploadHandle {
-  const xhr = (deps.createXhr ?? (() => new XMLHttpRequest() as unknown as XhrLike))();
+  const xhr = (
+    deps.createXhr ?? (() => new XMLHttpRequest() as unknown as XhrLike)
+  )();
+  let cancelled = false;
+  let finishActivity = () => {};
   const promise = (async () => {
     await ensureSession();
+    if (cancelled) throw new ApiError("client_cancelled", "Cancelled", 0);
     return new Promise<TranscriptResult>((resolve, reject) => {
       const form = new FormData();
       form.append("language", language);
       if (opts.farmId) form.append("farmId", opts.farmId);
-      form.append("audio", audio, "voice-note");
+      form.append("audio", audio, "voice-note.wav");
       xhr.open("POST", "/api/v1/speech/transcriptions");
       xhr.withCredentials = true;
       xhr.setRequestHeader("accept", "application/json");
-      for (const [k, v] of Object.entries(csrfHeaders("POST"))) xhr.setRequestHeader(k, v);
+      for (const [k, v] of Object.entries(csrfHeaders("POST")))
+        xhr.setRequestHeader(k, v);
       xhr.upload.onprogress = (e) => {
-        if (e.lengthComputable && e.total > 0) opts.onProgress?.(e.loaded / e.total);
+        if (e.lengthComputable && e.total > 0)
+          opts.onProgress?.(e.loaded / e.total);
       };
       xhr.upload.onload = () => opts.onSent?.();
-      xhr.onerror = () => reject(new ApiError("network_error", "Could not reach the server", 0));
-      xhr.onabort = () => reject(new ApiError("client_cancelled", "Cancelled", 0));
+      xhr.onerror = () =>
+        reject(new ApiError("network_error", "Could not reach the server", 0));
+      xhr.onabort = () =>
+        reject(new ApiError("client_cancelled", "Cancelled", 0));
       xhr.onload = () => {
         try {
-          const env = parseEnvelope<TranscriptionData>(JSON.parse(xhr.responseText), xhr.status);
+          const env = parseEnvelope<TranscriptionData>(
+            JSON.parse(xhr.responseText),
+            xhr.status,
+          );
           if (xhr.status < 200 || xhr.status >= 300 || env.error || !env.data) {
-            reject(new ApiError(env.error?.code ?? "http_error", env.error?.message ?? `HTTP ${xhr.status}`, xhr.status, env.requestId));
+            reject(
+              new ApiError(
+                env.error?.code ?? "http_error",
+                env.error?.message ?? `HTTP ${xhr.status}`,
+                xhr.status,
+                env.requestId,
+              ),
+            );
             return;
           }
           resolve({
@@ -71,45 +119,32 @@ export function uploadTranscription(
             languageProbability: env.data.languageProbability,
             synthetic: env.data.synthetic,
             providerName: env.data.provider.name,
+            model: env.data.provider.model ?? env.data.model ?? null,
           });
         } catch (e) {
-          reject(e instanceof ApiError ? e : new ApiError("invalid_response", "Server returned an unreadable response", xhr.status));
+          reject(
+            e instanceof ApiError
+              ? e
+              : new ApiError(
+                  "invalid_response",
+                  "Server returned an unreadable response",
+                  xhr.status,
+                ),
+          );
         }
       };
+      finishActivity = trackForegroundModelRequest(
+        "/api/v1/speech/transcriptions",
+        "POST",
+      );
       xhr.send(form);
     });
-  })();
-  return { promise, abort: () => xhr.abort() };
-}
-
-/** Fetches audio for an approved answer; resolves to the audio Blob. */
-export async function fetchSynthesis(
-  req: { text: string; language: SpeechLang; approvedTextHash: string },
-  signal?: AbortSignal,
-  fetchImpl: typeof fetch = fetch,
-): Promise<Blob> {
-  await ensureSession(fetchImpl);
-  let res: Response;
-  try {
-    res = await fetchImpl("/api/v1/speech/synthesis", {
-      method: "POST",
-      credentials: "same-origin",
-      ...(signal ? { signal } : {}),
-      headers: { "content-type": "application/json", ...csrfHeaders("POST") },
-      body: JSON.stringify(req),
-    });
-  } catch {
-    throw new ApiError("network_error", "Could not reach the server", 0);
-  }
-  if (!res.ok) {
-    let code = "http_error";
-    try {
-      const env = parseEnvelope<null>(await res.json(), res.status);
-      code = env.error?.code ?? code;
-    } catch {
-      /* keep generic code */
-    }
-    throw new ApiError(code, `HTTP ${res.status}`, res.status);
-  }
-  return res.blob();
+  })().finally(() => finishActivity());
+  return {
+    promise,
+    abort: () => {
+      cancelled = true;
+      xhr.abort();
+    },
+  };
 }

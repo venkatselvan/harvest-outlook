@@ -158,8 +158,9 @@ export async function getFarmContextHandler(input: { farmId: string }, ctx: Tool
     experience: known("experience", z.string().min(1).max(500)),
     accessibleMarketIds: known("accessible_market_ids", z.array(Id)),
     excludedCropIds: known("excluded_crop_ids", z.array(Id)),
+    ...(farm.facts.demo_prefilled?.value===true?{demo:{prefilledBoundary:true as const,source:String(farm.facts.demo_source?.value??'Demo field with a prefilled boundary')}}:farm.facts.demo_illustrative?.value===true?{demo:{illustrative:true as const,source:String(farm.facts.demo_source?.value??'Illustrative demo; not observed farm records')}}:{}),
     ...(workspace ? { history: {
-      basis: 'farmer_reported' as const, previousHarvest: workspace.previousHarvest,
+      basis: farm.facts.demo_illustrative?.value===true?'illustrative' as const:'farmer_reported' as const, previousHarvest: workspace.previousHarvest,
       cycles: workspace.cycles.slice(-20), rotationPlans: workspace.rotationPlans.slice(0, 20),
       boundaryRecorded: workspace.boundary !== null, rotationAssessment: 'not_assessed' as const,
     } } : {}),

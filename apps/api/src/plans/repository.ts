@@ -1,3 +1,4 @@
+import {payloadHash} from '../services/hash';
 import type pg from "pg";
 import type { PlanSnapshot } from "@harvest/contracts";
 import type { Pool } from "../db/pool";
@@ -73,17 +74,17 @@ const PLAN_COLS = "id, owner_id, parent_plan_id, content_hash, snapshot, data_ve
 
 export async function findPlan(db: Q, ownerId: string, planId: string, forUpdate = false): Promise<PlanRow | null> {
   if (!isUuid(planId)) return null;
-  const r = await db.query<PlanRow>(`SELECT ${PLAN_COLS} FROM plans WHERE id=$1 AND owner_id=$2${forUpdate ? " FOR UPDATE" : ""}`, [planId, ownerId]);
+  const r = await db.query<PlanRow>(`SELECT ${PLAN_COLS} FROM plans WHERE id=$1 AND owner_id=$2 AND NOT EXISTS(SELECT 1 FROM archived_plans a WHERE a.plan_id=plans.id AND a.owner_id=$2)${forUpdate ? " FOR UPDATE" : ""}`, [planId, ownerId]);
   return r.rows[0] ?? null;
 }
 
 export async function findPlanByInputHash(db: Q, ownerId: string, inputHash: string): Promise<PlanRow | null> {
-  const r = await db.query<PlanRow>(`SELECT ${PLAN_COLS} FROM plans WHERE owner_id=$1 AND input_hash=$2`, [ownerId, inputHash]);
+  const r = await db.query<PlanRow>(`SELECT ${PLAN_COLS} FROM plans WHERE owner_id=$1 AND input_hash=$2 AND NOT EXISTS(SELECT 1 FROM archived_plans a WHERE a.plan_id=plans.id AND a.owner_id=$1)`, [ownerId, inputHash]);
   return r.rows[0] ?? null;
 }
 
 export async function childPlanIds(db: Q, ownerId: string, planId: string): Promise<string[]> {
-  const r = await db.query<{ id: string }>("SELECT id FROM plans WHERE parent_plan_id=$1 AND owner_id=$2 ORDER BY created_at", [planId, ownerId]);
+  const r = await db.query<{ id: string }>("SELECT id FROM plans WHERE parent_plan_id=$1 AND owner_id=$2 AND NOT EXISTS(SELECT 1 FROM archived_plans a WHERE a.plan_id=plans.id AND a.owner_id=$2) ORDER BY created_at", [planId, ownerId]);
   return r.rows.map((x) => x.id);
 }
 
@@ -130,3 +131,6 @@ export async function putCachedTimeline(db: Q, ownerId: string, planId: string, 
     [ownerId, planId, scenarioId, dataVersion, JSON.stringify(timeline)],
   );
 }
+
+/** Archived immutable snapshots keep their original hash; replacement requests use a stable new cache identity. */
+export async function activeInputHash(db:Q,ownerId:string,baseHash:string):Promise<string>{const archived=(await db.query<{id:string}>('SELECT p.id FROM plans p JOIN archived_plans a ON a.plan_id=p.id AND a.owner_id=p.owner_id WHERE p.owner_id=$1 AND p.input_hash=$2 ORDER BY p.id',[ownerId,baseHash])).rows;return archived.length?payloadHash({baseHash,afterArchived:archived.map(r=>r.id)}):baseHash}

@@ -1,0 +1,68 @@
+{
+  "sources": [
+    {
+      "label": "chia",
+      "url": "https://niam.res.in/sites/default/files/pdfs/Chia%20technical%20folder%20English%20final.pdf",
+      "sha256": "115339595ee349556f6118e1b2bdb7fbf84ec493536aa00d1a9d88d4057e5ff6",
+      "retrievedAt": "2026-10-30",
+      "localResearchPath": "/tmp/harvest-gap/chia.pdf",
+      "status": "retrieved"
+    },
+    {
+      "label": "safed-musli",
+      "url": "https://www.dmapr.org.in/Publications/bulletine/Good%20Agricultural%20Practices%20for%20Safed%20musli.pdf",
+      "sha256": "6f4d5ad6a95b1351baccb6d3fa165778eb5fd19f707aacd733a39a67886c7f80",
+      "retrievedAt": "2026-10-30",
+      "localResearchPath": "/tmp/harvest-gap/safed-musli.pdf",
+      "status": "retrieved"
+    },
+    {
+      "label": "spiny-gourd",
+      "url": "https://epubs.icar.org.in/index.php/IndHort/article/download/123802/46864",
+      "sha256": "4d557ca62e3770e904af3df77da57f3ae87086bf230f61282617f717bf49039a",
+      "retrievedAt": "2026-10-30",
+      "localResearchPath": "/tmp/harvest-gap/spiny-gourd.pdf",
+      "status": "retrieved"
+    },
+    {
+      "label": "homegarden",
+      "url": "https://www.indiascienceandtechnology.gov.in/sites/default/files/Compendium%20HomeGarden.pdf",
+      "sha256": "6d86b0179ec24a2f704bd0fecfd040426d62efea587ad480e87f3f82faa0a616",
+      "retrievedAt": "2026-10-30",
+      "localResearchPath": "/tmp/harvest-gap/homegarden.pdf",
+      "status": "retrieved"
+    },
+    {
+      "label": "Arecanut",
+      "url": "https://agritech.tnau.ac.in/horticulture/horti_plantation%20crops_arecanut.html",
+      "sha256": "e579080200b076405f4799f0cbdcfc36202d53f646e73d9421b8b4007485701c",
+      "retrievedAt": "2026-10-30",
+      "localResearchPath": "/tmp/harvest-gap/Arecanut.html",
+      "status": "retrieved"
+    },
+    {
+      "label": "Fennel",
+      "url": "https://agritech.tnau.ac.in/horticulture/horti_spice%20crops_fennel.html",
+      "sha256": "1cc9aad05ae8fc56f20ec78b686f3605658fc2380252cf02917f44af3ac0a51c",
+      "retrievedAt": "2026-10-30",
+      "localResearchPath": "/tmp/harvest-gap/Fennel.html",
+      "status": "retrieved"
+    },
+    {
+      "label": "Fenugreek",
+      "url": "https://agritech.tnau.ac.in/horticulture/horti_spice%20crops_fenugreek.html",
+      "sha256": "4b82073c4b2ee0cedcb7d7866bf9b5f75d764e14a078250248c64fa893635ea6",
+      "retrievedAt": "2026-10-30",
+      "localResearchPath": "/tmp/harvest-gap/Fenugreek.html",
+      "status": "retrieved"
+    },
+    {
+      "label": "Lablab",
+      "url": "https://agritech.tnau.ac.in/horticulture/horti_vegetables_lab%20lab.html",
+      "sha256": "88630dc8142bd56a7f08e2a0aa68a48de4d5029bb6ea6835064484e39a7a4eda",
+      "retrievedAt": "2026-10-30",
+      "localResearchPath": "/tmp/harvest-gap/Lablab.html",
+      "status": "retrieved"
+    }
+  ]
+}

@@ -23,6 +23,13 @@ import { registerAssistantRoutes, type AssistantRouteDeps } from "./assistant";
 import { sessionRoutes } from "./session";
 import { registerSpeechRoutes, type SpeechRouteDeps } from "./speech";
 import { registerVisionRoutes } from "./vision";
+import type { FetchLike } from '../ingest/http';
+import {commodityCatalogueRoutes} from './commodity-catalogue';
+import {soilReportRoutes} from './soil-reports';
+import {planningReviewRoutes} from './planning-review';
+import {boundaryAssessmentRoutes} from './boundary-assessment';
+import {commandCenterRoutes} from './command-center';
+import {registerMarketContextRoutes} from './market-context';
 
 export interface RouteDeps {
   config: Config;
@@ -40,6 +47,7 @@ export interface RouteDeps {
   /** Test/override hooks; production passes none. */
   assistant?: Partial<AssistantRouteDeps> | undefined;
   speech?: Partial<Omit<SpeechRouteDeps, "pool">> | undefined;
+  weatherFetch?: FetchLike | undefined;
 }
 
 /**
@@ -49,7 +57,13 @@ export interface RouteDeps {
 export async function registerRoutes(app: FastifyInstance, deps: RouteDeps): Promise<void> {
   const { config, pool } = deps;
   await app.register(sessionRoutes, { config, pool });
-  await app.register(farmRoutes, { config, pool, storage: deps.storage });
+  await app.register(farmRoutes, { config, pool, storage: deps.storage, prices: deps.prices, weatherFetch: deps.weatherFetch,planning:{config,pool,budget:deps.budget,...(deps.catalogue?{catalogue:()=>deps.catalogue!.get()}:{}),...(deps.prices?{prices:deps.prices}:{}),...(deps.weatherFetch?{fetchImpl:deps.weatherFetch as unknown as typeof fetch}:{})} });
+  await app.register(commodityCatalogueRoutes,{config,pool});
+  await registerMarketContextRoutes(app,{config});
+  await app.register(commandCenterRoutes,{config,pool,budget:deps.budget,...(deps.catalogue?{catalogue:()=>deps.catalogue!.get()}:{}),...(deps.prices?{prices:deps.prices}:{})});
+  await app.register(soilReportRoutes,{config,pool,storage:deps.storage,budget:deps.budget,...(deps.weatherFetch?{fetchImpl:deps.weatherFetch as unknown as typeof fetch}:{})});
+  await app.register(planningReviewRoutes,{config,pool,budget:deps.budget,...(deps.catalogue?{catalogue:()=>deps.catalogue!.get()}:{}),...(deps.prices?{prices:deps.prices}:{}),...(deps.weatherFetch?{fetchImpl:deps.weatherFetch as unknown as typeof fetch}:{})});
+  await app.register(boundaryAssessmentRoutes,{config,pool,storage:deps.storage,budget:deps.budget,...(deps.weatherFetch?{fetchImpl:deps.weatherFetch as unknown as typeof fetch}:{})});
   await app.register(mediaRoutes, { config, pool, storage: deps.storage });
   await app.register(jobRoutes, { config, pool });
 
@@ -72,7 +86,7 @@ export async function registerRoutes(app: FastifyInstance, deps: RouteDeps): Pro
     ...deps.assistant,
   });
   await app.register(registerVisionRoutes, { config, pool, storage: deps.storage });
-  await registerSpeechRoutes(app, { config, pool, ...deps.speech });
+  await registerSpeechRoutes(app, { config, pool,budget:deps.budget, ...deps.speech });
 
   await registerCropRoutes(app, { config, pool, ...(deps.catalogue ? { store: deps.catalogue } : {}), ...(deps.prices ? { prices: deps.prices } : {}) });
   await app.register(registerVisualRoutes, { config, pool, storage: deps.storage });

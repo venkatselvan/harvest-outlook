@@ -105,6 +105,27 @@ describe("POST /api/v1/assistant/turns (synthetic mode)", () => {
     expect(res2.json().data.answerBlocks).toEqual([]);
   });
 
+  it("supplies only the selected owned demo provenance even without a farm-context tool call", async () => {
+    const seen: string[] = [];
+    const { client } = await appWith({}, { providerFactory: () => {
+      const fixture = new FixtureProvider("profile_extraction");
+      const original = fixture.call.bind(fixture);
+      fixture.call = async (request) => { seen.push(typeof request.input === "string" ? request.input : request.input.map(item => "content" in item ? (typeof item.content === "string" ? item.content : JSON.stringify(item.content)) : "").join("\n")); return original(request); };
+      return fixture;
+    } });
+    const demo = (await client.call("POST", "/api/v1/farms/demo", { payload: {} })).json().data;
+    expect((await post(client, body({ farmId: demo.farm.id }))).statusCode).toBe(200);
+    const context = JSON.parse(seen[0]!.match(/<request_context>(.*?)<\/request_context>/s)![1]!);
+    expect(context.selectedFarmProvenance).toMatchObject({ kind: "prefilled_boundary_demo", publicReference: { source: "https://uasmandya.edu.in/ars-arasikere" }, prefilledComponents: ["map boundary", "public location reference"] });
+    expect(context.selectedFarmProvenance.limitations).toContain("not prefilled");expect(JSON.stringify(context)).not.toMatch(/illustrative/i);
+    expect(JSON.stringify(context)).not.toContain('"coordinates"');
+    seen.length = 0;
+    const ordinary = (await client.call("POST", "/api/v1/farms", { payload: farmBody() })).json().data;
+    expect((await post(client, body({ farmId: ordinary.id }))).statusCode).toBe(200);
+    const ordinaryContext = JSON.parse(seen[0]!.match(/<request_context>(.*?)<\/request_context>/s)![1]!);
+    expect(ordinaryContext.selectedFarmProvenance).toBeUndefined();
+  });
+
   it("honours Idempotency-Key: one run for a repeated request, 422 for a different payload", async () => {
     let created = 0;
     const { client } = await appWith({}, { providerFactory: () => (created++, new FixtureProvider("profile_extraction")) });

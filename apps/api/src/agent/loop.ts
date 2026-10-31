@@ -147,7 +147,7 @@ export async function runAgentTurn(deps: AgentDeps, input: AgentTurnInput): Prom
   // F8: the plan's product (catalogue slug) scopes product-form claims ("dry ginger price ...").
   const planProductIds: string[] = [];
   if (input.planId && UUID_RE.test(input.planId)) {
-    const pr = await pool.query<{ crop_id: string; product_ref: string | null }>("SELECT crop_id, product_ref FROM plans WHERE id = $1 AND owner_id = $2", [input.planId, input.ownerId]);
+    const pr = await pool.query<{ crop_id: string; product_ref: string | null }>("SELECT crop_id, product_ref FROM plans WHERE id = $1 AND owner_id = $2 AND NOT EXISTS(SELECT 1 FROM archived_plans a WHERE a.plan_id=plans.id AND a.owner_id=$2)", [input.planId, input.ownerId]);
     for (const row of pr.rows) {
       planCropIds.push(row.crop_id);
       if (row.product_ref) planProductIds.push(row.product_ref);
@@ -156,9 +156,21 @@ export async function runAgentTurn(deps: AgentDeps, input: AgentTurnInput): Prom
   // L5: plan product slugs mapped to catalogue product ids (what resolve_crop_identity returns).
   const planProductUuids: string[] = planProductIds.length > 0 ? (await pool.query<{ id: string }>("SELECT id::text AS id FROM crop_products WHERE slug = ANY($1::text[]) OR id::text = ANY($1::text[])", [planProductIds])).rows.map((r) => r.id) : [];
   let farmGeo = input.farmGeography;
-  if (!farmGeo && farmUuid) {
+  let selectedFarmProvenance: { kind: "illustrative_demo"|"prefilled_boundary_demo"; publicReference: { description: string; source: string | null }; illustrativeComponents?: string[];prefilledComponents?:string[]; limitations: string } | undefined;
+  if (farmUuid) {
     const farm = await getFarm(pool, input.ownerId, farmUuid).catch(() => null);
-    if (farm) farmGeo = { districtId: farm.location.districtId, stateCode: farm.location.stateCode };
+    if (farm && !farmGeo) farmGeo = { districtId: farm.location.districtId, stateCode: farm.location.stateCode };
+    // Selected-owner provenance is supplied on every pass, even when the model does not request
+    // get_farm_context. Present-day demo metadata must not leak into historical replay.
+    if(farm&&input.mode!=="replay"&&farm.facts.demo_prefilled?.value===true){selectedFarmProvenance={kind:"prefilled_boundary_demo",publicReference:{description:String(farm.facts.demo_source?.value??"Demo field with a prefilled public-site boundary").slice(0,500),source:farm.facts.demo_source?.source?.slice(0,200)??null},prefilledComponents:["map boundary","public location reference"],limitations:"Only a boundary and derived location/area were prefilled. Crop history, current crops and season plans are not prefilled. The outline is not a surveyed institutional parcel; confirm it before use."};}
+    else if (farm && input.mode !== "replay" && farm.facts.demo_illustrative?.value === true) {
+      selectedFarmProvenance = {
+        kind: "illustrative_demo",
+        publicReference: { description: String(farm.facts.demo_source?.value ?? "Public research-site reference with illustrative farm records").slice(0, 500), source: farm.facts.demo_source?.source?.slice(0, 200) ?? null },
+        illustrativeComponents: ["map boundary", "previous harvest", "growing-cycle records", "season plans"],
+        limitations: "The public source establishes a research-site reference only. The selected boundary and seeded farming records are illustrative, not observations of institutional operations or verified field conditions.",
+      };
+    }
   }
   const claimScope: GateContext["claimScope"] = {
     geographyIds: input.geographyIds ?? [],
@@ -277,6 +289,7 @@ export async function runAgentTurn(deps: AgentDeps, input: AgentTurnInput): Prom
   const contextMessage = (): string => {
     const rc = {
       runtimeMode: input.mode, farmId: input.farmId ?? null, planId: input.planId ?? null, selectedDate: input.selectedDate ?? null, scenarioId: input.scenarioId ?? null, today: asOf.slice(0, 10),
+      ...(selectedFarmProvenance ? { selectedFarmProvenance } : {}),
       ...(productResolutions.size > 0 ? { productResolution: [...productResolutions.values()] } : {}),
     };
     return `<farmer_input language="${input.language}">\n${input.text}\n</farmer_input>\n<request_context>${JSON.stringify(rc)}</request_context>` + (profile ? `\n<interpretation>${JSON.stringify(profile)}</interpretation>` : "");

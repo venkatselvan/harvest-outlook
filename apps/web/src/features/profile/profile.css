@@ -1,23 +1,139 @@
-.pf { display: grid; gap: 14px; }
-.pf-field { display: grid; gap: 4px; border: 0; padding: 0; margin: 0; min-width: 0; }
-.pf label, .pf legend { font-weight: 600; }
-.pf legend { padding: 0; margin-bottom: 4px; }
-.pf select, .pf input[type="date"], .pf input:not([type]), .pf input[inputmode], .pf textarea { width: 100%; min-height: 44px; padding: 8px 12px; font: inherit; border: 1px solid var(--border); border-radius: 8px; background: #fff; color: var(--fg); }
-.pf [aria-invalid="true"] { border-color: #b53030; border-width: 2px; }
-.pf-help { margin: 0; color: var(--muted); font-size: 0.9rem; overflow-wrap: anywhere; }
-.pf-error { margin: 0; padding: 6px 10px; background: #fde0e0; color: #6b1010; border-radius: 6px; font-size: 0.95rem; }
-.pf-error::before { content: "Problem: "; font-weight: 700; }
-.pf-row { display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; }
-.pf-toggle { display: flex; gap: 8px; }
-.pf-opt { flex: 1; display: flex; align-items: center; justify-content: center; gap: 6px; min-height: 44px; border: 2px solid var(--border); border-radius: 8px; background: #fff; font-weight: 600; }
-.pf-opt.on { border-color: var(--accent); background: #e4f2e8; color: #0d3b1f; }
-.pf-opt input { width: 20px; height: 20px; }
-.pf-check { display: flex; align-items: center; gap: 10px; min-height: 44px; font-weight: 400 !important; }
-.pf-check input { width: 22px; height: 22px; flex: none; }
-.pf-checks { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 0 12px; }
-.pf-details summary { min-height: 44px; display: flex; align-items: center; cursor: pointer; font-weight: 600; }
-.pf-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
-.pf-secondary { background: #fff; color: var(--accent); justify-self: start; margin-top: 4px; }
-.pf-voice { display: grid; gap: 8px; padding: 12px; border: 1px solid var(--border); border-radius: 8px; background: #fff; }
-.pf-submit { width: 100%; font-weight: 700; }
-.pf-submit:disabled { opacity: 0.6; }
+.pf {
+  display: grid;
+  gap: 14px;
+}
+.pf-field {
+  display: grid;
+  gap: 4px;
+  border: 0;
+  padding: 0;
+  margin: 0;
+  min-width: 0;
+}
+.pf label,
+.pf legend {
+  font-weight: 600;
+}
+.pf legend {
+  padding: 0;
+  margin-bottom: 4px;
+}
+.pf select,
+.pf input[type="date"],
+.pf input:not([type]),
+.pf input[inputmode],
+.pf textarea {
+  width: 100%;
+  min-height: 44px;
+  padding: 8px 12px;
+  font: inherit;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--fg);
+}
+.pf [aria-invalid="true"] {
+  border-color: var(--danger);
+  border-width: 2px;
+}
+.pf-help {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+  overflow-wrap: anywhere;
+}
+.pf-error {
+  margin: 0;
+  padding: 6px 10px;
+  background: var(--surface-soft);
+  color: var(--danger);
+  border-radius: 6px;
+  font-size: 0.95rem;
+}
+.pf-error::before {
+  content: "Problem: ";
+  font-weight: 700;
+}
+.pf-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 8px;
+}
+.pf-toggle {
+  display: flex;
+  gap: 8px;
+}
+.pf-opt {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 44px;
+  border: 2px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  font-weight: 600;
+}
+.pf-opt.on {
+  border-color: var(--accent);
+  background: var(--surface-soft);
+  color: var(--accent);
+}
+.pf-opt input {
+  width: 20px;
+  height: 20px;
+}
+.pf-check {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  font-weight: 400 !important;
+}
+.pf-check input {
+  width: 22px;
+  height: 22px;
+  flex: none;
+}
+.pf-checks {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 0 12px;
+}
+.pf-details summary {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  font-weight: 600;
+}
+.pf-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+.pf-secondary {
+  background: var(--surface);
+  color: var(--accent);
+  justify-self: start;
+  margin-top: 4px;
+}
+.pf-voice {
+  display: grid;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+}
+.pf-submit {
+  width: 100%;
+  font-weight: 700;
+}
+.pf-submit:disabled {
+  opacity: 0.6;
+}

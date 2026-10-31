@@ -1,0 +1,524 @@
+{
+  "retrievedAt": "2026-10-30",
+  "source": "https://agritech.tnau.ac.in/horticulture/horti_index.html",
+  "sources": [
+    {
+      "label": "Mango",
+      "url": "https://agritech.tnau.ac.in/horticulture/horti_fruits_mango.html",
+      "retrievedAt": "2026-10-30",
+      "sha256": "7c49a43dd122be2a16656641d59cf03cb3e9a77fb15d34c72dec268d98693f05",
+      "localResearchText": "/tmp/harvest-tnau/mango.txt",
+      "status": "retrieved_unreviewed"
+    },
+    {
+      "label": "Banana",
+      "url": "https://agritech.tnau.ac.in/horticulture/horti_fruits_banana.html",
+      "retrievedAt": "2026-10-30",
+      "sha256": "983e3f0e1e81d998b210d76d50397b28328826f1662b6f883c109d067ea7c243",
+      "localResearchText": "/tmp/harvest-tnau/banana.txt",
+      "status": "retrieved_unreviewed"
+    },
+    {
+      "label": "Sapota",
+      "url": "https://agritech.tnau.ac.in/horticulture/horti_fruits_sapota.html",
+      "retrievedAt": "2026-10-30",
+      "sha256": "37d693f57d6528848d3ff6b021d97c8ac44254bdc1196c2d52517e0edcbcaff9",
+      "localResearchText": "/tmp/harvest-tnau/sapota.txt",
+      "status": "retrieved_unreviewed"
+    },
+    {
+      "label": "Papaya",
+      "url": "https://agritech.tnau.ac.in/horticulture/horti_fruits_papaya.html",
+      "retrievedAt": "2026-10-30",
+      "sha256": "b19f516427daa668f157280a1f60423c2bb064a7e81874df85cd07b6607bb75c",
+      "localResearchText": "/tmp/harvest-tnau/papaya.txt",
+      "status": "retrieved_unreviewed"
+    },
+    {
+      "label": "Guava",
+      "url": "https://agritech.tnau.ac.in/horticulture/horti_fruits_guava.html",
+      "retrievedAt": "2026-10-30",
+      "sha256": "5153b290a02f2aac54e79e5a663b90612a5b706be603386d30da0ae142b216f5",
+      "localResearchText": "/tmp/harvest-tnau/guava.txt",
+      "status": "retrieved_unreviewed"
+    },
+    {
+      "label": "Acid Lime",
+      "url": "https://agritech.tnau.ac.in/horticulture/horti_fruits_acidlime.html",
+      "retrievedAt": "2026-10-30",
+      "sha256": "8e9b45bf1c0daca5492bcca0ec6c5804169c7978575c6f30f95fa189d732eac1",
+      "localResearchText": "/tmp/harvest-tnau/acid-lime.txt",
+      "status": "retrieved_unreviewed"
+    },
+    {
+      "label": "Sweet Orange",
+      "url": "https://agritech.tnau.ac.in/horticulture/horti_fruits_sweetorange.html",
+      "retrievedAt": "2026-10-30",
+      "sha256": "707c6b0e7f097b8b16dd95fb2b532d0b6eb7bc7b79ea9c11848937015e2019a4",
+      "localResearchText": "/tmp/harvest-tnau/sweet-orange.txt",
+      "status": "retrieved_unreviewed"
+    },
+    {
+      "label": "Mandarin Orange",
+      "url": "https://agritech.tnau.ac.in/horticulture/horti_fruits_mandarin%20orange.html",
+      "retrievedAt": "2026-10-30",
+      "sha256": "438f987ec995e3e424bce7e9af8049d62808446243224ddb3505403a57f556d4",
+      "localResearchText": "/tmp/harvest-tnau/mandarin-orange.txt",
+      "status": "retrieved_unreviewed"
+    },
+    {
+      "label": "Grapes",
+      "url": "https://agritech.tnau.ac.in/horticulture/horti_fruits_grapes.html",
+      "retrievedAt": "2026-10-30",
+      "sha256": "4d570b7a5e9b524a6cea29f5727a724acfdc58d8a5a77fd1fabf9085abb34d7f",
+      "localResearchText": "/tmp/harvest-tnau/grapes.txt",
+      "status": "retrieved_unreviewed"
+    },
+    {
+      "label": "Pineapple",
+      "url": "https://agritech.tnau.ac.in/horticulture/horti_fruits_pineapple.html",
+      "retrievedAt": "2026-10-30",
+      "sha256": "21ffb849d761aea982281e65a20b2ff545d42e195e28ae10bad458c7473f3e49",
+      "localResearchText": "/tmp/harvest-tnau/pineapple.txt",
+      "status": "retrieved_unreviewed"
+    },
+    {
+      "label": "Pomegranate",
+      "url": "https://agritech.tnau.ac.in/horticulture/horti_fruits_pomegranate.html",
+      "retrievedAt": "2026-10-30",
+      "sha256": "a243a3a15e9b7582600a1cb4bfd93b5ee57d5edd30c9886d53957b443af53112",
+      "localResearchText": "/tmp/harvest-tnau/pomegranate.txt",
+      "status": "retrieved_unreviewed"
+    },
+    {
+      "label": "Jack",
+      "url": "https://agritech.tnau.ac.in/horticulture/horti_fruits_jack.html",
+      "retrievedAt": "2026-10-30",
+      "sha256": "48ff416bfda8c3e200fd36ba392e97bd0e74fa893794c320584904d31ff69740",
+      "localResearchText": "/tmp/harvest-tnau/jack.txt",
+      "status": "retrieved_unreviewed"
+    },
+    {
+      "label": "Ber",
+      "url": "https://agritech.tnau.ac.in/horticulture/horti_fruits_ber.html",
+      "retrievedAt": "2026-10-30",
+      "sha256": "2f1d38c3a1936d501531b32584b04b693ff588630af6fce10c231c012e5bdcab",
+      "localResearchText": "/tmp/harvest-tnau/ber.txt",
+      "status": "retrieved_unreviewed"
+    },
+    {
+      "label": "Amla",
+      "url": "https://agritech.tnau.ac.in/horticulture/horti_fruits_amla.html",
+      "retrievedAt": "2026-10-30",
+      "sha256": "84af4e6d4f53bfff7f950dc21d490a59e99023677ba5dc104271a3e7e7e583af",
+      "localResearchText": "/tmp/harvest-tnau/amla.txt",
+      "status": "retrieved_unreviewed"
+    },
+    {
+      "label": "Apple",
+      "url": "https://agritech.tnau.ac.in/horticulture/horti_fruits_apple.html",
+      "retrievedAt": "2026-10-30",
+      "sha256": "be0b20a4137e2f0e4e5b6f1ff3b4b51fa8aa9c9dbc6138864f9be12595d8486c",
+      "localResearchText": "/tmp/harvest-tnau/apple.txt",
+      "status": "retrieved_unreviewed"
+    },
+    {
+      "label": "Pear",
+      "url": "https://agritech.tnau.ac.in/horticulture/horti_fruits_pear.html",
+      "retrievedAt": "2026-10-30",
+      "sha256": "55b6a3b7db182ca24db3d2909ed50a644c5d63bfabe3c1e42efadc31d5523257",
+      "localResearchText": "/tmp/harvest-tnau/pear.txt",
+      "status": "retrieved_unreviewed"
+    },
+    {
+      "label": "Plum",
+      "url": "https://agritech.tnau.ac.in/horticulture/horti_fruits_plum.html",
+      "retrievedAt": "2026-10-30",
+      "sha256": "7f22e2f9799fac798ab559b514370c055833e68b11a574bf61fe1ae8558e5d90",
+      "localResearchText": "/tmp/harvest-tnau/plum.txt",
+      "status": "retrieved_unreviewed"
+    },
+    {
+      "label": "Aswagandha",
+      "url": "https://agritech.tnau.ac.in/horticulture/horti_medicinal%20crops_aswagandha.html",
+      "retrievedAt": "2026-10-30",
+      "sha256": "51b353ee79f7230398c3b8bd7404ccb6403e7b01fb8980d028577742392f1927",
+      "localResearchText": "/tmp/harvest-tnau/aswagandha.txt",
+      "status": "retrieved_unreviewed"
+    },
+    {
+      "label": "Coffee",
+      "url": "https://agritech.tnau.ac.in/horticulture/horti_plantation%20crops_coffee.html",
+      "retrievedAt": "2026-10-30",
+      "sha256": "37705112ea8746f6ca6ff16e81516a620d47865bd11a91988b31e06edcfe50f3",
+      "localResearchText": "/tmp/harvest-tnau/coffee.txt",
+      "status": "retrieved_unreviewed"
+    },
+    {
+      "label": "Coconut",
+      "url": "https://agritech.tnau.ac.in/horticulture/horti_plantation%20crops_coconut.html",
+      "retrievedAt": "2026-10-30",
+      "sha256": "7ea49e6e4b1920d7e11f7c4d3be80e23ba8eaa7e7655e30fe6a54b8f8ed49fdb",
+      "localResearchText": "/tmp/harvest-tnau/coconut.txt",
+      "status": "retrieved_unreviewed"
+    },
+    {
+      "label": "Arecanut",
+      "url": "https://agritech.tnau.ac.in/horticulture/horti_plantation%20crops_arecanut.html",
+      "retrievedAt": "2026-10-30",
+      "sha256": "e579080200b076405f4799f0cbdcfc36202d53f646e73d9421b8b4007485701c",
+      "localResearchText": "/tmp/harvest-gap/Arecanut.txt",
+      "status": "retrieved_unreviewed"
+    },
+    {
+      "label": "Rubber",
+      "url": "https://agritech.tnau.ac.in/horticulture/horti_plantation%20crops_rubber.html",
+      "retrievedAt": "2026-10-30",
+      "sha256": "3f98404de26bcc39c391e8160fb8ae9884a1c2f7f1b147c08cedbc66facfb405",
+      "localResearchText": "/tmp/harvest-tnau/rubber.txt",
+      "status": "retrieved_unreviewed"
+    },
+    {
+      "label": "Cashewnut",
+      "url": "https://agritech.tnau.ac.in/horticulture/horti_plantation%20crops_cashewnut.html",
+      "retrievedAt": "2026-10-30",
+      "sha256": "8804bbed3ef6f4cc55c3f15e47f90a978c573b17e3be9c24e375f40ad629bbca",
+      "localResearchText": "/tmp/harvest-tnau/cashewnut.txt",
+      "status": "retrieved_unreviewed"
+    },
+    {
+      "label": "Betelvine",
+      "url": "https://agritech.tnau.ac.in/horticulture/horti_plantation%20crops_betelvine.html",
+      "retrievedAt": "2026-10-30",
+      "sha256": "542c48fdaea40252f386f45a949c8b9b6c869274c95f9c9b83cff158ece5c566",
+      "localResearchText": "/tmp/harvest-tnau/betelvine.txt",
+      "status": "retrieved_unreviewed"
+    },
+    {
+      "label": "Pumpkin",
+      "url": "https://agritech.tnau.ac.in/horticulture/horti_vegetables_pumpkin.html",
+      "retrievedAt": "2026-10-30",
+      "sha256": "9ae1e39e6e999269cd89d26d809fb6e78e24cc1157155d8f8ab87443d5ca5b21",
+      "localResearchText": "/tmp/harvest-tnau/pumpkin.txt",
+      "status": "retrieved_unreviewed"
+    },
+    {
+      "label": "Snake Gourd",
+      "url": "https://agritech.tnau.ac.in/horticulture/horti_vegetables_snakegourd.html",
+      "status": "retrieval_failed",
+      "error": "HTTPError"
+    },
+    {
+      "label": "Ribbed Gourd",
+      "url": "https://agritech.tnau.ac.in/horticulture/horti_vegetables_ribbedgourd.html",
+      "status": "retrieval_failed",
+      "error": "HTTPError"
+    },
+    {
+      "label": "Bottle Gourd",
+      "url": "https://agritech.tnau.ac.in/horticulture/horti_vegetables_bottlegourd.html",
+      "retrievedAt": "2026-10-30",
+      "sha256": "418c70052f213c76b6175da371e2d115d909545e9be479acc90fdb5476b1bc16",
+      "localResearchText": "/tmp/harvest-tnau/bottle-gourd.txt",
+      "status": "retrieved_unreviewed"
+    },
+    {
+      "label": "Bitter Gourd",
+      "url": "https://agritech.tnau.ac.in/horticulture/horti_vegetables_bittergourd.html",
+      "retrievedAt": "2026-10-30",
+      "sha256": "fda73f51080cf04c222e731b554af57cccc8eb8579fe969499d0c44bdf668dca",
+      "localResearchText": "/tmp/harvest-tnau/bitter-gourd.txt",
+      "status": "retrieved_unreviewed"
+    },
+    {
+      "label": "Ash Gourd",
+      "url": "https://agritech.tnau.ac.in/horticulture/horti_vegetables_ashgourd.html",
+      "retrievedAt": "2026-10-30",
+      "sha256": "0521c5225fcd19dbfa116ff5a9527e4ed421362f56cf49ae454a605600d356b4",
+      "localResearchText": "/tmp/harvest-tnau/ash-gourd.txt",
+      "status": "retrieved_unreviewed"
+    },
+    {
+      "label": "Cucumber",
+      "url": "https://agritech.tnau.ac.in/horticulture/horti_vegetables_cucumber.html",
+      "retrievedAt": "2026-10-30",
+      "sha256": "9a0ad9c619b3f2cb7560d42c6acd5e61cb3e073ac6b290bddcdd20c7f93d34c9",
+      "localResearchText": "/tmp/harvest-tnau/cucumber.txt",
+      "status": "retrieved_unreviewed"
+    },
+    {
+      "label": "Watermelon",
+      "url": "https://agritech.tnau.ac.in/horticulture/horti_vegetables_watermelon.html",
+      "retrievedAt": "2026-10-30",
+      "sha256": "6abee93065ead86acfeb99943d90d85de5fc1addd42cd7d61b42528928ecdcad",
+      "localResearchText": "/tmp/harvest-tnau/watermelon.txt",
+      "status": "retrieved_unreviewed"
+    },
+    {
+      "label": "Muskmelon",
+      "url": "https://agritech.tnau.ac.in/horticulture/horti_vegetables_muskmelon.html",
+      "retrievedAt": "2026-10-30",
+      "sha256": "5a295e6c8b9dcadd627baa5e186ca9706b12e74541b98c71cb97eab036b45acc",
+      "localResearchText": "/tmp/harvest-tnau/muskmelon.txt",
+      "status": "retrieved_unreviewed"
+    },
+    {
+      "label": "Tinda",
+      "url": "https://agritech.tnau.ac.in/horticulture/horti_vegetables_tinda.html",
+      "retrievedAt": "2026-10-30",
+      "sha256": "c2605dc49eb27b6715cec3c6e058381a1e41b203b33b2938ef5760fcf146ef76",
+      "localResearchText": "/tmp/harvest-tnau/tinda.txt",
+      "status": "retrieved_unreviewed"
+    },
+    {
+      "label": "Chow Chow",
+      "url": "https://agritech.tnau.ac.in/horticulture/horti_vegetables_chow-chow.html",
+      "retrievedAt": "2026-10-30",
+      "sha256": "da8de1a4a416431dc017b8e0688b84903269d795eddd7fb3585238a5ac49a682",
+      "localResearchText": "/tmp/harvest-tnau/chow-chow.txt",
+      "status": "retrieved_unreviewed"
+    },
+    {
+      "label": "Cluster Bean",
+      "url": "https://agritech.tnau.ac.in/horticulture/horti_vegetables_clusterbeans.html",
+      "retrievedAt": "2026-10-30",
+      "sha256": "b7fee13de2210e45cdad151df9309f6c8ee233611b42afe81b466b44b931efe5",
+      "localResearchText": "/tmp/harvest-tnau/cluster-bean.txt",
+      "status": "retrieved_unreviewed"
+    },
+    {
+      "label": "Vegetable Cowpea",
+      "url": "https://agritech.tnau.ac.in/horticulture/horti_vegetables_vegetable%20cowpea.html",
+      "retrievedAt": "2026-10-30",
+      "sha256": "5d3ac9d494060ad4f88eeed0e58347c3e0c8798f69db0f81d274831ca0960cd2",
+      "localResearchText": "/tmp/harvest-tnau/vegetable-cowpea.txt",
+      "status": "retrieved_unreviewed"
+    },
+    {
+      "label": "Peas",
+      "url": "https://agritech.tnau.ac.in/horticulture/horti_vegetables_peas.html",
+      "retrievedAt": "2026-10-30",
+      "sha256": "c303ab4f92556de6932e7efa542e2e15869769b62596cf2f8b2af3c00b31ebe3",
+      "localResearchText": "/tmp/harvest-tnau/peas.txt",
+      "status": "retrieved_unreviewed"
+    },
+    {
+      "label": "Annual Moringa",
+      "url": "https://agritech.tnau.ac.in/horticulture/horti_vegetables_annualmoringa.html",
+      "retrievedAt": "2026-10-30",
+      "sha256": "beb4664e7737aa404e5c300b3d6b3aef88a0e3b8599837657be0f5a3e91f55af",
+      "localResearchText": "/tmp/harvest-tnau/annual-moringa.txt",
+      "status": "retrieved_unreviewed"
+    },
+    {
+      "label": "Carrot",
+      "url": "https://agritech.tnau.ac.in/horticulture/horti_vegetables_carrot.html",
+      "retrievedAt": "2026-10-30",
+      "sha256": "03444031cf2c42507bde8329a31875f4ee24f685dce2deabaabc789602df0d83",
+      "localResearchText": "/tmp/harvest-tnau/carrot.txt",
+      "status": "retrieved_unreviewed"
+    },
+    {
+      "label": "Beetroot",
+      "url": "https://agritech.tnau.ac.in/horticulture/horti_vegetables_beetroot.html",
+      "retrievedAt": "2026-10-30",
+      "sha256": "ae74b97a07b0cbef337275fb7dddc0955f6577d16239bcd73673f50f999b9081",
+      "localResearchText": "/tmp/harvest-tnau/beetroot.txt",
+      "status": "retrieved_unreviewed"
+    },
+    {
+      "label": "Radish",
+      "url": "https://agritech.tnau.ac.in/horticulture/horti_vegetables_radish.html",
+      "retrievedAt": "2026-10-30",
+      "sha256": "e8fb854a8106ce23e31af52632b8b697a6f7b404a7a135e055645ef60e6e42cc",
+      "localResearchText": "/tmp/harvest-tnau/radish.txt",
+      "status": "retrieved_unreviewed"
+    },
+    {
+      "label": "Colocasia",
+      "url": "https://agritech.tnau.ac.in/horticulture/horti_vegetables_colocasia.html",
+      "retrievedAt": "2026-10-30",
+      "sha256": "88e8fd4f7b0a15e097ec024ca9792515b46ad65abe60f7684291780301d776c3",
+      "localResearchText": "/tmp/harvest-tnau/colocasia.txt",
+      "status": "retrieved_unreviewed"
+    },
+    {
+      "label": "Potato",
+      "url": "https://agritech.tnau.ac.in/horticulture/horti_vegetables_potato.html",
+      "retrievedAt": "2026-10-30",
+      "sha256": "4137434ed7ddf0e47b8a2240934faa0d1764a973f4f848faf4bd6af70279389e",
+      "localResearchText": "/tmp/harvest-tnau/potato.txt",
+      "status": "retrieved_unreviewed"
+    },
+    {
+      "label": "Sweet Potato",
+      "url": "https://agritech.tnau.ac.in/horticulture/horti_vegetables_sweet%20potato.html",
+      "retrievedAt": "2026-10-30",
+      "sha256": "0650e8ce16bbe529abe43b37bccc1924b7885bafd84ba43c5dfb2ec12078cfa5",
+      "localResearchText": "/tmp/harvest-tnau/sweet-potato.txt",
+      "status": "retrieved_unreviewed"
+    },
+    {
+      "label": "Tapioca",
+      "url": "https://agritech.tnau.ac.in/horticulture/horti_vegetables_tapioca.html",
+      "retrievedAt": "2026-10-30",
+      "sha256": "c1c0e2cd8cc01459a80e28052e9b1c45b3fc07e000fe391f3ea8e748889448a0",
+      "localResearchText": "/tmp/harvest-tnau/tapioca.txt",
+      "status": "retrieved_unreviewed"
+    },
+    {
+      "label": "Elephant Foot Yam",
+      "url": "https://agritech.tnau.ac.in/horticulture/horti_vegetables_elephant%20yam.html",
+      "retrievedAt": "2026-10-30",
+      "sha256": "496bf1a2962d6d513c4fd5793c6d6d67a4b7e5737cfcf6e009b1aff1b8fc36cd",
+      "localResearchText": "/tmp/harvest-tnau/elephant-foot-yam.txt",
+      "status": "retrieved_unreviewed"
+    },
+    {
+      "label": "Amaranthus",
+      "url": "https://agritech.tnau.ac.in/horticulture/horti_vegetables_amaranthus.html",
+      "retrievedAt": "2026-10-30",
+      "sha256": "b5abd181fa2b2d005ba73ed59a21a11d4f8f118c829c71f6a64709bb9ed419d8",
+      "localResearchText": "/tmp/harvest-tnau/amaranthus.txt",
+      "status": "retrieved_unreviewed"
+    },
+    {
+      "label": "Cabbage",
+      "url": "https://agritech.tnau.ac.in/horticulture/horti_vegetables_cabbage.html",
+      "retrievedAt": "2026-10-30",
+      "sha256": "8847631dd63cc9bc644f1d5bd537c2be266d73eb38c02f59871629789cbc6711",
+      "localResearchText": "/tmp/harvest-tnau/cabbage.txt",
+      "status": "retrieved_unreviewed"
+    },
+    {
+      "label": "Cauliflower",
+      "url": "https://agritech.tnau.ac.in/horticulture/horti_vegetables_cauliflower.html",
+      "retrievedAt": "2026-10-30",
+      "sha256": "36536518467d98321455fadc33917f9feeebc45c54e40af46f7767e1f2ddc0de",
+      "localResearchText": "/tmp/harvest-tnau/cauliflower.txt",
+      "status": "retrieved_unreviewed"
+    },
+    {
+      "label": "Small Onion",
+      "url": "https://agritech.tnau.ac.in/horticulture/horti_vegetables_small%20onion.html",
+      "retrievedAt": "2026-10-30",
+      "sha256": "0fcd878aa071a6a00d81ed692acc7baa5ed1b9f752e6a78e4d0ec8f012db41d9",
+      "localResearchText": "/tmp/harvest-tnau/small-onion.txt",
+      "status": "retrieved_unreviewed"
+    },
+    {
+      "label": "Bellary Onion",
+      "url": "https://agritech.tnau.ac.in/horticulture/horti_vegetables_bellaryonion.html",
+      "retrievedAt": "2026-10-30",
+      "sha256": "7c0dcd654b4e9ed86b50de2c0c34dfee67a9652de60a588901c7bf220a4c8ca0",
+      "localResearchText": "/tmp/harvest-tnau/bellary-onion.txt",
+      "status": "retrieved_unreviewed"
+    },
+    {
+      "label": "Carnation",
+      "url": "https://agritech.tnau.ac.in/horticulture/horti_flower%20crops_carnation.html",
+      "retrievedAt": "2026-10-30",
+      "sha256": "64a4b39edcb1e1529f9e0c9129aa5bf64698920e86643ff0126f556e2a344e61",
+      "localResearchText": "/tmp/harvest-tnau/carnation.txt",
+      "status": "retrieved_unreviewed"
+    },
+    {
+      "label": "Gerbera",
+      "url": "https://agritech.tnau.ac.in/horticulture/horti_flower%20crops_gerbera.html",
+      "retrievedAt": "2026-10-30",
+      "sha256": "d3c6eae968783e16732ac0e7ad6c46cdb8288c486793a1aaae6b7fcbf651df1a",
+      "localResearchText": "/tmp/harvest-tnau/gerbera.txt",
+      "status": "retrieved_unreviewed"
+    },
+    {
+      "label": "China Aster",
+      "url": "https://agritech.tnau.ac.in/horticulture/horti_flower%20crops_aster.html",
+      "retrievedAt": "2026-10-30",
+      "sha256": "fdf0f3fce6f0c6f653d2b03cd007599ce336902b4a6d8e32786bcd4286c334e3",
+      "localResearchText": "/tmp/harvest-tnau/china-aster.txt",
+      "status": "retrieved_unreviewed"
+    },
+    {
+      "label": "Rose",
+      "url": "https://agritech.tnau.ac.in/horticulture/horti_flower%20crops_commercial%20rose.html",
+      "retrievedAt": "2026-10-30",
+      "sha256": "60f5a5ad31f12e64b645faafd0c6f6705e4fcde1dfb761b95d3ee122d1c7249f",
+      "localResearchText": "/tmp/harvest-tnau/rose.txt",
+      "status": "retrieved_unreviewed"
+    },
+    {
+      "label": "Malligai",
+      "url": "https://agritech.tnau.ac.in/horticulture/horti_flower%20crops_malligai.html",
+      "retrievedAt": "2026-10-30",
+      "sha256": "4fe4f2a58a5a7fd8df490b0a9197fb4372d49ccd1120554bf391e4e1fecfb740",
+      "localResearchText": "/tmp/harvest-tnau/malligai.txt",
+      "status": "retrieved_unreviewed"
+    },
+    {
+      "label": "Mullai",
+      "url": "https://agritech.tnau.ac.in/horticulture/horti_flower%20crops_mullai.html",
+      "retrievedAt": "2026-10-30",
+      "sha256": "646933e4784bcf9e0128117be122b11d2490a5c95d63351fb588b305085673d1",
+      "localResearchText": "/tmp/harvest-tnau/mullai.txt",
+      "status": "retrieved_unreviewed"
+    },
+    {
+      "label": "Jathi Malli",
+      "url": "https://agritech.tnau.ac.in/horticulture/horti_flower%20crops_jathimalli.html",
+      "retrievedAt": "2026-10-30",
+      "sha256": "50037e85757dfc50acd04b17c64a4dbebdff09dc4b87ecbe30d559c23b437b4a",
+      "localResearchText": "/tmp/harvest-tnau/jathi-malli.txt",
+      "status": "retrieved_unreviewed"
+    },
+    {
+      "label": "Crossandra",
+      "url": "https://agritech.tnau.ac.in/horticulture/horti_flower%20crops_crossandra.html",
+      "retrievedAt": "2026-10-30",
+      "sha256": "551fea2e70e1dd8975863689a7755c2625ce706c185ea9c75be142a4e8885c6c",
+      "localResearchText": "/tmp/harvest-tnau/crossandra.txt",
+      "status": "retrieved_unreviewed"
+    },
+    {
+      "label": "Marigold",
+      "url": "https://agritech.tnau.ac.in/horticulture/horti_flower%20crops_marigold.html",
+      "retrievedAt": "2026-10-30",
+      "sha256": "96fff681e1e921f47b6b2bd9282e1e4da94594feea0fadecfe3d8a2bc2fdb1c6",
+      "localResearchText": "/tmp/harvest-tnau/marigold.txt",
+      "status": "retrieved_unreviewed"
+    },
+    {
+      "label": "Tuberrose",
+      "url": "https://agritech.tnau.ac.in/horticulture/horti_flower%20crops_tuberose.html",
+      "retrievedAt": "2026-10-30",
+      "sha256": "b56863bf24179221acc7c2263963db101533df656f4876542d733ebf7e1352c4",
+      "localResearchText": "/tmp/harvest-tnau/tuberrose.txt",
+      "status": "retrieved_unreviewed"
+    },
+    {
+      "label": "Mint",
+      "url": "https://agritech.tnau.ac.in/horticulture/horti_aromatic%20crops_mint.html",
+      "retrievedAt": "2026-10-30",
+      "sha256": "7b00f519a58b91952f0a0adec06c6f1466314612ccc612a527ac69df911872d4",
+      "localResearchText": "/tmp/harvest-tnau/mint.txt",
+      "status": "retrieved_unreviewed"
+    }
+  ],
+  "remainingLabels": [
+    "Cardamom",
+    "Cinnamon",
+    "Clove",
+    "Coriander",
+    "Cumin",
+    "Fennel",
+    "Fenugreek",
+    "French Beans",
+    "Garlic",
+    "Ginger",
+    "Knolkhol",
+    "Lablab",
+    "Onion",
+    "Pepper",
+    "Turmeric",
+    "Turnip"
+  ]
+}

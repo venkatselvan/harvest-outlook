@@ -132,6 +132,7 @@ export function bindMarketOutlook(deps?: Pick<Int2Deps, "prices">): ToolHandler<
 /** Same enqueue path as POST /plans/:id/visuals (content-derived key). The photo is the plan farm's newest photo with a confirmed region. */
 export function bindVisualKeyframes(deps: Int2Deps): ToolHandler<"request_visual_keyframes"> {
   return async (input, ctx) => {
+    if(ctx.mode!=="synthetic")throw new ApiError(422,"observed_media_only","Current field views use dated owner photos. Generated field scenes are unavailable.");
     if (!UUID.test(input.planId)) throw notFound("Plan");
     const briefs = deps.briefs ?? (await loadBriefs());
     const plan = await deps.pool.query<{ farm_id: string }>("SELECT farm_id FROM plans WHERE id=$1 AND owner_id=$2", [input.planId, ctx.ownerId]);

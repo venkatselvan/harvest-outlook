@@ -1,9 +1,179 @@
 {
-  "_comment": "Agmarknet commodity name -> product slug. Names marked verified:true were observed in real rows from the keyed data.gov.in API (data/raw/datagovin/probe-2026-10-30.json; variety-wise resource 35985678-0d79-46b4-9ed6-6f13308a1d24 queried 2026-10-30). Unverified or unresolved rows are stored with validation_status='unverified_mapping' and hidden from default reads.",
-  "schemaVersion": 2,
+  "_comment": "Exact returned AGMARKNET commodity labels -> distinct catalogue product forms. Ginger mappings were observed in the earlier current/variety probes; new grain, seed, fresh vegetable and split-dal mappings were observed in official current-daily responses recorded in evals/results/live-smoke/mandi-mappings-2026-10-30.json. Commodity query filters are fuzzy; readers must match the returned label exactly. Missing/unverified mappings stay unavailable. Price units retain explicit convention-assumption flags. Focused crop mappings additionally verified against exact labels in the complete priced current-daily inventory dated 2026-10-30. Cane, shallot, curry leaves and coriander seed remain unmapped where no exact priced form was observed; sugar is not sugarcane and lime/galgal are not Citrus limon.",
+  "schemaVersion": 4,
   "entries": [
-    { "sourceCommodity": "Ginger(Green)", "productSlug": "ginger-fresh", "verified": true, "note": "Observed 2026-10-30: current-daily resource (964 rows that day) and variety-wise resource (Commodity_Code 103, 66,070 Karnataka rows 2002-2026)." },
-    { "sourceCommodity": "Ginger(Dry)", "productSlug": "ginger-dry", "verified": true, "note": "Observed 2026-10-30: current-daily resource (172 rows that day) and variety-wise resource (Commodity_Code 27, 8,000 Karnataka rows). Dry/wet basis must not be mixed with fresh." },
-    { "sourceCommodity": "Ginger", "productSlug": "ginger-fresh", "verified": false, "unresolved": true, "note": "Unqualified 'Ginger' (170 rows in the 2026-10-30 current-daily snapshot) does not say green or dry; the slug is only a storage carrier, flagged unresolved_product and hidden from default reads until a person resolves it. Not present in the variety-wise resource for Karnataka (0 rows)." }
+    {
+      "sourceCommodity": "Ginger(Green)",
+      "productSlug": "ginger-fresh",
+      "verified": true,
+      "note": "Observed 2026-10-30: current-daily resource (964 rows that day) and variety-wise resource (Commodity_Code 103, 66,070 Karnataka rows 2002-2026)."
+    },
+    {
+      "sourceCommodity": "Ginger(Dry)",
+      "productSlug": "ginger-dry",
+      "verified": true,
+      "note": "Observed 2026-10-30: current-daily resource (172 rows that day) and variety-wise resource (Commodity_Code 27, 8,000 Karnataka rows). Dry/wet basis must not be mixed with fresh."
+    },
+    {
+      "sourceCommodity": "Ginger",
+      "productSlug": "ginger-fresh",
+      "verified": false,
+      "unresolved": true,
+      "note": "Unqualified 'Ginger' (170 rows in the 2026-10-30 current-daily snapshot) does not say green or dry; the slug is only a storage carrier, flagged unresolved_product and hidden from default reads until a person resolves it. Not present in the variety-wise resource for Karnataka (0 rows)."
+    },
+    {
+      "sourceCommodity": "Maize",
+      "requestCommodity": "Maize",
+      "productSlug": "maize-grain",
+      "verified": true,
+      "note": "Exact returned commodity observed in the official current-daily API on 2026-10-30; source sample and limitations in evals/results/live-smoke/mandi-mappings-2026-10-30.json. Strict post-filter required because API commodity filters can match other products. Prices retain the explicit Agmarknet unit-convention assumption."
+    },
+    {
+      "sourceCommodity": "Sunflower/Sunflower Seed",
+      "requestCommodity": "Sunflower",
+      "productSlug": "sunflower-seed",
+      "verified": true,
+      "note": "Exact returned commodity observed in the official current-daily API on 2026-10-30; source sample and limitations in evals/results/live-smoke/mandi-mappings-2026-10-30.json. Strict post-filter required because API commodity filters can match other products. Prices retain the explicit Agmarknet unit-convention assumption."
+    },
+    {
+      "sourceCommodity": "Potato",
+      "requestCommodity": "Potato",
+      "productSlug": "potato-fresh",
+      "verified": true,
+      "note": "Exact returned commodity observed in the official current-daily API on 2026-10-30; source sample and limitations in evals/results/live-smoke/mandi-mappings-2026-10-30.json. Strict post-filter required because API commodity filters can match other products. Prices retain the explicit Agmarknet unit-convention assumption."
+    },
+    {
+      "sourceCommodity": "Bengal Gram Dal(Chana Dal)",
+      "requestCommodity": "Bengal Gram Dal (Chana Dal)",
+      "productSlug": "chickpea-split",
+      "verified": true,
+      "note": "Exact returned commodity observed in the official current-daily API on 2026-10-30; source sample and limitations in evals/results/live-smoke/mandi-mappings-2026-10-30.json. Strict post-filter required because API commodity filters can match other products. Prices retain the explicit Agmarknet unit-convention assumption."
+    },
+    {
+      "sourceCommodity": "Bengal Gram(Gram)(Whole)",
+      "requestCommodity": "Bengal Gram(Gram)(Whole)",
+      "productSlug": "chickpea-whole",
+      "verified": true,
+      "note": "Exact returned commodity observed in the official current-daily API on 2026-10-30; source sample and limitations in evals/results/live-smoke/mandi-mappings-2026-10-30.json. Strict post-filter required because API commodity filters can match other products. Prices retain the explicit Agmarknet unit-convention assumption."
+    },
+    {
+      "sourceCommodity": "Ragi(Finger Millet)",
+      "requestCommodity": "Ragi (Finger Millet)",
+      "productSlug": "finger-millet-grain",
+      "verified": true,
+      "note": "Exact returned commodity observed in the official current-daily API on 2026-10-30; source sample and limitations in evals/results/live-smoke/mandi-mappings-2026-10-30.json. Strict post-filter required because API commodity filters can match other products. Prices retain the explicit Agmarknet unit-convention assumption."
+    },
+    {
+      "sourceCommodity": "Bajra(Pearl Millet/Cumbu)",
+      "requestCommodity": "Bajra(Pearl Millet/Cumbu)",
+      "productSlug": "pearl-millet-grain",
+      "verified": true,
+      "note": "Exact returned commodity observed in the official current-daily API on 2026-10-30; source sample and limitations in evals/results/live-smoke/mandi-mappings-2026-10-30.json. Strict post-filter required because API commodity filters can match other products. Prices retain the explicit Agmarknet unit-convention assumption."
+    },
+    {
+      "sourceCommodity": "Sesamum(Sesame,Gingelly,Til)",
+      "requestCommodity": "Sesamum(Sesame,Gingelly,Til)",
+      "productSlug": "sesame-seed",
+      "verified": true,
+      "note": "Exact returned commodity observed in the official current-daily API on 2026-10-30; source sample and limitations in evals/results/live-smoke/mandi-mappings-2026-10-30.json. Strict post-filter required because API commodity filters can match other products. Prices retain the explicit Agmarknet unit-convention assumption."
+    },
+    {
+      "sourceCommodity": "Red gram split/Arhar dal/Tur dal",
+      "requestCommodity": "Arhar Dal(Tur Dal)",
+      "productSlug": "pigeon-pea-split",
+      "verified": true,
+      "note": "Exact returned commodity observed in the official current-daily API on 2026-10-30; source sample and limitations in evals/results/live-smoke/mandi-mappings-2026-10-30.json. Strict post-filter required because API commodity filters can match other products. Prices retain the explicit Agmarknet unit-convention assumption."
+    },
+    {
+      "sourceCommodity": "Onion",
+      "requestCommodity": "Onion",
+      "productSlug": "onion-bulb",
+      "verified": true,
+      "note": "Exact returned commodity observed in the official current-daily API on 2026-10-30; source sample and limitations in evals/results/live-smoke/mandi-mappings-2026-10-30.json. Strict post-filter required because API commodity filters can match other products. Prices retain the explicit Agmarknet unit-convention assumption."
+    },
+    {
+      "sourceCommodity": "Paddy(Common)",
+      "requestCommodity": "Paddy(Common)",
+      "productSlug": "paddy-grain",
+      "verified": true,
+      "note": "Exact priced returned commodity in complete official 2026-10-30 current-daily inventory data/manifests/agmarknet-priced-inventory-2026-10-30.json. Product form preserved; strict returned-label filtering and unit-convention provenance remain required."
+    },
+    {
+      "sourceCommodity": "Paddy(Basmati)",
+      "requestCommodity": "Paddy(Basmati)",
+      "productSlug": "paddy-grain",
+      "verified": true,
+      "note": "Exact priced returned commodity in complete official 2026-10-30 current-daily inventory data/manifests/agmarknet-priced-inventory-2026-10-30.json. Product form preserved; strict returned-label filtering and unit-convention provenance remain required."
+    },
+    {
+      "sourceCommodity": "Paddy(Fine/Superfine/Grade A)",
+      "requestCommodity": "Paddy(Fine/Superfine/Grade A)",
+      "productSlug": "paddy-grain",
+      "verified": true,
+      "note": "Exact priced returned commodity in complete official 2026-10-30 current-daily inventory data/manifests/agmarknet-priced-inventory-2026-10-30.json. Product form preserved; strict returned-label filtering and unit-convention provenance remain required."
+    },
+    {
+      "sourceCommodity": "Rice",
+      "requestCommodity": "Rice",
+      "productSlug": "paddy-milled-rice",
+      "verified": true,
+      "note": "Exact priced returned commodity in complete official 2026-10-30 current-daily inventory data/manifests/agmarknet-priced-inventory-2026-10-30.json. Product form preserved; strict returned-label filtering and unit-convention provenance remain required."
+    },
+    {
+      "sourceCommodity": "Rice(Fine/Superfine/Grade A)",
+      "requestCommodity": "Rice(Fine/Superfine/Grade A)",
+      "productSlug": "paddy-milled-rice",
+      "verified": true,
+      "note": "Exact priced returned commodity in complete official 2026-10-30 current-daily inventory data/manifests/agmarknet-priced-inventory-2026-10-30.json. Product form preserved; strict returned-label filtering and unit-convention provenance remain required."
+    },
+    {
+      "sourceCommodity": "Wheat",
+      "requestCommodity": "Wheat",
+      "productSlug": "wheat-grain",
+      "verified": true,
+      "note": "Exact priced returned commodity in complete official 2026-10-30 current-daily inventory data/manifests/agmarknet-priced-inventory-2026-10-30.json. Product form preserved; strict returned-label filtering and unit-convention provenance remain required."
+    },
+    {
+      "sourceCommodity": "Tomato",
+      "requestCommodity": "Tomato",
+      "productSlug": "tomato-fresh",
+      "verified": true,
+      "note": "Exact priced returned commodity in complete official 2026-10-30 current-daily inventory data/manifests/agmarknet-priced-inventory-2026-10-30.json. Product form preserved; strict returned-label filtering and unit-convention provenance remain required."
+    },
+    {
+      "sourceCommodity": "Green Chilli",
+      "requestCommodity": "Green Chilli",
+      "productSlug": "chilli-green",
+      "verified": true,
+      "note": "Exact priced returned commodity in complete official 2026-10-30 current-daily inventory data/manifests/agmarknet-priced-inventory-2026-10-30.json. Product form preserved; strict returned-label filtering and unit-convention provenance remain required."
+    },
+    {
+      "sourceCommodity": "Dry Chillies",
+      "requestCommodity": "Dry Chillies",
+      "productSlug": "chilli-dry",
+      "verified": true,
+      "note": "Exact priced returned commodity in complete official 2026-10-30 current-daily inventory data/manifests/agmarknet-priced-inventory-2026-10-30.json. Product form preserved; strict returned-label filtering and unit-convention provenance remain required."
+    },
+    {
+      "sourceCommodity": "Coriander(Leaves)",
+      "requestCommodity": "Coriander(Leaves)",
+      "productSlug": "coriander-leaf",
+      "verified": true,
+      "note": "Exact priced returned commodity in complete official 2026-10-30 current-daily inventory data/manifests/agmarknet-priced-inventory-2026-10-30.json. Product form preserved; strict returned-label filtering and unit-convention provenance remain required."
+    },
+    {
+      "sourceCommodity": "Lemon",
+      "requestCommodity": "Lemon",
+      "productSlug": "lemon-fruit",
+      "verified": true,
+      "note": "Exact priced returned commodity in complete official 2026-10-30 current-daily inventory data/manifests/agmarknet-priced-inventory-2026-10-30.json. Product form preserved; strict returned-label filtering and unit-convention provenance remain required."
+    },
+    {
+      "sourceCommodity": "Turmeric(raw)",
+      "requestCommodity": "Turmeric(raw)",
+      "productSlug": "turmeric-fresh",
+      "verified": true,
+      "note": "Exact positive-priced raw turmeric observed in complete 2026-10-30 current-daily inventory. Fresh/raw rhizome remains distinct from cured dry turmeric; generic Turmeric is not automatically assigned a processed form."
+    }
   ]
 }

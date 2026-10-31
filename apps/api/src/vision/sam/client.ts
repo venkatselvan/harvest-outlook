@@ -1,4 +1,5 @@
 import type { SamOptions } from "./options";
+import {trackMetaInvocation} from '../../services/model-activity';
 
 /** Provider-call failure. `outcomeUnknown` = the request may have been processed (timeout/connection loss). */
 export class SamHttpError extends Error {
@@ -123,6 +124,9 @@ export async function readSse(body: ReadableStream<Uint8Array>): Promise<{ text:
 
 /** Minimal fetch wrapper for POST {baseUrl}/responses. Never logs or returns the key or the image. */
 export async function callSam(i: SamCallInput): Promise<SamCallResult> {
+  return trackMetaInvocation(i.model,()=>callSamTransport(i));
+}
+async function callSamTransport(i:SamCallInput):Promise<SamCallResult>{
   const f = i.fetchImpl ?? fetch;
   const ctl = new AbortController();
   const timer = setTimeout(() => ctl.abort(), i.options.timeoutMs);

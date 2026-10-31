@@ -169,13 +169,13 @@ describe("synthetic journey: farm -> photo -> region -> plan -> timeline -> revi
     expect(turn.approvedTextHash).toBe(approvedTextHash(turn.approvedText));
   });
 
-  it("speech synthesis accepts the approved-text hash (no 403) and reports provider_unavailable in synthetic mode; a tampered text is 403", async () => {
+  it("retired speech synthesis returns 410 for both approved and tampered text", async () => {
     const ok = await c.call("POST", "/api/v1/speech/synthesis", { payload: { text: turn.approvedText, language: "en", approvedTextHash: turn.approvedTextHash }, headers: json });
     expect(ok.statusCode).not.toBe(403);
-    expect(ok.statusCode).toBe(424);
-    expect(ok.json().error.code).toBe("provider_unavailable");
+    expect(ok.statusCode).toBe(410);
+    expect(ok.json().error.code).toBe("speech_synthesis_not_supported");
     const tampered = await c.call("POST", "/api/v1/speech/synthesis", { payload: { text: `${turn.approvedText} Also buy more.`, language: "en", approvedTextHash: turn.approvedTextHash }, headers: json });
-    expect(tampered.statusCode).toBe(403);
+    expect(tampered.statusCode).toBe(410);
   });
 
   it("segmentation request becomes a job; the worker path reports unavailable in synthetic mode and manual fallback stays available", async () => {

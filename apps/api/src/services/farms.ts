@@ -218,7 +218,7 @@ export async function patchFarm(pool: Pool, ownerId: string, id: string, body: P
  * Appends the new current row. The partial unique index allows one current fact per key, so the old
  * row is first pointed at itself (frees the slot), then re-pointed at its successor.
  */
-async function appendFact(c: PoolClient, ownerId: string, farmId: string, key: string, f: FactInput, prevId: string | null): Promise<void> {
+export async function appendFact(c: PoolClient, ownerId: string, farmId: string, key: string, f: FactInput, prevId: string | null): Promise<void> {
   if (prevId) await c.query("UPDATE farm_facts SET superseded_by = id WHERE id = $1", [prevId]);
   const newId = await insertFact(c, ownerId, farmId, key, f, prevId);
   if (prevId) await c.query("UPDATE farm_facts SET superseded_by = $2 WHERE id = $1", [prevId, newId]);
@@ -248,6 +248,9 @@ export async function deleteFarm(
     await c.query("SET LOCAL harvest.allow_plan_delete = 'on'");
     await c.query("SET LOCAL harvest.allow_journal_delete = 'on'"); // journal rows are immutable (0010) except through this procedure
     const media = await c.query<{ id: string; storage_key: string }>("SELECT id, storage_key FROM media_objects WHERE farm_id=$1 AND owner_id=$2", [id, ownerId]);
+    const reports = await c.query<{id:string;original_key:string;pages:{key:string}[]}>("SELECT id,original_key,pages FROM soil_reports WHERE farm_id=$1 AND owner_id=$2",[id,ownerId]);
+    const attempts=await c.query<{pages:{key:string}[]}>("SELECT a.pages FROM soil_extraction_attempts a JOIN soil_reports r ON r.id=a.report_id WHERE r.farm_id=$1 AND r.owner_id=$2",[id,ownerId]);
+    const reportKeys=reports.rows.flatMap(r=>[r.original_key,...r.pages.map(p=>p.key)]).concat(attempts.rows.flatMap(a=>a.pages.map(p=>p.key))).filter((k,i,all)=>all.indexOf(k)===i).map(storage_key=>({id:"soil_report",storage_key}));
     const plans = "(SELECT id FROM plans WHERE farm_id = $1 AND owner_id = $2)";
     // Generated keyframes are stored objects too; collect their keys (and any generated media rows) before the rows go.
     const assets = await c.query<{ storage_key: string }>(
@@ -302,7 +305,7 @@ export async function deleteFarm(
     const still = await c.query<{ storage_key: string }>("SELECT DISTINCT storage_key FROM visual_assets WHERE owner_id = $1 AND storage_key IS NOT NULL", [ownerId]);
     const shared = new Set(still.rows.map((r) => r.storage_key));
     const assetKeys = [...new Set(assets.rows.map((a) => a.storage_key))].filter((k) => !shared.has(k));
-    return [...media.rows, ...assetMedia.rows, ...assetKeys.map((k) => ({ id: "visual_asset", storage_key: k }))];
+    return [...media.rows, ...assetMedia.rows,...reportKeys, ...assetKeys.map((k) => ({ id: "visual_asset", storage_key: k }))];
   });
   let failed = 0;
   for (const m of keys) {

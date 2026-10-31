@@ -1,0 +1,3756 @@
+{
+  "schemaVersion": "1.0",
+  "reviewedAt": "2026-10-31",
+  "evidenceType": "published_extension_reference",
+  "policy": {
+    "measuredSoilChange": false,
+    "automaticFertilizerDose": false,
+    "automaticPesticideDose": false,
+    "sourceDaysAreReferenceWindows": true,
+    "observedStageNeedsRecordedObservation": true,
+    "monthConversion": "Month ranges are retained as months; any approximate day equivalents are display-only and must not close a crop cycle.",
+    "soilFit": "Published pH ranges have no stated laboratory method. Display descriptive comparison only; never certify suitability, prescribe amendment or infer nutrient sufficiency.",
+    "careGeography": "Source geography is the origin/applicability of guidance. Outside matching region, present as reference requiring local review, not locally validated recommendation.",
+    "soilImpacts": "Qualitative mechanisms and management dependencies only. None of the focused14 is a legume; do not claim automatic nitrogen fixation or soil nutrient replenishment from these rotations."
+  },
+  "sources": [
+    {
+      "id": "tnau-rice-weeding",
+      "url": "https://agritech.tnau.ac.in/expert_system/paddy/cultivationpractices4.html",
+      "title": "Rice cultivation: weed management",
+      "publisher": "Tamil Nadu Agricultural University",
+      "retrievedAt": "2026-10-31",
+      "geography": "Tamil Nadu and specifically labelled Karnataka practices"
+    },
+    {
+      "id": "tnau-rice-sri",
+      "url": "https://agritech.tnau.ac.in/expert_system/paddy/faqs.html",
+      "title": "Rice SRI questions and answers",
+      "publisher": "Tamil Nadu Agricultural University",
+      "retrievedAt": "2026-10-31",
+      "geography": "Tamil Nadu, India"
+    },
+    {
+      "id": "tnau-rice-adt43",
+      "url": "https://agritech.tnau.ac.in/agriculture/ADT43.html",
+      "title": "Rice ADT43 cultivar; updated January 2023",
+      "publisher": "Tamil Nadu Agricultural University",
+      "retrievedAt": "2026-10-31",
+      "geography": "Tamil Nadu, India"
+    },
+    {
+      "id": "tn-wheat-guide",
+      "url": "https://tnagriculture.in/dashboard/CPG/03_Wheat.pdf",
+      "title": "Crop Production Guide: Wheat",
+      "publisher": "Tamil Nadu Department of Agriculture",
+      "retrievedAt": "2026-10-31",
+      "geography": "Listed Tamil Nadu plains and adjoining hills"
+    },
+    {
+      "id": "tnau-wheat-water",
+      "url": "https://agritech.tnau.ac.in/agriculture/agri_irrigationmgt_wheat.html",
+      "title": "Wheat irrigation management",
+      "publisher": "Tamil Nadu Agricultural University",
+      "retrievedAt": "2026-10-31",
+      "geography": "Tamil Nadu, India"
+    },
+    {
+      "id": "tnau-maize-crop",
+      "url": "https://agritech.tnau.ac.in/CropProduction/Millets/millets_maize.html",
+      "title": "Maize seasons, cultivars and crop management",
+      "publisher": "Tamil Nadu Agricultural University",
+      "retrievedAt": "2026-10-31",
+      "geography": "Tamil Nadu, India"
+    },
+    {
+      "id": "tnau-maize-water",
+      "url": "https://agritech.tnau.ac.in/agriculture/agri_irrigationmgt_maize.html",
+      "title": "Maize irrigation management",
+      "publisher": "Tamil Nadu Agricultural University",
+      "retrievedAt": "2026-10-31",
+      "geography": "Tamil Nadu, India"
+    },
+    {
+      "id": "tnau-sugarcane",
+      "url": "https://agritech.tnau.ac.in/agriculture/sugarcrops_sugarcane.html",
+      "title": "Sugarcane crop production",
+      "publisher": "Tamil Nadu Agricultural University",
+      "retrievedAt": "2026-10-31",
+      "geography": "Tamil Nadu, India"
+    },
+    {
+      "id": "tnau-sugarcane-season",
+      "url": "https://agritech.tnau.ac.in/govt_schemes_services/aas/sugarcane.html",
+      "title": "Sugarcane seasons and operations",
+      "publisher": "Tamil Nadu Agricultural University",
+      "retrievedAt": "2026-10-31",
+      "geography": "Tamil Nadu, India"
+    },
+    {
+      "id": "icar-sugarcane-2025",
+      "url": "https://www.icar.gov.in/sites/default/files/Circulars/ICAR%20En-Kharif%20Agro-Advisories%20for%20Farmers%202025.pdf",
+      "title": "ICAR Kharif agro-advisory2025: Sugarcane",
+      "publisher": "Indian Council of Agricultural Research",
+      "retrievedAt": "2026-10-31",
+      "geography": "India; regional advisory context must be checked"
+    },
+    {
+      "id": "tnau-tomato-soil",
+      "url": "https://agritech.tnau.ac.in/horticulture/horti_vegetables_tomato_Soil.html",
+      "title": "Tomato soil, nursery sowing and field preparation",
+      "publisher": "Tamil Nadu Agricultural University",
+      "retrievedAt": "2026-10-31",
+      "geography": "Tamil Nadu, India"
+    },
+    {
+      "id": "tnau-tomato-care",
+      "url": "https://agritech.tnau.ac.in/horticulture/horti_vegetables_tomato_cultural%20practices.html",
+      "title": "Tomato cultural practices",
+      "publisher": "Tamil Nadu Agricultural University",
+      "retrievedAt": "2026-10-31",
+      "geography": "Tamil Nadu, India"
+    },
+    {
+      "id": "tnau-tomato-variety",
+      "url": "https://agritech.tnau.ac.in/horticulture/horti_vegetables_tomato_varieties.html",
+      "title": "Tomato cultivar descriptions",
+      "publisher": "Tamil Nadu Agricultural University",
+      "retrievedAt": "2026-10-31",
+      "geography": "Tamil Nadu, India"
+    },
+    {
+      "id": "tnau-potato",
+      "url": "https://agritech.tnau.ac.in/horticulture/horti_vegetables_potato.html",
+      "title": "Potato cultivation; updated2013",
+      "publisher": "Tamil Nadu Agricultural University",
+      "retrievedAt": "2026-10-31",
+      "geography": "Tamil Nadu, India"
+    },
+    {
+      "id": "goi-vegetable-varieties",
+      "url": "https://agritech.tnau.ac.in/horticulture/pdf/tech_bulletin/national/Checklist-of-Commercial-Varieties-of-Vegetables.pdf",
+      "title": "Checklist of Commercial Varieties of Vegetables,2012",
+      "publisher": "Government of India, Department of Agriculture & Cooperation",
+      "retrievedAt": "2026-10-31",
+      "geography": "Cultivar-specific Indian states"
+    },
+    {
+      "id": "tnau-ginger-care",
+      "url": "https://agritech.tnau.ac.in/horticulture/horti_spice%20crops_ginger_seed.html",
+      "title": "Ginger rhizome planting, mulching and aftercare",
+      "publisher": "Tamil Nadu Agricultural University",
+      "retrievedAt": "2026-10-31",
+      "geography": "Tamil Nadu, India"
+    },
+    {
+      "id": "tnau-ginger-production",
+      "url": "https://agritech.tnau.ac.in/horticulture/horti_spice%20crops_ginger_productiontech.html",
+      "title": "Ginger production technology",
+      "publisher": "Tamil Nadu Agricultural University",
+      "retrievedAt": "2026-10-31",
+      "geography": "Tamil Nadu, India"
+    },
+    {
+      "id": "icar-goa-ginger",
+      "url": "https://ccari.res.in/dss/ginger.html",
+      "title": "Ginger disease management and harvest",
+      "publisher": "ICAR-Central Coastal Agricultural Research Institute",
+      "retrievedAt": "2026-10-31",
+      "geography": "Goa, India"
+    },
+    {
+      "id": "tnau-onion",
+      "url": "https://agritech.tnau.ac.in/horticulture/horti_vegetables_bellaryonion.html",
+      "title": "Bellary onion cultivation",
+      "publisher": "Tamil Nadu Agricultural University",
+      "retrievedAt": "2026-10-31",
+      "geography": "Tamil Nadu, India"
+    },
+    {
+      "id": "tnau-shallot",
+      "url": "https://agritech.tnau.ac.in/horticulture/horti_vegetables_small%20onion.html",
+      "title": "Small onion / Aggregatum cultivation",
+      "publisher": "Tamil Nadu Agricultural University",
+      "retrievedAt": "2026-10-31",
+      "geography": "Tamil Nadu, India"
+    },
+    {
+      "id": "tnau-chilli-soil",
+      "url": "https://agritech.tnau.ac.in/horticulture/horti_vegetables_chili_season_sowing.html",
+      "title": "Chilli soil and nursery sowing",
+      "publisher": "Tamil Nadu Agricultural University",
+      "retrievedAt": "2026-10-31",
+      "geography": "Tamil Nadu, India"
+    },
+    {
+      "id": "tnau-chilli-harvest",
+      "url": "https://agritech.tnau.ac.in/horticulture/horti_vegetables_chilli_Yield_new.html",
+      "title": "Chilli harvest; updated June2023",
+      "publisher": "Tamil Nadu Agricultural University",
+      "retrievedAt": "2026-10-31",
+      "geography": "Tamil Nadu, India"
+    },
+    {
+      "id": "tnau-chilli-review",
+      "url": "https://agritech.tnau.ac.in/horticulture/horti_vegetables_chilli_fertigation.html",
+      "title": "Chilli fertigation and nutrient timing",
+      "publisher": "Tamil Nadu Agricultural University",
+      "retrievedAt": "2026-10-31",
+      "geography": "Tamil Nadu, India"
+    },
+    {
+      "id": "tnau-turmeric",
+      "url": "https://agritech.tnau.ac.in/horticulture/horti_spice%20crops_turmeric.html",
+      "title": "Turmeric crop cultivation",
+      "publisher": "Tamil Nadu Agricultural University",
+      "retrievedAt": "2026-10-31",
+      "geography": "Tamil Nadu, India"
+    },
+    {
+      "id": "tnau-turmeric-soil",
+      "url": "https://agritech.tnau.ac.in/govt_schemes_services/aas/turmeric.html",
+      "title": "Turmeric soil and regional advisories",
+      "publisher": "Tamil Nadu Agricultural University",
+      "retrievedAt": "2026-10-31",
+      "geography": "Tamil Nadu, India"
+    },
+    {
+      "id": "tnau-curry-leaf",
+      "url": "https://agritech.tnau.ac.in/horticulture/horti_vegetables_curry%20leaf.html",
+      "title": "Curry leaf cultivation; updated January2016",
+      "publisher": "Tamil Nadu Agricultural University",
+      "retrievedAt": "2026-10-31",
+      "geography": "Tamil Nadu, India"
+    },
+    {
+      "id": "tnau-coriander",
+      "url": "https://agritech.tnau.ac.in/horticulture/horti_spice%20crops_corinader.html",
+      "title": "Coriander cultivation, leaf and seed harvest",
+      "publisher": "Tamil Nadu Agricultural University",
+      "retrievedAt": "2026-10-31",
+      "geography": "Tamil Nadu, India"
+    },
+    {
+      "id": "nhb-citrus-soil",
+      "url": "https://nhb.gov.in/pdf/fruits/citrus/cit012.pdf",
+      "title": "Citrus soil and climate",
+      "publisher": "National Horticulture Board",
+      "retrievedAt": "2026-10-31",
+      "geography": "India; citrus group reference"
+    },
+    {
+      "id": "nhb-citrus-harvest",
+      "url": "https://nhb.gov.in/pdf/fruits/citrus/cit004.pdf",
+      "title": "Citrus harvesting, including Citrus limon",
+      "publisher": "National Horticulture Board",
+      "retrievedAt": "2026-10-31",
+      "geography": "India; lemon-specific maturity statement within citrus guide"
+    },
+    {
+      "id": "tnau-orchard",
+      "url": "https://agritech.tnau.ac.in/horticulture/horti_orchard%20management.html",
+      "title": "Orchard establishment and management",
+      "publisher": "Tamil Nadu Agricultural University",
+      "retrievedAt": "2026-10-31",
+      "geography": "India; general evergreen orchard reference"
+    },
+    {
+      "id": "icar-puddling-study",
+      "url": "https://epubs.icar.org.in/index.php/JISSS/article/view/93194",
+      "title": "Puddling/direct seeding and rice–wheat soil physical health; field experiment2012–2014",
+      "publisher": "ICAR-IARI authors; Journal of the Indian Society of Soil Science",
+      "geography": "Research farm, New Delhi; trial-specific evidence",
+      "retrievedAt": "2026-10-31"
+    },
+    {
+      "id": "fao-organic-matter",
+      "url": "https://www.fao.org/4/a0100e/a0100e07.htm",
+      "title": "The importance of soil organic matter: practices",
+      "publisher": "Food and Agriculture Organization of the United Nations",
+      "geography": "General management principles; not a local response model",
+      "retrievedAt": "2026-10-31"
+    },
+    {
+      "id": "tnau-tomato-rotation",
+      "url": "https://agritech.tnau.ac.in/org_farm/orgfarm_tomato_diseases.html",
+      "title": "Tomato diseases: cultural rotation measures",
+      "publisher": "Tamil Nadu Agricultural University",
+      "geography": "Tamil Nadu extension disease-management reference",
+      "retrievedAt": "2026-10-31"
+    },
+    {
+      "id": "tnau-chilli-rotation",
+      "url": "https://agritech.tnau.ac.in/org_farm/IPM%20Booklet%20for%20OF-Dr.P.D.pdf",
+      "title": "Pest and disease management: organic ecosystem, chilli",
+      "publisher": "Tamil Nadu Agricultural University",
+      "geography": "Tamil Nadu extension reference",
+      "retrievedAt": "2026-10-31"
+    },
+    {
+      "id": "tnau-paddy-water-n",
+      "url": "https://agritech.tnau.ac.in/govt_schemes_services/aas/paddy.html",
+      "title": "Paddy advisory: LCC-based nutrient review and critical water stages",
+      "publisher": "Tamil Nadu Agricultural University",
+      "retrievedAt": "2026-10-31",
+      "geography": "Tamil Nadu extension; individual rice systems remain distinct"
+    }
+  ],
+  "crops": [
+    {
+      "cropId": "paddy",
+      "displayName": "Paddy",
+      "botanicalName": "Oryza sativa",
+      "aliases": [],
+      "productionType": "annual",
+      "establishmentMethods": [
+        "direct_sowing",
+        "transplanting",
+        "sri_transplanting"
+      ],
+      "marketProductIds": [
+        "paddy-grain"
+      ],
+      "duration": {
+        "minDays": 105,
+        "maxDays": 110,
+        "anchor": "sowing",
+        "conditions": [
+          "ADT43 cultivar only; includes nursery time. No transplant-to-harvest subtraction without actual nursery sowing date."
+        ],
+        "sourceRefs": [
+          {
+            "sourceId": "tnau-rice-adt43",
+            "locator": "Duration; Season"
+          }
+        ],
+        "kind": "crop_completion"
+      },
+      "soilEnvironment": [
+        {
+          "parameter": "water_regime",
+          "value": "SRI uses moist establishment and field-condition-based irrigation; distinguish from continuously flooded systems.",
+          "unit": null,
+          "conditions": [],
+          "sourceRefs": [
+            {
+              "sourceId": "tnau-rice-sri",
+              "locator": "Water management"
+            }
+          ]
+        }
+      ],
+      "care": [
+        {
+          "id": "paddy-handweed",
+          "title": "Inspect weeds and hand weed",
+          "action": "Inspect and hand weed when needed.",
+          "anchor": "transplanting",
+          "startDay": 15,
+          "endDay": 40,
+          "repeatEveryDays": null,
+          "stage": null,
+          "conditions": [
+            "Published regional reference; confirm local suitability and actual crop stage."
+          ],
+          "sourceRefs": [
+            {
+              "sourceId": "tnau-rice-weeding",
+              "locator": "Transplanted rice"
+            }
+          ],
+          "establishmentMethods": [
+            "transplanting"
+          ],
+          "geographyIds": [
+            "IN-TN"
+          ]
+        },
+        {
+          "id": "paddy-ka-weed1",
+          "title": "First Karnataka weed check",
+          "action": "Hand weed if needed under the published Karnataka practice.",
+          "anchor": "sowing",
+          "startDay": 20,
+          "endDay": 20,
+          "repeatEveryDays": null,
+          "stage": null,
+          "conditions": [
+            "Karnataka drill-sown rice only."
+          ],
+          "sourceRefs": [
+            {
+              "sourceId": "tnau-rice-weeding",
+              "locator": "Karnataka: drill-sown rice"
+            }
+          ],
+          "establishmentMethods": [
+            "direct_sowing"
+          ],
+          "geographyIds": [
+            "IN-KA"
+          ]
+        },
+        {
+          "id": "paddy-ka-weed2",
+          "title": "Second Karnataka weed check",
+          "action": "Recheck and remove weeds.",
+          "anchor": "sowing",
+          "startDay": 40,
+          "endDay": 40,
+          "repeatEveryDays": null,
+          "stage": null,
+          "conditions": [
+            "Karnataka drill-sown rice only."
+          ],
+          "sourceRefs": [
+            {
+              "sourceId": "tnau-rice-weeding",
+              "locator": "Karnataka: drill-sown rice"
+            }
+          ],
+          "establishmentMethods": [
+            "direct_sowing"
+          ],
+          "geographyIds": [
+            "IN-KA"
+          ]
+        },
+        {
+          "id": "paddy-sri-gaps",
+          "title": "Check establishment gaps",
+          "action": "Inspect and fill gaps in SRI planting.",
+          "anchor": "transplanting",
+          "startDay": 7,
+          "endDay": 10,
+          "repeatEveryDays": null,
+          "stage": null,
+          "conditions": [
+            "Published regional reference; confirm local suitability and actual crop stage."
+          ],
+          "sourceRefs": [
+            {
+              "sourceId": "tnau-rice-sri",
+              "locator": "Gap filling"
+            }
+          ],
+          "establishmentMethods": [
+            "sri_transplanting"
+          ],
+          "geographyIds": [
+            "IN-TN"
+          ]
+        },
+        {
+          "id": "paddy-sri-weeding",
+          "title": "Begin SRI mechanical weeding",
+          "action": "Use a suitable weeder; avoid injuring seedlings.",
+          "anchor": "transplanting",
+          "startDay": 10,
+          "endDay": 15,
+          "repeatEveryDays": null,
+          "stage": null,
+          "conditions": [
+            "Further passes depend on weeds and published 7–10-day interval; do not use this system for all rice.",
+            "Published regional reference; confirm local suitability and actual crop stage."
+          ],
+          "sourceRefs": [
+            {
+              "sourceId": "tnau-rice-sri",
+              "locator": "Conoweeding"
+            }
+          ],
+          "establishmentMethods": [
+            "sri_transplanting"
+          ],
+          "geographyIds": [
+            "IN-TN"
+          ]
+        },
+        {
+          "id": "paddy-sri-water",
+          "title": "Check SRI establishment moisture",
+          "action": "Keep establishment soil moist and inspect drainage; do not automatically flood SRI rice.",
+          "anchor": "transplanting",
+          "startDay": 0,
+          "endDay": 10,
+          "repeatEveryDays": null,
+          "stage": null,
+          "conditions": [
+            "SRI only; use current rainfall and field moisture observations."
+          ],
+          "sourceRefs": [
+            {
+              "sourceId": "tnau-rice-sri",
+              "locator": "Water management"
+            }
+          ],
+          "establishmentMethods": [
+            "sri_transplanting"
+          ],
+          "geographyIds": [
+            "IN-TN"
+          ]
+        },
+        {
+          "id": "paddy-lcc-transplant",
+          "title": "Begin leaf-colour nutrient review",
+          "action": "Record Leaf Colour Chart readings and review the local nitrogen plan; repeat weekly until heading under this source protocol.",
+          "anchor": "transplanting",
+          "startDay": 14,
+          "endDay": 14,
+          "repeatEveryDays": null,
+          "stage": null,
+          "conditions": [
+            "LCC protocol and cultivar response must be confirmed. No automatic fertilizer dose or generic colour-to-nutrient inference."
+          ],
+          "sourceRefs": [
+            {
+              "sourceId": "tnau-paddy-water-n",
+              "locator": "N management through LCC"
+            }
+          ],
+          "establishmentMethods": [
+            "transplanting"
+          ],
+          "geographyIds": [
+            "IN-TN"
+          ]
+        },
+        {
+          "id": "paddy-lcc-direct",
+          "title": "Begin direct-seeded nutrient review",
+          "action": "Start the source LCC observation protocol; later readings depend on the actual heading stage.",
+          "anchor": "sowing",
+          "startDay": 21,
+          "endDay": 21,
+          "repeatEveryDays": null,
+          "stage": null,
+          "conditions": [
+            "Confirm local establishment and cultivar applicability; no automatic dose."
+          ],
+          "sourceRefs": [
+            {
+              "sourceId": "tnau-paddy-water-n",
+              "locator": "N management through LCC"
+            }
+          ],
+          "establishmentMethods": [
+            "direct_sowing"
+          ],
+          "geographyIds": [
+            "IN-TN"
+          ]
+        },
+        {
+          "id": "paddy-water-panicle_initiation",
+          "title": "Water check at panicle initiation",
+          "action": "Assess field moisture and water access at this critical stage.",
+          "anchor": "observed_stage",
+          "startDay": 0,
+          "endDay": 0,
+          "repeatEveryDays": null,
+          "stage": "panicle_initiation",
+          "conditions": [
+            "Stage must be observed; actual irrigation depth depends on rice system and local guidance."
+          ],
+          "sourceRefs": [
+            {
+              "sourceId": "tnau-paddy-water-n",
+              "locator": "Critical stages of water requirement"
+            }
+          ],
+          "establishmentMethods": [
+            "direct_sowing",
+            "transplanting",
+            "sri_transplanting"
+          ],
+          "geographyIds": [
+            "IN-TN"
+          ]
+        },
+        {
+          "id": "paddy-water-booting",
+          "title": "Water check at booting",
+          "action": "Assess field moisture and water access at this critical stage.",
+          "anchor": "observed_stage",
+          "startDay": 0,
+          "endDay": 0,
+          "repeatEveryDays": null,
+          "stage": "booting",
+          "conditions": [
+            "Stage must be observed; actual irrigation depth depends on rice system and local guidance."
+          ],
+          "sourceRefs": [
+            {
+              "sourceId": "tnau-paddy-water-n",
+              "locator": "Critical stages of water requirement"
+            }
+          ],
+          "establishmentMethods": [
+            "direct_sowing",
+            "transplanting",
+            "sri_transplanting"
+          ],
+          "geographyIds": [
+            "IN-TN"
+          ]
+        },
+        {
+          "id": "paddy-water-heading",
+          "title": "Water check at heading",
+          "action": "Assess field moisture and water access at this critical stage.",
+          "anchor": "observed_stage",
+          "startDay": 0,
+          "endDay": 0,
+          "repeatEveryDays": null,
+          "stage": "heading",
+          "conditions": [
+            "Stage must be observed; actual irrigation depth depends on rice system and local guidance."
+          ],
+          "sourceRefs": [
+            {
+              "sourceId": "tnau-paddy-water-n",
+              "locator": "Critical stages of water requirement"
+            }
+          ],
+          "establishmentMethods": [
+            "direct_sowing",
+            "transplanting",
+            "sri_transplanting"
+          ],
+          "geographyIds": [
+            "IN-TN"
+          ]
+        },
+        {
+          "id": "paddy-water-flowering",
+          "title": "Water check at flowering",
+          "action": "Assess field moisture and water access at this critical stage.",
+          "anchor": "observed_stage",
+          "startDay": 0,
+          "endDay": 0,
+          "repeatEveryDays": null,
+          "stage": "flowering",
+          "conditions": [
+            "Stage must be observed; actual irrigation depth depends on rice system and local guidance."
+          ],
+          "sourceRefs": [
+            {
+              "sourceId": "tnau-paddy-water-n",
+              "locator": "Critical stages of water requirement"
+            }
+          ],
+          "establishmentMethods": [
+            "direct_sowing",
+            "transplanting",
+            "sri_transplanting"
+          ],
+          "geographyIds": [
+            "IN-TN"
+          ]
+        },
+        {
+          "id": "paddy-nutrient-active_tillering",
+          "title": "Review nutrients at active tillering",
+          "action": "Review the soil-test-based nutrient plan at this observed stage.",
+          "anchor": "observed_stage",
+          "startDay": 0,
+          "endDay": 0,
+          "repeatEveryDays": null,
+          "stage": "active_tillering",
+          "conditions": [
+            "No blanket fertilizer quantity; actual field need and prior applications must be reviewed."
+          ],
+          "sourceRefs": [
+            {
+              "sourceId": "tnau-paddy-water-n",
+              "locator": "Split application of N and K"
+            }
+          ],
+          "establishmentMethods": [
+            "direct_sowing",
+            "transplanting",
+            "sri_transplanting"
+          ],
+          "geographyIds": [
+            "IN-TN"
+          ]
+        },
+        {
+          "id": "paddy-nutrient-panicle_initiation",
+          "title": "Review nutrients at panicle initiation",
+          "action": "Review the soil-test-based nutrient plan at this observed stage.",
+          "anchor": "observed_stage",
+          "startDay": 0,
+          "endDay": 0,
+          "repeatEveryDays": null,
+          "stage": "panicle_initiation",
+          "conditions": [
+            "No blanket fertilizer quantity; actual field need and prior applications must be reviewed."
+          ],
+          "sourceRefs": [
+            {
+              "sourceId": "tnau-paddy-water-n",
+              "locator": "Split application of N and K"
+            }
+          ],
+          "establishmentMethods": [
+            "direct_sowing",
+            "transplanting",
+            "sri_transplanting"
+          ],
+          "geographyIds": [
+            "IN-TN"
+          ]
+        },
+        {
+          "id": "paddy-nutrient-heading",
+          "title": "Review nutrients at heading",
+          "action": "Review the soil-test-based nutrient plan at this observed stage.",
+          "anchor": "observed_stage",
+          "startDay": 0,
+          "endDay": 0,
+          "repeatEveryDays": null,
+          "stage": "heading",
+          "conditions": [
+            "No blanket fertilizer quantity; actual field need and prior applications must be reviewed."
+          ],
+          "sourceRefs": [
+            {
+              "sourceId": "tnau-paddy-water-n",
+              "locator": "Split application of N and K"
+            }
+          ],
+          "establishmentMethods": [
+            "direct_sowing",
+            "transplanting",
+            "sri_transplanting"
+          ],
+          "geographyIds": [
+            "IN-TN"
+          ]
+        }
+      ],
+      "sequenceConstraints": [
+        {
+          "code": "method_specific",
+          "text": "Wetland/SRI and dry/direct-seeded rice need different water and establishment management.",
+          "sourceRefs": [
+            {
+              "sourceId": "tnau-rice-weeding",
+              "locator": "Rice cultivation systems"
+            }
+          ],
+          "conditions": [
+            "Check previous-crop records and local field conditions."
+          ]
+        }
+      ],
+      "limitations": [
+        "Published management windows require field-stage, weather and local-extension checks; they are not observations of this farm.",
+        "No numeric soil improvement, nutrient depletion, fertilizer dose, yield or profit is predicted.",
+        "No sufficiently specific numeric local planting window imported; source care remains available for a farmer-recorded crop."
+      ],
+      "plantingWindows": [],
+      "endUses": [
+        {
+          "use": "Unmilled grain; milling quality is cultivar-specific.",
+          "sourceRefs": [
+            {
+              "sourceId": "tnau-rice-adt43",
+              "locator": "Salient features"
+            }
+          ],
+          "limitations": [
+            "End use does not establish current demand, buyer access or a future selling price."
+          ]
+        }
+      ],
+      "careReferenceGeography": "See each source; do not generalize Tamil Nadu timing to another state without local review.",
+      "soilEffects": [
+        {
+          "topic": "residue_management",
+          "direction": "conditional",
+          "text": "Retaining appropriate healthy residues can support organic-matter inputs; removal exports material and nutrients. Crop choice alone does not quantify a soil-carbon or nutrient change.",
+          "conditions": [
+            "General FAO principle, not a crop-specific field response. Residue quantity, disease status, decomposition, removal and management must be recorded."
+          ],
+          "sourceRefs": [
+            {
+              "sourceId": "fao-organic-matter",
+              "locator": "Practices: crop residues and rotations"
+            }
+          ],
+          "quantifiedDelta": null
+        },
+        {
+          "topic": "soil_structure",
+          "direction": "management_dependent",
+          "text": "In an IARI rice–wheat trial, puddled treatments had lower aggregate stability than direct-seeded rice. Assess drainage and structure before a following upland crop.",
+          "conditions": [
+            "New Delhi2012–2014 experiment; not a measured effect on this farm. Establishment method and soil are essential."
+          ],
+          "sourceRefs": [
+            {
+              "sourceId": "icar-puddling-study",
+              "locator": "Abstract"
+            }
+          ],
+          "quantifiedDelta": null
+        }
+      ]
+    },
+    {
+      "cropId": "wheat",
+      "displayName": "Wheat",
+      "botanicalName": "Triticum aestivum",
+      "aliases": [],
+      "productionType": "annual",
+      "establishmentMethods": [
+        "direct_sowing"
+      ],
+      "marketProductIds": [
+        "wheat-grain"
+      ],
+      "duration": {
+        "minDays": 85,
+        "maxDays": 90,
+        "anchor": "sowing",
+        "conditions": [
+          "CO(W)1 only; CO(W)2 is separately listed at110days."
+        ],
+        "sourceRefs": [
+          {
+            "sourceId": "tn-wheat-guide",
+            "locator": "Morphological description"
+          }
+        ],
+        "kind": "crop_completion"
+      },
+      "soilEnvironment": [
+        {
+          "parameter": "temperature",
+          "value": {
+            "min": 20,
+            "max": 25
+          },
+          "unit": "degC",
+          "conditions": [
+            "Published optimum, not a short-term weather suitability score."
+          ],
+          "sourceRefs": [
+            {
+              "sourceId": "tn-wheat-guide",
+              "locator": "Climate requirement"
+            }
+          ]
+        }
+      ],
+      "care": [
+        {
+          "id": "wheat-cri",
+          "title": "Crown-root water check",
+          "action": "Assess moisture and rainfall before deciding irrigation.",
+          "anchor": "sowing",
+          "startDay": 15,
+          "endDay": 20,
+          "repeatEveryDays": null,
+          "stage": null,
+          "conditions": [
+            "TN reference; cultivar and actual stage can differ. Avoid standing water."
+          ],
+          "sourceRefs": [
+            {
+              "sourceId": "tnau-wheat-water",
+              "locator": "Water-management stages"
+            }
+          ],
+          "establishmentMethods": [
+            "direct_sowing"
+          ],
+          "geographyIds": [
+            "IN-TN"
+          ]
+        },
+        {
+          "id": "wheat-tillering",
+          "title": "Tillering water check",
+          "action": "Assess moisture and rainfall before deciding irrigation.",
+          "anchor": "sowing",
+          "startDay": 35,
+          "endDay": 40,
+          "repeatEveryDays": null,
+          "stage": null,
+          "conditions": [
+            "TN reference; cultivar and actual stage can differ. Avoid standing water."
+          ],
+          "sourceRefs": [
+            {
+              "sourceId": "tnau-wheat-water",
+              "locator": "Water-management stages"
+            }
+          ],
+          "establishmentMethods": [
+            "direct_sowing"
+          ],
+          "geographyIds": [
+            "IN-TN"
+          ]
+        },
+        {
+          "id": "wheat-flowering",
+          "title": "Flowering water check",
+          "action": "Assess moisture and rainfall before deciding irrigation.",
+          "anchor": "sowing",
+          "startDay": 50,
+          "endDay": 55,
+          "repeatEveryDays": null,
+          "stage": null,
+          "conditions": [
+            "TN reference; cultivar and actual stage can differ. Avoid standing water."
+          ],
+          "sourceRefs": [
+            {
+              "sourceId": "tnau-wheat-water",
+              "locator": "Water-management stages"
+            }
+          ],
+          "establishmentMethods": [
+            "direct_sowing"
+          ],
+          "geographyIds": [
+            "IN-TN"
+          ]
+        },
+        {
+          "id": "wheat-grainfill",
+          "title": "Grain-filling water check",
+          "action": "Assess moisture and rainfall before deciding irrigation.",
+          "anchor": "sowing",
+          "startDay": 70,
+          "endDay": 75,
+          "repeatEveryDays": null,
+          "stage": null,
+          "conditions": [
+            "TN reference; cultivar and actual stage can differ. Avoid standing water."
+          ],
+          "sourceRefs": [
+            {
+              "sourceId": "tnau-wheat-water",
+              "locator": "Water-management stages"
+            }
+          ],
+          "establishmentMethods": [
+            "direct_sowing"
+          ],
+          "geographyIds": [
+            "IN-TN"
+          ]
+        },
+        {
+          "id": "wheat-maturity",
+          "title": "Check grain maturity",
+          "action": "Harvest readiness requires hard grain and dry, brittle straw.",
+          "anchor": "observed_stage",
+          "startDay": 0,
+          "endDay": 0,
+          "repeatEveryDays": null,
+          "stage": "grain_maturity",
+          "conditions": [
+            "Published regional reference; confirm local suitability and actual crop stage."
+          ],
+          "sourceRefs": [
+            {
+              "sourceId": "tn-wheat-guide",
+              "locator": "Harvest"
+            }
+          ],
+          "establishmentMethods": [
+            "direct_sowing"
+          ],
+          "geographyIds": [
+            "IN-TN"
+          ]
+        }
+      ],
+      "sequenceConstraints": [],
+      "limitations": [
+        "Published management windows require field-stage, weather and local-extension checks; they are not observations of this farm.",
+        "No numeric soil improvement, nutrient depletion, fertilizer dose, yield or profit is predicted."
+      ],
+      "plantingWindows": [
+        {
+          "season": "rabi",
+          "fromMonth": 10,
+          "toMonth": 11,
+          "geographyIds": [
+            "IN-TN-coimbatore",
+            "IN-TN-theni",
+            "IN-TN-dindigul",
+            "IN-TN-karur",
+            "IN-TN-erode",
+            "IN-TN-salem",
+            "IN-TN-dharmapuri",
+            "IN-TN-vellore",
+            "IN-TN-tiruvannamalai",
+            "IN-TN-kancheepuram"
+          ],
+          "irrigation": "any",
+          "establishmentMethods": [
+            "direct_sowing"
+          ],
+          "sourceRefs": [
+            {
+              "sourceId": "tn-wheat-guide",
+              "locator": "Season and suitable districts"
+            }
+          ],
+          "fromDay": 15,
+          "toDay": 15,
+          "conditions": [
+            "Preferred sowing through first week November; latest first fortnight. Plains/adjoining hill suitability must be checked."
+          ],
+          "anchor": "sowing"
+        }
+      ],
+      "endUses": [],
+      "careReferenceGeography": "See each source; do not generalize Tamil Nadu timing to another state without local review.",
+      "soilEffects": [
+        {
+          "topic": "residue_management",
+          "direction": "conditional",
+          "text": "Retaining appropriate healthy residues can support organic-matter inputs; removal exports material and nutrients. Crop choice alone does not quantify a soil-carbon or nutrient change.",
+          "conditions": [
+            "General FAO principle, not a crop-specific field response. Residue quantity, disease status, decomposition, removal and management must be recorded."
+          ],
+          "sourceRefs": [
+            {
+              "sourceId": "fao-organic-matter",
+              "locator": "Practices: crop residues and rotations"
+            }
+          ],
+          "quantifiedDelta": null
+        }
+      ]
+    },
+    {
+      "cropId": "maize",
+      "displayName": "Maize",
+      "botanicalName": "Zea mays",
+      "aliases": [],
+      "productionType": "annual",
+      "establishmentMethods": [
+        "direct_sowing"
+      ],
+      "marketProductIds": [
+        "maize-grain"
+      ],
+      "duration": {
+        "minDays": 105,
+        "maxDays": 110,
+        "anchor": "sowing",
+        "conditions": [
+          "CO1 grain maize only, not baby corn."
+        ],
+        "sourceRefs": [
+          {
+            "sourceId": "tnau-maize-crop",
+            "locator": "CO1 morphological description"
+          }
+        ],
+        "kind": "crop_completion"
+      },
+      "soilEnvironment": [
+        {
+          "parameter": "water_regime",
+          "value": "Sensitive to moisture deficit and excess; reproductive moisture is important.",
+          "unit": null,
+          "conditions": [],
+          "sourceRefs": [
+            {
+              "sourceId": "tnau-maize-water",
+              "locator": "Water management"
+            }
+          ]
+        }
+      ],
+      "care": [
+        {
+          "id": "maize-thin",
+          "title": "Check stand and thin doubles",
+          "action": "Where two seeds emerged, retain the healthy seedling; assess gaps.",
+          "anchor": "sowing",
+          "startDay": 12,
+          "endDay": 15,
+          "repeatEveryDays": null,
+          "stage": null,
+          "conditions": [
+            "Published regional reference; confirm local suitability and actual crop stage."
+          ],
+          "sourceRefs": [
+            {
+              "sourceId": "tnau-maize-crop",
+              "locator": "Thinning and gap filling"
+            }
+          ],
+          "establishmentMethods": [
+            "direct_sowing"
+          ],
+          "geographyIds": [
+            "IN-TN"
+          ]
+        },
+        {
+          "id": "maize-first-weed",
+          "title": "First manual weed check",
+          "action": "Hoe or hand weed when no herbicide programme was used.",
+          "anchor": "sowing",
+          "startDay": 17,
+          "endDay": 18,
+          "repeatEveryDays": null,
+          "stage": null,
+          "conditions": [
+            "Do not disturb soil contrary to a separately prescribed herbicide programme.",
+            "Published regional reference; confirm local suitability and actual crop stage."
+          ],
+          "sourceRefs": [
+            {
+              "sourceId": "tnau-maize-crop",
+              "locator": "Weed management"
+            }
+          ],
+          "establishmentMethods": [
+            "direct_sowing"
+          ],
+          "geographyIds": [
+            "IN-TN"
+          ]
+        },
+        {
+          "id": "maize-earth",
+          "title": "Weed and restore ridges",
+          "action": "Hoe, hand weed and earth up to support plants.",
+          "anchor": "sowing",
+          "startDay": 30,
+          "endDay": 30,
+          "repeatEveryDays": null,
+          "stage": null,
+          "conditions": [
+            "Published regional reference; confirm local suitability and actual crop stage."
+          ],
+          "sourceRefs": [
+            {
+              "sourceId": "tnau-maize-crop",
+              "locator": "Hoeing, hand-weeding and earthing up"
+            }
+          ],
+          "establishmentMethods": [
+            "direct_sowing"
+          ],
+          "geographyIds": [
+            "IN-TN"
+          ]
+        },
+        {
+          "id": "maize-flowering",
+          "title": "Protect flowering moisture",
+          "action": "Check root-zone moisture and drainage during the critical reproductive window.",
+          "anchor": "sowing",
+          "startDay": 45,
+          "endDay": 65,
+          "repeatEveryDays": null,
+          "stage": null,
+          "conditions": [
+            "Both drought and excess moisture can harm maize; no automatic irrigation volume.",
+            "Published regional reference; confirm local suitability and actual crop stage."
+          ],
+          "sourceRefs": [
+            {
+              "sourceId": "tnau-maize-water",
+              "locator": "Critical phase"
+            }
+          ],
+          "establishmentMethods": [
+            "direct_sowing"
+          ],
+          "geographyIds": [
+            "IN-TN"
+          ]
+        }
+      ],
+      "sequenceConstraints": [],
+      "limitations": [
+        "Published management windows require field-stage, weather and local-extension checks; they are not observations of this farm.",
+        "No numeric soil improvement, nutrient depletion, fertilizer dose, yield or profit is predicted."
+      ],
+      "plantingWindows": [
+        {
+          "season": "kharif",
+          "fromMonth": 7,
+          "toMonth": 8,
+          "geographyIds": [
+            "IN-TN-coimbatore",
+            "IN-TN-erode",
+            "IN-TN-tirunelveli",
+            "IN-TN-thanjavur",
+            "IN-TN-pudukkottai"
+          ],
+          "irrigation": "any",
+          "establishmentMethods": [
+            "direct_sowing"
+          ],
+          "sourceRefs": [
+            {
+              "sourceId": "tnau-maize-crop",
+              "locator": "Season and CO1 adoption"
+            }
+          ],
+          "conditions": [
+            "CO1 cultivar area; rainfed or irrigated as locally feasible."
+          ],
+          "anchor": "sowing"
+        },
+        {
+          "season": "rabi",
+          "fromMonth": 9,
+          "toMonth": 10,
+          "geographyIds": [
+            "IN-TN-coimbatore",
+            "IN-TN-erode",
+            "IN-TN-tirunelveli",
+            "IN-TN-thanjavur",
+            "IN-TN-pudukkottai"
+          ],
+          "irrigation": "any",
+          "establishmentMethods": [
+            "direct_sowing"
+          ],
+          "sourceRefs": [
+            {
+              "sourceId": "tnau-maize-crop",
+              "locator": "Season and CO1 adoption"
+            }
+          ],
+          "conditions": [
+            "CO1 cultivar area; rainfed or irrigated as locally feasible."
+          ],
+          "anchor": "sowing"
+        },
+        {
+          "season": "zaid",
+          "fromMonth": 1,
+          "toMonth": 2,
+          "geographyIds": [
+            "IN-TN-coimbatore",
+            "IN-TN-erode",
+            "IN-TN-tirunelveli",
+            "IN-TN-thanjavur",
+            "IN-TN-pudukkottai"
+          ],
+          "irrigation": "any",
+          "establishmentMethods": [
+            "direct_sowing"
+          ],
+          "sourceRefs": [
+            {
+              "sourceId": "tnau-maize-crop",
+              "locator": "Season and CO1 adoption"
+            }
+          ],
+          "conditions": [
+            "CO1 cultivar area; rainfed or irrigated as locally feasible."
+          ],
+          "anchor": "sowing"
+        }
+      ],
+      "endUses": [
+        {
+          "use": "Grain and crop residues have distinct product uses; grain prices are not fresh-cob prices.",
+          "sourceRefs": [
+            {
+              "sourceId": "tnau-maize-crop",
+              "locator": "CO1 grain and stover characteristics"
+            }
+          ],
+          "limitations": [
+            "End use does not establish current demand, buyer access or a future selling price."
+          ]
+        }
+      ],
+      "careReferenceGeography": "See each source; do not generalize Tamil Nadu timing to another state without local review.",
+      "soilEffects": [
+        {
+          "topic": "residue_management",
+          "direction": "conditional",
+          "text": "Retaining appropriate healthy residues can support organic-matter inputs; removal exports material and nutrients. Crop choice alone does not quantify a soil-carbon or nutrient change.",
+          "conditions": [
+            "General FAO principle, not a crop-specific field response. Residue quantity, disease status, decomposition, removal and management must be recorded."
+          ],
+          "sourceRefs": [
+            {
+              "sourceId": "fao-organic-matter",
+              "locator": "Practices: crop residues and rotations"
+            }
+          ],
+          "quantifiedDelta": null
+        }
+      ]
+    },
+    {
+      "cropId": "sugarcane",
+      "displayName": "Sugarcane",
+      "botanicalName": "Saccharum officinarum and commercial Saccharum hybrids",
+      "aliases": [],
+      "productionType": "long_duration",
+      "establishmentMethods": [
+        "sett_planting"
+      ],
+      "marketProductIds": [
+        "sugarcane-cane"
+      ],
+      "duration": null,
+      "soilEnvironment": [
+        {
+          "parameter": "soil_texture",
+          "value": "Deep, drained loam with water-holding capacity; avoid saline/alkaline conditions in this reference.",
+          "unit": null,
+          "conditions": [],
+          "sourceRefs": [
+            {
+              "sourceId": "icar-sugarcane-2025",
+              "locator": "Sugarcane"
+            }
+          ]
+        }
+      ],
+      "care": [
+        {
+          "id": "cane-partial-earth",
+          "title": "Partial earthing check",
+          "action": "Assess furrows and undertake partial earthing for the matched planting system.",
+          "anchor": "planting",
+          "startDay": 45,
+          "endDay": 45,
+          "repeatEveryDays": null,
+          "stage": null,
+          "conditions": [
+            "Furrow-planted plant cane; pit and ratoon systems differ.",
+            "Published regional reference; confirm local suitability and actual crop stage."
+          ],
+          "sourceRefs": [
+            {
+              "sourceId": "tnau-sugarcane",
+              "locator": "Earthing up"
+            }
+          ],
+          "establishmentMethods": [
+            "sett_planting"
+          ],
+          "geographyIds": [
+            "IN-TN"
+          ]
+        },
+        {
+          "id": "cane-full-earth",
+          "title": "Full earthing check",
+          "action": "Complete earthing when the crop reaches the published tillering window.",
+          "anchor": "planting",
+          "startDay": 90,
+          "endDay": 120,
+          "repeatEveryDays": null,
+          "stage": null,
+          "conditions": [
+            "Published regional reference; confirm local suitability and actual crop stage."
+          ],
+          "sourceRefs": [
+            {
+              "sourceId": "tnau-sugarcane-season",
+              "locator": "Earthing up"
+            }
+          ],
+          "establishmentMethods": [
+            "sett_planting"
+          ],
+          "geographyIds": [
+            "IN-TN"
+          ]
+        },
+        {
+          "id": "cane-harvest",
+          "title": "Verify cane maturity and buyer schedule",
+          "action": "Check cultivar maturity and mill or buyer requirements before harvest.",
+          "anchor": "observed_stage",
+          "startDay": 0,
+          "endDay": 0,
+          "repeatEveryDays": null,
+          "stage": "cane_maturity",
+          "conditions": [
+            "Published regional reference; confirm local suitability and actual crop stage."
+          ],
+          "sourceRefs": [
+            {
+              "sourceId": "tnau-sugarcane",
+              "locator": "Harvesting"
+            }
+          ],
+          "establishmentMethods": [
+            "sett_planting"
+          ],
+          "geographyIds": [
+            "IN-TN"
+          ]
+        }
+      ],
+      "sequenceConstraints": [
+        {
+          "code": "long_occupancy",
+          "text": "Plant cane can occupy most or more than one planning year; ratooning is a separate decision.",
+          "sourceRefs": [
+            {
+              "sourceId": "tnau-sugarcane-season",
+              "locator": "Indian seasons: autumn and Adsali"
+            }
+          ],
+          "conditions": [
+            "Check previous-crop records and local field conditions."
+          ]
+        }
+      ],
+      "limitations": [
+        "Published management windows require field-stage, weather and local-extension checks; they are not observations of this farm.",
+        "No numeric soil improvement, nutrient depletion, fertilizer dose, yield or profit is predicted.",
+        "No unambiguous generic whole-crop duration enabled; use product/cultivar-specific evidence or a farmer-entered expected harvest date."
+      ],
+      "plantingWindows": [
+        {
+          "season": "plant_cane",
+          "fromMonth": 12,
+          "toMonth": 5,
+          "geographyIds": [
+            "IN-TN"
+          ],
+          "irrigation": "any",
+          "establishmentMethods": [
+            "sett_planting"
+          ],
+          "sourceRefs": [
+            {
+              "sourceId": "tnau-sugarcane-season",
+              "locator": "Main season"
+            }
+          ],
+          "conditions": [
+            "Year-wrapping TN main season; cultivar maturity and mill delivery required."
+          ],
+          "anchor": "planting"
+        }
+      ],
+      "endUses": [
+        {
+          "use": "Cane for crushing; sugar and jaggery are processed products, not equivalent cane quotations.",
+          "sourceRefs": [
+            {
+              "sourceId": "tnau-sugarcane-season",
+              "locator": "Seasons and sugar recovery"
+            }
+          ],
+          "limitations": [
+            "End use does not establish current demand, buyer access or a future selling price."
+          ]
+        }
+      ],
+      "durationMonths": {
+        "min": 10,
+        "max": 12,
+        "scope": "TN early and midseason plant cane; not ratoon or Adsali",
+        "sourceRefs": [
+          {
+            "sourceId": "tnau-sugarcane",
+            "locator": "Harvesting"
+          }
+        ]
+      },
+      "newProducts": [
+        {
+          "productId": "sugarcane-cane",
+          "name": "Fresh sugarcane",
+          "productBasis": "other"
+        }
+      ],
+      "careReferenceGeography": "See each source; do not generalize Tamil Nadu timing to another state without local review.",
+      "soilEffects": [
+        {
+          "topic": "residue_management",
+          "direction": "conditional",
+          "text": "Retaining appropriate healthy residues can support organic-matter inputs; removal exports material and nutrients. Crop choice alone does not quantify a soil-carbon or nutrient change.",
+          "conditions": [
+            "General FAO principle, not a crop-specific field response. Residue quantity, disease status, decomposition, removal and management must be recorded."
+          ],
+          "sourceRefs": [
+            {
+              "sourceId": "fao-organic-matter",
+              "locator": "Practices: crop residues and rotations"
+            }
+          ],
+          "quantifiedDelta": null
+        }
+      ]
+    },
+    {
+      "cropId": "tomato",
+      "displayName": "Tomato",
+      "botanicalName": "Solanum lycopersicum",
+      "aliases": [],
+      "productionType": "annual",
+      "establishmentMethods": [
+        "transplanting"
+      ],
+      "marketProductIds": [
+        "tomato-fresh"
+      ],
+      "duration": null,
+      "soilEnvironment": [
+        {
+          "parameter": "ph",
+          "value": {
+            "min": 6.5,
+            "max": 7.5
+          },
+          "unit": "pH",
+          "conditions": [
+            "Soil test method not stated by source."
+          ],
+          "sourceRefs": [
+            {
+              "sourceId": "tnau-tomato-soil",
+              "locator": "Soil"
+            }
+          ]
+        },
+        {
+          "parameter": "soil_texture",
+          "value": "Drained loam rich in organic matter.",
+          "unit": null,
+          "conditions": [],
+          "sourceRefs": [
+            {
+              "sourceId": "tnau-tomato-soil",
+              "locator": "Soil"
+            }
+          ]
+        }
+      ],
+      "care": [
+        {
+          "id": "tomato-water3",
+          "title": "Check transplant establishment moisture",
+          "action": "Assess survival and moisture; the source places life irrigation on day3.",
+          "anchor": "transplanting",
+          "startDay": 3,
+          "endDay": 3,
+          "repeatEveryDays": null,
+          "stage": null,
+          "conditions": [
+            "Check rain and soil moisture before watering.",
+            "Published regional reference; confirm local suitability and actual crop stage."
+          ],
+          "sourceRefs": [
+            {
+              "sourceId": "tnau-tomato-soil",
+              "locator": "Field preparation"
+            }
+          ],
+          "establishmentMethods": [
+            "transplanting"
+          ],
+          "geographyIds": [
+            "IN-TN"
+          ]
+        },
+        {
+          "id": "tomato-weed",
+          "title": "Hand-weeding check",
+          "action": "Inspect weeds and hand weed as required.",
+          "anchor": "transplanting",
+          "startDay": 30,
+          "endDay": 30,
+          "repeatEveryDays": null,
+          "stage": null,
+          "conditions": [
+            "Published regional reference; confirm local suitability and actual crop stage."
+          ],
+          "sourceRefs": [
+            {
+              "sourceId": "tnau-tomato-care",
+              "locator": "Weed control"
+            }
+          ],
+          "establishmentMethods": [
+            "transplanting"
+          ],
+          "geographyIds": [
+            "IN-TN"
+          ]
+        },
+        {
+          "id": "tomato-stake",
+          "title": "Stake supported hybrids",
+          "action": "Install suitable support and check training.",
+          "anchor": "transplanting",
+          "startDay": 30,
+          "endDay": 30,
+          "repeatEveryDays": null,
+          "stage": null,
+          "conditions": [
+            "Hybrid/staked production only; confirm cultivar growth habit.",
+            "Published regional reference; confirm local suitability and actual crop stage."
+          ],
+          "sourceRefs": [
+            {
+              "sourceId": "tnau-tomato-care",
+              "locator": "Staking"
+            }
+          ],
+          "establishmentMethods": [
+            "transplanting"
+          ],
+          "geographyIds": [
+            "IN-TN"
+          ]
+        }
+      ],
+      "sequenceConstraints": [
+        {
+          "code": "solanaceous_break",
+          "text": "Avoid successive solanaceous crops in the cited disease-management context; potato history warrants particular caution.",
+          "conditions": [
+            "Risk-management guidance, not a diagnosis or quantified disease reduction."
+          ],
+          "avoidPreviousCropIds": [
+            "tomato",
+            "potato",
+            "chilli"
+          ],
+          "sourceRefs": [
+            {
+              "sourceId": "tnau-tomato-rotation",
+              "locator": "Early blight; fruit rot; bacterial wilt"
+            }
+          ]
+        }
+      ],
+      "limitations": [
+        "Published management windows require field-stage, weather and local-extension checks; they are not observations of this farm.",
+        "No numeric soil improvement, nutrient depletion, fertilizer dose, yield or profit is predicted.",
+        "No unambiguous generic whole-crop duration enabled; use product/cultivar-specific evidence or a farmer-entered expected harvest date."
+      ],
+      "plantingWindows": [
+        {
+          "season": "kharif",
+          "fromMonth": 5,
+          "toMonth": 6,
+          "geographyIds": [
+            "IN-TN"
+          ],
+          "irrigation": "any",
+          "establishmentMethods": [
+            "nursery_sowing"
+          ],
+          "sourceRefs": [
+            {
+              "sourceId": "tnau-tomato-soil",
+              "locator": "Season of sowing"
+            }
+          ],
+          "anchor": "sowing",
+          "conditions": [
+            "Nursery sowing window, not field transplanting window."
+          ]
+        },
+        {
+          "season": "rabi",
+          "fromMonth": 11,
+          "toMonth": 12,
+          "geographyIds": [
+            "IN-TN"
+          ],
+          "irrigation": "any",
+          "establishmentMethods": [
+            "nursery_sowing"
+          ],
+          "sourceRefs": [
+            {
+              "sourceId": "tnau-tomato-soil",
+              "locator": "Season of sowing"
+            }
+          ],
+          "anchor": "sowing",
+          "conditions": [
+            "Nursery sowing window, not field transplanting window."
+          ]
+        }
+      ],
+      "endUses": [],
+      "durationReference": {
+        "days": 135,
+        "cultivar": "PKM1",
+        "anchor": "not_explicit_in_source",
+        "sourceRefs": [
+          {
+            "sourceId": "tnau-tomato-variety",
+            "locator": "PKM1"
+          }
+        ],
+        "executable": false
+      },
+      "careReferenceGeography": "See each source; do not generalize Tamil Nadu timing to another state without local review.",
+      "soilEffects": [
+        {
+          "topic": "residue_management",
+          "direction": "conditional",
+          "text": "Retaining appropriate healthy residues can support organic-matter inputs; removal exports material and nutrients. Crop choice alone does not quantify a soil-carbon or nutrient change.",
+          "conditions": [
+            "General FAO principle, not a crop-specific field response. Residue quantity, disease status, decomposition, removal and management must be recorded."
+          ],
+          "sourceRefs": [
+            {
+              "sourceId": "fao-organic-matter",
+              "locator": "Practices: crop residues and rotations"
+            }
+          ],
+          "quantifiedDelta": null
+        }
+      ]
+    },
+    {
+      "cropId": "potato",
+      "displayName": "Potato",
+      "botanicalName": "Solanum tuberosum",
+      "aliases": [],
+      "productionType": "annual",
+      "establishmentMethods": [
+        "tuber_planting"
+      ],
+      "marketProductIds": [
+        "potato-fresh"
+      ],
+      "duration": null,
+      "soilEnvironment": [
+        {
+          "parameter": "ph",
+          "value": {
+            "min": 4.8,
+            "max": 5.4
+          },
+          "unit": "pH",
+          "conditions": [
+            "TN extension preference; method unspecified; not a universal physiological limit."
+          ],
+          "sourceRefs": [
+            {
+              "sourceId": "tnau-potato",
+              "locator": "Soil"
+            }
+          ]
+        },
+        {
+          "parameter": "soil_texture",
+          "value": "Friable, porous, drained soil and cool conditions.",
+          "unit": null,
+          "conditions": [],
+          "sourceRefs": [
+            {
+              "sourceId": "tnau-potato",
+              "locator": "Soil and climate"
+            }
+          ]
+        }
+      ],
+      "care": [
+        {
+          "id": "potato-hoe",
+          "title": "First hoeing check",
+          "action": "Hoe carefully without damaging developing stolons.",
+          "anchor": "planting",
+          "startDay": 45,
+          "endDay": 45,
+          "repeatEveryDays": null,
+          "stage": null,
+          "conditions": [
+            "Published regional reference; confirm local suitability and actual crop stage."
+          ],
+          "sourceRefs": [
+            {
+              "sourceId": "tnau-potato",
+              "locator": "Aftercultivation"
+            }
+          ],
+          "establishmentMethods": [
+            "tuber_planting"
+          ],
+          "geographyIds": [
+            "IN-TN"
+          ]
+        },
+        {
+          "id": "potato-earth",
+          "title": "Cover developing tubers",
+          "action": "Weed and earth up, covering exposed tubers.",
+          "anchor": "planting",
+          "startDay": 60,
+          "endDay": 60,
+          "repeatEveryDays": null,
+          "stage": null,
+          "conditions": [
+            "Published regional reference; confirm local suitability and actual crop stage."
+          ],
+          "sourceRefs": [
+            {
+              "sourceId": "tnau-potato",
+              "locator": "Aftercultivation"
+            }
+          ],
+          "establishmentMethods": [
+            "tuber_planting"
+          ],
+          "geographyIds": [
+            "IN-TN"
+          ]
+        }
+      ],
+      "sequenceConstraints": [
+        {
+          "code": "avoid_repeat",
+          "text": "Avoid potato in the same plot year after year; choose a locally reviewed rotation.",
+          "sourceRefs": [
+            {
+              "sourceId": "tnau-potato",
+              "locator": "Aftercultivation"
+            }
+          ],
+          "avoidPreviousCropIds": [
+            "potato"
+          ],
+          "conditions": [
+            "Check previous-crop records and local field conditions."
+          ]
+        }
+      ],
+      "limitations": [
+        "Published management windows require field-stage, weather and local-extension checks; they are not observations of this farm.",
+        "No numeric soil improvement, nutrient depletion, fertilizer dose, yield or profit is predicted.",
+        "No unambiguous generic whole-crop duration enabled; use product/cultivar-specific evidence or a farmer-entered expected harvest date."
+      ],
+      "plantingWindows": [
+        {
+          "season": "rabi",
+          "fromMonth": 10,
+          "toMonth": 11,
+          "geographyIds": [
+            "IN-TN"
+          ],
+          "irrigation": "any",
+          "establishmentMethods": [
+            "tuber_planting"
+          ],
+          "sourceRefs": [
+            {
+              "sourceId": "tnau-potato",
+              "locator": "Season"
+            }
+          ],
+          "conditions": [
+            "Tamil Nadu plains only; hills have separate windows."
+          ],
+          "anchor": "planting"
+        }
+      ],
+      "endUses": [],
+      "careReferenceGeography": "See each source; do not generalize Tamil Nadu timing to another state without local review.",
+      "soilEffects": [
+        {
+          "topic": "residue_management",
+          "direction": "conditional",
+          "text": "Retaining appropriate healthy residues can support organic-matter inputs; removal exports material and nutrients. Crop choice alone does not quantify a soil-carbon or nutrient change.",
+          "conditions": [
+            "General FAO principle, not a crop-specific field response. Residue quantity, disease status, decomposition, removal and management must be recorded."
+          ],
+          "sourceRefs": [
+            {
+              "sourceId": "fao-organic-matter",
+              "locator": "Practices: crop residues and rotations"
+            }
+          ],
+          "quantifiedDelta": null
+        }
+      ]
+    },
+    {
+      "cropId": "ginger",
+      "displayName": "Ginger",
+      "botanicalName": "Zingiber officinale",
+      "aliases": [],
+      "productionType": "long_duration",
+      "establishmentMethods": [
+        "rhizome_planting"
+      ],
+      "marketProductIds": [
+        "ginger-fresh",
+        "ginger-dry"
+      ],
+      "duration": {
+        "minDays": 200,
+        "maxDays": 200,
+        "anchor": "planting",
+        "conditions": [
+          "IISR Mahima cultivar maturity reference; actual harvest depends on end use and maturity."
+        ],
+        "sourceRefs": [
+          {
+            "sourceId": "tnau-ginger-production",
+            "locator": "Selected varieties"
+          }
+        ],
+        "kind": "crop_completion"
+      },
+      "soilEnvironment": [
+        {
+          "parameter": "ph",
+          "value": {
+            "min": 6,
+            "max": 6.5
+          },
+          "unit": "pH",
+          "conditions": [
+            "Method not stated; translation contains errors; only explicit numeric pH retained."
+          ],
+          "sourceRefs": [
+            {
+              "sourceId": "tnau-ginger-production",
+              "locator": "Soil"
+            }
+          ]
+        },
+        {
+          "parameter": "soil_texture",
+          "value": "Drained sandy loam; drainage matters for rhizome health.",
+          "unit": null,
+          "conditions": [
+            "Goa regional guidance."
+          ],
+          "sourceRefs": [
+            {
+              "sourceId": "icar-goa-ginger",
+              "locator": "Soil; rhizome rot management"
+            }
+          ]
+        }
+      ],
+      "care": [
+        {
+          "id": "ginger-mulch0",
+          "title": "Apply suitable clean mulch",
+          "action": "Mulch newly planted beds; maintain drainage.",
+          "anchor": "planting",
+          "startDay": 0,
+          "endDay": 0,
+          "repeatEveryDays": null,
+          "stage": null,
+          "conditions": [
+            "Published regional reference; confirm local suitability and actual crop stage."
+          ],
+          "sourceRefs": [
+            {
+              "sourceId": "tnau-ginger-care",
+              "locator": "Aftercultivation"
+            }
+          ],
+          "establishmentMethods": [
+            "rhizome_planting"
+          ],
+          "geographyIds": [
+            "IN-TN"
+          ]
+        },
+        {
+          "id": "ginger-earth45",
+          "title": "First earthing review",
+          "action": "Check weeds and earth up after locally prescribed top dressing.",
+          "anchor": "planting",
+          "startDay": 45,
+          "endDay": 45,
+          "repeatEveryDays": null,
+          "stage": null,
+          "conditions": [
+            "No fertilizer amount prescribed by this task.",
+            "Published regional reference; confirm local suitability and actual crop stage."
+          ],
+          "sourceRefs": [
+            {
+              "sourceId": "tnau-ginger-care",
+              "locator": "Top dressing and aftercultivation"
+            }
+          ],
+          "establishmentMethods": [
+            "rhizome_planting"
+          ],
+          "geographyIds": [
+            "IN-TN"
+          ]
+        },
+        {
+          "id": "ginger-earth90",
+          "title": "Second earthing review",
+          "action": "Check weeds and earth up if needed after the reviewed nutrient operation.",
+          "anchor": "planting",
+          "startDay": 90,
+          "endDay": 90,
+          "repeatEveryDays": null,
+          "stage": null,
+          "conditions": [
+            "Published regional reference; confirm local suitability and actual crop stage."
+          ],
+          "sourceRefs": [
+            {
+              "sourceId": "tnau-ginger-care",
+              "locator": "Top dressing and aftercultivation"
+            }
+          ],
+          "establishmentMethods": [
+            "rhizome_planting"
+          ],
+          "geographyIds": [
+            "IN-TN"
+          ]
+        },
+        {
+          "id": "ginger-mulch60",
+          "title": "Renew mulch",
+          "action": "Inspect mulch cover and renew suitable material.",
+          "anchor": "planting",
+          "startDay": 60,
+          "endDay": 60,
+          "repeatEveryDays": null,
+          "stage": null,
+          "conditions": [
+            "Published regional reference; confirm local suitability and actual crop stage."
+          ],
+          "sourceRefs": [
+            {
+              "sourceId": "tnau-ginger-care",
+              "locator": "Basal mulch splits"
+            }
+          ],
+          "establishmentMethods": [
+            "rhizome_planting"
+          ],
+          "geographyIds": [
+            "IN-TN"
+          ]
+        },
+        {
+          "id": "ginger-mulch120",
+          "title": "Renew mulch again",
+          "action": "Review mulch cover and drainage.",
+          "anchor": "planting",
+          "startDay": 120,
+          "endDay": 120,
+          "repeatEveryDays": null,
+          "stage": null,
+          "conditions": [
+            "Published regional reference; confirm local suitability and actual crop stage."
+          ],
+          "sourceRefs": [
+            {
+              "sourceId": "tnau-ginger-care",
+              "locator": "Basal mulch splits"
+            }
+          ],
+          "establishmentMethods": [
+            "rhizome_planting"
+          ],
+          "geographyIds": [
+            "IN-TN"
+          ]
+        },
+        {
+          "id": "ginger-mature",
+          "title": "Check harvest purpose and maturity",
+          "action": "Check yellowing and withering and the intended fresh or dry product before digging.",
+          "anchor": "observed_stage",
+          "startDay": 0,
+          "endDay": 0,
+          "repeatEveryDays": null,
+          "stage": "rhizome_maturity",
+          "conditions": [
+            "Published regional reference; confirm local suitability and actual crop stage."
+          ],
+          "sourceRefs": [
+            {
+              "sourceId": "icar-goa-ginger",
+              "locator": "Harvesting"
+            }
+          ],
+          "establishmentMethods": [
+            "rhizome_planting"
+          ],
+          "geographyIds": [
+            "IN-GA"
+          ]
+        }
+      ],
+      "sequenceConstraints": [
+        {
+          "code": "avoid_repeat",
+          "text": "Avoid repeated ginger on the same field; do not infer a fixed nutrient loss.",
+          "sourceRefs": [
+            {
+              "sourceId": "tnau-ginger-production",
+              "locator": "Soil"
+            }
+          ],
+          "avoidPreviousCropIds": [
+            "ginger"
+          ],
+          "conditions": [
+            "Check previous-crop records and local field conditions."
+          ]
+        },
+        {
+          "code": "disease_rotation",
+          "text": "Rice rotation is cited for bacterial-wilt management in Goa; local disease and water-system review is required.",
+          "sourceRefs": [
+            {
+              "sourceId": "icar-goa-ginger",
+              "locator": "Bacterial wilt management"
+            }
+          ],
+          "candidatePreviousCropIds": [
+            "paddy"
+          ],
+          "geographyIds": [
+            "IN-GA"
+          ],
+          "conditions": [
+            "Check previous-crop records and local field conditions."
+          ]
+        }
+      ],
+      "limitations": [
+        "Published management windows require field-stage, weather and local-extension checks; they are not observations of this farm.",
+        "No numeric soil improvement, nutrient depletion, fertilizer dose, yield or profit is predicted.",
+        "No sufficiently specific numeric local planting window imported; source care remains available for a farmer-recorded crop."
+      ],
+      "plantingWindows": [],
+      "endUses": [
+        {
+          "use": "Fresh rhizomes and dried ginger require different harvest and processing decisions.",
+          "sourceRefs": [
+            {
+              "sourceId": "icar-goa-ginger",
+              "locator": "Harvesting"
+            }
+          ],
+          "limitations": [
+            "End use does not establish current demand, buyer access or a future selling price."
+          ]
+        }
+      ],
+      "careReferenceGeography": "See each source; do not generalize Tamil Nadu timing to another state without local review.",
+      "soilEffects": [
+        {
+          "topic": "residue_management",
+          "direction": "conditional",
+          "text": "Retaining appropriate healthy residues can support organic-matter inputs; removal exports material and nutrients. Crop choice alone does not quantify a soil-carbon or nutrient change.",
+          "conditions": [
+            "General FAO principle, not a crop-specific field response. Residue quantity, disease status, decomposition, removal and management must be recorded."
+          ],
+          "sourceRefs": [
+            {
+              "sourceId": "fao-organic-matter",
+              "locator": "Practices: crop residues and rotations"
+            }
+          ],
+          "quantifiedDelta": null
+        },
+        {
+          "topic": "drainage",
+          "direction": "requirement_not_prediction",
+          "text": "Rhizome health requires drainage; changing crop does not repair waterlogging by itself.",
+          "conditions": [
+            "Inspect drains and field moisture; no prediction of future infiltration or disease status."
+          ],
+          "sourceRefs": [
+            {
+              "sourceId": "icar-goa-ginger",
+              "locator": "Soil; rhizome rot management"
+            }
+          ],
+          "quantifiedDelta": null
+        }
+      ]
+    },
+    {
+      "cropId": "onion",
+      "displayName": "Onion",
+      "botanicalName": "Allium cepa var. cepa",
+      "aliases": [],
+      "productionType": "annual",
+      "establishmentMethods": [
+        "transplanting"
+      ],
+      "marketProductIds": [
+        "onion-bulb"
+      ],
+      "duration": null,
+      "soilEnvironment": [
+        {
+          "parameter": "ph",
+          "value": {
+            "min": 5.8,
+            "max": 6.5
+          },
+          "unit": "pH",
+          "conditions": [
+            "Method unspecified."
+          ],
+          "sourceRefs": [
+            {
+              "sourceId": "tnau-onion",
+              "locator": "Soil"
+            }
+          ]
+        },
+        {
+          "parameter": "soil_texture",
+          "value": "Drained red loam through black soils; mild season.",
+          "unit": null,
+          "conditions": [],
+          "sourceRefs": [
+            {
+              "sourceId": "tnau-onion",
+              "locator": "Soil"
+            }
+          ]
+        }
+      ],
+      "care": [
+        {
+          "id": "onion-weed",
+          "title": "First weeding check",
+          "action": "Inspect and remove weeds; later weed as needed.",
+          "anchor": "transplanting",
+          "startDay": 30,
+          "endDay": 30,
+          "repeatEveryDays": null,
+          "stage": null,
+          "conditions": [
+            "Published drip/fertigation production context.",
+            "Published regional reference; confirm local suitability and actual crop stage."
+          ],
+          "sourceRefs": [
+            {
+              "sourceId": "tnau-onion",
+              "locator": "After care: big onion fertigation"
+            }
+          ],
+          "establishmentMethods": [
+            "transplanting"
+          ],
+          "geographyIds": [
+            "IN-TN"
+          ]
+        },
+        {
+          "id": "onion-water",
+          "title": "Review establishment and water",
+          "action": "Check moisture after establishment and before additional irrigation.",
+          "anchor": "observed_stage",
+          "startDay": 0,
+          "endDay": 0,
+          "repeatEveryDays": null,
+          "stage": "established",
+          "conditions": [
+            "Published regional reference; confirm local suitability and actual crop stage."
+          ],
+          "sourceRefs": [
+            {
+              "sourceId": "tnau-onion",
+              "locator": "Irrigation"
+            }
+          ],
+          "establishmentMethods": [
+            "transplanting"
+          ],
+          "geographyIds": [
+            "IN-TN"
+          ]
+        },
+        {
+          "id": "onion-harvest",
+          "title": "Check bulb harvest maturity",
+          "action": "Assess top fall and leaf drying before lifting bulbs.",
+          "anchor": "observed_stage",
+          "startDay": 0,
+          "endDay": 0,
+          "repeatEveryDays": null,
+          "stage": "bulb_maturity",
+          "conditions": [
+            "Published regional reference; confirm local suitability and actual crop stage."
+          ],
+          "sourceRefs": [
+            {
+              "sourceId": "tnau-onion",
+              "locator": "Harvest"
+            }
+          ],
+          "establishmentMethods": [
+            "transplanting"
+          ],
+          "geographyIds": [
+            "IN-TN"
+          ]
+        }
+      ],
+      "sequenceConstraints": [],
+      "limitations": [
+        "Published management windows require field-stage, weather and local-extension checks; they are not observations of this farm.",
+        "No numeric soil improvement, nutrient depletion, fertilizer dose, yield or profit is predicted.",
+        "No unambiguous generic whole-crop duration enabled; use product/cultivar-specific evidence or a farmer-entered expected harvest date."
+      ],
+      "plantingWindows": [
+        {
+          "season": "kharif",
+          "fromMonth": 5,
+          "toMonth": 6,
+          "geographyIds": [
+            "IN-TN"
+          ],
+          "irrigation": "any",
+          "establishmentMethods": [
+            "transplanting"
+          ],
+          "sourceRefs": [
+            {
+              "sourceId": "tnau-onion",
+              "locator": "Season and planting"
+            }
+          ],
+          "conditions": [
+            "45-day-old seedlings; nursery duration is separate."
+          ],
+          "anchor": "transplanting"
+        }
+      ],
+      "endUses": [
+        {
+          "use": "Dry bulb onion; keep apart from green onion and shallot quotations.",
+          "sourceRefs": [
+            {
+              "sourceId": "tnau-onion",
+              "locator": "Harvest and market information"
+            }
+          ],
+          "limitations": [
+            "End use does not establish current demand, buyer access or a future selling price."
+          ]
+        }
+      ],
+      "durationReference": {
+        "minDays": 140,
+        "maxDays": 150,
+        "anchor": "not_explicit_in_source",
+        "sourceRefs": [
+          {
+            "sourceId": "tnau-onion",
+            "locator": "Yield"
+          }
+        ],
+        "executable": false
+      },
+      "careReferenceGeography": "See each source; do not generalize Tamil Nadu timing to another state without local review.",
+      "soilEffects": [
+        {
+          "topic": "residue_management",
+          "direction": "conditional",
+          "text": "Retaining appropriate healthy residues can support organic-matter inputs; removal exports material and nutrients. Crop choice alone does not quantify a soil-carbon or nutrient change.",
+          "conditions": [
+            "General FAO principle, not a crop-specific field response. Residue quantity, disease status, decomposition, removal and management must be recorded."
+          ],
+          "sourceRefs": [
+            {
+              "sourceId": "fao-organic-matter",
+              "locator": "Practices: crop residues and rotations"
+            }
+          ],
+          "quantifiedDelta": null
+        }
+      ]
+    },
+    {
+      "cropId": "shallot",
+      "displayName": "Shallot",
+      "botanicalName": "Allium cepa Aggregatum Group",
+      "aliases": [],
+      "productionType": "annual",
+      "establishmentMethods": [
+        "bulb_planting"
+      ],
+      "marketProductIds": [
+        "shallot-bulb"
+      ],
+      "duration": {
+        "minDays": 70,
+        "maxDays": 90,
+        "anchor": "planting",
+        "conditions": [
+          "Bulb-planted small onion; CO(On)5 listed at90days. Not seed nursery duration."
+        ],
+        "sourceRefs": [
+          {
+            "sourceId": "tnau-shallot",
+            "locator": "Harvest and yield"
+          }
+        ],
+        "kind": "crop_completion"
+      },
+      "soilEnvironment": [
+        {
+          "parameter": "ph",
+          "value": {
+            "min": 6,
+            "max": 7
+          },
+          "unit": "pH",
+          "conditions": [
+            "Method unspecified."
+          ],
+          "sourceRefs": [
+            {
+              "sourceId": "tnau-shallot",
+              "locator": "Soil"
+            }
+          ]
+        },
+        {
+          "parameter": "soil_texture",
+          "value": "Drained red loam to black soils; avoid heavy rain at bulb establishment and formation.",
+          "unit": null,
+          "conditions": [],
+          "sourceRefs": [
+            {
+              "sourceId": "tnau-shallot",
+              "locator": "Soil; season"
+            }
+          ]
+        }
+      ],
+      "care": [
+        {
+          "id": "shallot-establishment",
+          "title": "Check bulb establishment",
+          "action": "Assess moisture and rot risk around newly planted bulbs.",
+          "anchor": "planting",
+          "startDay": 3,
+          "endDay": 3,
+          "repeatEveryDays": null,
+          "stage": null,
+          "conditions": [
+            "The source lists third-day irrigation; actual watering depends on rainfall and soil moisture.",
+            "Published regional reference; confirm local suitability and actual crop stage."
+          ],
+          "sourceRefs": [
+            {
+              "sourceId": "tnau-shallot",
+              "locator": "Irrigation; planting design"
+            }
+          ],
+          "establishmentMethods": [
+            "bulb_planting"
+          ],
+          "geographyIds": [
+            "IN-TN"
+          ]
+        },
+        {
+          "id": "shallot-harvest",
+          "title": "Assess bulb maturity",
+          "action": "Inspect drooping tops before lifting; cure harvested bulbs in shade.",
+          "anchor": "planting",
+          "startDay": 70,
+          "endDay": 90,
+          "repeatEveryDays": null,
+          "stage": null,
+          "conditions": [
+            "Maturity inspection, not guaranteed harvest date.",
+            "Published regional reference; confirm local suitability and actual crop stage."
+          ],
+          "sourceRefs": [
+            {
+              "sourceId": "tnau-shallot",
+              "locator": "Harvest and yield"
+            }
+          ],
+          "establishmentMethods": [
+            "bulb_planting"
+          ],
+          "geographyIds": [
+            "IN-TN"
+          ]
+        }
+      ],
+      "sequenceConstraints": [],
+      "limitations": [
+        "Published management windows require field-stage, weather and local-extension checks; they are not observations of this farm.",
+        "No numeric soil improvement, nutrient depletion, fertilizer dose, yield or profit is predicted."
+      ],
+      "plantingWindows": [
+        {
+          "season": "summer",
+          "fromMonth": 4,
+          "toMonth": 5,
+          "geographyIds": [
+            "IN-TN"
+          ],
+          "irrigation": "any",
+          "establishmentMethods": [
+            "bulb_planting"
+          ],
+          "sourceRefs": [
+            {
+              "sourceId": "tnau-shallot",
+              "locator": "Season"
+            }
+          ],
+          "anchor": "planting"
+        },
+        {
+          "season": "rabi",
+          "fromMonth": 10,
+          "toMonth": 11,
+          "geographyIds": [
+            "IN-TN"
+          ],
+          "irrigation": "any",
+          "establishmentMethods": [
+            "bulb_planting"
+          ],
+          "sourceRefs": [
+            {
+              "sourceId": "tnau-shallot",
+              "locator": "Season"
+            }
+          ],
+          "anchor": "planting"
+        }
+      ],
+      "endUses": [
+        {
+          "use": "Small onion bulbs; generic onion market identity does not prove this product.",
+          "sourceRefs": [
+            {
+              "sourceId": "tnau-shallot",
+              "locator": "Market information"
+            }
+          ],
+          "limitations": [
+            "End use does not establish current demand, buyer access or a future selling price."
+          ]
+        }
+      ],
+      "newProducts": [
+        {
+          "productId": "shallot-bulb",
+          "name": "Shallot bulbs",
+          "productBasis": "bulb"
+        }
+      ],
+      "careReferenceGeography": "See each source; do not generalize Tamil Nadu timing to another state without local review.",
+      "soilEffects": [
+        {
+          "topic": "residue_management",
+          "direction": "conditional",
+          "text": "Retaining appropriate healthy residues can support organic-matter inputs; removal exports material and nutrients. Crop choice alone does not quantify a soil-carbon or nutrient change.",
+          "conditions": [
+            "General FAO principle, not a crop-specific field response. Residue quantity, disease status, decomposition, removal and management must be recorded."
+          ],
+          "sourceRefs": [
+            {
+              "sourceId": "fao-organic-matter",
+              "locator": "Practices: crop residues and rotations"
+            }
+          ],
+          "quantifiedDelta": null
+        }
+      ]
+    },
+    {
+      "cropId": "chilli",
+      "displayName": "Green Chillies",
+      "botanicalName": "Capsicum annuum",
+      "aliases": [],
+      "productionType": "annual",
+      "establishmentMethods": [
+        "transplanting"
+      ],
+      "marketProductIds": [
+        "chilli-green"
+      ],
+      "duration": null,
+      "soilEnvironment": [
+        {
+          "parameter": "ph",
+          "value": {
+            "min": 6.5,
+            "max": 7.5
+          },
+          "unit": "pH",
+          "conditions": [
+            "Method unspecified."
+          ],
+          "sourceRefs": [
+            {
+              "sourceId": "tnau-chilli-soil",
+              "locator": "Soil"
+            }
+          ]
+        },
+        {
+          "parameter": "soil_texture",
+          "value": "Drained loam rich in organic matter.",
+          "unit": null,
+          "conditions": [],
+          "sourceRefs": [
+            {
+              "sourceId": "tnau-chilli-soil",
+              "locator": "Soil"
+            }
+          ]
+        }
+      ],
+      "care": [
+        {
+          "id": "chilli-nutrient-review-30",
+          "title": "Review the nutrient plan",
+          "action": "Review the soil-test-based nutrient plan and crop condition; do not infer a dose from appearance.",
+          "anchor": "transplanting",
+          "startDay": 30,
+          "endDay": 30,
+          "repeatEveryDays": null,
+          "stage": null,
+          "conditions": [
+            "Review checkpoint only; the published blanket dose is not imported.",
+            "Published regional reference; confirm local suitability and actual crop stage."
+          ],
+          "sourceRefs": [
+            {
+              "sourceId": "tnau-chilli-review",
+              "locator": "Nutrient split timing"
+            }
+          ],
+          "establishmentMethods": [
+            "transplanting"
+          ],
+          "geographyIds": [
+            "IN-TN"
+          ]
+        },
+        {
+          "id": "chilli-nutrient-review-60",
+          "title": "Review the nutrient plan",
+          "action": "Review the soil-test-based nutrient plan and crop condition; do not infer a dose from appearance.",
+          "anchor": "transplanting",
+          "startDay": 60,
+          "endDay": 60,
+          "repeatEveryDays": null,
+          "stage": null,
+          "conditions": [
+            "Review checkpoint only; the published blanket dose is not imported.",
+            "Published regional reference; confirm local suitability and actual crop stage."
+          ],
+          "sourceRefs": [
+            {
+              "sourceId": "tnau-chilli-review",
+              "locator": "Nutrient split timing"
+            }
+          ],
+          "establishmentMethods": [
+            "transplanting"
+          ],
+          "geographyIds": [
+            "IN-TN"
+          ]
+        },
+        {
+          "id": "chilli-nutrient-review-90",
+          "title": "Review the nutrient plan",
+          "action": "Review the soil-test-based nutrient plan and crop condition; do not infer a dose from appearance.",
+          "anchor": "transplanting",
+          "startDay": 90,
+          "endDay": 90,
+          "repeatEveryDays": null,
+          "stage": null,
+          "conditions": [
+            "Review checkpoint only; the published blanket dose is not imported.",
+            "Published regional reference; confirm local suitability and actual crop stage."
+          ],
+          "sourceRefs": [
+            {
+              "sourceId": "tnau-chilli-review",
+              "locator": "Nutrient split timing"
+            }
+          ],
+          "establishmentMethods": [
+            "transplanting"
+          ],
+          "geographyIds": [
+            "IN-TN"
+          ]
+        },
+        {
+          "id": "chilli-first-pick",
+          "title": "Inspect green harvest readiness",
+          "action": "Check fruit size and maturity for the intended green market.",
+          "anchor": "transplanting",
+          "startDay": 75,
+          "endDay": 75,
+          "repeatEveryDays": null,
+          "stage": null,
+          "conditions": [
+            "First-picking reference; repeated picking continues and land is not released at this date."
+          ],
+          "sourceRefs": [
+            {
+              "sourceId": "tnau-chilli-harvest",
+              "locator": "Harvest"
+            }
+          ],
+          "establishmentMethods": [
+            "transplanting"
+          ],
+          "geographyIds": [
+            "IN-TN"
+          ]
+        }
+      ],
+      "sequenceConstraints": [
+        {
+          "code": "previous_solanaceous",
+          "text": "The chilli IPM reference advises avoiding fields previously under tomato or brinjal and cites maize among rotation crops.",
+          "conditions": [
+            "Specific pest/disease-management context; no claim that maize replenishes nitrogen."
+          ],
+          "avoidPreviousCropIds": [
+            "tomato",
+            "brinjal"
+          ],
+          "candidatePreviousCropIds": [
+            "maize"
+          ],
+          "sourceRefs": [
+            {
+              "sourceId": "tnau-chilli-rotation",
+              "locator": "Chilli: cultural control"
+            }
+          ]
+        }
+      ],
+      "limitations": [
+        "Published management windows require field-stage, weather and local-extension checks; they are not observations of this farm.",
+        "No numeric soil improvement, nutrient depletion, fertilizer dose, yield or profit is predicted.",
+        "No unambiguous generic whole-crop duration enabled; use product/cultivar-specific evidence or a farmer-entered expected harvest date."
+      ],
+      "plantingWindows": [
+        {
+          "season": "summer",
+          "fromMonth": 1,
+          "toMonth": 2,
+          "geographyIds": [
+            "IN-TN"
+          ],
+          "irrigation": "any",
+          "establishmentMethods": [
+            "nursery_sowing"
+          ],
+          "sourceRefs": [
+            {
+              "sourceId": "tnau-chilli-soil",
+              "locator": "Season of sowing"
+            }
+          ],
+          "anchor": "sowing",
+          "conditions": [
+            "Nursery sowing; do not treat as transplant date."
+          ]
+        },
+        {
+          "season": "kharif",
+          "fromMonth": 6,
+          "toMonth": 7,
+          "geographyIds": [
+            "IN-TN"
+          ],
+          "irrigation": "any",
+          "establishmentMethods": [
+            "nursery_sowing"
+          ],
+          "sourceRefs": [
+            {
+              "sourceId": "tnau-chilli-soil",
+              "locator": "Season of sowing"
+            }
+          ],
+          "anchor": "sowing",
+          "conditions": [
+            "Nursery sowing; do not treat as transplant date."
+          ]
+        },
+        {
+          "season": "rabi",
+          "fromMonth": 9,
+          "toMonth": 10,
+          "geographyIds": [
+            "IN-TN"
+          ],
+          "irrigation": "any",
+          "establishmentMethods": [
+            "nursery_sowing"
+          ],
+          "sourceRefs": [
+            {
+              "sourceId": "tnau-chilli-soil",
+              "locator": "Season of sowing"
+            }
+          ],
+          "anchor": "sowing",
+          "conditions": [
+            "Nursery sowing; do not treat as transplant date."
+          ]
+        }
+      ],
+      "endUses": [
+        {
+          "use": "Fresh green chilli; exclude dry red chilli quotations.",
+          "sourceRefs": [
+            {
+              "sourceId": "tnau-chilli-harvest",
+              "locator": "Harvest"
+            }
+          ],
+          "limitations": [
+            "End use does not establish current demand, buyer access or a future selling price."
+          ]
+        }
+      ],
+      "durationReference": {
+        "firstHarvestDays": 75,
+        "anchor": "transplanting",
+        "sourceRefs": [
+          {
+            "sourceId": "tnau-chilli-harvest",
+            "locator": "Harvest"
+          }
+        ],
+        "executableAsCropCompletion": false
+      },
+      "careReferenceGeography": "See each source; do not generalize Tamil Nadu timing to another state without local review.",
+      "soilEffects": [
+        {
+          "topic": "residue_management",
+          "direction": "conditional",
+          "text": "Retaining appropriate healthy residues can support organic-matter inputs; removal exports material and nutrients. Crop choice alone does not quantify a soil-carbon or nutrient change.",
+          "conditions": [
+            "General FAO principle, not a crop-specific field response. Residue quantity, disease status, decomposition, removal and management must be recorded."
+          ],
+          "sourceRefs": [
+            {
+              "sourceId": "fao-organic-matter",
+              "locator": "Practices: crop residues and rotations"
+            }
+          ],
+          "quantifiedDelta": null
+        }
+      ]
+    },
+    {
+      "cropId": "turmeric",
+      "displayName": "Turmeric",
+      "botanicalName": "Curcuma longa",
+      "aliases": [],
+      "productionType": "long_duration",
+      "establishmentMethods": [
+        "rhizome_planting"
+      ],
+      "marketProductIds": [
+        "turmeric-fresh",
+        "turmeric-dry"
+      ],
+      "duration": {
+        "minDays": 270,
+        "maxDays": 270,
+        "anchor": "planting",
+        "conditions": [
+          "Published270-day production schedule, not universal cultivar maturity."
+        ],
+        "sourceRefs": [
+          {
+            "sourceId": "tnau-turmeric",
+            "locator": "Fertigation stage table total"
+          }
+        ],
+        "kind": "crop_completion"
+      },
+      "soilEnvironment": [
+        {
+          "parameter": "ph",
+          "value": {
+            "min": 4.5,
+            "max": 7.5
+          },
+          "unit": "pH",
+          "conditions": [
+            "Regional published range; method unspecified."
+          ],
+          "sourceRefs": [
+            {
+              "sourceId": "tnau-turmeric-soil",
+              "locator": "Soil and climate"
+            }
+          ]
+        },
+        {
+          "parameter": "soil_texture",
+          "value": "Friable, drained red loam with organic matter.",
+          "unit": null,
+          "conditions": [],
+          "sourceRefs": [
+            {
+              "sourceId": "tnau-turmeric",
+              "locator": "Soil and climate"
+            }
+          ]
+        }
+      ],
+      "care": [
+        {
+          "id": "turmeric-earth-60",
+          "title": "Weed and earth up",
+          "action": "Inspect weeds and earth up at the matched nutrient-management stage.",
+          "anchor": "planting",
+          "startDay": 60,
+          "endDay": 60,
+          "repeatEveryDays": null,
+          "stage": null,
+          "conditions": [
+            "Derived from second/fourth listed top dressings at60/120days; no dose prescribed.",
+            "Published regional reference; confirm local suitability and actual crop stage."
+          ],
+          "sourceRefs": [
+            {
+              "sourceId": "tnau-turmeric",
+              "locator": "Intercultivation; top-dressing schedule"
+            }
+          ],
+          "establishmentMethods": [
+            "rhizome_planting"
+          ],
+          "geographyIds": [
+            "IN-TN"
+          ]
+        },
+        {
+          "id": "turmeric-earth-120",
+          "title": "Weed and earth up",
+          "action": "Inspect weeds and earth up at the matched nutrient-management stage.",
+          "anchor": "planting",
+          "startDay": 120,
+          "endDay": 120,
+          "repeatEveryDays": null,
+          "stage": null,
+          "conditions": [
+            "Derived from second/fourth listed top dressings at60/120days; no dose prescribed.",
+            "Published regional reference; confirm local suitability and actual crop stage."
+          ],
+          "sourceRefs": [
+            {
+              "sourceId": "tnau-turmeric",
+              "locator": "Intercultivation; top-dressing schedule"
+            }
+          ],
+          "establishmentMethods": [
+            "rhizome_planting"
+          ],
+          "geographyIds": [
+            "IN-TN"
+          ]
+        },
+        {
+          "id": "turmeric-maturity",
+          "title": "Check rhizome maturity",
+          "action": "Inspect lodging, yellowing and drying before digging.",
+          "anchor": "observed_stage",
+          "startDay": 0,
+          "endDay": 0,
+          "repeatEveryDays": null,
+          "stage": "rhizome_maturity",
+          "conditions": [
+            "Published regional reference; confirm local suitability and actual crop stage."
+          ],
+          "sourceRefs": [
+            {
+              "sourceId": "tnau-turmeric",
+              "locator": "Harvest"
+            }
+          ],
+          "establishmentMethods": [
+            "rhizome_planting"
+          ],
+          "geographyIds": [
+            "IN-TN"
+          ]
+        }
+      ],
+      "sequenceConstraints": [
+        {
+          "code": "nematode_previous_crop",
+          "text": "The source advises avoiding turmeric after banana or solanaceous vegetables where nematode risk needs management; seek local review.",
+          "sourceRefs": [
+            {
+              "sourceId": "tnau-turmeric",
+              "locator": "Nematode"
+            }
+          ],
+          "avoidPreviousCropIds": [
+            "tomato",
+            "potato",
+            "chilli",
+            "banana"
+          ],
+          "condition": "Nematode-risk review; no automatic treatment or universal ban.",
+          "conditions": [
+            "Nematode-risk review; no automatic treatment or universal ban."
+          ]
+        }
+      ],
+      "limitations": [
+        "Published management windows require field-stage, weather and local-extension checks; they are not observations of this farm.",
+        "No numeric soil improvement, nutrient depletion, fertilizer dose, yield or profit is predicted."
+      ],
+      "plantingWindows": [
+        {
+          "season": "kharif",
+          "fromMonth": 5,
+          "toMonth": 6,
+          "geographyIds": [
+            "IN-TN"
+          ],
+          "irrigation": "any",
+          "establishmentMethods": [
+            "rhizome_planting"
+          ],
+          "sourceRefs": [
+            {
+              "sourceId": "tnau-turmeric",
+              "locator": "Season"
+            }
+          ],
+          "anchor": "planting"
+        }
+      ],
+      "endUses": [
+        {
+          "use": "Fresh rhizomes versus cured dry turmeric; processing changes saleable mass and price basis.",
+          "sourceRefs": [
+            {
+              "sourceId": "tnau-turmeric",
+              "locator": "Yield; processing"
+            }
+          ],
+          "limitations": [
+            "End use does not establish current demand, buyer access or a future selling price."
+          ]
+        }
+      ],
+      "careReferenceGeography": "See each source; do not generalize Tamil Nadu timing to another state without local review.",
+      "soilEffects": [
+        {
+          "topic": "residue_management",
+          "direction": "conditional",
+          "text": "Retaining appropriate healthy residues can support organic-matter inputs; removal exports material and nutrients. Crop choice alone does not quantify a soil-carbon or nutrient change.",
+          "conditions": [
+            "General FAO principle, not a crop-specific field response. Residue quantity, disease status, decomposition, removal and management must be recorded."
+          ],
+          "sourceRefs": [
+            {
+              "sourceId": "fao-organic-matter",
+              "locator": "Practices: crop residues and rotations"
+            }
+          ],
+          "quantifiedDelta": null
+        },
+        {
+          "topic": "drainage",
+          "direction": "requirement_not_prediction",
+          "text": "Rhizome health requires drainage; changing crop does not repair waterlogging by itself.",
+          "conditions": [
+            "Inspect drains and field moisture; no prediction of future infiltration or disease status."
+          ],
+          "sourceRefs": [
+            {
+              "sourceId": "tnau-turmeric",
+              "locator": "Soil and climate"
+            }
+          ],
+          "quantifiedDelta": null
+        }
+      ]
+    },
+    {
+      "cropId": "curry-leaf",
+      "displayName": "Curry Tree",
+      "botanicalName": "Murraya koenigii",
+      "aliases": [],
+      "productionType": "perennial",
+      "establishmentMethods": [
+        "seedling_planting"
+      ],
+      "marketProductIds": [
+        "curry-leaf-fresh"
+      ],
+      "duration": null,
+      "soilEnvironment": [
+        {
+          "parameter": "temperature",
+          "value": {
+            "min": 26,
+            "max": 37
+          },
+          "unit": "degC",
+          "conditions": [],
+          "sourceRefs": [
+            {
+              "sourceId": "tnau-curry-leaf",
+              "locator": "Soil and climate"
+            }
+          ]
+        },
+        {
+          "parameter": "soil_texture",
+          "value": "Drained red sandy loam.",
+          "unit": null,
+          "conditions": [],
+          "sourceRefs": [
+            {
+              "sourceId": "tnau-curry-leaf",
+              "locator": "Soil and climate"
+            }
+          ]
+        }
+      ],
+      "care": [
+        {
+          "id": "curry-establishment",
+          "title": "Check young-tree establishment",
+          "action": "Assess survival and soil moisture around the young tree.",
+          "anchor": "planting",
+          "startDay": 3,
+          "endDay": 3,
+          "repeatEveryDays": null,
+          "stage": null,
+          "conditions": [
+            "One-year-old planting material; watering remains moisture-dependent.",
+            "Published regional reference; confirm local suitability and actual crop stage."
+          ],
+          "sourceRefs": [
+            {
+              "sourceId": "tnau-curry-leaf",
+              "locator": "Irrigation"
+            }
+          ],
+          "establishmentMethods": [
+            "seedling_planting"
+          ],
+          "geographyIds": [
+            "IN-TN"
+          ]
+        },
+        {
+          "id": "curry-branch",
+          "title": "Train branches at observed height",
+          "action": "Consider terminal-bud pinching to encourage branching when the plant reaches1m.",
+          "anchor": "observed_stage",
+          "startDay": 0,
+          "endDay": 0,
+          "repeatEveryDays": null,
+          "stage": "height_1m",
+          "conditions": [
+            "Published regional reference; confirm local suitability and actual crop stage."
+          ],
+          "sourceRefs": [
+            {
+              "sourceId": "tnau-curry-leaf",
+              "locator": "Inter cultivation"
+            }
+          ],
+          "establishmentMethods": [
+            "seedling_planting"
+          ],
+          "geographyIds": [
+            "IN-TN"
+          ]
+        },
+        {
+          "id": "curry-first-leaf",
+          "title": "Inspect first leaf-harvest readiness",
+          "action": "Assess establishment and leaf harvest readiness; the source places first harvest at10–12months.",
+          "anchor": "observed_stage",
+          "startDay": 0,
+          "endDay": 0,
+          "repeatEveryDays": null,
+          "stage": "first_leaf_harvest_ready",
+          "conditions": [
+            "Published regional reference; confirm local suitability and actual crop stage."
+          ],
+          "sourceRefs": [
+            {
+              "sourceId": "tnau-curry-leaf",
+              "locator": "Inter cultivation"
+            }
+          ],
+          "establishmentMethods": [
+            "seedling_planting"
+          ],
+          "geographyIds": [
+            "IN-TN"
+          ]
+        }
+      ],
+      "sequenceConstraints": [
+        {
+          "code": "perennial_occupancy",
+          "text": "Harvesting leaves does not release the plot for the next annual crop.",
+          "sourceRefs": [
+            {
+              "sourceId": "tnau-curry-leaf",
+              "locator": "Harvest and yield"
+            }
+          ],
+          "conditions": [
+            "Check previous-crop records and local field conditions."
+          ]
+        }
+      ],
+      "limitations": [
+        "Published management windows require field-stage, weather and local-extension checks; they are not observations of this farm.",
+        "No numeric soil improvement, nutrient depletion, fertilizer dose, yield or profit is predicted.",
+        "No sufficiently specific numeric local planting window imported; source care remains available for a farmer-recorded crop.",
+        "No unambiguous generic whole-crop duration enabled; use product/cultivar-specific evidence or a farmer-entered expected harvest date."
+      ],
+      "plantingWindows": [],
+      "endUses": [
+        {
+          "use": "Repeated leaf harvests from an established perennial stand.",
+          "sourceRefs": [
+            {
+              "sourceId": "tnau-curry-leaf",
+              "locator": "Harvest and yield"
+            }
+          ],
+          "limitations": [
+            "End use does not establish current demand, buyer access or a future selling price."
+          ]
+        }
+      ],
+      "firstHarvestMonths": {
+        "min": 10,
+        "max": 12,
+        "sourceRefs": [
+          {
+            "sourceId": "tnau-curry-leaf",
+            "locator": "Inter cultivation"
+          }
+        ],
+        "anchor": "planting"
+      },
+      "newProducts": [
+        {
+          "productId": "curry-leaf-fresh",
+          "name": "Fresh curry leaves",
+          "productBasis": "fresh"
+        }
+      ],
+      "careReferenceGeography": "See each source; do not generalize Tamil Nadu timing to another state without local review.",
+      "soilEffects": [
+        {
+          "topic": "residue_management",
+          "direction": "conditional",
+          "text": "Retaining appropriate healthy residues can support organic-matter inputs; removal exports material and nutrients. Crop choice alone does not quantify a soil-carbon or nutrient change.",
+          "conditions": [
+            "General FAO principle, not a crop-specific field response. Residue quantity, disease status, decomposition, removal and management must be recorded."
+          ],
+          "sourceRefs": [
+            {
+              "sourceId": "fao-organic-matter",
+              "locator": "Practices: crop residues and rotations"
+            }
+          ],
+          "quantifiedDelta": null
+        }
+      ]
+    },
+    {
+      "cropId": "coriander",
+      "displayName": "Coriander",
+      "botanicalName": "Coriandrum sativum",
+      "aliases": [],
+      "productionType": "annual",
+      "establishmentMethods": [
+        "direct_sowing"
+      ],
+      "marketProductIds": [
+        "coriander-leaf",
+        "coriander-seed"
+      ],
+      "duration": null,
+      "soilEnvironment": [
+        {
+          "parameter": "ph",
+          "value": {
+            "min": 6,
+            "max": 8
+          },
+          "unit": "pH",
+          "conditions": [
+            "Published in the rainfed-soil context; method unspecified."
+          ],
+          "sourceRefs": [
+            {
+              "sourceId": "tnau-coriander",
+              "locator": "Soil climate season"
+            }
+          ]
+        },
+        {
+          "parameter": "temperature",
+          "value": {
+            "min": 20,
+            "max": 25
+          },
+          "unit": "degC",
+          "conditions": [],
+          "sourceRefs": [
+            {
+              "sourceId": "tnau-coriander",
+              "locator": "Soil climate season"
+            }
+          ]
+        }
+      ],
+      "care": [
+        {
+          "id": "coriander-emergence",
+          "title": "Inspect emergence",
+          "action": "Check emergence and patchiness; the source reports8–15days.",
+          "anchor": "sowing",
+          "startDay": 8,
+          "endDay": 15,
+          "repeatEveryDays": null,
+          "stage": null,
+          "conditions": [
+            "Published regional reference; confirm local suitability and actual crop stage."
+          ],
+          "sourceRefs": [
+            {
+              "sourceId": "tnau-coriander",
+              "locator": "Field preparation and sowing"
+            }
+          ],
+          "establishmentMethods": [
+            "direct_sowing"
+          ],
+          "geographyIds": [
+            "IN-TN"
+          ]
+        },
+        {
+          "id": "coriander-thin",
+          "title": "Thin and inspect weeds",
+          "action": "Thin the stand and remove competing weeds if needed.",
+          "anchor": "sowing",
+          "startDay": 30,
+          "endDay": 30,
+          "repeatEveryDays": null,
+          "stage": null,
+          "conditions": [
+            "Published regional reference; confirm local suitability and actual crop stage."
+          ],
+          "sourceRefs": [
+            {
+              "sourceId": "tnau-coriander",
+              "locator": "Aftercultivation"
+            }
+          ],
+          "establishmentMethods": [
+            "direct_sowing"
+          ],
+          "geographyIds": [
+            "IN-TN"
+          ]
+        },
+        {
+          "id": "coriander-leaf-harvest",
+          "title": "Assess whole-plant leaf harvest",
+          "action": "Check leaf-market readiness only if the chosen product is fresh leaves.",
+          "anchor": "sowing",
+          "startDay": 30,
+          "endDay": 40,
+          "repeatEveryDays": null,
+          "stage": null,
+          "conditions": [
+            "Fresh-leaf product only; not a seed harvest date.",
+            "Published regional reference; confirm local suitability and actual crop stage."
+          ],
+          "sourceRefs": [
+            {
+              "sourceId": "tnau-coriander",
+              "locator": "Harvest"
+            }
+          ],
+          "establishmentMethods": [
+            "direct_sowing"
+          ],
+          "productIds": [
+            "coriander-leaf"
+          ],
+          "geographyIds": [
+            "IN-TN"
+          ]
+        },
+        {
+          "id": "coriander-seed-harvest",
+          "title": "Check seed maturity",
+          "action": "Inspect fruit ripeness and beginning dry-down before seed harvest.",
+          "anchor": "observed_stage",
+          "startDay": 0,
+          "endDay": 0,
+          "repeatEveryDays": null,
+          "stage": "seed_maturity",
+          "conditions": [
+            "Seed product only.",
+            "Published regional reference; confirm local suitability and actual crop stage."
+          ],
+          "sourceRefs": [
+            {
+              "sourceId": "tnau-coriander",
+              "locator": "Harvest"
+            }
+          ],
+          "establishmentMethods": [
+            "direct_sowing"
+          ],
+          "productIds": [
+            "coriander-seed"
+          ],
+          "geographyIds": [
+            "IN-TN"
+          ]
+        }
+      ],
+      "sequenceConstraints": [],
+      "limitations": [
+        "Published management windows require field-stage, weather and local-extension checks; they are not observations of this farm.",
+        "No numeric soil improvement, nutrient depletion, fertilizer dose, yield or profit is predicted.",
+        "No unambiguous generic whole-crop duration enabled; use product/cultivar-specific evidence or a farmer-entered expected harvest date."
+      ],
+      "plantingWindows": [
+        {
+          "season": "kharif",
+          "fromMonth": 6,
+          "toMonth": 7,
+          "geographyIds": [
+            "IN-TN"
+          ],
+          "irrigation": "any",
+          "establishmentMethods": [
+            "direct_sowing"
+          ],
+          "sourceRefs": [
+            {
+              "sourceId": "tnau-coriander",
+              "locator": "Season"
+            }
+          ],
+          "anchor": "sowing"
+        },
+        {
+          "season": "rabi",
+          "fromMonth": 10,
+          "toMonth": 11,
+          "geographyIds": [
+            "IN-TN"
+          ],
+          "irrigation": "any",
+          "establishmentMethods": [
+            "direct_sowing"
+          ],
+          "sourceRefs": [
+            {
+              "sourceId": "tnau-coriander",
+              "locator": "Season"
+            }
+          ],
+          "anchor": "sowing"
+        }
+      ],
+      "endUses": [
+        {
+          "use": "Fresh leaves and dry seed are separate products and different crop durations.",
+          "sourceRefs": [
+            {
+              "sourceId": "tnau-coriander",
+              "locator": "Harvest"
+            }
+          ],
+          "limitations": [
+            "End use does not establish current demand, buyer access or a future selling price."
+          ]
+        }
+      ],
+      "durationVariants": [
+        {
+          "productId": "coriander-leaf",
+          "minDays": 30,
+          "maxDays": 40,
+          "anchor": "sowing",
+          "kind": "crop_completion",
+          "conditions": [
+            "Whole-plant leaf harvest, not regrowth cutting."
+          ],
+          "sourceRefs": [
+            {
+              "sourceId": "tnau-coriander",
+              "locator": "Harvest"
+            }
+          ]
+        },
+        {
+          "productId": "coriander-seed",
+          "minDays": 90,
+          "maxDays": 110,
+          "anchor": "sowing",
+          "kind": "crop_completion",
+          "conditions": [
+            "CO3=90,CO2=90–100,CO1=110days; select cultivar."
+          ],
+          "sourceRefs": [
+            {
+              "sourceId": "tnau-coriander",
+              "locator": "Varieties"
+            }
+          ]
+        }
+      ],
+      "newProducts": [
+        {
+          "productId": "coriander-leaf",
+          "name": "Fresh coriander leaves",
+          "productBasis": "fresh"
+        },
+        {
+          "productId": "coriander-seed",
+          "name": "Coriander seed",
+          "productBasis": "seed"
+        }
+      ],
+      "careReferenceGeography": "See each source; do not generalize Tamil Nadu timing to another state without local review.",
+      "soilEffects": [
+        {
+          "topic": "residue_management",
+          "direction": "conditional",
+          "text": "Retaining appropriate healthy residues can support organic-matter inputs; removal exports material and nutrients. Crop choice alone does not quantify a soil-carbon or nutrient change.",
+          "conditions": [
+            "General FAO principle, not a crop-specific field response. Residue quantity, disease status, decomposition, removal and management must be recorded."
+          ],
+          "sourceRefs": [
+            {
+              "sourceId": "fao-organic-matter",
+              "locator": "Practices: crop residues and rotations"
+            }
+          ],
+          "quantifiedDelta": null
+        }
+      ]
+    },
+    {
+      "cropId": "lemon",
+      "displayName": "Lemon",
+      "botanicalName": "Citrus limon",
+      "aliases": [],
+      "productionType": "perennial",
+      "establishmentMethods": [
+        "seedling_planting"
+      ],
+      "marketProductIds": [
+        "lemon-fruit"
+      ],
+      "duration": null,
+      "soilEnvironment": [
+        {
+          "parameter": "ph",
+          "value": {
+            "min": 5.5,
+            "max": 7.5
+          },
+          "unit": "pH",
+          "conditions": [
+            "Citrus-group reference, not lemon cultivar/rootstock-specific; method unspecified."
+          ],
+          "sourceRefs": [
+            {
+              "sourceId": "nhb-citrus-soil",
+              "locator": "Soil"
+            }
+          ]
+        },
+        {
+          "parameter": "soil_texture",
+          "value": "Aerated, deep, drained loam or sandy loam; avoid saline/alkaline sites in this reference.",
+          "unit": null,
+          "conditions": [],
+          "sourceRefs": [
+            {
+              "sourceId": "nhb-citrus-soil",
+              "locator": "Soil"
+            }
+          ]
+        },
+        {
+          "parameter": "climate",
+          "value": "Warm, moderately moist conditions for lemons.",
+          "unit": null,
+          "conditions": [],
+          "sourceRefs": [
+            {
+              "sourceId": "nhb-citrus-soil",
+              "locator": "Climate"
+            }
+          ]
+        }
+      ],
+      "care": [
+        {
+          "id": "lemon-establish",
+          "title": "Check orchard drainage",
+          "action": "Inspect drainage at establishment and avoid water stagnation.",
+          "anchor": "planting",
+          "startDay": 0,
+          "endDay": 0,
+          "repeatEveryDays": null,
+          "stage": null,
+          "conditions": [
+            "General citrus/evergreen-orchard practice; confirm rootstock and site.",
+            "Published regional reference; confirm local suitability and actual crop stage."
+          ],
+          "sourceRefs": [
+            {
+              "sourceId": "tnau-orchard",
+              "locator": "Selection of site"
+            }
+          ],
+          "establishmentMethods": [
+            "seedling_planting"
+          ],
+          "geographyIds": [
+            "IN"
+          ]
+        },
+        {
+          "id": "lemon-harvest",
+          "title": "Check fruit maturity",
+          "action": "Check yellow-green peel and local maturity criteria; clip fruit and move into shade.",
+          "anchor": "observed_stage",
+          "startDay": 0,
+          "endDay": 0,
+          "repeatEveryDays": null,
+          "stage": "fruit_maturity",
+          "conditions": [
+            "Published regional reference; confirm local suitability and actual crop stage."
+          ],
+          "sourceRefs": [
+            {
+              "sourceId": "nhb-citrus-harvest",
+              "locator": "Lemon maturity; harvesting"
+            }
+          ],
+          "establishmentMethods": [
+            "seedling_planting"
+          ],
+          "geographyIds": [
+            "IN"
+          ]
+        }
+      ],
+      "sequenceConstraints": [
+        {
+          "code": "perennial_occupancy",
+          "text": "Orchard establishment is a multiyear commitment; no first-year fruit revenue or automatic plot release.",
+          "sourceRefs": [
+            {
+              "sourceId": "nhb-citrus-harvest",
+              "locator": "Bearing and maturity"
+            }
+          ],
+          "conditions": [
+            "Check previous-crop records and local field conditions."
+          ]
+        }
+      ],
+      "limitations": [
+        "Published management windows require field-stage, weather and local-extension checks; they are not observations of this farm.",
+        "No numeric soil improvement, nutrient depletion, fertilizer dose, yield or profit is predicted.",
+        "No sufficiently specific numeric local planting window imported; source care remains available for a farmer-recorded crop.",
+        "No unambiguous generic whole-crop duration enabled; use product/cultivar-specific evidence or a farmer-entered expected harvest date."
+      ],
+      "plantingWindows": [],
+      "endUses": [
+        {
+          "use": "Fresh lemon fruit; lemon is not interchangeable with acid lime in product mappings.",
+          "sourceRefs": [
+            {
+              "sourceId": "nhb-citrus-harvest",
+              "locator": "Limes and lemons"
+            }
+          ],
+          "limitations": [
+            "End use does not establish current demand, buyer access or a future selling price."
+          ]
+        }
+      ],
+      "newProducts": [
+        {
+          "productId": "lemon-fruit",
+          "name": "Lemon fruit",
+          "productBasis": "fruit"
+        }
+      ],
+      "careReferenceGeography": "See each source; do not generalize Tamil Nadu timing to another state without local review.",
+      "soilEffects": [
+        {
+          "topic": "residue_management",
+          "direction": "conditional",
+          "text": "Retaining appropriate healthy residues can support organic-matter inputs; removal exports material and nutrients. Crop choice alone does not quantify a soil-carbon or nutrient change.",
+          "conditions": [
+            "General FAO principle, not a crop-specific field response. Residue quantity, disease status, decomposition, removal and management must be recorded."
+          ],
+          "sourceRefs": [
+            {
+              "sourceId": "fao-organic-matter",
+              "locator": "Practices: crop residues and rotations"
+            }
+          ],
+          "quantifiedDelta": null
+        }
+      ]
+    }
+  ]
+}

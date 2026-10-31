@@ -152,6 +152,7 @@ export const ApiErrorCode = z.enum([
   'budget_exceeded',
   'mode_mismatch',
   'capability_unavailable',
+  'speech_synthesis_not_supported',
   'provider_unavailable',
   'provider_error',
   'job_cancelled',

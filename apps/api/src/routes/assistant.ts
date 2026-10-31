@@ -18,6 +18,7 @@ import { getFarm } from "../services/farms";
 import { parseIdempotencyKey, runIdempotent } from "../services/idempotency";
 import { envelopeSchema, errorEnvelopeSchema } from "./schemas/common";
 import { turnBody, turnOut, type TurnOut } from "./schemas/assistant";
+import {withModelActivity} from '../services/model-activity';
 
 export interface AssistantRouteDeps {
   config: Config;
@@ -103,7 +104,7 @@ export async function registerAssistantRoutes(app: FastifyInstance, deps: Assist
         farmGeography = { districtId: farm.location.districtId, stateCode: farm.location.stateCode };
       }
       if (body.planId) {
-        const p = await pool.query("SELECT 1 FROM plans WHERE id = $1 AND owner_id = $2", [body.planId, ownerId]);
+        const p = await pool.query("SELECT 1 FROM plans WHERE id = $1 AND owner_id = $2 AND NOT EXISTS(SELECT 1 FROM archived_plans a WHERE a.plan_id=plans.id AND a.owner_id=$2)", [body.planId, ownerId]);
         if (p.rowCount === 0) throw notFound("Plan");
       }
 
@@ -113,10 +114,10 @@ export async function registerAssistantRoutes(app: FastifyInstance, deps: Assist
       });
 
       const out = await runIdempotent(pool, { ownerId, key, route: "POST /api/v1/assistant/turns", hashInput: body }, async () => {
-        const result = await runAgentTurn(
+        const result = await withModelActivity({pool,ownerId,sessionId,mode:config.RUNTIME_MODE,purpose:'assistant'},()=>runAgentTurn(
           { pool, budget, provider: providerFor(config.RUNTIME_MODE), registry, limits, models: { text: config.META_TEXT_MODEL, escalation: config.META_ESCALATION_MODEL }, signal: ac.signal },
           { ownerId, sessionId, mode: config.RUNTIME_MODE, requestId: req.id, language: body.language, text, farmId: body.farmId, planId: body.planId, selectedDate: body.selectedDate, scenarioId: body.scenarioId, farmGeography },
-        );
+        ));
         if (result.status === "provider_unavailable") {
           return { status: 503, body: errorEnvelope(req.id, config.RUNTIME_MODE, { code: "provider_unavailable", message: "The AI provider is not available. Text exploration without AI remains available.", details: { traceId: result.runId } }) };
         }

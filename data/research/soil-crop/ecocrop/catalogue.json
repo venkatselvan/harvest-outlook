@@ -1,0 +1,567 @@
+{
+  "cdh_schema_version": "v0.5.0",
+  "extensions": [
+    "https://cgiar-climate-data-hub.github.io/cdh-metadata-standard/v0.5.0/extensions/cdh/schema.json",
+    "https://cgiar-climate-data-hub.github.io/cdh-metadata-standard/v0.5.0/extensions/agriculture/schema.json"
+  ],
+  "id": "ecocrop",
+  "title": "EcoCrop crop ecological requirements database",
+  "version": "1",
+  "description": "Expert-compiled ecological requirements for 2,568 plant species from the FAO EcoCrop database: optimal and absolute ranges of temperature, rainfall, soil pH, latitude and altitude, killing temperatures, crop cycle length in days, plus categorical soil, light, photoperiod, climate zone and life-form attributes. One row per species, keyed by EcoPort code. The table is a cleaned copy of the CSV snapshot published by the OpenCLIM EcoCrop suitability model (UK Centre for Ecology & Hydrology), with the FAO column codes kept so values map directly onto EcoCrop-type suitability models.\n",
+  "resource_type": "dataset",
+  "license": "CC-BY-4.0",
+  "attribution": "Source data from the FAO EcoCrop database, Food and Agriculture Organization of the United Nations.",
+  "keywords": [
+    "crop suitability",
+    "crop requirements",
+    "ecological thresholds",
+    "temperature thresholds",
+    "rainfall thresholds",
+    "crop cycle",
+    "killing temperature",
+    "EcoCrop",
+    "EcoPort",
+    "species database"
+  ],
+  "note": "Values are expert estimates of uneven provenance, not measurements. 495 of 2,568 species have no temperature or rainfall thresholds at all; killing temperature is missing for 1,411. A few rows hold obvious errors in the source (latitude limits above 90, an optimal minimum temperature of 160 for Barringtonia racemosa) that are kept as published. EcoCrop records rainfall as an annual total; suitability models usually apply it over the crop cycle (gmin to gmax days).\n",
+  "contact": [
+    {
+      "organization": "Food and Agriculture Organization of the United Nations",
+      "url": "https://www.fao.org/home/en/",
+      "roles": [
+        "licensor",
+        "producer"
+      ]
+    },
+    {
+      "name": "Matt James Brown",
+      "organization": "UK Centre for Ecology & Hydrology",
+      "email": "matbro@ceh.ac.uk",
+      "roles": [
+        "processor"
+      ]
+    },
+    {
+      "name": "Brayden Youngberg",
+      "organization": "Alliance of Bioversity International and CIAT",
+      "email": "b.youngberg@cgiar.org",
+      "roles": [
+        "processor",
+        "point-of-contact",
+        "maintainer"
+      ]
+    }
+  ],
+  "citation": {
+    "title": "ECOCROP, the crop ecological requirements database",
+    "authors": [
+      {
+        "organization": "Food and Agriculture Organization of the United Nations"
+      }
+    ],
+    "date": "2025",
+    "publisher": "Food and Agriculture Organization of the United Nations",
+    "url": "https://data.apps.fao.org/catalog/dataset/ecocrop"
+  },
+  "related_publications": [
+    {
+      "citation": {
+        "title": "Ecocrop 1: The crop environmental requirements database. Ecocrop 2: The crop environment response database",
+        "authors": [
+          {
+            "organization": "FAO Land and Water Development Division"
+          }
+        ],
+        "date": "1998",
+        "publisher": "Food and Agriculture Organization of the United Nations",
+        "url": "https://agris.fao.org/search/en/records/647231e653aa8c896301e8f4"
+      }
+    },
+    {
+      "doi": "10.1016/j.agrformet.2011.09.005",
+      "citation": {
+        "title": "Empirical approaches for assessing impacts of climate change on agriculture: The EcoCrop model and a case study with grain sorghum",
+        "authors": [
+          {
+            "family": "Ramirez-Villegas",
+            "given": "J."
+          },
+          {
+            "family": "Jarvis",
+            "given": "A."
+          },
+          {
+            "family": "Läderach",
+            "given": "P."
+          }
+        ],
+        "date": "2013",
+        "publisher": "Agricultural and Forest Meteorology"
+      }
+    },
+    {
+      "doi": "10.1002/cli2.70007",
+      "citation": {
+        "title": "National Horizon Scanning for Future Crops Under a Changing UK Climate",
+        "authors": [
+          {
+            "family": "Redhead",
+            "given": "J. W."
+          },
+          {
+            "family": "Brown",
+            "given": "M."
+          },
+          {
+            "family": "Price",
+            "given": "J."
+          },
+          {
+            "family": "Robinson",
+            "given": "E."
+          },
+          {
+            "family": "Nicholls",
+            "given": "R. J."
+          },
+          {
+            "family": "Warren",
+            "given": "R."
+          },
+          {
+            "family": "Pywell",
+            "given": "R. F."
+          }
+        ],
+        "date": "2025",
+        "publisher": "Climate Resilience and Sustainability"
+      }
+    }
+  ],
+  "created": "2026-10-09",
+  "updated": "2026-10-14",
+  "structures": [
+    {
+      "name": "species-requirements",
+      "dimensions": [
+        {
+          "name": "ecoportcode",
+          "type": "crop",
+          "description": "EcoPort species code, the EcoCrop primary key. One row per species. The FAO datasheet for a code is https://ecocrop.apps.fao.org/ecocrop/srv/en/dataSheet?id=<ecoportcode>.\n",
+          "reference_system": "https://ecocrop.apps.fao.org/ecocrop/srv/en/home",
+          "data_type": "integer"
+        }
+      ],
+      "variables": [
+        {
+          "name": "scientificname",
+          "description": "Accepted scientific name (genus and species).",
+          "data_type": "string"
+        },
+        {
+          "name": "auth",
+          "description": "Taxonomic authority for the scientific name.",
+          "data_type": "string"
+        },
+        {
+          "name": "famname",
+          "description": "Classification path class:subclass:order:family, colon-separated.",
+          "data_type": "string"
+        },
+        {
+          "name": "syno",
+          "description": "Synonyms, split on commas outside parentheses; items are free text as published. List of strings.",
+          "data_type": "array"
+        },
+        {
+          "name": "comname",
+          "description": "Common names in many languages, split on commas outside parentheses. List of strings.",
+          "data_type": "array"
+        },
+        {
+          "name": "lifo",
+          "description": "Life form: tree, shrub, herb, grass, vine, or combinations. List of strings.",
+          "data_type": "array"
+        },
+        {
+          "name": "habi",
+          "description": "Growth habit: erect, prostrate/procumbent/semi-erect, climber/scrambler/scadent. List of strings.",
+          "data_type": "array"
+        },
+        {
+          "name": "lispa",
+          "description": "Life span: annual, biennial, perennial. List of strings.",
+          "data_type": "array"
+        },
+        {
+          "name": "phys",
+          "description": "Physiology: single stem, multi stem, evergreen, deciduous, C3/C4 and similar. List of strings.",
+          "data_type": "array"
+        },
+        {
+          "name": "cat",
+          "description": "Use category: cereals & pseudocereals, vegetables, forage/pasture, forest/wood, medicinals & aromatic, and others. List of strings.",
+          "data_type": "array"
+        },
+        {
+          "name": "plat",
+          "description": "Plant attributes: grown on large scale, grown on small scale, harvested from wild. List of strings.",
+          "data_type": "array"
+        },
+        {
+          "name": "prosy",
+          "description": "Production system: large scale/commercial, small scale (manual), home garden, and others. List of strings.",
+          "data_type": "array"
+        },
+        {
+          "name": "topmn",
+          "description": "Optimal minimum temperature.",
+          "data_type": "int64",
+          "unit": "degC"
+        },
+        {
+          "name": "topmx",
+          "description": "Optimal maximum temperature.",
+          "data_type": "int64",
+          "unit": "degC"
+        },
+        {
+          "name": "tmin",
+          "description": "Absolute minimum temperature; growth stops below this.",
+          "data_type": "int64",
+          "unit": "degC"
+        },
+        {
+          "name": "tmax",
+          "description": "Absolute maximum temperature; growth stops above this.",
+          "data_type": "int64",
+          "unit": "degC"
+        },
+        {
+          "name": "ktmp",
+          "description": "Killing temperature during early growth. Missing for 1,411 species.",
+          "data_type": "int64",
+          "unit": "degC"
+        },
+        {
+          "name": "ktmpr",
+          "description": "Killing temperature during rest (dormancy). Missing for 1,411 species.",
+          "data_type": "int64",
+          "unit": "degC"
+        },
+        {
+          "name": "ropmn",
+          "description": "Optimal minimum rainfall, recorded by EcoCrop as an annual total.",
+          "data_type": "int64",
+          "unit": "mm"
+        },
+        {
+          "name": "ropmx",
+          "description": "Optimal maximum rainfall, annual total.",
+          "data_type": "int64",
+          "unit": "mm"
+        },
+        {
+          "name": "rmin",
+          "description": "Absolute minimum rainfall, annual total.",
+          "data_type": "int64",
+          "unit": "mm"
+        },
+        {
+          "name": "rmax",
+          "description": "Absolute maximum rainfall, annual total.",
+          "data_type": "int64",
+          "unit": "mm"
+        },
+        {
+          "name": "gmin",
+          "description": "Minimum crop cycle, days from sowing or planting to harvest.",
+          "data_type": "int64",
+          "unit": "d"
+        },
+        {
+          "name": "gmax",
+          "description": "Maximum crop cycle in days. Perennials are commonly recorded as 365.",
+          "data_type": "int64",
+          "unit": "d"
+        },
+        {
+          "name": "phopmn",
+          "description": "Optimal minimum soil pH.",
+          "data_type": "float64",
+          "unit": "[pH]"
+        },
+        {
+          "name": "phopmx",
+          "description": "Optimal maximum soil pH.",
+          "data_type": "float64",
+          "unit": "[pH]"
+        },
+        {
+          "name": "phmin",
+          "description": "Absolute minimum soil pH.",
+          "data_type": "float64",
+          "unit": "[pH]"
+        },
+        {
+          "name": "phmax",
+          "description": "Absolute maximum soil pH.",
+          "data_type": "float64",
+          "unit": "[pH]"
+        },
+        {
+          "name": "latopmn",
+          "description": "Optimal minimum latitude, absolute value in degrees from the equator.",
+          "data_type": "float64",
+          "unit": "degree"
+        },
+        {
+          "name": "latopmx",
+          "description": "Optimal maximum latitude, degrees from the equator.",
+          "data_type": "float64",
+          "unit": "degree"
+        },
+        {
+          "name": "latmn",
+          "description": "Absolute minimum latitude, degrees from the equator. A few source rows exceed 90 and are errors.",
+          "data_type": "float64",
+          "unit": "degree"
+        },
+        {
+          "name": "latmx",
+          "description": "Absolute maximum latitude, degrees from the equator. A few source rows exceed 90 and are errors.",
+          "data_type": "float64",
+          "unit": "degree"
+        },
+        {
+          "name": "altmx",
+          "description": "Absolute maximum altitude.",
+          "data_type": "int64",
+          "unit": "m"
+        },
+        {
+          "name": "liopmn",
+          "description": "Optimal minimum light intensity: very bright, clear skies, cloudy skies, light shade, heavy shade.",
+          "data_type": "string"
+        },
+        {
+          "name": "liopmx",
+          "description": "Optimal maximum light intensity, same classes as liopmn.",
+          "data_type": "string"
+        },
+        {
+          "name": "limn",
+          "description": "Absolute minimum light intensity, same classes as liopmn.",
+          "data_type": "string"
+        },
+        {
+          "name": "limx",
+          "description": "Absolute maximum light intensity, same classes as liopmn.",
+          "data_type": "string"
+        },
+        {
+          "name": "photo",
+          "description": "Photoperiod sensitivity: short day (<12 hours), neutral day (12-14 hours), long day (>14 hours). List of strings.",
+          "data_type": "array"
+        },
+        {
+          "name": "cliz",
+          "description": "Climate zones where the species is grown, Köppen-style labels as published, e.g. tropical wet & dry (Aw), subtropical humid (Cf). List of strings.",
+          "data_type": "array"
+        },
+        {
+          "name": "dep",
+          "description": "Optimal soil depth: very shallow (<20 cm), shallow (20-50 cm), medium (50-150 cm), deep (>>150 cm).",
+          "data_type": "string"
+        },
+        {
+          "name": "depr",
+          "description": "Absolute soil depth, same classes as dep.",
+          "data_type": "string"
+        },
+        {
+          "name": "text",
+          "description": "Optimal soil texture: heavy, medium, light, organic, wide. List of strings.",
+          "data_type": "array"
+        },
+        {
+          "name": "textr",
+          "description": "Absolute soil texture, same classes as text. List of strings.",
+          "data_type": "array"
+        },
+        {
+          "name": "fer",
+          "description": "Optimal soil fertility: high, moderate, low.",
+          "data_type": "string"
+        },
+        {
+          "name": "ferr",
+          "description": "Absolute soil fertility, same classes as fer.",
+          "data_type": "string"
+        },
+        {
+          "name": "tox",
+          "description": "Optimal soil aluminium toxicity as share of cation exchange capacity: none (<5%), low (6-15%), medium (16-25%), high (>25%). Mostly empty.",
+          "data_type": "string"
+        },
+        {
+          "name": "toxr",
+          "description": "Absolute soil aluminium toxicity, same classes as tox.",
+          "data_type": "string"
+        },
+        {
+          "name": "sal",
+          "description": "Optimal soil salinity: none, low (<4 dS/m), medium (4-10 dS/m), high (>10 dS/m).",
+          "data_type": "string"
+        },
+        {
+          "name": "salr",
+          "description": "Absolute soil salinity, same classes as sal.",
+          "data_type": "string"
+        },
+        {
+          "name": "dra",
+          "description": "Optimal soil drainage: well (dry spells), poorly (saturated >50% of year), excessive (dry/moderately dry). List of strings.",
+          "data_type": "array"
+        },
+        {
+          "name": "drar",
+          "description": "Absolute soil drainage, same classes as dra. List of strings.",
+          "data_type": "array"
+        },
+        {
+          "name": "abitol",
+          "description": "Abiotic tolerances: drought, flooding, fire, wind, salinity, frost, and others. List of strings.",
+          "data_type": "array"
+        },
+        {
+          "name": "abisus",
+          "description": "Abiotic susceptibilities, same classes as abitol. List of strings.",
+          "data_type": "array"
+        },
+        {
+          "name": "intri",
+          "description": "Introduction risk: can become a weed, poisonous to man or animals, susceptible to nematodes, and others. List of strings.",
+          "data_type": "array"
+        }
+      ]
+    }
+  ],
+  "processing": [
+    {
+      "id": "source",
+      "description": "FAO EcoCrop database as exported to CSV in the OpenCLIM EcoCrop suitability model repository (2,568 species, 55 columns, Windows-1252 encoded, missing values as \"NA\" or empty). FAO no longer offers a bulk download, so the copy pinned at commit ea43ecd is the reference source. Checked against the live FAO tool on 2026-10-09: same species set, IDs, names and values.\n",
+      "derived_from": [
+        {
+          "title": "FAO EcoCrop database",
+          "url": "https://gaez.fao.org/pages/ecocrop"
+        },
+        {
+          "title": "EcoCrop_DB.csv in the OpenCLIM ecocrop repository, pinned at commit ea43ecd (2022-03-01)",
+          "url": "https://github.com/OpenCLIM/ecocrop/blob/ea43ecd418fd1a1ea08d32c7dce64b7fae02dec4/EcoCrop_DB.csv",
+          "version": "ea43ecd"
+        }
+      ]
+    },
+    {
+      "id": "clean",
+      "description": "Decoded from Windows-1252 to UTF-8, column names lowercased, \"NA\" and empty strings set to null, numeric columns typed, multi-valued columns split on commas (outside parentheses for synonyms and common names) into list<string>, values trimmed. No rows dropped or values corrected. Written as one Parquet file sorted by ecoportcode.\n",
+      "code": {
+        "url": "https://github.com/CGIAR-Climate-Data-Hub/cdh-data-pipeline/blob/main/recipes/ecocrop.py",
+        "version": "5eaee18"
+      },
+      "date": "2026-10-09"
+    }
+  ],
+  "data": [
+    {
+      "name": "table",
+      "description": "One row per species.",
+      "locations": [
+        {
+          "url": "https://digital-atlas.s3.amazonaws.com/cdh/data/ecocrop/ecocrop.parquet",
+          "title": "HTTPS"
+        },
+        {
+          "url": "s3://digital-atlas/cdh/data/ecocrop/ecocrop.parquet",
+          "title": "S3"
+        }
+      ],
+      "media_type": "application/vnd.apache.parquet",
+      "file_size": "293 KB",
+      "processing_steps": [
+        "source",
+        "clean"
+      ]
+    }
+  ],
+  "additional_assets": [
+    {
+      "name": "column lookup",
+      "description": "Source column code to description list from the OpenCLIM repository.",
+      "locations": [
+        {
+          "url": "https://github.com/OpenCLIM/ecocrop/blob/f13577f4237604b15d85d8e43741714a2d1eb2d4/Ecocrop_variable_lookup.csv"
+        }
+      ],
+      "media_type": "text/csv",
+      "roles": [
+        "metadata",
+        "describedby"
+      ],
+      "file_size": "2 KB"
+    }
+  ],
+  "additional_links": [
+    {
+      "title": "ECOCROP online tool",
+      "rel": "related",
+      "url": "https://ecocrop.apps.fao.org/ecocrop/srv/en/home",
+      "description": "The original FAO application, still running under its old URL scheme. Authoritative reference for re-verifying or re-scraping this table: one datasheet per species at /ecocrop/srv/en/dataSheet?id=<ecoportcode>. The GAEZ page below embeds this app in an iframe.\n"
+    },
+    {
+      "title": "FAO EcoCrop page on the GAEZ data portal",
+      "rel": "about",
+      "url": "https://gaez.fao.org/pages/ecocrop",
+      "description": "FAO's current landing page; an iframe around the ECOCROP online tool."
+    },
+    {
+      "title": "ECOCROP on the FAO data catalog",
+      "rel": "cite-as",
+      "url": "https://data.apps.fao.org/catalog/dataset/ecocrop",
+      "description": "FAO catalog entry declaring the CC-BY-4.0 licence and linking the online ECOCROP tool."
+    },
+    {
+      "title": "OpenCLIM ecocrop repository at commit ea43ecd",
+      "rel": "related",
+      "url": "https://github.com/OpenCLIM/ecocrop/tree/ea43ecd418fd1a1ea08d32c7dce64b7fae02dec4",
+      "description": "Source of the CSV snapshot, pinned to the commit used, and a reference implementation of EcoCrop-type suitability scoring (software DOI 10.5281/zenodo.10843625).\n"
+    }
+  ],
+  "cdh": {
+    "domain": [
+      "agricultural-production",
+      "adaptation"
+    ],
+    "usage": {
+      "intended_uses": [
+        "parameterising EcoCrop-type climatic suitability models with temperature, rainfall and crop-cycle thresholds",
+        "screening candidate crops for a location by temperature, rainfall, soil and photoperiod requirements",
+        "looking up species attributes by scientific name, EcoPort code or use category"
+      ],
+      "not_recommended_for": [
+        {
+          "use": "Treating thresholds as validated field or trial results.",
+          "reason": "Values are expert estimates with no per-species provenance, and some rows hold obvious errors."
+        },
+        {
+          "use": "Applying the rainfall thresholds as growing-season totals without checking.",
+          "reason": "EcoCrop records rainfall as an annual total; suitability models reinterpret it over the crop cycle and results differ."
+        }
+      ]
+    }
+  },
+  "commodities": [
+    "crops"
+  ]
+}

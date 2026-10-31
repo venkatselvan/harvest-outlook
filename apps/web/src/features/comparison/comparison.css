@@ -1,37 +1,195 @@
-.cmp-muted { color: var(--muted); font-size: 0.9rem; margin: 2px 0; overflow-wrap: anywhere; }
-.cmp-error { margin: 0; padding: 8px 12px; background: #fde0e0; color: #6b1010; border-radius: 8px; }
-.cmp-warn { margin: 8px 0; padding: 8px 12px; background: #fff3cd; color: #5c4400; border-radius: 8px; }
-.cmp-results { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
-.cmp-result { border: 1px solid var(--border); border-radius: 10px; padding: 8px 12px; background: #fff; }
-.cmp-pick { display: flex; gap: 12px; align-items: flex-start; min-height: 44px; }
-.cmp-pick input { width: 24px; height: 24px; flex: none; margin-top: 8px; }
-.cmp-pick-text { display: grid; }
-.cmp-result-meta { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 4px; }
-.cmp-cov { font-size: 0.9rem; font-weight: 600; }
-.cmp-outcome, .cmp-badge { display: inline-block; padding: 2px 8px; border-radius: 999px; border: 1.5px solid currentColor; font-size: 0.85rem; font-weight: 700; white-space: nowrap; }
-.cmp-outcome[data-outcome="eligible"] { color: #0d3b1f; background: #d9f2e1; }
-.cmp-outcome[data-outcome="requires_review"] { color: #5c4400; background: #fff3cd; }
-.cmp-outcome[data-outcome="unknown"] { color: #333; background: #ececec; }
-.cmp-outcome[data-outcome="ineligible"], .cmp-outcome[data-outcome="excluded_by_farmer"] { color: #6b1010; background: #fde0e0; }
-.cmp-badge { color: #243a2d; background: #f1f5f2; font-weight: 600; font-size: 0.8rem; }
-.cmp-badge[data-state="unavailable"] { border-style: dashed; color: #555; }
-.cmp-badge[data-state="scenario"], .cmp-badge[data-state="farmer_assumption"] { color: #0b2a66; background: #dbe8ff; }
-.cmp-sbs-track { display: flex; gap: 12px; overflow-x: auto; scroll-snap-type: x proximity; padding-bottom: 8px; }
-.cmp-sbs-cell { flex: 0 0 min(88vw, 340px); scroll-snap-align: start; }
-.cmp-card { border: 1px solid var(--border); border-radius: 10px; padding: 12px; background: #fff; display: grid; gap: 10px; }
-.cmp-card h3 { margin: 0; font-size: 1.1rem; }
-.cmp-card h4 { margin: 0 0 4px; font-size: 1rem; }
-.cmp-card p { margin: 4px 0; }
-.cmp-dl { margin: 0; display: grid; gap: 8px; }
-.cmp-row { display: grid; gap: 2px; padding-bottom: 8px; border-bottom: 1px solid #e6ebe7; }
-.cmp-row dt { color: var(--muted); font-size: 0.85rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.03em; }
-.cmp-row dd { margin: 0; overflow-wrap: anywhere; }
-.cmp-list { margin: 4px 0; padding-left: 20px; }
-.cmp-details summary { min-height: 44px; display: flex; align-items: center; cursor: pointer; font-weight: 600; }
-.cmp-cite { margin-bottom: 8px; overflow-wrap: anywhere; }
-.cmp-excerpt { display: block; margin: 2px 0; font-style: italic; }
-.cmp-card a { display: inline-block; min-height: 24px; }
-.cmp-actions { display: flex; flex-wrap: wrap; gap: 8px; }
-.cmp-secondary { background: #fff; color: var(--accent); }
-.cmp-card code { font-size: 0.8rem; overflow-wrap: anywhere; }
-@media (min-width: 900px) { .cmp-sbs-cell { flex-basis: 320px; } }
+.cmp-muted {
+  color: var(--muted);
+  font-size: 0.9rem;
+  margin: 2px 0;
+  overflow-wrap: anywhere;
+}
+.cmp-error {
+  margin: 0;
+  padding: 8px 12px;
+  background: var(--surface-soft);
+  color: var(--danger);
+  border-radius: 8px;
+}
+.cmp-warn {
+  margin: 8px 0;
+  padding: 8px 12px;
+  background: var(--surface-soft);
+  color: var(--text);
+  border-radius: 8px;
+}
+.cmp-results {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+.cmp-result {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 8px 12px;
+  background: var(--surface);
+}
+.cmp-pick {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  min-height: 44px;
+}
+.cmp-pick input {
+  width: 24px;
+  height: 24px;
+  flex: none;
+  margin-top: 8px;
+}
+.cmp-pick-text {
+  display: grid;
+}
+.cmp-result-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin-top: 4px;
+}
+.cmp-cov {
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+.cmp-outcome,
+.cmp-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1.5px solid currentColor;
+  font-size: 0.85rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.cmp-outcome[data-outcome="eligible"] {
+  color: var(--accent);
+  background: var(--surface-soft);
+}
+.cmp-outcome[data-outcome="requires_review"] {
+  color: var(--text);
+  background: var(--surface-soft);
+}
+.cmp-outcome[data-outcome="unknown"] {
+  color: var(--text);
+  background: var(--surface-soft);
+}
+.cmp-outcome[data-outcome="ineligible"],
+.cmp-outcome[data-outcome="excluded_by_farmer"] {
+  color: var(--danger);
+  background: var(--surface-soft);
+}
+.cmp-badge {
+  color: var(--accent);
+  background: var(--surface-soft);
+  font-weight: 600;
+  font-size: 0.8rem;
+}
+.cmp-badge[data-state="unavailable"] {
+  border-style: dashed;
+  color: var(--text);
+}
+.cmp-badge[data-state="scenario"],
+.cmp-badge[data-state="farmer_assumption"] {
+  color: var(--info);
+  background: var(--surface-soft);
+}
+.cmp-sbs-track {
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  scroll-snap-type: x proximity;
+  padding-bottom: 8px;
+}
+.cmp-sbs-cell {
+  flex: 0 0 min(88vw, 340px);
+  scroll-snap-align: start;
+}
+.cmp-card {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px;
+  background: var(--surface);
+  display: grid;
+  gap: 10px;
+}
+.cmp-card h3 {
+  margin: 0;
+  font-size: 1.1rem;
+}
+.cmp-card h4 {
+  margin: 0 0 4px;
+  font-size: 1rem;
+}
+.cmp-card p {
+  margin: 4px 0;
+}
+.cmp-dl {
+  margin: 0;
+  display: grid;
+  gap: 8px;
+}
+.cmp-row {
+  display: grid;
+  gap: 2px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+}
+.cmp-row dt {
+  color: var(--muted);
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+.cmp-row dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.cmp-list {
+  margin: 4px 0;
+  padding-left: 20px;
+}
+.cmp-details summary {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  font-weight: 600;
+}
+.cmp-cite {
+  margin-bottom: 8px;
+  overflow-wrap: anywhere;
+}
+.cmp-excerpt {
+  display: block;
+  margin: 2px 0;
+  font-style: italic;
+}
+.cmp-card a {
+  display: inline-block;
+  min-height: 24px;
+}
+.cmp-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.cmp-secondary {
+  background: var(--surface);
+  color: var(--accent);
+}
+.cmp-card code {
+  font-size: 0.8rem;
+  overflow-wrap: anywhere;
+}
+@media (min-width: 900px) {
+  .cmp-sbs-cell {
+    flex-basis: 320px;
+  }
+}

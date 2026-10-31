@@ -1,38 +1,204 @@
-.jr-page { display: grid; gap: 16px; }
-.jr-form { display: grid; gap: 8px; }
-.jr-form label, .jr-label { font-weight: 600; margin-top: 4px; }
-.jr-form input, .jr-form select, .jr-form textarea { font: inherit; min-height: 44px; padding: 8px; border: 1px solid var(--border); border-radius: 8px; width: 100%; box-sizing: border-box; background: #fff; color: var(--fg); }
-.jr-form textarea { min-height: 88px; }
-.jr-row { border: 1px solid var(--border); border-radius: 8px; padding: 8px; display: grid; gap: 4px; }
-.jr-thumbs { list-style: none; display: flex; flex-wrap: wrap; gap: 8px; padding: 0; margin: 0; }
-.jr-thumbs li { display: grid; gap: 4px; justify-items: start; }
-.jr-thumbs img { border-radius: 8px; max-width: 96px; height: auto; }
-.jr-voice summary { min-height: 44px; display: flex; align-items: center; cursor: pointer; font-weight: 600; }
-.jr-photos { display: flex; flex-wrap: wrap; gap: 8px; }
-.jr-photos figure { margin: 0; max-width: 100%; }
-.jr-photos img { max-width: 100%; height: auto; border-radius: 8px; }
-.jr-photos figcaption, .jr-small, .jr-date { color: var(--muted); font-size: 0.85rem; }
-.jr-notetext { white-space: pre-wrap; overflow-wrap: anywhere; }
-.jr-note { background: #eef5f0; border-radius: 8px; padding: 8px 12px; }
-.jr-ai { border-left: 4px solid #2f5fb5; padding: 4px 12px; background: #f3f7ff; border-radius: 6px; }
-.jr-ai-label { font-weight: 700; color: #0b2a66; margin: 4px 0; }
-.jr-synthetic { background: #fff3cd; color: #5c4400; padding: 6px 10px; border-radius: 6px; }
-.jr-warn { background: #fff3cd; color: #5c4400; padding: 8px 12px; border-radius: 6px; }
-.jr-error { color: #8a1c1c; }
-.jr-proposals { list-style: none; padding: 0; display: grid; gap: 12px; }
-.jr-proposal { border: 1px solid var(--border); border-radius: 10px; padding: 12px; background: #fff; }
-.jr-proposal[data-status="confirmed"] { border-color: var(--accent); }
-.jr-tag { margin-left: 8px; font-size: 0.8rem; background: #e6efe9; color: var(--accent); padding: 2px 8px; border-radius: 999px; }
-.jr-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
-.btn.secondary { background: #fff; color: var(--accent); }
-.jr-review { border-top: 1px dashed var(--border); margin-top: 8px; padding-top: 8px; }
-.jr-lines { padding-left: 18px; margin: 4px 0; }
-.jr-why { overflow-wrap: anywhere; }
-.jr-revision { border: 1px solid var(--border); border-radius: 8px; padding: 4px 12px; margin-top: 8px; }
-.jr-revision summary { min-height: 44px; display: flex; align-items: center; cursor: pointer; font-weight: 600; }
-.jr-entry h3 { margin: 0 0 8px; }
-.jr-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
-.jr-timeline { display: grid; gap: 12px; }
-.jr-tasks { padding-left: 18px; }
-.jr-form :focus-visible, .jr-page :focus-visible { outline: 3px solid #2f5fb5; outline-offset: 2px; }
-@media (prefers-reduced-motion: reduce) { .jr-page * { transition: none !important; animation: none !important; scroll-behavior: auto !important; } }
+.jr-page {
+  display: grid;
+  gap: 16px;
+}
+.jr-form {
+  display: grid;
+  gap: 8px;
+}
+.jr-form label,
+.jr-label {
+  font-weight: 600;
+  margin-top: 4px;
+}
+.jr-form input,
+.jr-form select,
+.jr-form textarea {
+  font: inherit;
+  min-height: 44px;
+  padding: 8px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  width: 100%;
+  box-sizing: border-box;
+  background: var(--surface);
+  color: var(--fg);
+}
+.jr-form textarea {
+  min-height: 88px;
+}
+.jr-row {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px;
+  display: grid;
+  gap: 4px;
+}
+.jr-thumbs {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 0;
+  margin: 0;
+}
+.jr-thumbs li {
+  display: grid;
+  gap: 4px;
+  justify-items: start;
+}
+.jr-thumbs img {
+  border-radius: 8px;
+  max-width: 96px;
+  height: auto;
+}
+.jr-voice summary {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  font-weight: 600;
+}
+.jr-photos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.jr-photos figure {
+  margin: 0;
+  max-width: 100%;
+}
+.jr-photos img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 8px;
+}
+.jr-photos figcaption,
+.jr-small,
+.jr-date {
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+.jr-notetext {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.jr-note {
+  background: var(--surface-soft);
+  border-radius: 8px;
+  padding: 8px 12px;
+}
+.jr-ai {
+  border-left: 4px solid var(--info);
+  padding: 4px 12px;
+  background: var(--surface-soft);
+  border-radius: 6px;
+}
+.jr-ai-label {
+  font-weight: 700;
+  color: var(--info);
+  margin: 4px 0;
+}
+.jr-synthetic {
+  background: var(--surface-soft);
+  color: var(--text);
+  padding: 6px 10px;
+  border-radius: 6px;
+}
+.jr-warn {
+  background: var(--surface-soft);
+  color: var(--text);
+  padding: 8px 12px;
+  border-radius: 6px;
+}
+.jr-error {
+  color: var(--danger);
+}
+.jr-proposals {
+  list-style: none;
+  padding: 0;
+  display: grid;
+  gap: 12px;
+}
+.jr-proposal {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px;
+  background: var(--surface);
+}
+.jr-proposal[data-status="confirmed"] {
+  border-color: var(--accent);
+}
+.jr-tag {
+  margin-left: 8px;
+  font-size: 0.8rem;
+  background: var(--surface-soft);
+  color: var(--accent);
+  padding: 2px 8px;
+  border-radius: 999px;
+}
+.jr-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+.btn.secondary {
+  background: var(--surface);
+  color: var(--accent);
+}
+.jr-review {
+  border-top: 1px dashed var(--border);
+  margin-top: 8px;
+  padding-top: 8px;
+}
+.jr-lines {
+  padding-left: 18px;
+  margin: 4px 0;
+}
+.jr-why {
+  overflow-wrap: anywhere;
+}
+.jr-revision {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 4px 12px;
+  margin-top: 8px;
+}
+.jr-revision summary {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  font-weight: 600;
+}
+.jr-entry h3 {
+  margin: 0 0 8px;
+}
+.jr-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+.jr-timeline {
+  display: grid;
+  gap: 12px;
+}
+.jr-tasks {
+  padding-left: 18px;
+}
+.jr-form :focus-visible,
+.jr-page :focus-visible {
+  outline: 3px solid var(--info);
+  outline-offset: 2px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .jr-page * {
+    transition: none !important;
+    animation: none !important;
+    scroll-behavior: auto !important;
+  }
+}

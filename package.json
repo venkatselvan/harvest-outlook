@@ -21,8 +21,7 @@
     "smoke:agent": "pnpm --filter @harvest/api exec tsx ../../scripts/smoke/agent-live-smoke.ts",
     "smoke:sam": "pnpm --filter @harvest/api exec tsx ../../scripts/smoke/sam-smoke.ts",
     "smoke:image": "pnpm --filter @harvest/api exec tsx ../../scripts/smoke/muse-image-smoke.ts",
-    "smoke:live": "sh -c 'pnpm run smoke:openmeteo; pnpm run smoke:meta; pnpm run smoke:elevenlabs; true'",
-    "smoke:elevenlabs": "pnpm --filter @harvest/api exec tsx ../../scripts/smoke/elevenlabs-smoke.ts",
+    "smoke:live": "sh -c 'pnpm run smoke:openmeteo; pnpm run smoke:meta; true'",
     "audit:data": "pnpm --filter @harvest/scripts exec tsx catalogue/validate.ts && echo \"See docs/DATA_AUDIT.md and docs/CROP_CATALOGUE.md\"",
     "analytics:test": "analytics/.venv/bin/python -m pytest analytics/tests -q",
     "catalogue:validate": "pnpm --filter @harvest/scripts exec tsx catalogue/validate.ts",
@@ -33,6 +32,7 @@
     "ingest:ginger-ka": "pnpm --filter @harvest/api exec tsx ../../scripts/seed/ingest-ginger-karnataka.ts",
     "audit:ginger-prices": "pnpm --filter @harvest/api exec tsx ../../scripts/seed/audit-ginger-prices.ts",
     "replay:export": "pnpm --filter @harvest/api exec tsx ../../scripts/replay/export-price-rows.ts",
-    "replay:ginger-ka": "for v in '' no-scaling-rule; do echo \"{\\\"requestPath\\\":\\\"evals/cases/forecast/ginger-karnataka-2026-10-30/request.json\\\",\\\"sensitivity\\\":\\\"$v\\\",\\\"preRegistrationCommit\\\":\\\"47906f2dffed0977cd71dc9093b3d215a4990620\\\",\\\"amendments\\\":[\\\"e42e2435 Amendment 1: sensitivity run without the state-median scaling rule\\\"],\\\"writeReport\\\":true,\\\"summaryOnly\\\":true}\" | analytics/.venv/bin/python -m harvest_analytics forecast.ablation > /dev/null && echo \"written ${v:-primary}\" || exit 1; done"
+    "replay:ginger-ka": "for v in '' no-scaling-rule; do echo \"{\\\"requestPath\\\":\\\"evals/cases/forecast/ginger-karnataka-2026-10-30/request.json\\\",\\\"sensitivity\\\":\\\"$v\\\",\\\"preRegistrationCommit\\\":\\\"47906f2dffed0977cd71dc9093b3d215a4990620\\\",\\\"amendments\\\":[\\\"e42e2435 Amendment 1: sensitivity run without the state-median scaling rule\\\"],\\\"writeReport\\\":true,\\\"summaryOnly\\\":true}\" | analytics/.venv/bin/python -m harvest_analytics forecast.ablation > /dev/null && echo \"written ${v:-primary}\" || exit 1; done",
+    "smoke:meta-stt": "pnpm --filter @harvest/api exec tsx ../../scripts/smoke/meta-speech-smoke.ts"
   }
 }

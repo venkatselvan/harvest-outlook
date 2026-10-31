@@ -1,0 +1,67 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "value": {
+      "type": [
+        "number",
+        "null"
+      ]
+    },
+    "unit": {
+      "anyOf": [
+        {
+          "type": "string",
+          "maxLength": 300
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "conversion": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "formula": {
+              "type": "string"
+            },
+            "version": {
+              "type": "string",
+              "const": "soil-unit-v1"
+            }
+          },
+          "required": [
+            "formula",
+            "version"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "missingReason": {
+      "anyOf": [
+        {
+          "type": "string",
+          "maxLength": 300
+        },
+        {
+          "type": "null"
+        }
+      ]
+    }
+  },
+  "required": [
+    "value",
+    "unit",
+    "conversion",
+    "missingReason"
+  ],
+  "additionalProperties": false,
+  "$id": "https://harvest-outlook.local/schema/1.0/SoilCanonicalValue.json",
+  "x-schemaVersion": "1.0"
+}

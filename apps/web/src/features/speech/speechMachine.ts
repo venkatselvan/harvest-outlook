@@ -1,10 +1,14 @@
 /**
- * Pure state machines for voice input and answer playback. No DOM access, so every transition,
+ * Pure state machine for Meta voice input. No DOM access, so every transition,
  * including the recording cap and the unsupported-browser fallback, is unit-testable.
  */
 
 export type SpeechLang = "en" | "ta" | "hi";
-export const LANGUAGE_NAMES: Record<SpeechLang, string> = { en: "English", ta: "Tamil", hi: "Hindi" };
+export const LANGUAGE_NAMES: Record<SpeechLang, string> = {
+  en: "English",
+  ta: "Tamil",
+  hi: "Hindi",
+};
 export const DEFAULT_MAX_SECONDS = 60;
 
 export interface TranscriptResult {
@@ -13,6 +17,7 @@ export interface TranscriptResult {
   languageProbability: number | null;
   synthetic: boolean;
   providerName: string;
+  model?: string | null;
 }
 
 export type VoiceState =
@@ -21,6 +26,7 @@ export type VoiceState =
   | { kind: "disclosure" }
   | { kind: "requesting_permission" }
   | { kind: "recording"; elapsed: number; capReached: boolean }
+  | { kind: "preparing" }
   | { kind: "uploading"; progress: number }
   | { kind: "processing" }
   | { kind: "review"; result: TranscriptResult }
@@ -33,6 +39,7 @@ export type VoiceEvent =
   | { type: "permission_denied" }
   | { type: "tick"; elapsed: number; maxSeconds: number }
   | { type: "recorded" }
+  | { type: "prepared" }
   | { type: "upload_progress"; fraction: number }
   | { type: "upload_sent" }
   | { type: "result"; result: TranscriptResult }
@@ -54,6 +61,8 @@ export function errorMessage(code: string): string {
     case "provider_auth_failed":
     case "provider_bad_response":
     case "provider_rate_limited":
+    case "speech_not_supported":
+    case "speech_not_qualified":
       return UNAVAILABLE_MESSAGE;
     case "network_error":
       return "No connection. Your text is kept; try again or type instead.";
@@ -64,6 +73,10 @@ export function errorMessage(code: string): string {
       return "That recording was too short. Try again or type instead.";
     case "unsupported_media_type":
       return "This browser's audio format is not supported. Type instead.";
+    case "audio_preparation_failed":
+      return "This recording could not be prepared. Type instead.";
+    case "recording_failed":
+      return "Could not record audio. Your microphone has been released. Type instead.";
     case "permission_denied":
       return "Microphone access was blocked. Allow it in your browser settings, or type instead.";
     case "rate_limited":
@@ -77,30 +90,55 @@ export function voiceReducer(s: VoiceState, e: VoiceEvent): VoiceState {
   switch (e.type) {
     case "tap_record":
       if (!e.supported) return { kind: "unsupported" };
-      if (s.kind !== "idle" && s.kind !== "error" && s.kind !== "review") return s;
-      return e.disclosureAcknowledged ? { kind: "requesting_permission" } : { kind: "disclosure" };
+      if (s.kind !== "idle" && s.kind !== "error" && s.kind !== "review")
+        return s;
+      return e.disclosureAcknowledged
+        ? { kind: "requesting_permission" }
+        : { kind: "disclosure" };
     case "acknowledge_disclosure":
       return s.kind === "disclosure" ? { kind: "requesting_permission" } : s;
     case "permission_granted":
-      return s.kind === "requesting_permission" ? { kind: "recording", elapsed: 0, capReached: false } : s;
+      return s.kind === "requesting_permission"
+        ? { kind: "recording", elapsed: 0, capReached: false }
+        : s;
     case "permission_denied":
-      return s.kind === "requesting_permission" ? { kind: "error", code: "permission_denied", message: errorMessage("permission_denied") } : s;
+      return s.kind === "requesting_permission"
+        ? {
+            kind: "error",
+            code: "permission_denied",
+            message: errorMessage("permission_denied"),
+          }
+        : s;
     case "tick": {
       if (s.kind !== "recording") return s;
       const elapsed = Math.min(e.elapsed, e.maxSeconds);
-      return { kind: "recording", elapsed, capReached: s.capReached || e.elapsed >= e.maxSeconds };
+      return {
+        kind: "recording",
+        elapsed,
+        capReached: s.capReached || e.elapsed >= e.maxSeconds,
+      };
     }
     case "recorded":
-      return s.kind === "recording" ? { kind: "uploading", progress: 0 } : s;
+      return s.kind === "recording" ? { kind: "preparing" } : s;
+    case "prepared":
+      return s.kind === "preparing" ? { kind: "uploading", progress: 0 } : s;
     case "upload_progress":
-      return s.kind === "uploading" ? { kind: "uploading", progress: Math.max(0, Math.min(1, e.fraction)) } : s;
+      return s.kind === "uploading"
+        ? { kind: "uploading", progress: Math.max(0, Math.min(1, e.fraction)) }
+        : s;
     case "upload_sent":
       return s.kind === "uploading" ? { kind: "processing" } : s;
     case "result":
-      return s.kind === "uploading" || s.kind === "processing" ? { kind: "review", result: e.result } : s;
+      return s.kind === "uploading" || s.kind === "processing"
+        ? { kind: "review", result: e.result }
+        : s;
     case "fail":
       if (s.kind === "idle" || s.kind === "unsupported") return s;
-      return { kind: "error", code: e.code, message: e.message ?? errorMessage(e.code) };
+      return {
+        kind: "error",
+        code: e.code,
+        message: e.message ?? errorMessage(e.code),
+      };
     case "cancel":
       return s.kind === "unsupported" ? s : { kind: "idle" };
     case "reset":
@@ -109,7 +147,11 @@ export function voiceReducer(s: VoiceState, e: VoiceEvent): VoiceState {
 }
 
 export const isBusy = (s: VoiceState): boolean =>
-  s.kind === "requesting_permission" || s.kind === "recording" || s.kind === "uploading" || s.kind === "processing";
+  s.kind === "requesting_permission" ||
+  s.kind === "recording" ||
+  s.kind === "preparing" ||
+  s.kind === "uploading" ||
+  s.kind === "processing";
 
 /** 0:12 style timer. */
 export function formatTimer(seconds: number): string {
@@ -120,7 +162,9 @@ export function formatTimer(seconds: number): string {
 const CANDIDATES = ["audio/webm;codecs=opus", "audio/mp4"] as const;
 
 /** First MediaRecorder type the browser can record, in preference order; null means text-only. */
-export function pickMimeType(isTypeSupported: ((t: string) => boolean) | undefined): string | null {
+export function pickMimeType(
+  isTypeSupported: ((t: string) => boolean) | undefined,
+): string | null {
   if (!isTypeSupported) return null;
   for (const t of CANDIDATES) {
     try {
@@ -132,44 +176,29 @@ export function pickMimeType(isTypeSupported: ((t: string) => boolean) | undefin
   return null;
 }
 
-export function normaliseDetected(code: string | null): SpeechLang | string | null {
+export function normaliseDetected(
+  code: string | null,
+): SpeechLang | string | null {
   if (!code) return null;
   const c = code.toLowerCase().split(/[-_]/)[0]!;
-  const map: Record<string, SpeechLang> = { en: "en", eng: "en", ta: "ta", tam: "ta", hi: "hi", hin: "hi" };
+  const map: Record<string, SpeechLang> = {
+    en: "en",
+    eng: "en",
+    ta: "ta",
+    tam: "ta",
+    hi: "hi",
+    hin: "hi",
+  };
   return map[c] ?? c;
 }
 
 /** Warning text when the detected language differs from the selected one; null when they agree or are unknown. */
-export function languageMismatchWarning(detected: string | null, selected: SpeechLang): string | null {
+export function languageMismatchWarning(
+  detected: string | null,
+  selected: SpeechLang,
+): string | null {
   const d = normaliseDetected(detected);
   if (!d || d === selected) return null;
   const heard = d in LANGUAGE_NAMES ? LANGUAGE_NAMES[d as SpeechLang] : d;
   return `This sounded like ${heard}, but ${LANGUAGE_NAMES[selected]} is selected. Check the text before using it.`;
-}
-
-// ---------------------------------------------------------------- answer speaker
-
-export type SpeakerState = { kind: "idle" } | { kind: "loading" } | { kind: "playing" } | { kind: "paused" } | { kind: "error"; message: string };
-export type SpeakerEvent =
-  | { type: "play" }
-  | { type: "loaded" }
-  | { type: "pause" }
-  | { type: "stop" }
-  | { type: "ended" }
-  | { type: "fail"; code?: string };
-
-export function speakerReducer(s: SpeakerState, e: SpeakerEvent): SpeakerState {
-  switch (e.type) {
-    case "play":
-      return s.kind === "idle" || s.kind === "error" ? { kind: "loading" } : s.kind === "paused" ? { kind: "playing" } : s;
-    case "loaded":
-      return s.kind === "loading" ? { kind: "playing" } : s;
-    case "pause":
-      return s.kind === "playing" ? { kind: "paused" } : s;
-    case "stop":
-    case "ended":
-      return { kind: "idle" };
-    case "fail":
-      return { kind: "error", message: e.code ? "Speech unavailable; read the answer instead." : "Could not play the audio; read the answer instead." };
-  }
 }

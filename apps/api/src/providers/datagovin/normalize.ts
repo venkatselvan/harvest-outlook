@@ -9,6 +9,7 @@ const here = dirname(fileURLToPath(import.meta.url));
 
 export interface CommodityMapEntry {
   sourceCommodity: string;
+  requestCommodity?: string;
   productSlug: string;
   verified: boolean;
   /** The source name does not identify the product (e.g. unqualified "Ginger"); rows carry the unresolved_product flag. */

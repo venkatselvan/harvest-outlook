@@ -35,7 +35,11 @@ export interface Harness {
 
 /** Wipes the test database, migrates, and builds an app with a temp filesystem storage root. */
 export async function setupHarness(over: Record<string, string> = {}): Promise<Harness> {
+  const testUrl = new URL(TEST_DB);
+  if (!["localhost", "127.0.0.1", "[::1]"].includes(testUrl.hostname) || testUrl.pathname !== "/harvest_outlook_test") throw new Error("Refusing schema reset outside dedicated local harvest_outlook_test database");
   const pool = createPool(TEST_DB);
+  const target = (await pool.query<{ name: string }>("SELECT current_database() AS name")).rows[0];
+  if (target?.name !== "harvest_outlook_test") { await pool.end(); throw new Error("Refusing schema reset: unexpected database identity"); }
   await pool.query("DROP SCHEMA public CASCADE; CREATE SCHEMA public;");
   await migrate(pool, undefined, () => undefined);
   const storageRoot = await mkdtemp(join(tmpdir(), "ho-test-"));

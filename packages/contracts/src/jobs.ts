@@ -69,6 +69,7 @@ export const Job = z
   });
 export type Job = z.infer<typeof Job>;
 
+/** Includes retired provider names solely to read historical usage ledger rows. No adapter is dispatched from this enum. */
 export const Provider = z.enum(['meta', 'elevenlabs']);
 
 export const UsageReservation = z

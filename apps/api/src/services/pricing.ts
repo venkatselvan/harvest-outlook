@@ -2,6 +2,7 @@ import { z } from "zod";
 import { ApiError } from "./errors";
 
 export type PriceEntry =
+  | { kind: "audio"; perSecondUsd: number }
   | { kind: "tokens"; inputPerMTokUsd: number; outputPerMTokUsd: number }
   | { kind: "image"; perImageUsd: number }
   /** Speech is tracked in characters or seconds; no USD price is asserted. */
@@ -15,12 +16,13 @@ export const DEFAULT_PRICE_TABLE: PriceTable = {
   "muse-wonder-1.0": { kind: "tokens", inputPerMTokUsd: 4, outputPerMTokUsd: 20 },
   "muse-image-1.0": { kind: "image", perImageUsd: 0.01 },
   "sam-3.1": { kind: "image", perImageUsd: 0.0025 },
-  // ElevenLabs is tracked in units (STT seconds, TTS characters) passed in the usage estimate; no USD asserted.
-  "elevenlabs:*": { kind: "speech", unit: "characters" },
+  // Official Meta Voice Transcribe: $0.18/hour, Standard processing.
+  "muse-voice-transcribe-1.0": { kind: "audio", perSecondUsd: 0.18 / 3600 },
 };
 
 const nonNeg = z.number().finite().nonnegative();
 const entrySchema = z.discriminatedUnion("kind", [
+  z.object({kind:z.literal("audio"),perSecondUsd:nonNeg}),
   z.object({ kind: z.literal("tokens"), inputPerMTokUsd: nonNeg, outputPerMTokUsd: nonNeg }),
   z.object({ kind: z.literal("image"), perImageUsd: nonNeg }),
   z.object({ kind: z.literal("speech"), unit: z.enum(["characters", "seconds"]) }),
@@ -74,6 +76,8 @@ export function estimateCost(table: PriceTable, provider: string, model: string,
     }
     case "image":
       return { usd: ceilMicro((usage.images ?? 1) * entry.perImageUsd), units: usage };
+    case "audio":
+      return {usd:ceilMicro((usage.seconds??0)*entry.perSecondUsd),units:usage};
     case "speech":
       return { usd: null, units: usage };
   }

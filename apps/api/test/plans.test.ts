@@ -190,6 +190,16 @@ afterAll(async () => pool?.end());
 // ---------------------------------------------------------------- tests
 
 describe("plan snapshots", () => {
+  ifDb("archives a demo snapshot reversibly and rebuilds identical inputs without resurrecting it",async()=>{
+    const owner=await newOwner(),farm=await newFarm(owner);const {s}=sources();const svc=service("synthetic",s);
+    const original=await svc.createPlan(createArgs(ginger,owner,farm));
+    await pool.query("INSERT INTO archived_plans(plan_id,owner_id,farm_id,reason) VALUES($1,$2,$3,'retired demo seed')",[original.snapshot.id,owner,farm]);
+    await expect(svc.getPlan(owner,original.snapshot.id)).rejects.toMatchObject({statusCode:404});
+    const fresh=await svc.createPlan(createArgs(ginger,owner,farm));expect(fresh.snapshot.id).not.toBe(original.snapshot.id);
+    const repeated=await svc.createPlan(createArgs(ginger,owner,farm));expect(repeated.snapshot.id).toBe(fresh.snapshot.id);
+    expect((await pool.query('SELECT count(*)::int count FROM plans WHERE id=$1',[original.snapshot.id])).rows[0].count).toBe(1);
+  });
+
   ifDb("identical inputs yield the same contentHash; plans and outputs reject SQL UPDATE", async () => {
     const owner = await newOwner();
     const farm = await newFarm(owner);

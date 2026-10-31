@@ -4,8 +4,28 @@ import * as planApi from "../../lib/plan-api";
 import { newEntryId } from "../photo-region/http";
 import { normalizedUrl, type MediaInfo } from "../photo-region/types";
 import type { EvidenceCitation } from "../comparison/types";
-import { clampDate, dateToPos, indexTimeline, indexWater, posToDate, recordAt, addDaysIso, dateToDap, todayInKolkata, type TimelineIndex, type WaterIndex } from "./model";
-import { outputsOf, type PlanOutputs, type PlanTaskOutput, type PlanView, type Scenario, type TimelineDay, type VisualsView } from "../../lib/plan-api";
+import {
+  clampDate,
+  dateToPos,
+  indexTimeline,
+  indexWater,
+  posToDate,
+  recordAt,
+  addDaysIso,
+  dateToDap,
+  todayInKolkata,
+  type TimelineIndex,
+  type WaterIndex,
+} from "./model";
+import {
+  outputsOf,
+  type PlanOutputs,
+  type PlanTaskOutput,
+  type PlanView,
+  type Scenario,
+  type TimelineDay,
+  type VisualsView,
+} from "../../lib/plan-api";
 
 /** Network surface of the explorer. Injected so tests can count calls; defaults to the real client. */
 export interface SeasonApi {
@@ -59,15 +79,25 @@ export interface SeasonState {
   visuals: VisualsView | null;
   media: MediaInfo | null;
   generate: GenerateState;
-  history: { status: "idle" | "loading" | "ready" | "error"; items: HistoryItem[] };
-  citations: { status: "idle" | "loading" | "ready" | "error"; byId: ReadonlyMap<string, EvidenceCitation> };
+  history: {
+    status: "idle" | "loading" | "ready" | "error";
+    items: HistoryItem[];
+  };
+  citations: {
+    status: "idle" | "loading" | "ready" | "error";
+    byId: ReadonlyMap<string, EvidenceCitation>;
+  };
 }
 
 export const SCHEMATIC_REASON_TEXT: Record<string, string> = {
-  synthetic_mode: "Synthetic mode: no image provider is called, so simple labelled schematic drawings are shown instead of generated pictures.",
-  replay_mode: "Replay mode: no image provider is called, so simple labelled schematic drawings are shown.",
-  provider_unavailable: "The image provider is not available right now, so labelled schematic drawings are shown. Try again later.",
-  no_brief: "No illustration brief exists for this stage, so a labelled schematic drawing is shown.",
+  synthetic_mode:
+    "Synthetic mode: no image provider is called, so simple labelled schematic drawings are shown instead of generated pictures.",
+  replay_mode:
+    "Replay mode: no image provider is called, so simple labelled schematic drawings are shown.",
+  provider_unavailable:
+    "The image provider is not available right now, so labelled schematic drawings are shown. Try again later.",
+  no_brief:
+    "No illustration brief exists for this stage, so a labelled schematic drawing is shown.",
 };
 
 const emptyState = (today: string, scenario: Scenario): SeasonState => ({
@@ -94,7 +124,9 @@ const emptyState = (today: string, scenario: Scenario): SeasonState => ({
 });
 
 const errInfo = (e: unknown): { code: string; message: string } =>
-  e instanceof ApiError ? { code: e.code, message: e.message } : { code: "unexpected", message: "Something unexpected went wrong." };
+  e instanceof ApiError
+    ? { code: e.code, message: e.message }
+    : { code: "unexpected", message: "Something unexpected went wrong." };
 
 export interface ControllerOptions {
   api?: SeasonApi;
@@ -119,7 +151,10 @@ export class SeasonController {
   private listeners = new Set<(s: SeasonState) => void>();
   private disposed = false;
 
-  constructor(readonly planId: string, o: ControllerOptions = {}) {
+  constructor(
+    readonly planId: string,
+    o: ControllerOptions = {},
+  ) {
     this.api = o.api ?? realSeasonApi;
     this.now = o.now ?? (() => new Date());
     this.sleep = o.sleep ?? ((ms) => new Promise((r) => setTimeout(r, ms)));
@@ -162,10 +197,18 @@ export class SeasonController {
   async load(): Promise<void> {
     this.set({ status: "loading", error: null });
     try {
-      const [plan, tl] = await Promise.all([this.api.getPlan(this.planId), this.api.getTimeline(this.planId, this.state.scenario)]);
+      const [plan, tl] = await Promise.all([
+        this.api.getPlan(this.planId),
+        this.api.getTimeline(this.planId, this.state.scenario),
+      ]);
       const outputs = outputsOf(plan.data);
       const plantingDate = outputs.stage_windows?.plantingDate ?? null;
-      if (!plantingDate) throw new ApiError("plan_incomplete", "This plan has no stage windows, so a season timeline cannot be shown.", 0);
+      if (!plantingDate)
+        throw new ApiError(
+          "plan_incomplete",
+          "This plan has no stage windows, so a season timeline cannot be shown.",
+          0,
+        );
       const ix = indexTimeline(tl.data, plantingDate);
       const today = todayInKolkata(this.now());
       const water = outputs.water?.byTiming[this.state.scenario]?.runs;
@@ -176,8 +219,12 @@ export class SeasonController {
         plan: plan.data,
         outputs,
         plantingDate,
-        tasksById: new Map((outputs.tasks?.tasks ?? []).map((t) => [t.task.id, t])),
-        stageNames: new Map((outputs.stage_windows?.stages ?? []).map((s) => [s.stageId, s.name])),
+        tasksById: new Map(
+          (outputs.tasks?.tasks ?? []).map((t) => [t.task.id, t]),
+        ),
+        stageNames: new Map(
+          (outputs.stage_windows?.stages ?? []).map((s) => [s.stageId, s.name]),
+        ),
         timelines: { [this.state.scenario]: ix },
         waterIndex: { [this.state.scenario]: indexWater(water) },
         today,
@@ -220,7 +267,8 @@ export class SeasonController {
     if (d !== this.state.selectedDate) this.set({ selectedDate: d });
   }
   selectDap(dap: number): void {
-    if (this.state.plantingDate) this.select(addDaysIso(this.state.plantingDate, dap));
+    if (this.state.plantingDate)
+      this.select(addDaysIso(this.state.plantingDate, dap));
   }
   selectPos(pos: number): void {
     const ix = this.index;
@@ -232,7 +280,9 @@ export class SeasonController {
     if (ix && d) this.select(posToDate(ix, dateToPos(ix, d) + days));
   }
   get dap(): number | null {
-    return this.state.plantingDate && this.state.selectedDate ? dateToDap(this.state.plantingDate, this.state.selectedDate) : null;
+    return this.state.plantingDate && this.state.selectedDate
+      ? dateToDap(this.state.plantingDate, this.state.selectedDate)
+      : null;
   }
 
   /** Scenario switch: the other timeline is fetched once on first use, then switched locally. */
@@ -245,7 +295,10 @@ export class SeasonController {
         const ix = indexTimeline(tl.data, this.state.plantingDate!);
         this.set({
           timelines: { ...this.state.timelines, [s]: ix },
-          waterIndex: { ...this.state.waterIndex, [s]: indexWater(this.state.outputs.water?.byTiming[s]?.runs) },
+          waterIndex: {
+            ...this.state.waterIndex,
+            [s]: indexWater(this.state.outputs.water?.byTiming[s]?.runs),
+          },
         });
       } catch (e) {
         this.set({ scenarioLoading: false, error: errInfo(e) });
@@ -253,64 +306,139 @@ export class SeasonController {
       }
     }
     const ix = this.state.timelines[s]!;
-    this.set({ scenario: s, scenarioLoading: false, selectedDate: this.state.selectedDate ? clampDate(ix, this.state.selectedDate) : ix.from });
+    this.set({
+      scenario: s,
+      scenarioLoading: false,
+      selectedDate: this.state.selectedDate
+        ? clampDate(ix, this.state.selectedDate)
+        : ix.from,
+    });
   }
 
   // ---- illustrations
   async generateIllustrations(): Promise<void> {
     const media = this.state.media;
     if (!media || !media.region) {
-      this.set({ generate: { status: "error", message: "Add a farm photo and confirm the planting region on the farm page first.", reasons: [] } });
+      this.set({
+        generate: {
+          status: "error",
+          message:
+            "Add a farm photo and confirm the planting region on the farm page first.",
+          reasons: [],
+        },
+      });
       return;
     }
-    this.set({ generate: { status: "working", message: "Requesting illustrations…", reasons: [] } });
+    this.set({
+      generate: {
+        status: "working",
+        message: "Requesting illustrations…",
+        reasons: [],
+      },
+    });
     try {
-      const start = await this.api.startVisuals(this.planId, media.id, media.region.version, newEntryId("visuals"));
+      const start = await this.api.startVisuals(
+        this.planId,
+        media.id,
+        media.region.version,
+        newEntryId("visuals"),
+      );
       const jobId = start.data.jobId;
       if (jobId) {
         let state = start.data.state;
-        for (let n = 0; n < this.maxPolls && state !== "succeeded" && state !== "failed" && state !== "cancelled"; n++) {
-          this.set({ generate: { status: "working", message: `Illustrations are being prepared (${state})…`, reasons: [] } });
+        for (
+          let n = 0;
+          n < this.maxPolls &&
+          state !== "succeeded" &&
+          state !== "failed" &&
+          state !== "cancelled";
+          n++
+        ) {
+          this.set({
+            generate: {
+              status: "working",
+              message: `Illustrations are being prepared (${state})…`,
+              reasons: [],
+            },
+          });
           await this.sleep(this.pollMs);
           if (this.disposed) return;
           state = (await this.api.getJob(jobId)).data.state;
         }
         if (state === "failed" || state === "cancelled") {
           await this.refreshVisuals();
-          this.set({ generate: { status: "error", message: "Illustrations could not be generated. Your plan, tasks and economics are unaffected; schematic drawings are shown.", reasons: [] } });
+          this.set({
+            generate: {
+              status: "error",
+              message:
+                "Illustrations could not be generated. Your plan, tasks and economics are unaffected; schematic drawings are shown.",
+              reasons: [],
+            },
+          });
           return;
         }
         if (state !== "succeeded") {
-          this.set({ generate: { status: "error", message: "Illustrations are taking longer than expected. Check again in a moment.", reasons: [] } });
+          this.set({
+            generate: {
+              status: "error",
+              message:
+                "Illustrations are taking longer than expected. Check again in a moment.",
+              reasons: [],
+            },
+          });
           return;
         }
       }
       const v = await this.refreshVisuals();
-      const reasons = [...new Set((v?.stages ?? []).filter((s) => s.state !== "ready").map((s) => s.asset?.reason).filter((r): r is string => !!r))];
+      const reasons = [
+        ...new Set(
+          (v?.stages ?? [])
+            .filter((s) => s.state !== "ready")
+            .map((s) => s.asset?.reason)
+            .filter((r): r is string => !!r),
+        ),
+      ];
       const anySchematic = (v?.stages ?? []).some((s) => s.state !== "ready");
       this.set({
         generate: {
           status: "done",
-          message: anySchematic ? "Schematic drawings are shown for stages without a generated image." : "Illustrations are ready. They are illustrative, not predictions.",
+          message: anySchematic
+            ? "Schematic drawings are shown for stages without a generated image."
+            : "Generated images are ready. They are not field observations or forecasts.",
           reasons,
         },
       });
     } catch (e) {
-      this.set({ generate: { status: "error", message: `Could not request illustrations: ${errInfo(e).message}`, reasons: [] } });
+      this.set({
+        generate: {
+          status: "error",
+          message: `Could not request illustrations: ${errInfo(e).message}`,
+          reasons: [],
+        },
+      });
     }
   }
 
   // ---- lazy panels
   async loadHistory(): Promise<void> {
-    if (this.state.history.status === "loading" || this.state.history.status === "ready") return;
+    if (
+      this.state.history.status === "loading" ||
+      this.state.history.status === "ready"
+    )
+      return;
     this.set({ history: { status: "loading", items: [] } });
     try {
       const items: HistoryItem[] = [];
       let id: string | null = this.planId;
       let view = this.state.plan;
       for (let n = 0; n < 12 && id; n++) {
-        if (!view || view.snapshot.id !== id) view = (await this.api.getPlan(id)).data;
-        items.push({ planId: view.snapshot.id, createdAt: view.snapshot.createdAt, summary: outputsOf(view).change_summary ?? null });
+        if (!view || view.snapshot.id !== id)
+          view = (await this.api.getPlan(id)).data;
+        items.push({
+          planId: view.snapshot.id,
+          createdAt: view.snapshot.createdAt,
+          summary: outputsOf(view).change_summary ?? null,
+        });
         id = view.snapshot.parentId;
       }
       this.set({ history: { status: "ready", items } });
@@ -321,11 +449,18 @@ export class SeasonController {
 
   async loadCitations(): Promise<void> {
     const plan = this.state.plan;
-    if (!plan || this.state.citations.status === "loading" || this.state.citations.status === "ready") return;
+    if (
+      !plan ||
+      this.state.citations.status === "loading" ||
+      this.state.citations.status === "ready"
+    )
+      return;
     this.set({ citations: { status: "loading", byId: new Map() } });
     try {
       const ev = await this.api.getCropEvidence(plan.snapshot.cropId);
-      this.set({ citations: { status: "ready", byId: new Map(ev.map((e) => [e.id, e])) } });
+      this.set({
+        citations: { status: "ready", byId: new Map(ev.map((e) => [e.id, e])) },
+      });
     } catch {
       this.set({ citations: { status: "error", byId: new Map() } });
     }

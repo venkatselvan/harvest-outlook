@@ -1,6 +1,8 @@
 import { z } from 'zod';
 import { DateRange, DecimalString, GeoPoint, Id, IsoDateTime, Mode, SchemaVersion } from './common';
 import { IrrigationCategory, LabourLevel, SoilDrainage, SoilTexture } from './rules';
+import { CropCycle, PreviousHarvest, RotationPlan } from './workspace';
+import { ValueRecord } from './evidence';
 
 export const FactBasis = z.enum(['farmer_reported', 'lab_test', 'district_proxy', 'derived', 'unknown']);
 export type FactBasis = z.infer<typeof FactBasis>;
@@ -76,6 +78,23 @@ export const FarmProfile = z
     experience: fact(z.string().min(1).max(500)),
     accessibleMarketIds: fact(z.array(Id)),
     excludedCropIds: fact(z.array(Id)),
+    demo:z.union([z.object({illustrative:z.literal(true),source:z.string()}).strict(),z.object({prefilledBoundary:z.literal(true),source:z.string()}).strict()]).optional(),
+    /** Farmer-entered tracking context; it does not establish validated rotation suitability. */
+    history: z.object({
+      basis: z.enum(['farmer_reported','illustrative']),
+      previousHarvest: PreviousHarvest,
+      cycles: z.array(CropCycle).max(20),
+      rotationPlans: z.array(RotationPlan).max(20),
+      boundaryRecorded: z.boolean(),
+      rotationAssessment: z.literal('not_assessed'),
+    }).strict().optional(),
+    monitoring: z.object({
+      checkedAt: IsoDateTime,
+      weatherStatus: z.enum(['fresh', 'stale', 'unavailable']),
+      marketStatus: z.enum(['available', 'stale', 'unavailable']),
+      references: z.array(ValueRecord).max(50),
+      marketProducts: z.array(z.object({ productId: z.string(), marketId: z.string(), date: z.string(), inrPerKg: z.string() }).strict()).max(12),
+    }).strict().optional(),
   })
   .strict();
 export type FarmProfile = z.infer<typeof FarmProfile>;

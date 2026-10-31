@@ -5,6 +5,7 @@ import type { Pool } from "../db/pool";
 import { withTransaction } from "../db/pool";
 import { purgeExpiredIdempotencyKeys } from "../services/idempotency";
 import { ingestHandlers, registerWorkerHandlers } from "./handlers";
+import { enqueueDueMonitors } from '../services/monitor-schedule';
 
 export interface JobRow {
   id: string;
@@ -142,7 +143,12 @@ async function main() {
   console.log(JSON.stringify({ msg: "worker started", workerId, mode: config.RUNTIME_MODE }));
   const PURGE_EVERY_MS = 10 * 60_000;
   let lastPurge = 0;
+  let lastMonitorScan = 0;
   while (!stopping) {
+    if (Date.now() - lastMonitorScan >= 60_000) {
+      lastMonitorScan = Date.now();
+      await enqueueDueMonitors(pool).catch(() => console.error(JSON.stringify({ msg: 'monitor scheduling failed' })));
+    }
     if (Date.now() - lastPurge >= PURGE_EVERY_MS) {
       lastPurge = Date.now();
       await purgeExpiredIdempotencyKeys(pool, config.IDEMPOTENCY_TTL_HOURS).catch((e) => console.error(JSON.stringify({ msg: "idempotency purge failed", error: (e as Error).message })));

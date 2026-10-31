@@ -9,13 +9,28 @@ import { Job, PriceTable, UsageLedgerEntry, UsageReservation } from './jobs';
 import { ActionTask, AgentTrace, ForecastArtifact, JournalEntry, JournalFact, PlanSnapshot, StageDefinition, VisualAsset } from './plans';
 import { CropRule, RuleContext, RuleEvaluationResult } from './rules';
 import { StructuredAssistantOutput, ToolSchemas } from './assistant';
+import {CurrentMandiQuotes,CurrentMandiQuote} from './market-quotes';
+import {PlanningReview,PlanningProposal,PlanningComparison,PlanningEvidence,ApplyPlanningReview,ApplyPlanningReviewResult} from './planning-review';
+import {SoilReportedReference,SoilParameter,SoilMarkerDraft,SoilSampleDraft,SoilReportExtraction,SoilCanonicalValue,SoilMarker,SoilReport,ReviewSoilReport,ConfirmSoilReport,FarmSoilMarkers} from './soil-reports';
+import {CommodityCatalogue,PricedCommodity,ResearchedCropProfile} from './commodity-catalogue';
 import { WaterBalanceInput, WaterBalanceResult } from './water';
+import {FarmCommandCenter,PlantCrop,PlantCropResult,CompleteCareTask,CompleteCareTaskResult,FocusedCrop,CareTask,SoilCropFit,PriorYearMarket} from './command-center';
 
 /**
  * Every public contract exported as JSON Schema for Python analytics.
  * Keys become file names under packages/contracts/schema/.
  */
 export const PUBLIC_CONTRACTS: Record<string, z.ZodType> = {
+  FarmCommandCenter,PlantCrop,PlantCropResult,CompleteCareTask,CompleteCareTaskResult,FocusedCrop,CareTask,SoilCropFit,PriorYearMarket,
+  SoilReportedReference,SoilParameter,SoilMarkerDraft,SoilSampleDraft,SoilReportExtraction,SoilCanonicalValue,SoilMarker,SoilReport,ReviewSoilReport,ConfirmSoilReport,FarmSoilMarkers,CommodityCatalogue,PricedCommodity,ResearchedCropProfile,
+  CurrentMandiQuotes,
+  CurrentMandiQuote,
+  PlanningReview,
+  PlanningProposal,
+  PlanningComparison,
+  PlanningEvidence,
+  ApplyPlanningReview,
+  ApplyPlanningReviewResult,
   ApiError,
   DateRange,
   GeoPoint,

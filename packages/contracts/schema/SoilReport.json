@@ -1,0 +1,1460 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "string",
+      "format": "uuid",
+      "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+    },
+    "farmId": {
+      "type": "string",
+      "format": "uuid",
+      "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+    },
+    "kind": {
+      "type": "string",
+      "enum": [
+        "field_report",
+        "reference_sample"
+      ]
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "running",
+        "needs_review",
+        "confirmed",
+        "unavailable",
+        "error"
+      ]
+    },
+    "version": {
+      "type": "integer",
+      "minimum": -9007199254740991,
+      "maximum": 9007199254740991
+    },
+    "filename": {
+      "type": "string"
+    },
+    "contentType": {
+      "type": "string"
+    },
+    "bytes": {
+      "type": "integer",
+      "minimum": -9007199254740991,
+      "maximum": 9007199254740991
+    },
+    "sha256": {
+      "type": "string"
+    },
+    "createdAt": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+    },
+    "jobId": {
+      "anyOf": [
+        {
+          "type": "string",
+          "format": "uuid",
+          "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "modelInvocation": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "provider": {
+              "type": "string",
+              "const": "meta"
+            },
+            "requestedModel": {
+              "type": "string"
+            },
+            "model": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "purpose": {
+              "type": "string"
+            },
+            "status": {
+              "type": "string",
+              "enum": [
+                "running",
+                "succeeded",
+                "failed"
+              ]
+            },
+            "startedAt": {
+              "type": "string",
+              "format": "date-time",
+              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+            },
+            "finishedAt": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date-time",
+                  "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "processing": {
+              "type": "string",
+              "const": "standard"
+            },
+            "requestedStorage": {
+              "type": "boolean",
+              "const": false
+            },
+            "responseDeleted": {
+              "type": [
+                "boolean",
+                "null"
+              ]
+            }
+          },
+          "required": [
+            "id",
+            "provider",
+            "requestedModel",
+            "model",
+            "purpose",
+            "status",
+            "startedAt",
+            "finishedAt",
+            "processing",
+            "requestedStorage",
+            "responseDeleted"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "originalUrl": {
+      "type": "string"
+    },
+    "referenceSource": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "title": {
+              "type": "string"
+            },
+            "url": {
+              "type": "string",
+              "format": "uri"
+            },
+            "pages": {
+              "type": "array",
+              "items": {
+                "type": "integer",
+                "exclusiveMinimum": 0,
+                "maximum": 9007199254740991
+              }
+            },
+            "limitations": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "extractionScope": {
+              "type": "object",
+              "properties": {
+                "sampleLabel": {
+                  "type": "string"
+                },
+                "description": {
+                  "type": "string"
+                },
+                "markerLimit": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 100
+                }
+              },
+              "required": [
+                "sampleLabel",
+                "description",
+                "markerLimit"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "required": [
+            "title",
+            "url",
+            "pages",
+            "limitations"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "pages": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "page": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "imageUrl": {
+            "type": "string"
+          },
+          "width": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "height": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "nativeTextAvailable": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "page",
+          "imageUrl",
+          "width",
+          "height",
+          "nativeTextAvailable"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "extraction": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "title": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 300
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "laboratory": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 300
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "receivedDate": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date",
+                  "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "reportDate": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date",
+                  "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "samples": {
+              "maxItems": 20,
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 100
+                  },
+                  "sampleLabel": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "maxLength": 300
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "laboratory": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "maxLength": 300
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "collectionDate": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "format": "date",
+                        "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "receivedDate": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "format": "date",
+                        "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "reportDate": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "format": "date",
+                        "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "depth": {
+                    "anyOf": [
+                      {
+                        "type": "object",
+                        "properties": {
+                          "from": {
+                            "type": "number",
+                            "minimum": 0
+                          },
+                          "to": {
+                            "type": "number",
+                            "minimum": 0
+                          },
+                          "unit": {
+                            "type": "string",
+                            "enum": [
+                              "cm",
+                              "m",
+                              "inch"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "from",
+                          "to",
+                          "unit"
+                        ],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "markers": {
+                    "maxItems": 100,
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 100
+                        },
+                        "parameter": {
+                          "type": "string",
+                          "enum": [
+                            "ph",
+                            "electrical_conductivity",
+                            "organic_carbon",
+                            "organic_matter",
+                            "nitrogen_available",
+                            "nitrogen_total",
+                            "nitrogen_unspecified",
+                            "nitrate_n",
+                            "ammonium_n",
+                            "phosphorus_available",
+                            "phosphorus_total",
+                            "potassium_available",
+                            "potassium_total",
+                            "sulphur_available",
+                            "zinc_available",
+                            "boron_available",
+                            "iron_available",
+                            "manganese_available",
+                            "copper_available",
+                            "calcium_exchangeable",
+                            "magnesium_exchangeable",
+                            "sodium_exchangeable",
+                            "cec",
+                            "texture",
+                            "sand",
+                            "silt",
+                            "clay",
+                            "bulk_density",
+                            "moisture_gravimetric",
+                            "moisture_volumetric",
+                            "field_capacity",
+                            "wilting_point",
+                            "base_saturation",
+                            "esp",
+                            "sar",
+                            "unknown_other"
+                          ]
+                        },
+                        "rawLabel": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 300
+                        },
+                        "rawValue": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 300
+                        },
+                        "rawUnit": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "maxLength": 300
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "numericValue": {
+                          "type": [
+                            "number",
+                            "null"
+                          ]
+                        },
+                        "qualifier": {
+                          "type": "string",
+                          "enum": [
+                            "exact",
+                            "less_than",
+                            "less_or_equal",
+                            "greater_than",
+                            "greater_or_equal",
+                            "range",
+                            "below_detection",
+                            "unreadable",
+                            "text"
+                          ]
+                        },
+                        "range": {
+                          "anyOf": [
+                            {
+                              "type": "object",
+                              "properties": {
+                                "low": {
+                                  "type": "number"
+                                },
+                                "high": {
+                                  "type": "number"
+                                }
+                              },
+                              "required": [
+                                "low",
+                                "high"
+                              ],
+                              "additionalProperties": false
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "analyteForm": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "maxLength": 300
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "method": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "maxLength": 300
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "extractant": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "maxLength": 300
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "soilWaterRatio": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "maxLength": 300
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "temperatureC": {
+                          "type": [
+                            "number",
+                            "null"
+                          ]
+                        },
+                        "matrix": {
+                          "type": "string",
+                          "enum": [
+                            "soil",
+                            "water",
+                            "plant",
+                            "unknown"
+                          ]
+                        },
+                        "massBasis": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "maxLength": 300
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "reportedRating": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "maxLength": 300
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "reportedReference": {
+                          "anyOf": [
+                            {
+                              "type": "object",
+                              "properties": {
+                                "label": {
+                                  "type": "string",
+                                  "minLength": 1,
+                                  "maxLength": 300
+                                },
+                                "rawText": {
+                                  "type": "string",
+                                  "minLength": 1,
+                                  "maxLength": 1000
+                                },
+                                "rawUnit": {
+                                  "anyOf": [
+                                    {
+                                      "type": "string",
+                                      "maxLength": 300
+                                    },
+                                    {
+                                      "type": "null"
+                                    }
+                                  ]
+                                },
+                                "qualifier": {
+                                  "type": "string",
+                                  "enum": [
+                                    "exact",
+                                    "less_than",
+                                    "less_or_equal",
+                                    "greater_than",
+                                    "greater_or_equal",
+                                    "range",
+                                    "text"
+                                  ]
+                                },
+                                "numericValue": {
+                                  "type": [
+                                    "number",
+                                    "null"
+                                  ]
+                                },
+                                "range": {
+                                  "anyOf": [
+                                    {
+                                      "type": "object",
+                                      "properties": {
+                                        "low": {
+                                          "type": "number"
+                                        },
+                                        "high": {
+                                          "type": "number"
+                                        },
+                                        "lowInclusive": {
+                                          "type": [
+                                            "boolean",
+                                            "null"
+                                          ]
+                                        },
+                                        "highInclusive": {
+                                          "type": [
+                                            "boolean",
+                                            "null"
+                                          ]
+                                        }
+                                      },
+                                      "required": [
+                                        "low",
+                                        "high",
+                                        "lowInclusive",
+                                        "highInclusive"
+                                      ],
+                                      "additionalProperties": false
+                                    },
+                                    {
+                                      "type": "null"
+                                    }
+                                  ]
+                                },
+                                "evidence": {
+                                  "type": "object",
+                                  "properties": {
+                                    "page": {
+                                      "type": "integer",
+                                      "minimum": 1,
+                                      "maximum": 8
+                                    },
+                                    "quote": {
+                                      "type": "string",
+                                      "maxLength": 1500
+                                    },
+                                    "nativeTextCheck": {
+                                      "type": "string",
+                                      "enum": [
+                                        "matched",
+                                        "not_matched",
+                                        "image_review_required"
+                                      ]
+                                    }
+                                  },
+                                  "required": [
+                                    "page",
+                                    "quote",
+                                    "nativeTextCheck"
+                                  ],
+                                  "additionalProperties": false
+                                }
+                              },
+                              "required": [
+                                "label",
+                                "rawText",
+                                "rawUnit",
+                                "qualifier",
+                                "numericValue",
+                                "range",
+                                "evidence"
+                              ],
+                              "additionalProperties": false
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "evidence": {
+                          "type": "object",
+                          "properties": {
+                            "page": {
+                              "type": "integer",
+                              "minimum": 1,
+                              "maximum": 8
+                            },
+                            "quote": {
+                              "type": "string",
+                              "maxLength": 1500
+                            },
+                            "nativeTextCheck": {
+                              "type": "string",
+                              "enum": [
+                                "matched",
+                                "not_matched",
+                                "image_review_required"
+                              ]
+                            }
+                          },
+                          "required": [
+                            "page",
+                            "quote",
+                            "nativeTextCheck"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "extractionConfidence": {
+                          "type": "string",
+                          "enum": [
+                            "high",
+                            "medium",
+                            "low",
+                            "unreadable"
+                          ]
+                        },
+                        "warnings": {
+                          "maxItems": 20,
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                            "maxLength": 500
+                          }
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "parameter",
+                        "rawLabel",
+                        "rawValue",
+                        "rawUnit",
+                        "numericValue",
+                        "qualifier",
+                        "range",
+                        "analyteForm",
+                        "method",
+                        "extractant",
+                        "soilWaterRatio",
+                        "temperatureC",
+                        "matrix",
+                        "massBasis",
+                        "reportedRating",
+                        "evidence",
+                        "extractionConfidence",
+                        "warnings"
+                      ],
+                      "additionalProperties": false
+                    }
+                  }
+                },
+                "required": [
+                  "id",
+                  "sampleLabel",
+                  "laboratory",
+                  "collectionDate",
+                  "reportDate",
+                  "depth",
+                  "markers"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "warnings": {
+              "maxItems": 30,
+              "type": "array",
+              "items": {
+                "type": "string",
+                "maxLength": 1000
+              }
+            }
+          },
+          "required": [
+            "title",
+            "laboratory",
+            "reportDate",
+            "samples",
+            "warnings"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "reviewed": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "title": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 300
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "laboratory": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 300
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "receivedDate": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date",
+                  "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "reportDate": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date",
+                  "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "samples": {
+              "maxItems": 20,
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 100
+                  },
+                  "sampleLabel": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "maxLength": 300
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "laboratory": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "maxLength": 300
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "collectionDate": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "format": "date",
+                        "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "receivedDate": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "format": "date",
+                        "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "reportDate": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "format": "date",
+                        "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "depth": {
+                    "anyOf": [
+                      {
+                        "type": "object",
+                        "properties": {
+                          "from": {
+                            "type": "number",
+                            "minimum": 0
+                          },
+                          "to": {
+                            "type": "number",
+                            "minimum": 0
+                          },
+                          "unit": {
+                            "type": "string",
+                            "enum": [
+                              "cm",
+                              "m",
+                              "inch"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "from",
+                          "to",
+                          "unit"
+                        ],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "markers": {
+                    "maxItems": 100,
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 100
+                        },
+                        "parameter": {
+                          "type": "string",
+                          "enum": [
+                            "ph",
+                            "electrical_conductivity",
+                            "organic_carbon",
+                            "organic_matter",
+                            "nitrogen_available",
+                            "nitrogen_total",
+                            "nitrogen_unspecified",
+                            "nitrate_n",
+                            "ammonium_n",
+                            "phosphorus_available",
+                            "phosphorus_total",
+                            "potassium_available",
+                            "potassium_total",
+                            "sulphur_available",
+                            "zinc_available",
+                            "boron_available",
+                            "iron_available",
+                            "manganese_available",
+                            "copper_available",
+                            "calcium_exchangeable",
+                            "magnesium_exchangeable",
+                            "sodium_exchangeable",
+                            "cec",
+                            "texture",
+                            "sand",
+                            "silt",
+                            "clay",
+                            "bulk_density",
+                            "moisture_gravimetric",
+                            "moisture_volumetric",
+                            "field_capacity",
+                            "wilting_point",
+                            "base_saturation",
+                            "esp",
+                            "sar",
+                            "unknown_other"
+                          ]
+                        },
+                        "rawLabel": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 300
+                        },
+                        "rawValue": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 300
+                        },
+                        "rawUnit": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "maxLength": 300
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "numericValue": {
+                          "type": [
+                            "number",
+                            "null"
+                          ]
+                        },
+                        "qualifier": {
+                          "type": "string",
+                          "enum": [
+                            "exact",
+                            "less_than",
+                            "less_or_equal",
+                            "greater_than",
+                            "greater_or_equal",
+                            "range",
+                            "below_detection",
+                            "unreadable",
+                            "text"
+                          ]
+                        },
+                        "range": {
+                          "anyOf": [
+                            {
+                              "type": "object",
+                              "properties": {
+                                "low": {
+                                  "type": "number"
+                                },
+                                "high": {
+                                  "type": "number"
+                                }
+                              },
+                              "required": [
+                                "low",
+                                "high"
+                              ],
+                              "additionalProperties": false
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "analyteForm": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "maxLength": 300
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "method": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "maxLength": 300
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "extractant": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "maxLength": 300
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "soilWaterRatio": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "maxLength": 300
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "temperatureC": {
+                          "type": [
+                            "number",
+                            "null"
+                          ]
+                        },
+                        "matrix": {
+                          "type": "string",
+                          "enum": [
+                            "soil",
+                            "water",
+                            "plant",
+                            "unknown"
+                          ]
+                        },
+                        "massBasis": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "maxLength": 300
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "reportedRating": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "maxLength": 300
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "reportedReference": {
+                          "anyOf": [
+                            {
+                              "type": "object",
+                              "properties": {
+                                "label": {
+                                  "type": "string",
+                                  "minLength": 1,
+                                  "maxLength": 300
+                                },
+                                "rawText": {
+                                  "type": "string",
+                                  "minLength": 1,
+                                  "maxLength": 1000
+                                },
+                                "rawUnit": {
+                                  "anyOf": [
+                                    {
+                                      "type": "string",
+                                      "maxLength": 300
+                                    },
+                                    {
+                                      "type": "null"
+                                    }
+                                  ]
+                                },
+                                "qualifier": {
+                                  "type": "string",
+                                  "enum": [
+                                    "exact",
+                                    "less_than",
+                                    "less_or_equal",
+                                    "greater_than",
+                                    "greater_or_equal",
+                                    "range",
+                                    "text"
+                                  ]
+                                },
+                                "numericValue": {
+                                  "type": [
+                                    "number",
+                                    "null"
+                                  ]
+                                },
+                                "range": {
+                                  "anyOf": [
+                                    {
+                                      "type": "object",
+                                      "properties": {
+                                        "low": {
+                                          "type": "number"
+                                        },
+                                        "high": {
+                                          "type": "number"
+                                        },
+                                        "lowInclusive": {
+                                          "type": [
+                                            "boolean",
+                                            "null"
+                                          ]
+                                        },
+                                        "highInclusive": {
+                                          "type": [
+                                            "boolean",
+                                            "null"
+                                          ]
+                                        }
+                                      },
+                                      "required": [
+                                        "low",
+                                        "high",
+                                        "lowInclusive",
+                                        "highInclusive"
+                                      ],
+                                      "additionalProperties": false
+                                    },
+                                    {
+                                      "type": "null"
+                                    }
+                                  ]
+                                },
+                                "evidence": {
+                                  "type": "object",
+                                  "properties": {
+                                    "page": {
+                                      "type": "integer",
+                                      "minimum": 1,
+                                      "maximum": 8
+                                    },
+                                    "quote": {
+                                      "type": "string",
+                                      "maxLength": 1500
+                                    },
+                                    "nativeTextCheck": {
+                                      "type": "string",
+                                      "enum": [
+                                        "matched",
+                                        "not_matched",
+                                        "image_review_required"
+                                      ]
+                                    }
+                                  },
+                                  "required": [
+                                    "page",
+                                    "quote",
+                                    "nativeTextCheck"
+                                  ],
+                                  "additionalProperties": false
+                                }
+                              },
+                              "required": [
+                                "label",
+                                "rawText",
+                                "rawUnit",
+                                "qualifier",
+                                "numericValue",
+                                "range",
+                                "evidence"
+                              ],
+                              "additionalProperties": false
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "evidence": {
+                          "type": "object",
+                          "properties": {
+                            "page": {
+                              "type": "integer",
+                              "minimum": 1,
+                              "maximum": 8
+                            },
+                            "quote": {
+                              "type": "string",
+                              "maxLength": 1500
+                            },
+                            "nativeTextCheck": {
+                              "type": "string",
+                              "enum": [
+                                "matched",
+                                "not_matched",
+                                "image_review_required"
+                              ]
+                            }
+                          },
+                          "required": [
+                            "page",
+                            "quote",
+                            "nativeTextCheck"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "extractionConfidence": {
+                          "type": "string",
+                          "enum": [
+                            "high",
+                            "medium",
+                            "low",
+                            "unreadable"
+                          ]
+                        },
+                        "warnings": {
+                          "maxItems": 20,
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                            "maxLength": 500
+                          }
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "parameter",
+                        "rawLabel",
+                        "rawValue",
+                        "rawUnit",
+                        "numericValue",
+                        "qualifier",
+                        "range",
+                        "analyteForm",
+                        "method",
+                        "extractant",
+                        "soilWaterRatio",
+                        "temperatureC",
+                        "matrix",
+                        "massBasis",
+                        "reportedRating",
+                        "evidence",
+                        "extractionConfidence",
+                        "warnings"
+                      ],
+                      "additionalProperties": false
+                    }
+                  }
+                },
+                "required": [
+                  "id",
+                  "sampleLabel",
+                  "laboratory",
+                  "collectionDate",
+                  "reportDate",
+                  "depth",
+                  "markers"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "warnings": {
+              "maxItems": 30,
+              "type": "array",
+              "items": {
+                "type": "string",
+                "maxLength": 1000
+              }
+            }
+          },
+          "required": [
+            "title",
+            "laboratory",
+            "reportDate",
+            "samples",
+            "warnings"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "confirmedSampleIds": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "warnings": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  },
+  "required": [
+    "id",
+    "farmId",
+    "kind",
+    "status",
+    "version",
+    "filename",
+    "contentType",
+    "bytes",
+    "sha256",
+    "createdAt",
+    "jobId",
+    "modelInvocation",
+    "originalUrl",
+    "referenceSource",
+    "pages",
+    "extraction",
+    "reviewed",
+    "confirmedSampleIds",
+    "warnings"
+  ],
+  "additionalProperties": false,
+  "$id": "https://harvest-outlook.local/schema/1.0/SoilReport.json",
+  "x-schemaVersion": "1.0"
+}

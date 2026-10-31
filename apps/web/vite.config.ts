@@ -12,12 +12,19 @@ export default defineConfig({
         name: "Harvest Outlook",
         short_name: "Harvest",
         description: "Crop comparison, season planning and visual journal.",
-        start_url: "/explore",
+        start_url: "/farm",
         scope: "/",
         display: "standalone",
-        background_color: "#fbfaf5",
+        background_color: "#ffffff",
         theme_color: "#1f5f3a",
-        icons: [{ src: "/icon.svg", sizes: "any", type: "image/svg+xml", purpose: "any" }],
+        icons: [
+          {
+            src: "/brand/harvest-logo.png",
+            sizes: "1254x1254",
+            type: "image/png",
+            purpose: "any",
+          },
+        ],
       },
       workbox: {
         // App shell plus one public, non-personal read endpoint family (the crop catalogue) so Explore opens offline.
@@ -26,7 +33,7 @@ export default defineConfig({
         // Everything else under /api (plans, journal, farms, media, assistant, speech, session, jobs) is private and
         // is NEVER cached by the service worker; private snapshots live in IndexedDB under an owner scope instead
         // (src/features/plan-cache). The fixed `private` rule below is an allow-list, not a deny-list.
-        globPatterns: ["**/*.{js,css,html,svg,webmanifest}"],
+        globPatterns: ["**/*.{js,css,html,svg,png,webmanifest}"],
         navigateFallback: "/index.html",
         navigateFallbackDenylist: [/^\/api\//],
         runtimeCaching: [
@@ -34,7 +41,9 @@ export default defineConfig({
             // GET /api/v1/crops* only. NetworkFirst with a short maxAge: fresh data when
             // online, last good copy (at most one hour old) when not. Cleared on logout (features/offline/purge.ts).
             urlPattern: ({ url, request }: { url: URL; request: Request }) =>
-              request.method === "GET" && (url.pathname === "/api/v1/crops" || url.pathname.startsWith("/api/v1/crops/")),
+              request.method === "GET" &&
+              (url.pathname === "/api/v1/crops" ||
+                url.pathname.startsWith("/api/v1/crops/")),
             handler: "NetworkFirst",
             options: {
               cacheName: "ho-api-public",
@@ -50,7 +59,12 @@ export default defineConfig({
   ],
   server: {
     port: 5173,
-    proxy: { "/api": { target: process.env.API_PROXY_TARGET ?? "http://127.0.0.1:8787", changeOrigin: false } },
+    proxy: {
+      "/api": {
+        target: process.env.API_PROXY_TARGET ?? "http://127.0.0.1:8787",
+        changeOrigin: false,
+      },
+    },
   },
   build: { target: "es2022" },
 });
