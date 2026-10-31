@@ -4,7 +4,6 @@ import {StageTimeline, TodayView} from '@harvest/contracts';
 import {setupHarness, login, testConfig, ORIGIN, type Harness, type Client} from './helpers';
 import {fakePlanetary, type FakeScene} from './fixtures/sentinel2/fake-provider';
 import {MAX_OUTLOOK_CALLS, boundedWindow, todayView, type TodayProviders, type TodayViewDeps} from '../src/services/today/view';
-import {todayRoutes} from '../src/routes/today';
 import {stageAt, stageTimeline} from '../src/services/today/stage-timeline';
 import {persistAlerts, type AlertDraft} from '../src/services/today/alerts';
 import {focusedResearch, type FocusedResearch} from '../src/services/focused-crops';
@@ -386,9 +385,7 @@ describe('todayView: edges', () => {
 describe('GET /api/v1/farms/:id/today', () => {
   let app: FastifyInstance;
   beforeAll(async () => {
-    app = await h.make({RUNTIME_MODE: 'live'});
-    const deps = liveDeps();
-    await app.register(todayRoutes, {...deps, config: testConfig({RUNTIME_MODE: 'live'}), pool: h.pool});
+    app = await h.make({RUNTIME_MODE: 'live'}, {today: {view: liveDeps()}});
   });
   const get = (c: Client | null, id: string) => app.inject({method: 'GET', url: `/api/v1/farms/${id}/today`, headers: {origin: ORIGIN, ...(c ? {cookie: c.cookie} : {})}});
 

@@ -1,7 +1,7 @@
 import {readFileSync} from 'node:fs';
 import {resolve} from 'node:path';
 import {describe, expect, it} from 'vitest';
-import {NdviStats} from '../../../packages/contracts/src/ndvi';
+import {NdviStats} from '@harvest/contracts';
 import {
   PC_ORIGIN, bandStack, baselineOffset, bboxAreaKm2, bufferBbox, listScenes, ndviStats, neighbourhoodBands, parseNpy, polygonBands, prepareRing, renderScene,
   type Sentinel2Fetch,

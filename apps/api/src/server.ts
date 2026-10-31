@@ -87,6 +87,8 @@ export interface ServerDeps {
   priceKeyConfigured?: boolean;
   /** Clock for the price reference source and comparison endpoint (tests). */
   priceNow?: () => Date;
+  /** Test hooks for the Today view plugins (see RouteDeps.today). */
+  today?: RouteDeps["today"];
 }
 
 /** Whether a data.gov.in key is present in the environment. Boolean only; a malformed provider config counts as not configured. */
@@ -250,6 +252,7 @@ export async function buildServer(config: Config, pool: Pool, deps: ServerDeps =
     toolBindings,
     assistant: deps.assistant,
     weatherFetch: deps.weatherFetch,
+    today: deps.today,
     speech: { service: speechService },
   });
   await budget.init().catch((e) => app.log.warn({ err: { type: (e as Error).name } }, "budget_state not initialised (database unavailable or unmigrated)"));

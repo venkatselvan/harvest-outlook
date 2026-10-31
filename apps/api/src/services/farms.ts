@@ -253,6 +253,15 @@ export async function deleteFarm(
     const reports = await c.query<{id:string;original_key:string;pages:{key:string}[]}>("SELECT id,original_key,pages FROM soil_reports WHERE farm_id=$1 AND owner_id=$2",[id,ownerId]);
     const attempts=await c.query<{pages:{key:string}[]}>("SELECT a.pages FROM soil_extraction_attempts a JOIN soil_reports r ON r.id=a.report_id WHERE r.farm_id=$1 AND r.owner_id=$2",[id,ownerId]);
     const reportKeys=reports.rows.flatMap(r=>[r.original_key,...r.pages.map(p=>p.key)]).concat(attempts.rows.flatMap(a=>a.pages.map(p=>p.key))).filter((k,i,all)=>all.indexOf(k)===i).map(storage_key=>({id:"soil_report",storage_key}));
+    // Today view objects: rendered Sentinel-2 PNGs (ndvi_scene_stats.image_keys maps 'visual'/'ndvi' to a key; one key can be recorded
+    // on several rows of the same farm) and generated future-look illustrations. Both tables cascade with the farm, so the keys
+    // must be read before the delete below; the objects go after commit like every other private file.
+    const sceneRows = await c.query<{ image_keys: Record<string, unknown> | null }>("SELECT image_keys FROM ndvi_scene_stats WHERE farm_id=$1 AND owner_id=$2 AND image_keys IS NOT NULL", [id, ownerId]);
+    const futureRows = await c.query<{ storage_key: string }>("SELECT storage_key FROM future_look_assets WHERE farm_id=$1 AND owner_id=$2 AND storage_key IS NOT NULL", [id, ownerId]);
+    const todayKeys = [
+      ...sceneRows.rows.flatMap((r) => Object.values(r.image_keys ?? {}).filter((k): k is string => typeof k === "string" && k.length > 0)).filter((k, i, all) => all.indexOf(k) === i).map((storage_key) => ({ id: "ndvi_scene", storage_key })),
+      ...futureRows.rows.map((r) => r.storage_key).filter((k, i, all) => all.indexOf(k) === i).map((storage_key) => ({ id: "future_look", storage_key })),
+    ];
     const plans = "(SELECT id FROM plans WHERE farm_id = $1 AND owner_id = $2)";
     // Generated keyframes are stored objects too; collect their keys (and any generated media rows) before the rows go.
     const assets = await c.query<{ storage_key: string }>(
@@ -307,7 +316,7 @@ export async function deleteFarm(
     const still = await c.query<{ storage_key: string }>("SELECT DISTINCT storage_key FROM visual_assets WHERE owner_id = $1 AND storage_key IS NOT NULL", [ownerId]);
     const shared = new Set(still.rows.map((r) => r.storage_key));
     const assetKeys = [...new Set(assets.rows.map((a) => a.storage_key))].filter((k) => !shared.has(k));
-    return [...media.rows, ...assetMedia.rows,...reportKeys, ...assetKeys.map((k) => ({ id: "visual_asset", storage_key: k }))];
+    return [...media.rows, ...assetMedia.rows,...reportKeys, ...todayKeys, ...assetKeys.map((k) => ({ id: "visual_asset", storage_key: k }))];
   });
   let failed = 0;
   for (const m of keys) {
@@ -318,5 +327,7 @@ export async function deleteFarm(
       log.warn({ mediaId: m.id, err: (e as Error).name }, "storage delete failed after farm deletion; object orphaned");
     }
   }
-  return { mediaObjectsRemoved: keys.filter((k) => k.id !== "visual_asset").length, storageObjectsFailed: failed };
+  // mediaObjectsRemoved keeps its meaning (uploaded media); the Today view objects are generated or fetched, like keyframes.
+  const NOT_MEDIA = new Set(["visual_asset", "ndvi_scene", "future_look"]);
+  return { mediaObjectsRemoved: keys.filter((k) => !NOT_MEDIA.has(k.id)).length, storageObjectsFailed: failed };
 }

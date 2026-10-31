@@ -32,6 +32,12 @@ import {aiActivityRoutes} from './ai-activity';
 import {demoFarmRoutes} from './demo-farm';
 import {commandCenterRoutes} from './command-center';
 import {registerMarketContextRoutes} from './market-context';
+import {todayRoutes, type TodayRouteDeps} from './today';
+import {todayNdviRoutes, type TodayNdviDeps} from './today-ndvi';
+import {todayAlertRoutes, type TodayAlertRouteDeps} from './today-alerts';
+import {todayTimelineRoutes, type TodayTimelineDeps} from './today-timeline';
+import {todayFutureRoutes, type TodayFutureDeps} from './today-future';
+import {priceSeriesRoutes} from './price-series';
 
 export interface RouteDeps {
   config: Config;
@@ -50,6 +56,14 @@ export interface RouteDeps {
   assistant?: Partial<AssistantRouteDeps> | undefined;
   speech?: Partial<Omit<SpeechRouteDeps, "pool">> | undefined;
   weatherFetch?: FetchLike | undefined;
+  /** Test hooks for the Today view plugins (clocks, provider fetch seams, injected timelines); production passes none. Applied after the defaults. */
+  today?: {
+    view?: Partial<Omit<TodayRouteDeps, "config" | "pool">>;
+    ndvi?: Partial<Omit<TodayNdviDeps, "config" | "pool" | "storage">>;
+    alerts?: Partial<Omit<TodayAlertRouteDeps, "config" | "pool">>;
+    timeline?: Partial<Omit<TodayTimelineDeps, "config" | "pool">>;
+    future?: Partial<Omit<TodayFutureDeps, "config" | "pool" | "storage">>;
+  } | undefined;
 }
 
 /**
@@ -70,6 +84,14 @@ export async function registerRoutes(app: FastifyInstance, deps: RouteDeps): Pro
   await app.register(demoFarmRoutes,{config,pool});
   await app.register(mediaRoutes, { config, pool, storage: deps.storage });
   await app.register(jobRoutes, { config, pool });
+  // Stream B: Today view (UI_BRIEF section 4) and the wholesale price reads. The weather seam only reaches the plugins that call Open-Meteo;
+  // the NDVI and future-look plugins talk to Planetary Computer through their own Sentinel2Fetch seam, which tests inject at the plugin.
+  await app.register(todayRoutes,{config,pool,...(deps.weatherFetch?{weatherFetch:deps.weatherFetch}:{}),...deps.today?.view});
+  await app.register(todayNdviRoutes,{config,pool,storage:deps.storage,...deps.today?.ndvi});
+  await app.register(todayAlertRoutes,{config,pool,...deps.today?.alerts});
+  await app.register(todayTimelineRoutes,{config,pool,...(deps.weatherFetch?{fetchImpl:deps.weatherFetch}:{}),...deps.today?.timeline});
+  await app.register(todayFutureRoutes,{config,pool,storage:deps.storage,...deps.today?.future});
+  await app.register(priceSeriesRoutes,{config,pool});
 
   await registerPlanRoutes(app, {
     config,

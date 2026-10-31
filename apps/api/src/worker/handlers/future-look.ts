@@ -12,7 +12,7 @@
  * within the documented threshold. A rejected image is billed but not stored. The image edit endpoint returns no
  * response id, so `response_deleted` stays NULL (nothing to delete); provider-side retention of the input image is unknown.
  *
- * Not registered here (shared file): `registry['today.future-look'] = createFutureLookHandler({config, pool, storage, budget, fetchImpl})`.
+ * Registered in worker/handlers/index.ts as `today.future-look` (wrapped there by the generic model-activity wrapper).
  * The registry wrapper's model-activity purpose is overridden here by `future_look`.
  */
 import sharp from 'sharp';
@@ -25,9 +25,10 @@ import {withModelActivity} from '../../services/model-activity';
 import type {StorageAdapter} from '../../storage/types';
 import {displayBbox, type Sentinel2Fetch} from '../../providers/sentinel2';
 import {sceneImage as defaultSceneImage, type NdviImageDeps, type SceneImage} from '../../services/today/ndvi';
+import type {FutureLookQa, FutureLookStatus} from '@harvest/contracts';
 import {
   buildFutureLookPrompt, evaluateFutureLook, futureLookField, futureLookStorageKey, ringToImage,
-  type FutureLookQa, type FutureLookRow, type FutureLookStatus,
+  type FutureLookRow,
 } from '../../services/today/future-look';
 import {claimDispatch, finishDispatch, unresolvedDispatches} from '../../visuals/dispatch';
 import {editImage, MuseImageError} from '../../visuals/muse-image';

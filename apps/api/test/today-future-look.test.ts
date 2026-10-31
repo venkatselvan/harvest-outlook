@@ -1,17 +1,16 @@
 import {afterAll, beforeAll, beforeEach, describe, expect, it, vi} from 'vitest';
 import sharp from 'sharp';
 import type {FastifyInstance} from 'fastify';
-import {StageTimeline} from '@harvest/contracts';
+import {FutureLookAsset, StageTimeline} from '@harvest/contracts';
 import {buildServer} from '../src/server';
 import {Budget} from '../src/services/budget';
 import {ApiError} from '../src/services/errors';
 import {ndviSeries, type NdviDeps, type SceneImage} from '../src/services/today/ndvi';
 import {
-  FUTURE_LOOK_JOB_TYPE, FUTURE_QA_OUTSIDE_CHANNEL_MAX, FutureLookAsset, buildFutureLookPrompt, evaluateFutureLook, futureLookField, futureLookImage,
+  FUTURE_LOOK_JOB_TYPE, FUTURE_QA_OUTSIDE_CHANNEL_MAX, buildFutureLookPrompt, evaluateFutureLook, futureLookField, futureLookImage,
   futureLookStatus, listReadyFutureLooks, requestFutureLook, ringToImage, type FutureLookDeps,
 } from '../src/services/today/future-look';
 import {createFutureLookHandler, runFutureLook, type FutureLookHandlerDeps} from '../src/worker/handlers/future-look';
-import {todayFutureRoutes} from '../src/routes/today-future';
 import {claimDispatch} from '../src/visuals/dispatch';
 import {displayBbox, prepareRing} from '../src/providers/sentinel2';
 import {dataUrlToBuffer, providerOk} from './fixtures/muse-image/build';
@@ -344,12 +343,10 @@ describe('evaluateFutureLook (deterministic QA)', () => {
 
 describe('routes (registered on a test server)', () => {
   let liveApp: FastifyInstance, synthApp: FastifyInstance;
-  const routeDeps = (config = testConfig(LIVE)) => ({config, pool: h.pool, storage: h.storage, now: NOW, timeline: () => MAIZE});
+  const routeDeps = () => ({now: NOW, timeline: () => MAIZE});
   beforeAll(async () => {
-    liveApp = await buildServer(testConfig(LIVE), h.pool, {storage: h.storage});
-    await liveApp.register(todayFutureRoutes, routeDeps());
-    synthApp = await buildServer(testConfig(), h.pool, {storage: h.storage});
-    await synthApp.register(todayFutureRoutes, routeDeps(testConfig()));
+    liveApp = await buildServer(testConfig(LIVE), h.pool, {storage: h.storage, today: {future: routeDeps()}});
+    synthApp = await buildServer(testConfig(), h.pool, {storage: h.storage, today: {future: routeDeps()}});
   });
   afterAll(async () => { await liveApp?.close(); await synthApp?.close(); });
   const call = (app: FastifyInstance, c: Client, method: 'GET' | 'POST', url: string) =>

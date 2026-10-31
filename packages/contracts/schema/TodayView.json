@@ -1,0 +1,2147 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "farmId": {
+      "type": "string",
+      "format": "uuid",
+      "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+    },
+    "asOf": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+    },
+    "today": {
+      "type": "string",
+      "format": "date",
+      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+    },
+    "cycle": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 120
+            },
+            "cropId": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 120
+            },
+            "cropName": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 120
+            },
+            "sowingDate": {
+              "type": "string",
+              "format": "date",
+              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+            },
+            "establishmentDate": {
+              "type": "string",
+              "format": "date",
+              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+            },
+            "establishmentMethod": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 80
+            },
+            "productId": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 200
+            },
+            "productName": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 120
+            },
+            "stage": {
+              "type": "string",
+              "enum": [
+                "sowed",
+                "growing",
+                "flowering",
+                "harvested"
+              ]
+            },
+            "harvestDate": {
+              "type": "string",
+              "format": "date",
+              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+            },
+            "notes": {
+              "type": "string",
+              "maxLength": 2000
+            },
+            "rootPlanId": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "latestPlanId": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            }
+          },
+          "required": [
+            "id",
+            "cropId",
+            "sowingDate",
+            "stage"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "product": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "productId": {
+              "type": "string"
+            },
+            "productName": {
+              "type": "string"
+            },
+            "cropName": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "productId",
+            "productName",
+            "cropName"
+          ]
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "timeline": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "cropId": {
+              "type": "string"
+            },
+            "productId": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "establishmentMethod": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "anchorDate": {
+              "type": "string",
+              "format": "date",
+              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+            },
+            "stages": {
+              "maxItems": 12,
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "name": {
+                    "type": "string",
+                    "maxLength": 80
+                  },
+                  "from": {
+                    "type": "string",
+                    "format": "date",
+                    "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+                  },
+                  "to": {
+                    "type": "string",
+                    "format": "date",
+                    "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+                  },
+                  "basis": {
+                    "type": "string",
+                    "enum": [
+                      "sourced",
+                      "fao_generic",
+                      "estimate"
+                    ]
+                  }
+                },
+                "required": [
+                  "id",
+                  "name",
+                  "from",
+                  "to",
+                  "basis"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "harvest": {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "earliest": {
+                      "type": "string",
+                      "format": "date",
+                      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+                    },
+                    "latest": {
+                      "type": "string",
+                      "format": "date",
+                      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+                    }
+                  },
+                  "required": [
+                    "earliest",
+                    "latest"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "basis": {
+              "type": "object",
+              "properties": {
+                "kind": {
+                  "type": "string",
+                  "enum": [
+                    "price_history",
+                    "yield_reference",
+                    "cost_reference",
+                    "sowing_window",
+                    "duration",
+                    "rotation",
+                    "water",
+                    "soil",
+                    "ndvi",
+                    "climatology",
+                    "model"
+                  ]
+                },
+                "label": {
+                  "type": "string",
+                  "maxLength": 200
+                },
+                "sourceId": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "maxLength": 200
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "url": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "format": "uri"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "scope": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "maxLength": 120
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "note": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "maxLength": 1000
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              },
+              "required": [
+                "kind",
+                "label",
+                "sourceId",
+                "url",
+                "scope",
+                "note"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "required": [
+            "cropId",
+            "productId",
+            "establishmentMethod",
+            "anchorDate",
+            "stages",
+            "harvest",
+            "basis"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "slider": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "from": {
+              "type": "string",
+              "format": "date",
+              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+            },
+            "to": {
+              "type": "string",
+              "format": "date",
+              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+            },
+            "todayProgress": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            }
+          },
+          "required": [
+            "from",
+            "to",
+            "todayProgress"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "daysToHarvest": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "earliest": {
+              "type": "integer",
+              "minimum": -9007199254740991,
+              "maximum": 9007199254740991
+            },
+            "latest": {
+              "type": "integer",
+              "minimum": -9007199254740991,
+              "maximum": 9007199254740991
+            }
+          },
+          "required": [
+            "earliest",
+            "latest"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "scenes": {
+      "maxItems": 120,
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "date": {
+            "type": "string",
+            "format": "date",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "observed",
+              "illustration"
+            ]
+          },
+          "itemId": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "acquisitionDate": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "cloudPct": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "imagePath": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 300
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "ndviImagePath": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 300
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "derivedFromItemId": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "stageId": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 80
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "date",
+          "kind",
+          "itemId",
+          "acquisitionDate",
+          "cloudPct",
+          "imagePath",
+          "ndviImagePath",
+          "derivedFromItemId",
+          "stageId"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "ndvi": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "farmId": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "status": {
+              "type": "string",
+              "enum": [
+                "available",
+                "unavailable"
+              ]
+            },
+            "reason": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 80
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "window": {
+              "type": "object",
+              "properties": {
+                "from": {
+                  "type": "string",
+                  "format": "date",
+                  "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+                },
+                "to": {
+                  "type": "string",
+                  "format": "date",
+                  "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+                }
+              },
+              "required": [
+                "from",
+                "to"
+              ],
+              "additionalProperties": false
+            },
+            "polygonBasis": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "boundary",
+                    "farm_point_square"
+                  ]
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "polygonPixels": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 9007199254740991
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "smallField": {
+              "type": "boolean"
+            },
+            "imageBbox": {
+              "anyOf": [
+                {
+                  "type": "array",
+                  "items": [
+                    {
+                      "type": "number"
+                    },
+                    {
+                      "type": "number"
+                    },
+                    {
+                      "type": "number"
+                    },
+                    {
+                      "type": "number"
+                    }
+                  ],
+                  "additionalItems": false,
+                  "minItems": 4,
+                  "maxItems": 4
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "scenesListed": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            "scenesAnalysed": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            "scenesPending": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            "scenesFailed": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            "readings": {
+              "maxItems": 500,
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "itemId": {
+                    "type": "string",
+                    "pattern": "^[A-Za-z0-9_.-]{1,128}$"
+                  },
+                  "date": {
+                    "type": "string",
+                    "format": "date",
+                    "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+                  },
+                  "acquiredAt": {
+                    "type": "string",
+                    "format": "date-time",
+                    "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                  },
+                  "tileId": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "maxLength": 16
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "baseline": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "maxLength": 16
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "offsetApplied": {
+                    "type": "boolean"
+                  },
+                  "sceneCloudPct": {
+                    "anyOf": [
+                      {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 100
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "usable": {
+                    "type": "boolean"
+                  },
+                  "field": {
+                    "type": "object",
+                    "properties": {
+                      "mean": {
+                        "anyOf": [
+                          {
+                            "type": "number",
+                            "minimum": -1,
+                            "maximum": 1
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "median": {
+                        "anyOf": [
+                          {
+                            "type": "number",
+                            "minimum": -1,
+                            "maximum": 1
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "p10": {
+                        "anyOf": [
+                          {
+                            "type": "number",
+                            "minimum": -1,
+                            "maximum": 1
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "p90": {
+                        "anyOf": [
+                          {
+                            "type": "number",
+                            "minimum": -1,
+                            "maximum": 1
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "clearPixels": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 9007199254740991
+                      },
+                      "totalPixels": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 9007199254740991
+                      },
+                      "clearFraction": {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 1
+                      },
+                      "cloudOrShadowFraction": {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 1
+                      },
+                      "b04P95": {
+                        "anyOf": [
+                          {
+                            "type": "number",
+                            "minimum": 0
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "usable": {
+                        "type": "boolean"
+                      },
+                      "rejection": {
+                        "anyOf": [
+                          {
+                            "type": "string",
+                            "enum": [
+                              "no_pixels",
+                              "implausible_band_values",
+                              "insufficient_clear_pixels",
+                              "low_clear_fraction"
+                            ]
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      }
+                    },
+                    "required": [
+                      "mean",
+                      "median",
+                      "p10",
+                      "p90",
+                      "clearPixels",
+                      "totalPixels",
+                      "clearFraction",
+                      "cloudOrShadowFraction",
+                      "b04P95",
+                      "usable",
+                      "rejection"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "neighbourhood": {
+                    "anyOf": [
+                      {
+                        "type": "object",
+                        "properties": {
+                          "mean": {
+                            "anyOf": [
+                              {
+                                "type": "number",
+                                "minimum": -1,
+                                "maximum": 1
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
+                          "median": {
+                            "anyOf": [
+                              {
+                                "type": "number",
+                                "minimum": -1,
+                                "maximum": 1
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
+                          "p10": {
+                            "anyOf": [
+                              {
+                                "type": "number",
+                                "minimum": -1,
+                                "maximum": 1
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
+                          "p90": {
+                            "anyOf": [
+                              {
+                                "type": "number",
+                                "minimum": -1,
+                                "maximum": 1
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
+                          "clearPixels": {
+                            "type": "integer",
+                            "minimum": 0,
+                            "maximum": 9007199254740991
+                          },
+                          "totalPixels": {
+                            "type": "integer",
+                            "minimum": 0,
+                            "maximum": 9007199254740991
+                          },
+                          "clearFraction": {
+                            "type": "number",
+                            "minimum": 0,
+                            "maximum": 1
+                          },
+                          "cloudOrShadowFraction": {
+                            "type": "number",
+                            "minimum": 0,
+                            "maximum": 1
+                          },
+                          "b04P95": {
+                            "anyOf": [
+                              {
+                                "type": "number",
+                                "minimum": 0
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
+                          "usable": {
+                            "type": "boolean"
+                          },
+                          "rejection": {
+                            "anyOf": [
+                              {
+                                "type": "string",
+                                "enum": [
+                                  "no_pixels",
+                                  "implausible_band_values",
+                                  "insufficient_clear_pixels",
+                                  "low_clear_fraction"
+                                ]
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          }
+                        },
+                        "required": [
+                          "mean",
+                          "median",
+                          "p10",
+                          "p90",
+                          "clearPixels",
+                          "totalPixels",
+                          "clearFraction",
+                          "cloudOrShadowFraction",
+                          "b04P95",
+                          "usable",
+                          "rejection"
+                        ],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  }
+                },
+                "required": [
+                  "itemId",
+                  "date",
+                  "acquiredAt",
+                  "tileId",
+                  "baseline",
+                  "offsetApplied",
+                  "sceneCloudPct",
+                  "usable",
+                  "field",
+                  "neighbourhood"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "latestUsable": {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "itemId": {
+                      "type": "string",
+                      "pattern": "^[A-Za-z0-9_.-]{1,128}$"
+                    },
+                    "date": {
+                      "type": "string",
+                      "format": "date",
+                      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+                    },
+                    "acquiredAt": {
+                      "type": "string",
+                      "format": "date-time",
+                      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                    },
+                    "tileId": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "maxLength": 16
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "baseline": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "maxLength": 16
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "offsetApplied": {
+                      "type": "boolean"
+                    },
+                    "sceneCloudPct": {
+                      "anyOf": [
+                        {
+                          "type": "number",
+                          "minimum": 0,
+                          "maximum": 100
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "usable": {
+                      "type": "boolean"
+                    },
+                    "field": {
+                      "type": "object",
+                      "properties": {
+                        "mean": {
+                          "anyOf": [
+                            {
+                              "type": "number",
+                              "minimum": -1,
+                              "maximum": 1
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "median": {
+                          "anyOf": [
+                            {
+                              "type": "number",
+                              "minimum": -1,
+                              "maximum": 1
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "p10": {
+                          "anyOf": [
+                            {
+                              "type": "number",
+                              "minimum": -1,
+                              "maximum": 1
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "p90": {
+                          "anyOf": [
+                            {
+                              "type": "number",
+                              "minimum": -1,
+                              "maximum": 1
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "clearPixels": {
+                          "type": "integer",
+                          "minimum": 0,
+                          "maximum": 9007199254740991
+                        },
+                        "totalPixels": {
+                          "type": "integer",
+                          "minimum": 0,
+                          "maximum": 9007199254740991
+                        },
+                        "clearFraction": {
+                          "type": "number",
+                          "minimum": 0,
+                          "maximum": 1
+                        },
+                        "cloudOrShadowFraction": {
+                          "type": "number",
+                          "minimum": 0,
+                          "maximum": 1
+                        },
+                        "b04P95": {
+                          "anyOf": [
+                            {
+                              "type": "number",
+                              "minimum": 0
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "usable": {
+                          "type": "boolean"
+                        },
+                        "rejection": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "enum": [
+                                "no_pixels",
+                                "implausible_band_values",
+                                "insufficient_clear_pixels",
+                                "low_clear_fraction"
+                              ]
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        }
+                      },
+                      "required": [
+                        "mean",
+                        "median",
+                        "p10",
+                        "p90",
+                        "clearPixels",
+                        "totalPixels",
+                        "clearFraction",
+                        "cloudOrShadowFraction",
+                        "b04P95",
+                        "usable",
+                        "rejection"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "neighbourhood": {
+                      "anyOf": [
+                        {
+                          "type": "object",
+                          "properties": {
+                            "mean": {
+                              "anyOf": [
+                                {
+                                  "type": "number",
+                                  "minimum": -1,
+                                  "maximum": 1
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            "median": {
+                              "anyOf": [
+                                {
+                                  "type": "number",
+                                  "minimum": -1,
+                                  "maximum": 1
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            "p10": {
+                              "anyOf": [
+                                {
+                                  "type": "number",
+                                  "minimum": -1,
+                                  "maximum": 1
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            "p90": {
+                              "anyOf": [
+                                {
+                                  "type": "number",
+                                  "minimum": -1,
+                                  "maximum": 1
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            "clearPixels": {
+                              "type": "integer",
+                              "minimum": 0,
+                              "maximum": 9007199254740991
+                            },
+                            "totalPixels": {
+                              "type": "integer",
+                              "minimum": 0,
+                              "maximum": 9007199254740991
+                            },
+                            "clearFraction": {
+                              "type": "number",
+                              "minimum": 0,
+                              "maximum": 1
+                            },
+                            "cloudOrShadowFraction": {
+                              "type": "number",
+                              "minimum": 0,
+                              "maximum": 1
+                            },
+                            "b04P95": {
+                              "anyOf": [
+                                {
+                                  "type": "number",
+                                  "minimum": 0
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            "usable": {
+                              "type": "boolean"
+                            },
+                            "rejection": {
+                              "anyOf": [
+                                {
+                                  "type": "string",
+                                  "enum": [
+                                    "no_pixels",
+                                    "implausible_band_values",
+                                    "insufficient_clear_pixels",
+                                    "low_clear_fraction"
+                                  ]
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            }
+                          },
+                          "required": [
+                            "mean",
+                            "median",
+                            "p10",
+                            "p90",
+                            "clearPixels",
+                            "totalPixels",
+                            "clearFraction",
+                            "cloudOrShadowFraction",
+                            "b04P95",
+                            "usable",
+                            "rejection"
+                          ],
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    }
+                  },
+                  "required": [
+                    "itemId",
+                    "date",
+                    "acquiredAt",
+                    "tileId",
+                    "baseline",
+                    "offsetApplied",
+                    "sceneCloudPct",
+                    "usable",
+                    "field",
+                    "neighbourhood"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "method": {
+              "type": "object",
+              "properties": {
+                "version": {
+                  "type": "string"
+                },
+                "sclClassesKept": {
+                  "type": "array",
+                  "items": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 11
+                  }
+                },
+                "minClearFraction": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1
+                },
+                "minClearPixels": {
+                  "type": "integer",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991
+                },
+                "maxSceneCloudPct": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 100
+                }
+              },
+              "required": [
+                "version",
+                "sclClassesKept",
+                "minClearFraction",
+                "minClearPixels",
+                "maxSceneCloudPct"
+              ],
+              "additionalProperties": false
+            },
+            "attribution": {
+              "type": "string"
+            },
+            "limitations": {
+              "maxItems": 20,
+              "type": "array",
+              "items": {
+                "type": "string",
+                "maxLength": 400
+              }
+            }
+          },
+          "required": [
+            "farmId",
+            "status",
+            "reason",
+            "window",
+            "polygonBasis",
+            "polygonPixels",
+            "smallField",
+            "imageBbox",
+            "scenesListed",
+            "scenesAnalysed",
+            "scenesPending",
+            "scenesFailed",
+            "readings",
+            "latestUsable",
+            "method",
+            "attribution",
+            "limitations"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "health": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "date": {
+              "type": "string",
+              "format": "date",
+              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+            },
+            "ndviMean": {
+              "type": "number"
+            },
+            "neighbourhoodMean": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "typicalRange": {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "low": {
+                      "type": "number"
+                    },
+                    "high": {
+                      "type": "number"
+                    }
+                  },
+                  "required": [
+                    "low",
+                    "high"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "verdict": {
+              "type": "string",
+              "enum": [
+                "above_typical",
+                "near_typical",
+                "below_typical",
+                "no_reference"
+              ]
+            },
+            "clearFraction": {
+              "type": "number"
+            },
+            "basis": {
+              "type": "object",
+              "properties": {
+                "kind": {
+                  "type": "string",
+                  "enum": [
+                    "price_history",
+                    "yield_reference",
+                    "cost_reference",
+                    "sowing_window",
+                    "duration",
+                    "rotation",
+                    "water",
+                    "soil",
+                    "ndvi",
+                    "climatology",
+                    "model"
+                  ]
+                },
+                "label": {
+                  "type": "string",
+                  "maxLength": 200
+                },
+                "sourceId": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "maxLength": 200
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "url": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "format": "uri"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "scope": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "maxLength": 120
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "note": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "maxLength": 1000
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              },
+              "required": [
+                "kind",
+                "label",
+                "sourceId",
+                "url",
+                "scope",
+                "note"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "required": [
+            "date",
+            "ndviMean",
+            "neighbourhoodMean",
+            "typicalRange",
+            "verdict",
+            "clearFraction",
+            "basis"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "priceTrack": {
+      "maxItems": 400,
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "date": {
+            "type": "string",
+            "format": "date",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "observed",
+              "reference"
+            ]
+          },
+          "p50": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "range": {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "low": {
+                    "type": "number"
+                  },
+                  "high": {
+                    "type": "number"
+                  }
+                },
+                "required": [
+                  "low",
+                  "high"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "unit": {
+            "type": "string",
+            "const": "INR/kg"
+          }
+        },
+        "required": [
+          "date",
+          "kind",
+          "p50",
+          "range",
+          "unit"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "harvestPrice": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "p50": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "range": {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "low": {
+                      "type": "number"
+                    },
+                    "high": {
+                      "type": "number"
+                    }
+                  },
+                  "required": [
+                    "low",
+                    "high"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "status": {
+              "type": "string",
+              "enum": [
+                "available",
+                "insufficient"
+              ]
+            },
+            "reason": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 80
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "scopeLabel": {
+              "type": "string",
+              "maxLength": 160
+            }
+          },
+          "required": [
+            "p50",
+            "range",
+            "status",
+            "reason",
+            "scopeLabel"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "weatherTrack": {
+      "maxItems": 400,
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "date": {
+            "type": "string",
+            "format": "date",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "observed",
+              "forecast",
+              "typical",
+              "unavailable"
+            ]
+          },
+          "rainMm": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "tMinC": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "tMaxC": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "basis": {
+            "type": "object",
+            "properties": {
+              "source": {
+                "type": "string",
+                "maxLength": 120
+              },
+              "issuedAt": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "format": "date-time",
+                    "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "years": {
+                "anyOf": [
+                  {
+                    "type": "array",
+                    "items": {
+                      "type": "integer",
+                      "minimum": -9007199254740991,
+                      "maximum": 9007199254740991
+                    }
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            },
+            "required": [
+              "source",
+              "issuedAt",
+              "years"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "date",
+          "kind",
+          "rainMm",
+          "tMinC",
+          "tMaxC",
+          "basis"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "alerts": {
+      "maxItems": 50,
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "farmId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "weather",
+              "price",
+              "market_event",
+              "crop_threat"
+            ]
+          },
+          "severity": {
+            "type": "string",
+            "enum": [
+              "info",
+              "watch",
+              "warning"
+            ]
+          },
+          "origin": {
+            "type": "string",
+            "enum": [
+              "rule",
+              "grounded_review"
+            ]
+          },
+          "title": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120
+          },
+          "detail": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 600
+          },
+          "source": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 200
+              },
+              "url": {
+                "type": "string",
+                "format": "uri"
+              },
+              "date": {
+                "type": "string",
+                "format": "date",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+              }
+            },
+            "required": [
+              "name",
+              "url",
+              "date"
+            ],
+            "additionalProperties": false
+          },
+          "validFrom": {
+            "type": "string",
+            "format": "date",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+          },
+          "validTo": {
+            "type": "string",
+            "format": "date",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+          },
+          "suggestedStep": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 300
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+          }
+        },
+        "required": [
+          "id",
+          "farmId",
+          "type",
+          "severity",
+          "origin",
+          "title",
+          "detail",
+          "source",
+          "validFrom",
+          "validTo",
+          "suggestedStep",
+          "createdAt"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "newsReview": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "status": {
+              "type": "string",
+              "enum": [
+                "active",
+                "paused",
+                "not_run",
+                "unavailable"
+              ]
+            },
+            "reason": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "lastReviewedAt": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date-time",
+                  "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": [
+            "status",
+            "reason",
+            "lastReviewedAt"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "imdStatus": {
+      "type": "string",
+      "const": "not_connected"
+    },
+    "upcoming": {
+      "maxItems": 30,
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "maxLength": 160
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "care_task",
+              "stage_transition",
+              "alert_step"
+            ]
+          },
+          "title": {
+            "type": "string",
+            "maxLength": 160
+          },
+          "detail": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 1000
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "dueFrom": {
+            "type": "string",
+            "format": "date",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+          },
+          "dueTo": {
+            "type": "string",
+            "format": "date",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "upcoming",
+              "due",
+              "overdue",
+              "completed"
+            ]
+          },
+          "careTask": {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "actionId": {
+                    "type": "string"
+                  },
+                  "cycleId": {
+                    "type": "string"
+                  },
+                  "cropId": {
+                    "type": "string"
+                  },
+                  "title": {
+                    "type": "string"
+                  },
+                  "action": {
+                    "type": "string"
+                  },
+                  "anchor": {
+                    "type": "string"
+                  },
+                  "geographyIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "dueFrom": {
+                    "type": "string",
+                    "format": "date",
+                    "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+                  },
+                  "dueTo": {
+                    "type": "string",
+                    "format": "date",
+                    "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+                  },
+                  "conditions": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "sourceRefs": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "sourceId": {
+                          "type": "string"
+                        },
+                        "locator": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "sourceId",
+                        "locator"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "upcoming",
+                      "due",
+                      "overdue",
+                      "completed"
+                    ]
+                  },
+                  "completedOn": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "format": "date",
+                        "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "journalEntryId": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "format": "uuid",
+                        "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "evidenceState": {
+                    "type": "string",
+                    "const": "source_schedule"
+                  }
+                },
+                "required": [
+                  "id",
+                  "actionId",
+                  "cycleId",
+                  "cropId",
+                  "title",
+                  "action",
+                  "anchor",
+                  "dueFrom",
+                  "dueTo",
+                  "conditions",
+                  "sourceRefs",
+                  "status",
+                  "completedOn",
+                  "journalEntryId",
+                  "evidenceState"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "alertId": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "title",
+          "detail",
+          "dueFrom",
+          "dueTo",
+          "status",
+          "careTask",
+          "alertId"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "monitoring": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "lastCheckedAt": {
+          "anyOf": [
+            {
+              "type": "string",
+              "format": "date-time",
+              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "nextCheckAt": {
+          "anyOf": [
+            {
+              "type": "string",
+              "format": "date-time",
+              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "enabled",
+        "lastCheckedAt",
+        "nextCheckAt"
+      ],
+      "additionalProperties": false
+    },
+    "limitations": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "maxLength": 1000
+      }
+    }
+  },
+  "required": [
+    "farmId",
+    "asOf",
+    "today",
+    "cycle",
+    "product",
+    "timeline",
+    "slider",
+    "daysToHarvest",
+    "scenes",
+    "ndvi",
+    "health",
+    "priceTrack",
+    "harvestPrice",
+    "weatherTrack",
+    "alerts",
+    "newsReview",
+    "imdStatus",
+    "upcoming",
+    "monitoring",
+    "limitations"
+  ],
+  "additionalProperties": false,
+  "$id": "https://harvest-outlook.local/schema/1.0/TodayView.json",
+  "x-schemaVersion": "1.0"
+}

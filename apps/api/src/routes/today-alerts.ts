@@ -1,8 +1,7 @@
 import type { FastifyInstance } from 'fastify';
 import type { ZodTypeProvider } from 'fastify-type-provider-zod';
 import { z } from 'zod';
-// Imported by path until packages/contracts/src/index.ts (orchestrator-owned) re-exports alerts.
-import { FarmAlert, FarmAlerts } from '../../../../packages/contracts/src/alerts';
+import { FarmAlert, FarmAlerts } from '@harvest/contracts';
 import type { Config } from '../config';
 import type { Pool } from '../db/pool';
 import { envelope } from '../envelope';
@@ -14,8 +13,7 @@ import { envelopeSchema, uuidParam } from './schemas/common';
 export interface TodayAlertRouteDeps { config: Config; pool: Pool; now?: () => Date }
 
 /**
- * Today view alerts. Not registered here: the orchestrator adds `app.register(todayAlertRoutes, {config, pool})` in
- * routes/index.ts. Owner isolation: every query is scoped by the session owner and the parent farm; foreign farms
+ * Today view alerts (registered in routes/index.ts). Owner isolation: every query is scoped by the session owner and the parent farm; foreign farms
  * and alerts are 404.
  */
 export async function todayAlertRoutes(app: FastifyInstance, deps: TodayAlertRouteDeps) {

@@ -23,3 +23,4 @@ export * from './ndvi';
 export * from './price-outlook';
 export * from './alerts';
 export * from './today';
+export * from './future-look';

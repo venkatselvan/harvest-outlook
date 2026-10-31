@@ -1,8 +1,7 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { HarvestPriceOutlook, PriceSeries, PriceTrend } from "../../../packages/contracts/src/price-outlook";
+import { HarvestPriceOutlook, PriceSeries, PriceTrend } from "@harvest/contracts";
 import { SYNTHETIC_SOURCE_ID, ensureSource } from "../src/ingest/sources";
 import { isoWeek } from "../src/plans/adapters/market-outlook";
-import { priceSeriesRoutes } from "../src/routes/price-series";
 import { districtKey, harvestPriceOutlook, isoWeekMonday, priceSeries, priceTrend, productsWithHistory } from "../src/services/price-series";
 import { GINGER_PRODUCT_ID, seedGinger } from "./fixtures/meta/helpers";
 import { login, setupHarness, testConfig, type Harness } from "./helpers";
@@ -269,7 +268,6 @@ describe("mode separation and replay cutoff", () => {
 
   it("replay needs a valid cutoff: the route requires asOf and the service rejects an impossible date", async () => {
     const app = await h.make({ RUNTIME_MODE: "replay" });
-    await app.register(priceSeriesRoutes, { config: testConfig({ RUNTIME_MODE: "replay" }), pool: h.pool });
     const c = await login(app);
     const missing = await c.call("GET", "/api/v1/price-outlook?productId=ginger-fresh&stateName=Karnataka&harvestDate=2026-06-17");
     expect(missing.statusCode).toBe(400);
@@ -303,7 +301,6 @@ describe("productsWithHistory", () => {
 describe("routes", () => {
   it("serves the three reads with auth, validation and a private cache header", async () => {
     const app = await h.make();
-    await app.register(priceSeriesRoutes, { config: h.config, pool: h.pool });
     const anon = await app.inject({ method: "GET", url: "/api/v1/price-outlook?productId=ginger-fresh&stateName=Karnataka&harvestDate=2026-06-17" });
     expect(anon.statusCode).toBe(401);
     const c = await login(app);
@@ -319,6 +316,12 @@ describe("routes", () => {
     const t = await c.call("GET", "/api/v1/price-trend?productId=ginger-dry&stateName=Karnataka&districtName=Hassan&months=24&asOf=2026-11-01");
     expect(t.statusCode).toBe(200);
     expect(PriceTrend.parse(t.json().data).yoy!.changePct).toBe(20);
+    // UI_BRIEF spelling (`state` as an id, `district`) reads the same data; a state is required; conflicting spellings are refused.
+    const alias = await c.call("GET", "/api/v1/price-trend?productId=ginger-dry&state=IN-KA&district=Hassan&months=24&asOf=2026-11-01");
+    expect(alias.statusCode, alias.body).toBe(200);
+    expect(alias.json().data).toEqual(t.json().data);
+    expect((await c.call("GET", "/api/v1/price-trend?productId=ginger-dry&months=24&asOf=2026-11-01")).statusCode).toBe(400);
+    expect((await c.call("GET", "/api/v1/price-trend?productId=ginger-dry&state=Kerala&stateName=Karnataka&months=24&asOf=2026-11-01")).statusCode).toBe(400);
     expect((await c.call("GET", "/api/v1/price-series?productId=ginger-fresh&from=2026-03-01&to=2026-01-01")).statusCode).toBe(400);
     expect((await c.call("GET", "/api/v1/price-outlook?productId=ginger-fresh&stateName=Karnataka&harvestDate=2026-02-30")).statusCode).toBe(400);
     expect((await c.call("GET", "/api/v1/price-trend?productId=ginger-fresh&stateName=Karnataka&months=6")).statusCode).toBe(400);

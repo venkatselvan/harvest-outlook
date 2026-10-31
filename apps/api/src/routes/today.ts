@@ -13,8 +13,7 @@ export interface TodayRouteDeps extends TodayViewDeps { config: Config; pool: Po
 
 /**
  * `GET /api/v1/farms/:id/today` -> TodayView (UI_BRIEF section 4). Owner-private: the farm is resolved for the session
- * owner first, so a foreign or deleted farm is 404. Not registered here: the orchestrator adds
- * `app.register(todayRoutes, {config, pool, ...})` in routes/index.ts.
+ * owner first, so a foreign or deleted farm is 404. Registered in routes/index.ts.
  * A cold read in live mode can reach Planetary Computer (at most 12 scenes) and Open-Meteo (bounded ingest), so the
  * rate limit is low and the response is never cached by intermediaries.
  */

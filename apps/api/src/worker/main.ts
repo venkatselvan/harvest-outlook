@@ -140,7 +140,7 @@ async function main() {
   };
   process.on("SIGINT", stop);
   process.on("SIGTERM", stop);
-  console.log(JSON.stringify({ msg: "worker started", workerId, mode: config.RUNTIME_MODE }));
+  console.log(JSON.stringify({ msg: "worker started", workerId, mode: config.RUNTIME_MODE, handlers: Object.keys(handlers).sort() }));
   const PURGE_EVERY_MS = 10 * 60_000;
   let lastPurge = 0;
   let lastMonitorScan = 0;

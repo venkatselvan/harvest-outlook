@@ -8,10 +8,9 @@
  * Cost bound: at most `maxScenes` (default 12) uncached scenes are analysed per call, newest first, two requests per
  * scene (field + 1 km neighbourhood), two scenes at a time. Scene lists are cached for a day per window.
  *
- * Integration notes for the orchestrator (not done here because the files are shared):
- * - `deleteFarm` in services/farms.ts must collect `image_keys` values from ndvi_scene_stats before the cascade,
- *   otherwise rendered PNGs stay in the owner's private storage until the owner is deleted.
- * - Route registration and a worker job type for background back-fill are not wired.
+ * Integration (done 2026-11-01): `todayNdviRoutes` is registered in routes/index.ts and `deleteFarm` (services/farms.ts)
+ * removes the `image_keys` objects of ndvi_scene_stats before the cascade. A worker job type for background back-fill
+ * is not wired.
  */
 import {z} from 'zod';
 import type {Config} from '../../config';
@@ -22,7 +21,7 @@ import {getFarm} from '../farms';
 import {getWorkspace} from '../workspace';
 import {ApiError, notFound} from '../errors';
 import {sha256Hex} from '../hash';
-import {NdviStats, type NdviReading, type NdviSeries, type NeighbourhoodSeasonality} from '../../../../../packages/contracts/src/ndvi';
+import {NdviStats, type NdviReading, type NdviSeries, type NeighbourhoodSeasonality} from '@harvest/contracts';
 import {
   DEFAULT_MAX_SCENE_CLOUD_PCT, ITEM_ID_RE, MIN_CLEAR_FRACTION, MIN_CLEAR_PIXELS, NDVI_METHOD_VERSION, SCL_KEEP, SENTINEL2_ATTRIBUTION,
   baselineOffset, bboxProblem, displayBbox, listScenes, neighbourhoodBands, polygonBands, prepareRing, renderScene, ringBbox, squareAround,

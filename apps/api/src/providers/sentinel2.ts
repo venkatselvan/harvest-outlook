@@ -11,7 +11,7 @@
  * degrades to `{status:'unavailable', reason, transient}` instead of throwing.
  */
 import {z} from 'zod';
-import type {NdviStats} from '../../../../packages/contracts/src/ndvi';
+import type {NdviStats} from '@harvest/contracts';
 
 export const PC_ORIGIN = 'https://planetarycomputer.microsoft.com';
 const STAC_SEARCH_URL = `${PC_ORIGIN}/api/stac/v1/search`;

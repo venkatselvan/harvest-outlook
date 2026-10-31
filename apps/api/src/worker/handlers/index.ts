@@ -15,6 +15,7 @@ import { createIngestHandlers } from "./ingest";
 import {createSoilHandler} from './soil-reports';
 import {createPlanningReviewHandler} from './planning-review';
 import { createMonitorHandler } from './monitoring';
+import { createFutureLookHandler } from './future-look';
 import {withModelActivity} from '../../services/model-activity';
 
 /** Job-type -> handler registry for T05a. Imported by worker/main.ts. */
@@ -38,6 +39,7 @@ export function registerWorkerHandlers(registry: Record<string, JobHandler>, dep
   registry['soil.extract']=createSoilHandler({config,pool,storage,budget,...(deps.fetchImpl?{fetchImpl:deps.fetchImpl}:{})});
   registry['farm.planning-review']=createPlanningReviewHandler({config,pool,budget,...(deps.fetchImpl?{fetchImpl:deps.fetchImpl}:{})});
   registry['farm.monitor'] = createMonitorHandler({ config, pool, budget, fetchImpl: deps.fetchImpl });
+  registry['today.future-look'] = createFutureLookHandler({ config, pool, storage, budget, ...(deps.fetchImpl ? { fetchImpl: deps.fetchImpl } : {}) });
   // T10: vision.segment. Returns status 'unavailable' without any network call in synthetic/replay mode or without a credential.
   registerSegmentationHandler(registry, { pool, config, storage, budget, options: samOptionsFromEnv(samEnvFromConfig(config)), ...(deps.fetchImpl ? { fetchImpl: deps.fetchImpl } : {}) });
   registerVisualHandlers(registry, { pool, config, storage, budget });

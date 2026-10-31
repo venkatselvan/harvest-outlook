@@ -95,7 +95,7 @@ export async function farmWeatherTrack(deps: TodayTimelineDeps, ownerId: string,
   return {farmId, pointBasis, ...track};
 }
 
-/** Owner-private stage timeline and weather track for the Today slider. Not registered in routes/index.ts yet. */
+/** Owner-private stage timeline and weather track for the Today slider. Registered in routes/index.ts. */
 export async function todayTimelineRoutes(app: FastifyInstance, deps: TodayTimelineDeps) {
   const {config, pool} = deps;
   app.addHook('onRequest', privateRouteGuard(config, pool));

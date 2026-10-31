@@ -9,13 +9,13 @@ import {requireAuth} from '../security/session';
 import {envelope} from '../envelope';
 import {envelopeSchema} from './schemas/common';
 import {ITEM_ID_RE} from '../providers/sentinel2';
-import {FutureLookAsset, FutureLookRequestResult, futureLookImage, futureLookStatus, requestFutureLook, type FutureLookImageDeps} from '../services/today/future-look';
+import {FutureLookAsset, FutureLookRequestResult} from '@harvest/contracts';
+import {futureLookImage, futureLookStatus, requestFutureLook, type FutureLookImageDeps} from '../services/today/future-look';
 
 export interface TodayFutureDeps extends FutureLookImageDeps { config: Config; pool: Pool; storage: StorageAdapter }
 
 /**
- * Owner-private "future look" illustrations for the Today satellite view. Not registered in routes/index.ts yet:
- * `app.register(todayFutureRoutes, {config, pool, storage})`.
+ * Owner-private "future look" illustrations for the Today satellite view. Registered in routes/index.ts.
  */
 export async function todayFutureRoutes(app: FastifyInstance, deps: TodayFutureDeps) {
   const {config, pool} = deps;

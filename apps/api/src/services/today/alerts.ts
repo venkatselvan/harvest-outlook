@@ -1,8 +1,7 @@
 import { z } from 'zod';
 import type { PoolClient } from 'pg';
 import type { FarmWorkspace, Mode } from '@harvest/contracts';
-// Imported by path until packages/contracts/src/index.ts (orchestrator-owned) re-exports alerts.
-import { FarmAlertSeverity, FarmAlertType, type FarmAlert, type FarmAlerts, type FarmNewsReviewStatus } from '../../../../../packages/contracts/src/alerts';
+import { FarmAlertSeverity, FarmAlertType, type FarmAlert, type FarmAlerts, type FarmNewsReviewStatus } from '@harvest/contracts';
 import type { Config } from '../../config';
 import { withTransaction, type Pool } from '../../db/pool';
 import { scopedQuery } from '../../ingest/scope';

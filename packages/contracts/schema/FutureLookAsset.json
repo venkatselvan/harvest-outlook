@@ -1,0 +1,301 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "assetId": {
+      "type": "string",
+      "format": "uuid",
+      "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+    },
+    "farmId": {
+      "type": "string",
+      "format": "uuid",
+      "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+    },
+    "cycleId": {
+      "type": "string"
+    },
+    "stageId": {
+      "type": "string"
+    },
+    "stageName": {
+      "type": "string"
+    },
+    "cropId": {
+      "type": "string"
+    },
+    "cropName": {
+      "type": "string"
+    },
+    "sourceItemId": {
+      "type": "string"
+    },
+    "sourceAcquiredAt": {
+      "anyOf": [
+        {
+          "type": "string",
+          "format": "date-time",
+          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "derivedFromDate": {
+      "anyOf": [
+        {
+          "type": "string",
+          "format": "date",
+          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "queued",
+        "running",
+        "ready",
+        "failed",
+        "unavailable"
+      ]
+    },
+    "failureReason": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "label": {
+      "type": "string"
+    },
+    "disclaimer": {
+      "type": "string"
+    },
+    "imagePath": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "qa": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "version": {
+              "type": "string"
+            },
+            "passed": {
+              "type": "boolean"
+            },
+            "reasons": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": [
+                  "output_undecodable",
+                  "aspect_mismatch",
+                  "outside_region_too_small",
+                  "scene_changed_outside_field"
+                ]
+              }
+            },
+            "scores": {
+              "type": "object",
+              "properties": {
+                "outsideChannelMad": {
+                  "anyOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "r": {
+                          "type": "number"
+                        },
+                        "g": {
+                          "type": "number"
+                        },
+                        "b": {
+                          "type": "number"
+                        }
+                      },
+                      "required": [
+                        "r",
+                        "g",
+                        "b"
+                      ],
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "outsideMaxChannelMad": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "insideMeanAbsDiff": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "outsideFraction": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "aspectError": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "outputWidth": {
+                  "anyOf": [
+                    {
+                      "type": "integer",
+                      "minimum": -9007199254740991,
+                      "maximum": 9007199254740991
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "outputHeight": {
+                  "anyOf": [
+                    {
+                      "type": "integer",
+                      "minimum": -9007199254740991,
+                      "maximum": 9007199254740991
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              },
+              "required": [
+                "outsideChannelMad",
+                "outsideMaxChannelMad",
+                "insideMeanAbsDiff",
+                "outsideFraction",
+                "aspectError",
+                "outputWidth",
+                "outputHeight"
+              ],
+              "additionalProperties": false
+            },
+            "thresholds": {
+              "type": "object",
+              "properties": {
+                "outsideChannelMadMax": {
+                  "type": "number"
+                },
+                "boundaryMarginPx": {
+                  "type": "integer",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991
+                },
+                "aspectTolerance": {
+                  "type": "number"
+                },
+                "minOutsideFraction": {
+                  "type": "number"
+                },
+                "grid": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "outsideChannelMadMax",
+                "boundaryMarginPx",
+                "aspectTolerance",
+                "minOutsideFraction",
+                "grid"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "required": [
+            "version",
+            "passed",
+            "reasons",
+            "scores",
+            "thresholds"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "model": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "responseDeleted": {
+      "type": [
+        "boolean",
+        "null"
+      ]
+    },
+    "promptVersion": {
+      "type": "string"
+    },
+    "attempt": {
+      "type": "integer",
+      "minimum": -9007199254740991,
+      "maximum": 9007199254740991
+    },
+    "createdAt": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+    },
+    "updatedAt": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+    }
+  },
+  "required": [
+    "assetId",
+    "farmId",
+    "cycleId",
+    "stageId",
+    "stageName",
+    "cropId",
+    "cropName",
+    "sourceItemId",
+    "sourceAcquiredAt",
+    "derivedFromDate",
+    "status",
+    "failureReason",
+    "label",
+    "disclaimer",
+    "imagePath",
+    "qa",
+    "model",
+    "responseDeleted",
+    "promptVersion",
+    "attempt",
+    "createdAt",
+    "updatedAt"
+  ],
+  "additionalProperties": false,
+  "$id": "https://harvest-outlook.local/schema/1.0/FutureLookAsset.json",
+  "x-schemaVersion": "1.0"
+}

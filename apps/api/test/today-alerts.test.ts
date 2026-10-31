@@ -1,8 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
-import type { FarmWorkspace } from '@harvest/contracts';
-import { FarmAlerts } from '../../../packages/contracts/src/alerts';
+import { FarmAlerts, type FarmWorkspace } from '@harvest/contracts';
 import { setupHarness, login, farmBody, type Harness, type Client } from './helpers';
 import {
   addDays, alertFingerprint, gateGroundedAlerts, groundedReview, istDate, listAlerts, loadPriceMoves, persistAlerts, priceMoveFromQuotes,
@@ -11,7 +10,6 @@ import {
 import { monitoringSnapshot, type MonitoringSnapshot } from '../src/services/monitoring';
 import { enqueueDueMonitors, readMonitorSettings } from '../src/services/monitor-schedule';
 import { createMonitorHandler } from '../src/worker/handlers/monitoring';
-import { todayAlertRoutes } from '../src/routes/today-alerts';
 import { MetaClient } from '../src/providers/meta/client';
 import { Budget } from '../src/services/budget';
 import { enqueue } from '../src/services/jobs';
@@ -272,7 +270,6 @@ describe('alert persistence, listing and routes', () => {
 
   it('serves GET alerts and an idempotent, owner-scoped dismiss through the route plugin', async () => {
     const app = await h.make();
-    await app.register(todayAlertRoutes, { config: h.config, pool: h.pool });
     const call = (c: Client, method: string, url: string) => app.inject({ method: method as 'GET', url, headers: { cookie: c.cookie, origin: 'http://localhost:5173', 'x-csrf-token': c.csrf }, ...(method === 'POST' ? { payload: {} } : {}) });
     const id = await createFarm();
     const ownerId = await ownerOf(id);

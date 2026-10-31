@@ -1,8 +1,7 @@
 import {afterAll, beforeAll, beforeEach, describe, expect, it} from 'vitest';
 import type {FastifyInstance} from 'fastify';
-import {NdviSeries, NeighbourhoodSeasonality} from '../../../packages/contracts/src/ndvi';
+import {NdviSeries, NeighbourhoodSeasonality} from '@harvest/contracts';
 import {buildServer} from '../src/server';
-import {todayNdviRoutes} from '../src/routes/today-ndvi';
 import {ndviSeries, neighbourhoodSeasonality, sceneImage, type NdviDeps} from '../src/services/today/ndvi';
 import {ApiError} from '../src/services/errors';
 import {setupHarness, login, farmBody, testConfig, ORIGIN, type Harness, type Client} from './helpers';
@@ -200,10 +199,9 @@ describe('today NDVI routes', () => {
   let liveApp: FastifyInstance, synthApp: FastifyInstance;
   const fake = fakePlanetary(OCTOBER.slice(1, 2));
   beforeAll(async () => {
-    liveApp = await buildServer(testConfig({RUNTIME_MODE: 'live'}), h.pool, {storage: h.storage});
-    await liveApp.register(todayNdviRoutes, {config: testConfig({RUNTIME_MODE: 'live'}), pool: h.pool, storage: h.storage, fetchImpl: fake.fetchImpl});
-    synthApp = await buildServer(testConfig(), h.pool, {storage: h.storage});
-    await synthApp.register(todayNdviRoutes, {config: testConfig(), pool: h.pool, storage: h.storage, fetchImpl: fake.fetchImpl});
+    // The full server registers the plugin; the fake Planetary Computer is injected through its test hook.
+    liveApp = await buildServer(testConfig({RUNTIME_MODE: 'live'}), h.pool, {storage: h.storage, today: {ndvi: {fetchImpl: fake.fetchImpl}}});
+    synthApp = await buildServer(testConfig(), h.pool, {storage: h.storage, today: {ndvi: {fetchImpl: fake.fetchImpl}}});
   });
   afterAll(async () => { await liveApp?.close(); await synthApp?.close(); });
   const get = (app: FastifyInstance, c: Client, url: string) => app.inject({method: 'GET', url, headers: {cookie: c.cookie, origin: ORIGIN}});

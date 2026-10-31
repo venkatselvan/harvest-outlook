@@ -8,14 +8,13 @@ import {privateRouteGuard} from '../security/guards';
 import {requireAuth} from '../security/session';
 import {envelope} from '../envelope';
 import {envelopeSchema, uuidParam} from './schemas/common';
-// Imported by file path until the orchestrator exports it from @harvest/contracts.
-import {NdviSeries} from '../../../../packages/contracts/src/ndvi';
+import {NdviSeries} from '@harvest/contracts';
 import {ITEM_ID_RE, type Sentinel2Fetch} from '../providers/sentinel2';
 import {ndviSeries, sceneImage} from '../services/today/ndvi';
 
 export interface TodayNdviDeps { config: Config; pool: Pool; storage: StorageAdapter; fetchImpl?: Sentinel2Fetch | undefined }
 
-/** Owner-private Sentinel-2 NDVI series and scene images for one farm. Not registered in routes/index.ts yet. */
+/** Owner-private Sentinel-2 NDVI series and scene images for one farm. */
 export async function todayNdviRoutes(app: FastifyInstance, deps: TodayNdviDeps) {
   const {config, pool} = deps;
   app.addHook('onRequest', privateRouteGuard(config, pool));
