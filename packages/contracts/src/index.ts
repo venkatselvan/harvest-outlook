@@ -13,7 +13,6 @@ export * from './jobs';
 export * from './assistant';
 export * from './registry';
 export * from './workspace';
-export * from './boundary-assessment';
 export * from './planning-review';
 export * from './market-quotes';
 export * from './soil-reports';

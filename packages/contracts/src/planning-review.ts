@@ -1,6 +1,6 @@
 import {z} from 'zod';
 import {CurrentMandiQuotes} from './market-quotes';
-import {ModelInvocation} from './boundary-assessment';
+import {ModelInvocation} from './common';
 import {PreviousHarvest,CropCycle,FarmWorkspace} from './workspace';
 const text=z.string().max(1000);
 export const PlanningEvidence=z.object({id:z.string(),title:z.string(),url:z.url(),scope:z.enum(['district','state','region','national']),geographyIds:z.array(z.string()),reviewStatus:z.enum(['source_checked','pending']),limitations:z.array(text)}).strict();

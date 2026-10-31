@@ -8,7 +8,7 @@ export function trackForegroundModelRequest(
 ): () => void {
   const invokes =
     method?.toUpperCase() === "POST" &&
-    /\/assistant\/turns$|\/boundary-assessments$|\/planning-review$|\/soil-reports(?:\/sample)?$|\/speech\/transcriptions$|\/analysis$|\/segmentation$|\/visuals$/.test(
+    /\/assistant\/turns$|\/planning-review$|\/soil-reports(?:\/sample)?$|\/speech\/transcriptions$|\/analysis$|\/segmentation$|\/visuals$/.test(
       path,
     );
   if (!invokes) return () => {};

@@ -1,5 +1,5 @@
 import {z} from 'zod';
-import {ModelInvocation} from './boundary-assessment';
+import {ModelInvocation} from './common';
 const optionalText=z.string().max(300).nullable();
 export const SoilParameter=z.enum(['ph','electrical_conductivity','organic_carbon','organic_matter','nitrogen_available','nitrogen_total','nitrogen_unspecified','nitrate_n','ammonium_n','phosphorus_available','phosphorus_total','potassium_available','potassium_total','sulphur_available','zinc_available','boron_available','iron_available','manganese_available','copper_available','calcium_exchangeable','magnesium_exchangeable','sodium_exchangeable','cec','texture','sand','silt','clay','bulk_density','moisture_gravimetric','moisture_volumetric','field_capacity','wilting_point','base_saturation','esp','sar','unknown_other']);
 const SoilPageEvidence=z.object({page:z.number().int().min(1).max(8),quote:z.string().max(1500),nativeTextCheck:z.enum(['matched','not_matched','image_review_required'])}).strict();

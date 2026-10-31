@@ -1,10 +1,5 @@
 import { PlanningReviewPanel } from "./PlanningReview";
 import { FarmStart } from "./FarmStart";
-import {
-  BoundaryAssessmentCard,
-  type BoundaryAssessment,
-  type BoundaryContext,
-} from "./BoundaryAssessment";
 import { GeographicBoundary } from "@harvest/contracts";
 import {
   For,
@@ -33,6 +28,16 @@ import {
 } from "../features/photo-region/http";
 import { listDistricts, listStates } from "../lib/catalogue-api";
 import { stateLabel } from "../routes/farm/formModel";
+/** Response of POST /api/v1/boundary-context: administrative location for the drawn boundary. */
+type BoundaryContext = {
+  suggestedName?: string;
+  location: {
+    stateId: string | null;
+    stateName: string | null;
+    districtId: string | null;
+    districtName: string | null;
+  };
+};
 export function PageHeading(props: {
   eyebrow: string;
   title: string;
@@ -241,18 +246,9 @@ export function FarmWorkspace(
   const [boundaryComplete, setBoundaryComplete] = createSignal(false);
   const [savingBoundary, setSavingBoundary] = createSignal(false);
   const [demoBusy, setDemoBusy] = createSignal(false);
-  const [boundaryContext, setBoundaryContext] =
-    createSignal<BoundaryContext | null>(null);
-  const [assessment, setAssessment] = createSignal<BoundaryAssessment | null>(
-    null,
-  );
-  const [assessing, setAssessing] = createSignal(false);
-  const [assessmentError, setAssessmentError] = createSignal("");
-  const [waterAccepted, setWaterAccepted] = createSignal(false);
-  let assessmentSequence = 0;
-  let assessmentKey = newEntryId("boundary");
-  let assessedBoundary = "";
-  const dirty = { name: false, state: false, district: false, water: false };
+  // Bumped on every farm/session/boundary change so a slow location lookup cannot overwrite newer input.
+  let prefillSequence = 0;
+  const dirty = { name: false, state: false, district: false };
   const demoKey = newEntryId("demo");
   const [editing, setEditing] = createSignal(false);
   const [draft, setDraft] = createSignal<Boundary | null>(null);
@@ -289,13 +285,8 @@ export function FarmWorkspace(
     on([() => s.farm()?.id, s.sessionEpoch], ([id, epoch]) => {
       const identityChanged = epoch !== previousEpoch;
       if (previousFarmId !== id || identityChanged) {
-        ++assessmentSequence;
-        setAssessment(null);
-        setBoundaryContext(null);
-        setAssessing(false);
-        setAssessmentError("");
+        ++prefillSequence;
         setBoundaryComplete(false);
-        setWaterAccepted(false);
         setEditing(false);
         setDraft(null);
         setSavingBoundary(false);
@@ -408,12 +399,7 @@ export function FarmWorkspace(
                   value: water(),
                   basis: "farmer_reported",
                   confirmed: true,
-                  source: waterAccepted()
-                    ? `Evara suggestion accepted by farmer (${assessment()?.modelInvocation?.model ?? "context review"})`.slice(
-                        0,
-                        200,
-                      )
-                    : "Farm setup: farmer selection",
+                  source: "Farm setup: farmer selection",
                 },
               },
       };
@@ -474,14 +460,9 @@ export function FarmWorkspace(
     setPendingFarm(null);
     preparedBody = null;
     createKey = newEntryId("farm");
-    ++assessmentSequence;
+    ++prefillSequence;
     setSetupMode("choose");
     setBoundaryComplete(false);
-    setBoundaryContext(null);
-    setAssessment(null);
-    setAssessmentError("");
-    setAssessing(false);
-    setWaterAccepted(false);
     for (const key of Object.keys(dirty) as (keyof typeof dirty)[])
       dirty[key] = false;
     setName("");
@@ -523,7 +504,7 @@ export function FarmWorkspace(
         void s.refreshFarms();
         return;
       }
-      ++assessmentSequence;
+      ++prefillSequence;
       createdId = data.farm.id;
       s.setFarms([
         ...(s.farms() ?? []).filter((f) => f.id !== data.farm.id),
@@ -538,8 +519,6 @@ export function FarmWorkspace(
       setHistory(false);
       setDraft(null);
       setEditing(false);
-      setAssessment(null);
-      setAssessing(false);
       setCenter(undefined);
       s.setNotice(
         "Demo boundary ready. Evara will check live sources for this location.",
@@ -554,12 +533,9 @@ export function FarmWorkspace(
   function finishBoundary(boundary: Boundary | null) {
     setError("");
     if (!boundary) {
-      ++assessmentSequence;
+      ++prefillSequence;
       setDraft(null);
       setBoundaryComplete(false);
-      setBoundaryContext(null);
-      setAssessment(null);
-      setAssessing(false);
       return;
     }
     const valid = GeographicBoundary.safeParse(boundary);
@@ -570,116 +546,41 @@ export function FarmWorkspace(
       return;
     }
     setDraft(boundary);
-    setWaterAccepted(false);
     if (onboarding()) {
       setBoundaryComplete(true);
-      void assessBoundary(boundary);
+      void prefillFromBoundary(boundary);
     } else void saveBoundaryFromMap(boundary);
   }
-  async function assessBoundary(boundary: Boundary) {
+  /** Quick public-context lookup that prefills state, district and name; manual edits are never overwritten. */
+  async function prefillFromBoundary(boundary: Boundary) {
     const epoch = s.sessionEpoch();
     const target = s.farm()?.id;
-    const sequence = ++assessmentSequence;
-    const key = JSON.stringify(boundary);
-    if (key !== assessedBoundary) {
-      assessmentKey = newEntryId("boundary");
-      assessedBoundary = key;
-    }
+    const sequence = ++prefillSequence;
     const active = () =>
       epoch === s.sessionEpoch() &&
       target === s.farm()?.id &&
-      sequence === assessmentSequence;
-    setAssessing(true);
-    setAssessmentError("");
-    setAssessment(null);
-    setBoundaryContext(null);
-    const prefill = (context: BoundaryContext) => {
-      if (!active()) return;
-      setBoundaryContext(context);
-      if (onboarding()) {
-        if (!dirty.name)
-          setName(
-            context.suggestedName ??
-              `${context.location.districtName ?? context.location.stateName ?? "Mapped"} farm`,
-          );
-        if (!dirty.state && context.location.stateId)
-          setState(context.location.stateId);
-        if (!dirty.district) {
-          setDistrict(context.location.districtId ?? "");
-          setDistrictText(context.location.districtName ?? "");
-        }
-      }
-    };
+      sequence === prefillSequence;
     try {
-      try {
-        const context = (
-          await apiRequest<BoundaryContext>(
-            "/api/v1/boundary-context",
-            jsonInit("POST", { boundary }),
-          )
-        ).data!;
-        if (!active()) return;
-        prefill(context);
-      } catch {
-        /* Full assessment may still provide the context if the quick lookup fails. */
-      }
-      if (!active()) return;
-      const next = (
-        await apiRequest<BoundaryAssessment>(
-          "/api/v1/boundary-assessments",
-          jsonInit("POST", { boundary }, { "idempotency-key": assessmentKey }),
+      const context = (
+        await apiRequest<BoundaryContext>(
+          "/api/v1/boundary-context",
+          jsonInit("POST", { boundary }),
         )
       ).data!;
-      if (!active()) return;
-      setAssessment(next);
-      prefill(next);
-    } catch (e) {
-      if (active())
-        setAssessmentError(
-          `The boundary is finished. Context review is unavailable: ${(e as Error).message}. You can enter the location yourself.`,
+      if (!active() || !onboarding()) return;
+      if (!dirty.name)
+        setName(
+          context.suggestedName ??
+            `${context.location.districtName ?? context.location.stateName ?? "Mapped"} farm`,
         );
-    } finally {
-      if (active()) setAssessing(false);
-    }
-  }
-  async function acceptWaterSuggestion() {
-    const value = assessment()?.suggestions.irrigation.value;
-    if (!value || value === "unknown") return;
-    if (onboarding()) {
-      setWater(value);
-      dirty.water = true;
-      setWaterAccepted(true);
-      return;
-    }
-    const farmId = s.farm()?.id;
-    const epoch = s.sessionEpoch();
-    if (!farmId) return;
-    try {
-      await apiRequest(
-        `/api/v1/farms/${farmId}`,
-        jsonInit("PATCH", {
-          facts: {
-            irrigation_category: {
-              value,
-              basis: "farmer_reported",
-              confirmed: true,
-              source:
-                `Evara suggestion accepted by farmer (${assessment()?.modelInvocation?.model ?? "context review"})`.slice(
-                  0,
-                  200,
-                ),
-            },
-          },
-        }),
-      );
-      if (farmId === s.farm()?.id && epoch === s.sessionEpoch()) {
-        setWaterAccepted(true);
-        void s.refreshFarms();
-        s.setNotice("Water access saved from your confirmed suggestion.");
+      if (!dirty.state && context.location.stateId)
+        setState(context.location.stateId);
+      if (!dirty.district) {
+        setDistrict(context.location.districtId ?? "");
+        setDistrictText(context.location.districtName ?? "");
       }
-    } catch (e) {
-      if (farmId === s.farm()?.id && epoch === s.sessionEpoch())
-        setAssessmentError((e as Error).message);
+    } catch {
+      /* Prefill is a convenience; the farmer can enter the location manually. */
     }
   }
   return (
@@ -841,7 +742,6 @@ export function FarmWorkspace(
                 ? {
                     onEdit: () => {
                       setBoundaryComplete(false);
-                      setAssessmentError("");
                     },
                   }
                 : {
@@ -1106,11 +1006,7 @@ export function FarmWorkspace(
                       How is the land watered?
                       <select
                         value={water()}
-                        onChange={(e) => {
-                          dirty.water = true;
-                          setWaterAccepted(false);
-                          setWater(e.currentTarget.value);
-                        }}
+                        onChange={(e) => setWater(e.currentTarget.value)}
                       >
                         <option value="unknown">Not sure yet</option>
                         <option value="rainfed">Rainfed</option>
@@ -1142,11 +1038,7 @@ export function FarmWorkspace(
                       class="text-button full-width"
                       type="button"
                       onClick={() => {
-                        ++assessmentSequence;
-                        setAssessment(null);
-                        setBoundaryContext(null);
-                        setAssessing(false);
-                        setAssessmentError("");
+                        ++prefillSequence;
                         setDraft(null);
                         setBoundaryComplete(false);
                         setSetupMode("choose");
@@ -1160,11 +1052,7 @@ export function FarmWorkspace(
                       class="text-button full-width"
                       type="button"
                       onClick={() => {
-                        ++assessmentSequence;
-                        setAssessment(null);
-                        setBoundaryContext(null);
-                        setAssessing(false);
-                        setAssessmentError("");
+                        ++prefillSequence;
                         setBoundaryComplete(false);
                         setAdding(false);
                         setDraft(null);
@@ -1185,19 +1073,6 @@ export function FarmWorkspace(
                   approximate, not a legal survey.
                 </p>
               </div>
-            </Show>
-            <Show when={assessing() || assessment() || assessmentError()}>
-              <BoundaryAssessmentCard
-                assessment={assessment()}
-                context={boundaryContext()}
-                loading={assessing()}
-                error={assessmentError()}
-                accepted={waterAccepted()}
-                onAccept={() => void acceptWaterSuggestion()}
-                onRetry={() => {
-                  if (draft()) void assessBoundary(draft()!);
-                }}
-              />
             </Show>
             <Show when={error()}>
               <p class="inline-error" role="alert">
@@ -1293,7 +1168,6 @@ export function FarmWorkspace(
       if (s.farm()?.id === farmId && s.sessionEpoch() === epoch) {
         setEditing(false);
         s.setNotice("Farm boundary finished and saved.");
-        void assessBoundary(b);
       }
     } catch (e) {
       if (farmId === s.farm()?.id && epoch === s.sessionEpoch())

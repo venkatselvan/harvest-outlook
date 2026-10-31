@@ -27,7 +27,9 @@ import type { FetchLike } from '../ingest/http';
 import {commodityCatalogueRoutes} from './commodity-catalogue';
 import {soilReportRoutes} from './soil-reports';
 import {planningReviewRoutes} from './planning-review';
-import {boundaryAssessmentRoutes} from './boundary-assessment';
+import {boundaryContextRoutes} from './boundary-context';
+import {aiActivityRoutes} from './ai-activity';
+import {demoFarmRoutes} from './demo-farm';
 import {commandCenterRoutes} from './command-center';
 import {registerMarketContextRoutes} from './market-context';
 
@@ -63,7 +65,9 @@ export async function registerRoutes(app: FastifyInstance, deps: RouteDeps): Pro
   await app.register(commandCenterRoutes,{config,pool,budget:deps.budget,...(deps.catalogue?{catalogue:()=>deps.catalogue!.get()}:{}),...(deps.prices?{prices:deps.prices}:{})});
   await app.register(soilReportRoutes,{config,pool,storage:deps.storage,budget:deps.budget,...(deps.weatherFetch?{fetchImpl:deps.weatherFetch as unknown as typeof fetch}:{})});
   await app.register(planningReviewRoutes,{config,pool,budget:deps.budget,...(deps.catalogue?{catalogue:()=>deps.catalogue!.get()}:{}),...(deps.prices?{prices:deps.prices}:{}),...(deps.weatherFetch?{fetchImpl:deps.weatherFetch as unknown as typeof fetch}:{})});
-  await app.register(boundaryAssessmentRoutes,{config,pool,storage:deps.storage,budget:deps.budget,...(deps.weatherFetch?{fetchImpl:deps.weatherFetch as unknown as typeof fetch}:{})});
+  await app.register(boundaryContextRoutes,{config,pool,...(deps.weatherFetch?{fetchImpl:deps.weatherFetch as unknown as typeof fetch}:{})});
+  await app.register(aiActivityRoutes,{config,pool});
+  await app.register(demoFarmRoutes,{config,pool});
   await app.register(mediaRoutes, { config, pool, storage: deps.storage });
   await app.register(jobRoutes, { config, pool });
 

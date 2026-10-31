@@ -252,3 +252,21 @@ export type ApiEnvelope<T> = {
   warnings: ApiWarning[];
   error: ApiError | null;
 };
+
+/** Record of one runtime model call, embedded in planning-review and soil-report results. */
+export const ModelInvocation = z
+  .object({
+    id: z.uuid(),
+    provider: z.literal('meta'),
+    requestedModel: z.string(),
+    model: z.string().nullable(),
+    purpose: z.string(),
+    status: z.enum(['running', 'succeeded', 'failed']),
+    startedAt: z.iso.datetime(),
+    finishedAt: z.iso.datetime().nullable(),
+    processing: z.literal('standard'),
+    requestedStorage: z.literal(false),
+    responseDeleted: z.boolean().nullable(),
+  })
+  .strict();
+export type ModelInvocation = z.infer<typeof ModelInvocation>;

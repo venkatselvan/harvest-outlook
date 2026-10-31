@@ -1,3 +1,4 @@
+// Retained for the Sentinel-2 NDVI provider; no callers until Stream B.
 import sharp from 'sharp';
 import type {GeographicBoundary} from '@harvest/contracts';
 import {z} from 'zod';
