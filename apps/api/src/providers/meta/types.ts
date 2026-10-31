@@ -41,6 +41,11 @@ export interface CreateResponseParams {
   input: string | InputItem[];
   tools?: FunctionToolDef[];
   webSearch?: WebSearchToolOptions;
+  /**
+   * Sent as `max_tool_calls`: "Maximum number of built-in tool calls allowed while generating a response", counted across
+   * all built-in tools, minimum 1; the model ignores calls beyond the limit (dev.meta.ai Responses schemas, read 2026-11-01).
+   */
+  maxToolCalls?: number;
   /** Responses `include`; only the documented web-search result expansion is allowed. */
   include?: "web_search_call.results"[];
   textFormat?: { name: string; schema: JsonSchema };

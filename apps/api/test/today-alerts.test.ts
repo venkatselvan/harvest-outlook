@@ -141,6 +141,41 @@ describe('citation gate for grounded alerts', () => {
     expect(r.kept).toHaveLength(6);
     expect(r.dropped.map((d) => d.reason)).toEqual(['duplicate', 'over_limit', 'over_limit']);
   });
+  describe('lapsed recent weather (extended_recent_weather)', () => {
+    // asOf 2026-11-01. Undated URL on purpose, so only the date rules under test apply.
+    const weather = { ...base, type: 'weather', title: 'Heavy rain warning for Hassan', detail: 'A heavy-rain warning was issued for the district.', sourceUrl: 'https://prices.example.in/maize-outlook', sourceName: 'Example bulletin', sourceDate: '2026-10-29', validFrom: '2026-10-29', validTo: '2026-10-31' };
+    it('keeps a weather item that lapsed but was published in the last 7 days, extends validTo to asOf + 2 days and logs it', () => {
+      const r = gate([weather]);
+      expect(r.dropped).toEqual([]);
+      expect(r.kept).toHaveLength(1);
+      expect(r.kept[0]).toMatchObject({ type: 'weather', origin: 'grounded_review', validFrom: '2026-10-29', validTo: '2026-11-03', source: { url: weather.sourceUrl, date: '2026-10-29' } });
+      expect(r.adjusted).toEqual([{ reason: 'extended_recent_weather', type: 'weather', sourceDomain: 'prices.example.in' }]);
+    });
+    it('applies only at the 7-day boundary, only to weather, and never rescues an item that fails another check', () => {
+      const r = gate([
+        { ...weather, title: 'Seven days old', sourceDate: '2026-10-25' },
+        { ...weather, title: 'Eight days old', sourceDate: '2026-10-24' },
+        { ...weather, type: 'market_event', title: 'Lapsed strike notice' },
+        { ...weather, type: 'crop_threat', title: 'Lapsed pest report' },
+        { ...weather, title: 'Uncited lapsed warning', sourceUrl: 'https://invented.example.com/x' },
+        { ...weather, title: 'Mismatched source date', sourceUrl: base.sourceUrl, sourceDate: '2026-10-20' },
+        { ...weather, title: 'Still valid warning', validTo: '2026-11-04' },
+      ]);
+      expect(r.kept.map((a) => [a.title, a.validTo])).toEqual([['Seven days old', '2026-11-03'], ['Still valid warning', '2026-11-04']]);
+      expect(r.dropped.map((d) => d.reason)).toEqual(['expired', 'expired', 'expired', 'uncited_url', 'source_date_mismatch']);
+      expect(r.adjusted).toHaveLength(1);
+    });
+  });
+});
+
+describe('Meta request shape for built-in tool limits', () => {
+  const params = { model: 'muse-spark-1.3', instructions: 'i', input: 'x', maxOutputTokens: 100 };
+  const client = new MetaClient({ apiKey: 'test-key-not-real', baseUrl: 'https://api.meta.test/v1' });
+  it('sends max_tool_calls only when set, and only as an integer of at least 1', () => {
+    expect(client.buildBody({ ...params, webSearch: { searchContextSize: 'low' }, maxToolCalls: 3 })).toMatchObject({ max_tool_calls: 3, tools: [{ type: 'web_search', search_context_size: 'low' }] });
+    expect(client.buildBody({ ...params, webSearch: { searchContextSize: 'low' } })).not.toHaveProperty('max_tool_calls');
+    for (const bad of [0, -1, 1.5, Number.NaN]) expect(() => client.buildBody({ ...params, maxToolCalls: bad })).toThrow(/maxToolCalls/);
+  });
 });
 
 // ------------------------------------------------------------------------------------------------ database tests
@@ -298,12 +333,24 @@ describe('grounded review (Meta transport injected, never live)', () => {
       tools: [{ type: 'web_search', search_context_size: 'low', user_location: { type: 'approximate', country: 'IN', region: 'Karnataka', timezone: 'Asia/Kolkata' } }],
       text: { format: { type: 'json_schema', name: 'farm_alert_review', strict: true } } });
     expect(post!.body!.tool_choice).toBeUndefined();
+    // At most three built-in searches, capped in the request and asked for in the instructions; focused queries, official sources.
+    expect(post!.body!.max_tool_calls).toBe(3);
+    const instructions = String(post!.body!.instructions);
+    expect(instructions).toMatch(/at most three times/);
+    expect(instructions).toMatch(/last 14 days/);
+    expect(instructions).toMatch(/Prefer official sources/);
     const input = String(post!.body!.input);
     expect(JSON.parse(input)).toMatchObject({ region: { district: 'Hassan', state: 'Karnataka', country: 'India' }, crops: [{ name: 'maize', status: 'growing' }] });
     expect(input).not.toMatch(/13\.0|76\.0|North plot|lat|lon/);
     expect(del).toMatchObject({ method: 'DELETE' });
-    const reservation = (await h.pool.query("SELECT state, request_id, settled_usd FROM usage_reservations WHERE request_id LIKE 'farm_alert_review:%' AND request_id LIKE $1", [`%${id}%`])).rows[0];
+    const reservation = (await h.pool.query("SELECT state, request_id, estimated_usd, settled_usd FROM usage_reservations WHERE request_id LIKE 'farm_alert_review:%' AND request_id LIKE $1", [`%${id}%`])).rows[0];
     expect(reservation).toMatchObject({ state: 'settled', settled_usd: '0.015325' });
+    // The reservation covers three searches at the per-search input cost of the first live run (93,581 input tokens over
+    // 11 searches), the full output allowance and three search fees; settlement above used the actual usage.
+    const threeSearchWorstCase = (3 * Math.ceil(93_581 / 11) * 1.25 + 3000 * 4.25) / 1e6 + 3 * 0.0025;
+    expect(r.estimateUsd!).toBeGreaterThanOrEqual(threeSearchWorstCase);
+    expect(r.estimateUsd!).toBeLessThan(0.07);
+    expect(Number(reservation.estimated_usd)).toBeCloseTo(r.estimateUsd!, 6);
     expect((await h.pool.query("SELECT purpose, status, model FROM ai_invocations WHERE owner_id=$1 AND purpose='farm_alert_review'", [ownerId])).rows).toEqual([{ purpose: 'farm_alert_review', status: 'succeeded', model: 'muse-spark-1.3' }]);
   });
 
@@ -318,7 +365,7 @@ describe('grounded review (Meta transport injected, never live)', () => {
     expect((await groundedReview({ pool: h.pool, config: h.config, budget, transport: meta.client }, args)).reason).toBe('live_mode_required');
     expect((await groundedReview({ pool: h.pool, config: liveConfig({ MODEL_API_KEY: undefined }), budget }, args)).reason).toBe('meta_key_missing');
     expect((await groundedReview({ pool: h.pool, config: liveConfig(), budget, transport: meta.client }, { ...args, workspace: { ...ws, cycles: [] } })).reason).toBe('no_tracked_crops');
-    // Atomic cap check: the estimate (tokens + one search) alone exceeds a 1 cent cap.
+    // Atomic cap check: the estimate (tokens + three searches) alone exceeds a 1 cent cap.
     expect((await groundedReview({ pool: h.pool, config: liveConfig({ MONITOR_META_DAILY_CAP_USD: 0.01 }), budget, transport: meta.client }, args))).toMatchObject({ status: 'skipped', reason: 'daily_cap_reached' });
     expect(meta.fetchImpl).not.toHaveBeenCalled();
   });

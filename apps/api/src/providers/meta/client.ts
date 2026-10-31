@@ -162,6 +162,10 @@ export class MetaClient {
       });
     }
     if (tools.length > 0) body.tools = tools;
+    if (p.maxToolCalls !== undefined) {
+      if (!Number.isInteger(p.maxToolCalls) || p.maxToolCalls < 1) throw new MetaError("bad_request", "maxToolCalls must be an integer of at least 1");
+      body.max_tool_calls = p.maxToolCalls;
+    }
     if (p.include && p.include.length > 0) {
       if (p.include.some((i) => i !== "web_search_call.results")) throw new MetaError("bad_request", "Only include web_search_call.results is supported");
       body.include = p.include;

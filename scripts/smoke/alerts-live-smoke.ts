@@ -1,6 +1,7 @@
 /**
- * One live smoke of the grounded farm-alert review (Meta muse-spark-1.3 + web search). Paid: one call, expected
- * well under $0.05. Creates a TEMPORARY guest owner and farm (Hassan, Karnataka) with a maize cycle, runs
+ * One live smoke of the grounded farm-alert review (Meta muse-spark-1.3 + web search). Paid: one call capped at three
+ * built-in searches (max_tool_calls: 3), expected about $0.03 to $0.05 (run 1, uncapped, made 11 searches and cost
+ * about $0.154). Writes alerts-2026-11-01-run2.json; run 1's record stays in alerts-2026-11-01.json. Creates a TEMPORARY guest owner and farm (Hassan, Karnataka) with a maize cycle, runs
  * groundedReview once, persists the gated alerts, records a sanitized summary and deletes the temporary owner/farm.
  * Never reads or modifies existing farms. Run from apps/api so the repo .env loads:
  *   pnpm --filter @harvest/api exec tsx ../../scripts/smoke/alerts-live-smoke.ts
@@ -14,11 +15,11 @@ const { loadConfig } = await import('../../apps/api/src/config');
 const { createPool } = await import('../../apps/api/src/db/pool');
 const { Budget } = await import('../../apps/api/src/services/budget');
 const { createFarm } = await import('../../apps/api/src/services/farms');
-const { groundedReview, persistAlerts, listAlerts } = await import('../../apps/api/src/services/today/alerts');
+const { groundedReview, persistAlerts, listAlerts, MAX_SEARCH_CALLS } = await import('../../apps/api/src/services/today/alerts');
 
-const OUT = resolve(dirname(fileURLToPath(import.meta.url)), '../../evals/results/live-smoke/alerts-2026-11-01.json');
+const OUT = resolve(dirname(fileURLToPath(import.meta.url)), '../../evals/results/live-smoke/alerts-2026-11-01-run2.json');
 const config = loadConfig();
-const record: Record<string, unknown> = { task: 'stream-b-alerts-live-smoke', runAt: new Date().toISOString(), runtimeMode: config.RUNTIME_MODE, requestedModel: config.META_TEXT_MODEL, keyConfigured: !!config.MODEL_API_KEY, farm: { kind: 'temporary', district: 'Hassan', state: 'Karnataka', crops: ['maize (growing)'] } };
+const record: Record<string, unknown> = { task: 'stream-b-alerts-live-smoke', run: 2, compareTo: 'evals/results/live-smoke/alerts-2026-11-01.json (run 1: uncapped, 11 searches, 93,581 input tokens, about $0.154, 0 kept, 2 expired)', maxToolCalls: MAX_SEARCH_CALLS, runAt: new Date().toISOString(), runtimeMode: config.RUNTIME_MODE, requestedModel: config.META_TEXT_MODEL, keyConfigured: !!config.MODEL_API_KEY, farm: { kind: 'temporary', district: 'Hassan', state: 'Karnataka', crops: ['maize (growing)'] } };
 if (config.RUNTIME_MODE !== 'live' || !config.MODEL_API_KEY) {
   record.status = 'skipped'; record.reason = config.RUNTIME_MODE !== 'live' ? 'live_mode_required' : 'meta_key_missing';
 } else {
@@ -42,7 +43,10 @@ if (config.RUNTIME_MODE !== 'live' || !config.MODEL_API_KEY) {
     Object.assign(record, {
       status: r.status, reason: r.reason, latencyMs: Date.now() - started, receivedModel: r.model, invocation,
       search: { calls: r.searchCalls, queries: r.searchQueries, citations: r.citations, retrievedSources: r.searchSources },
+      keptAlerts: r.alerts.map((a) => ({ type: a.type, severity: a.severity, title: a.title, sourceDomain: domain(a.source.url), sourceDate: a.source.date, validFrom: a.validFrom, validTo: a.validTo })),
+      adjusted: (r.adjusted ?? []).map((a) => ({ reason: a.reason, type: a.type, sourceDomain: a.sourceDomain })),
       kept: { count: r.alerts.length, types: count(r.alerts.map((a) => a.type)), severities: count(r.alerts.map((a) => a.severity)), sourceDomains: count(r.alerts.map((a) => domain(a.source.url))), sourceDates: r.alerts.map((a) => a.source.date).sort() },
+      droppedItems: r.dropped.map((d) => ({ reason: d.reason, type: d.type, sourceDomain: d.sourceDomain })),
       dropped: { count: r.dropped.length, reasons: count(r.dropped.map((d) => d.reason)), types: count(r.dropped.map((d) => d.type)), sourceDomains: count(r.dropped.map((d) => d.sourceDomain)) },
       persisted, listedActive: listed.alerts.length, imdStatus: listed.imdStatus, newsReview: listed.newsReview,
       usage: r.usage, cost: { estimateUsd: r.estimateUsd, settledUsd: r.settledUsd, basis: 'estimated from reported usage and the documented price table, not a provider bill', reservation },
