@@ -37,8 +37,9 @@ export async function demoFarm(pool:Pool,ownerId:string){
     const workspace=(await c.query<{state:unknown}>('SELECT state FROM farm_workspaces WHERE farm_id=$1 FOR UPDATE',[existing.farm_id])).rows[0];
     if(workspace){const old=FarmWorkspaceState.parse(workspace.state),next=withoutLegacyDemoRecords(old);if(JSON.stringify(old)!==JSON.stringify(next)){
       await c.query('UPDATE farm_workspaces SET state=$2::jsonb,version=version+1 WHERE farm_id=$1',[existing.farm_id,JSON.stringify(next)]);
-      await c.query("UPDATE jobs SET cancel_requested=true WHERE owner_id=$1 AND payload->>'farmId'=$2 AND type IN ('farm.planning-review','farm.monitor') AND state IN ('queued','running')",[ownerId,existing.farm_id]);
-      await c.query('UPDATE farm_planning_reviews SET archived_at=now() WHERE farm_id=$1 AND owner_id=$2 AND archived_at IS NULL',[existing.farm_id,ownerId]);
+      await c.query("UPDATE jobs SET cancel_requested=true WHERE owner_id=$1 AND payload->>'farmId'=$2 AND type IN ('farm.year-plan','farm.monitor') AND state IN ('queued','running')",[ownerId,existing.farm_id]);
+      // Year plans built on the removed seed records are archived (kept for audit, never shown); the Plan tab rebuilds one.
+      await c.query('UPDATE farm_year_plans SET archived_at=now() WHERE farm_id=$1 AND owner_id=$2 AND archived_at IS NULL',[existing.farm_id,ownerId]);
       await c.query("UPDATE farm_monitors SET snapshot=NULL,meta_review=NULL,reviewed_fingerprint=NULL,changes='[]'::jsonb WHERE farm_id=$1",[existing.farm_id]);
     }}
     await setFact(c,ownerId,existing.farm_id,'demo_seed_version',4);await setFact(c,ownerId,existing.farm_id,'demo_prefilled',true);await setFact(c,ownerId,existing.farm_id,'demo_illustrative',false);await setFact(c,ownerId,existing.farm_id,'demo_source',`${LABEL}. Public reference: ${SOURCE}`);

@@ -1,7 +1,7 @@
 import {beforeAll,describe,expect,it} from 'vitest';
 import {focusedResearch,establishmentAnchor,type FocusedResearch} from '../src/services/focused-crops';
 import {careSchedule,measuredSoilFit} from '../src/services/command-center';
-import {planningMeasuredPh} from '../src/services/planning-review';
+import {planningMeasuredPh} from '../src/services/soil-reports';
 import type {FarmSoilMarkers,SoilMarkerDraft} from '@harvest/contracts';
 const localCareSchedule=(cycle:Parameters<typeof careSchedule>[0],crop:Parameters<typeof careSchedule>[1],asOf:string)=>careSchedule(cycle,crop,asOf,[],{stateId:'IN-TN',districtId:'IN-TN-coimbatore'});
 let research:FocusedResearch;

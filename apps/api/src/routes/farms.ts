@@ -18,10 +18,10 @@ import { monitoringSnapshot } from '../services/monitoring';
 import type { PriceDeps } from '../plans/adapters/market-outlook';
 import type { FetchLike } from '../ingest/http';
 import {currentMandiQuotes} from '../services/market-quotes';
-import {ensurePlanningReview,type PlanningDeps} from '../services/planning-review';
+import { ensureYearPlan, type YearPlanDeps } from '../services/year-plan/service';
 import { MonitorSettings, readMonitorSettings, saveMonitorSnapshot, updateMonitorSettings } from '../services/monitor-schedule';
 
-export async function farmRoutes(app: FastifyInstance, opts: { config: Config; pool: Pool; storage: StorageAdapter; prices?: PriceDeps | undefined; weatherFetch?: FetchLike | undefined; planning?:PlanningDeps|undefined }) {
+export async function farmRoutes(app: FastifyInstance, opts: { config: Config; pool: Pool; storage: StorageAdapter; prices?: PriceDeps | undefined; weatherFetch?: FetchLike | undefined; yearPlan?: YearPlanDeps | undefined }) {
   const { config, pool, storage } = opts;
   app.addHook("onRequest", privateRouteGuard(config, pool));
   const r = app.withTypeProvider<ZodTypeProvider>();
@@ -37,8 +37,11 @@ export async function farmRoutes(app: FastifyInstance, opts: { config: Config; p
     schema: { tags: ['farms'], params: uuidParam, body: PutFarmWorkspace, response: { 200: envelopeSchema(FarmWorkspace) } },
   }, async (req) => {
     const auth=requireAuth(req);const saved=await putWorkspace(pool,auth.ownerId,req.params.id,req.body);
-    // Initial unknown history is collected in a follow-up form. Explicitly submitted unknown uses POST ensure.
-    if(opts.planning&&saved.previousHarvest.status!=='unknown')await ensurePlanningReview(opts.planning,auth,req.params.id).catch(()=>req.log.warn({code:'planning_enqueue_unavailable'},'Workspace saved; automatic planning enqueue unavailable'));
+    // Year plan for the saved farm (one farm.year-plan job per context hash; same hash -> no new job). Best effort: the
+    // save never fails because of planning. A workspace saved with unknown harvest history (the farm-setup save, before
+    // the history dialog) is not planned here, so setup does not spend a model call on a context about to change; the
+    // Plan tab generates one on first open (POST /year-plan) and offers Refresh when the plan shown is stale.
+    if(opts.yearPlan&&saved.previousHarvest.status!=='unknown')await ensureYearPlan(opts.yearPlan,auth,req.params.id).catch(()=>req.log.warn({code:'year_plan_enqueue_unavailable'},'Workspace saved; automatic year-plan enqueue unavailable'));
     return envelope(req.id,config.RUNTIME_MODE,saved);
   });
 

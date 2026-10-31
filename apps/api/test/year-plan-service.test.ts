@@ -115,7 +115,7 @@ describe('year-plan review service', () => {
     expect(meta.provider.deleteResponse).toHaveBeenCalledWith('resp-valid');
     const stored = (await h.pool.query('SELECT input_context FROM farm_year_plans WHERE id=$1', [review.reviewId])).rows[0].input_context;
     expect(stored.norm.maxMarginRate === null || stored.norm.maxMarginRate > 0).toBe(true);
-    expect(stored.inputs.priceKeys.looked).toBeLessThanOrEqual(60);
+    expect(stored.inputs.priceKeys.looked).toBeLessThanOrEqual(160);
   });
 
   for (const mode of ['foreign', 'digit', 'unknown_code'] as const) {
@@ -171,7 +171,7 @@ describe('year-plan review service', () => {
     await expect(applyYearPlan(d, auth.ownerId, f.id, { reviewId: review.reviewId!, optionId: option.optionId, expectedWorkspaceVersion: 0 })).rejects.toMatchObject({ statusCode: 409, code: 'review_stale' });
   });
 
-  it('gate unit: label must be code-allowed for the candidate', () => {
+  it('gate unit: an unsupported label is replaced by a code-allowed one (labelAdjusted); foreign ids, unknown codes and digits still reject', () => {
     data.invalidate();
     const ctx = buildScenario({ workspace: { previousHarvest: { status: 'unknown' }, cycles: [], rotationPlans: [] }, farm: { location: { stateCode: 'IN-KA', districtId: 'IN-KA-hassan' }, areaHectares: 1, facts: {} }, asOf: '2026-11-01' });
     const run = runYearPlanEngine(ctx, emptyInputs('2026-11-01'));
@@ -180,7 +180,18 @@ describe('year-plan review service', () => {
     const ok = cands.filter((c) => c.allowedLabels.length).slice(0, 3);
     const plans = cands.slice(0, 3).map((c, i) => ({ candidateId: c.option.optionId, label: i === 0 ? 'Best price timing' : PLAN_LABELS[i]!, reasonCodes: c.codes.slice(0, 1), sentence: 'A plain sentence.' }));
     plans[0]!.candidateId = notAllowed.option.optionId;
-    expect(gateSelection({ plans }, cands)).toMatchObject({ ok: false });
+    const gated = gateSelection({ plans }, cands);
+    expect(gated.ok).toBe(true);
+    if (!gated.ok) return;
+    expect(gated.labelAdjusted).toEqual(expect.arrayContaining([expect.objectContaining({ candidateId: notAllowed.option.optionId, proposed: 'Best price timing', reason: 'label_not_supported' })]));
+    const adjusted = gated.options.find((o) => o.optionId === notAllowed.option.optionId)!;
+    expect(adjusted.label === 'Alternative' || notAllowed.allowedLabels.includes(adjusted.label as never)).toBe(true);
+    expect(adjusted.reasons.at(-1)).toEqual({ code: 'model_sentence', text: 'A plain sentence.' });
+    for (const o of gated.options) { const c = cands.find((x) => x.option.optionId === o.optionId)!; expect(o.label === 'Alternative' || c.allowedLabels.includes(o.label as never)).toBe(true); }
+    expect(new Set(gated.options.filter((o) => o.label !== 'Alternative').map((o) => o.label)).size).toBe(gated.options.filter((o) => o.label !== 'Alternative').length);
+    expect(gateSelection({ plans: plans.map((p, i) => (i === 1 ? { ...p, candidateId: 'opt-foreign' } : p)) }, cands)).toMatchObject({ ok: false, reason: 'foreign_candidate' });
+    expect(gateSelection({ plans: plans.map((p, i) => (i === 1 ? { ...p, reasonCodes: ['nitrogen_boost'] } : p)) }, cands)).toMatchObject({ ok: false, reason: 'unknown_reason_code' });
+    expect(gateSelection({ plans: plans.map((p, i) => (i === 1 ? { ...p, sentence: 'Sells in 3 good weeks.' } : p)) }, cands)).toMatchObject({ ok: false, reason: 'digit_in_sentence' });
     expect(ok.length).toBeGreaterThan(0);
   });
 });

@@ -13,7 +13,7 @@ import { createWeatherSource } from "../../plans/adapters/weather-source";
 import type { JobHandler } from "../main";
 import { createIngestHandlers } from "./ingest";
 import {createSoilHandler} from './soil-reports';
-import {createPlanningReviewHandler} from './planning-review';
+import { createYearPlanHandler } from './year-plan';
 import { createMonitorHandler } from './monitoring';
 import { createFutureLookHandler } from './future-look';
 import {withModelActivity} from '../../services/model-activity';
@@ -37,7 +37,7 @@ export function registerWorkerHandlers(registry: Record<string, JobHandler>, dep
   const previous=new Map(Object.entries(registry));
   const { config, pool, storage, budget } = deps;
   registry['soil.extract']=createSoilHandler({config,pool,storage,budget,...(deps.fetchImpl?{fetchImpl:deps.fetchImpl}:{})});
-  registry['farm.planning-review']=createPlanningReviewHandler({config,pool,budget,...(deps.fetchImpl?{fetchImpl:deps.fetchImpl}:{})});
+  registry['farm.year-plan'] = createYearPlanHandler({ config, pool, budget, ...(deps.fetchImpl ? { fetchImpl: deps.fetchImpl } : {}) });
   registry['farm.monitor'] = createMonitorHandler({ config, pool, budget, fetchImpl: deps.fetchImpl });
   registry['today.future-look'] = createFutureLookHandler({ config, pool, storage, budget, ...(deps.fetchImpl ? { fetchImpl: deps.fetchImpl } : {}) });
   // T10: vision.segment. Returns status 'unavailable' without any network call in synthetic/replay mode or without a credential.

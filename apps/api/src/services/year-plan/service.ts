@@ -15,17 +15,16 @@ import type { TextModelProvider } from '../../agent/provider';
 import { harvestPriceOutlook, type HarvestPriceOutlookArgs } from '../price-series';
 import { createWeatherSource } from '../../plans/adapters/weather-source';
 import type { ClimatologyBundle, WeatherScope } from '../../plans/sources';
-import { farmSoilMarkers } from '../soil-reports';
-import { planningMeasuredPh } from '../planning-review';
+import { farmSoilMarkers, planningMeasuredPh } from '../soil-reports';
 import { neighbourhoodSeasonality } from '../today/ndvi';
 import * as data from './data';
 import { addDays, monthOf, overlaps } from './dates';
 import { buildScenario, occupancyFor } from './scenario';
 import { enumerateCandidates, shortHash, type CandidateSet } from './candidates';
-import { editInputKeys, rescoreOption, runInputKeys, runYearPlanEngine, type ScoringNorm } from './assemble';
+import { distinctOptions, editInputKeys, rescoreOption, runInputKeys, runYearPlanEngine, type ScoringNorm } from './assemble';
 import { emptyInputs, monthlyRainFromDaily, slotPriceKey, type Inputs, type PriceInputKey } from './inputs';
 import type { EngineContext } from './types';
-import { deterministicSelection, selectionCandidates, selectWithMeta } from './select';
+import { deterministicSelection, labelAdjustedNote, selectionCandidates, selectWithMeta, type LabelAdjustment } from './select';
 
 /**
  * Persisted year-plan review (Stream A packet 2): context hash -> job farm.year-plan -> prefetch inputs -> deterministic
@@ -38,8 +37,12 @@ import { deterministicSelection, selectionCandidates, selectWithMeta } from './s
 export const ENGINE_VERSION = 'year-plan-v2-2026-11-01';
 export const JOB_TYPE = 'farm.year-plan';
 export const EDIT_SUFFIX = ':edit';
-/** Harvest-price lookups per review (bounded 4 at a time). Measured 2026-11-01: Hassan fresh needs 102 keys (2.4 s). */
-export const PRICE_LOOKUP_CAP = 60;
+/**
+ * Harvest-price lookups per review (bounded 4 at a time). Measured 2026-11-01: Hassan fresh needs 102 keys (2.4 s for
+ * 60) and Coimbatore fresh 66; at 60 the cap dropped sowing dates and starved data-poor farms of candidates, so it was
+ * raised to 160 (2026-11-01) to cover both measured farms in full.
+ */
+export const PRICE_LOOKUP_CAP = 160;
 const WEIGHTS = { price: 40, yield: 30, soilRotation: 15, water: 10, confidence: 5 } as const;
 
 export interface YearPlanDeps {
@@ -69,7 +72,7 @@ interface InputsSummary {
 interface StoredEdit { baseOptionId: string; slots: RescoreYearPlan['slots']; option: YearPlanOption; at: string }
 interface StoredContext {
   asOf: string; scenario: YearPlanScenario; candidateIds: string[]; norm: ScoringNorm | null; inputs: InputsSummary | null;
-  slotSeasons?: Record<string, string>; meta?: { failure: string | null; dispatched: boolean; model: string | null; costUsd: number | null; usage: { inputTokens: number; outputTokens: number } | null } | null;
+  slotSeasons?: Record<string, string>; meta?: { failure: string | null; dispatched: boolean; model: string | null; costUsd: number | null; usage: { inputTokens: number; outputTokens: number } | null; labelAdjusted?: LabelAdjustment[] } | null;
   edits?: Record<string, StoredEdit>;
 }
 interface Row {
@@ -307,17 +310,28 @@ export async function generateYearPlan(deps: YearPlanDeps, reviewId: string, own
     result.options = deterministicSelection(candidates);
     result.status = 'partial';
     result.summary = 'Plans picked and labelled by code from the scored crop sequences; every date, range and score is calculated.';
-    if (candidates.length < 3) { result.status = 'ready'; result.limitations.push('Fewer than three distinct crop sequences fit this field, so no model selection was needed.'); return finish(); }
+    if (candidates.length < 3) {
+      result.status = 'ready';
+      const distinct = distinctOptions(run.options).length;
+      result.limitations.push(distinct > candidates.length
+        ? 'Fewer than three crop sequences keep the field in use for enough of the year (at least 40 percent of the horizon, or a score within 70 percent of the best plan), so fewer plans are shown and no model selection was needed.'
+        : 'Fewer than three distinct crop sequences fit this field, so no model selection was needed.');
+      return finish();
+    }
     if (!live || (!deps.config.MODEL_API_KEY && !deps.provider)) { result.limitations.push(live ? 'Meta is not configured; the plans were picked and labelled by code.' : 'Meta is not used in this runtime mode; the plans were picked and labelled by code.'); return finish(); }
     const session = row.session_id ? (await deps.pool.query('SELECT id FROM sessions WHERE id=$1 AND owner_id=$2 AND revoked_at IS NULL AND expires_at>now()', [row.session_id, ownerId])).rows[0] : null;
     if (!session || (await isCancelled())) { result.limitations.push('The requesting session expired or the request was cancelled before the model call; the plans were picked by code.'); return finish(); }
     if ((await yearPlanContext(deps, ownerId, row.farm_id, c.asOf)).hash !== row.context_hash) { result.status = 'error'; result.stale = true; result.options = []; result.summary = 'Farm inputs changed while the plan was being built. Ask for a new plan.'; return finish(); }
     const sel = await selectWithMeta(deps, { reviewId, ownerId, sessionId: row.session_id, scenario: result.scenario, candidates });
-    stored.meta = { failure: sel.failure, dispatched: sel.dispatched, model: sel.model, costUsd: sel.costUsd, usage: sel.usage };
+    stored.meta = { failure: sel.failure, dispatched: sel.dispatched, model: sel.model, costUsd: sel.costUsd, usage: sel.usage, labelAdjusted: sel.labelAdjusted };
     if (sel.origin === 'model') {
       result.options = sel.options;
       result.status = 'ready';
-      result.summary = 'Meta chose and labelled three of the code-scored crop sequences and wrote one sentence each; every date, range and score is calculated by code.';
+      result.summary = sel.labelAdjusted.length
+        ? 'Meta chose three of the code-scored crop sequences and wrote one sentence each; code replaced a label Meta proposed that the plan does not support. Every date, range and score is calculated by code.'
+        : 'Meta chose and labelled three of the code-scored crop sequences and wrote one sentence each; every date, range and score is calculated by code.';
+      const note = labelAdjustedNote(sel.labelAdjusted);
+      if (note) result.limitations.push(note.slice(0, 1000));
     } else {
       result.retryAfter = new Date(Date.now() + 15 * 60_000).toISOString();
       result.limitations.push(`Meta selection was unavailable or failed the checks (${sel.failure ?? 'unknown'}); the plans were picked and labelled by code. A retry is allowed after the cooldown.`);

@@ -1,7 +1,8 @@
 import {randomUUID} from 'node:crypto';
 import type {PoolClient} from 'pg';
 import {FarmWorkspaceState,type FarmWorkspace,type CropCycle,type CareTask,type FarmCommandCenter,type FarmSoilMarkers,type SoilCropFit,type PlantCrop,type CompleteCareTask} from '@harvest/contracts';
-import {withTransaction} from '../db/pool';
+import {withTransaction,type Pool} from '../db/pool';
+import type {Config} from '../config';
 import {insertFact} from '../journal/repository';
 import {createWeatherSource} from '../plans/adapters/weather-source';
 import {getFarm} from './farms';
@@ -9,12 +10,12 @@ import {getWorkspace} from './workspace';
 import {focusedResearch,establishmentAnchor,type FocusedResearch,type FocusedCareCrop} from './focused-crops';
 import {farmSoilMarkers} from './soil-reports';
 import {hasUnresolvedSoilWarnings} from './soil-normalization';
-import {readPlanningReview,type PlanningDeps} from './planning-review';
 import {currentMandiQuotes,priorYearMandiQuotes} from './market-quotes';
 import {loadCommodityMap} from '../providers/datagovin/normalize';
 import {ApiError,notFound} from './errors';
 import {payloadHash} from './hash';
-export type CommandDeps=PlanningDeps;
+/** Reads only the database, configuration, an optional fetch seam and an optional clock (the planning review was retired 2026-11-01; the year plan has its own endpoint). */
+export interface CommandDeps{pool:Pool;config:Config;fetchImpl?:typeof fetch|undefined;now?:()=>Date}
 const today=(now=new Date())=>new Date(now.getTime()+19800000).toISOString().slice(0,10);
 export const addCareDays=(date:string,days:number)=>new Date(Date.parse(date+'T00:00:00Z')+days*86400000).toISOString().slice(0,10);
 /** Methods offered for catalogue crops that have no reviewed focused care schedule; focused crops keep their own sourced method list. */
@@ -125,22 +126,25 @@ export async function completeCareTask(deps:CommandDeps,ownerId:string,farmId:st
 export async function farmCommandCenter(deps:CommandDeps,ownerId:string,farmId:string):Promise<FarmCommandCenter>{
  const farm=await getFarm(deps.pool,ownerId,farmId);if(!farm)throw notFound('Farm');
  const asOf=(deps.now??(()=>new Date()))().toISOString(),date=today(new Date(asOf));const workspace=await getWorkspace(deps.pool,ownerId,farmId);
- const [research,markers,review,quotes,completed]=await Promise.all([focusedResearch(),farmSoilMarkers(deps,ownerId,farmId),readPlanningReview(deps,ownerId,farmId),currentMandiQuotes(deps,ownerId,farmId),deps.pool.query<Completion>('SELECT cycle_id,action_key,completed_on::text completed_on,journal_entry_id FROM farm_cycle_actions WHERE owner_id=$1 AND farm_id=$2 AND mode=$3',[ownerId,farmId,deps.config.RUNTIME_MODE])]);
+ const [research,markers,quotes,completed]=await Promise.all([focusedResearch(),farmSoilMarkers(deps,ownerId,farmId),currentMandiQuotes(deps,ownerId,farmId),deps.pool.query<Completion>('SELECT cycle_id,action_key,completed_on::text completed_on,journal_entry_id FROM farm_cycle_actions WHERE owner_id=$1 AND farm_id=$2 AND mode=$3',[ownerId,farmId,deps.config.RUNTIME_MODE])]);
  const products=(await deps.pool.query<{crop_id:string;slug:string;name:string}>('SELECT c.slug crop_id,p.slug,p.name FROM crop_products p JOIN crop_identities c ON c.id=p.crop_id WHERE c.slug=ANY($1::text[]) ORDER BY p.slug',[research.crops.map(c=>c.cropId)])).rows;
  const map=loadCommodityMap().filter(m=>m.verified&&!m.unresolved);
  const focusedCrops=research.crops.map(c=>({cropId:c.cropId,displayName:c.displayName,botanicalName:c.botanicalName,productionType:c.productionType,establishmentMethods:c.establishmentMethods,products:products.filter(p=>p.crop_id===c.cropId&&(!Array.isArray(c.marketProductIds)||(c.marketProductIds as string[]).includes(p.slug))).map(p=>({productId:p.slug,productName:p.name,sourceCommodities:map.filter(m=>m.productSlug===p.slug).map(m=>m.sourceCommodity),mappingStatus:map.some(m=>m.productSlug===p.slug)?'verified' as const:'unavailable' as const})),soilEffects:Array.isArray(c.soilEffects)?c.soilEffects:[],endUses:Array.isArray(c.endUses)?c.endUses:[],sequenceConstraints:Array.isArray(c.sequenceConstraints)?c.sequenceConstraints:[],limitations:c.limitations}));
  const point=farm.location.lat!==null&&farm.location.lon!==null?{lat:farm.location.lat,lon:farm.location.lon}:null;
  const forecast=deps.config.RUNTIME_MODE==='live'?await createWeatherSource({pool:deps.pool,mode:'live',autoIngest:false}).getForecast({farmId,districtId:farm.location.districtId,stateId:farm.location.stateCode,point},{issuedAtOrBefore:asOf}):null;
  const days=forecast?.days.filter(d=>d.date>=date)??[];
- const priorYearMarkets=(await Promise.all(quotes.products.map(async p=>{
+ // Products: the current quote selection; when it is empty, the products of the growing crops and saved seasons. Target dates come only from recorded crops and saved seasons.
+ const tracked=[...new Set([...workspace.cycles.filter(c=>c.stage!=='harvested'),...workspace.rotationPlans].flatMap(r=>r.productId?[r.productId]:[]))].slice(0,8);
+ const marketProducts=quotes.products.length?quotes.products.map(p=>p.productId):tracked;
+ const priorYearMarkets=(await Promise.all(marketProducts.map(async productId=>{const p={productId};
   const cycle=workspace.cycles.find(c=>c.stage!=='harvested'&&c.productId===p.productId),crop=research.crops.find(c=>c.cropId===cycle?.cropId);
   const duration=crop?.durationVariants?.find(d=>d.productId===p.productId||d.productIds?.includes(p.productId))??crop?.duration;
   const sourceMatches=duration?.sourceRefs.some(ref=>{const src=research.sources.find(s=>s.id===ref.sourceId);return farm.location.stateCode==='IN-TN'&&typeof src?.geography==='string'&&/Tamil Nadu/i.test(src.geography)});
   const harvest=cycle&&duration?.kind==='crop_completion'&&duration.anchor===establishmentAnchor(cycle.establishmentMethod)&&duration.maxDays!==null&&sourceMatches?addCareDays(cycle.establishmentDate??cycle.sowingDate,duration.maxDays):null;
-  const plan=workspace.rotationPlans.find(r=>r.productId===p.productId&&r.plannedHarvestDate&&r.plannedHarvestDate>=date)??(!review.stale?review.rotationDraft.find(r=>r.productId===p.productId&&r.plannedHarvestDate>=date):undefined);
+  const plan=workspace.rotationPlans.find(r=>r.productId===p.productId&&r.plannedHarvestDate&&r.plannedHarvestDate>=date);
   const target=harvest&&harvest>=date?harvest:plan?.plannedHarvestDate??date;
   return priorYearMandiQuotes(deps,ownerId,farmId,[p.productId],target,harvest&&harvest>=date?'harvest_scenario':plan?.plannedHarvestDate?'planned_harvest':'as_of_date');
  }))).flat();
 
- return{farmId,asOf,workspace,focusedCrops,sources:research.sources,currentCycles:workspace.cycles.filter(c=>c.stage!=='harvested').map(c=>({cycle:c,...careSchedule(c,research.crops.find(p=>p.cropId===c.cropId),date,completed.rows,{stateId:farm.location.stateCode,districtId:farm.location.districtId}),stageGuidance:(research.crops.find(p=>p.cropId===c.cropId)?.care??[]).filter(a=>a.anchor==='observed_stage'&&(!a.productIds?.length||!!c.productId&&a.productIds.includes(c.productId))&&(!a.establishmentMethods?.length||!!c.establishmentMethod&&a.establishmentMethods.includes(c.establishmentMethod))).map(a=>({actionId:a.id,title:a.title,action:a.action,stage:a.stage,conditions:a.conditions,sourceRefs:a.sourceRefs,geographyIds:a.geographyIds,applicability:a.geographyIds.some(id=>[farm.location.stateCode,farm.location.districtId,'IN'].includes(id))?'matched' as const:farm.location.stateCode?'outside_source_region' as const:'location_unknown' as const,requiresObservation:true as const}))})),soil:{markers,fit:research.crops.map(c=>measuredSoilFit(markers,c))},planningReview:review,weather:{kind:'forecast',status:!days.length?'unavailable':Date.parse(asOf)-Date.parse(forecast!.issuedAt)>6*3600000?'stale':'fresh',reason:!days.length?'no_current_stored_forecast':null,issuedAt:forecast?.issuedAt??null,source:'https://open-meteo.com/',days:days.map(d=>({date:d.date,rainMm:d.rainMm,tMinC:d.tMinC,tMaxC:d.tMaxC,et0Mm:d.et0Mm}))},currentQuotes:quotes,priorYearMarkets,limitations:['Care dates are published timing relative to the recorded establishment method, not observed growth or automatic completion. Source conditions and geography require local confirmation.','Crop sequences remain drafts until explicitly applied. Missing soil, water or cultivar inputs prevent a strong suitability claim.','Historical prices are actual stored observations where available; no fabricated harvest price, margin, yield or profit forecast.']};
+ return{farmId,asOf,workspace,focusedCrops,sources:research.sources,currentCycles:workspace.cycles.filter(c=>c.stage!=='harvested').map(c=>({cycle:c,...careSchedule(c,research.crops.find(p=>p.cropId===c.cropId),date,completed.rows,{stateId:farm.location.stateCode,districtId:farm.location.districtId}),stageGuidance:(research.crops.find(p=>p.cropId===c.cropId)?.care??[]).filter(a=>a.anchor==='observed_stage'&&(!a.productIds?.length||!!c.productId&&a.productIds.includes(c.productId))&&(!a.establishmentMethods?.length||!!c.establishmentMethod&&a.establishmentMethods.includes(c.establishmentMethod))).map(a=>({actionId:a.id,title:a.title,action:a.action,stage:a.stage,conditions:a.conditions,sourceRefs:a.sourceRefs,geographyIds:a.geographyIds,applicability:a.geographyIds.some(id=>[farm.location.stateCode,farm.location.districtId,'IN'].includes(id))?'matched' as const:farm.location.stateCode?'outside_source_region' as const:'location_unknown' as const,requiresObservation:true as const}))})),soil:{markers,fit:research.crops.map(c=>measuredSoilFit(markers,c))},weather:{kind:'forecast',status:!days.length?'unavailable':Date.parse(asOf)-Date.parse(forecast!.issuedAt)>6*3600000?'stale':'fresh',reason:!days.length?'no_current_stored_forecast':null,issuedAt:forecast?.issuedAt??null,source:'https://open-meteo.com/',days:days.map(d=>({date:d.date,rainMm:d.rainMm,tMinC:d.tMinC,tMaxC:d.tMaxC,et0Mm:d.et0Mm}))},currentQuotes:quotes,priorYearMarkets,limitations:['Care dates are published timing relative to the recorded establishment method, not observed growth or automatic completion. Source conditions and geography require local confirmation.','Crop sequences remain drafts until explicitly applied. Missing soil, water or cultivar inputs prevent a strong suitability claim.','Historical prices are actual stored observations where available; no fabricated harvest price, margin, yield or profit forecast.']};
 }

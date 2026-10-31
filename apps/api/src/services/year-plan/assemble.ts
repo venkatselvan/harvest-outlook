@@ -290,13 +290,28 @@ export function distinctOptions(options: readonly YearPlanOption[]): YearPlanOpt
 }
 
 /**
- * Diverse shortlist (spec 4.5): from the top 12 distinct crop sequences by score (date variants of one sequence count
- * once), best overall, best soil enrichment, best water fit and best price, then the next best whose first suggested
- * crop differs from those already picked, then the next best by score until `n`. Each pick is labelled by why it was
- * picked.
+ * Share of the horizon a plan keeps the field occupied (current crop included), from its idle months. Uses the same
+ * idle-day count as the idle penalty; `horizonDays` defaults to 365.
  */
-export function shortlist(options: readonly YearPlanOption[], n = 8): YearPlanOption[] {
-  const top = distinctOptions(options).slice(0, 12);
+export const horizonShare = (o: Pick<YearPlanOption, 'idleMonths'>, horizonDays = 365): number =>
+  horizonDays > 0 ? clip(1 - (o.idleMonths * ASSUMPTIONS.daysPerMonth.value) / horizonDays, 0, 1) : 0;
+
+/** ASSUMPTIONS.shortlistCoverage: the top plan always qualifies; any other needs 40 % of the horizon or 70 % of the top score. */
+export function coverageQualifies(o: YearPlanOption, top: YearPlanOption | undefined, horizonDays = 365): boolean {
+  if (!top || o.optionId === top.optionId) return true;
+  const { minHorizonShare, minScoreShare } = ASSUMPTIONS.shortlistCoverage.value;
+  return horizonShare(o, horizonDays) >= minHorizonShare - 1e-9 || o.score >= minScoreShare * top.score - 1e-9;
+}
+
+/**
+ * Diverse shortlist (spec 4.5): from the 12 best distinct crop sequences by score (date variants of one sequence count
+ * once) that pass the coverage rule (ASSUMPTIONS.shortlistCoverage), best overall, best soil enrichment, best water fit
+ * and best price, then the next best whose first suggested crop differs from those already picked, then the next best
+ * by score until `n`. Each pick is labelled by why it was picked. Plans that fail the coverage rule are never shortlisted.
+ */
+export function shortlist(options: readonly YearPlanOption[], n = 8, horizonDays = 365): YearPlanOption[] {
+  const distinct = distinctOptions(options);
+  const top = distinct.filter((o) => coverageQualifies(o, distinct[0], horizonDays)).slice(0, 12);
   const picked: YearPlanOption[] = [];
   const take = (o: YearPlanOption | undefined, label: string) => { if (o && picked.length < n && !picked.some((p) => p.optionId === o.optionId)) picked.push({ ...o, label }); };
   const bestBy = (k: keyof ScoreComponents) => top.filter((o) => !picked.some((p) => p.optionId === o.optionId)).sort((a, b) => b.components[k] - a.components[k] || b.score - a.score || a.optionId.localeCompare(b.optionId))[0];
@@ -432,5 +447,5 @@ export function runYearPlanEngine(ctx: EngineContext, inputs: Inputs, opts: Engi
   const scored = sequences.length || !ctx.fixedSlot ? sequences : [{ sequenceId: 'seq-current-crop-only', slots: [] }];
   const options = scoreSequences(ctx, scored, inputs, { norm, evaluations });
   const limitations = [...ENGINE_LIMITATIONS, ...ctx.warnings, ...set.notes];
-  return { candidateSet: set, norm, sequencesConsidered: sequences.length, options: distinctOptions(options).slice(0, opts.keep ?? 12), shortlist: shortlist(options, opts.shortlistSize ?? 8), limitations };
+  return { candidateSet: set, norm, sequencesConsidered: sequences.length, options: distinctOptions(options).slice(0, opts.keep ?? 12), shortlist: shortlist(options, opts.shortlistSize ?? 8, daysBetween(ctx.horizon.from, ctx.horizon.to)), limitations };
 }

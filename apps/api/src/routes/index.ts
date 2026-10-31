@@ -26,7 +26,7 @@ import { registerVisionRoutes } from "./vision";
 import type { FetchLike } from '../ingest/http';
 import {commodityCatalogueRoutes} from './commodity-catalogue';
 import {soilReportRoutes} from './soil-reports';
-import {planningReviewRoutes} from './planning-review';
+import {yearPlanRoutes} from './year-plan';
 import {boundaryContextRoutes} from './boundary-context';
 import {aiActivityRoutes} from './ai-activity';
 import {demoFarmRoutes} from './demo-farm';
@@ -73,12 +73,13 @@ export interface RouteDeps {
 export async function registerRoutes(app: FastifyInstance, deps: RouteDeps): Promise<void> {
   const { config, pool } = deps;
   await app.register(sessionRoutes, { config, pool });
-  await app.register(farmRoutes, { config, pool, storage: deps.storage, prices: deps.prices, weatherFetch: deps.weatherFetch,planning:{config,pool,budget:deps.budget,...(deps.catalogue?{catalogue:()=>deps.catalogue!.get()}:{}),...(deps.prices?{prices:deps.prices}:{}),...(deps.weatherFetch?{fetchImpl:deps.weatherFetch as unknown as typeof fetch}:{})} });
+  await app.register(farmRoutes, { config, pool, storage: deps.storage, prices: deps.prices, weatherFetch: deps.weatherFetch,yearPlan:{config,pool,budget:deps.budget,...(deps.weatherFetch?{fetchImpl:deps.weatherFetch as unknown as typeof fetch}:{})} });
   await app.register(commodityCatalogueRoutes,{config,pool});
   await registerMarketContextRoutes(app,{config});
-  await app.register(commandCenterRoutes,{config,pool,budget:deps.budget,...(deps.catalogue?{catalogue:()=>deps.catalogue!.get()}:{}),...(deps.prices?{prices:deps.prices}:{})});
+  await app.register(commandCenterRoutes,{config,pool});
   await app.register(soilReportRoutes,{config,pool,storage:deps.storage,budget:deps.budget,...(deps.weatherFetch?{fetchImpl:deps.weatherFetch as unknown as typeof fetch}:{})});
-  await app.register(planningReviewRoutes,{config,pool,budget:deps.budget,...(deps.catalogue?{catalogue:()=>deps.catalogue!.get()}:{}),...(deps.prices?{prices:deps.prices}:{}),...(deps.weatherFetch?{fetchImpl:deps.weatherFetch as unknown as typeof fetch}:{})});
+  // Stream A: year plan (UI_BRIEF section 4); its job type farm.year-plan is registered in worker/handlers/index.ts.
+  await app.register(yearPlanRoutes,{config,pool,budget:deps.budget,...(deps.weatherFetch?{fetchImpl:deps.weatherFetch as unknown as typeof fetch}:{})});
   await app.register(boundaryContextRoutes,{config,pool,...(deps.weatherFetch?{fetchImpl:deps.weatherFetch as unknown as typeof fetch}:{})});
   await app.register(aiActivityRoutes,{config,pool});
   await app.register(demoFarmRoutes,{config,pool});
