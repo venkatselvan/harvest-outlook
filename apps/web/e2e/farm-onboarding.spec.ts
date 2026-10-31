@@ -110,64 +110,13 @@ async function fixture(
           }
         : boundary,
   });
-  let planningCalls = 0;
+  let yearPlanPosts = 0;
   let metaActive = false;
   let chatRoute: Route | undefined;
   await page.route("**/api/v1/**", async (route) => {
     const path = new URL(route.request().url()).pathname;
     const method = route.request().method();
-    if (path.endsWith("/planning-review")) {
-      planningCalls++;
-      await route.fulfill({
-        json: envelope({
-          reviewId: null,
-          jobId: null,
-          contextHash: null,
-          status: "unavailable",
-          stale: false,
-          inputVersions: { farm: 1, workspace: 2 },
-          generatedAt: null,
-          retryAfter: null,
-          modelInvocation: null,
-          summary: "No source-backed options in this fixture.",
-          localContext: {
-            location: {
-              stateId: "IN-TN",
-              districtId: "IN-TN-coimbatore",
-              districtName: "Coimbatore",
-              village: null,
-              villageBasis: "unavailable",
-              granularity: "district",
-              sources: [],
-              limitations: [],
-            },
-            weather: {
-              kind: "forecast",
-              status: "unavailable",
-              issuedAt: null,
-              source: "Unavailable",
-              days: [],
-              limitations: [],
-            },
-            mandi: { status: "unavailable", references: [], limitations: [] },
-            history: {
-              basis: "farmer_reported",
-              previousHarvest: { status: "unknown" },
-              cycles: [],
-              rotationAssessment: "not_assessed",
-            },
-            occupancy: [],
-          },
-          horizon: { from: "2026-10-30", to: "2027-10-29" },
-          rotationDraft: [],
-          comparisonShortlist: [],
-          evidence: [],
-          limitations: [],
-          appliedProposalIds: [],
-        }),
-      });
-      return;
-    }
+    if (path.endsWith("/year-plan") && method === "POST") yearPlanPosts++;
     if (path === "/api/v1/boundary-context" && options.holdContext) {
       contextRoute = route;
       return;
@@ -298,8 +247,8 @@ async function fixture(
     }),
   );
   return {
-    get planningCalls() {
-      return planningCalls;
+    get yearPlanPosts() {
+      return yearPlanPosts;
     },
     get contextRoute() {
       return contextRoute;
@@ -596,14 +545,20 @@ test("saving the first farm does not wait for the location lookup and ignores it
   ).toBeVisible();
   await api.finishContext();
   await expect(page.getByRole("alert")).toHaveCount(0);
-  expect(api.planningCalls).toBe(0);
+  // No banner and no plan request while the history is still unknown: the server enqueues the year plan only from
+  // the workspace save that records known history.
+  await expect(page.getByText(/One step to go/)).toHaveCount(0);
+  expect(api.yearPlanPosts).toBe(0);
   await page.reload();
-  await expect(page.getByText(/One step to go/)).toBeVisible();
-  expect(api.planningCalls).toBe(0);
-  await page.getByRole("button", { name: "Confirm harvest history" }).click();
+  await expect(page.getByText(/One step to go/)).toHaveCount(0);
+  expect(api.yearPlanPosts).toBe(0);
+  await page.goto("/farm?history=1");
   await page.getByRole("button", { name: "I don't know yet" }).click();
   await page.getByRole("button", { name: "Save harvest history" }).click();
-  await expect.poll(() => api.planningCalls).toBeGreaterThan(0);
+  await expect(
+    page.getByRole("dialog", { name: "What grew here last?" }),
+  ).toHaveCount(0);
+  expect(api.yearPlanPosts).toBe(0);
 });
 
 test("a resolved district outside the registry remains visible as editable text", async ({

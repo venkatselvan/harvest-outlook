@@ -2,10 +2,6 @@ import {
   CurrentMandiQuotes as currentMandiQuotesSchema,
   type CurrentMandiQuotes,
 } from "@harvest/contracts";
-import {
-  PlanningReview as planningReviewSchema,
-  type PlanningReview,
-} from "@harvest/contracts";
 import { getOwnerScope } from "../features/offline/scope";
 import {
   createContext,
@@ -210,10 +206,6 @@ function model() {
       target,
       epoch: sessionEpoch(),
       products: productIds ? [...productIds].sort() : null,
-      review: planningReview()?.reviewId,
-      recommended: planningReview()?.comparisonShortlist.map(
-        (p) => p.productId,
-      ),
       workspace: workspace()?.version,
     });
     if (ensuredQuoteContexts.has(key)) return;
@@ -230,204 +222,6 @@ function model() {
     setQuoteRequestError("");
   }
   const [crops] = createResource(() => listCrops());
-  const setupStorageKey = () => `ho.planningSetup.${getOwnerScope()}`;
-  const [deferredPlanning, setDeferredPlanning] = createSignal<Set<string>>(
-    (() => {
-      try {
-        const ids = JSON.parse(localStorage.getItem(setupStorageKey()) ?? "[]");
-        return new Set<string>(
-          Array.isArray(ids)
-            ? ids.filter((id: unknown) => typeof id === "string")
-            : [],
-        );
-      } catch {
-        return new Set<string>();
-      }
-    })(),
-  );
-  createEffect(() => {
-    try {
-      localStorage.setItem(
-        setupStorageKey(),
-        JSON.stringify([...deferredPlanning()]),
-      );
-    } catch {}
-  });
-  const ensuredPlanningContexts = new Set<string>();
-  const planningSetupPending = () =>
-    !!farm()?.id && deferredPlanning().has(farm()!.id);
-  const reviewContextKey = (f: GeoFarm, w: Workspace, epoch: number) =>
-    JSON.stringify({
-      farmId: f.id,
-      epoch,
-      location: f.location,
-      facts: Object.fromEntries(
-        Object.entries(f.facts)
-          .sort(([a], [b]) => a.localeCompare(b))
-          .map(([key, fact]) => [
-            key,
-            {
-              value: fact.value,
-              unit: fact.unit,
-              basis: fact.basis,
-              confirmed: fact.confirmed,
-            },
-          ]),
-      ),
-      boundary: w.boundary,
-      previousHarvest: w.previousHarvest,
-      cycles: w.cycles,
-      rotationPlans: w.rotationPlans,
-    });
-  const planningKey = () => {
-    const f = farm();
-    const w = workspace();
-    if (
-      !f ||
-      workspace.loading ||
-      !w ||
-      w.farmId !== f.id ||
-      planningSetupPending()
-    )
-      return false;
-    return reviewContextKey(f, w, sessionEpoch());
-  };
-  async function readReview(farmId: string, method: "GET" | "POST" = "GET") {
-    const data = (
-      await apiRequest<PlanningReview>(
-        `/api/v1/farms/${farmId}/planning-review`,
-        method === "POST" ? jsonInit("POST", {}) : undefined,
-      )
-    ).data!;
-    const parsed = planningReviewSchema.safeParse(data);
-    if (!parsed.success)
-      throw new Error(
-        "Evara's planning review is not available from the server yet.",
-      );
-    return parsed.data;
-  }
-  const [planningState, { refetch: refetchPlanning, mutate: mutatePlanning }] =
-    createResource(planningKey, async (key) => {
-      const target = farm()!.id;
-      const epoch = sessionEpoch();
-      let review = await readReview(target);
-      if (
-        epoch !== sessionEpoch() ||
-        farm()?.id !== target ||
-        planningKey() !== key
-      )
-        return undefined;
-      if (!ensuredPlanningContexts.has(key)) {
-        ensuredPlanningContexts.add(key);
-        if (
-          review.stale ||
-          !["ready", "partial", "pending", "running"].includes(review.status)
-        )
-          review = await readReview(target, "POST");
-      }
-      return epoch === sessionEpoch() &&
-        farm()?.id === target &&
-        planningKey() === key
-        ? { farmId: target, key, review }
-        : undefined;
-    });
-  const planningReview = () =>
-    !planningState.error &&
-    planningState()?.farmId === farm()?.id &&
-    planningState()?.key === planningKey()
-      ? planningState()?.review
-      : undefined;
-  const planningLoading = () => planningState.loading;
-  const planningError = () => planningState.error as Error | undefined;
-  createEffect(() => {
-    const review = planningReview();
-    if (review && ["pending", "running"].includes(review.status)) {
-      const timer = setTimeout(() => void refetchPlanning(), 1200);
-      onCleanup(() => clearTimeout(timer));
-    }
-  });
-  const deferPlanningReview = (id: string) =>
-    setDeferredPlanning((current) => new Set([...current, id]));
-  const finishFarmSetup = (id: string) =>
-    setDeferredPlanning((current) => {
-      const next = new Set(current);
-      next.delete(id);
-      return next;
-    });
-  async function refreshPlanningReview() {
-    const target = farm()?.id;
-    const epoch = sessionEpoch();
-    const key = planningKey();
-    if (!target || !key || planningSetupPending()) return;
-    const review = await readReview(target, "POST");
-    if (
-      epoch === sessionEpoch() &&
-      farm()?.id === target &&
-      planningKey() === key
-    )
-      mutatePlanning({ farmId: target, key, review });
-  }
-  const [applyingPlanningFarm, setApplyingPlanningFarm] = createSignal<
-    string | null
-  >(null);
-  const applyingPlanning = () =>
-    !!farm()?.id && applyingPlanningFarm() === farm()?.id;
-  async function applyPlanningReview(proposalIds: string[]) {
-    const target = farm()?.id;
-    const epoch = sessionEpoch();
-    const w = workspace();
-    const review = planningReview();
-    if (
-      !target ||
-      workspace.loading ||
-      planningLoading() ||
-      !w ||
-      w.farmId !== target ||
-      !review?.reviewId ||
-      review.stale
-    )
-      throw new Error(
-        "Wait for this farm's review and saved seasons to finish loading.",
-      );
-    if (applyingPlanning() || saving())
-      throw new Error("Please wait for the current save to finish.");
-    setApplyingPlanningFarm(target);
-    try {
-      const result = (
-        await apiRequest<{ workspace: Workspace; review: PlanningReview }>(
-          `/api/v1/farms/${target}/planning-review/apply`,
-          jsonInit("POST", {
-            reviewId: review.reviewId,
-            proposalIds,
-            expectedWorkspaceVersion: w.version,
-          }),
-        )
-      ).data!;
-      if (
-        epoch === sessionEpoch() &&
-        farm()?.id === target &&
-        result.workspace.farmId === target
-      ) {
-        ensuredPlanningContexts.add(
-          reviewContextKey(farm()!, result.workspace, epoch),
-        );
-        setWorkspace(result.workspace);
-        mutatePlanning({
-          farmId: target,
-          key: reviewContextKey(farm()!, result.workspace, epoch),
-          review: result.review,
-        });
-        void refreshFarms();
-        setNotice(
-          "Selected proposals added to your rotation. Your existing seasons are kept.",
-        );
-      }
-      return result;
-    } finally {
-      if (epoch === sessionEpoch() && farm()?.id === target)
-        setApplyingPlanningFarm(null);
-    }
-  }
   interface CompareSelection {
     productIds: string[];
     date: string;
@@ -485,15 +279,9 @@ function model() {
     setQuoteRequestError("");
     ensuredQuoteContexts.clear();
     setSavingFarm(null);
-    setDeferredPlanning(new Set<string>());
-    ensuredPlanningContexts.clear();
-    mutatePlanning(undefined);
-    setApplyingPlanningFarm(null);
     try {
       for (const key of Object.keys(sessionStorage))
         if (key.startsWith("ho.compare.")) sessionStorage.removeItem(key);
-      for (const key of Object.keys(localStorage))
-        if (key.startsWith("ho.planningSetup.")) localStorage.removeItem(key);
     } catch {}
     setNotice("");
     try {
@@ -572,15 +360,6 @@ function model() {
     notice,
     setNotice,
     sessionEpoch,
-    planningReview,
-    planningLoading,
-    planningError,
-    planningSetupPending,
-    refreshPlanningReview,
-    applyPlanningReview,
-    applyingPlanning,
-    deferPlanningReview,
-    finishFarmSetup,
     loadCompareSelection,
     rememberCompareSelection,
   };

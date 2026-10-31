@@ -56,11 +56,6 @@ export function Outlook() {
           s.farm()?.id,
           s.workspace.loading,
           s.workspace()?.version,
-          s.planningReview()?.reviewId,
-          s
-            .planningReview()
-            ?.comparisonShortlist.map((p) => p.productId)
-            .join("|"),
         ] as const,
       () => {
         if (s.farm() && !s.workspace.loading) void s.ensureCurrentMarket();

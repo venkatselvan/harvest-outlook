@@ -1,4 +1,3 @@
-import { PlanningReviewPanel } from "./PlanningReview";
 import {
   For,
   Show,
@@ -236,34 +235,6 @@ export function Planner() {
             </button>
           </div>
         </div>
-        <PlanningReviewPanel
-          onEditProposal={(proposal) => {
-            editorFarmId = s.farm()?.id;
-            setEditing({
-              year: Number(proposal.plannedSowingDate.slice(0, 4)),
-              season:
-                [
-                  "Kharif",
-                  "Rabi",
-                  "Zaid",
-                  "Perennial / year-round",
-                  "Cover crop / green manure",
-                  "Other",
-                ].find(
-                  (value) =>
-                    value.toLowerCase() === proposal.season.toLowerCase(),
-                ) ?? "Other",
-              cropId: proposal.cropId,
-              cropName: proposal.cropName,
-              productId: proposal.productId,
-              productName: proposal.productName,
-              plannedSowingDate: proposal.plannedSowingDate,
-              plannedHarvestDate: proposal.plannedHarvestDate,
-              notes: `Edited from Evara’s suggested season. ${proposal.reason}`,
-            });
-            setError("");
-          }}
-        />
         <section class="rotation-board">
           <div class="section-heading">
             <div>

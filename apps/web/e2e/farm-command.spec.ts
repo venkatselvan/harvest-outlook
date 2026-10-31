@@ -7,6 +7,10 @@ import {
   todayEmptyFixture,
   todayFixture,
 } from "../src/workspace/today/fixtures";
+import {
+  insufficientTrendFixture,
+  priceTrendFixture,
+} from "../src/workspace/year/fixtures";
 const A = "11111111-1111-4111-8111-111111111111",
   B = "22222222-2222-4222-8222-222222222222",
   J = "33333333-3333-4333-8333-333333333333";
@@ -125,52 +129,6 @@ const workspace = (farmId: string) => ({
   cycles: farmId === A ? [{ ...cycle }] : [],
   rotationPlans: [],
 });
-const review = () => ({
-  reviewId: null,
-  jobId: null,
-  contextHash: null,
-  status: "unavailable",
-  stale: false,
-  inputVersions: { farm: 1, workspace: 1 },
-  generatedAt: null,
-  retryAfter: null,
-  modelInvocation: null,
-  summary: "No sourced planning review available.",
-  localContext: {
-    location: {
-      stateId: "IN-KA",
-      districtId: "IN-KA-hassan",
-      districtName: "Hassan",
-      village: null,
-      villageBasis: "unavailable",
-      granularity: "district",
-      sources: [],
-      limitations: [],
-    },
-    weather: {
-      kind: "forecast",
-      status: "unavailable",
-      issuedAt: null,
-      source: "Test source",
-      days: [],
-      limitations: [],
-    },
-    mandi: { status: "unavailable", references: [], limitations: [] },
-    history: {
-      basis: "farmer_reported",
-      previousHarvest: { status: "none" },
-      cycles: [],
-      rotationAssessment: "not_assessed",
-    },
-    occupancy: [],
-  },
-  horizon: { from: "2026-10-31", to: "2027-10-30" },
-  rotationDraft: [],
-  comparisonShortlist: [],
-  evidence: [],
-  limitations: [],
-  appliedProposalIds: [],
-});
 const quotes = {
   checkedAt: asOf,
   selectionBasis: "none",
@@ -189,9 +147,25 @@ async function fixture(
     extendedCare?: boolean;
     /** Answer GET /today from the synthetic Today fixture. Without it the endpoint returns an empty envelope and the Today view shows its unavailable state. */
     today?: boolean;
+    /** Adds a saved ginger season to the first farm and answers GET /price-trend (full series for maize, none for ginger). */
+    trends?: boolean;
   } = {},
 ) {
   const workspaces: any = { [A]: workspace(A), [B]: workspace(B) };
+  const trendRequests: URLSearchParams[] = [];
+  if (options.trends)
+    workspaces[A].rotationPlans = [
+      {
+        id: "season-ginger",
+        year: 2027,
+        season: "Kharif",
+        cropId: "ginger",
+        cropName: "Ginger",
+        productId: "ginger-fresh",
+        productName: "Fresh ginger",
+        plannedSowingDate: "2027-04-20",
+      },
+    ];
   let completed = false,
     pending: Route | undefined,
     planted: any;
@@ -287,7 +261,6 @@ async function fixture(
           limitations: [],
         })),
       },
-      planningReview: review(),
       weather: {
         kind: "forecast",
         status: "fresh",
@@ -317,6 +290,18 @@ async function fixture(
     const path = new URL(route.request().url()).pathname,
       method = route.request().method(),
       id = path.includes(B) ? B : A;
+    if (path === "/api/v1/price-trend") {
+      const query = new URL(route.request().url()).searchParams;
+      trendRequests.push(query);
+      const productId = query.get("productId") ?? "unknown";
+      return route.fulfill({
+        json: env(
+          productId === "maize-product"
+            ? priceTrendFixture(productId)
+            : insufficientTrendFixture(productId),
+        ),
+      });
+    }
     if (path.endsWith("/cycles") && method === "POST") {
       const body = route.request().postDataJSON();
       plantBodies.push(body);
@@ -387,9 +372,7 @@ async function fixture(
             ? workspaces[id]
             : path.endsWith("/command-center")
               ? makeCenter(id)
-              : path.endsWith("/planning-review")
-                ? review()
-                : path === "/api/v1/crops"
+              : path === "/api/v1/crops"
                   ? {
                       crops: focused.map((c) => ({
                         cropId: c.cropId,
@@ -469,6 +452,7 @@ async function fixture(
   return {
     plantBodies,
     careBodies,
+    trendRequests,
     get pending() {
       return pending;
     },
@@ -555,6 +539,33 @@ test("one selected-farm workspace holds the Today view and four tabs, and the Fa
   await expect(global).toContainText("not an Indian mandi price");
   await page.getByLabel("Selected farm", { exact: true }).selectOption(B);
   await expect(global).toContainText("no crop-specific indicator");
+});
+
+test("Market tab charts a 36-month price trend for each tracked product and says so when a product has no series", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1280, height: 900 });
+  const api = await fixture(page, { trends: true });
+  await page.goto("/farm?tab=harvest");
+  const trends = page.getByRole("region", { name: "Price trends", exact: true });
+  await expect(trends).toBeVisible();
+  // One card per tracked product: the growing maize cycle and the saved ginger season.
+  await expect(trends.locator(".market-trend")).toHaveCount(2);
+  const maize = trends.getByRole("article", { name: "Maize · Maize price trend" });
+  await expect(maize.locator("figure.ui-trend")).toHaveCount(1);
+  await expect(maize).not.toContainText("No price series yet");
+  const ginger = trends.getByRole("article", { name: "Ginger · Fresh ginger price trend" });
+  await expect(ginger.locator("figure.ui-trend")).toHaveCount(0);
+  await expect(ginger).toContainText("No price series yet");
+  // The request carries the farm's own place and the 36-month window.
+  const maizeRequest = api.trendRequests.find((q) => q.get("productId") === "maize-product")!;
+  expect(Object.fromEntries(maizeRequest)).toMatchObject({
+    state: "IN-KA",
+    district: "Hassan",
+    months: "36",
+  });
+  // The existing Market content and the monitoring controls are still there below the trends.
+  await expect(page.getByRole("region", { name: "Global market context" })).toBeVisible();
 });
 
 test("planting a focused crop requires its exact product/date and exposes the saved crop care", async ({

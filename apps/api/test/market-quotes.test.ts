@@ -49,6 +49,20 @@ describe('latest dated mandi observations',()=>{
   await h.pool.query("DELETE FROM provider_cache WHERE key LIKE 'mandi-current:%'");const f=vi.fn(async()=>new Response('{}',{status:429}));const r=await currentMandiQuotes(deps(f),ownerId,farmId,{refresh:true,productIds:['maize-grain','sunflower-seed','potato-fresh']});
   expect(f).toHaveBeenCalledTimes(1);expect(r.providerStatus).toBe('rate_limited');await currentMandiQuotes(deps(f),ownerId,farmId,{refresh:true,productIds:['maize-grain','sunflower-seed']});expect(f).toHaveBeenCalledTimes(1);
  });
+ it('uses the latest ready or partial year plan slot products as the watchlist, never a pending, failed or archived plan',async()=>{
+  const f=(await a.call('POST','/api/v1/farms',{payload:farmBody({location:{stateId:'IN-KA',districtId:'IN-KA-hassan',precision:'district'},facts:{}})})).json().data;
+  const plan=async(status:string,productIds:string[][],archived=false)=>{const result={options:productIds.map((ids,i)=>({optionId:`o${i}`,slots:ids.map((productId,j)=>({slotId:`s${i}${j}`,productId}))}))};
+   await h.pool.query('INSERT INTO farm_year_plans(owner_id,farm_id,mode,context_hash,input_versions,input_context,result,status,archived_at) VALUES($1,$2,$3,$4,$5::jsonb,$6::jsonb,$7::jsonb,$8,$9)',[ownerId,f.id,deps().config.RUNTIME_MODE,`quotes-${status}-${Math.random()}`,JSON.stringify({farm:1,workspace:1}),'{}',JSON.stringify(result),status,archived?new Date():null]);
+   await new Promise(r=>setTimeout(r,5))};
+  const basis=async()=>{const r=await currentMandiQuotes(deps(),ownerId,f.id);return{basis:r.selectionBasis,products:r.products.map(p=>p.productId)}};
+  expect(await basis()).toEqual({basis:'none',products:[]});
+  await plan('pending',[['maize-grain']]);await plan('error',[['wheat-grain']]);await plan('ready',[['potato-fresh']],true);
+  expect(await basis()).toEqual({basis:'none',products:[]});
+  await plan('ready',[['maize-grain','potato-fresh'],['potato-fresh','wheat-grain']]);
+  expect(await basis()).toEqual({basis:'recommendation_watchlist',products:['maize-grain','potato-fresh','wheat-grain']});
+  await plan('partial',[['sunflower-seed']]);
+  expect(await basis()).toEqual({basis:'recommendation_watchlist',products:['sunflower-seed']});
+ });
  it('removes complete known seed records but preserves every edited or extra field',()=>{
   const cycle={id:'demo-cycle',cropId:'ginger',cropName:'Ginger (illustrative crop)',sowingDate:'2026-06-01',stage:'growing' as const,notes:'Illustrative planning record, not an observation of research-station operations.'};
   const state={boundary:null,previousHarvest:{status:'known' as const,cropId:'maize',cropName:'Maize (illustrative previous crop)',harvestDate:'2026-04-20'},cycles:[cycle],rotationPlans:[]};expect(withoutLegacyDemoRecords(state).cycles).toEqual([]);expect(withoutLegacyDemoRecords(state).previousHarvest.status).toBe('unknown');

@@ -1,11 +1,11 @@
 import { CommodityBrowser } from "./CommodityCatalogue";
 import { CurrentQuote } from "./CurrentQuote";
-import { PlanningReviewPanel } from "./PlanningReview";
 import {
   For,
   Show,
   createEffect,
   createMemo,
+  createResource,
   createSignal,
   on,
 } from "solid-js";
@@ -23,6 +23,8 @@ import { EvidenceDetails } from "../features/comparison/EvidenceDetails";
 import { newEntryId } from "../features/photo-region/http";
 import { sourceReason, priceGapTitle } from "./reasons";
 import { createPlan } from "../lib/plan-api";
+import { loadYearPlan } from "./year/yearPlanApi";
+import { preselectProducts } from "./compare-preselect";
 import "../features/comparison/comparison.css";
 const MONTHS = [
   "Jan",
@@ -85,40 +87,30 @@ export function CompareWorkspace(
   const [manualProducts, setManualProducts] = createSignal(false);
   const [manualDate, setManualDate] = createSignal(false);
   let runId = 0;
-  const recommendations = () =>
-    [...(s.planningReview()?.comparisonShortlist ?? [])]
-      .filter((p) => !props.focused || props.cropIds?.includes(p.cropId))
-      .sort((a, b) => a.rank - b.rank);
-  const recommendedFor = (item: CompareItem) =>
-    recommendations().find((p) => p.productId === item.productId);
-  const reviewSowingWindow = (item: CompareItem) =>
-    recommendedFor(item)?.sowingWindow;
-  const reviewHarvestWindow = (item: CompareItem) =>
-    recommendedFor(item)?.harvestWindow ??
-    s
-      .planningReview()
-      ?.rotationDraft.find((p) => p.productId === item.productId)
-      ?.harvestWindow;
-  const reviewEvidenceFor = (item: CompareItem) => {
-    const ids = recommendedFor(item)?.evidenceRefs ?? [];
-    return s.planningReview()?.evidence.filter((e) => ids.includes(e.id)) ?? [];
-  };
-  const planningSettled = () =>
-    !s.planningSetupPending() &&
-    !s.workspace.loading &&
-    (!!s.planningError() ||
-      (!!s.planningReview() &&
-        !["pending", "running"].includes(s.planningReview()!.status)));
+  // Crops to pre-select: the current year plan's proposals, then the saved seasons. Reading the plan never starts a
+  // new one, and a failed read just leaves the saved seasons.
+  const [yearPlan] = createResource(
+    () => {
+      const id = s.farm()?.id;
+      return id ? `${s.sessionEpoch()}|${id}` : undefined;
+    },
+    async (key) => {
+      const id = key.slice(key.indexOf("|") + 1);
+      try {
+        return { farmId: id, review: await loadYearPlan(id) };
+      } catch {
+        return undefined;
+      }
+    },
+  );
   const preferredProducts = () => {
-    const seen = new Set<string>();
-    return recommendations()
-      .filter((p) => {
-        if (seen.has(p.cropId)) return false;
-        seen.add(p.cropId);
-        return true;
-      })
-      .slice(0, 3)
-      .map((p) => p.productId);
+    const plan = yearPlan();
+    const w = s.workspace();
+    return preselectProducts({
+      yearPlan: plan && plan.farmId === s.farm()?.id ? plan.review : undefined,
+      savedSeasons: w && w.farmId === s.farm()?.id ? w.rotationPlans : [],
+      cropIds: props.focused ? props.cropIds : undefined,
+    });
   };
   function persistSelection() {
     const id = s.farm()?.id;
@@ -209,34 +201,17 @@ export function CompareWorkspace(
   );
   createEffect(
     on(
-      () =>
-        [
-          s.farm()?.id,
-          s.planningReview()?.reviewId,
-          s.planningReview()?.status,
-          s.planningError(),
-          s.workspace.loading,
-        ] as const,
+      () => [s.farm()?.id, s.workspace.loading] as const,
       () => {
-        if (!s.farm() || !planningSettled()) return;
-        const nextDate = manualDate()
-          ? date()
-          : (recommendations()[0]?.nextSowingDate ?? date());
-        if (!manualDate()) setDate(nextDate);
-        if (!result() || comparedDate() !== nextDate) void compare(nextDate);
+        if (!s.farm() || s.workspace.loading) return;
+        if (!result() || comparedDate() !== date()) void compare(date());
       },
     ),
   );
   createEffect(
     on(
       () =>
-        [
-          s.planningReview()?.reviewId,
-          recommendations()
-            .map((p) => p.productId)
-            .join("|"),
-          result(),
-        ] as const,
+        [preferredProducts().join("|"), result()] as const,
       () => {
         if (manualProducts() || !result()) return;
         const available = new Set(
@@ -250,12 +225,6 @@ export function CompareWorkspace(
       },
     ),
   );
-  function checkRecommendedDate(value: string) {
-    setDate(value);
-    setManualDate(true);
-    persistSelection();
-    void compare(value);
-  }
   const currentProduct = (id: string) =>
     s.currentMarket()?.products.find((product) => product.productId === id);
   createEffect(
@@ -393,7 +362,6 @@ export function CompareWorkspace(
           </div>
         }
       >
-        <PlanningReviewPanel comparison compact />
         <div class="comparison-history-context">
           <Icon name="history" size={19} />
           <div>
@@ -446,7 +414,7 @@ export function CompareWorkspace(
           <button
             class="btn"
             onClick={() => void compare()}
-            disabled={busy() || !planningSettled()}
+            disabled={busy() || s.workspace.loading}
           >
             {busy() ? "Comparing…" : "Refresh comparison"}
             <Icon name="compare" size={17} />
@@ -561,9 +529,9 @@ export function CompareWorkspace(
                   <div class="small-empty">
                     <Icon name="compare" />
                     <p>
-                      {planningSettled()
-                        ? "Choose crops from the catalogue, or use Evara's supported shortlist, to build your comparison."
-                        : "Evara is preparing the first shortlist and its sowing windows. Your saved crop choices will be kept."}
+                      {busy()
+                        ? "Checking crop requirements for your farm…"
+                        : "Choose crops from the catalogue to build your comparison."}
                     </p>
                   </div>
                 }
@@ -605,57 +573,6 @@ export function CompareWorkspace(
                       </tr>
                     </thead>
                     <tbody>
-                      <tr class="recommendation-window-row">
-                        <th>Suggested sowing date</th>
-                        <For each={choices()}>
-                          {(item) => (
-                            <td>
-                              <Show
-                                when={recommendedFor(item)}
-                                fallback={
-                                  <span>No current recommendation</span>
-                                }
-                              >
-                                {(pick) => (
-                                  <>
-                                    <strong>
-                                      {dateLabel(pick().nextSowingDate)}
-                                    </strong>
-                                    <small>
-                                      {pick().scope} sowing evidence
-                                    </small>
-                                    <details class="comparison-option-reason">
-                                      <summary>Why this option</summary>
-                                      <p>{pick().reason}</p>
-                                      <For each={pick().uncertainties}>
-                                        {(condition) => <p>{condition}</p>}
-                                      </For>
-                                    </details>
-                                    <Show
-                                      when={
-                                        pick().nextSowingDate !== comparedDate()
-                                      }
-                                    >
-                                      <button
-                                        class="text-button"
-                                        disabled={busy()}
-                                        onClick={() =>
-                                          checkRecommendedDate(
-                                            pick().nextSowingDate,
-                                          )
-                                        }
-                                      >
-                                        Check this window
-                                        <Icon name="arrow" size={12} />
-                                      </button>
-                                    </Show>
-                                  </>
-                                )}
-                              </Show>
-                            </td>
-                          )}
-                        </For>
-                      </tr>
                       <tr>
                         <th>Overall screening</th>
                         <For each={choices()}>
@@ -675,17 +592,13 @@ export function CompareWorkspace(
                             <td>
                               {i.plantingWindow
                                 ? `${MONTHS[i.plantingWindow.fromMonth - 1]} – ${MONTHS[i.plantingWindow.toMonth - 1]}`
-                                : reviewSowingWindow(i)
-                                  ? `${dateLabel(reviewSowingWindow(i)!.from)} – ${dateLabel(reviewSowingWindow(i)!.to)}`
-                                  : "No sourced window"}
+                                : "No sourced window"}
                               <small>
                                 {i.context?.plantingMonthInWindow
                                   ? "Your month is in this window"
                                   : i.plantingWindow
                                     ? "Check your chosen date"
-                                    : reviewSowingWindow(i)
-                                      ? `${recommendedFor(i)?.scope} source in Evara's review`
-                                      : "For this region"}
+                                    : "For this region"}
                               </small>
                             </td>
                           )}
@@ -698,15 +611,8 @@ export function CompareWorkspace(
                             <td>
                               {i.dimensions.timeToFirstIncome.status === "known"
                                 ? dimension(i, "timeToFirstIncome")
-                                : reviewHarvestWindow(i)
-                                  ? `${dateLabel(reviewHarvestWindow(i)!.earliest)} – ${dateLabel(reviewHarvestWindow(i)!.latest)}`
-                                  : "Not enough evidence"}
-                              <small>
-                                {i.dimensions.timeToFirstIncome.status !==
-                                  "known" && reviewHarvestWindow(i)
-                                  ? "Source-based harvest estimate · confirm cultivar"
-                                  : "Reference, not a prediction"}
-                              </small>
+                                : "Not enough evidence"}
+                              <small>Reference, not a prediction</small>
                             </td>
                           )}
                         </For>
@@ -810,12 +716,6 @@ export function CompareWorkspace(
                             <td>
                               {i.evidenceCoverage.evidenceRecords} evidence
                               records
-                              <Show when={reviewEvidenceFor(i).length}>
-                                <small>
-                                  Localized review:{" "}
-                                  {reviewEvidenceFor(i).length} linked sources
-                                </small>
-                              </Show>
                               <small>
                                 {i.evidenceCoverage.validationPending
                                   ? "Validation pending"
@@ -933,22 +833,6 @@ export function CompareWorkspace(
                   No sourced rule applies to this location and season. This is a
                   gap in the evidence.
                 </p>
-              </Show>
-              <Show when={reviewEvidenceFor(i()).length}>
-                <section class="localized-review-evidence">
-                  <h3>Evidence used in this local review</h3>
-                  <For each={reviewEvidenceFor(i())}>
-                    {(source) => (
-                      <p>
-                        <a href={source.url} target="_blank" rel="noreferrer">
-                          {source.title}
-                        </a>{" "}
-                        · {source.scope} evidence.{" "}
-                        {source.limitations.join(" ")}
-                      </p>
-                    )}
-                  </For>
-                </section>
               </Show>
               <EvidenceDetails item={i()} />
             </section>

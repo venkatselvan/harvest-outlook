@@ -39,7 +39,7 @@ describe('farm command center and explicit crop care',()=>{
  });
  it('returns a read-only scoped overview, then completes an action once and persists after reload',async()=>{
   const first=await a.call('GET',`/api/v1/farms/${farmId}/command-center`);expect(first.statusCode,first.body).toBe(200);const data=FarmCommandCenter.parse(first.json().data);const active=data.currentCycles[0]!,task=active.careTasks[0]!;
-  expect(data.soil.markers.samples).toEqual([]);expect(data.soil.fit[0]?.status).toBe('needs_soil_report');expect(data.weather.kind).toBe('forecast');expect(first.json().data).not.toHaveProperty('planningReview');
+  expect(data.soil.markers.samples).toEqual([]);expect(data.soil.fit[0]?.status).toBe('needs_soil_report');expect(data.weather.kind).toBe('forecast');
   expect((await h.pool.query('SELECT count(*) FROM journal_entries')).rows[0].count).toBe('1');
   const url=`/api/v1/farms/${farmId}/cycles/${active.cycle.id}/care/${task.id}/complete`,payload={clientEntryId:'done-task',completedOn:'2026-10-20',note:'I checked the field'};
   expect((await b.call('POST',url,{payload})).statusCode).toBe(404);

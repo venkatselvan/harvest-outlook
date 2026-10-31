@@ -31,8 +31,8 @@ import { CompareWorkspace } from "./Compare";
 import { Outlook } from "./Outlook";
 import { JournalWorkspace } from "./Journal";
 import { FarmSettings } from "./FarmSettings";
-import { PlanningReviewPanel } from "./PlanningReview";
 import { MarketContextPanel } from "./MarketContextPanel";
+import { MarketTrends } from "./MarketTrends";
 import { Icon } from "./icons";
 import { Evara } from "./Evara";
 import { TodayView } from "./today/TodayView";
@@ -416,18 +416,6 @@ export function FarmCommandCenter() {
         </div>
       </header>
       <FarmTabNav variant="top" current={tab} />
-      <Show when={s.planningSetupPending()}>
-        <div class="command-data-warning" role="status">
-          <Icon name="history" size={16} />
-          <span>
-            <strong>One step to go.</strong> Confirm the previous harvest, first
-            season, or unknown history to start local planning.
-          </span>
-          <button class="text-button" onClick={() => setHistory(true)}>
-            Confirm harvest history
-          </button>
-        </div>
-      </Show>
       <Show when={resource.error}>
         <div class="command-data-warning" role="status">
           <Icon name="info" size={15} />
@@ -502,7 +490,6 @@ export function FarmCommandCenter() {
               </button>
             </div>
           </div>
-          <PlanningReviewPanel compact />
           <div class="focused-crop-heading">
             <h2>Focused crop collection</h2>
             <span>
@@ -638,6 +625,10 @@ export function FarmCommandCenter() {
       </Show>
       <Show when={tab() === "harvest"}>
         <div class="farm-tab-scroll embedded-tool">
+          <MarketTrends
+            cycles={cycles().map((entry) => entry.cycle)}
+            savedSeasons={workspace()?.rotationPlans ?? []}
+          />
           <section class="harvest-context-panel">
             <div class="context-view-heading">
               <div>

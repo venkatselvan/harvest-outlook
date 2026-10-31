@@ -253,7 +253,7 @@ export type ApiEnvelope<T> = {
   error: ApiError | null;
 };
 
-/** Record of one runtime model call, embedded in planning-review and soil-report results. */
+/** Record of one runtime model call, embedded in year-plan and soil-report results. */
 export const ModelInvocation = z
   .object({
     id: z.uuid(),

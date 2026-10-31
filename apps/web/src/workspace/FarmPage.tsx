@@ -1,4 +1,3 @@
-import { PlanningReviewPanel } from "./PlanningReview";
 import { FarmStart } from "./FarmStart";
 import { GeographicBoundary } from "@harvest/contracts";
 import {
@@ -117,7 +116,6 @@ export function HistoryDialog(props: { onClose: () => void }) {
             : { status: kind() as "none" | "unknown" },
       });
       if (matchesTarget()) {
-        if (capturedFarm) s.finishFarmSetup(capturedFarm);
         props.onClose();
       }
     } catch (e) {
@@ -413,7 +411,6 @@ export function FarmWorkspace(
         ).data!;
       if (epoch !== s.sessionEpoch()) return;
       setPendingFarm(farm);
-      s.deferPlanningReview(farm.id);
       await apiRequest<Workspace>(
         `/api/v1/farms/${farm.id}/workspace`,
         jsonInit("PUT", {
@@ -1082,7 +1079,6 @@ export function FarmWorkspace(
           </aside>
         </div>
         <Show when={!onboarding()}>
-          <PlanningReviewPanel compact />
           <div class="overview-bottom">
             <div class="land-story">
               <span class="round-feature">

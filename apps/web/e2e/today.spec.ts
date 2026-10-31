@@ -96,31 +96,6 @@ const workspace = (farmId: string) => ({
   cycles: farmId === A ? [maizeCycle] : [],
   rotationPlans: [],
 });
-const review = () => ({
-  reviewId: null,
-  jobId: null,
-  contextHash: null,
-  status: "unavailable",
-  stale: false,
-  inputVersions: { farm: 1, workspace: 1 },
-  generatedAt: null,
-  retryAfter: null,
-  modelInvocation: null,
-  summary: "No sourced planning review available.",
-  localContext: {
-    location: { stateId: "IN-KA", districtId: "IN-KA-hassan", districtName: "Hassan", village: null, villageBasis: "unavailable", granularity: "district", sources: [], limitations: [] },
-    weather: { kind: "forecast", status: "unavailable", issuedAt: null, source: "Test source", days: [], limitations: [] },
-    mandi: { status: "unavailable", references: [], limitations: [] },
-    history: { basis: "farmer_reported", previousHarvest: { status: "none" }, cycles: [], rotationAssessment: "not_assessed" },
-    occupancy: [],
-  },
-  horizon: { from: "2026-11-01", to: "2027-10-31" },
-  rotationDraft: [],
-  comparisonShortlist: [],
-  evidence: [],
-  limitations: [],
-  appliedProposalIds: [],
-});
 const quotes = {
   checkedAt: asOf,
   selectionBasis: "none",
@@ -167,7 +142,6 @@ const command = (farmId: string, completed: boolean) => ({
   sources: [{ id: "care-source", url: "https://example.org/care", publisher: "Crop guide fixture", title: "Care", retrievedAt: asOf, geography: { scope: "state" } }],
   currentCycles: workspace(farmId).cycles.map((cycle) => ({ cycle, careTasks: [careTask(completed ? "completed" : "due")], limitations: [] })),
   soil: { markers: { farmId, samples: [], limitations: [] }, fit: [] },
-  planningReview: review(),
   weather: { kind: "forecast", status: "unavailable", reason: "fixture", issuedAt: null, source: "Fixture", days: [] },
   currentQuotes: quotes,
   priorYearMarkets: [],
@@ -260,9 +234,7 @@ async function mock(page: Page, options: MockOptions = {}) {
             ? workspace(id)
             : path.endsWith("/command-center")
               ? command(id, state.completed.has("task-moisture"))
-              : path.endsWith("/planning-review")
-                ? review()
-                : path === "/api/v1/crops"
+              : path === "/api/v1/crops"
                   ? { crops: [{ cropId: "maize", name: "Maize", products: [{ productId: "maize-grain", name: "Maize grain" }] }] }
                   : path.endsWith("/monitoring")
                     ? {

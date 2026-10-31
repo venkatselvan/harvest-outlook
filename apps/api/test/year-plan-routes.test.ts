@@ -77,7 +77,7 @@ describe('year-plan routes (registered)', () => {
     expect((await put({ status: 'none' }, 1)).statusCode).toBe(200);
     expect(await jobs(f.id)).toBe(1);
     expect(Number((await h.pool.query('SELECT count(*) FROM farm_year_plans WHERE farm_id=$1 AND archived_at IS NULL', [f.id])).rows[0].count)).toBe(1);
-    expect(Number((await h.pool.query("SELECT count(*) FROM jobs WHERE type='farm.planning-review'")).rows[0].count)).toBe(0);
+    expect(Number((await h.pool.query("SELECT count(*) FROM jobs WHERE type<>'farm.year-plan' AND payload->>'farmId'=$1", [f.id])).rows[0].count)).toBe(0);
   });
 
   it('demo refresh that removes legacy seed records archives the farm year plans', async () => {

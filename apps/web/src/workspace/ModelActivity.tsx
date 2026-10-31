@@ -21,8 +21,8 @@ interface Invocation {
   processing?: string;
 }
 const activityPurpose = (purpose: string | undefined) =>
-  purpose?.startsWith("planning_review/")
-    ? "Localized crop planning"
+  purpose?.startsWith("year_plan_review/")
+    ? "Planning your year"
     : purpose?.startsWith("soil_report")
       ? "Soil report extraction"
       : purpose?.startsWith("speech") || purpose?.startsWith("voice")
