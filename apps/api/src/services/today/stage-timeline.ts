@@ -10,10 +10,11 @@
  *  (c) no stages but a published duration: a two-stage `estimate` (growing, maturing) ending at the duration;
  *  (d) otherwise `stages: []`, `harvest: null`, basis note "no sourced stage data".
  *
- * Harvest window, independent of which stage source won: published durations in crop-agronomy.json that match the
+ * Harvest window: when a sourced catalogue stage model won (a), that model governs the harvest window too (orchestrator
+ * decision 2026-11-01, so the slider end and the stage dates come from one source); published durations that disagree are
+ * quoted in the basis note, not reconciled. Otherwise: published durations in crop-agronomy.json that match the
  * establishment method, region and product (envelope of min..max over the matching cultivar or season values), else the
- * focused-crop duration, else the end of the last stage. When catalogue stage boundaries and the duration envelope disagree
- * the numbers are NOT reconciled; the basis note says so. Stage dates in the catalogue case use the shortest source
+ * focused-crop duration, else the end of the last stage. Stage dates in the catalogue case use the shortest source
  * durations (so stages tile the calendar without overlap) and the spread of the source ranges lives in the harvest window.
  *
  * The agronomy file is research_candidate_unreviewed and another worker appends to it: it is loaded once, per-crop
@@ -332,11 +333,12 @@ function fromCatalogue(defs: StageDefinition[], anchor: string, ctx: Ctx, agrono
   const modelHarvest: HarvestWindow = r.harvestWindows.length
     ? {earliest: r.harvestWindows.map((w) => w.earliestStart).sort()[0]!, latest: r.harvestWindows.map((w) => w.latestEnd).sort().at(-1)!}
     : {earliest: r.windows.at(-1)!.earliestEnd, latest: r.windows.at(-1)!.latestEnd};
-  const harvest: HarvestWindow = agronomyHarvest ? {earliest: addDays(anchor, agronomyHarvest.lo), latest: addDays(anchor, agronomyHarvest.hi)} : modelHarvest;
+  const harvest: HarvestWindow = modelHarvest;
+  const published: HarvestWindow | null = agronomyHarvest ? {earliest: addDays(anchor, agronomyHarvest.lo), latest: addDays(anchor, agronomyHarvest.hi)} : null;
   const spread = defs.some((d) => !d.isHarvest && d.durationDays.min !== d.durationDays.max);
   const first = defs[0]!;
   const prefix = first.id.endsWith(`.${first.stageId}`) ? first.id.slice(0, -(first.stageId.length + 1)) : first.id;
-  const mismatch = agronomyHarvest && (harvest.earliest !== modelHarvest.earliest || harvest.latest !== modelHarvest.latest);
+  const mismatch = published && (published.earliest !== modelHarvest.earliest || published.latest !== modelHarvest.latest) ? published : null;
   return {
     cropId: ctx.cropId, productId: ctx.productId, establishmentMethod: ctx.method, anchorDate: anchor,
     stages: stages.slice(0, MAX_STAGES), harvest,
@@ -348,8 +350,9 @@ function fromCatalogue(defs: StageDefinition[], anchor: string, ctx: Ctx, agrono
         r.limitations[0],
         `Stage model review status: ${first.reviewStatus}.`,
         spread && 'Stage boundaries use the shortest source durations; the spread of the source ranges is the harvest window.',
-        agronomyHarvest ? agronomyHarvest.note : 'Harvest window from the stage model.',
-        mismatch && `The stage model puts the harvest window at ${modelHarvest.earliest} to ${modelHarvest.latest}; the published durations above are used for the harvest window.`,
+        `Harvest window from the stage model: ${modelHarvest.earliest} to ${modelHarvest.latest}.`,
+        mismatch && `Published crop durations put harvest at ${mismatch.earliest} to ${mismatch.latest}; the stage model governs the harvest window here and the two are not reconciled.`,
+        mismatch && agronomyHarvest?.note,
       ]),
     },
   };

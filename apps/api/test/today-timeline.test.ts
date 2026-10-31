@@ -92,9 +92,10 @@ describe('stageTimeline precedence', () => {
     expect(new Set(t.stages.map((s) => s.basis))).toEqual(new Set(['sourced']));
     expect(t.stages.every((s) => s.name.length <= 80 && !s.name.includes('('))).toBe(true);
     expect(t.basis).toMatchObject({kind: 'duration', sourceId: 'stage.ginger.hassan-kharif', scope: 'IN-KA-hassan'});
-    // Harvest window comes from the published durations (200 to 240), and the note says it differs from the model's 210 to 240.
-    expect(t.harvest).toEqual({earliest: plus(A, 200), latest: plus(A, 240)});
+    // The stage model governs the harvest window (210 to 240); the published durations (200 to 240) are quoted in the note, not used.
+    expect(t.harvest).toEqual({earliest: plus(A, 210), latest: plus(A, 240)});
     expect(t.basis.note).toContain(`${plus(A, 210)} to ${plus(A, 240)}`);
+    expect(t.basis.note).toContain(`${plus(A, 200)} to ${plus(A, 240)}`);
     expect(t.basis.note).toMatch(/not an observation/);
   });
 
@@ -248,7 +249,7 @@ describe('agronomy loader', () => {
 });
 
 describe('stageAt', () => {
-  const t = stageTimeline(base); // ginger Hassan: 0 / 90 / 135 / 180 / 210 days, harvest 200 to 240
+  const t = stageTimeline(base); // ginger Hassan: 0 / 90 / 135 / 180 / 210 days, harvest 210 to 240 (stage model)
   const at = (days: number) => stageAt(t, plus(A, days));
 
   it('anchor, mid-cycle and stage boundaries', () => {
@@ -262,8 +263,9 @@ describe('stageAt', () => {
 
   it('harvest window, the last day, after harvest and before the anchor', () => {
     expect(at(199)).toMatchObject({phase: 'growing'});
-    expect(at(205)).toMatchObject({phase: 'harvest_window'});
+    expect(at(205)).toMatchObject({phase: 'growing'});
     expect(at(205).stage!.id).toBe('maturation');
+    expect(at(210)).toMatchObject({phase: 'harvest_window'});
     expect(at(210).stage!.id).toBe('harvest_full_maturity');
     expect(at(240)).toMatchObject({phase: 'harvest_window', progress: 1});
     expect(at(240).stage!.id).toBe('harvest_full_maturity');
