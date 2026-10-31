@@ -1,0 +1,46 @@
+{
+ "decidedAt": "2026-11-01",
+ "decidedBy": "orchestrator (Claude Fable 5.1) per user instruction to pick 15-20 crops with usable soil, yield and mandi data that demonstrate nitrogen-aware rotation",
+ "basis": [
+  "docs/research/ROTATION_AGRONOMY_SOURCES.md completeness ranking (crop-agronomy.json)",
+  "docs/research/YIELD_COST_SOURCES.md coverage (yield-cost.json)",
+  "docs/research/MANDI_HISTORY_PLAN.md commodity mapping table"
+ ],
+ "pool": [
+  {"cropId": "paddy", "productIds": ["paddy-grain"], "rotationRole": "moderate_feeder", "why": "Hassan and Coimbatore windows, costs both states, verified mandi label; the occupied-field demo crop."},
+  {"cropId": "maize", "productIds": ["maize-grain"], "rotationRole": "heavy_feeder", "why": "Full data in both states, 179k KA price rows; the main heavy feeder."},
+  {"cropId": "finger-millet", "productIds": ["finger-millet-grain"], "rotationRole": "light_feeder", "why": "Hassan staple with sourced second-crop fertiliser rule; verified label."},
+  {"cropId": "sorghum", "productIds": ["sorghum-grain"], "rotationRole": "moderate_feeder", "why": "Both-state yields and costs, 98k KA price rows."},
+  {"cropId": "groundnut", "productIds": ["groundnut-pod"], "rotationRole": "nitrogen_fixer", "why": "Highest-completeness legume, costs both states; pod label needs census confirmation."},
+  {"cropId": "soybean", "productIds": ["soybean-seed"], "rotationRole": "nitrogen_fixer", "why": "Hassan potato-soybean sequence evidence, KA cost, verified label."},
+  {"cropId": "chickpea", "productIds": ["chickpea-whole"], "rotationRole": "nitrogen_fixer", "why": "Rabi legume after paddy in Hassan sequences; KA cost from CACP rabi report."},
+  {"cropId": "green-gram", "productIds": ["green-gram-whole"], "rotationRole": "nitrogen_fixer", "why": "Short-duration legume in Hassan sequences (green gram-paddy, green gram-maize); windows being filled; costs and yields both states."},
+  {"cropId": "black-gram", "productIds": ["black-gram-whole"], "rotationRole": "nitrogen_fixer", "why": "Short-duration legume in Hassan sequences (black gram-ragi); windows being filled; costs and yields both states."},
+  {"cropId": "pigeon-pea", "productIds": ["pigeon-pea-whole"], "rotationRole": "nitrogen_fixer", "why": "Long-duration legume, KA cost; whole label unverified until census."},
+  {"cropId": "sesame", "productIds": ["sesame-seed"], "rotationRole": "light_feeder", "why": "Hassan sesame-potato sequence, verified label; no cost yet (gross revenue only until filled)."},
+  {"cropId": "sunflower", "productIds": ["sunflower-seed"], "rotationRole": "heavy_feeder", "why": "Hassan window and cultivar duration, KA cost, verified label."},
+  {"cropId": "cotton", "productIds": ["cotton-kapas"], "rotationRole": "heavy_feeder", "why": "Coimbatore crop with costs both states; kapas label unverified until census."},
+  {"cropId": "potato", "productIds": ["potato-fresh"], "rotationRole": "heavy_feeder", "why": "Hassan potato sequences (potato-ragi, potato-soybean), verified label; cost pending."},
+  {"cropId": "onion", "productIds": ["onion-bulb"], "rotationRole": "moderate_feeder", "why": "Both-state windows, verified label; cost pending."},
+  {"cropId": "tomato", "productIds": ["tomato-fresh"], "rotationRole": "heavy_feeder", "why": "Hassan grows it, TN window, avoid-after rules sourced, verified label; cost pending."},
+  {"cropId": "chilli", "productIds": ["chilli-green", "chilli-dry"], "rotationRole": "moderate_feeder", "why": "Hassan grows it, avoid-after rules, verified labels for both forms; cost pending."},
+  {"cropId": "ginger", "productIds": ["ginger-fresh", "ginger-dry"], "rotationRole": "moderate_feeder", "why": "Richest price history (66k KA rows) and sourced stage model; Karnataka window remains a pending user decision."},
+  {"cropId": "turmeric", "productIds": ["turmeric-fresh", "turmeric-dry"], "rotationRole": "heavy_feeder", "why": "TN window and 39k TN price rows; dry label unverified until census."}
+ ],
+ "excluded": [
+  {"cropId": "wheat", "why": "No Tamil Nadu rows; Karnataka not projected by CACP; Hassan plan omits it."},
+  {"cropId": "pearl-millet", "why": "No Karnataka window or cost; label only on the current-daily feed."},
+  {"cropId": "lentil", "why": "No Karnataka or Tamil Nadu agronomy, yield, cost or price evidence."},
+  {"cropId": "mustard", "why": "No Karnataka or Tamil Nadu evidence; market class unresolved."},
+  {"cropId": "shallot", "why": "No priced mandi label; Tamil Nadu only."},
+  {"cropId": "brinjal", "why": "Agronomy completeness 0.33; no cost."},
+  {"cropId": "okra", "why": "Agronomy completeness 0.33; no cost; two competing labels."},
+  {"cropId": "sugarcane", "why": "No in-window mandi rows (mill procurement, not mandi); occupies more than the 12-month horizon. Kept as reference data only."},
+  {"cropId": "coriander", "why": "Tamil Nadu only, no water or stage data; leaf and seed need separate occupancy rules. Reconsider after the pool proves out."}
+ ],
+ "notes": [
+  "Nitrogen fixers: groundnut, soybean, chickpea, green-gram, black-gram, pigeon-pea (six). Heavy feeders: maize, sunflower, cotton, potato, tomato, turmeric. This is enough contrast to demonstrate fixer-after-heavy-feeder sequences in both states.",
+  "Pool crops without a cost source show revenue ranges and a 'cost not sourced' confidence penalty until the cost research lands.",
+  "Legume nitrogen credits are the generic FAO figure until crop-specific values are found; the soil-rotation component treats them as low-confidence."
+ ]
+}

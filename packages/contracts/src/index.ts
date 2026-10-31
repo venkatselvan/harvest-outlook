@@ -18,3 +18,4 @@ export * from './market-quotes';
 export * from './soil-reports';
 export * from './commodity-catalogue';
 export * from './command-center';
+export * from './year-plan';

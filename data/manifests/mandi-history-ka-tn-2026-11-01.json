@@ -1,0 +1,660 @@
+{
+ "schemaVersion": 1,
+ "id": "mandi-history-ka-tn-2026-11-01",
+ "title": "Karnataka and Tamil Nadu mandi price history, 2023-11-01 to 2026-10-31, variety-wise daily resource",
+ "generatedOn": "2026-11-01",
+ "resourceId": "35985678-0d79-46b4-9ed6-6f13308a1d24",
+ "granularity": "state-day",
+ "granularityNote": "One request series per (state, calendar day): filters[State] plus filters[Arrival_Date]=dd/mm/yyyy, all commodities, paged at pageSize. Rows are then kept only when the returned Commodity label matches an enabled label below (case- and whitespace-insensitive, as in the normaliser). The resource has no date-range filter and a commodity history scan reads about 20 years per commodity, so per-day state queries are the cheapest complete route.",
+ "states": [
+  "Karnataka",
+  "Tamil Nadu"
+ ],
+ "range": {
+  "from": "2023-11-01",
+  "to": "2026-10-31"
+ },
+ "dateStepDays": 1,
+ "pageSize": 1000,
+ "pauseMs": 8000,
+ "volumeModel": {
+  "basis": "Measured state-day totals in evals/results/live-smoke/mandi-history-probe-2026-11-01.json and per-state label shares in data/manifests/agmarknet-priced-inventory-2026-10-30.json (a different feed, one day). Estimates, not measurements; weekday, holiday and seasonal variation are not modelled.",
+  "states": {
+   "Karnataka": {
+    "segments": [
+     {
+      "from": "2023-11-01",
+      "to": "2026-10-31",
+      "rowsPerDay": 740,
+      "storedRowsPerDay": 345,
+      "basis": "mean of 560 (2023-11-15) and 919 (2026-09-16); target-label share 46.7 percent of 540 Karnataka rows in the 2026-10-30 inventory"
+     }
+    ]
+   },
+   "Tamil Nadu": {
+    "segments": [
+     {
+      "from": "2023-11-01",
+      "to": "2024-08-14",
+      "rowsPerDay": 190,
+      "storedRowsPerDay": 95,
+      "basis": "164 (2023-11-15) and 188 (2024-06-12); stored share assumed 50 percent (not measured)"
+     },
+     {
+      "from": "2024-08-15",
+      "to": "2026-10-31",
+      "rowsPerDay": 7700,
+      "storedRowsPerDay": 1550,
+      "basis": "6,405 (2024-10-16), 6,667 (2025-03-12), 8,760 (2026-09-16), mean of a linear ramp; target-label share 20.1 percent of 6,964 Tamil Nadu rows in the 2026-10-30 inventory. The step change lies between 2024-06-13 and 2024-10-15; 2024-08-15 is the assumed midpoint."
+     }
+    ]
+   }
+  }
+ },
+ "products": [
+  {
+   "cropId": "paddy",
+   "productId": "paddy-grain",
+   "enabled": true,
+   "commodities": [
+    {
+     "label": "Paddy(Common)",
+     "currentDaily": "2026-10-30 inventory rows: Karnataka 19, Tamil Nadu 3",
+     "varietyWise": "observed: probe 9, Karnataka, 8,647 rows, first rows dated 2026-03"
+    },
+    {
+     "label": "Paddy(Dhan)(Common)",
+     "currentDaily": "2026-10-30 inventory rows: Karnataka 0, Tamil Nadu 0",
+     "varietyWise": "observed: probe 6, Tamil Nadu 2024-06-12"
+    }
+   ],
+   "labelHints": [
+    "paddy",
+    "dhan"
+   ],
+   "note": "Common paddy only. Paddy(Basmati) and Paddy(Fine/Superfine/Grade A) are mapped to paddy-grain in commodity-map.json but excluded here so one series does not mix price classes; no Karnataka or Tamil Nadu rows were seen for them in the 2026-10-30 inventory."
+  },
+  {
+   "cropId": "wheat",
+   "productId": "wheat-grain",
+   "enabled": true,
+   "commodities": [
+    {
+     "label": "Wheat",
+     "currentDaily": "2026-10-30 inventory rows: Karnataka 8, Tamil Nadu 0",
+     "varietyWise": "not observed (unconfirmed on this resource)"
+    }
+   ],
+   "labelHints": [
+    "wheat"
+   ]
+  },
+  {
+   "cropId": "maize",
+   "productId": "maize-grain",
+   "enabled": true,
+   "commodities": [
+    {
+     "label": "Maize",
+     "currentDaily": "2026-10-30 inventory rows: Karnataka 26, Tamil Nadu 2",
+     "varietyWise": "observed: probe 8 (Karnataka, 179,262 rows) and probe 2 (Tamil Nadu 2023-11-15)"
+    }
+   ],
+   "labelHints": [
+    "maize",
+    "corn"
+   ]
+  },
+  {
+   "cropId": "sorghum",
+   "productId": "sorghum-grain",
+   "enabled": true,
+   "commodities": [
+    {
+     "label": "Jowar(Sorghum)",
+     "currentDaily": "2026-10-30 inventory rows: Karnataka 12, Tamil Nadu 0",
+     "varietyWise": "observed: probe 10, Karnataka, 98,666 rows"
+    }
+   ],
+   "labelHints": [
+    "jowar",
+    "sorghum"
+   ]
+  },
+  {
+   "cropId": "pearl-millet",
+   "productId": "pearl-millet-grain",
+   "enabled": true,
+   "commodities": [
+    {
+     "label": "Bajra(Pearl Millet/Cumbu)",
+     "currentDaily": "2026-10-30 inventory rows: Karnataka 9, Tamil Nadu 0",
+     "varietyWise": "not observed (unconfirmed on this resource)"
+    }
+   ],
+   "labelHints": [
+    "bajra",
+    "pearl millet",
+    "cumbu"
+   ]
+  },
+  {
+   "cropId": "finger-millet",
+   "productId": "finger-millet-grain",
+   "enabled": true,
+   "commodities": [
+    {
+     "label": "Ragi(Finger Millet)",
+     "currentDaily": "2026-10-30 inventory rows: Karnataka 8, Tamil Nadu 0",
+     "varietyWise": "observed with a space, Ragi (Finger Millet): probe 6, Tamil Nadu 2024-06-12; matches case- and whitespace-insensitively"
+    }
+   ],
+   "labelHints": [
+    "ragi",
+    "finger millet"
+   ]
+  },
+  {
+   "cropId": "chickpea",
+   "productId": "chickpea-whole",
+   "enabled": true,
+   "commodities": [
+    {
+     "label": "Bengal Gram(Gram)(Whole)",
+     "currentDaily": "2026-10-30 inventory rows: Karnataka 13, Tamil Nadu 0",
+     "varietyWise": "not observed (unconfirmed on this resource)"
+    }
+   ],
+   "labelHints": [
+    "bengal gram",
+    "gram",
+    "chana",
+    "chickpea"
+   ],
+   "note": "Whole grain only; the split (dal) form chickpea-split is a processed product and stays disabled below."
+  },
+  {
+   "cropId": "pigeon-pea",
+   "productId": "pigeon-pea-whole",
+   "enabled": true,
+   "commodities": [
+    {
+     "label": "Red gram/Arhar/Tur(whole)",
+     "currentDaily": "2026-10-30 inventory rows: Karnataka 7, Tamil Nadu 1",
+     "varietyWise": "not observed (unconfirmed on this resource)"
+    },
+    {
+     "label": "Arhar (Tur/Red Gram)(Whole)",
+     "currentDaily": "not in the 2026-10-30 inventory",
+     "varietyWise": "observed: Karnataka 2025-03 census, 59 rows"
+    }
+   ],
+   "labelHints": [
+    "red gram",
+    "arhar",
+    "tur",
+    "pigeon"
+   ],
+   "note": "Whole grain only; pigeon-pea-split stays disabled below."
+  },
+  {
+   "cropId": "green-gram",
+   "productId": "green-gram-whole",
+   "enabled": true,
+   "commodities": [
+    {
+     "label": "Green Gram(Moong)(Whole)",
+     "currentDaily": "2026-10-30 inventory rows: Karnataka 9, Tamil Nadu 0",
+     "varietyWise": "not observed (unconfirmed on this resource)"
+    }
+   ],
+   "labelHints": [
+    "green gram",
+    "moong"
+   ]
+  },
+  {
+   "cropId": "black-gram",
+   "productId": "black-gram-whole",
+   "enabled": true,
+   "commodities": [
+    {
+     "label": "Black Gram(Urd Beans)(Whole)",
+     "currentDaily": "2026-10-30 inventory rows: Karnataka 7, Tamil Nadu 0",
+     "varietyWise": "not observed (unconfirmed on this resource)"
+    }
+   ],
+   "labelHints": [
+    "black gram",
+    "urd"
+   ]
+  },
+  {
+   "cropId": "lentil",
+   "productId": "lentil-whole",
+   "enabled": true,
+   "commodities": [
+    {
+     "label": "Lentil(Masur)(Whole)",
+     "currentDaily": "2026-10-30 inventory rows: Karnataka 0, Tamil Nadu 0",
+     "varietyWise": "not observed (unconfirmed on this resource)"
+    }
+   ],
+   "labelHints": [
+    "lentil",
+    "masur"
+   ],
+   "note": "No Karnataka or Tamil Nadu row in the 2026-10-30 inventory; coverage may be absent."
+  },
+  {
+   "cropId": "soybean",
+   "productId": "soybean-seed",
+   "enabled": true,
+   "commodities": [
+    {
+     "label": "Soyabean",
+     "currentDaily": "2026-10-30 inventory rows: Karnataka 9, Tamil Nadu 3",
+     "varietyWise": "observed: probe 3, Karnataka 2026-09-16"
+    }
+   ],
+   "labelHints": [
+    "soya",
+    "soy"
+   ]
+  },
+  {
+   "cropId": "groundnut",
+   "productId": "groundnut-pod",
+   "enabled": true,
+   "commodities": [
+    {
+     "label": "Groundnut",
+     "currentDaily": "2026-10-30 inventory rows: Karnataka 12, Tamil Nadu 54",
+     "varietyWise": "not observed (unconfirmed on this resource)"
+    }
+   ],
+   "labelHints": [
+    "groundnut",
+    "ground nut",
+    "peanut"
+   ],
+   "note": "Pod form assigned from price magnitude; unverified."
+  },
+  {
+   "cropId": "groundnut",
+   "productId": "groundnut-kernel",
+   "enabled": true,
+   "commodities": [
+    {
+     "label": "Ground Nut Seed",
+     "currentDaily": "2026-10-30 inventory rows: Karnataka 3, Tamil Nadu 0",
+     "varietyWise": "observed: probe 2, Tamil Nadu 2023-11-15"
+    }
+   ],
+   "labelHints": [
+    "groundnut",
+    "ground nut",
+    "peanut"
+   ],
+   "note": "Kernel form assigned from price magnitude; unverified."
+  },
+  {
+   "cropId": "sesame",
+   "productId": "sesame-seed",
+   "enabled": true,
+   "commodities": [
+    {
+     "label": "Sesamum(Sesame,Gingelly,Til)",
+     "currentDaily": "2026-10-30 inventory rows: Karnataka 3, Tamil Nadu 0",
+     "varietyWise": "observed: probe 1 (Karnataka 2023-11-15) and probe 6 (Tamil Nadu 2024-06-12)"
+    }
+   ],
+   "labelHints": [
+    "sesam",
+    "gingelly",
+    "til"
+   ]
+  },
+  {
+   "cropId": "sunflower",
+   "productId": "sunflower-seed",
+   "enabled": true,
+   "commodities": [
+    {
+     "label": "Sunflower/Sunflower Seed",
+     "currentDaily": "2026-10-30 inventory rows: Karnataka 8, Tamil Nadu 0",
+     "varietyWise": "not observed (unconfirmed on this resource)"
+    },
+    {
+     "label": "Sunflower",
+     "currentDaily": "not in the 2026-10-30 inventory",
+     "varietyWise": "observed: Karnataka 2025-03 census, 30 rows"
+    }
+   ],
+   "labelHints": [
+    "sunflower"
+   ]
+  },
+  {
+   "cropId": "mustard",
+   "productId": "mustard-seed",
+   "enabled": true,
+   "commodities": [
+    {
+     "label": "Mustard",
+     "currentDaily": "2026-10-30 inventory rows: Karnataka 2, Tamil Nadu 0",
+     "varietyWise": "not observed (unconfirmed on this resource)"
+    }
+   ],
+   "labelHints": [
+    "mustard",
+    "rape",
+    "taramira"
+   ]
+  },
+  {
+   "cropId": "cotton",
+   "productId": "cotton-kapas",
+   "enabled": true,
+   "commodities": [
+    {
+     "label": "Cotton",
+     "currentDaily": "2026-10-30 inventory rows: Karnataka 8, Tamil Nadu 0",
+     "varietyWise": "not observed (unconfirmed on this resource)"
+    }
+   ],
+   "labelHints": [
+    "cotton",
+    "kapas"
+   ]
+  },
+  {
+   "cropId": "potato",
+   "productId": "potato-fresh",
+   "enabled": true,
+   "commodities": [
+    {
+     "label": "Potato",
+     "currentDaily": "2026-10-30 inventory rows: Karnataka 10, Tamil Nadu 156",
+     "varietyWise": "not observed (unconfirmed on this resource)"
+    }
+   ],
+   "labelHints": [
+    "potato"
+   ]
+  },
+  {
+   "cropId": "onion",
+   "productId": "onion-bulb",
+   "enabled": true,
+   "commodities": [
+    {
+     "label": "Onion",
+     "currentDaily": "2026-10-30 inventory rows: Karnataka 14, Tamil Nadu 173",
+     "varietyWise": "not observed (unconfirmed on this resource)"
+    }
+   ],
+   "labelHints": [
+    "onion"
+   ],
+   "note": "Onion Green (spring onion) is a different product and is not pulled."
+  },
+  {
+   "cropId": "shallot",
+   "productId": "shallot-bulb",
+   "enabled": false,
+   "commodities": [],
+   "labelHints": [
+    "shallot",
+    "sambar",
+    "small onion",
+    "pearl onion"
+   ],
+   "note": "No priced shallot label exists in the 2026-10-30 inventory; shallot may be reported as a variety under Onion, which is not a product statement. No pull possible until a label is found."
+  },
+  {
+   "cropId": "tomato",
+   "productId": "tomato-fresh",
+   "enabled": true,
+   "commodities": [
+    {
+     "label": "Tomato",
+     "currentDaily": "2026-10-30 inventory rows: Karnataka 15, Tamil Nadu 184",
+     "varietyWise": "not observed (unconfirmed on this resource)"
+    }
+   ],
+   "labelHints": [
+    "tomato"
+   ]
+  },
+  {
+   "cropId": "brinjal",
+   "productId": "brinjal-fresh",
+   "enabled": true,
+   "commodities": [
+    {
+     "label": "Brinjal",
+     "currentDaily": "2026-10-30 inventory rows: Karnataka 13, Tamil Nadu 178",
+     "varietyWise": "not observed (unconfirmed on this resource)"
+    }
+   ],
+   "labelHints": [
+    "brinjal",
+    "eggplant",
+    "baingan"
+   ]
+  },
+  {
+   "cropId": "okra",
+   "productId": "okra-fresh",
+   "enabled": true,
+   "commodities": [
+    {
+     "label": "Bhindi(Ladies Finger)",
+     "currentDaily": "2026-10-30 inventory rows: Karnataka 0, Tamil Nadu 177",
+     "varietyWise": "not observed (unconfirmed on this resource)"
+    },
+    {
+     "label": "Ladies Finger",
+     "currentDaily": "2026-10-30 inventory rows: Karnataka 10, Tamil Nadu 0",
+     "varietyWise": "not observed (unconfirmed on this resource)"
+    }
+   ],
+   "labelHints": [
+    "bhindi",
+    "ladies",
+    "okra"
+   ]
+  },
+  {
+   "cropId": "chilli",
+   "productId": "chilli-green",
+   "enabled": true,
+   "commodities": [
+    {
+     "label": "Green Chilli",
+     "currentDaily": "2026-10-30 inventory rows: Karnataka 12, Tamil Nadu 179",
+     "varietyWise": "not observed (unconfirmed on this resource)"
+    }
+   ],
+   "labelHints": [
+    "green chilli",
+    "chilli",
+    "chillies"
+   ]
+  },
+  {
+   "cropId": "chilli",
+   "productId": "chilli-dry",
+   "enabled": true,
+   "commodities": [
+    {
+     "label": "Dry Chillies",
+     "currentDaily": "2026-10-30 inventory rows: Karnataka 3, Tamil Nadu 0",
+     "varietyWise": "not observed (unconfirmed on this resource)"
+    }
+   ],
+   "labelHints": [
+    "dry chill",
+    "red chill"
+   ]
+  },
+  {
+   "cropId": "ginger",
+   "productId": "ginger-fresh",
+   "enabled": true,
+   "commodities": [
+    {
+     "label": "Ginger(Green)",
+     "currentDaily": "2026-10-30 inventory rows: Karnataka 4, Tamil Nadu 129",
+     "varietyWise": "observed: probe 1, Karnataka 2023-11-15; 66,070 Karnataka rows from the 2026-10-30 ginger pull"
+    }
+   ],
+   "labelHints": [
+    "ginger"
+   ]
+  },
+  {
+   "cropId": "ginger",
+   "productId": "ginger-dry",
+   "enabled": true,
+   "commodities": [
+    {
+     "label": "Ginger(Dry)",
+     "currentDaily": "2026-10-30 inventory rows: Karnataka 2, Tamil Nadu 0",
+     "varietyWise": "observed: 8,000 Karnataka rows in the 2026-10-30 ginger pull (docs/DATA_AUDIT.md section 13)"
+    }
+   ],
+   "labelHints": [
+    "ginger"
+   ]
+  },
+  {
+   "cropId": "turmeric",
+   "productId": "turmeric-dry",
+   "enabled": true,
+   "commodities": [
+    {
+     "label": "Turmeric",
+     "currentDaily": "2026-10-30 inventory rows: Karnataka 2, Tamil Nadu 1",
+     "varietyWise": "observed: probe 11, Tamil Nadu, 39,098 rows"
+    }
+   ],
+   "labelHints": [
+    "turmeric"
+   ],
+   "note": "Dry (cured) form is assigned from price magnitude; repository policy requires a person to confirm."
+  },
+  {
+   "cropId": "turmeric",
+   "productId": "turmeric-fresh",
+   "enabled": true,
+   "commodities": [
+    {
+     "label": "Turmeric(raw)",
+     "currentDaily": "2026-10-30 inventory rows: Karnataka 0, Tamil Nadu 0",
+     "varietyWise": "not observed (unconfirmed on this resource)"
+    }
+   ],
+   "labelHints": [
+    "turmeric"
+   ]
+  },
+  {
+   "cropId": "sugarcane",
+   "productId": "sugarcane-cane",
+   "enabled": false,
+   "commodities": [],
+   "labelHints": [
+    "sugarcane",
+    "cane"
+   ],
+   "note": "Label Sugarcane exists on the variety-wise resource but holds 13 Karnataka rows, all from 2003 (probe 12); nothing to pull in 2023-2026. The mapped entry is kept only to record the label."
+  },
+  {
+   "cropId": "coriander",
+   "productId": "coriander-leaf",
+   "enabled": true,
+   "commodities": [
+    {
+     "label": "Coriander(Leaves)",
+     "currentDaily": "2026-10-30 inventory rows: Karnataka 2, Tamil Nadu 163",
+     "varietyWise": "not observed (unconfirmed on this resource)"
+    }
+   ],
+   "labelHints": [
+    "coriander",
+    "corriander",
+    "dhania"
+   ]
+  },
+  {
+   "cropId": "coriander",
+   "productId": "coriander-seed",
+   "enabled": true,
+   "commodities": [
+    {
+     "label": "Corriander seed",
+     "currentDaily": "2026-10-30 inventory rows: Karnataka 2, Tamil Nadu 0",
+     "varietyWise": "not observed (unconfirmed on this resource)"
+    }
+   ],
+   "labelHints": [
+    "coriander",
+    "corriander",
+    "dhania"
+   ]
+  },
+  {
+   "cropId": "chickpea",
+   "productId": "chickpea-split",
+   "enabled": false,
+   "commodities": [
+    {
+     "label": "Bengal Gram Dal(Chana Dal)"
+    }
+   ],
+   "labelHints": [
+    "dal"
+   ],
+   "note": "Processed (dal) form: not requested."
+  },
+  {
+   "cropId": "pigeon-pea",
+   "productId": "pigeon-pea-split",
+   "enabled": false,
+   "commodities": [
+    {
+     "label": "Red gram split/Arhar dal/Tur dal"
+    }
+   ],
+   "labelHints": [
+    "dal"
+   ],
+   "note": "Processed (dal) form: not requested."
+  },
+  {
+   "cropId": "paddy",
+   "productId": "paddy-milled-rice",
+   "enabled": false,
+   "commodities": [
+    {
+     "label": "Rice"
+    },
+    {
+     "label": "Rice(Fine/Superfine/Grade A)"
+    }
+   ],
+   "labelHints": [
+    "rice"
+   ],
+   "note": "Milled rice is a processed product: not requested."
+  }
+ ],
+ "notes": [
+  "Every enabled label must have a commodity-map.json entry for the same productSlug (checked by the script). Entries with verified false are stored as validation_status=unverified_mapping, hidden from default reads, and counted as storedUnverifiedMapping.",
+  "Labels differ between the current-daily and variety-wise resources and over time (for example Paddy(Dhan)(Common) before about March 2026 and Paddy(Common) after). Run a label census (--dates ... --no-store) and review the unmatched-label report before the full pull; add any alias to commodity-map.json and to the matching product here.",
+  "Prices are stored in the source unit INR/quintal under the existing Agmarknet convention assumption flag; INR/kg is derived by the shared normaliser.",
+  "available_at is the fetch time per page (flag availability_basis:conservative_upper_bound): the source publishes no first-seen time, as in the ginger pull."
+ ]
+}
