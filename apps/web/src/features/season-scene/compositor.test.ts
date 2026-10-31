@@ -272,7 +272,7 @@ describe("persistent honesty label", () => {
             expect(t.label.length).toBeGreaterThan(10);
             expect(t.label.toLowerCase()).not.toContain("observed");
             expect(t.label.toLowerCase()).toMatch(
-              /generated stage image|schematic/,
+              /illustrative growth|schematic/,
             );
             expect(sceneSummary(t, plan, kfs.length)).toContain(t.label);
           }
@@ -286,7 +286,7 @@ describe("persistent honesty label", () => {
     );
     expect(gen).toMatchObject({
       kind: "illustrative",
-      label: "Generated stage image — not a field observation or forecast",
+      label: "Illustrative growth — generated image, not a prediction",
     });
     const mixed = sceneText(
       planScene(progress("b", "c", 0.5), KFS, IMGS, false),

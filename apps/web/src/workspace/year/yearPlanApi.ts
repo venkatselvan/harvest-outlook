@@ -55,9 +55,15 @@ export async function loadYearPlan(farmId: string, opts: RequestOptions = {}): P
   return parse<YearPlanReview>(reviewSchema, env.data, "year plan");
 }
 
+export interface GenerateOptions extends RequestOptions {
+  /** Refresh / Try again: replace a finished plan now instead of waiting out the server's provider-error cooldown. */
+  force?: boolean;
+}
+
 /** POST: ask the server to (re)generate the review. Returns immediately with a pending or finished review. */
-export async function generateYearPlan(farmId: string, opts: RequestOptions = {}): Promise<YearPlanReview> {
-  const env = await apiRequest<unknown>(planPath(farmId), withSignal(jsonInit("POST", {}), opts.signal), opts.fetchImpl);
+export async function generateYearPlan(farmId: string, opts: GenerateOptions = {}): Promise<YearPlanReview> {
+  const body = opts.force === true ? { force: true } : {};
+  const env = await apiRequest<unknown>(planPath(farmId), withSignal(jsonInit("POST", body), opts.signal), opts.fetchImpl);
   return parse<YearPlanReview>(reviewSchema, env.data, "year plan");
 }
 
@@ -75,7 +81,7 @@ function pause(ms: number, signal?: AbortSignal): Promise<void> {
   });
 }
 
-export interface PollOptions extends RequestOptions {
+export interface PollOptions extends GenerateOptions {
   onUpdate?: (review: YearPlanReview) => void;
   intervalMs?: number;
   maxPolls?: number;

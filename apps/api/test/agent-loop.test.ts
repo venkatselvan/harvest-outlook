@@ -407,11 +407,16 @@ describe("tool registry and allowlist", () => {
 
   it("replay mode removes tools that read current data and never offers search grounding", async () => {
     const replay = reg.allowedFor("replay").map((t) => t.name);
-    for (const n of ["interpret_observation", "request_segmentation", "request_visual_keyframes", "get_job_status"]) {
+    for (const n of ["interpret_observation", "request_segmentation", "get_job_status"]) {
       expect(replay).not.toContain(n);
       expect(reg.isAllowed(n, "replay")).toBe(false);
       expect(reg.isAllowed(n, "live")).toBe(true);
     }
+    // request_visual_keyframes became a synthetic-only test tool (live field views use dated owner photos only).
+    expect(replay).not.toContain("request_visual_keyframes");
+    expect(reg.isAllowed("request_visual_keyframes", "replay")).toBe(false);
+    expect(reg.isAllowed("request_visual_keyframes", "live")).toBe(false);
+    expect(reg.isAllowed("request_visual_keyframes", "synthetic")).toBe(true);
     expect(reg.advertisedFor("replay").map((t) => t.name)).toEqual(["resolve_crop_identity", "get_farm_context", "retrieve_evidence"]);
     expect(JSON.stringify(reg.advertisedFor("replay"))).not.toMatch(/search|ground/i);
     expect(reg.isAllowed("web_search", "replay")).toBe(false);

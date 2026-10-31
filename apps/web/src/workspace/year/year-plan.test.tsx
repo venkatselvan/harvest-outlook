@@ -32,7 +32,7 @@ import {
   scenarioText,
   draftFromOption,
 } from "./model";
-import { ensureYearPlan, pollYearPlan } from "./yearPlanApi";
+import { ensureYearPlan, generateYearPlan, pollYearPlan } from "./yearPlanApi";
 import { sparklineGeometry } from "../ui/Sparkline";
 import { summarizeTrend } from "../ui/PriceTrendChart";
 
@@ -193,6 +193,18 @@ describe("year plan client", () => {
     expect(seen).toEqual(["pending", "pending", "ready"]);
     expect(calls.filter((c) => c.startsWith("POST /api/v1/farms"))).toHaveLength(1);
     expect(calls.filter((c) => c.startsWith("GET /api/v1/farms"))).toHaveLength(2);
+  });
+  it("posts {} by default and {\"force\":true} for Refresh and Try again", async () => {
+    const bodies: unknown[] = [];
+    const fetchImpl = (async (input: RequestInfo | URL, init?: RequestInit) => {
+      if (String(input) === "/api/v1/session") return envelope({ authenticated: true, csrfToken: "test" });
+      if (init?.method === "POST") bodies.push(JSON.parse(String(init.body)));
+      return envelope(occupiedReview);
+    }) as typeof fetch;
+    await generateYearPlan(FIXTURE_FARM_ID, { fetchImpl });
+    await generateYearPlan(FIXTURE_FARM_ID, { fetchImpl, force: true });
+    await ensureYearPlan(FIXTURE_FARM_ID, { fetchImpl, force: true, intervalMs: 1 });
+    expect(bodies).toEqual([{}, { force: true }, { force: true }]);
   });
   it("stops polling when the farm changes or the view unmounts", async () => {
     const { calls, fetchImpl } = fake([pendingReview]);

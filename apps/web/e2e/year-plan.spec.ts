@@ -30,7 +30,7 @@ async function mock(page: Page, opts: { script?: YearPlanReview[]; missing?: boo
   let script = [...(opts.script ?? [occupiedReview])];
   let last = script[0]!;
   let workspace = structuredClone(workspaceBefore);
-  const calls = { gets: 0, posts: 0, rescores: [] as any[], applies: [] as any[], trends: [] as string[] };
+  const calls = { gets: 0, posts: 0, postBodies: [] as unknown[], rescores: [] as any[], applies: [] as any[], trends: [] as string[] };
   const nextReview = () => {
     last = script.length ? script.shift()! : last;
     return last;
@@ -41,6 +41,7 @@ async function mock(page: Page, opts: { script?: YearPlanReview[]; missing?: boo
     const url = new URL(route.request().url());
     const path = url.pathname;
     const method = route.request().method();
+    if (method === "POST" && path.endsWith("/year-plan")) calls.postBodies.push(route.request().postDataJSON());
     if (path.endsWith("/command-center")) return; // left pending: the Year plan tab does not depend on it
     if (opts.missing && (path.includes("/year-plan") || path === "/api/v1/price-trend"))
       return route.fulfill({ status: 404, json: notFound });
@@ -195,11 +196,14 @@ test("model unavailable shows the calculated plans with a chip", async ({ page }
 });
 
 test("without the backend the view explains itself and saved seasons still render", async ({ page }) => {
-  await mock(page, { missing: true });
+  const calls = await mock(page, { missing: true });
   await page.goto("/planner");
   await expect(page.getByText("Year plans are not available here yet")).toBeVisible();
   await expect(page.getByRole("heading", { name: "Saved seasons" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Try again" })).toBeVisible();
+  expect(calls.postBodies).toEqual([{}]); // the first ask is a plain ensure
+  await page.getByRole("button", { name: "Try again" }).click();
+  await expect.poll(() => calls.postBodies).toEqual([{}, { force: true }]); // Try again replaces a finished plan at once
 });
 
 for (const theme of ["light", "dark"] as const) {

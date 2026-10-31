@@ -38,6 +38,17 @@ describe('year-plan routes (registered)', () => {
     expect(await jobs(f.id)).toBe(0);
   });
 
+  it('POST accepts {} and {"force":true} and rejects any other body', async () => {
+    const f = await farm();
+    const url = `/api/v1/farms/${f.id}/year-plan`;
+    const plain = YearPlanReview.parse((await a.call('POST', url, { payload: {} })).json().data);
+    const forced = await a.call('POST', url, { payload: { force: true } });
+    expect(forced.statusCode, forced.body).toBe(200);
+    expect(YearPlanReview.parse(forced.json().data).reviewId).toBe(plain.reviewId); // the first plan is still being built
+    expect((await a.call('POST', url, { payload: { force: 'yes' } })).statusCode).toBe(400);
+    expect((await a.call('POST', url, { payload: { force: true, extra: 1 } })).statusCode).toBe(400);
+  });
+
   it('POST pending -> worker -> three options; rescore ":edit"; apply ":edit" idempotent; foreign 404; stale 409', async () => {
     const f = await farm();
     const review = await ready(f.id);

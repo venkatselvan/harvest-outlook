@@ -83,6 +83,11 @@ interface Row {
   status: YearPlanReview['status']; job_id: string | null; attempt: number; session_id: string | null; updated_at: Date; created_at: Date;
 }
 
+/** Result summaries written when the farm inputs changed under a plan; a retry cannot help them, so ensure restarts at once. */
+export const INPUTS_CHANGED_BEFORE_START = 'Farm inputs changed before this plan began.';
+export const INPUTS_CHANGED_WHILE_BUILDING = 'Farm inputs changed while the plan was being built.';
+const isContextMismatch = (r: Row): boolean => r.status === 'error' && [INPUTS_CHANGED_BEFORE_START, INPUTS_CHANGED_WHILE_BUILDING].some((s) => r.result.summary.startsWith(s));
+
 export const todayIst = (d: Date): string => new Date(d.getTime() + 5.5 * 3600_000).toISOString().slice(0, 10);
 const nowOf = (deps: YearPlanDeps) => (deps.now ?? (() => new Date()))();
 const fileHashes = new Map<string, string>();
@@ -148,17 +153,28 @@ export async function readYearPlan(deps: YearPlanDeps, ownerId: string, farmId: 
   return row ? view(deps, row, c) : blank(c);
 }
 
-/** Same hash -> the existing review; otherwise a pending review and one job (max_attempts 1). Retry only after 15 minutes, at most 3 attempts. */
-export async function ensureYearPlan(deps: YearPlanDeps, auth: { ownerId: string; sessionId: string | null }, farmId: string): Promise<YearPlanReview> {
+/**
+ * Same hash -> the existing review; otherwise a pending review and one job (max_attempts 1). A provider error retries the
+ * same row only after 15 minutes, at most 3 attempts. A row that failed because the farm inputs changed under it, or any
+ * finished row when `force` is set (Refresh, Try again), is archived and replaced by a fresh review at once; a plan that
+ * is still being built is never replaced.
+ */
+export async function ensureYearPlan(deps: YearPlanDeps, auth: { ownerId: string; sessionId: string | null }, farmId: string, opts: { force?: boolean } = {}): Promise<YearPlanReview> {
   const c = await yearPlanContext(deps, auth.ownerId, farmId, todayIst(nowOf(deps)));
   const mode = deps.config.RUNTIME_MODE;
   const id = await withTransaction(deps.pool, async (tx) => {
     const owned = await tx.query('SELECT id FROM farms WHERE id=$1 AND owner_id=$2 AND deleted_at IS NULL FOR UPDATE', [farmId, auth.ownerId]);
     if (!owned.rowCount) throw notFound('Farm');
-    const existing = (await tx.query<Row>('SELECT * FROM farm_year_plans WHERE farm_id=$1 AND mode=$2 AND context_hash=$3 AND archived_at IS NULL FOR UPDATE', [farmId, mode, c.hash])).rows[0];
+    let existing: Row | undefined = (await tx.query<Row>('SELECT * FROM farm_year_plans WHERE farm_id=$1 AND mode=$2 AND context_hash=$3 AND archived_at IS NULL FOR UPDATE', [farmId, mode, c.hash])).rows[0];
     if (existing) {
       const jobState = existing.job_id ? (await tx.query<{ state: string }>('SELECT state FROM jobs WHERE id=$1', [existing.job_id])).rows[0]?.state : null;
       if (['pending', 'running'].includes(existing.status) && ['failed', 'cancelled', 'succeeded'].includes(jobState ?? '')) existing.status = 'error';
+      if (isContextMismatch(existing) || (opts.force === true && !['pending', 'running'].includes(existing.status))) {
+        await tx.query('UPDATE farm_year_plans SET archived_at=now() WHERE id=$1', [existing.id]);
+        existing = undefined;
+      }
+    }
+    if (existing) {
       const ended = existing.status === 'error' || (existing.status === 'partial' && existing.result.retryAfter !== null);
       if (!(ended && existing.attempt < 3 && Date.now() - existing.updated_at.getTime() > 15 * 60_000)) return existing.id;
       const q = await enqueue(tx, JOB_TYPE, { reviewId: existing.id, farmId, sessionId: auth.sessionId }, auth.ownerId, `yearplan:${existing.id}:${existing.attempt + 1}`);
@@ -249,7 +265,7 @@ export async function generateYearPlan(deps: YearPlanDeps, reviewId: string, own
       [reviewId, ownerId, result.status, JSON.stringify(YearPlanReview.parse(result)), JSON.stringify(stored)]);
     return { status: result.status, reviewId };
   };
-  if (c.hash !== row.context_hash) { result.stale = true; result.summary = 'Farm inputs changed before this plan began. Ask for a new plan.'; return finish(); }
+  if (c.hash !== row.context_hash) { result.stale = true; result.summary = `${INPUTS_CHANGED_BEFORE_START} Ask for a new plan.`; return finish(); }
   const claimed = await deps.pool.query("UPDATE farm_year_plans SET status='running',started_at=now() WHERE id=$1 AND owner_id=$2 AND status='pending' RETURNING id", [reviewId, ownerId]);
   if (!claimed.rowCount) return { status: 'cancelled', reason: 'already_claimed' };
   if (await isCancelled()) { result.summary = 'The plan was cancelled.'; return finish(); }
@@ -324,7 +340,7 @@ export async function generateYearPlan(deps: YearPlanDeps, reviewId: string, own
     if (!live || (!deps.config.MODEL_API_KEY && !deps.provider)) { result.limitations.push(live ? 'Meta is not configured; the plans were picked and labelled by code.' : 'Meta is not used in this runtime mode; the plans were picked and labelled by code.'); return finish(); }
     const session = row.session_id ? (await deps.pool.query('SELECT id FROM sessions WHERE id=$1 AND owner_id=$2 AND revoked_at IS NULL AND expires_at>now()', [row.session_id, ownerId])).rows[0] : null;
     if (!session || (await isCancelled())) { result.limitations.push('The requesting session expired or the request was cancelled before the model call; the plans were picked by code.'); return finish(); }
-    if ((await yearPlanContext(deps, ownerId, row.farm_id, c.asOf)).hash !== row.context_hash) { result.status = 'error'; result.stale = true; result.options = []; result.summary = 'Farm inputs changed while the plan was being built. Ask for a new plan.'; return finish(); }
+    if ((await yearPlanContext(deps, ownerId, row.farm_id, c.asOf)).hash !== row.context_hash) { result.status = 'error'; result.stale = true; result.options = []; result.summary = `${INPUTS_CHANGED_WHILE_BUILDING} Ask for a new plan.`; return finish(); }
     const sel = await selectWithMeta(deps, { reviewId, ownerId, sessionId: row.session_id, scenario: result.scenario, candidates });
     stored.meta = { failure: sel.failure, dispatched: sel.dispatched, model: sel.model, costUsd: sel.costUsd, usage: sel.usage, labelAdjusted: sel.labelAdjusted };
     if (sel.origin === 'model') {

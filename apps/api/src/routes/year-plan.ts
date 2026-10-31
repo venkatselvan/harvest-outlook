@@ -18,8 +18,8 @@ export async function yearPlanRoutes(app: FastifyInstance, deps: YearPlanDeps) {
     reply.header('cache-control', 'private, no-store');
     return envelope(req.id, deps.config.RUNTIME_MODE, await readYearPlan(deps, requireAuth(req).ownerId, req.params.id));
   });
-  r.post('/api/v1/farms/:id/year-plan', { config: { rateLimit: { max: 12, timeWindow: '1 minute' } }, schema: { tags: ['farms'], params: uuidParam, body: z.object({}).strict(), response: { 200: envelopeSchema(YearPlanReview) } } },
-    async (req) => envelope(req.id, deps.config.RUNTIME_MODE, await ensureYearPlan(deps, requireAuth(req), req.params.id)));
+  r.post('/api/v1/farms/:id/year-plan', { config: { rateLimit: { max: 12, timeWindow: '1 minute' } }, schema: { tags: ['farms'], params: uuidParam, description: 'Start (or return) the year plan for the current inputs. Body {} keeps the 15-minute provider-error cooldown; {"force":true} replaces a finished plan at once (never one still being built).', body: z.object({ force: z.boolean().optional() }).strict(), response: { 200: envelopeSchema(YearPlanReview) } } },
+    async (req) => envelope(req.id, deps.config.RUNTIME_MODE, await ensureYearPlan(deps, requireAuth(req), req.params.id, { force: req.body.force === true })));
   r.post('/api/v1/farms/:id/year-plan/rescore', { schema: { tags: ['farms'], description: `Re-score a farmer edit by code (no model call). ${EDIT_CONVENTION}`, params: uuidParam, body: RescoreYearPlan, response: { 200: envelopeSchema(YearPlanOption) } } },
     async (req) => envelope(req.id, deps.config.RUNTIME_MODE, await rescoreYearPlan(deps, requireAuth(req).ownerId, req.params.id, req.body)));
   r.post('/api/v1/farms/:id/year-plan/apply', { schema: { tags: ['farms'], description: `Append the option's seasons (the growing crop is skipped) with ids yearplan:{reviewId}:{optionId}:{slotId}; a repeated apply is a no-op. ${EDIT_CONVENTION}`, params: uuidParam, body: ApplyYearPlan, response: { 200: envelopeSchema(ApplyYearPlanResult) } } },

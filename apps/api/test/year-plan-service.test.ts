@@ -6,7 +6,7 @@ import { Budget } from '../src/services/budget';
 import { getWorkspace, putWorkspace } from '../src/services/workspace';
 import { patchFarm } from '../src/services/farms';
 import { ASSUMPTIONS, buildScenario, data, emptyInputs, priceScore, runYearPlanEngine } from '../src/services/year-plan';
-import { applyYearPlan, ensureYearPlan, generateYearPlan, readYearPlan, rescoreYearPlan, yearPlanContext, type YearPlanDeps } from '../src/services/year-plan/service';
+import { applyYearPlan, ensureYearPlan, generateYearPlan, INPUTS_CHANGED_BEFORE_START, readYearPlan, rescoreYearPlan, yearPlanContext, type YearPlanDeps } from '../src/services/year-plan/service';
 import { stageTimeline } from '../src/services/today/stage-timeline';
 import { addDays } from '../src/services/year-plan/dates';
 import { gateSelection, PLAN_LABELS, selectionCandidates } from '../src/services/year-plan/select';
@@ -156,6 +156,48 @@ describe('year-plan review service', () => {
     const again = await applyYearPlan(d, auth.ownerId, f.id, { reviewId: review.reviewId!, optionId: option.optionId, expectedWorkspaceVersion: before.version });
     expect(again.workspace.version).toBe(applied.workspace.version);
     expect(again.workspace.rotationPlans).toHaveLength(applied.workspace.rotationPlans.length);
+  });
+
+  it('ensure restarts at once after a context-mismatch error or force, keeps the 15-minute rule for provider errors, never replaces a plan being built', async () => {
+    const d = deps();
+    const state = async (id: string) => (await h.pool.query<{ archived: boolean; status: string }>('SELECT archived_at IS NOT NULL AS archived, status FROM farm_year_plans WHERE id=$1', [id])).rows[0]!;
+    const setError = (id: string, summary: string) => h.pool.query("UPDATE farm_year_plans SET status='error', result=jsonb_set(result,'{summary}',to_jsonb($2::text)) WHERE id=$1", [id, summary]);
+
+    // 1. A real mismatch written by the worker: inputs change between ensure and generate.
+    const m = await farm();
+    const first = await ensureYearPlan(d, m.auth, m.f.id);
+    await patchFarm(h.pool, m.auth.ownerId, m.f.id, { facts: { irrigation_category: { value: 'irrigated', basis: 'farmer_reported', confirmed: true } } });
+    await generateYearPlan(d, first.reviewId!, m.auth.ownerId);
+    const failed = (await h.pool.query<{ status: string; result: { summary: string } }>('SELECT status,result FROM farm_year_plans WHERE id=$1', [first.reviewId])).rows[0]!;
+    expect(failed.status).toBe('error');
+    expect(failed.result.summary.startsWith(INPUTS_CHANGED_BEFORE_START)).toBe(true);
+    // The inputs are back to what that row recorded: the row now matches the current hash and still holds the mismatch error.
+    const current = await yearPlanContext(d, m.auth.ownerId, m.f.id, '2026-11-01');
+    await h.pool.query('UPDATE farm_year_plans SET context_hash=$2 WHERE id=$1', [first.reviewId, current.hash]);
+    const second = await ensureYearPlan(d, m.auth, m.f.id);
+    expect(second.reviewId).not.toBe(first.reviewId);
+    expect(second.status).toBe('pending');
+    expect(await state(first.reviewId!)).toMatchObject({ archived: true });
+
+    // 2. A provider error inside the cooldown is not retried by a plain ensure.
+    const p = await farm();
+    const row = await ensureYearPlan(d, p.auth, p.f.id);
+    await setError(row.reviewId!, 'The year plan could not be built right now. Retry after the cooldown.');
+    const same = await ensureYearPlan(d, p.auth, p.f.id);
+    expect(same.reviewId).toBe(row.reviewId);
+    expect(same.status).toBe('error');
+    expect(await state(row.reviewId!)).toMatchObject({ archived: false, status: 'error' });
+    // ... but force replaces it immediately, and the error row is archived.
+    const forced = await ensureYearPlan(d, p.auth, p.f.id, { force: true });
+    expect(forced.reviewId).not.toBe(row.reviewId);
+    expect(forced.status).toBe('pending');
+    expect(await state(row.reviewId!)).toMatchObject({ archived: true });
+    expect(Number((await h.pool.query('SELECT count(*) FROM farm_year_plans WHERE farm_id=$1 AND archived_at IS NULL', [p.f.id])).rows[0].count)).toBe(1);
+
+    // 3. force never replaces a plan whose job is still in flight.
+    const again = await ensureYearPlan(d, p.auth, p.f.id, { force: true });
+    expect(again.reviewId).toBe(forced.reviewId);
+    expect(await state(forced.reviewId!)).toMatchObject({ archived: false, status: 'pending' });
   });
 
   it('a changed farm context makes rescore and apply 409 review_stale; other owners get 404', async () => {

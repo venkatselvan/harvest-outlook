@@ -115,7 +115,7 @@ export function YearPlanView() {
     const opts = { signal: ctrl.signal, onUpdate: show };
     try {
       if (force) {
-        show(await ensureYearPlan(id, opts));
+        show(await ensureYearPlan(id, { ...opts, force: true }));
         return;
       }
       let current: YearPlanReview | null = null;
@@ -206,7 +206,7 @@ export function YearPlanView() {
     const id = farmId();
     if (!id) return;
     setPhase({ kind: "loading" });
-    void load(id, false);
+    void load(id, true);
   }
 
   const options = () => review()?.options ?? [];
