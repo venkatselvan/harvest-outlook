@@ -5,14 +5,16 @@
   "scope": {
     "targets": ["IN-KA-hassan", "IN-TN-coimbatore"],
     "hassanZoneNote": "ICAR-CRIDA Hassan plan (p1) places Hassan mainly in the Southern Transition Zone (KA-7), with taluk blocks in Zone-4 (Central Dry), Zone-6 (Southern Dry) and Zone-9 (Hilly). The brief calls Hassan 'southern dry zone'; only the Zone-6 portion is southern dry. Neighbouring Southern Dry Zone district plans (Mysore, Mandya, Chamarajanagar) are recorded as region IN-KA with sourceDistrict, never as IN-KA-hassan.",
-    "coimbatoreZoneNote": "ICAR-CRIDA Coimbatore plan (p1): Western Zone (TN-3) and High Altitude and Hilly Zone (TN-7). TNAU 'Western Zone' rows naming Coimbatore are recorded as IN-TN-coimbatore; statewide TNAU rows are IN-TN."
+    "coimbatoreZoneNote": "ICAR-CRIDA Coimbatore plan (p1): Western Zone (TN-3) and High Altitude and Hilly Zone (TN-7). TNAU 'Western Zone' rows naming Coimbatore are recorded as IN-TN-coimbatore; statewide TNAU rows are IN-TN.",
+    "regionNote": "Pass 2 adds region IN-west-coast (with candidateFor IN-KA and reviewStatus pending_user_decision) for the ginger West Coast planting rows. It is not counted as a KA window."
   },
   "methods": {
-    "weekToDate": "CRIDA 'Nth week' of a month converted as 1st=01-07, 2nd=08-14, 3rd=15-21, 4th=22-month end; '1st FN' (fortnight)=01-15; a month-only bound uses the 1st or last day of the month. Conversion is arithmetic, not a source value.",
+    "weekToDate": "CRIDA 'Nth week' of a month converted as 1st=01-07, 2nd=08-14, 3rd=15-21, 4th=22-month end; '1st FN' (fortnight)=01-15; a month-only bound uses the 1st or last day of the month. Conversion is arithmetic, not a source value. Pass 2: '2nd fortnight' = 16-month end.",
     "seasonLabel": "Source season label kept where the source gives one (CRIDA Kharif/Rabi/Summer rows). Otherwise assigned from the start month: Feb-Apr summer, May-Aug kharif, Sep-Jan rabi. TN pattam names are kept in notes.",
     "rotationRoleRule": "Legumes with a cited BNF statement = nitrogen_fixer. Others derived from a cited per-hectare N uptake/removal at the source's stated yield or the cited recommended N dose: >=120 kg N/ha heavy_feeder, 60-119 moderate_feeder, <60 light_feeder. This threshold rule is a project analytic convention (rule v1), not a published classification; role is null when no cited N figure exists.",
     "stages": "Day 0 = sowing or planting (FAO-56 notes the initial stage of transplanted crops starts at transplanting). FAO stage splits (Kc initial/development/mid/late) are used only where FAO publishes a row; the crop-specific source is used where one exists. FAO rows are not KA/TN cultivar phenology.",
-    "dataCompleteness": "Scored fields: family, productIds, rotationRole, nutrientUptake, waterNeedMm, rainfedSuitable, durationDays, stages, sowingWindows (any KA or TN), predecessors/successors (one field), avoidAfter, seasonalRisks; plus nitrogenCreditKgPerHa for legumes (13 fields) else 12. A field counts only if it carries a cited source. Family is counted from standard taxonomy with the botanical name taken from repo crop-profiles; not a retrieved document."
+    "dataCompleteness": "Scored fields: family, productIds, rotationRole, nutrientUptake, waterNeedMm, rainfedSuitable, durationDays, stages, sowingWindows (any KA or TN), predecessors/successors (one field), avoidAfter, seasonalRisks; plus nitrogenCreditKgPerHa for legumes (13 fields) else 12. A field counts only if it carries a cited source. Family is counted from standard taxonomy with the botanical name taken from repo crop-profiles; not a retrieved document. Pass 2 (2026-11-01): all 28 crops recomputed with a strict rule: a list field counts only when non-empty, rainfedSuitable only when present, sowingWindows only for an IN-KA* or IN-TN* row. The first pass had over-counted one field for nine crops. Each record now lists its missing fields.",
+    "nitrogenCredit": "Pass 2: crop-specific value preferred over the FAO generic 40-50 kg/ha. Specificity labels: crop_specific_state_university (UAS/TNAU recommendation naming the successor), crop_specific_india_review (Indian review quoting Ghosh et al. 2007; successor not named), generic_preceding_legume (FAO). The generic value is kept in genericFallback."
   },
   "sourceCatalog": [
     {"id": "CRIDA-HAS", "url": "https://www.icar-crida.res.in/CP-2012/statewiseplans/Karnataka%20(Pdf)/GKVK,%20Bangalore/KA28-Hassan%20%2004.10.2011.pdf", "title": "Agriculture Contingency Plan for District: Hassan (2011-10-04)", "publisher": "ICAR-CRIDA / UAS Bangalore (GKVK)", "retrievedAt": "2026-10-30", "sha256": "8e1d6636773a5714c3110a7908815baf0e6dc2736ec77bf96dda5ea8322ddd6a", "accessNote": "Repo copy data/raw/crida/KA28-Hassan-2011-10-04.pdf; table 1.12 verified visually from rendered page 9."},
@@ -57,7 +59,19 @@
     {"id": "TNAU-SUGARCANE", "url": "https://agritech.tnau.ac.in/agriculture/sugarcrops_sugarcane.html", "title": "Sugarcane", "publisher": "TNAU Agritech Portal", "retrievedAt": "2026-11-01"},
     {"id": "TNAU-CORIANDER", "url": "https://agritech.tnau.ac.in/horticulture/horti_spice%20crops_corinader.html", "title": "Coriander", "publisher": "TNAU Agritech Portal", "retrievedAt": "2026-11-01"},
     {"id": "TNAU-ORG-ROT", "url": "https://agritech.tnau.ac.in/org_farm/orgfarm_crop_rotation.html", "title": "Organic Farming: Organic Inputs and Techniques, Crop Rotation", "publisher": "TNAU Agritech Portal", "retrievedAt": "2026-11-01", "accessNote": "Read via page fetch summary; principles and example sequences quoted by the fetch tool."},
-    {"id": "ICAR-GOA-GIN", "url": "https://ccari.res.in/dss/ginger.html", "title": "Ginger decision support (Goa)", "publisher": "ICAR-CCARI", "retrievedAt": "2026-10-31", "accessNote": "Reused from focused-crop-care.json."}
+    {"id": "ICAR-GOA-GIN", "url": "https://ccari.res.in/dss/ginger.html", "title": "Ginger decision support (Goa)", "publisher": "ICAR-CCARI", "retrievedAt": "2026-10-31", "accessNote": "Reused from focused-crop-care.json."},
+    {"id": "TNAU-GREENGRAM", "url": "https://agritech.tnau.ac.in/agriculture/pulses_greengram.html", "title": "Crop Production :: Pulses :: Greengram", "publisher": "TNAU Agritech Portal", "retrievedAt": "2026-11-01", "sha256": "419399812abb268bc682d3e1feac66090d37b6f64de946623e67d4818957517e", "accessNote": "Fetched with curl; season table and variety description tables read from HTML text. Replaces the 404 URL pattern agri_seasonandvarieties_greengram.html."},
+    {"id": "TNAU-BLACKGRAM", "url": "https://agritech.tnau.ac.in/agriculture/pulses_blackgram.html", "title": "Crop Production :: Pulses :: Blackgram", "publisher": "TNAU Agritech Portal", "retrievedAt": "2026-11-01", "sha256": "10445973ec3f5047ffefa9d5b7e91b670198eef99826c89a088230f18497f393", "accessNote": "Fetched with curl; season table and variety description tables read from HTML text."},
+    {"id": "ARCC-R2165", "url": "https://arccjournals.com/journal/agricultural-reviews/R-2165", "title": "Agricultural Reviews article R-2165 (DOI 10.18805/ag.R-2165); citing review, title not captured", "publisher": "Agricultural Research Communication Centre (Agricultural Reviews)", "retrievedAt": "2026-11-01", "accessNote": "Secondary: quotes Ghosh, P.K., Bandyopadhyay, K.K., Wanjari, R.H., Manna, M.C., Misra, A.K., Mohanty, M., Subba Rao, A. (2007) Legume effect for enhancing productivity and nutrient use-efficiency in major cropping systems: an Indian perspective: a review. J. Sustainable Agriculture 30(1): 59-86 (ICAR-IISS authors). Primary review not retrieved. Sentence verified in fetched HTML."},
+    {"id": "UASB-TECH", "url": "https://www.uasbangalore.edu.in/wp-content/uploads/2026/08/technologies-developed-2000-2025.pdf", "title": "Agro-Technologies Developed by UASB (2000-2025)", "publisher": "University of Agricultural Sciences, Bangalore", "retrievedAt": "2026-11-01", "sha256": "607e6ae34d375f8450e4560c5c38d0eabff7317f965c7a23c9a4f445c05f83f3", "accessNote": "Compendium of released recommendations; one-line entries with year and zone, no trial tables."},
+    {"id": "CRIDA-TUM", "url": "https://icar-crida.res.in/CP/Karnataka/GKVK,%20Bangalore/KAR%2020-%20Tumkur%2031.05.2011.pdf", "title": "Agriculture Contingency Plan for District: Tumkur (2011-05-31)", "publisher": "ICAR-CRIDA / UAS Bangalore (GKVK)", "retrievedAt": "2026-11-01", "sha256": "2092bf09d4c499db0e475bc8a966d7a051bf84ba379e981d2862d017d31b6d93", "accessNote": "Table 1.12 verified visually from rendered page 6. Tumkur borders Hassan to the east (Central, Eastern and Southern Dry zones); stored as IN-KA with sourceDistrict."},
+    {"id": "TNAU-GN-SEASON", "url": "https://agritech.tnau.ac.in/agriculture/Crop-improvement%20-1.html", "title": "Groundnut: Season and varieties (Crop improvement 1)", "publisher": "TNAU Agritech Portal", "retrievedAt": "2026-11-01", "sha256": "d85a582a95330d94aae3e1b360a79fc3671ca5a344c78ff6dc2eb85e264f9b17", "accessNote": "Groundnut seasons of Tamil Nadu and zone-wise season/variety table."},
+    {"id": "TNAU-GN-CO7", "url": "https://agritech.tnau.ac.in/agriculture/grounnut%20co7.html", "title": "Groundnut - CO 7", "publisher": "TNAU Agritech Portal", "retrievedAt": "2026-11-01", "sha256": "c37580f651c91f267e8bc3140c96a3a9a72685095bffcee15d084638ead5ce48", "accessNote": "Variety page, updated May 2023."},
+    {"id": "TNAU-GN-TMV14", "url": "https://agritech.tnau.ac.in/agriculture/grounnut%20TMV%2014.html", "title": "Groundnut - TMV 14", "publisher": "TNAU Agritech Portal", "retrievedAt": "2026-11-01", "sha256": "7f5e69fa6f6d2f1c912fe8e6e0a4d10a4263cc7119460d0560ef30a96713472d", "accessNote": "Variety page, updated May 2023."},
+    {"id": "TNAU-GN-VRI8", "url": "https://agritech.tnau.ac.in/agriculture/grounnut%20VRI%208.html", "title": "Groundnut - VRI 8", "publisher": "TNAU Agritech Portal", "retrievedAt": "2026-11-01", "sha256": "de58051db1a2d25efb5014c93bafe8836954840eb8a9b223c74ed6e7c044f60b", "accessNote": "Variety page, updated May 2023."},
+    {"id": "TNAU-POTATO-PP", "url": "https://agritech.tnau.ac.in/horticulture/horti_vegetables_potato.html", "title": "Horticulture :: Vegetables :: Potato (plant protection section)", "publisher": "TNAU Agritech Portal", "retrievedAt": "2026-11-01", "accessNote": "Same page as TNAU-POTATO, re-fetched in pass 2 for the white grub months."},
+    {"id": "VIK-GIN", "url": "https://en.vikaspedia.in/viewcontent/agriculture/crop-production/package-of-practices/spices/ginger", "title": "Ginger package of practices", "publisher": "Vikaspedia (MeitY / C-DAC)", "retrievedAt": "2026-10-29", "sha256Prefix": "b8e84983e1a9c82c", "accessNote": "Repo copy data/raw/ginger-ka/vikaspedia_ginger.html (fetch_log id ka-vikaspedia-ginger). Text matches the IISR/Spices Board ginger package; not a Karnataka-specific source."},
+    {"id": "CRIDA-DK", "url": "https://icar-crida.res.in/CP/Karnataka/GKVK,%20Bangalore/KAR13-DAKSHINA%20KANNADA%2031.03.2011.pdf", "title": "Agriculture Contingency Plan for District: Dakshina Kannada (2011-03-31)", "publisher": "ICAR-CRIDA / UAS Bangalore (GKVK)", "retrievedAt": "2026-11-01", "sha256": "060fa1acb3ebac3ea12659f20128280456217ff8e5b89746e3d2136d1719b030", "accessNote": "Table 1.12 verified visually from rendered page 7. Coastal Zone district, rice-fallow rabi pulses; agro-climatically unlike Hassan."}
   ],
   "crops": [
     {
@@ -111,7 +125,7 @@
         {"risk": "Regular: stem borer, leaf folder, thrips, brown plant hopper, ear head bug, blast. Occasional: sheath rot, sheath blight, bacterial leaf blight, brown spot, rice tungro virus", "months": null, "region": "IN-TN-coimbatore", "source": "CRIDA-CBE p7 Table 1.13"},
         {"risk": "Sheath blight and stem borer in paddy (regular)", "months": null, "region": "IN-KA (Mysore)", "source": "CRIDA-MYS p7 Table 1.13"}
       ],
-      "dataCompleteness": {"score": 0.92, "filled": 11, "scored": 12, "note": "Missing avoidAfter; stages are FAO generic, not cultivar; risk months not stated."},
+      "dataCompleteness": {"score": 0.92, "filled": 11, "scored": 12, "missing": ["avoidAfter"], "note": "Missing avoidAfter; stages are FAO generic, not cultivar; risk months not stated."},
       "sources": [
         {"id": "CRIDA-HAS", "url": "https://www.icar-crida.res.in/CP-2012/statewiseplans/Karnataka%20(Pdf)/GKVK,%20Bangalore/KA28-Hassan%20%2004.10.2011.pdf", "title": "Agriculture Contingency Plan: Hassan", "publisher": "ICAR-CRIDA / UAS Bangalore", "retrievedAt": "2026-10-30", "locator": "p9 Table 1.12", "excerpt": "Paddy ... Kharif- Rainfed July 2nd - Aug 1st; Kharif-Irrigated July 4th - Aug 4th; Summer Dec 1st - Jan 2nd"},
         {"id": "CRIDA-HAS", "url": "https://www.icar-crida.res.in/CP-2012/statewiseplans/Karnataka%20(Pdf)/GKVK,%20Bangalore/KA28-Hassan%20%2004.10.2011.pdf", "title": "Agriculture Contingency Plan: Hassan", "publisher": "ICAR-CRIDA / UAS Bangalore", "retrievedAt": "2026-10-30", "locator": "pp13-14, 2.1.1 rainfed, Zone-6", "excerpt": "Paddy - Green gram / black gram / bengalgram / Cowpea"},
@@ -152,7 +166,7 @@
       "recommendedSuccessors": [],
       "avoidAfter": [],
       "seasonalRisks": [],
-      "dataCompleteness": {"score": 0.67, "filled": 8, "scored": 12, "note": "No KA source (wheat not in Hassan plan); no water need captured; rainfed status, avoidAfter and risks missing."},
+      "dataCompleteness": {"score": 0.67, "filled": 8, "scored": 12, "missing": ["waterNeedMm", "rainfedSuitable", "avoidAfter", "seasonalRisks"], "note": "No KA source (wheat not in Hassan plan); no water need captured; rainfed status, avoidAfter and risks missing."},
       "sources": [
         {"id": "TNAU-WHEAT", "url": "https://agritech.tnau.ac.in/agriculture/agri_seasonandvarieties_wheat.html", "title": "Season and Varieties: Wheat", "publisher": "TNAU", "retrievedAt": "2026-11-01", "locator": "I. Season and variety", "excerpt": "Ideal sowing time is 15th October to 1st week of November. Sowing must be completed within the first fortnight of November."},
         {"id": "FAO-PNFS", "url": "https://www.fao.org/4/a0443e/a0443e04.pdf", "title": "Plant nutrition for food security, Ch. 8", "publisher": "FAO", "retrievedAt": "2026-11-01", "locator": "p236 Wheat", "excerpt": "Under subtropical Indian conditions, a crop producing 4.6 tonnes grains + 6.9 tonnes straw absorbed 128 kg N, 46 kg P2O5, 219 kg K2O"},
@@ -209,7 +223,7 @@
         {"risk": "Regular: stem borer, aphid, downy mildew. Occasional: cob borer, shoot fly, leaf spot", "months": null, "region": "IN-TN-coimbatore", "source": "CRIDA-CBE p7 Table 1.13"},
         {"risk": "Stem borer in maize (contingency spray advice under drought)", "months": null, "region": "IN-KA-hassan", "source": "CRIDA-HAS pp20-22"}
       ],
-      "dataCompleteness": {"score": 0.92, "filled": 11, "scored": 12, "note": "Nutrient removal is North American data; avoidAfter not found."},
+      "dataCompleteness": {"score": 0.92, "filled": 11, "scored": 12, "missing": ["avoidAfter"], "note": "Nutrient removal is North American data; avoidAfter not found."},
       "sources": [
         {"id": "CRIDA-HAS", "url": "https://www.icar-crida.res.in/CP-2012/statewiseplans/Karnataka%20(Pdf)/GKVK,%20Bangalore/KA28-Hassan%20%2004.10.2011.pdf", "title": "Agriculture Contingency Plan: Hassan", "publisher": "ICAR-CRIDA / UAS Bangalore", "retrievedAt": "2026-10-30", "locator": "p9 Table 1.12; pp10-14", "excerpt": "Maize May 4th - June 4th (Kharif-Rainfed) ... Maize - Ragi/ pulses ... Maize - Soyabean (Late khariff)"},
         {"id": "CRIDA-CBE", "url": "https://www.icar-crida.res.in/CP-2012/statewiseplans/Tamilnadu%20(pdf)/TNAU,%20Coimbattore/TN18-%20COIMBATORE%2031.03.2011.pdf", "title": "Agriculture Contingency Plan: Coimbatore", "publisher": "ICAR-CRIDA / TNAU", "retrievedAt": "2026-11-01", "locator": "p6 Table 1.12", "excerpt": "Maize: Kharif-Irrigated July 1st FN to Aug 1st week; Rabi-Rainfed Oct 2nd week to Nov 1st week; Rabi-Irrigated Nov 2nd week - Dec 4th week"},
@@ -260,7 +274,7 @@
       "seasonalRisks": [
         {"risk": "Regular: shoot fly, stem borer, ear head bug, ergot, leaf spot, mite, rust, head mould, downy mildew. Occasional: ear head caterpillar, grain midge, charcoal rot", "months": null, "region": "IN-TN-coimbatore", "source": "CRIDA-CBE p7 Table 1.13"}
       ],
-      "dataCompleteness": {"score": 0.75, "filled": 9, "scored": 12, "note": "No nutrient removal or role source; no Hassan window (only Chamarajanagar); avoidAfter missing."},
+      "dataCompleteness": {"score": 0.75, "filled": 9, "scored": 12, "missing": ["rotationRole", "nutrientUptake", "avoidAfter"], "note": "No nutrient removal or role source; no Hassan window (only Chamarajanagar); avoidAfter missing."},
       "sources": [
         {"id": "CRIDA-CBE", "url": "https://www.icar-crida.res.in/CP-2012/statewiseplans/Tamilnadu%20(pdf)/TNAU,%20Coimbattore/TN18-%20COIMBATORE%2031.03.2011.pdf", "title": "Agriculture Contingency Plan: Coimbatore", "publisher": "ICAR-CRIDA / TNAU", "retrievedAt": "2026-11-01", "locator": "p6 Table 1.12; p7 Table 1.13", "excerpt": "Sorghum: June 1st week to July 1st week; Sep 3rd week - Oct 2nd week; January 4th week - Feb. 2nd week"},
         {"id": "TNAU-SORG", "url": "https://agritech.tnau.ac.in/agriculture/millets_sorghum.html", "title": "Sorghum season and varieties", "publisher": "TNAU", "retrievedAt": "2026-10-29", "locator": "I. Season and varieties, 5. Coimbatore/Tirupur", "excerpt": "5. Coimbatore/Tirupur | Thaipattam | January - February ... Chithiraipattam | April - May ... Adipattam | June - July"},
@@ -303,7 +317,7 @@
       "avoidAfter": [],
       "rotationNotes": ["Coimbatore contingency: pearl millet raised as intercrop with groundnut under delayed NE monsoon (CRIDA-CBE p14); intercrop, not a sequence."],
       "seasonalRisks": [],
-      "dataCompleteness": {"score": 0.58, "filled": 7, "scored": 12, "note": "No KA window or rotation; no nutrient or role source; risks not captured."},
+      "dataCompleteness": {"score": 0.58, "filled": 7, "scored": 12, "missing": ["rotationRole", "nutrientUptake", "predecessorsSuccessors", "avoidAfter", "seasonalRisks"], "note": "No KA window or rotation; no nutrient or role source; risks not captured."},
       "sources": [
         {"id": "TNAU-CUMBU", "url": "https://agritech.tnau.ac.in/agriculture/agri_seasonandvarieties_cumbu.html", "title": "Season and Varieties: Cumbu", "publisher": "TNAU", "retrievedAt": "2026-11-01", "locator": "I. Season and varieties; II. Particulars", "excerpt": "IRRIGATED i. Chithiraipattam (March-April) ii. Masipattam (January-February) RAINFED i. Adipattam (June-July) ii. Purattasipattam (September-October)"},
         {"id": "FAO-IWM3", "url": "https://www.fao.org/4/s2022e/s2022e07.htm", "title": "Irrigation Water Needs, Ch. 3", "publisher": "FAO", "retrievedAt": "2026-11-01", "locator": "Table 7; Table 14", "excerpt": "Millet 105: 15 / 25 / 40 / 25; Sorghum/Millet 450-650 mm"}
@@ -358,7 +372,7 @@
       "avoidAfter": [],
       "rotationNotes": ["Hassan terminal-drought guidance: apply only 50 percent of RDF to the second-crop ragi if fertilizer was applied to the first crop (CRIDA-HAS p24) - a residual-fertility rule usable by the planner."],
       "seasonalRisks": [],
-      "dataCompleteness": {"score": 0.83, "filled": 10, "scored": 12, "note": "No nutrient removal per tonne; water and stages are generic millet; risks not captured."},
+      "dataCompleteness": {"score": 0.75, "filled": 9, "scored": 12, "missing": ["nutrientUptake", "avoidAfter", "seasonalRisks"], "note": "No nutrient removal per tonne; water and stages are generic millet; risks not captured."},
       "sources": [
         {"id": "CRIDA-HAS", "url": "https://www.icar-crida.res.in/CP-2012/statewiseplans/Karnataka%20(Pdf)/GKVK,%20Bangalore/KA28-Hassan%20%2004.10.2011.pdf", "title": "Agriculture Contingency Plan: Hassan", "publisher": "ICAR-CRIDA / UAS Bangalore", "retrievedAt": "2026-10-30", "locator": "p9 Table 1.12; p10; p24", "excerpt": "Apply only 50 % of the RDF (25:10:10 kg NPK/ha) for the 2nd crop ragi, if fertilizer is applied to the first crop"},
         {"id": "TNAU-RAGI", "url": "https://agritech.tnau.ac.in/agriculture/millets_ragi.html", "title": "Ragi", "publisher": "TNAU", "retrievedAt": "2026-10-29", "locator": "Cropping systems: Crop rotation", "excerpt": "Rotation with legumes like green / black gram / field gram / soybean / horse gram or ground nut in southern state will minimize inorganic fertilizer application"},
@@ -372,7 +386,7 @@
       "botanicalName": "Cicer arietinum",
       "productIds": ["chickpea-whole", "chickpea-split"],
       "rotationRole": {"value": "nitrogen_fixer", "method": "cited", "basis": "FAO: grain legume benefiting from BNF with Rhizobium; inoculation benefit broadly equivalent to 20-25 kg N/ha (to the chickpea crop itself).", "sources": ["FAO-PNFS p243"]},
-      "nitrogenCreditKgPerHa": {"min": 40, "max": 50, "specificity": "generic_preceding_legume", "source": "FAO-PNFS p251", "note": "FAO potato guideline: a preceding legume can reduce the next crop's fertilizer N requirement by 40-50 kg/ha. Not chickpea-specific and not validated for KA/TN."},
+      "nitrogenCreditKgPerHa": {"min": 68, "max": 68, "specificity": "crop_specific_india_review", "successorCrop": null, "source": "ARCC-R2165 Introduction, citing Ghosh et al. 2007", "note": "Carryover N to succeeding crops, quoted in an Indian review from Ghosh et al. (2007, ICAR-IISS). Following crop not named; primary not retrieved.", "genericFallback": {"min": 40, "max": 50, "source": "FAO-PNFS p251"}},
       "nitrogenFixationKgPerHa": null,
       "nutrientUptake": {"basis": "per_ha_at_stated_yield", "yieldT": 1.5, "N": 91, "P2O5": 14, "K2O": 60, "unit": "kg/ha through total dry matter (Aulakh 1985)", "source": "FAO-PNFS p243", "note": "A large part of N presumably from BNF."},
       "waterNeedMm": null,
@@ -393,11 +407,12 @@
       "avoidAfter": [],
       "rotationNotes": ["TNAU bengalgram page: paired-row planting with coriander as intercrop; wheat intercropped in deep black cotton soil of Coimbatore and other districts (intercrops, not sequences)."],
       "seasonalRisks": [],
-      "dataCompleteness": {"score": 0.77, "filled": 10, "scored": 13, "note": "N credit is generic legume value; no water need or FAO stage row; no KA window; risks missing."},
+      "dataCompleteness": {"score": 0.69, "filled": 9, "scored": 13, "missing": ["waterNeedMm", "stages", "avoidAfter", "seasonalRisks"], "note": "N credit 68 kg/ha from Indian review (successor not named); no water need or stage row; no KA window; risks missing."},
       "sources": [
         {"id": "TNAU-BENGAL", "url": "https://agritech.tnau.ac.in/agriculture/agri_seasonandvarieties_bengalgram.html", "title": "Season and Varieties: Bengalgram", "publisher": "TNAU", "retrievedAt": "2026-10-29", "locator": "I. Season and varieties; II. Description", "excerpt": "November (Winter season) Rainfed ... Erode, Coimbatore ... CO 4 ... Duration (days) 85"},
         {"id": "FAO-PNFS", "url": "https://www.fao.org/4/a0443e/a0443e04.pdf", "title": "Plant nutrition for food security, Ch. 8", "publisher": "FAO", "retrievedAt": "2026-11-01", "locator": "p243 Chickpea; p251 Potato", "excerpt": "A preceding legume or another crop with high residual effects, or an application of organic manure, can reduce fertilizer N requirements by 40-50 kg/ha."},
-        {"id": "CRIDA-HAS", "url": "https://www.icar-crida.res.in/CP-2012/statewiseplans/Karnataka%20(Pdf)/GKVK,%20Bangalore/KA28-Hassan%20%2004.10.2011.pdf", "title": "Agriculture Contingency Plan: Hassan", "publisher": "ICAR-CRIDA / UAS Bangalore", "retrievedAt": "2026-10-30", "locator": "pp13-14", "excerpt": "Paddy - Green gram / black gram / bengalgram / Cowpea"}
+        {"id": "CRIDA-HAS", "url": "https://www.icar-crida.res.in/CP-2012/statewiseplans/Karnataka%20(Pdf)/GKVK,%20Bangalore/KA28-Hassan%20%2004.10.2011.pdf", "title": "Agriculture Contingency Plan: Hassan", "publisher": "ICAR-CRIDA / UAS Bangalore", "retrievedAt": "2026-10-30", "locator": "pp13-14", "excerpt": "Paddy - Green gram / black gram / bengalgram / Cowpea"},
+        {"id": "ARCC-R2165", "url": "https://arccjournals.com/journal/agricultural-reviews/R-2165", "title": "Agricultural Reviews R-2165 (citing Ghosh et al. 2007)", "publisher": "Agricultural Research Communication Centre", "retrievedAt": "2026-11-01", "locator": "Introduction", "excerpt": "The carryover effect of N for succeeding crops may be ... 68 kg/ha for chickpea, 55 kg/ha for black gram, 54 to 58 kg/ha for groundnut and 36 to 42 kg/ha for pigeon pea (Ghosh et al., 2007)"}
       ]
     },
     {
@@ -406,7 +421,7 @@
       "botanicalName": "Cajanus cajan",
       "productIds": ["pigeon-pea-whole", "pigeon-pea-split"],
       "rotationRole": {"value": "nitrogen_fixer", "method": "cited", "basis": "FAO: grain legume; significant part of N presumably from BNF; inoculation benefit 20-25 kg N/ha.", "sources": ["FAO-PNFS p244"]},
-      "nitrogenCreditKgPerHa": {"min": 40, "max": 50, "specificity": "generic_preceding_legume", "source": "FAO-PNFS p251", "note": "Generic preceding-legume value; Hassan advises no second crop after redgram/castor intercrop (CRIDA-HAS p25), so a credit applies only to the following season."},
+      "nitrogenCreditKgPerHa": {"min": 36, "max": 42, "specificity": "crop_specific_india_review", "successorCrop": null, "source": "ARCC-R2165 Introduction, citing Ghosh et al. 2007", "note": "Carryover N to succeeding crops, quoted in an Indian review from Ghosh et al. (2007, ICAR-IISS). Following crop not named; primary not retrieved. Hassan advises no second crop after redgram intercrop (CRIDA-HAS p25), so the credit applies to the next season.", "genericFallback": {"min": 40, "max": 50, "source": "FAO-PNFS p251"}},
       "nitrogenFixationKgPerHa": null,
       "nutrientUptake": {"basis": "per_ha_at_stated_yield", "yieldT": 1.2, "N": 85, "P2O5": 18, "K2O": 75, "unit": "kg/ha through total dry matter (Aulakh 1985)", "source": "FAO-PNFS p244"},
       "waterNeedMm": null,
@@ -421,7 +436,9 @@
       "stages": [],
       "sowingWindows": [
         {"region": "IN-TN-coimbatore", "season": "kharif", "from": "05-01", "to": "06-30", "condition": "any", "source": "TNAU-REDGRAM Season", "note": "Vaigasi Pattam; Coimbatore listed; Co (Rg) 7"},
-        {"region": "IN-TN-coimbatore", "season": "rabi", "from": "09-01", "to": "10-31", "condition": "any", "source": "TNAU-REDGRAM Season", "note": "Purattasipattam; Coimbatore listed"}
+        {"region": "IN-TN-coimbatore", "season": "rabi", "from": "09-01", "to": "10-31", "condition": "any", "source": "TNAU-REDGRAM Season", "note": "Purattasipattam; Coimbatore listed"},
+        {"region": "IN-KA", "sourceDistrict": "Tumkur", "season": "kharif", "from": "05-16", "to": "07-15", "condition": "rainfed", "source": "CRIDA-TUM p6 Table 1.12", "note": "2nd fortnight of May to 1st fortnight of July"},
+        {"region": "IN-KA", "sourceDistrict": "Tumkur", "season": "kharif", "from": "05-16", "to": "07-31", "condition": "irrigated", "source": "CRIDA-TUM p6 Table 1.12", "note": "2nd fortnight of May to 2nd fortnight of July"}
       ],
       "recommendedPredecessors": [],
       "recommendedSuccessors": [],
@@ -430,11 +447,13 @@
       "seasonalRisks": [
         {"risk": "Pod borer on redgram (spray advice when incidence starts)", "months": null, "region": "IN-KA-hassan", "source": "CRIDA-HAS pp20-25"}
       ],
-      "dataCompleteness": {"score": 0.69, "filled": 9, "scored": 13, "note": "No sequence (only intercrop) rotation; no water need or stage row; no KA window; N credit generic."},
+      "dataCompleteness": {"score": 0.69, "filled": 9, "scored": 13, "missing": ["waterNeedMm", "stages", "predecessorsSuccessors", "avoidAfter"], "note": "KA window from neighbouring Tumkur plan (not Hassan); N credit 36-42 kg/ha from Indian review; no water need or stage row; only intercrop rotation evidence."},
       "sources": [
         {"id": "TNAU-REDGRAM", "url": "https://agritech.tnau.ac.in/agriculture/agri_seasonandvarieties_redgram.html", "title": "Season and Varieties: Redgram", "publisher": "TNAU", "retrievedAt": "2026-10-29", "locator": "I. Season; II. Description", "excerpt": "Vaigasi Pattam (May-June) | Krishnagiri, Dharmapuri, Salem, Erode, Coimbatore ... Purattasipattam (September - October)"},
         {"id": "FAO-PNFS", "url": "https://www.fao.org/4/a0443e/a0443e04.pdf", "title": "Plant nutrition for food security, Ch. 8", "publisher": "FAO", "retrievedAt": "2026-11-01", "locator": "p244 Pigeon pea", "excerpt": "A crop producing 1.2 tonnes of grain ... N 85, P2O5 18, K2O 75 ... A significant part of this is presumably provided by BNF."},
-        {"id": "CRIDA-HAS", "url": "https://www.icar-crida.res.in/CP-2012/statewiseplans/Karnataka%20(Pdf)/GKVK,%20Bangalore/KA28-Hassan%20%2004.10.2011.pdf", "title": "Agriculture Contingency Plan: Hassan", "publisher": "ICAR-CRIDA / UAS Bangalore", "retrievedAt": "2026-10-30", "locator": "p25 terminal drought", "excerpt": "Only intercrop (redgram or castor) Don't plan for second crop in redgram/castor"}
+        {"id": "CRIDA-HAS", "url": "https://www.icar-crida.res.in/CP-2012/statewiseplans/Karnataka%20(Pdf)/GKVK,%20Bangalore/KA28-Hassan%20%2004.10.2011.pdf", "title": "Agriculture Contingency Plan: Hassan", "publisher": "ICAR-CRIDA / UAS Bangalore", "retrievedAt": "2026-10-30", "locator": "p25 terminal drought", "excerpt": "Only intercrop (redgram or castor) Don't plan for second crop in redgram/castor"},
+        {"id": "ARCC-R2165", "url": "https://arccjournals.com/journal/agricultural-reviews/R-2165", "title": "Agricultural Reviews R-2165 (citing Ghosh et al. 2007)", "publisher": "Agricultural Research Communication Centre", "retrievedAt": "2026-11-01", "locator": "Introduction", "excerpt": "The carryover effect of N for succeeding crops may be ... 68 kg/ha for chickpea, 55 kg/ha for black gram, 54 to 58 kg/ha for groundnut and 36 to 42 kg/ha for pigeon pea (Ghosh et al., 2007)"},
+        {"id": "CRIDA-TUM", "url": "https://icar-crida.res.in/CP/Karnataka/GKVK,%20Bangalore/KAR%2020-%20Tumkur%2031.05.2011.pdf", "title": "Agriculture Contingency Plan: Tumkur", "publisher": "ICAR-CRIDA / UAS Bangalore", "retrievedAt": "2026-11-01", "locator": "p6 Table 1.12", "excerpt": "Redgram: Kharif-Rainfed 2nd fortnight of May to 1st fortnight of July; Kharif-Irrigated 2nd fortnight of May to 2nd fortnight of July"}
       ]
     },
     {
@@ -443,19 +462,37 @@
       "botanicalName": "Vigna radiata",
       "productIds": ["green-gram-whole", "green-gram-split"],
       "rotationRole": {"value": "nitrogen_fixer", "method": "cited", "basis": "TNAU crop rotation principles: non-leguminous crops followed by leguminous crops; green gram is the legume in TNAU example sequences.", "sources": ["TNAU-ORG-ROT"]},
-      "nitrogenCreditKgPerHa": {"min": 40, "max": 50, "specificity": "generic_preceding_legume", "source": "FAO-PNFS p251", "note": "Generic preceding-legume value; no green-gram-specific residual N source retrieved."},
+      "nitrogenCreditKgPerHa": {"min": 40, "max": 50, "specificity": "generic_preceding_legume", "source": "FAO-PNFS p251", "note": "Generic preceding-legume value retained: no green-gram-specific residual N figure from ICAR/TNAU/UAS was retrieved in this pass (ARCC-R2165 lists chickpea, black gram, groundnut and pigeon pea, not green gram)."},
       "nitrogenFixationKgPerHa": null,
       "nutrientUptake": null,
       "waterNeedMm": null,
       "rainfedSuitable": true,
       "rainfedSuitableSource": "Hassan rainfed systems (CRIDA-HAS pp11-14).",
-      "durationDays": [],
-      "stagesBasis": null,
-      "stages": [],
-      "sowingWindows": [],
+      "durationDays": [
+        {"method": "direct_sowing", "cultivar": "CO 6 (TN)", "min": 62, "max": 67, "source": "TNAU-GREENGRAM Description of varieties", "note": "50% flowering 26-30 days; listed for Adipattam and Puratasipattam."},
+        {"method": "direct_sowing", "cultivar": "Co(Gg) 7 (TN)", "min": 60, "max": 65, "source": "TNAU-GREENGRAM Description of varieties", "note": "Synchronized maturity; Adipattam."},
+        {"method": "direct_sowing", "cultivar": "VBN(Gg) 2 (TN)", "min": 65, "max": 70, "source": "TNAU-GREENGRAM Description of varieties", "note": "50% flowering 30-35 days."},
+        {"method": "direct_sowing", "cultivar": "VBN(Gg) 3 (TN)", "min": 65, "max": 75, "source": "TNAU-GREENGRAM Description of varieties", "note": "Indeterminate flowering."},
+        {"method": "direct_sowing", "cultivar": "VRM(Gg) 1 (TN)", "min": 56, "max": 67, "source": "TNAU-GREENGRAM Description of varieties"},
+        {"method": "relay_broadcast_in_rice_fallow", "cultivar": "ADT 3 (TN rice fallow)", "min": 66, "max": 66, "source": "TNAU-GREENGRAM Description of varieties", "note": "Suitable only for rice fallow and Margazhi pattam."}
+      ],
+      "stagesBasis": {"type": "TNAU_cultivar_phenology", "source": "TNAU-GREENGRAM CO 6: 50% flowering 26-30 d, duration 62-67 d", "note": "Boundaries are midpoints of the published ranges rounded half up (28, 65); arithmetic, not source values. Not FAO Kc periods."},
+      "stages": [
+        {"id": "vegetative", "name": "Sowing to 50% flowering", "startDay": 0, "endDay": 28, "description": "TNAU CO 6 50% flowering 26-30 d"},
+        {"id": "reproductive", "name": "50% flowering to maturity", "startDay": 28, "endDay": 65, "description": "TNAU CO 6 duration 62-67 d; flowering and pod formation are critical irrigation stages (TNAU)"}
+      ],
+      "sowingWindows": [
+        {"region": "IN-TN", "season": "kharif", "from": "06-01", "to": "07-31", "condition": "any", "source": "TNAU-GREENGRAM I. Season and varieties", "note": "Adipattam (June - July); all districts except Kanyakumari and Nilgiris (Coimbatore included by exclusion, not named). Pattam label and months as printed. Season label assigned from start month (method seasonLabel)."},
+        {"region": "IN-TN-coimbatore", "season": "rabi", "from": "09-01", "to": "10-31", "condition": "any", "source": "TNAU-GREENGRAM I. Season and varieties", "note": "Puratasipattam (September - October); district list names Coimbatore and Erode."},
+        {"region": "IN-TN", "season": "rabi", "from": "12-01", "to": "01-31", "condition": "any", "source": "TNAU-GREENGRAM I. Season and varieties", "note": "Margazhi-Thai Pattam (December - January); all districts except Kanyakumari and Nilgiris."},
+        {"region": "IN-TN", "sourceDistrict": "Thanjavur, Tiruvarur, Nagapattinam, Cuddalore", "season": "rabi", "from": "01-01", "to": "02-28", "condition": "rice_fallow", "source": "TNAU-GREENGRAM I. Season and varieties", "note": "Rice fallows (January - February), ADT 3; delta districts only, not Coimbatore."},
+        {"region": "IN-TN", "sourceDistrict": "Delta and northern districts (not Coimbatore)", "season": "summer", "from": "02-01", "to": "03-31", "condition": "any", "source": "TNAU-GREENGRAM I. Season and varieties", "note": "Summer (February - March)."},
+        {"region": "IN-KA", "sourceDistrict": "Dakshina Kannada", "season": "rabi", "from": "10-01", "to": "10-31", "condition": "rainfed", "source": "CRIDA-DK p7 Table 1.12", "note": "1st to 4th week of October, Rabi-Rainfed. Coastal Zone rice-fallow pulse slot; not representative of Hassan. The only Karnataka window found."}
+      ],
       "recommendedPredecessors": [
         {"cropId": "paddy", "source": "CRIDA-HAS pp13-14; p25", "context": "'Paddy - Green gram' (Zone-6 contingency); greengram relay after hill-zone paddy"},
-        {"cropId": "sesame", "source": "TNAU-ORG-ROT", "context": "'Sesame followed by cowpea, green gram, blackgram or groundnut'"}
+        {"cropId": "sesame", "source": "TNAU-ORG-ROT", "context": "'Sesame followed by cowpea, green gram, blackgram or groundnut'"},
+        {"cropId": "paddy", "source": "TNAU-GREENGRAM Rice fallow", "context": "Relay: broadcast seed in standing paddy 5-10 days before paddy harvest (TN delta rice fallows)"}
       ],
       "recommendedSuccessors": [
         {"cropId": "paddy", "source": "CRIDA-HAS pp11-14", "context": "Zone-6 'green gram-paddy'"},
@@ -463,13 +500,20 @@
         {"cropId": "wheat", "source": "TNAU-ORG-ROT", "context": "General example"}
       ],
       "avoidAfter": [],
-      "seasonalRisks": [],
-      "dataCompleteness": {"score": 0.46, "filled": 6, "scored": 13, "note": "No KA/TN window, duration, nutrient, water or stage source captured; FAO-56 green gram row rejected (total did not match stage sum)."},
+      "seasonalRisks": [
+        {"risk": "Yellow mosaic virus and powdery mildew (TNAU lists moderate resistance to these as variety features)", "months": null, "region": "IN-TN", "source": "TNAU-GREENGRAM Description of varieties (Special features)"}
+      ],
+      "dataCompleteness": {"score": 0.77, "filled": 10, "scored": 13, "missing": ["nutrientUptake", "waterNeedMm", "avoidAfter"], "note": "TN windows and durations from TNAU; the only KA window is coastal Dakshina Kannada (rabi rice fallow), none for Hassan or the southern dry/transition zones; no nutrient uptake or water need. N credit generic FAO."},
       "sources": [
         {"id": "CRIDA-HAS", "url": "https://www.icar-crida.res.in/CP-2012/statewiseplans/Karnataka%20(Pdf)/GKVK,%20Bangalore/KA28-Hassan%20%2004.10.2011.pdf", "title": "Agriculture Contingency Plan: Hassan", "publisher": "ICAR-CRIDA / UAS Bangalore", "retrievedAt": "2026-10-30", "locator": "pp11-14 Zone-6; p25", "excerpt": "Cow pea- Groundnut, green gram-paddy, black gram-ragi, sesamum-potato, ... green gram-maize ... Greengram as a relay crop"},
         {"id": "TNAU-ORG-ROT", "url": "https://agritech.tnau.ac.in/org_farm/orgfarm_crop_rotation.html", "title": "Crop Rotation", "publisher": "TNAU", "retrievedAt": "2026-11-01", "locator": "Principles; examples", "excerpt": "Non -leguminous crops should be followed by leguminous crops and vice-versa"},
-        {"id": "FAO-PNFS", "url": "https://www.fao.org/4/a0443e/a0443e04.pdf", "title": "Plant nutrition for food security, Ch. 8", "publisher": "FAO", "retrievedAt": "2026-11-01", "locator": "p251", "excerpt": "A preceding legume ... can reduce fertilizer N requirements by 40-50 kg/ha."}
-      ]
+        {"id": "FAO-PNFS", "url": "https://www.fao.org/4/a0443e/a0443e04.pdf", "title": "Plant nutrition for food security, Ch. 8", "publisher": "FAO", "retrievedAt": "2026-11-01", "locator": "p251", "excerpt": "A preceding legume ... can reduce fertilizer N requirements by 40-50 kg/ha."},
+        {"id": "TNAU-GREENGRAM", "url": "https://agritech.tnau.ac.in/agriculture/pulses_greengram.html", "title": "Greengram", "publisher": "TNAU", "retrievedAt": "2026-11-01", "locator": "I. Season and varieties", "excerpt": "Adipattam (June - July) All districts except Kanyakumari and Nilgiris ... Puratasipattam (September - October) ... Erode, Coimbatore ... Margazhi-Thai Pattam (December - January) ... Rice fallows (January - February)"},
+        {"id": "TNAU-GREENGRAM", "url": "https://agritech.tnau.ac.in/agriculture/pulses_greengram.html", "title": "Greengram", "publisher": "TNAU", "retrievedAt": "2026-11-01", "locator": "Description of greengram varieties", "excerpt": "CO 6 ... 50% flowering (days) 26 - 30 ... Duration (days) 62 - 67"},
+        {"id": "TNAU-GREENGRAM", "url": "https://agritech.tnau.ac.in/agriculture/pulses_greengram.html", "title": "Greengram", "publisher": "TNAU", "retrievedAt": "2026-11-01", "locator": "Rice fallow; Fertilizer application", "excerpt": "broadcast the seeds in the standing crop 5 to 10 days before the harvest of the paddy crop"},
+        {"id": "CRIDA-DK", "url": "https://icar-crida.res.in/CP/Karnataka/GKVK,%20Bangalore/KAR13-DAKSHINA%20KANNADA%2031.03.2011.pdf", "title": "Agriculture Contingency Plan: Dakshina Kannada", "publisher": "ICAR-CRIDA / UAS Bangalore", "retrievedAt": "2026-11-01", "locator": "p7 Table 1.12", "excerpt": "Blackgram | Greengram ... Rabi- Rainfed: 1st week of October to 4th week of October"}
+      ],
+      "rotationNotes": ["TNAU fertilizer dose: rainfed 12.5 kg N + 25 kg P2O5 + 12.5 kg K2O + 10 kg S/ha; irrigated 25:50:25:20. This is a recommended dose, not nutrient uptake, so nutrientUptake stays null.", "Hassan CRIDA plan names Karnataka varieties China moong and PDM 84-178 for Zone-4 (CRIDA-HAS p10); no duration for them was retrieved."]
     },
     {
       "cropId": "black-gram",
@@ -477,31 +521,56 @@
       "botanicalName": "Vigna mungo",
       "productIds": ["black-gram-whole", "black-gram-split"],
       "rotationRole": {"value": "nitrogen_fixer", "method": "cited", "basis": "TNAU blackgram production pages prescribe Rhizobium seed treatment; TNAU rotation examples treat blackgram as the legume.", "sources": ["TNAU-ORG-ROT"]},
-      "nitrogenCreditKgPerHa": {"min": 40, "max": 50, "specificity": "generic_preceding_legume", "source": "FAO-PNFS p251", "note": "Generic. An ICAR KRISHI record reportedly lists about 55 kg N/ha carryover for black gram, but the host did not resolve and the value is not used."},
+      "nitrogenCreditKgPerHa": {"min": 55, "max": 55, "specificity": "crop_specific_india_review", "successorCrop": null, "source": "ARCC-R2165 Introduction, citing Ghosh et al. 2007", "note": "Carryover N to succeeding crops for black gram, as quoted in an Indian review from Ghosh et al. (2007, ICAR-IISS). Following crop not named; primary not retrieved. Previous generic FAO 40-50 kg/ha retained as fallback in genericFallback.", "genericFallback": {"min": 40, "max": 50, "source": "FAO-PNFS p251"}},
       "nitrogenFixationKgPerHa": null,
       "nutrientUptake": null,
       "waterNeedMm": null,
       "rainfedSuitable": true,
       "rainfedSuitableSource": "Hassan Zone-6 rainfed systems (CRIDA-HAS pp11-14); TNAU has a rainfed blackgram production page.",
-      "durationDays": [],
-      "stagesBasis": null,
-      "stages": [],
-      "sowingWindows": [],
+      "durationDays": [
+        {"method": "direct_sowing", "cultivar": "T 9 (named for Hassan Zone-4 in CRIDA-HAS p10)", "min": 65, "max": 70, "source": "TNAU-BLACKGRAM Description of varieties", "note": "Duration is the TNAU description of T 9, applied to the variety named in the Hassan plan; not a Karnataka trial value."},
+        {"method": "direct_sowing", "cultivar": "VBN 3 (TN)", "min": 65, "max": 70, "source": "TNAU-BLACKGRAM Description of varieties", "note": "50% flowering 35-40 days; Puratasi and Margazhi-Thai pattam."},
+        {"method": "direct_sowing", "cultivar": "VBN(Bg) 4 (TN)", "min": 75, "max": 80, "source": "TNAU-BLACKGRAM Description of varieties"},
+        {"method": "direct_sowing", "cultivar": "VBN(Bg) 5 / TNAU VBN 6 / TNAU VBN 7 (TN)", "min": 65, "max": 70, "source": "TNAU-BLACKGRAM Description of varieties"},
+        {"method": "direct_sowing", "cultivar": "ADT 5 (TN)", "min": 62, "max": 62, "source": "TNAU-BLACKGRAM Description of varieties"},
+        {"method": "relay_broadcast_in_rice_fallow", "cultivar": "ADT 3 (TN rice fallow)", "min": 70, "max": 75, "source": "TNAU-BLACKGRAM Description of varieties"}
+      ],
+      "stagesBasis": {"type": "TNAU_cultivar_phenology", "source": "TNAU-BLACKGRAM VBN 3: 50% flowering 35-40 d, maturity 65-70 d", "note": "Boundaries are midpoints of the published ranges rounded half up (38, 68); arithmetic, not source values. Not FAO Kc periods."},
+      "stages": [
+        {"id": "vegetative", "name": "Sowing to 50% flowering", "startDay": 0, "endDay": 38, "description": "TNAU VBN 3 50% flowering 35-40 d"},
+        {"id": "reproductive", "name": "50% flowering to maturity", "startDay": 38, "endDay": 68, "description": "TNAU VBN 3 maturity 65-70 d"}
+      ],
+      "sowingWindows": [
+        {"region": "IN-TN", "season": "kharif", "from": "06-01", "to": "08-31", "condition": "any", "source": "TNAU-BLACKGRAM 1. Season and varieties", "note": "Adipattam (June-August); all districts except Kanyakumari and Nilgiris (Coimbatore included by exclusion, not named)."},
+        {"region": "IN-TN-coimbatore", "season": "rabi", "from": "09-01", "to": "11-30", "condition": "any", "source": "TNAU-BLACKGRAM 1. Season and varieties", "note": "Puratasipattam (September-November); district list names Coimbatore and Erode."},
+        {"region": "IN-TN", "season": "rabi", "from": "12-01", "to": "01-31", "condition": "irrigated", "source": "TNAU-BLACKGRAM 1. Season and varieties; months from TNAU-GREENGRAM", "note": "Markazhi-Thai pattam (Winter irrigated), all districts except Kanyakumari and Nilgiris. The black gram page gives no months; December-January is the months TNAU prints for the same pattam on the green gram page."},
+        {"region": "IN-TN", "sourceDistrict": "Thanjavur, Tiruvarur, Nagapattinam, Cuddalore, Villupuram, Kanchipuram", "season": "rabi", "from": "01-01", "to": "01-31", "condition": "rice_fallow", "source": "TNAU-BLACKGRAM 1. Season and varieties", "note": "Rice fallows (January), ADT 3; not Coimbatore."},
+        {"region": "IN-KA", "sourceDistrict": "Dakshina Kannada", "season": "rabi", "from": "10-01", "to": "10-31", "condition": "rainfed", "source": "CRIDA-DK p7 Table 1.12", "note": "1st to 4th week of October, Rabi-Rainfed. Coastal Zone rice-fallow pulse slot; not representative of Hassan. The only Karnataka window found."}
+      ],
       "recommendedPredecessors": [
         {"cropId": "paddy", "source": "CRIDA-HAS pp13-14", "context": "'Paddy - ... black gram'"},
-        {"cropId": "sesame", "source": "TNAU-ORG-ROT", "context": "'Sesame followed by ... blackgram'"}
+        {"cropId": "sesame", "source": "TNAU-ORG-ROT", "context": "'Sesame followed by ... blackgram'"},
+        {"cropId": "paddy", "source": "TNAU-BLACKGRAM Rice fallow", "context": "Relay: broadcast seed in standing paddy 5-10 days before paddy harvest (TN delta rice fallows)"}
       ],
       "recommendedSuccessors": [
         {"cropId": "finger-millet", "source": "CRIDA-HAS pp11-14", "context": "Zone-6 'black gram-ragi'"}
       ],
       "avoidAfter": [],
-      "seasonalRisks": [],
-      "dataCompleteness": {"score": 0.46, "filled": 6, "scored": 13, "note": "No KA/TN window or KA/TN duration (only Assam in repo); no nutrient, water or stages."},
+      "seasonalRisks": [
+        {"risk": "Yellow mosaic virus: TNAU advises imidacloprid seed treatment for VBN 3 in Puratasi pattam", "months": [9, 10, 11], "region": "IN-TN-coimbatore", "source": "TNAU-BLACKGRAM 1. Season and varieties", "note": "Months are the Puratasipattam sowing months of the row carrying the advice, not an observed infection calendar."}
+      ],
+      "dataCompleteness": {"score": 0.77, "filled": 10, "scored": 13, "missing": ["nutrientUptake", "waterNeedMm", "avoidAfter"], "note": "TN windows and durations from TNAU; the only KA window is coastal Dakshina Kannada (rabi rice fallow), none for Hassan or the southern dry/transition zones; no nutrient uptake or water need. N credit 55 kg/ha from Indian review."},
       "sources": [
         {"id": "CRIDA-HAS", "url": "https://www.icar-crida.res.in/CP-2012/statewiseplans/Karnataka%20(Pdf)/GKVK,%20Bangalore/KA28-Hassan%20%2004.10.2011.pdf", "title": "Agriculture Contingency Plan: Hassan", "publisher": "ICAR-CRIDA / UAS Bangalore", "retrievedAt": "2026-10-30", "locator": "pp11-14", "excerpt": "Horsegram / Cow pea / black gram - Ragi ... black gram-ragi"},
         {"id": "TNAU-ORG-ROT", "url": "https://agritech.tnau.ac.in/org_farm/orgfarm_crop_rotation.html", "title": "Crop Rotation", "publisher": "TNAU", "retrievedAt": "2026-11-01", "locator": "Examples", "excerpt": "Sesame followed by cowpea, green gram, blackgram, or groundnut"},
-        {"id": "FAO-PNFS", "url": "https://www.fao.org/4/a0443e/a0443e04.pdf", "title": "Plant nutrition for food security, Ch. 8", "publisher": "FAO", "retrievedAt": "2026-11-01", "locator": "p251", "excerpt": "A preceding legume ... can reduce fertilizer N requirements by 40-50 kg/ha."}
-      ]
+        {"id": "FAO-PNFS", "url": "https://www.fao.org/4/a0443e/a0443e04.pdf", "title": "Plant nutrition for food security, Ch. 8", "publisher": "FAO", "retrievedAt": "2026-11-01", "locator": "p251", "excerpt": "A preceding legume ... can reduce fertilizer N requirements by 40-50 kg/ha."},
+        {"id": "TNAU-BLACKGRAM", "url": "https://agritech.tnau.ac.in/agriculture/pulses_blackgram.html", "title": "Blackgram", "publisher": "TNAU", "retrievedAt": "2026-11-01", "locator": "1. Season and varieties", "excerpt": "Adipattam (June-August) All districts except Kanyakumari and Nilgiris ... Puratasipattam (September-November) ... Erode, Coimbatore ... VBN 3 (To avoid Yellow Mosaic Virus treat the seeds with Imidachlorphid"},
+        {"id": "TNAU-BLACKGRAM", "url": "https://agritech.tnau.ac.in/agriculture/pulses_blackgram.html", "title": "Blackgram", "publisher": "TNAU", "retrievedAt": "2026-11-01", "locator": "Description of blackgram varieties", "excerpt": "T 9 | CO 5 | ADT 3 | VBN 1 ... Maturity duration (days) 65 - 70 | 70 - 75 | 70 - 75 | 60 - 65"},
+        {"id": "TNAU-BLACKGRAM", "url": "https://agritech.tnau.ac.in/agriculture/pulses_blackgram.html", "title": "Blackgram", "publisher": "TNAU", "retrievedAt": "2026-11-01", "locator": "Description of blackgram varieties (second table)", "excerpt": "VBN 3 ... 50% flowering (days) 35 -40 ... Maturity duration (days) 65 - 70"},
+        {"id": "ARCC-R2165", "url": "https://arccjournals.com/journal/agricultural-reviews/R-2165", "title": "Agricultural Reviews R-2165 (citing Ghosh et al. 2007)", "publisher": "Agricultural Research Communication Centre", "retrievedAt": "2026-11-01", "locator": "Introduction", "excerpt": "The carryover effect of N for succeeding crops may be ... 68 kg/ha for chickpea, 55 kg/ha for black gram, 54 to 58 kg/ha for groundnut and 36 to 42 kg/ha for pigeon pea (Ghosh et al., 2007)"},
+        {"id": "CRIDA-DK", "url": "https://icar-crida.res.in/CP/Karnataka/GKVK,%20Bangalore/KAR13-DAKSHINA%20KANNADA%2031.03.2011.pdf", "title": "Agriculture Contingency Plan: Dakshina Kannada", "publisher": "ICAR-CRIDA / UAS Bangalore", "retrievedAt": "2026-11-01", "locator": "p7 Table 1.12", "excerpt": "Blackgram | Greengram ... Rabi- Rainfed: 1st week of October to 4th week of October"}
+      ],
+      "rotationNotes": ["Chithiraipattam (summer irrigated, delta districts) is listed without months and is not encoded.", "Hassan CRIDA plan names Karnataka varieties T-9 and Rashmi for Zone-4 (CRIDA-HAS p10). No Karnataka sowing window was found."]
     },
     {
       "cropId": "lentil",
@@ -527,7 +596,7 @@
       "recommendedSuccessors": [],
       "avoidAfter": [],
       "seasonalRisks": [],
-      "dataCompleteness": {"score": 0.38, "filled": 5, "scored": 13, "note": "Lentil does not appear in Hassan or Coimbatore plans or TNAU pages read; only Assam evidence exists in repo. Not recommended for this KA/TN planner."},
+      "dataCompleteness": {"score": 0.38, "filled": 5, "scored": 13, "missing": ["nutrientUptake", "waterNeedMm", "rainfedSuitable", "durationDays", "sowingWindows", "predecessorsSuccessors", "avoidAfter", "seasonalRisks"], "note": "Lentil does not appear in Hassan or Coimbatore plans or TNAU pages read; only Assam evidence exists in repo. Not recommended for this KA/TN planner."},
       "sources": [
         {"id": "FAO-56", "url": "https://www.fao.org/4/x0490e/x0490e0b.htm", "title": "FAO-56 Table 11", "publisher": "FAO", "retrievedAt": "2026-11-01", "locator": "Table 11 Lentil", "excerpt": "Lentil 25 35 70 40 170 Oct/Nov Arid Region"},
         {"id": "FAO-PNFS", "url": "https://www.fao.org/4/a0443e/a0443e04.pdf", "title": "Plant nutrition for food security, Ch. 8", "publisher": "FAO", "retrievedAt": "2026-11-01", "locator": "p251", "excerpt": "A preceding legume ... can reduce fertilizer N requirements by 40-50 kg/ha."}
@@ -539,7 +608,7 @@
       "botanicalName": "Glycine max",
       "productIds": ["soybean-seed"],
       "rotationRole": {"value": "nitrogen_fixer", "method": "cited", "basis": "FAO: under conditions favourable for N fixation a significant part of N uptake derives from BNF; starter 20-40 kg N/ha.", "sources": ["FAO-PNFS p246-247"]},
-      "nitrogenCreditKgPerHa": {"min": 40, "max": 50, "specificity": "generic_preceding_legume", "source": "FAO-PNFS p251", "note": "Generic preceding-legume value."},
+      "nitrogenCreditKgPerHa": {"min": 25, "max": 25, "specificity": "crop_specific_state_university", "successorCrop": "sunflower", "region": "IN-KA", "source": "UASB-TECH PDF p27, 2015 entry", "note": "UAS Bangalore 2015 recommendation: kharif cowpea or soybean before rabi sunflower economizes 25 kg N/ha compared with maize grown with 50 kg N/ha. Zone not stated in the entry. Applies to a sunflower successor only.", "genericFallback": {"min": 40, "max": 50, "source": "FAO-PNFS p251"}},
       "nitrogenFixationKgPerHa": null,
       "nutrientUptake": {"basis": "per_tonne_grain", "N": 146, "P2O5": 25, "K2O": 53, "unit": "kg total plant uptake per tonne grain (IFA 1992)", "source": "FAO-PNFS p246"},
       "waterNeedMm": {"min": 450, "max": 700, "source": "FAO-IWM3 Table 14 (Soybean)"},
@@ -566,16 +635,18 @@
         {"cropId": "maize", "source": "CRIDA-HAS pp10-12", "context": "'Maize - Soyabean (Late khariff)'"}
       ],
       "recommendedSuccessors": [
-        {"cropId": "finger-millet", "source": "TNAU-RAGI Crop rotation", "context": "Legume rotation with ragi (order not specified)"}
+        {"cropId": "finger-millet", "source": "TNAU-RAGI Crop rotation", "context": "Legume rotation with ragi (order not specified)"},
+        {"cropId": "sunflower", "source": "UASB-TECH 2015 entry", "context": "Kharif legume (soybean or cowpea) then rabi sunflower; 25 kg N/ha economized"}
       ],
       "avoidAfter": [],
       "seasonalRisks": [],
-      "dataCompleteness": {"score": 0.85, "filled": 11, "scored": 13, "note": "No KA sowing window (Hassan lists soybean only as contingency); risks and avoidAfter missing."},
+      "dataCompleteness": {"score": 0.85, "filled": 11, "scored": 13, "missing": ["avoidAfter", "seasonalRisks"], "note": "No KA sowing window (Hassan lists soybean only as contingency); risks and avoidAfter missing."},
       "sources": [
         {"id": "TNAU-SOY", "url": "https://agritech.tnau.ac.in/agriculture/agri_seasonandvarieties_soybean.html", "title": "Season and Varieties: Soybean", "publisher": "TNAU", "retrievedAt": "2026-10-29", "locator": "Season and varieties", "excerpt": "Adipattam (June - July) Purattasipattam (Sep. - Oct.) Masipattam (February - March)"},
         {"id": "CRIDA-HAS", "url": "https://www.icar-crida.res.in/CP-2012/statewiseplans/Karnataka%20(Pdf)/GKVK,%20Bangalore/KA28-Hassan%20%2004.10.2011.pdf", "title": "Agriculture Contingency Plan: Hassan", "publisher": "ICAR-CRIDA / UAS Bangalore", "retrievedAt": "2026-10-30", "locator": "p10", "excerpt": "Potato - Soyabean/ Potato-Cowpea ... Soyabean; J-365, K.B-79, Moneta"},
         {"id": "FAO-PNFS", "url": "https://www.fao.org/4/a0443e/a0443e04.pdf", "title": "Plant nutrition for food security, Ch. 8", "publisher": "FAO", "retrievedAt": "2026-11-01", "locator": "p246", "excerpt": "Total nutrient uptake by the plants per tonne of grain production ... N 146, P2O5 25, K2O 53"},
-        {"id": "FAO-56", "url": "https://www.fao.org/4/x0490e/x0490e0b.htm", "title": "FAO-56 Table 11", "publisher": "FAO", "retrievedAt": "2026-11-01", "locator": "Table 11 Soybeans", "excerpt": "15 15 40 15 85 Dec Tropics"}
+        {"id": "FAO-56", "url": "https://www.fao.org/4/x0490e/x0490e0b.htm", "title": "FAO-56 Table 11", "publisher": "FAO", "retrievedAt": "2026-11-01", "locator": "Table 11 Soybeans", "excerpt": "15 15 40 15 85 Dec Tropics"},
+        {"id": "UASB-TECH", "url": "https://www.uasbangalore.edu.in/wp-content/uploads/2026/08/technologies-developed-2000-2025.pdf", "title": "Agro-Technologies Developed by UASB (2000-2025)", "publisher": "University of Agricultural Sciences, Bangalore", "retrievedAt": "2026-11-01", "locator": "2015 entry, Effect of preceding legumes on N economy in sunflower", "excerpt": "Growing of preceding leguminous crop of cowpea and soybean is found superior instead of growing maize with N @ 50 kg/ha which economizes N (25 kg/ha) ... Kharif: Legumes Rabi: Sunflower"}
       ]
     },
     {
@@ -584,13 +655,17 @@
       "botanicalName": "Arachis hypogaea",
       "productIds": ["groundnut-pod", "groundnut-kernel"],
       "rotationRole": {"value": "nitrogen_fixer", "method": "cited", "basis": "FAO: the groundnut-Rhizobium symbiosis can fix about 110-150 kg N/ha.", "sources": ["FAO-PNFS p245"]},
-      "nitrogenCreditKgPerHa": {"min": 40, "max": 50, "specificity": "generic_preceding_legume", "source": "FAO-PNFS p251", "note": "Generic preceding-legume value; fixation figure is not residual credit."},
+      "nitrogenCreditKgPerHa": {"min": 54, "max": 58, "specificity": "crop_specific_india_review", "successorCrop": null, "source": "ARCC-R2165 Introduction, citing Ghosh et al. 2007", "note": "Carryover N to succeeding crops, quoted in an Indian review from Ghosh et al. (2007, ICAR-IISS). Following crop not named; primary not retrieved.", "genericFallback": {"min": 40, "max": 50, "source": "FAO-PNFS p251"}},
       "nitrogenFixationKgPerHa": {"min": 110, "max": 150, "source": "FAO-PNFS p245", "note": "Gross fixation, mostly removed in pods/haulm; not a residual benefit."},
       "nutrientUptake": {"basis": "per_tonne_economic_produce", "N": 58.1, "P2O5": 19.6, "K2O": 30.1, "unit": "kg removed per tonne, north Indian conditions (Aulakh 1985)", "source": "FAO-PNFS p245"},
       "waterNeedMm": {"min": 500, "max": 700, "source": "FAO-IWM3 Table 14 (Peanut)"},
       "rainfedSuitable": true,
       "rainfedSuitableSource": "CRIDA-CBE p6 Kharif-Rainfed groundnut window.",
-      "durationDays": [],
+      "durationDays": [
+        {"method": "direct_sowing", "cultivar": "CO 7 (TN, Spanish bunch)", "min": 85, "max": 90, "source": "TNAU-GN-CO7 Duration", "note": "Listed for Western Zone Coimbatore (TNAU-GN-SEASON)."},
+        {"method": "direct_sowing", "cultivar": "TMV 14 (TN)", "min": 105, "max": 110, "source": "TNAU-GN-TMV14 Duration"},
+        {"method": "direct_sowing", "cultivar": "VRI 8 (TN)", "min": 105, "max": 110, "source": "TNAU-GN-VRI8 Duration"}
+      ],
       "stagesBasis": {"type": "FAO_Kc_split", "source": "FAO-IWM3 Table 7 Peanut/Groundnut 130 days"},
       "stages": [
         {"id": "initial", "name": "Initial", "startDay": 0, "endDay": 25, "description": "FAO initial"},
@@ -603,7 +678,11 @@
         {"region": "IN-TN-coimbatore", "season": "kharif", "from": "05-01", "to": "06-30", "condition": "irrigated", "source": "CRIDA-CBE p6 Table 1.12", "note": "May - June"},
         {"region": "IN-TN-coimbatore", "season": "rabi", "from": "12-08", "to": "01-07", "condition": "irrigated", "source": "CRIDA-CBE p6 Table 1.12"},
         {"region": "IN-KA", "sourceDistrict": "Chamarajanagar", "season": "kharif", "from": "07-22", "to": "08-07", "condition": "rainfed", "source": "CRIDA-CHN p7 Table 1.12"},
-        {"region": "IN-KA", "sourceDistrict": "Chamarajanagar", "season": "summer", "from": "01-01", "to": "02-07", "condition": "irrigated", "source": "CRIDA-CHN p7 Table 1.12"}
+        {"region": "IN-KA", "sourceDistrict": "Chamarajanagar", "season": "summer", "from": "01-01", "to": "02-07", "condition": "irrigated", "source": "CRIDA-CHN p7 Table 1.12"},
+        {"region": "IN-TN-coimbatore", "season": "summer", "from": "04-01", "to": "05-31", "condition": "irrigated", "source": "TNAU-GN-SEASON Western Zone (Irrigated)", "note": "Chithiraipattam April-May; Coimbatore/Tiruppur/Kallakurichi"},
+        {"region": "IN-TN-coimbatore", "season": "kharif", "from": "06-01", "to": "07-31", "condition": "rainfed", "source": "TNAU-GN-SEASON Western Zone (Rainfed)", "note": "Anippattam June-July; Coimbatore/Tiruppur/Erode/Theni/Dindigul"},
+        {"region": "IN-KA", "sourceDistrict": "Tumkur", "season": "kharif", "from": "06-01", "to": "07-31", "condition": "rainfed_or_irrigated", "source": "CRIDA-TUM p6 Table 1.12", "note": "June 1st week to July end (same for rainfed and irrigated)"},
+        {"region": "IN-KA", "sourceDistrict": "Tumkur", "season": "rabi", "from": "12-08", "to": "01-14", "condition": "irrigated", "source": "CRIDA-TUM p6 Table 1.12", "note": "December 2nd week to January 2nd week"}
       ],
       "recommendedPredecessors": [
         {"cropId": "sesame", "source": "CRIDA-HAS pp11-12; TNAU-ORG-ROT", "context": "'Sesamum-Groundnut' (Hassan contingency); 'Sesame followed by ... groundnut'"}
@@ -616,12 +695,18 @@
       "seasonalRisks": [
         {"risk": "Regular: leaf miner, thrips, pod borer, root rot, tikka leaf spot, rust. Occasional: red hairy caterpillar, millipede", "months": null, "region": "IN-TN-coimbatore", "source": "CRIDA-CBE p7 Table 1.13"}
       ],
-      "dataCompleteness": {"score": 0.92, "filled": 12, "scored": 13, "note": "No KA/TN cultivar duration captured (TNAU groundnut season page not retrieved); no Hassan window."},
+      "dataCompleteness": {"score": 0.92, "filled": 12, "scored": 13, "missing": ["avoidAfter"], "note": "TN cultivar durations and Coimbatore windows from TNAU; KA windows from Chamarajanagar and Tumkur plans, none from Hassan; avoidAfter missing."},
       "sources": [
         {"id": "CRIDA-CBE", "url": "https://www.icar-crida.res.in/CP-2012/statewiseplans/Tamilnadu%20(pdf)/TNAU,%20Coimbattore/TN18-%20COIMBATORE%2031.03.2011.pdf", "title": "Agriculture Contingency Plan: Coimbatore", "publisher": "ICAR-CRIDA / TNAU", "retrievedAt": "2026-11-01", "locator": "p6 Table 1.12; p7 Table 1.13", "excerpt": "Groundnut: May 2nd week - June 2nd week; May - June; Dec 2nd week - Jan1st week"},
         {"id": "FAO-PNFS", "url": "https://www.fao.org/4/a0443e/a0443e04.pdf", "title": "Plant nutrition for food security, Ch. 8", "publisher": "FAO", "retrievedAt": "2026-11-01", "locator": "p245", "excerpt": "Nutrient removal per tonne of economic produce under north Indian conditions ... N 58.1, P2O5 19.6, K2O 30.1 ... can fix about 110-150 kg N/ha"},
         {"id": "CRIDA-CHN", "url": "https://www.icar-crida.res.in/CP-2012/statewiseplans/Karnataka%20(Pdf)/GKVK,%20Bangalore/KAR18-CHAMARAJANAGAR%2031.03.2011.pdf", "title": "Agriculture Contingency Plan: Chamarajanagar", "publisher": "ICAR-CRIDA / UAS Bangalore", "retrievedAt": "2026-11-01", "locator": "p7 Table 1.12", "excerpt": "Groundnut: 4th week July-1st week August; 1st January -1st Week February"},
-        {"id": "FAO-IWM3", "url": "https://www.fao.org/4/s2022e/s2022e07.htm", "title": "Irrigation Water Needs, Ch. 3", "publisher": "FAO", "retrievedAt": "2026-11-01", "locator": "Table 7; Table 14", "excerpt": "Peanut/Groundnut 130: 25 / 35 / 45 / 25; Peanut 500-700 mm"}
+        {"id": "FAO-IWM3", "url": "https://www.fao.org/4/s2022e/s2022e07.htm", "title": "Irrigation Water Needs, Ch. 3", "publisher": "FAO", "retrievedAt": "2026-11-01", "locator": "Table 7; Table 14", "excerpt": "Peanut/Groundnut 130: 25 / 35 / 45 / 25; Peanut 500-700 mm"},
+        {"id": "ARCC-R2165", "url": "https://arccjournals.com/journal/agricultural-reviews/R-2165", "title": "Agricultural Reviews R-2165 (citing Ghosh et al. 2007)", "publisher": "Agricultural Research Communication Centre", "retrievedAt": "2026-11-01", "locator": "Introduction", "excerpt": "The carryover effect of N for succeeding crops may be ... 68 kg/ha for chickpea, 55 kg/ha for black gram, 54 to 58 kg/ha for groundnut and 36 to 42 kg/ha for pigeon pea (Ghosh et al., 2007)"},
+        {"id": "TNAU-GN-SEASON", "url": "https://agritech.tnau.ac.in/agriculture/Crop-improvement%20-1.html", "title": "Groundnut season and varieties", "publisher": "TNAU", "retrievedAt": "2026-11-01", "locator": "Groundnut Seasons and Varieties: I. Western Zone", "excerpt": "a. Coimbatore/Tiruppur/Kallakurichi Chithiraipattam April-May TMVGn 13, CO 7, TMV 14, VRI 8 ... Western Zone (Rainfed) a. Coimbatore/ Tiruppur/Erode/ Theni/ Dindigul Anippattam June- July"},
+        {"id": "TNAU-GN-CO7", "url": "https://agritech.tnau.ac.in/agriculture/grounnut%20co7.html", "title": "Groundnut - CO 7", "publisher": "TNAU", "retrievedAt": "2026-11-01", "locator": "Duration", "excerpt": "Groundnut - CO 7 ... Duration 85 - 90 days"},
+        {"id": "TNAU-GN-TMV14", "url": "https://agritech.tnau.ac.in/agriculture/grounnut%20TMV%2014.html", "title": "Groundnut - TMV 14", "publisher": "TNAU", "retrievedAt": "2026-11-01", "locator": "Duration", "excerpt": "Groundnut - TMV 14 ... Duration 105 - 110 days"},
+        {"id": "TNAU-GN-VRI8", "url": "https://agritech.tnau.ac.in/agriculture/grounnut%20VRI%208.html", "title": "Groundnut - VRI 8", "publisher": "TNAU", "retrievedAt": "2026-11-01", "locator": "Duration", "excerpt": "Groundnut - VRI 8 ... Duration 105 - 110 days"},
+        {"id": "CRIDA-TUM", "url": "https://icar-crida.res.in/CP/Karnataka/GKVK,%20Bangalore/KAR%2020-%20Tumkur%2031.05.2011.pdf", "title": "Agriculture Contingency Plan: Tumkur", "publisher": "ICAR-CRIDA / UAS Bangalore", "retrievedAt": "2026-11-01", "locator": "p6 Table 1.12", "excerpt": "Groundnut: June 1st week to July end (Kharif rainfed and irrigated); Rabi-Irrigated December 2nd week to January 2nd week"}
       ]
     },
     {
@@ -656,7 +741,7 @@
       ],
       "avoidAfter": [],
       "seasonalRisks": [],
-      "dataCompleteness": {"score": 0.58, "filled": 7, "scored": 12, "note": "No role, nutrient or water source; FAO-56 sesame row rejected (total mismatch); no KA window; risks missing."},
+      "dataCompleteness": {"score": 0.5, "filled": 6, "scored": 12, "missing": ["rotationRole", "nutrientUptake", "waterNeedMm", "stages", "avoidAfter", "seasonalRisks"], "note": "No role, nutrient or water source; FAO-56 sesame row rejected (total mismatch); no KA window; risks missing."},
       "sources": [
         {"id": "TNAU-GINGELLY", "url": "https://agritech.tnau.ac.in/agriculture/agri_seasonandvarieties_gingelly.html", "title": "Season and Varieties: Gingelly", "publisher": "TNAU", "retrievedAt": "2026-10-29", "locator": "Seasons and varieties: Western Zone", "excerpt": "Western Zone (Irrigated) | Coimbatore, Tiruppur and Erode | Masipattam | Feb - March ... Western Zone (Rainfed) ... Anippattam | June - July"},
         {"id": "CRIDA-HAS", "url": "https://www.icar-crida.res.in/CP-2012/statewiseplans/Karnataka%20(Pdf)/GKVK,%20Bangalore/KA28-Hassan%20%2004.10.2011.pdf", "title": "Agriculture Contingency Plan: Hassan", "publisher": "ICAR-CRIDA / UAS Bangalore", "retrievedAt": "2026-10-30", "locator": "pp11-14", "excerpt": "Sesamum/ Minor millets / pulses - Ragi / Sunflower / Maize ... Sesamum - Ragi ... Sesamum-Groundnut ... sesamum-potato"},
@@ -695,17 +780,19 @@
         {"region": "IN-TN-coimbatore", "season": "summer", "from": "04-01", "to": "05-31", "condition": "irrigated", "source": "TNAU-SUNF B. Irrigated 4. Chithiraipattam"}
       ],
       "recommendedPredecessors": [
-        {"cropId": "sesame", "source": "CRIDA-HAS pp11-12", "context": "Zone-4 '... - Ragi / Sunflower / Maize'"}
+        {"cropId": "sesame", "source": "CRIDA-HAS pp11-12", "context": "Zone-4 '... - Ragi / Sunflower / Maize'"},
+        {"cropId": "soybean", "source": "UASB-TECH 2015 entry", "context": "Kharif soybean or cowpea before rabi sunflower"}
       ],
       "recommendedSuccessors": [],
       "avoidAfter": [],
       "rotationNotes": ["Hassan contingency 'Sunflower - Cowpea / Horsegram' (neither is a candidate id)."],
       "seasonalRisks": [],
-      "dataCompleteness": {"score": 0.92, "filled": 11, "scored": 12, "note": "Risks not captured for sunflower; avoidAfter missing."},
+      "dataCompleteness": {"score": 0.83, "filled": 10, "scored": 12, "missing": ["avoidAfter", "seasonalRisks"], "note": "Risks not captured for sunflower; avoidAfter missing."},
       "sources": [
         {"id": "CRIDA-HAS", "url": "https://www.icar-crida.res.in/CP-2012/statewiseplans/Karnataka%20(Pdf)/GKVK,%20Bangalore/KA28-Hassan%20%2004.10.2011.pdf", "title": "Agriculture Contingency Plan: Hassan", "publisher": "ICAR-CRIDA / UAS Bangalore", "retrievedAt": "2026-10-30", "locator": "p9 Table 1.12", "excerpt": "Sunflower: May 2nd - May 3rd; May 1st - May 2nd; Aug 1st - Aug 2nd"},
         {"id": "TNAU-SUNF", "url": "https://agritech.tnau.ac.in/agriculture/agri_seasonandvarieties_sunflower.html", "title": "Season and Varieties: Sunflower", "publisher": "TNAU", "retrievedAt": "2026-10-29", "locator": "Season and varieties", "excerpt": "1. Adipattam (Jun-July) ... Coimbatore ... 3. Margazhipattam (Dec-Jan) ... 4. Chithiraipattam (April - May) | COSFV 5 | Coimbatore"},
-        {"id": "FAO-PNFS", "url": "https://www.fao.org/4/a0443e/a0443e04.pdf", "title": "Plant nutrition for food security, Ch. 8", "publisher": "FAO", "retrievedAt": "2026-11-01", "locator": "p250", "excerpt": "The total nutrient uptake by a sunflower crop producing 3.5 tonnes of seed per hectare ... N 131, P2O5 87, K2O 385"}
+        {"id": "FAO-PNFS", "url": "https://www.fao.org/4/a0443e/a0443e04.pdf", "title": "Plant nutrition for food security, Ch. 8", "publisher": "FAO", "retrievedAt": "2026-11-01", "locator": "p250", "excerpt": "The total nutrient uptake by a sunflower crop producing 3.5 tonnes of seed per hectare ... N 131, P2O5 87, K2O 385"},
+        {"id": "UASB-TECH", "url": "https://www.uasbangalore.edu.in/wp-content/uploads/2026/08/technologies-developed-2000-2025.pdf", "title": "Agro-Technologies Developed by UASB (2000-2025)", "publisher": "University of Agricultural Sciences, Bangalore", "retrievedAt": "2026-11-01", "locator": "2015 entry, Effect of preceding legumes on N economy in sunflower", "excerpt": "Growing of preceding leguminous crop of cowpea and soybean is found superior instead of growing maize with N @ 50 kg/ha which economizes N (25 kg/ha)"}
       ]
     },
     {
@@ -726,7 +813,7 @@
       "recommendedSuccessors": [],
       "avoidAfter": [],
       "seasonalRisks": [],
-      "dataCompleteness": {"score": 0.25, "filled": 3, "scored": 12, "note": "No KA or TN source; mustard absent from Hassan/Coimbatore plans and TNAU pages read. Not recommended."},
+      "dataCompleteness": {"score": 0.25, "filled": 3, "scored": 12, "missing": ["rotationRole", "waterNeedMm", "rainfedSuitable", "durationDays", "stages", "sowingWindows", "predecessorsSuccessors", "avoidAfter", "seasonalRisks"], "note": "No KA or TN source; mustard absent from Hassan/Coimbatore plans and TNAU pages read. Not recommended."},
       "sources": [
         {"id": "FAO-PNFS", "url": "https://www.fao.org/4/a0443e/a0443e04.pdf", "title": "Plant nutrition for food security, Ch. 8", "publisher": "FAO", "retrievedAt": "2026-11-01", "locator": "p248", "excerpt": "In subtropical north India, the total nutrient removal per tonne of seed production by mustard ... N 32.8, P2O5 16.4, K2O 41.8"}
       ]
@@ -768,7 +855,7 @@
       "seasonalRisks": [
         {"risk": "Regular: sucking pests (thrips, aphid, leaf hopper, whiteflies), stem weevil, boll rot, wilt, mealy bug. Occasional: root rot, Alternaria leaf spot", "months": null, "region": "IN-TN-coimbatore", "source": "CRIDA-CBE p7 Table 1.13"}
       ],
-      "dataCompleteness": {"score": 0.83, "filled": 10, "scored": 12, "note": "No rotation sequence or avoidAfter found; cotton not in Hassan plan (Mysore only)."},
+      "dataCompleteness": {"score": 0.83, "filled": 10, "scored": 12, "missing": ["predecessorsSuccessors", "avoidAfter"], "note": "No rotation sequence or avoidAfter found; cotton not in Hassan plan (Mysore only)."},
       "sources": [
         {"id": "CRIDA-CBE", "url": "https://www.icar-crida.res.in/CP-2012/statewiseplans/Tamilnadu%20(pdf)/TNAU,%20Coimbattore/TN18-%20COIMBATORE%2031.03.2011.pdf", "title": "Agriculture Contingency Plan: Coimbatore", "publisher": "ICAR-CRIDA / TNAU", "retrievedAt": "2026-11-01", "locator": "p6 Table 1.12; p7 Table 1.13", "excerpt": "Cotton: June 4th week - July 2nd week; Aug 1st week - 4th week; Sep 4th week - Oct 2nd week"},
         {"id": "TNAU-COTTON", "url": "https://agritech.tnau.ac.in/agriculture/agri_seasonandvarieties_cotton.html", "title": "Season and Varieties: Cotton", "publisher": "TNAU", "retrievedAt": "2026-10-29", "locator": "I. Season and varieties", "excerpt": "Winter Irrigated | 150-160 | Aug - Sep | Coimbatore, Erode, Tirupur ..."},
@@ -812,14 +899,17 @@
       ],
       "seasonalRisks": [
         {"risk": "Late blight in potato (occasional; 2008 and 2009)", "months": null, "region": "IN-KA-hassan", "source": "CRIDA-HAS p9 Table 1.13"},
-        {"risk": "Early and late blight, potato tuber moth, mites under unusual rains", "months": null, "region": "IN-KA-hassan", "source": "CRIDA-HAS pp28-31 (2.2 Unusual rains)"}
+        {"risk": "Early and late blight, potato tuber moth, mites under unusual rains", "months": null, "region": "IN-KA-hassan", "source": "CRIDA-HAS pp28-31 (2.2 Unusual rains)"},
+        {"risk": "White grub: light traps for adult beetles in April-May; hand-pick 3rd instar grubs in July-August", "months": [4, 5, 7, 8], "region": "IN-TN", "source": "TNAU-POTATO-PP Plant protection: White grub", "note": "Months are TNAU management-action months that indicate when the pest stage is present in TN potato areas (mainly hills), not a Hassan calendar."}
       ],
-      "dataCompleteness": {"score": 0.92, "filled": 11, "scored": 12, "note": "No duration for Hassan cultivar Kufri Jyothi captured."},
+      "dataCompleteness": {"score": 0.92, "filled": 11, "scored": 12, "missing": ["durationDays"], "note": "No Kufri Jyoti duration from ICAR-CPRI; white grub months are TN management months."},
       "sources": [
         {"id": "CRIDA-HAS", "url": "https://www.icar-crida.res.in/CP-2012/statewiseplans/Karnataka%20(Pdf)/GKVK,%20Bangalore/KA28-Hassan%20%2004.10.2011.pdf", "title": "Agriculture Contingency Plan: Hassan", "publisher": "ICAR-CRIDA / UAS Bangalore", "retrievedAt": "2026-10-30", "locator": "p9 Tables 1.12-1.13; p10", "excerpt": "Potato - Ragi (Potato with Redgram/ castor as intercrop 6:1) Potato- Kufri Jyothi ... Potato - Soyabean/ Potato-Cowpea"},
         {"id": "TNAU-POTATO", "url": "https://agritech.tnau.ac.in/horticulture/horti_vegetables_potato.html", "title": "Potato", "publisher": "TNAU", "retrievedAt": "2026-10-29", "locator": "Season; Aftercultivation", "excerpt": "Avoid growing potato year after year in the same field. Follow rotation with vegetables and green manure."},
-        {"id": "FAO-PNFS", "url": "https://www.fao.org/4/a0443e/a0443e04.pdf", "title": "Plant nutrition for food security, Ch. 8", "publisher": "FAO", "retrievedAt": "2026-11-01", "locator": "p251", "excerpt": "an adequately fertilized crop yielding 34 tonnes tubers/ha removed 135 kg N, 21 kg P2O5 and 157 kg K2O"}
-      ]
+        {"id": "FAO-PNFS", "url": "https://www.fao.org/4/a0443e/a0443e04.pdf", "title": "Plant nutrition for food security, Ch. 8", "publisher": "FAO", "retrievedAt": "2026-11-01", "locator": "p251", "excerpt": "an adequately fertilized crop yielding 34 tonnes tubers/ha removed 135 kg N, 21 kg P2O5 and 157 kg K2O"},
+        {"id": "TNAU-POTATO-PP", "url": "https://agritech.tnau.ac.in/horticulture/horti_vegetables_potato.html", "title": "Potato", "publisher": "TNAU", "retrievedAt": "2026-11-01", "locator": "Plant protection: White grub; Late blight", "excerpt": "Install light traps between 7 p.m. and 9 p.m. in April - May months. Hand pick the adult beetles in the morning. Hand pick the 3rd instar grub during July - August."}
+      ],
+      "rotationNotes": ["TNAU lists Kufri Jyothi (the Hassan variety in CRIDA-HAS) as late-blight resistant. No days-to-maturity for Kufri Jyoti was found from ICAR-CPRI; CPRI catalogue labels maturity only as Medium/Late (search snippet, not retrieved), so durationDays stays empty."]
     },
     {
       "cropId": "onion",
@@ -855,7 +945,7 @@
       "seasonalRisks": [
         {"risk": "Heavy rains during bulb germination and bulb formation affect crop growth (stated on TNAU small onion page)", "months": null, "region": "IN-TN", "source": "TNAU-SHALLOT Season"}
       ],
-      "dataCompleteness": {"score": 0.75, "filled": 9, "scored": 12, "note": "No nutrient removal, rotation sequence or avoidAfter; NHB window is a joint 3-state row, not Hassan."},
+      "dataCompleteness": {"score": 0.67, "filled": 8, "scored": 12, "missing": ["nutrientUptake", "rainfedSuitable", "predecessorsSuccessors", "avoidAfter"], "note": "No nutrient removal, rotation sequence or avoidAfter; NHB window is a joint 3-state row, not Hassan."},
       "sources": [
         {"id": "NHB-ONI", "url": "https://nhb.gov.in/pdf/vegetable/onion/oni011.pdf", "title": "Onion: season of planting", "publisher": "National Horticulture Board", "retrievedAt": "2026-10-29", "locator": "p1 Season of Planting", "excerpt": "Tamil Nadu, Karnataka and A. P Early kharif February-April Kharif May-June Rabi September-October"},
         {"id": "TNAU-ONION", "url": "https://agritech.tnau.ac.in/horticulture/horti_vegetables_bellaryonion.html", "title": "Bellary onion", "publisher": "TNAU", "retrievedAt": "2026-10-29", "locator": "Season; Yield; Fertilizers", "excerpt": "Season May - June is best season for planting ... The crop yields about 15 - 18 t/ha in 140 - 150 days."}
@@ -887,7 +977,7 @@
       "seasonalRisks": [
         {"risk": "Heavy rains during bulb germination and bulb formation affect crop growth", "months": null, "region": "IN-TN", "source": "TNAU-SHALLOT Season"}
       ],
-      "dataCompleteness": {"score": 0.5, "filled": 6, "scored": 12, "note": "TN only; no KA source, rotation, water or stages."},
+      "dataCompleteness": {"score": 0.5, "filled": 6, "scored": 12, "missing": ["nutrientUptake", "waterNeedMm", "rainfedSuitable", "stages", "predecessorsSuccessors", "avoidAfter"], "note": "TN only; no KA source, rotation, water or stages."},
       "sources": [
         {"id": "TNAU-SHALLOT", "url": "https://agritech.tnau.ac.in/horticulture/horti_vegetables_small%20onion.html", "title": "Small onion", "publisher": "TNAU", "retrievedAt": "2026-10-29", "locator": "Season; Harvest", "excerpt": "Sow the medium sized bulbs during April - May and October - November. ... heavy rains during bulb germination and bulb formation affects the crop growth"}
       ]
@@ -925,7 +1015,7 @@
         {"family": "Solanaceae", "source": "TNAU-TOMATO-ROT", "context": "Family-level caution"}
       ],
       "seasonalRisks": [],
-      "dataCompleteness": {"score": 0.58, "filled": 7, "scored": 12, "note": "Hassan grows 1.7 thousand ha tomato (CRIDA-HAS p6) but no KA window, rotation partner, nutrient or risk source captured."},
+      "dataCompleteness": {"score": 0.58, "filled": 7, "scored": 12, "missing": ["rotationRole", "nutrientUptake", "rainfedSuitable", "predecessorsSuccessors", "seasonalRisks"], "note": "Hassan grows 1.7 thousand ha tomato (CRIDA-HAS p6) but no KA window, rotation partner, nutrient or risk source captured."},
       "sources": [
         {"id": "TNAU-TOMATO", "url": "https://agritech.tnau.ac.in/horticulture/horti_vegetables_tomato_Soil.html", "title": "Tomato: soil and season", "publisher": "TNAU", "retrievedAt": "2026-10-29", "locator": "Season and field preparation", "excerpt": "Season of Sowing May - June and November - December"},
         {"id": "TNAU-TOMATO-ROT", "url": "https://agritech.tnau.ac.in/org_farm/orgfarm_tomato_diseases.html", "title": "Organic farming: tomato diseases", "publisher": "TNAU", "retrievedAt": "2026-10-31", "locator": "Early blight; fruit rot; bacterial wilt", "excerpt": "Rotation away from solanaceous crops (as summarised in repo focused-crop-care.json sequenceConstraints)"},
@@ -959,7 +1049,7 @@
       "avoidAfter": [],
       "rotationNotes": ["Brinjal is named as a crop to avoid before chilli (TNAU-CHILLI-IPM) and before ginger (SB-GIN p7); no avoidAfter for brinjal itself was found."],
       "seasonalRisks": [],
-      "dataCompleteness": {"score": 0.33, "filled": 4, "scored": 12, "note": "TN window only; no duration for KA/TN cultivars, nutrients, water, rotation or risks."},
+      "dataCompleteness": {"score": 0.33, "filled": 4, "scored": 12, "missing": ["rotationRole", "nutrientUptake", "waterNeedMm", "rainfedSuitable", "durationDays", "predecessorsSuccessors", "avoidAfter", "seasonalRisks"], "note": "TN window only; no duration for KA/TN cultivars, nutrients, water, rotation or risks."},
       "sources": [
         {"id": "TNAU-BRINJAL", "url": "https://agritech.tnau.ac.in/horticulture/horti_vegetables_brinjal_season.html", "title": "Brinjal: season", "publisher": "TNAU", "retrievedAt": "2026-10-29", "locator": "Season", "excerpt": "Season of Sowing December - January and May - June."},
         {"id": "FAO-56", "url": "https://www.fao.org/4/x0490e/x0490e0b.htm", "title": "FAO-56 Table 11", "publisher": "FAO", "retrievedAt": "2026-11-01", "locator": "Table 11 Egg plant", "excerpt": "Egg plant 30 40 40 20 130 October Arid Region"}
@@ -989,7 +1079,7 @@
       "recommendedSuccessors": [],
       "avoidAfter": [],
       "seasonalRisks": [],
-      "dataCompleteness": {"score": 0.33, "filled": 4, "scored": 12, "note": "TN only; no FAO stage row; no nutrient, water, rotation or risk source."},
+      "dataCompleteness": {"score": 0.33, "filled": 4, "scored": 12, "missing": ["rotationRole", "nutrientUptake", "waterNeedMm", "rainfedSuitable", "stages", "predecessorsSuccessors", "avoidAfter", "seasonalRisks"], "note": "TN only; no FAO stage row; no nutrient, water, rotation or risk source."},
       "sources": [
         {"id": "TNAU-BHENDI", "url": "https://agritech.tnau.ac.in/horticulture/horti_vegetables_bhendi_Soil.html", "title": "Bhendi: soil and season", "publisher": "TNAU", "retrievedAt": "2026-10-29", "locator": "Soil and season; Varieties", "excerpt": "Planting can be done during June - August and February"}
       ]
@@ -1029,7 +1119,7 @@
         {"cropId": "brinjal", "source": "TNAU-CHILLI-IPM", "context": "Same"}
       ],
       "seasonalRisks": [],
-      "dataCompleteness": {"score": 0.67, "filled": 8, "scored": 12, "note": "Hassan grows 2.4 thousand ha green chilli (CRIDA-HAS p6) but no KA window captured; water/stages are generic pepper; nutrient and risk missing."},
+      "dataCompleteness": {"score": 0.67, "filled": 8, "scored": 12, "missing": ["rotationRole", "nutrientUptake", "rainfedSuitable", "seasonalRisks"], "note": "Hassan grows 2.4 thousand ha green chilli (CRIDA-HAS p6) but no KA window captured; water/stages are generic pepper; nutrient and risk missing."},
       "sources": [
         {"id": "TNAU-CHILLI", "url": "https://agritech.tnau.ac.in/horticulture/horti_vegetables_chilli_season_seed.html", "title": "Chilli: season and seed", "publisher": "TNAU", "retrievedAt": "2026-10-29", "locator": "Season and seed", "excerpt": "Season of sowing 1. January - February 2. June - July 3. September- October"},
         {"id": "TNAU-CHILLI-H", "url": "https://agritech.tnau.ac.in/horticulture/horti_vegetables_chilli_Yield_new.html", "title": "Chilli: harvest and yield", "publisher": "TNAU", "retrievedAt": "2026-10-29", "locator": "Harvest and yield", "excerpt": "Harvesting can be done 75 days after transplanting. First two picking yield green chilli and subsequently yield red ripe fruits."},
@@ -1060,7 +1150,9 @@
         {"id": "maturation", "name": "Maturation", "startDay": 180, "endDay": 240, "description": "Full maturity 210-240 DAP for dry ginger; irrigation stopped one month before harvest"}
       ],
       "sowingWindows": [
-        {"region": "IN-TN", "season": "summer", "from": "04-01", "to": "04-07", "condition": "rainfed", "source": "TNAU-GINGER Planting season", "note": "TN context is high-rainfall Kanyakumari and lower Palani hills; same page: irrigated planting possible mid-late Feb and March (ambiguous wording, not encoded)"}
+        {"region": "IN-TN", "season": "summer", "from": "04-01", "to": "04-07", "condition": "rainfed", "source": "TNAU-GINGER Planting season", "note": "TN context is high-rainfall Kanyakumari and lower Palani hills; same page: irrigated planting possible mid-late Feb and March (ambiguous wording, not encoded)"},
+        {"region": "IN-west-coast", "candidateFor": "IN-KA", "season": "summer", "from": "05-01", "to": "05-15", "condition": "rainfed", "source": "VIK-GIN Season", "reviewStatus": "pending_user_decision", "note": "First fortnight of May with pre-monsoon showers, West Coast of India. Not Karnataka- or Hassan-specific. The Karnataka ginger window is an open user decision, so this row is not counted as a KA window."},
+        {"region": "IN-west-coast", "candidateFor": "IN-KA", "season": "summer", "from": "02-11", "to": "03-10", "condition": "irrigated", "source": "VIK-GIN Season", "reviewStatus": "pending_user_decision", "note": "'middle of February or early March'; dates use the convention mid-month = 11-20 and early = 01-10, which is arithmetic, not source text."}
       ],
       "recommendedPredecessors": [
         {"cropId": "paddy", "source": "SB-GIN p7; ICAR-GOA-GIN", "context": "Crops commonly rotated with ginger: tapioca, ragi, paddy, gingelly, maize, vegetables; rice rotation cited for bacterial wilt management in Goa"},
@@ -1082,17 +1174,18 @@
         {"cropId": "brinjal", "source": "SB-GIN p7", "context": "Wilt host"},
         {"cropId": "groundnut", "source": "SB-GIN p7", "context": "Peanut named as wilt host"}
       ],
-      "rotationNotes": ["In Karnataka ginger is also mix-cropped with ragi, red gram and castor (SB-GIN p7; IISR-GIN p15). Organic systems may rotate ginger with green manure/legume crops (SB-GIN p11)."],
+      "rotationNotes": ["In Karnataka ginger is also mix-cropped with ragi, red gram and castor (SB-GIN p7; IISR-GIN p15). Organic systems may rotate ginger with green manure/legume crops (SB-GIN p11).", "Vikaspedia (VIK-GIN): in Karnataka ginger is also mix cropped with ragi, red gram and castor. These are mixed-crop partners, not sequence predecessors."],
       "seasonalRisks": [
         {"risk": "Soft rot: fungus multiplies with soil moisture build-up at onset of south-west monsoon; young sprouts most susceptible", "months": null, "region": "national guide", "source": "IISR-GIN p15"},
         {"risk": "Bacterial wilt (Ralstonia solanacearum); avoid solanaceous and peanut history", "months": null, "region": "national guide", "source": "SB-GIN p7, p9; IISR-GIN p18"}
       ],
-      "dataCompleteness": {"score": 0.92, "filled": 11, "scored": 12, "note": "No KA/Hassan planting window in this file (Karnataka ginger window source is an open user decision); no nutrient removal per tonne."},
+      "dataCompleteness": {"score": 0.92, "filled": 11, "scored": 12, "missing": ["nutrientUptake"], "note": "Karnataka window still open (user decision); West Coast candidate rows recorded as pending_user_decision; no nutrient removal per tonne."},
       "sources": [
         {"id": "SB-GIN", "url": "https://www.indianspices.com/sites/default/files/cultivation_practices-ginger.pdf", "title": "Cultivation practices: Ginger", "publisher": "Spices Board India", "retrievedAt": "2026-10-29", "locator": "PDF p7 Inter cropping and crop rotation", "excerpt": "The crops most commonly rotated with ginger are tapioca, ragi, paddy, gingelly, maize and vegetables. ... crop rotation using tomato, potato, chillies, brinjal and peanut should be avoided"},
         {"id": "SB-GIN", "url": "https://www.indianspices.com/sites/default/files/cultivation_practices-ginger.pdf", "title": "Cultivation practices: Ginger", "publisher": "Spices Board India", "retrievedAt": "2026-10-29", "locator": "PDF p9 Bacterial wilt", "excerpt": "It is not advisable to plant ginger consecutively in the same field every year. Fields used for growing potato, or other solanaceous crops are to be avoided."},
         {"id": "IISR-GIN", "url": "https://spices.res.in/storage/app/public/pdfs/GINGER/3ENG.pdf", "title": "Ginger (ICAR-IISR, Feb 2025)", "publisher": "ICAR-IISR", "retrievedAt": null, "locator": "p14 Irrigation; p25 Harvesting", "excerpt": "Ginger requires 1300 -1500 mm of water during its crop cycle. ... Ginger attains full maturity in 210 -240 days after planting."},
-        {"id": "TNAU-GINGER", "url": "https://agritech.tnau.ac.in/horticulture/horti_spice%20crops_ginger_productiontech.html", "title": "Ginger production technology", "publisher": "TNAU", "retrievedAt": "2026-11-01", "locator": "Soil; Planting season", "excerpt": "Ginger well absorb the nutrients in the soil. By their nature, avoid ginger cultivation again and again in the same field. ... planting should be done in the first week of April."}
+        {"id": "TNAU-GINGER", "url": "https://agritech.tnau.ac.in/horticulture/horti_spice%20crops_ginger_productiontech.html", "title": "Ginger production technology", "publisher": "TNAU", "retrievedAt": "2026-11-01", "locator": "Soil; Planting season", "excerpt": "Ginger well absorb the nutrients in the soil. By their nature, avoid ginger cultivation again and again in the same field. ... planting should be done in the first week of April."},
+        {"id": "VIK-GIN", "url": "https://en.vikaspedia.in/viewcontent/agriculture/crop-production/package-of-practices/spices/ginger", "title": "Ginger package of practices", "publisher": "Vikaspedia", "retrievedAt": "2026-10-29", "locator": "Season; Inter cropping and crop rotation", "excerpt": "The best time for planting ginger in the West Coast of India is during the first fortnight of May with the receipt of pre- monsoon showers. Under irrigated conditions ... middle of February or early March."}
       ]
     },
     {
@@ -1138,7 +1231,7 @@
       ],
       "rotationNotes": ["Spices Board 'rotation with' list conflicts with TNAU nematode caution for chillies; planner must treat chilli before turmeric as a conflict requiring local review."],
       "seasonalRisks": [],
-      "dataCompleteness": {"score": 0.83, "filled": 10, "scored": 12, "note": "No water need or nutrient removal; risks not captured; no KA window (Hassan turmeric area 0.1 thousand ha)."},
+      "dataCompleteness": {"score": 0.75, "filled": 9, "scored": 12, "missing": ["nutrientUptake", "waterNeedMm", "seasonalRisks"], "note": "No water need or nutrient removal; risks not captured; no KA window (Hassan turmeric area 0.1 thousand ha)."},
       "sources": [
         {"id": "TNAU-TURMERIC", "url": "https://agritech.tnau.ac.in/horticulture/horti_spice%20crops_turmeric.html", "title": "Turmeric", "publisher": "TNAU", "retrievedAt": "2026-11-01", "locator": "Season; Fertigation schedule; Nematode", "excerpt": "Season May-June is suitable ... Total Duration 270 ... Avoid planting turmeric after Banana or other solanaceous vegetables."},
         {"id": "SB-TUR", "url": "https://www.indianspices.com/sites/default/files/cultivation_practices-TURMERIC-1.pdf", "title": "Cultivation practices: Turmeric", "publisher": "Spices Board India", "retrievedAt": "2026-10-29", "locator": "PDF p13 rotation", "excerpt": "In wet lands, turmeric can be rotated with rice, sugarcane, banana, etc. once in 3 or 4 years. In garden lands, turmeric can be grown in rotation with sugarcane, chillies, onion, garlic"}
@@ -1175,7 +1268,7 @@
       "avoidAfter": [],
       "rotationNotes": ["Occupies 10-12 months (plant cane) so it consumes a whole 12-month plan; ratooning is a separate decision (focused-crop-care sequenceConstraints)."],
       "seasonalRisks": [],
-      "dataCompleteness": {"score": 0.75, "filled": 9, "scored": 12, "note": "No stages, rainfed status or risks; poor fit for 12-month multi-crop sequences."},
+      "dataCompleteness": {"score": 0.67, "filled": 8, "scored": 12, "missing": ["rainfedSuitable", "stages", "avoidAfter", "seasonalRisks"], "note": "No stages, rainfed status or risks; poor fit for 12-month multi-crop sequences."},
       "sources": [
         {"id": "TNAU-SUGARCANE", "url": "https://agritech.tnau.ac.in/agriculture/sugarcrops_sugarcane.html", "title": "Sugarcane", "publisher": "TNAU", "retrievedAt": "2026-11-01", "locator": "1. Season and Planting", "excerpt": "Sugarcane is grown chiefly in the main season (December - May) in the entire State. In parts of ... Coimbatore districts, it is also raised during the special season (June - September)."},
         {"id": "CRIDA-MDY", "url": "https://www.icar-crida.res.in/CP-2012/statewiseplans/Karnataka%20(Pdf)/GKVK,%20Bangalore/KAR16-MANDYA%2031.03.2011.pdf", "title": "Agriculture Contingency Plan: Mandya", "publisher": "ICAR-CRIDA / UAS Bangalore", "retrievedAt": "2026-11-01", "locator": "p6 Table 1.12", "excerpt": "Sugarcane: June1st week - August 4th week; October 3rd week to November 2nd week; January 1st week to February 4th week"},
@@ -1211,7 +1304,7 @@
       "avoidAfter": [],
       "rotationNotes": ["Used as an intercrop with chickpea and on turmeric ridges (TNAU bengalgram; TNAU-TURMERIC); not a sequence recommendation."],
       "seasonalRisks": [],
-      "dataCompleteness": {"score": 0.58, "filled": 7, "scored": 12, "note": "TN only; no FAO stage row, water need, nutrients, rotation or risk months."},
+      "dataCompleteness": {"score": 0.5, "filled": 6, "scored": 12, "missing": ["nutrientUptake", "waterNeedMm", "stages", "predecessorsSuccessors", "avoidAfter", "seasonalRisks"], "note": "TN only; no FAO stage row, water need, nutrients, rotation or risk months."},
       "sources": [
         {"id": "TNAU-CORIANDER", "url": "https://agritech.tnau.ac.in/horticulture/horti_spice%20crops_corinader.html", "title": "Coriander", "publisher": "TNAU", "retrievedAt": "2026-11-01", "locator": "Season; Varieties; Harvest; Manuring", "excerpt": "June - July and October - November ... For leaf, pull out the plants when they are 30-40 days old. ... FYM 10 t/ha; 10 kg N, 40 kg P and 20 kg K"}
       ]
@@ -1219,7 +1312,7 @@
   ],
   "notes": [
     "All records are research candidates; no excerpt has been human-reviewed. Excerpts marked 'as recorded in repo' were not re-read from the original page in this pass.",
-    "nitrogenCreditKgPerHa uses one generic FAO statement (preceding legume reduces next-crop fertilizer N by 40-50 kg/ha, stated in the potato guideline) for all seven grain legumes. No crop-specific residual N credit from ICAR/TNAU/UAS was retrieved. Treat as a low-confidence scenario input, not a measured farm benefit.",
+    "nitrogenCreditKgPerHa: chickpea 68, black gram 55, groundnut 54-58 and pigeon pea 36-42 kg N/ha come from one Indian review (Agricultural Reviews R-2165) quoting Ghosh et al. (2007); soybean 25 kg N/ha (sunflower successor) is a UAS Bangalore 2015 recommendation. Green gram and lentil still use the generic FAO 40-50 kg/ha. All are scenario inputs, not measured farm benefits.",
     "nitrogenFixationKgPerHa (groundnut 110-150) is gross fixation, not residual credit; FAO inoculation benefits (chickpea, pigeon pea 20-25 kg N/ha) apply to the legume crop itself.",
     "CRIDA district plans are dated 2011; sowing windows reflect that vintage. Hassan table 1.12 covers only paddy, ragi, maize, potato and sunflower; other Hassan crops have sequences but no window.",
     "Generic CRIDA Mysore 'Pulses' Kharif-Rainfed window (April 2nd week to June 2nd week) is not attached to any single legume because the column does not name the pulse.",
@@ -1233,6 +1326,12 @@
     {"url": "https://en.vikaspedia.in/viewcontent/agriculture/crop-production/package-of-practices/pulses/cropping-systems-involving-pulses?lgn=en", "reason": "Host did not resolve."},
     {"url": "https://agritech.tnau.ac.in/agriculture/agri_seasonandvarieties_greengram.html", "reason": "404 (guessed URL pattern); same for blackgram and groundnut season pages."},
     {"url": "https://mail.uasbangalore.edu.in/images/crop_weather/zone-6-(mysore)-ragi-%20(sowing-window-1).pdf", "reason": "Returned HTML 404 page."},
-    {"url": "https://desagri.gov.in/wp-content/uploads/2021/04/karnatak.pdf", "reason": "Retrieved but content is farm harvest prices, not a crop calendar."}
+    {"url": "https://desagri.gov.in/wp-content/uploads/2021/04/karnatak.pdf", "reason": "Retrieved but content is farm harvest prices, not a crop calendar."},
+    {"url": "https://vikaspedia.in/agriculture/crop-production/package-of-practices/pulses/blackgram-and-greengram", "reason": "curl returned no response (HTTP 000). Not used."},
+    {"url": "https://www.icar-crida.res.in/CP-2012/statewiseplans/Karnataka%20(Pdf)/", "reason": "Directory listing 403; district plan URLs must come from search results."},
+    {"url": "https://icar-crida.res.in/CP/Karnataka/GKVK,%20Bangalore/KAR24-%20Ramanagara%2031.05.2011.pdf", "reason": "404 at the filename reported by a search summary (also KAR8-CHICKBALLAPUR 31.03.2011.pdf)."},
+    {"url": "https://agritech.tnau.ac.in/agriculture/oilseeds_groundnut.html", "reason": "404; groundnut data taken from the TNAU Crop-improvement -1 page and variety pages instead."},
+    {"url": "https://cpri.icar.gov.in/AddLink/getIMG/6209", "reason": "Not retrieved (tool budget). Search snippet labels Kufri Jyoti maturity Medium/Late without days; no value used."},
+    {"url": "https://www.uasbangalore.edu.in/wp-content/uploads/2026/08/technologies-developed-2000-2025.pdf", "reason": "Retrieved and used for the soybean-sunflower N economy only; it contains no pulse sowing windows."}
   ]
 }
