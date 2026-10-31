@@ -1,0 +1,78 @@
+{
+ "type": "FeatureCollection",
+ "links": [
+  {
+   "rel": "root",
+   "type": "application/json",
+   "href": "https://planetarycomputer.microsoft.com/api/stac/v1/"
+  },
+  {
+   "rel": "self",
+   "type": "application/json",
+   "href": "https://planetarycomputer.microsoft.com/api/stac/v1/search?collections=sentinel-2-l2a"
+  }
+ ],
+ "features": [
+  {
+   "properties": {
+    "platform": "Sentinel-2A",
+    "s2:mgrs_tile": "43PFQ",
+    "datetime": "2026-10-29T05:22:31.024000Z",
+    "eo:cloud_cover": 0.148978,
+    "s2:processing_baseline": "05.13"
+   },
+   "id": "S2A_MSIL2A_20261029T052231_R062_T43PFQ_20261029T101714"
+  },
+  {
+   "properties": {
+    "platform": "Sentinel-2C",
+    "s2:mgrs_tile": "43PFQ",
+    "datetime": "2026-10-27T05:19:11.025000Z",
+    "eo:cloud_cover": 3.668574,
+    "s2:processing_baseline": "05.13"
+   },
+   "id": "S2C_MSIL2A_20261027T051911_R062_T43PFQ_20261027T101812"
+  },
+  {
+   "properties": {
+    "platform": "Sentinel-2B",
+    "s2:mgrs_tile": "43PFQ",
+    "datetime": "2026-10-12T05:17:39.024000Z",
+    "eo:cloud_cover": 3.982157,
+    "s2:processing_baseline": "05.13"
+   },
+   "id": "S2B_MSIL2A_20261012T051739_R062_T43PFQ_20261012T091927"
+  },
+  {
+   "properties": {
+    "platform": "Sentinel-2A",
+    "s2:mgrs_tile": "43PFQ",
+    "datetime": "2026-10-09T05:22:41.024000Z",
+    "eo:cloud_cover": 55.951899,
+    "s2:processing_baseline": "05.13"
+   },
+   "id": "S2A_MSIL2A_20261009T052241_R062_T43PFQ_20261009T101803"
+  },
+  {
+   "properties": {
+    "platform": "Sentinel-2C",
+    "s2:mgrs_tile": "43PFQ",
+    "datetime": "2026-10-07T05:17:11.025000Z",
+    "eo:cloud_cover": 39.725745,
+    "s2:processing_baseline": "05.13"
+   },
+   "id": "S2C_MSIL2A_20261007T051711_R062_T43PFQ_20261007T100902"
+  },
+  {
+   "properties": {
+    "platform": "Sentinel-2B",
+    "s2:mgrs_tile": "43PFQ",
+    "datetime": "2026-10-02T05:16:49.024000Z",
+    "eo:cloud_cover": 54.120129,
+    "s2:processing_baseline": "05.13"
+   },
+   "id": "S2B_MSIL2A_20261002T051649_R062_T43PFQ_20261002T091946"
+  }
+ ],
+ "numberReturned": 6
+}
