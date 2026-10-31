@@ -151,6 +151,8 @@ export async function createFarm(pool: Pool, ownerId: string, body: CreateFarmBo
     );
     const id = f.rows[0]!.id;
     for (const [k, v] of Object.entries(body.facts ?? {})) await insertFact(c, ownerId, id, k, v, null);
+    // Monitoring is on by default for every farm (user decision 2026-11-01): first check due now, then every 24 h.
+    await c.query("INSERT INTO farm_monitors (farm_id, enabled, meta_enabled, interval_hours, next_check_at) VALUES ($1, true, true, 24, now())", [id]);
     return { ...(await readFarm(c, ownerId, id, false))!, ...(loc.warnings.length ? { warnings: loc.warnings } : {}) };
   });
 }

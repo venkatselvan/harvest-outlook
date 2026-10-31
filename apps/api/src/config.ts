@@ -29,6 +29,12 @@ export const configSchema = z.object({
   BUDGET_PER_OWNER_DAY_USD: positiveNum(10),
   /** Daily cap per client IP (salted hash), across all guest sessions from that IP. */
   BUDGET_PER_IP_DAY_USD: positiveNum(15),
+  /**
+   * Global daily USD cap (UTC day) for the automatic per-farm grounded alert review run by the farm.monitor worker.
+   * Counts reserved and settled spend tagged farm_alert_review; when reached, the structured checks still run and
+   * the news review is reported as paused.
+   */
+  MONITOR_META_DAILY_CAP_USD: z.coerce.number().nonnegative().default(3),
   /** Optional JSON object merged over the default price table (see services/pricing.ts). */
   PRICE_TABLE_JSON: optionalString,
   SESSION_TTL_DAYS: positiveInt(30),

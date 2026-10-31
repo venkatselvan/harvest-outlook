@@ -24,11 +24,25 @@ export interface FunctionToolDef {
   strict: boolean;
 }
 
+/**
+ * Meta built-in web search (search grounding), documented at dev.meta.ai/docs/search-grounding (read 2026-11-01).
+ * Sent only through the explicit `webSearch` field, never through `tools`, so no general caller can enable it by
+ * passing a tool entry. Billed per search query on top of tokens.
+ */
+export interface WebSearchToolOptions {
+  searchContextSize?: "low" | "medium" | "high";
+  /** Coarse locale bias only (country/region/timezone). Never farm coordinates. */
+  userLocation?: { country?: string; region?: string; city?: string; timezone?: string };
+}
+
 export interface CreateResponseParams {
   model: string;
   instructions: string;
   input: string | InputItem[];
   tools?: FunctionToolDef[];
+  webSearch?: WebSearchToolOptions;
+  /** Responses `include`; only the documented web-search result expansion is allowed. */
+  include?: "web_search_call.results"[];
   textFormat?: { name: string; schema: JsonSchema };
   previousResponseId?: string;
   maxOutputTokens: number;
@@ -55,6 +69,22 @@ export interface ParsedFunctionCall {
   callId: string;
 }
 
+/** A `url_citation` annotation on an output_text part: the subset of retrieved sources the model cited. */
+export interface UrlCitation {
+  url: string;
+  title: string | null;
+}
+
+/** A `web_search_call` output item. `results` is present only with `include: ["web_search_call.results"]`. */
+export interface WebSearchCall {
+  id: string | null;
+  status: string | null;
+  queries: string[];
+  /** `action.sources[].url`. */
+  sourceUrls: string[];
+  results: { url: string; title: string | null }[];
+}
+
 export interface MetaResponse {
   /** Response id (`resp_...`); usable as previous_response_id. */
   responseId: string | null;
@@ -71,6 +101,10 @@ export interface MetaResponse {
   latencyMs: number;
   retries: number;
   incompleteReason: string | null;
+  /** url_citation annotations across all answer message parts (empty when the model cited nothing). */
+  citations?: UrlCitation[];
+  /** web_search_call items; empty when no search ran (the model decides whether to search). */
+  webSearchCalls?: WebSearchCall[];
 }
 
 export type MetaErrorKind = "provider_unavailable" | "unauthorized" | "bad_request" | "rate_limited" | "server_error" | "network" | "timeout" | "aborted" | "invalid_response" | "incomplete";

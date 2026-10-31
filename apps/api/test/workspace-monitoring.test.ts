@@ -9,6 +9,7 @@ import { enqueueDueMonitors, monitorChanges, readMonitorSettings, saveMonitorSna
 import { getFarmContextHandler } from '../src/agent/tools/handlers';
 import { unitAtPointer } from '../src/agent/tool-units';
 import { Budget } from '../src/services/budget';
+import { enqueue } from '../src/services/jobs';
 
 let h: Harness, owner: Client, stranger: Client;
 const body = { expectedVersion: 0, boundary: { type: 'Polygon', coordinates: [[[76, 13], [76.01, 13], [76.01, 13.01], [76, 13.01], [76, 13]]] }, previousHarvest: { status: 'known', cropId: 'rice', harvestDate: '2026-04-02' }, cycles: [{ id: 'c1', cropId: 'ginger', sowingDate: '2026-05-01', stage: 'growing' }], rotationPlans: [{ id: 'r1', cropId: 'rice', year: 2027, season: 'Kharif' }] };
@@ -94,6 +95,8 @@ describe('honest recurring monitoring', () => {
     expect(fetchImpl).not.toHaveBeenCalled();
     const setting = await owner.call('PUT', `/api/v1/farms/${id}/monitoring`, { payload: { enabled: true, metaEnabled: true, intervalHours: 6 } });
     expect(setting.statusCode).toBe(200);
+    // Farms are monitored by default from creation; keep only this farm due for the concurrency check.
+    await h.pool.query("UPDATE farm_monitors SET next_check_at=now()+interval '1 day' WHERE farm_id<>$1", [id]);
     const counts = await Promise.all([enqueueDueMonitors(h.pool), enqueueDueMonitors(h.pool)]);
     expect(counts.reduce((a, b) => a + b, 0)).toBe(1);
     expect((await h.pool.query("SELECT 1 FROM jobs WHERE type='farm.monitor' AND payload->>'farmId'=$1", [id])).rowCount).toBe(1);
@@ -127,37 +130,42 @@ describe('honest recurring monitoring', () => {
     const id = await create();
     const ownerId = (await h.pool.query('SELECT owner_id FROM farms WHERE id=$1', [id])).rows[0].owner_id;
     await owner.call('PUT', `/api/v1/farms/${id}/monitoring`, { payload: { enabled: true, metaEnabled: true } });
-    const fetchImpl = vi.fn(); const review = vi.fn();
-    const handler = createMonitorHandler({ config: h.config, pool: h.pool, budget: Budget.fromConfig(h.pool, h.config), fetchImpl, review });
+    const fetchImpl = vi.fn(); const review = { createResponse: vi.fn(), deleteResponse: vi.fn() };
+    const handler = createMonitorHandler({ config: h.config, pool: h.pool, budget: Budget.fromConfig(h.pool, h.config), fetchImpl, metaTransport: review });
     const job = { id: randomUUID(), owner_id: ownerId, type: 'farm.monitor', attempt: 1, max_attempts: 1, payload: { farmId: id } };
     const ctx = { pool: h.pool, heartbeat: async () => {}, isCancelled: async () => false };
     expect(await handler(job, ctx)).toMatchObject({ status: 'checked', metaStatus: 'live_mode_required' });
-    expect(fetchImpl).not.toHaveBeenCalled(); expect(review).not.toHaveBeenCalled();
+    expect(fetchImpl).not.toHaveBeenCalled(); expect(review.createResponse).not.toHaveBeenCalled();
     await owner.call('PUT', `/api/v1/farms/${id}/monitoring`, { payload: { enabled: false } });
     expect(await handler(job, ctx)).toMatchObject({ status: 'cancelled' });
   });
-  it('claims at most one daily Meta review across overlapping jobs and blocks expired sessions', async () => {
-    const id = await create();
-    await owner.call('PUT', `/api/v1/farms/${id}/workspace`, { payload: body });
-    await owner.call('PUT', `/api/v1/farms/${id}/monitoring`, { payload: { enabled: true, metaEnabled: true } });
+  it('claims at most one farm-level daily review across overlapping jobs and needs no live guest session', async () => {
+    // Since 2026-11-01 the automatic review is farm-level (user decision): it is attributed to the farm owner and
+    // capped per day, not billed to the session that toggled monitoring, so an expired session does not block it.
+    const other = await login(h.app);
+    const id = (await other.call('POST', '/api/v1/farms', { payload: farmBody({ facts: {} }) })).json().data.id;
+    await other.call('PUT', `/api/v1/farms/${id}/workspace`, { payload: body });
+    await other.call('PUT', `/api/v1/farms/${id}/monitoring`, { payload: { enabled: true, metaEnabled: true } });
     const ownerId = (await h.pool.query('SELECT owner_id FROM farms WHERE id=$1', [id])).rows[0].owner_id;
+    await h.pool.query("UPDATE sessions SET expires_at=now()-interval '1 hour' WHERE owner_id=$1", [ownerId]);
     const fixture = JSON.parse(readFileSync(new URL('./fixtures/openmeteo/forecast_hassan.json', import.meta.url), 'utf8'));
     const fetchImpl = vi.fn(async () => new Response(JSON.stringify(fixture.body), { status: 200 }));
-    const review = vi.fn(async () => ({ status: 'approved', runId: randomUUID(), approved: { answerBlocks: [] }, limitations: [] }) as never);
-    const handler = createMonitorHandler({ config: { ...h.config, RUNTIME_MODE: 'live' }, pool: h.pool, budget: Budget.fromConfig(h.pool, h.config), fetchImpl, review });
-    const job = { id: randomUUID(), owner_id: ownerId, type: 'farm.monitor', attempt: 1, max_attempts: 1, payload: { farmId: id } };
+    const createResponse = vi.fn(async () => ({ responseId: 'resp_test', requestId: 'req', model: 'muse-spark-1.3', status: 'completed', outputText: '{"alerts":[]}', functionCalls: [], refusal: null, usage: { inputTokens: 3000, outputTokens: 500, cachedInputTokens: 0 }, latencyMs: 1, retries: 0, incompleteReason: null, citations: [], webSearchCalls: [{ id: 'ws', status: 'completed', queries: ['ginger Kerala'], sourceUrls: [], results: [] }] }));
+    const review = { createResponse, deleteResponse: vi.fn(async () => ({ ok: true, code: null })) };
+    const handler = createMonitorHandler({ config: { ...h.config, RUNTIME_MODE: 'live' }, pool: h.pool, budget: Budget.fromConfig(h.pool, h.config), fetchImpl, metaTransport: review });
+    const job = async () => ({ id: (await enqueue(h.pool, 'farm.monitor', { farmId: id }, ownerId, `t-${randomUUID()}`)).job.id, owner_id: ownerId, type: 'farm.monitor', attempt: 1, max_attempts: 1, payload: { farmId: id } });
     const ctx = { pool: h.pool, heartbeat: async () => {}, isCancelled: async () => false };
-    await Promise.all([handler(job, ctx), handler({ ...job, id: randomUUID() }, ctx)]);
-    expect(review).toHaveBeenCalledTimes(1);
-    expect((await readMonitorSettings(h.pool, ownerId, id, 'live')).metaReview).toMatchObject({ mode: 'live', status: 'approved' });
+    // Store the forecast once first: concurrent first-time storage of one vintage is a known ingest race (weather_fc_vintage_uq).
+    await monitoringSnapshot({ config: { ...h.config, RUNTIME_MODE: 'live' }, pool: h.pool, fetchImpl }, ownerId, id);
+    const results = await Promise.all([handler(await job(), ctx), handler(await job(), ctx)]) as { metaStatus: string }[];
+    expect(results.map((r) => r.metaStatus).sort()).toEqual(['completed', 'daily_limit']);
+    expect(createResponse).toHaveBeenCalledTimes(1);
+    expect((await readMonitorSettings(h.pool, ownerId, id, 'live')).metaReview).toMatchObject({ mode: 'live', kind: 'grounded_alert_review', status: 'completed' });
     expect((await readMonitorSettings(h.pool, ownerId, id, 'synthetic')).metaReview).toBeNull();
-
-    const other = await login(h.app);
-    const otherFarm = (await other.call('POST', '/api/v1/farms', { payload: farmBody({ facts: {} }) })).json().data.id;
-    await other.call('PUT', `/api/v1/farms/${otherFarm}/monitoring`, { payload: { enabled: true, metaEnabled: true } });
-    const otherOwner = (await h.pool.query('SELECT owner_id FROM farms WHERE id=$1', [otherFarm])).rows[0].owner_id;
-    await h.pool.query("UPDATE sessions SET expires_at=now()-interval '1 hour' WHERE owner_id=$1", [otherOwner]);
-    expect(await handler({ ...job, id: randomUUID(), owner_id: otherOwner, payload: { farmId: otherFarm } }, ctx)).toMatchObject({ metaStatus: 'session_expired_or_monitor_disabled' });
-    expect(review).toHaveBeenCalledTimes(1);
+    // A farmer's explicit disable stops the next run before any provider work.
+    await h.pool.query("UPDATE sessions SET expires_at=now()+interval '1 hour' WHERE owner_id=$1", [ownerId]);
+    await other.call('PUT', `/api/v1/farms/${id}/monitoring`, { payload: { enabled: false } });
+    expect(await handler(await job(), ctx)).toMatchObject({ status: 'cancelled' });
+    expect(createResponse).toHaveBeenCalledTimes(1);
   });
 });

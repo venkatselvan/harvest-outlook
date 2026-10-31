@@ -5,6 +5,8 @@ export type PriceEntry =
   | { kind: "audio"; perSecondUsd: number }
   | { kind: "tokens"; inputPerMTokUsd: number; outputPerMTokUsd: number }
   | { kind: "image"; perImageUsd: number }
+  /** Built-in web search (search grounding), billed per query on top of the model's tokens. */
+  | { kind: "search"; perQueryUsd: number }
   /** Speech is tracked in characters or seconds; no USD price is asserted. */
   | { kind: "speech"; unit: "characters" | "seconds" };
 
@@ -15,6 +17,9 @@ export const DEFAULT_PRICE_TABLE: PriceTable = {
   "muse-spark-1.3": { kind: "tokens", inputPerMTokUsd: 1.25, outputPerMTokUsd: 4.25 },
   "muse-wonder-1.0": { kind: "tokens", inputPerMTokUsd: 4, outputPerMTokUsd: 20 },
   "muse-image-1.0": { kind: "image", perImageUsd: 0.01 },
+  // Meta search grounding: $2.50 per 1,000 search queries plus tokens (dev.meta.ai/docs/pricing-rate-limits, read
+  // 2026-10-31). How several queries inside one web_search_call are metered is not stated; callers count per query.
+  "meta:web_search": { kind: "search", perQueryUsd: 2.5 / 1000 },
   "sam-3.1": { kind: "image", perImageUsd: 0.0025 },
   // Official Meta Voice Transcribe: $0.18/hour, Standard processing.
   "muse-voice-transcribe-1.0": { kind: "audio", perSecondUsd: 0.18 / 3600 },
@@ -25,6 +30,7 @@ const entrySchema = z.discriminatedUnion("kind", [
   z.object({kind:z.literal("audio"),perSecondUsd:nonNeg}),
   z.object({ kind: z.literal("tokens"), inputPerMTokUsd: nonNeg, outputPerMTokUsd: nonNeg }),
   z.object({ kind: z.literal("image"), perImageUsd: nonNeg }),
+  z.object({ kind: z.literal("search"), perQueryUsd: nonNeg }),
   z.object({ kind: z.literal("speech"), unit: z.enum(["characters", "seconds"]) }),
 ]);
 
@@ -46,6 +52,8 @@ export interface UsageEstimateInput {
   /** Use the capped maximum output tokens for a worst-case reservation. */
   outputTokens?: number;
   images?: number;
+  /** Web search queries (search grounding). */
+  searches?: number;
   characters?: number;
   seconds?: number;
 }
@@ -78,6 +86,8 @@ export function estimateCost(table: PriceTable, provider: string, model: string,
       return { usd: ceilMicro((usage.images ?? 1) * entry.perImageUsd), units: usage };
     case "audio":
       return {usd:ceilMicro((usage.seconds??0)*entry.perSecondUsd),units:usage};
+    case "search":
+      return { usd: ceilMicro((usage.searches ?? 0) * entry.perQueryUsd), units: usage };
     case "speech":
       return { usd: null, units: usage };
   }

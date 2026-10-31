@@ -1,7 +1,7 @@
 import { setTimeout as sleepTimer } from "node:timers/promises";
 import sharp from "sharp";
 import {trackMetaInvocation} from '../../services/model-activity';
-import { MetaError, type CreateResponseParams, type InputItem, type MetaResponse, type ParsedFunctionCall, type ParsedUsage } from "./types";
+import { MetaError, type CreateResponseParams, type InputItem, type MetaResponse, type ParsedFunctionCall, type ParsedUsage, type UrlCitation, type WebSearchCall } from "./types";
 
 export const MAX_RETRIES = 2;
 const DEFAULT_TIMEOUT_MS = 60_000;
@@ -44,6 +44,23 @@ export interface ParsedOutput {
   outputText: string | null;
   functionCalls: ParsedFunctionCall[];
   refusal: string | null;
+  citations: UrlCitation[];
+  webSearchCalls: WebSearchCall[];
+}
+
+const str = (v: unknown): string | null => (typeof v === "string" && v.length > 0 ? v : null);
+
+/** Documented shape (dev.meta.ai/docs/search-grounding, Responses schemas): action.queries[], action.sources[{url}], results[{url,title}]. */
+function parseWebSearchCall(item: Record<string, unknown>): WebSearchCall {
+  const action = obj(item.action);
+  const queries = Array.isArray(action.queries) ? action.queries.filter((q): q is string => typeof q === "string") : str(action.query) ? [action.query as string] : [];
+  const sourceUrls = (Array.isArray(action.sources) ? action.sources : []).map((x) => str(obj(x).url)).filter((u): u is string => u !== null);
+  const results = (Array.isArray(item.results) ? item.results : []).flatMap((x) => {
+    const r = obj(x);
+    const url = str(r.url);
+    return url ? [{ url, title: str(r.title) }] : [];
+  });
+  return { id: str(item.id), status: str(item.status), queries, sourceUrls, results };
 }
 
 /**
@@ -61,6 +78,8 @@ export function parseOutputItems(body: Record<string, unknown>): ParsedOutput {
   const commentary: string[] = [];
   const refusals: string[] = [];
   const functionCalls: ParsedFunctionCall[] = [];
+  const citations: UrlCitation[] = [];
+  const webSearchCalls: WebSearchCall[] = [];
   const output = Array.isArray(body.output) ? body.output : [];
   for (const raw of output) {
     const item = obj(raw);
@@ -69,9 +88,17 @@ export function parseOutputItems(body: Record<string, unknown>): ParsedOutput {
       const sink = item.phase === "commentary" ? commentary : texts;
       for (const c of content) {
         const part = obj(c);
-        if (part.type === "output_text" && typeof part.text === "string") sink.push(part.text);
-        else if (part.type === "refusal" && typeof part.refusal === "string") refusals.push(part.refusal);
+        if (part.type === "output_text" && typeof part.text === "string") {
+          sink.push(part.text);
+          for (const a of Array.isArray(part.annotations) ? part.annotations : []) {
+            const ann = obj(a);
+            const url = str(ann.url);
+            if (ann.type === "url_citation" && url) citations.push({ url, title: str(ann.title) });
+          }
+        } else if (part.type === "refusal" && typeof part.refusal === "string") refusals.push(part.refusal);
       }
+    } else if (item.type === "web_search_call") {
+      webSearchCalls.push(parseWebSearchCall(item));
     } else if (item.type === "function_call") {
       if (item.status === "incomplete") continue;
       const name = item.name;
@@ -84,7 +111,7 @@ export function parseOutputItems(body: Record<string, unknown>): ParsedOutput {
   let outputText: string | null = texts.length > 0 ? texts.join("") : null;
   if (outputText === null && functionCalls.length === 0 && commentary.length > 0) outputText = commentary.join("");
   if (outputText === null && typeof body.output_text === "string") outputText = body.output_text;
-  return { outputText, functionCalls, refusal: refusals.length > 0 ? refusals.join(" ").slice(0, 500) : null };
+  return { outputText, functionCalls, refusal: refusals.length > 0 ? refusals.join(" ").slice(0, 500) : null, citations, webSearchCalls };
 }
 
 export class MetaClient {
@@ -104,7 +131,12 @@ export class MetaClient {
     return !!this.opts.apiKey;
   }
 
-  /** Builds the request body. Only flat function tools are ever sent: no search grounding or built-in tools. */
+  /**
+   * Builds the request body. `tools` may only hold flat function tools. Built-in web search (search grounding) is
+   * added solely from the explicit `webSearch` option, in the documented `{type:"web_search", search_context_size,
+   * user_location}` shape; `tool_choice`/`parallel_tool_calls` are sent only with function tools (the documented
+   * web-search request carries neither).
+   */
   buildBody(p: CreateResponseParams): Record<string, unknown> {
     const body: Record<string, unknown> = {
       model: p.model,
@@ -112,13 +144,27 @@ export class MetaClient {
       input: p.input,
       max_output_tokens: p.maxOutputTokens,
     };
+    const tools: unknown[] = [];
     if (p.tools && p.tools.length > 0) {
       for (const t of p.tools) {
-        if (t.type !== "function") throw new MetaError("bad_request", "Only function tools may be sent (search grounding and built-in tools are disabled)");
+        if (t.type !== "function") throw new MetaError("bad_request", "Only function tools may be sent in tools (search grounding is enabled only through the explicit webSearch option)");
       }
-      body.tools = p.tools;
+      tools.push(...p.tools);
       body.tool_choice = "auto"; // the only accepted value; anything else is a 400
       body.parallel_tool_calls = false;
+    }
+    if (p.webSearch) {
+      const loc = p.webSearch.userLocation;
+      tools.push({
+        type: "web_search",
+        ...(p.webSearch.searchContextSize ? { search_context_size: p.webSearch.searchContextSize } : {}),
+        ...(loc ? { user_location: { type: "approximate", ...Object.fromEntries(Object.entries(loc).filter(([, v]) => typeof v === "string" && v.length > 0)) } } : {}),
+      });
+    }
+    if (tools.length > 0) body.tools = tools;
+    if (p.include && p.include.length > 0) {
+      if (p.include.some((i) => i !== "web_search_call.results")) throw new MetaError("bad_request", "Only include web_search_call.results is supported");
+      body.include = p.include;
     }
     if (p.textFormat) body.text = { format: { type: "json_schema", name: p.textFormat.name, strict: true, schema: p.textFormat.schema } };
     if (p.previousResponseId) body.previous_response_id = p.previousResponseId;
@@ -237,6 +283,8 @@ export class MetaClient {
       latencyMs,
       retries,
       incompleteReason,
+      citations: parsed.citations,
+      webSearchCalls: parsed.webSearchCalls,
     };
   }
 

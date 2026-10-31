@@ -27,7 +27,7 @@ describe('reusable boundary-only public research-site demo',()=>{
   expect(pickStageSet(stages,{stateCode:first.farm.location.stateCode,districtCode:first.farm.location.districtId})?.defs.length).toBeGreaterThan(0);
   expect(first.workspace.cycles).toEqual([]);expect(first.workspace.rotationPlans).toEqual([]);expect(first.workspace.previousHarvest).toEqual({status:'unknown'});
   expect((await getFarmContextHandler({farmId:first.farm.id},{pool:h.pool,ownerId:auth.ownerId,mode:'synthetic',requestId:randomUUID(),agentRunId:randomUUID(),asOf:new Date().toISOString()})).farm.demo).toMatchObject({prefilledBoundary:true});
-  const monitor=(await h.pool.query('SELECT enabled,meta_enabled FROM farm_monitors WHERE farm_id=$1',[first.farm.id])).rows[0];expect(monitor).toEqual({enabled:false,meta_enabled:false});
+  const monitor=(await h.pool.query('SELECT enabled,meta_enabled FROM farm_monitors WHERE farm_id=$1',[first.farm.id])).rows[0];expect(monitor).toEqual({enabled:true,meta_enabled:true});
   expect((await a.call('GET',`/api/v1/farms/${existing.id}`)).json().data).toEqual(before);
   const other=(await b.call('POST','/api/v1/farms/demo',{payload:{}})).json().data;expect(other.farm.id).not.toBe(first.farm.id);
   expect((await b.call('GET',`/api/v1/farms/${first.farm.id}/workspace`)).statusCode).toBe(404);
