@@ -804,7 +804,7 @@
     "note": "Not researched in this pass (ICAR-CIPHET / NABCONS loss studies not retrieved)."
    },
    "marketingCostNote": "Not researched in this pass: APMC commission and market-fee norms for Karnataka and Tamil Nadu were not retrieved; treat as unknown.",
-   "costNote": "CACP Rabi RMS 2026-27 report downloaded but not parsed; Karnataka/Tamil Nadu wheat coverage unverified.",
+   "costNote": "CACP Rabi RMS2026-27 has no Karnataka or Tamil Nadu wheat cost. Annex 5.12 lists Karnataka wheat as Not Projected: TE2024-25 all-India area share 0.47%, production share 0.17%, cost-study sample size 46 farms (1.3%) in TE2023-24. Tamil Nadu is absent from the wheat tables. Nearest reported states with a wheat cost are listed in Annex 5.5 (for example Maharashtra and Madhya Pradesh); none is a Karnataka or Tamil Nadu proxy, so no cost is recorded.",
    "yieldNote": "No Tamil Nadu wheat row in DES five-year estimates; TN handbook shows 13 ha state wheat area, no yield."
   },
   {
@@ -2990,14 +2990,77 @@
      "sourceId": "datagovin-dws-35be999b"
     }
    ],
-   "costs": [],
+   "costs": [
+    {
+     "region": "IN-KA",
+     "year": "2021-22",
+     "a2flPerHa": 30676,
+     "c2PerHa": 42468,
+     "a2PerHa": 25726,
+     "costPerQuintal": null,
+     "sampleYieldQtlPerHa": 9.2,
+     "basis": "actual cost of cultivation of gram (chickpea), Rs/ha, current prices, Cost of Cultivation scheme sample farms",
+     "derivation": "C2 = Operational Cost + Fixed Cost; A2+FL = C2 - rental value of owned land - interest on fixed capital; A2 = A2+FL - family labour. Inputs read visually from the table: operational 30486, fixed 11982, rental value of owned land 10447, interest on fixed capital 1345, family labour 4950.",
+     "locator": "Annex Table 5.6(c), Karnataka columns (report p.202, PDF p.232), visually verified",
+     "sourceId": "cacp-rabi-rms-2026-27",
+     "authority": "des",
+     "productBasis": "chickpea grain, qtl"
+    },
+    {
+     "region": "IN-KA",
+     "year": "2022-23",
+     "a2flPerHa": 30852,
+     "c2PerHa": 42552,
+     "a2PerHa": 25119,
+     "costPerQuintal": null,
+     "sampleYieldQtlPerHa": 9.7,
+     "basis": "actual cost of cultivation of gram (chickpea), Rs/ha, current prices, Cost of Cultivation scheme sample farms",
+     "derivation": "C2 = Operational Cost + Fixed Cost; A2+FL = C2 - rental value of owned land - interest on fixed capital; A2 = A2+FL - family labour. Inputs read visually from the table: operational 30657, fixed 11895, rental value of owned land 10393, interest on fixed capital 1307, family labour 5733.",
+     "locator": "Annex Table 5.6(c), Karnataka columns (report p.202, PDF p.232), visually verified",
+     "sourceId": "cacp-rabi-rms-2026-27",
+     "authority": "des",
+     "productBasis": "chickpea grain, qtl"
+    },
+    {
+     "region": "IN-KA",
+     "year": "2023-24",
+     "a2flPerHa": 31999,
+     "c2PerHa": 45163,
+     "a2PerHa": 26526,
+     "costPerQuintal": null,
+     "sampleYieldQtlPerHa": 9.3,
+     "basis": "actual cost of cultivation of gram (chickpea), Rs/ha, current prices, Cost of Cultivation scheme sample farms",
+     "derivation": "C2 = Operational Cost + Fixed Cost; A2+FL = C2 - rental value of owned land - interest on fixed capital; A2 = A2+FL - family labour. Inputs read visually from the table: operational 31540, fixed 13623, rental value of owned land 11680, interest on fixed capital 1484, family labour 5473.",
+     "locator": "Annex Table 5.6(c), Karnataka columns (report p.202, PDF p.232), visually verified",
+     "sourceId": "cacp-rabi-rms-2026-27",
+     "authority": "des",
+     "productBasis": "chickpea grain, qtl"
+    },
+    {
+     "region": "IN-KA",
+     "year": "RMS2026-27 (projected, crop year 2025-26)",
+     "a2flPerHa": null,
+     "c2PerHa": null,
+     "costPerQuintal": 5355,
+     "costPerQuintalC2": 5355,
+     "costPerQuintalA2FL": 4088,
+     "costPerQuintalA2": 3390,
+     "projectedYieldQtlPerHa": 9.4,
+     "basis": "projected cost of production, Rs per quintal of gram (chickpea grain); per-ha not derived because CoP is net of by-product value",
+     "locator": "Annex Table 5.5 (report p.189, PDF p.219), Karnataka row under Gram, visually verified; cross-checked with Annex Table 5.10 (yield 9.42 qtl/ha, C2 5355)",
+     "sourceId": "cacp-rabi-rms-2026-27",
+     "authority": "cacp",
+     "productBasis": "chickpea grain, qtl",
+     "stateShareInAllIndiaProductionPct": 3.9
+    }
+   ],
    "postHarvestLossPct": {
     "value": null,
     "sourceId": null,
     "note": "Not researched in this pass (ICAR-CIPHET / NABCONS loss studies not retrieved)."
    },
    "marketingCostNote": "Not researched in this pass: APMC commission and market-fee norms for Karnataka and Tamil Nadu were not retrieved; treat as unknown.",
-   "costNote": "CACP Rabi RMS 2026-27 report downloaded but not parsed."
+   "costNote": "CACP Rabi RMS2026-27 (July 2025) reports Karnataka gram only (Annex 5.5, 5.6(c)). Tamil Nadu gram is listed in Annex 5.12 as Not Projected: very low all-India share and inadequate sample size, so no TN gram cost exists in that report."
   },
   {
    "cropId": "pigeon-pea",
@@ -4476,7 +4539,7 @@
     "note": "Not researched in this pass (ICAR-CIPHET / NABCONS loss studies not retrieved)."
    },
    "marketingCostNote": "Not researched in this pass: APMC commission and market-fee norms for Karnataka and Tamil Nadu were not retrieved; treat as unknown.",
-   "costNote": "CACP Rabi RMS 2026-27 report downloaded but not parsed; no KA/TN lentil area in DES estimates."
+   "costNote": "CACP Rabi RMS2026-27 reports lentil cost only for Bihar, Madhya Pradesh, Uttar Pradesh and West Bengal (Annex 5.5, 5.6(d)). Karnataka and Tamil Nadu are not in the lentil tables. Annex 5.12 lists Jharkhand as not projected; no KA or TN lentil row exists anywhere in the report. No cost is recorded."
   },
   {
    "cropId": "soybean",
@@ -6386,7 +6449,7 @@
     "note": "Not researched in this pass (ICAR-CIPHET / NABCONS loss studies not retrieved)."
    },
    "marketingCostNote": "Not researched in this pass: APMC commission and market-fee norms for Karnataka and Tamil Nadu were not retrieved; treat as unknown.",
-   "costNote": "CACP Rabi RMS 2026-27 report downloaded but not parsed; KA/TN mustard area negligible."
+   "costNote": "CACP Rabi RMS2026-27 reports rapeseed and mustard cost for Assam, Bihar, Gujarat, Haryana, Himachal Pradesh, Jharkhand, Madhya Pradesh, Punjab, Rajasthan, Uttar Pradesh and West Bengal (Annex 5.5, 5.6(e)). Karnataka and Tamil Nadu are not in the tables. No cost is recorded. Mustard area in KA and TN is below 1 thousand ha in the DES estimates."
   },
   {
    "cropId": "cotton",
@@ -7519,14 +7582,159 @@
      "sourceId": "datagovin-dws-35be999b"
     }
    ],
-   "costs": [],
+   "costs": [
+    {
+     "region": "IN-KA",
+     "year": "2021-22",
+     "a2flPerHa": 78681,
+     "c2PerHa": 131602,
+     "a2PerHa": 64904,
+     "costPerQuintal": null,
+     "sampleYieldQtlPerHa": 939.84,
+     "basis": "actual cost of cultivation of sugarcane (plant and ratoon crops combined, sample-farm average), Rs/ha, current prices, Cost of Cultivation scheme; yield is cane in qtl/ha",
+     "derivation": "C2 = Operational Cost + Fixed Cost; A2+FL = C2 - rental value of owned land - interest on fixed capital; A2 = A2+FL - family labour. Inputs read visually: operational 78459, fixed 53143, rental value of owned land 50803, interest on fixed capital 2118, family labour 13777.",
+     "locator": "Annex Table 5.4(c) (report p.121, PDF p.141), visually verified",
+     "sourceId": "cacp-sugarcane-2026-27",
+     "authority": "des",
+     "productBasis": "cane, qtl"
+    },
+    {
+     "region": "IN-KA",
+     "year": "2022-23",
+     "a2flPerHa": 84651,
+     "c2PerHa": 138634,
+     "a2PerHa": 68043,
+     "costPerQuintal": null,
+     "sampleYieldQtlPerHa": 911.14,
+     "basis": "actual cost of cultivation of sugarcane (plant and ratoon crops combined, sample-farm average), Rs/ha, current prices, Cost of Cultivation scheme; yield is cane in qtl/ha",
+     "derivation": "C2 = Operational Cost + Fixed Cost; A2+FL = C2 - rental value of owned land - interest on fixed capital; A2 = A2+FL - family labour. Inputs read visually: operational 84436, fixed 54198, rental value of owned land 51984, interest on fixed capital 1999, family labour 16608.",
+     "locator": "Annex Table 5.4(c) (report p.121, PDF p.141), visually verified",
+     "sourceId": "cacp-sugarcane-2026-27",
+     "authority": "des",
+     "productBasis": "cane, qtl"
+    },
+    {
+     "region": "IN-KA",
+     "year": "2023-24",
+     "a2flPerHa": 89625,
+     "c2PerHa": 148215,
+     "a2PerHa": 71413,
+     "costPerQuintal": null,
+     "sampleYieldQtlPerHa": 893.78,
+     "basis": "actual cost of cultivation of sugarcane (plant and ratoon crops combined, sample-farm average), Rs/ha, current prices, Cost of Cultivation scheme; yield is cane in qtl/ha",
+     "derivation": "C2 = Operational Cost + Fixed Cost; A2+FL = C2 - rental value of owned land - interest on fixed capital; A2 = A2+FL - family labour. Inputs read visually: operational 89406, fixed 58809, rental value of owned land 56376, interest on fixed capital 2214, family labour 18212.",
+     "locator": "Annex Table 5.4(c) (report p.121, PDF p.141), visually verified",
+     "sourceId": "cacp-sugarcane-2026-27",
+     "authority": "des",
+     "productBasis": "cane, qtl"
+    },
+    {
+     "region": "IN-TN",
+     "year": "2021-22",
+     "a2flPerHa": 189741,
+     "c2PerHa": 249971,
+     "a2PerHa": 175132,
+     "costPerQuintal": null,
+     "sampleYieldQtlPerHa": 1075.06,
+     "basis": "actual cost of cultivation of sugarcane (plant and ratoon crops combined, sample-farm average), Rs/ha, current prices, Cost of Cultivation scheme; yield is cane in qtl/ha",
+     "derivation": "C2 = Operational Cost + Fixed Cost; A2+FL = C2 - rental value of owned land - interest on fixed capital; A2 = A2+FL - family labour. Inputs read visually: operational 188011, fixed 61960, rental value of owned land 39155, interest on fixed capital 21075, family labour 14609.",
+     "locator": "Annex Table 5.4(e) (report p.123, PDF p.143), visually verified",
+     "sourceId": "cacp-sugarcane-2026-27",
+     "authority": "des",
+     "productBasis": "cane, qtl"
+    },
+    {
+     "region": "IN-TN",
+     "year": "2022-23",
+     "a2flPerHa": 194743,
+     "c2PerHa": 259728,
+     "a2PerHa": 177758,
+     "costPerQuintal": null,
+     "sampleYieldQtlPerHa": 1010.16,
+     "basis": "actual cost of cultivation of sugarcane (plant and ratoon crops combined, sample-farm average), Rs/ha, current prices, Cost of Cultivation scheme; yield is cane in qtl/ha",
+     "derivation": "C2 = Operational Cost + Fixed Cost; A2+FL = C2 - rental value of owned land - interest on fixed capital; A2 = A2+FL - family labour. Inputs read visually: operational 192940, fixed 66788, rental value of owned land 46998, interest on fixed capital 17987, family labour 16985.",
+     "locator": "Annex Table 5.4(e) (report p.123, PDF p.143), visually verified",
+     "sourceId": "cacp-sugarcane-2026-27",
+     "authority": "des",
+     "productBasis": "cane, qtl"
+    },
+    {
+     "region": "IN-TN",
+     "year": "2023-24",
+     "a2flPerHa": 203188,
+     "c2PerHa": 260756,
+     "a2PerHa": 183225,
+     "costPerQuintal": null,
+     "sampleYieldQtlPerHa": 1018.69,
+     "basis": "actual cost of cultivation of sugarcane (plant and ratoon crops combined, sample-farm average), Rs/ha, current prices, Cost of Cultivation scheme; yield is cane in qtl/ha",
+     "derivation": "C2 = Operational Cost + Fixed Cost; A2+FL = C2 - rental value of owned land - interest on fixed capital; A2 = A2+FL - family labour. Inputs read visually: operational 201173, fixed 59583, rental value of owned land 38958, interest on fixed capital 18610, family labour 19963.",
+     "locator": "Annex Table 5.4(e) (report p.123, PDF p.143), visually verified",
+     "sourceId": "cacp-sugarcane-2026-27",
+     "authority": "des",
+     "productBasis": "cane, qtl"
+    },
+    {
+     "region": "IN-KA",
+     "year": "Sugar season 2026-27 (projected)",
+     "a2flPerHa": null,
+     "c2PerHa": null,
+     "costPerQuintal": 179,
+     "costPerQuintalC2": 179,
+     "costPerQuintalA2FL": 120,
+     "costPerQuintalA2": 97,
+     "sugarRecoveryRatePct": 10.97,
+     "projectedYieldQtlPerHa": 914.92,
+     "stateGovernmentProjection": {
+      "yieldQtlPerHa": 900.0,
+      "c2PerQtl": 353
+     },
+     "basis": "projected cost of production, Rs per quintal of cane at the state-specific sugar recovery rate (TE2024-25); per-ha not derived",
+     "locator": "Table 5.3 (report p.72, PDF p.92) and Annex Tables 5.6 and 5.9 (PDF pp.146, 154), visually verified",
+     "sourceId": "cacp-sugarcane-2026-27",
+     "authority": "cacp",
+     "productBasis": "cane, qtl",
+     "costPerQuintalAtBasicRecoveryRate": {
+      "basicRecoveryRatePct": 10.25,
+      "a2": 90,
+      "a2fl": 112,
+      "c2": 167
+     }
+    },
+    {
+     "region": "IN-TN",
+     "year": "Sugar season 2026-27 (projected)",
+     "a2flPerHa": null,
+     "c2PerHa": null,
+     "costPerQuintal": 305,
+     "costPerQuintalC2": 305,
+     "costPerQuintalA2FL": 247,
+     "costPerQuintalA2": 225,
+     "sugarRecoveryRatePct": 9.15,
+     "projectedYieldQtlPerHa": 1034.64,
+     "stateGovernmentProjection": {
+      "yieldQtlPerHa": 1045.0,
+      "c2PerQtl": 370
+     },
+     "basis": "projected cost of production, Rs per quintal of cane at the state-specific sugar recovery rate (TE2024-25); per-ha not derived",
+     "locator": "Table 5.3 (report p.72, PDF p.92) and Annex Tables 5.6 and 5.9 (PDF pp.146, 154), visually verified",
+     "sourceId": "cacp-sugarcane-2026-27",
+     "authority": "cacp",
+     "productBasis": "cane, qtl",
+     "costPerQuintalAtBasicRecoveryRate": {
+      "basicRecoveryRatePct": 10.25,
+      "a2": 252,
+      "a2fl": 276,
+      "c2": 341
+     }
+    }
+   ],
    "postHarvestLossPct": {
     "value": null,
     "sourceId": null,
     "note": "Not researched in this pass (ICAR-CIPHET / NABCONS loss studies not retrieved)."
    },
    "marketingCostNote": "Not researched in this pass: APMC commission and market-fee norms for Karnataka and Tamil Nadu were not retrieved; treat as unknown.",
-   "costNote": "CACP Sugarcane 2026-27 report downloaded but not parsed."
+   "costNote": "CACP Sugarcane 2026-27 report (Nov 2025): Karnataka and Tamil Nadu per-ha cost for 2021-22 to 2023-24 from Annex 5.4(c) and 5.4(e), plus projected cost per quintal of cane for sugar season 2026-27. TE2023-24 means derived from the three years match the published Table 5.1 exactly (KA A2 68120, A2+FL 84319; TN A2 178705, A2+FL 195891). Cost per ha includes ratoon and plant crops in the state sample mix; Karnataka has a high ratoon share, which lowers its per-ha cost."
   },
   {
    "cropId": "coriander",
@@ -7678,20 +7886,20 @@
    "title": "Price Policy for Rabi Crops: The Marketing Season 2026-27 (July 2025)",
    "publisher": "CACP",
    "retrievedAt": "2026-11-01",
-   "locator": "Downloaded, text layer present, not parsed in this pass",
-   "excerpt": null,
+   "locator": "Annex Table 5.5 (report pp.189-190, PDF pp.219-220); Annex Table 5.6(a)-(f) break-up (PDF pp.221-243; Karnataka appears only on 5.6(c) Gram, PDF p.232, and 5.6(f) Safflower, PDF p.243); Annex Tables 5.10 and 5.12 (PDF pp.248, 252). Tamil Nadu appears only in Annex 5.12 (gram, Not Projected). Pages viewed as rendered images.",
+   "excerpt": "Annex Table 5.5: Projected Cost of Production (A2, A2+FL & C2) and Yield for Rabi Crops for RMS2026-27 and Production Shares during TE2024-25. Source: CACP Calculations using CS data. Annex Table 5.12: Crop-wise States not-included in Projection of Rabi Crops: Wheat, Karnataka: \"State area and production shares of wheat at all-India during TE2024-25 are 0.47% and 0.17%\"; Gram, Tamil Nadu: \"State area and production share of gram at all-India level ... are very low\".",
    "sha256": "084e054182edda2b0bc7e519ea82d20b2ef84fa7bcbf3c83bbcb202628455829",
-   "usedForValues": false
+   "usedForValues": true
   },
   "cacp-sugarcane-2026-27": {
    "url": "https://cacp.da.gov.in/Document/EnglishReports/Sugarcane%20report%20final_Dec25_20260506100048275.pdf",
    "title": "Price Policy for Sugarcane: 2026-27 Sugar Season (November 2025)",
    "publisher": "CACP",
    "retrievedAt": "2026-11-01",
-   "locator": "Downloaded, text layer present, not parsed in this pass",
-   "excerpt": null,
+   "locator": "Table 5.1 (PDF p.85), Table 5.3 (report p.72, PDF p.92), Annex Tables 5.4(c) Karnataka (PDF p.141) and 5.4(e) Tamil Nadu (PDF p.143), Annex 5.6 and 5.7 (PDF pp.146-147), Annex 5.9 (PDF p.154); pages viewed as rendered images",
+   "excerpt": "Table 5.3: Projected Cost of Production (CoP) of Sugarcane for Sugar Season 2026-27. Source: CACP Calculations using Directorate of Sugar & Vegetable Oils ... and CS data. Annex Table 5.4: Break-up of cost of Cultivation. Source: ES&E Division, Ministry of Agriculture and Farmers Welfare",
    "sha256": "b4088d81222b1c480ca147104938cb7894ab1013434cfb21fd7984a9f5466dfe",
-   "usedForValues": false
+   "usedForValues": true
   },
   "spicesboard-state-2024-25": {
    "url": "https://indianspices.com/sites/default/files/Major%20spice%20state%20wise%20area%20production%202024-25%20web.pdf",
@@ -7702,6 +7910,40 @@
    "excerpt": null,
    "sha256": "2e9166ab2603f912ddc77d9d916ab92ec89ba53f85373aa529772d22c06dc828",
    "usedForValues": false
+  },
+  "cag-report-31-2015-paddy-milling": {
+   "url": "https://cag.gov.in/uploads/download_audit_report/2015/Union_Performance_Procurement_Milling_of_Paddy_Central_Pool_31_2015.pdf",
+   "title": "Performance Audit of Procurement and Milling of Paddy in the Central Pool, Report No. 31 of 2015 (Union Government, Food and Public Distribution / FCI)",
+   "publisher": "Comptroller and Auditor General of India",
+   "retrievedAt": "2026-11-01",
+   "locator": "Chapter V para 5.1 (PDF p.82); Executive Summary footnotes 16-17 (milling charges, out-turn ratio); table footnote \"Paddy is converted into rice at the out-turn ratio of 67 per cent\" (Ministry of Agriculture and FCI procurement data); para 5.1.2 (levy rates at 67% raw and 68% parboiled)",
+   "excerpt": "After conversion by milling as per norms laid down by Tariff Commission, (2005), 100 kg of paddy is expected to produce 67 kg raw rice or 68 kg in case of par-boiled rice. ... Out-turn Ratio of production of 67 per cent of raw rice and 68 per cent of par-boiled out of one quintal paddy was recommended by Gokak Committee during 1994.",
+   "sha256": "c8645ecfe2c73999bf9f6217ad5722cb0d5055da163c6d8fff1215a1d86943fe",
+   "usedForValues": true,
+   "note": "Audit report dated 2015 describing Government of India norms (Gokak Committee 1994, Tariff Commission 2005). No 2024-26 DFPD notification was retrieved, so currency is unconfirmed. The ratio is a procurement and milling norm, not a measured variety-specific recovery."
+  }
+ },
+ "conversions": {
+  "riceToPaddy": {
+   "status": "recorded only; NOT applied to any yield or cost row",
+   "riceKgPerKgPaddyRaw": 0.67,
+   "riceKgPerKgPaddyParboiled": 0.68,
+   "paddyKgPerKgRiceRaw": 1.4925,
+   "paddyKgPerKgRiceParboiled": 1.4706,
+   "formula": "paddy_kg = rice_kg / 0.67 (raw rice). Example from the cited report: 149.25 kg paddy is equivalent to 100 kg rice at 67 per cent.",
+   "authority": "official-norm",
+   "basis": "Government of India out-turn ratio (OTR) for custom milling of paddy: 67 kg raw rice or 68 kg parboiled rice per 100 kg paddy. Origin: Gokak Committee 1994, re-based on Tariff Commission recommendations of September 2005.",
+   "caveats": [
+    "It is a policy norm for procurement and custom milling, not a measured recovery for a given variety or mill.",
+    "Millers dispute it for some varieties (for example Punjab PR-126 reported at 62-64 per cent in press reports), and the cited audit reports test-milling above 72 per cent for MTU 7029. Treat as a default and let the farmer override.",
+    "It was not confirmed that DES applies 67 per cent when it publishes paddy \"in terms of rice\"; the DES and TN yields in this file are published as rice (milled) and the conversion used by the publisher is not stated in the retrieved pages. The cited report footnotes that Ministry of Agriculture paddy figures in its table use 67 per cent."
+   ],
+   "sourceId": "cag-report-31-2015-paddy-milling",
+   "locator": "Chapter V para 5.1 (PDF p.82) and Executive Summary footnote 17"
+  },
+  "acreToHectare": {
+   "value": 0.404686,
+   "note": "1 acre = 4046.86 m2 (international acre, rounded); 1 ha = 10000 m2. Used for every per-acre figure converted in this file."
   }
  }
 }
