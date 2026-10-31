@@ -6925,14 +6925,50 @@
      "sourceId": "datagovin-dws-35be999b"
     }
    ],
-   "costs": [],
+   "costs": [
+    {
+     "region": "IN-KA",
+     "district": "Haveri",
+     "season": "kharif",
+     "year": null,
+     "yearPrinted": null,
+     "a2flPerHa": null,
+     "c2PerHa": 121783,
+     "a2PerHa": null,
+     "costPerQuintal": 1182,
+     "totalCostPerHa": 121783,
+     "costPerHaOriginal": {
+      "value": 49283.87,
+      "unit": "Rs per acre (abstract and text)"
+     },
+     "unitConversion": "Rs per acre / 0.404686 ha per acre = 121783 Rs/ha (original kept in costPerHaOriginal). costPerQuintal = 49,283.87 / 41.69 = 1182 Rs/q, matching the paper's own Rs 1,182/q.",
+     "costIncludes": "Variable cost (87.34 per cent: seeds, human labour at hired rates, bullock and machine labour, manure, fertilizers, plant protection, irrigation, miscellaneous, interest on working capital at 7 per cent) plus fixed cost (12.66 per cent: depreciation, land revenue, rental value of owned land, interest on fixed capital at 12 per cent). Land rent is included, so it is C2-like. No separate family-labour imputation is described.",
+     "expectedYield": {
+      "original": "41.69 quintal per acre (average realised, 100 farmers)",
+      "kgPerHa": 10302,
+      "unitConversion": "41.69 q/acre x 100 kg/q = 4,169 kg/acre; / 0.404686 = 10302 kg/ha",
+      "note": "Fresh/cured bulb basis not stated; assumed marketed bulb (price Rs 1,833/q). This is a single-season (kharif) survey average, not a normal-year expectation."
+     },
+     "priceRealised": "Rs 1,833 per quintal",
+     "grossReturnsPerAcre": 76409,
+     "returnsPerRupeeSpent": 1.55,
+     "sampleDescription": "100 onion farmers, 50 in each of two leading taluks of Haveri district, Karnataka; survey year is not printed in the extracted text (paper received April 2024).",
+     "reliability": "MEDIUM-LOW. The paper is internally inconsistent: the abstract and cost-of-production line use Rs 49,283.87/acre, the Table 6 text layer sums to Rs 49,286.27, and the discussion text says Rs 49,936 and a fixed cost of Rs 6,889 against Table 6 Rs 6,239.34. The abstract total was used because it reproduces the paper's Rs 1,182/q cost of production and the 1.55 return per rupee. Kharif onion in a north Karnataka district; not a Hassan or Mysuru figure.",
+     "figureType": "peer-reviewed farm-survey paper (CAGR, instability and tabular analysis), authors at UAS Bengaluru (GKVK) and College of Agriculture Hassan; not an official SAU cost sheet",
+     "basis": "Survey-average cost of cultivation of kharif onion per acre in Haveri district.",
+     "locator": "Abstract; Table 6 \"Cost of cultivation of kharif onion (Rs./Per acre)\"; Mysore J. Agric. Sci. 58(3): 393-401 (2024)",
+     "sourceId": "patil-mjas-2024-onion-haveri",
+     "authority": "sau",
+     "productBasis": "onion bulb (marketed), kharif"
+    }
+   ],
    "postHarvestLossPct": {
     "value": null,
     "sourceId": null,
     "note": "Not researched in this pass (ICAR-CIPHET / NABCONS loss studies not retrieved)."
    },
    "marketingCostNote": "Not researched in this pass: APMC commission and market-fee norms for Karnataka and Tamil Nadu were not retrieved; treat as unknown.",
-   "costNote": "Not a CACP kharif/rabi mandated crop; TNAU/UAS/KVK cost-of-cultivation sheets not researched in this pass."
+   "costNote": "Karnataka: UAS-authored Haveri kharif survey added (year not printed, medium-low reliability). Tamil Nadu: no TNAU cost sheet found; the TNAU Agritech cost table does not include onion. CACP/DES cost not available."
   },
   {
    "cropId": "shallot",
@@ -6978,14 +7014,53 @@
      "stateAreaHa": 41392
     }
    ],
-   "costs": [],
+   "costs": [
+    {
+     "region": "IN-TN",
+     "year": null,
+     "yearPrinted": null,
+     "a2flPerHa": null,
+     "c2PerHa": null,
+     "a2PerHa": null,
+     "costPerQuintal": null,
+     "totalCostPerHa": 61000,
+     "costPerHaOriginal": {
+      "value": 61000,
+      "unit": "Rs; per-hectare wording is not printed on the page"
+     },
+     "unitCheck": "Per hectare inferred, not printed: the same page gives yield in MT/ha and its stated net income equals yield x lowest price - cost for every row (Rs 39000 at Rs 2/kg).",
+     "costIncludes": "Seven cash-cost lines only: field preparation, nursery and planting/sowing, weeding, plant protection, fertilizers, wages, and staking/transport/other. No land rent, interest or family-labour line is printed. Not comparable to CACP C2.",
+     "components": {
+      "fieldPreparation": 6000,
+      "nurseryAndPlantingOrSowing": 7000,
+      "weeding": 10000,
+      "plantProtection": 12000,
+      "fertilizers": 8000,
+      "wages": 13000,
+      "stakingTransportOther": 5000
+     },
+     "expectedYield": {
+      "original": "50 MT/ha",
+      "kgPerHa": 50000,
+      "note": "Fresh fruit; the table does not state grade."
+     },
+     "priceRangeOriginal": "Rs 2-30/kg",
+     "netIncomeStatedByTable": "Rs 39000 at Rs 2/kg",
+     "figureType": "normative budget table for annual horticultural crops (not a farm survey); undated",
+     "basis": "TNAU Agritech portal table \"Cost of cultivation of annual horticultural crops\", Rs per hectare, with expected yield from the companion table \"Costs and benefits of annual Horticultural crops\". Undated: the page footer reads TNAU-2013 and the sub-heading reads \"Cost of cultivation NHB\", so the cost norms may derive from NHB and are likely older than 2013 (a Rs 2/kg tomato price floor points to an old base year). Do not treat as a current-year cost.",
+     "locator": "Tables \"Cost of cultivation of annual horticultural crops\" and \"Costs and benefits of annual Horticultural crops\", row \"Tomato\"",
+     "sourceId": "tnau-agritech-hort-cost-table",
+     "authority": "sau",
+     "productBasis": "tomato fresh fruit"
+    }
+   ],
    "postHarvestLossPct": {
     "value": null,
     "sourceId": null,
     "note": "Not researched in this pass (ICAR-CIPHET / NABCONS loss studies not retrieved)."
    },
    "marketingCostNote": "Not researched in this pass: APMC commission and market-fee norms for Karnataka and Tamil Nadu were not retrieved; treat as unknown.",
-   "costNote": "Not a CACP kharif/rabi mandated crop; TNAU/UAS/KVK cost-of-cultivation sheets not researched in this pass."
+   "costNote": "Not a CACP kharif/rabi mandated crop. TNAU Agritech normative budget row added (undated, cash-cost lines only, Rs/ha inferred); Karnataka SAU/department figures not found for this crop."
   },
   {
    "cropId": "brinjal",
@@ -7019,14 +7094,53 @@
      "stateAreaHa": 20444
     }
    ],
-   "costs": [],
+   "costs": [
+    {
+     "region": "IN-TN",
+     "year": null,
+     "yearPrinted": null,
+     "a2flPerHa": null,
+     "c2PerHa": null,
+     "a2PerHa": null,
+     "costPerQuintal": null,
+     "totalCostPerHa": 50000,
+     "costPerHaOriginal": {
+      "value": 50000,
+      "unit": "Rs; per-hectare wording is not printed on the page"
+     },
+     "unitCheck": "Per hectare inferred, not printed: the same page gives yield in MT/ha and its stated net income equals yield x lowest price - cost for every row (Rs 70000 at Rs 2/kg).",
+     "costIncludes": "Seven cash-cost lines only: field preparation, nursery and planting/sowing, weeding, plant protection, fertilizers, wages, and staking/transport/other. No land rent, interest or family-labour line is printed. Not comparable to CACP C2.",
+     "components": {
+      "fieldPreparation": 6000,
+      "nurseryAndPlantingOrSowing": 7000,
+      "weeding": 10000,
+      "plantProtection": 10000,
+      "fertilizers": 7000,
+      "wages": 10000,
+      "stakingTransportOther": null
+     },
+     "expectedYield": {
+      "original": "60 MT/ha",
+      "kgPerHa": 60000,
+      "note": "Fresh fruit."
+     },
+     "priceRangeOriginal": "Rs 2-30/kg",
+     "netIncomeStatedByTable": "Rs 70000 at Rs 2/kg",
+     "figureType": "normative budget table for annual horticultural crops (not a farm survey); undated",
+     "basis": "TNAU Agritech portal table \"Cost of cultivation of annual horticultural crops\", Rs per hectare, with expected yield from the companion table \"Costs and benefits of annual Horticultural crops\". Undated: the page footer reads TNAU-2013 and the sub-heading reads \"Cost of cultivation NHB\", so the cost norms may derive from NHB and are likely older than 2013 (a Rs 2/kg tomato price floor points to an old base year). Do not treat as a current-year cost.",
+     "locator": "Tables \"Cost of cultivation of annual horticultural crops\" and \"Costs and benefits of annual Horticultural crops\", row \"Brinjal\"",
+     "sourceId": "tnau-agritech-hort-cost-table",
+     "authority": "sau",
+     "productBasis": "brinjal fresh fruit"
+    }
+   ],
    "postHarvestLossPct": {
     "value": null,
     "sourceId": null,
     "note": "Not researched in this pass (ICAR-CIPHET / NABCONS loss studies not retrieved)."
    },
    "marketingCostNote": "Not researched in this pass: APMC commission and market-fee norms for Karnataka and Tamil Nadu were not retrieved; treat as unknown.",
-   "costNote": "Not a CACP kharif/rabi mandated crop; TNAU/UAS/KVK cost-of-cultivation sheets not researched in this pass."
+   "costNote": "Not a CACP kharif/rabi mandated crop. TNAU Agritech normative budget row added (undated, cash-cost lines only, Rs/ha inferred); Karnataka SAU/department figures not found for this crop."
   },
   {
    "cropId": "okra",
@@ -7059,14 +7173,53 @@
      "stateAreaHa": 16813
     }
    ],
-   "costs": [],
+   "costs": [
+    {
+     "region": "IN-TN",
+     "year": null,
+     "yearPrinted": null,
+     "a2flPerHa": null,
+     "c2PerHa": null,
+     "a2PerHa": null,
+     "costPerQuintal": null,
+     "totalCostPerHa": 40600,
+     "costPerHaOriginal": {
+      "value": 40600,
+      "unit": "Rs; per-hectare wording is not printed on the page"
+     },
+     "unitCheck": "Per hectare inferred, not printed: the same page gives yield in MT/ha and its stated net income equals yield x lowest price - cost for every row (Rs 19400 at Rs 6/kg).",
+     "costIncludes": "Seven cash-cost lines only: field preparation, nursery and planting/sowing, weeding, plant protection, fertilizers, wages, and staking/transport/other. No land rent, interest or family-labour line is printed. Not comparable to CACP C2.",
+     "components": {
+      "fieldPreparation": 6000,
+      "nurseryAndPlantingOrSowing": 12000,
+      "weeding": 5600,
+      "plantProtection": 5000,
+      "fertilizers": 6000,
+      "wages": 6000,
+      "stakingTransportOther": null
+     },
+     "expectedYield": {
+      "original": "10 MT/ha",
+      "kgPerHa": 10000,
+      "note": "Fresh pods; the table calls the crop \"Bhendi\"."
+     },
+     "priceRangeOriginal": "Rs 6-15/kg",
+     "netIncomeStatedByTable": "Rs 19400 at Rs 6/kg",
+     "figureType": "normative budget table for annual horticultural crops (not a farm survey); undated",
+     "basis": "TNAU Agritech portal table \"Cost of cultivation of annual horticultural crops\", Rs per hectare, with expected yield from the companion table \"Costs and benefits of annual Horticultural crops\". Undated: the page footer reads TNAU-2013 and the sub-heading reads \"Cost of cultivation NHB\", so the cost norms may derive from NHB and are likely older than 2013 (a Rs 2/kg tomato price floor points to an old base year). Do not treat as a current-year cost.",
+     "locator": "Tables \"Cost of cultivation of annual horticultural crops\" and \"Costs and benefits of annual Horticultural crops\", row \"Bhendi\"",
+     "sourceId": "tnau-agritech-hort-cost-table",
+     "authority": "sau",
+     "productBasis": "okra fresh pods (table: Bhendi)"
+    }
+   ],
    "postHarvestLossPct": {
     "value": null,
     "sourceId": null,
     "note": "Not researched in this pass (ICAR-CIPHET / NABCONS loss studies not retrieved)."
    },
    "marketingCostNote": "Not researched in this pass: APMC commission and market-fee norms for Karnataka and Tamil Nadu were not retrieved; treat as unknown.",
-   "costNote": "Not a CACP kharif/rabi mandated crop; TNAU/UAS/KVK cost-of-cultivation sheets not researched in this pass."
+   "costNote": "Not a CACP kharif/rabi mandated crop. TNAU Agritech normative budget row added (undated, cash-cost lines only, Rs/ha inferred); Karnataka SAU/department figures not found for this crop."
   },
   {
    "cropId": "chilli",
@@ -7224,16 +7377,208 @@
      "districtAreaHa": 417.0,
      "districtProductionT": 739.0,
      "sourceId": "datagovin-dws-35be999b"
+    },
+    {
+     "region": "IN-KA",
+     "level": "state",
+     "season": "all seasons combined",
+     "cropYear": "2021-22",
+     "yieldKgPerHa": 1360,
+     "sourceUnit": "derived: production (tonnes) x 1000 kg/t / area (hectare); the table has no yield column. 177311 t x 1000 / 130391 ha = 1359.8 kg/ha (1.360 t/ha)",
+     "basis": "dry chilli inferred from magnitude only; the table does not state the product form (India total 3.4 t/ha is a dry-pod level)",
+     "basisEvidence": "magnitude (not stated in table)",
+     "estimateStatus": "no flag in table columns (earlier than the (F) final column)",
+     "stateAreaHa": 130391,
+     "stateProductionT": 177311,
+     "table": "Major Spice/state wise area and production of spices, PDF page 1, chilli block",
+     "sourceId": "spicesboard-state-2024-25"
+    },
+    {
+     "region": "IN-KA",
+     "level": "state",
+     "season": "all seasons combined",
+     "cropYear": "2022-23",
+     "yieldKgPerHa": 1484,
+     "sourceUnit": "derived: production (tonnes) x 1000 kg/t / area (hectare); the table has no yield column. 162833 t x 1000 / 109730 ha = 1483.9 kg/ha (1.484 t/ha)",
+     "basis": "dry chilli inferred from magnitude only; the table does not state the product form (India total 3.4 t/ha is a dry-pod level)",
+     "basisEvidence": "magnitude (not stated in table)",
+     "estimateStatus": "no flag in table columns (earlier than the (F) final column)",
+     "stateAreaHa": 109730,
+     "stateProductionT": 162833,
+     "table": "Major Spice/state wise area and production of spices, PDF page 1, chilli block",
+     "sourceId": "spicesboard-state-2024-25"
+    },
+    {
+     "region": "IN-KA",
+     "level": "state",
+     "season": "all seasons combined",
+     "cropYear": "2023-24",
+     "yieldKgPerHa": 1642,
+     "sourceUnit": "derived: production (tonnes) x 1000 kg/t / area (hectare); the table has no yield column. 280628 t x 1000 / 170915 ha = 1641.9 kg/ha (1.642 t/ha)",
+     "basis": "dry chilli inferred from magnitude only; the table does not state the product form (India total 3.4 t/ha is a dry-pod level)",
+     "basisEvidence": "magnitude (not stated in table)",
+     "estimateStatus": "no flag in table columns (earlier than the (F) final column)",
+     "stateAreaHa": 170915,
+     "stateProductionT": 280628,
+     "table": "Major Spice/state wise area and production of spices, PDF page 1, chilli block",
+     "sourceId": "spicesboard-state-2024-25",
+     "note": "Karnataka chilli area swings between 103,645 and 170,915 ha across the five columns; treat a single-year yield as noisy."
+    },
+    {
+     "region": "IN-KA",
+     "level": "state",
+     "season": "all seasons combined",
+     "cropYear": "2024-25",
+     "yieldKgPerHa": 1973,
+     "sourceUnit": "derived: production (tonnes) x 1000 kg/t / area (hectare); the table has no yield column. 204473 t x 1000 / 103645 ha = 1972.8 kg/ha (1.973 t/ha)",
+     "basis": "dry chilli inferred from magnitude only; the table does not state the product form (India total 3.4 t/ha is a dry-pod level)",
+     "basisEvidence": "magnitude (not stated in table)",
+     "estimateStatus": "final, per table footnote \"(F): final\" on the 2024-25 f column",
+     "stateAreaHa": 103645,
+     "stateProductionT": 204473,
+     "table": "Major Spice/state wise area and production of spices, PDF page 1, chilli block",
+     "sourceId": "spicesboard-state-2024-25"
+    },
+    {
+     "region": "IN-KA",
+     "level": "state",
+     "season": "all seasons combined",
+     "cropYear": "2025-26",
+     "yieldKgPerHa": 1761,
+     "sourceUnit": "derived: production (tonnes) x 1000 kg/t / area (hectare); the table has no yield column. 221443 t x 1000 / 125783 ha = 1760.5 kg/ha (1.761 t/ha)",
+     "basis": "dry chilli inferred from magnitude only; the table does not state the product form (India total 3.4 t/ha is a dry-pod level)",
+     "basisEvidence": "magnitude (not stated in table)",
+     "estimateStatus": "advance estimate, per table footnote \"(*): adv estimate\" on the 2025-26 column",
+     "stateAreaHa": 125783,
+     "stateProductionT": 221443,
+     "table": "Major Spice/state wise area and production of spices, PDF page 1, chilli block",
+     "sourceId": "spicesboard-state-2024-25"
+    },
+    {
+     "region": "IN-TN",
+     "level": "state",
+     "season": "all seasons combined",
+     "cropYear": "2021-22",
+     "yieldKgPerHa": 496,
+     "sourceUnit": "derived: production (tonnes) x 1000 kg/t / area (hectare); the table has no yield column. 26382 t x 1000 / 53173 ha = 496.2 kg/ha (0.496 t/ha)",
+     "basis": "dry chilli inferred from magnitude only; the table does not state the product form (India total 3.4 t/ha is a dry-pod level)",
+     "basisEvidence": "magnitude (not stated in table)",
+     "estimateStatus": "no flag in table columns (earlier than the (F) final column)",
+     "stateAreaHa": 53173,
+     "stateProductionT": 26382,
+     "table": "Major Spice/state wise area and production of spices, PDF page 1, chilli block",
+     "sourceId": "spicesboard-state-2024-25"
+    },
+    {
+     "region": "IN-TN",
+     "level": "state",
+     "season": "all seasons combined",
+     "cropYear": "2022-23",
+     "yieldKgPerHa": 480,
+     "sourceUnit": "derived: production (tonnes) x 1000 kg/t / area (hectare); the table has no yield column. 25292 t x 1000 / 52703 ha = 479.9 kg/ha (0.480 t/ha)",
+     "basis": "dry chilli inferred from magnitude only; the table does not state the product form (India total 3.4 t/ha is a dry-pod level)",
+     "basisEvidence": "magnitude (not stated in table)",
+     "estimateStatus": "no flag in table columns (earlier than the (F) final column)",
+     "stateAreaHa": 52703,
+     "stateProductionT": 25292,
+     "table": "Major Spice/state wise area and production of spices, PDF page 1, chilli block",
+     "sourceId": "spicesboard-state-2024-25",
+     "crossCheck": "Equals the existing tn-shb-2022-23-ch4 state row for chilli (same area 52703 ha, yield 480 kg/ha): the Spices Board figure is the Tamil Nadu state series republished. Both tables leave the product form unstated."
+    },
+    {
+     "region": "IN-TN",
+     "level": "state",
+     "season": "all seasons combined",
+     "cropYear": "2023-24",
+     "yieldKgPerHa": 592,
+     "sourceUnit": "derived: production (tonnes) x 1000 kg/t / area (hectare); the table has no yield column. 28559 t x 1000 / 48203 ha = 592.5 kg/ha (0.592 t/ha)",
+     "basis": "dry chilli inferred from magnitude only; the table does not state the product form (India total 3.4 t/ha is a dry-pod level)",
+     "basisEvidence": "magnitude (not stated in table)",
+     "estimateStatus": "no flag in table columns (earlier than the (F) final column)",
+     "stateAreaHa": 48203,
+     "stateProductionT": 28559,
+     "table": "Major Spice/state wise area and production of spices, PDF page 1, chilli block",
+     "sourceId": "spicesboard-state-2024-25"
+    },
+    {
+     "region": "IN-TN",
+     "level": "state",
+     "season": "all seasons combined",
+     "cropYear": "2024-25",
+     "yieldKgPerHa": 715,
+     "sourceUnit": "derived: production (tonnes) x 1000 kg/t / area (hectare); the table has no yield column. 29525 t x 1000 / 41268 ha = 715.4 kg/ha (0.715 t/ha)",
+     "basis": "dry chilli inferred from magnitude only; the table does not state the product form (India total 3.4 t/ha is a dry-pod level)",
+     "basisEvidence": "magnitude (not stated in table)",
+     "estimateStatus": "final, per table footnote \"(F): final\" on the 2024-25 f column",
+     "stateAreaHa": 41268,
+     "stateProductionT": 29525,
+     "table": "Major Spice/state wise area and production of spices, PDF page 1, chilli block",
+     "sourceId": "spicesboard-state-2024-25"
+    },
+    {
+     "region": "IN-TN",
+     "level": "state",
+     "season": "all seasons combined",
+     "cropYear": "2025-26",
+     "yieldKgPerHa": 715,
+     "sourceUnit": "derived: production (tonnes) x 1000 kg/t / area (hectare); the table has no yield column. 31298 t x 1000 / 43747 ha = 715.4 kg/ha (0.715 t/ha)",
+     "basis": "dry chilli inferred from magnitude only; the table does not state the product form (India total 3.4 t/ha is a dry-pod level)",
+     "basisEvidence": "magnitude (not stated in table)",
+     "estimateStatus": "advance estimate, per table footnote \"(*): adv estimate\" on the 2025-26 column",
+     "stateAreaHa": 43747,
+     "stateProductionT": 31298,
+     "table": "Major Spice/state wise area and production of spices, PDF page 1, chilli block",
+     "sourceId": "spicesboard-state-2024-25",
+     "note": "Advance-estimate yield equals the 2024-25 yield to rounding (715 kg/ha in both years), so the 2025-26 Tamil Nadu figure looks like a carried-forward yield applied to a new area, not an independent estimate."
     }
    ],
-   "costs": [],
+   "costs": [
+    {
+     "region": "IN-TN",
+     "year": null,
+     "yearPrinted": null,
+     "a2flPerHa": null,
+     "c2PerHa": null,
+     "a2PerHa": null,
+     "costPerQuintal": null,
+     "totalCostPerHa": 46000,
+     "costPerHaOriginal": {
+      "value": 46000,
+      "unit": "Rs; per-hectare wording is not printed on the page"
+     },
+     "unitCheck": "Per hectare inferred, not printed: the same page gives yield in MT/ha and its stated net income equals yield x lowest price - cost for every row (Rs 64000 at Rs 5/kg).",
+     "costIncludes": "Seven cash-cost lines only: field preparation, nursery and planting/sowing, weeding, plant protection, fertilizers, wages, and staking/transport/other. No land rent, interest or family-labour line is printed. Not comparable to CACP C2.",
+     "components": {
+      "fieldPreparation": 6000,
+      "nurseryAndPlantingOrSowing": 7000,
+      "weeding": 10000,
+      "plantProtection": 12000,
+      "fertilizers": 6000,
+      "wages": 5000,
+      "stakingTransportOther": null
+     },
+     "expectedYield": {
+      "original": "22 MT/ha",
+      "kgPerHa": 22000,
+      "note": "Product form not stated. A 22 t/ha yield and a Rs 5-15/kg price are consistent with fresh green chilli, not dry pods (the handbook TN dry-chilli yield is about 0.5 t/ha). Inferred from magnitude only."
+     },
+     "priceRangeOriginal": "Rs 5-15/kg",
+     "netIncomeStatedByTable": "Rs 64000 at Rs 5/kg",
+     "figureType": "normative budget table for annual horticultural crops (not a farm survey); undated",
+     "basis": "TNAU Agritech portal table \"Cost of cultivation of annual horticultural crops\", Rs per hectare, with expected yield from the companion table \"Costs and benefits of annual Horticultural crops\". Undated: the page footer reads TNAU-2013 and the sub-heading reads \"Cost of cultivation NHB\", so the cost norms may derive from NHB and are likely older than 2013 (a Rs 2/kg tomato price floor points to an old base year). Do not treat as a current-year cost.",
+     "locator": "Tables \"Cost of cultivation of annual horticultural crops\" and \"Costs and benefits of annual Horticultural crops\", row \"Chilli\"",
+     "sourceId": "tnau-agritech-hort-cost-table",
+     "authority": "sau",
+     "productBasis": "chilli, product form not stated (green by magnitude, inferred)"
+    }
+   ],
    "postHarvestLossPct": {
     "value": null,
     "sourceId": null,
     "note": "Not researched in this pass (ICAR-CIPHET / NABCONS loss studies not retrieved)."
    },
    "marketingCostNote": "Not researched in this pass: APMC commission and market-fee norms for Karnataka and Tamil Nadu were not retrieved; treat as unknown.",
-   "costNote": "Not a CACP kharif/rabi mandated crop; TNAU/UAS/KVK cost-of-cultivation sheets not researched in this pass."
+   "costNote": "Not a CACP kharif/rabi mandated crop. TNAU Agritech normative budget row added (undated, cash-cost lines only, Rs/ha inferred); Karnataka SAU/department figures not found for this crop."
   },
   {
    "cropId": "ginger",
@@ -7307,16 +7652,124 @@
      "districtAreaHa": 15736.0,
      "districtProductionT": 510979.0,
      "sourceId": "datagovin-dws-35be999b"
+    },
+    {
+     "region": "IN-KA",
+     "level": "state",
+     "season": "all seasons combined",
+     "cropYear": "2021-22",
+     "yieldKgPerHa": 12555,
+     "sourceUnit": "derived: production (tonnes) x 1000 kg/t / area (hectare); the table has no yield column. 565561 t x 1000 / 45048 ha = 12554.6 kg/ha (12.555 t/ha)",
+     "basis": "fresh rhizome inferred from magnitude only; the table does not state the product form (about 11-13 t/ha is far above any dry-ginger yield)",
+     "basisEvidence": "magnitude (not stated in table). Unverified hint: a web-search summary of the DASD Kozhikode ginger state table (dasd.gov.in/adminimage/Ginger_Staewise.pdf, same data source as this table) said production is \"in terms of fresh ginger\"; that host did not resolve from this machine (ENOTFOUND), so the file was not retrieved",
+     "estimateStatus": "no flag in table columns (earlier than the (F) final column)",
+     "stateAreaHa": 45048,
+     "stateProductionT": 565561,
+     "table": "Major Spice/state wise area and production of spices, PDF page 1 (Karnataka row; page 2 continues the ginger block with no Tamil Nadu row), ginger block",
+     "sourceId": "spicesboard-state-2024-25"
+    },
+    {
+     "region": "IN-KA",
+     "level": "state",
+     "season": "all seasons combined",
+     "cropYear": "2022-23",
+     "yieldKgPerHa": 10709,
+     "sourceUnit": "derived: production (tonnes) x 1000 kg/t / area (hectare); the table has no yield column. 267340 t x 1000 / 24963 ha = 10709.4 kg/ha (10.709 t/ha)",
+     "basis": "fresh rhizome inferred from magnitude only; the table does not state the product form (about 11-13 t/ha is far above any dry-ginger yield)",
+     "basisEvidence": "magnitude (not stated in table). Unverified hint: a web-search summary of the DASD Kozhikode ginger state table (dasd.gov.in/adminimage/Ginger_Staewise.pdf, same data source as this table) said production is \"in terms of fresh ginger\"; that host did not resolve from this machine (ENOTFOUND), so the file was not retrieved",
+     "estimateStatus": "no flag in table columns (earlier than the (F) final column)",
+     "stateAreaHa": 24963,
+     "stateProductionT": 267340,
+     "table": "Major Spice/state wise area and production of spices, PDF page 1 (Karnataka row; page 2 continues the ginger block with no Tamil Nadu row), ginger block",
+     "sourceId": "spicesboard-state-2024-25"
+    },
+    {
+     "region": "IN-KA",
+     "level": "state",
+     "season": "all seasons combined",
+     "cropYear": "2023-24",
+     "yieldKgPerHa": 10909,
+     "sourceUnit": "derived: production (tonnes) x 1000 kg/t / area (hectare); the table has no yield column. 232839 t x 1000 / 21344 ha = 10908.9 kg/ha (10.909 t/ha)",
+     "basis": "fresh rhizome inferred from magnitude only; the table does not state the product form (about 11-13 t/ha is far above any dry-ginger yield)",
+     "basisEvidence": "magnitude (not stated in table). Unverified hint: a web-search summary of the DASD Kozhikode ginger state table (dasd.gov.in/adminimage/Ginger_Staewise.pdf, same data source as this table) said production is \"in terms of fresh ginger\"; that host did not resolve from this machine (ENOTFOUND), so the file was not retrieved",
+     "estimateStatus": "no flag in table columns (earlier than the (F) final column)",
+     "stateAreaHa": 21344,
+     "stateProductionT": 232839,
+     "table": "Major Spice/state wise area and production of spices, PDF page 1 (Karnataka row; page 2 continues the ginger block with no Tamil Nadu row), ginger block",
+     "sourceId": "spicesboard-state-2024-25"
+    },
+    {
+     "region": "IN-KA",
+     "level": "state",
+     "season": "all seasons combined",
+     "cropYear": "2024-25",
+     "yieldKgPerHa": 11232,
+     "sourceUnit": "derived: production (tonnes) x 1000 kg/t / area (hectare); the table has no yield column. 379151 t x 1000 / 33756 ha = 11232.1 kg/ha (11.232 t/ha)",
+     "basis": "fresh rhizome inferred from magnitude only; the table does not state the product form (about 11-13 t/ha is far above any dry-ginger yield)",
+     "basisEvidence": "magnitude (not stated in table). Unverified hint: a web-search summary of the DASD Kozhikode ginger state table (dasd.gov.in/adminimage/Ginger_Staewise.pdf, same data source as this table) said production is \"in terms of fresh ginger\"; that host did not resolve from this machine (ENOTFOUND), so the file was not retrieved",
+     "estimateStatus": "final, per table footnote \"(F): final\" on the 2024-25 f column",
+     "stateAreaHa": 33756,
+     "stateProductionT": 379151,
+     "table": "Major Spice/state wise area and production of spices, PDF page 1 (Karnataka row; page 2 continues the ginger block with no Tamil Nadu row), ginger block",
+     "sourceId": "spicesboard-state-2024-25"
+    },
+    {
+     "region": "IN-KA",
+     "level": "state",
+     "season": "all seasons combined",
+     "cropYear": "2025-26",
+     "yieldKgPerHa": 12550,
+     "sourceUnit": "derived: production (tonnes) x 1000 kg/t / area (hectare); the table has no yield column. 336065 t x 1000 / 26778 ha = 12550.0 kg/ha (12.550 t/ha)",
+     "basis": "fresh rhizome inferred from magnitude only; the table does not state the product form (about 11-13 t/ha is far above any dry-ginger yield)",
+     "basisEvidence": "magnitude (not stated in table). Unverified hint: a web-search summary of the DASD Kozhikode ginger state table (dasd.gov.in/adminimage/Ginger_Staewise.pdf, same data source as this table) said production is \"in terms of fresh ginger\"; that host did not resolve from this machine (ENOTFOUND), so the file was not retrieved",
+     "estimateStatus": "advance estimate, per table footnote \"(*): adv estimate\" on the 2025-26 column",
+     "stateAreaHa": 26778,
+     "stateProductionT": 336065,
+     "table": "Major Spice/state wise area and production of spices, PDF page 1 (Karnataka row; page 2 continues the ginger block with no Tamil Nadu row), ginger block",
+     "sourceId": "spicesboard-state-2024-25"
     }
    ],
-   "costs": [],
+   "costs": [
+    {
+     "region": "IN-KA",
+     "district": "Bidar",
+     "year": null,
+     "yearPrinted": "abstract says \"conducted in the year 2019-2020\"; see reliability note",
+     "a2flPerHa": null,
+     "c2PerHa": 204539,
+     "a2PerHa": 176551,
+     "costPerQuintal": null,
+     "totalCostPerHa": 204539,
+     "costPerHaOriginal": {
+      "value": 204538.5,
+      "unit": "Rs per hectare (Table 3 sample-average Cost C; Table 1 shows 204,538.51)"
+     },
+     "unitConversion": "Already per hectare; no acre conversion applied.",
+     "costIncludes": "Cost C concept: Cost A2 (hired and bullock labour, machinery, seedlings, FYM, fertilizers, irrigation, plant protection, miscellaneous, interest on working capital at 8 per cent, depreciation, land revenue) + rental value of own land (Rs 12,000/ha) + interest on fixed capital at 10 per cent + imputed family labour. Seedlings alone are about 42 per cent of the total (Rs 85,708/ha). Cost A1/A2 sample average 176,550.80; Cost B 190,255.50.",
+     "expectedYield": {
+      "original": "192.38 quintal per ha sample average (marginal 190, small 193, medium 198)",
+      "kgPerHa": 19238,
+      "unitConversion": "192.38 q/ha x 100 kg/q = 19,238 kg/ha",
+      "note": "Product form not stated; 19 t/ha at Rs 3,200/q (Rs 32/kg) is a fresh-rhizome level. Inferred from magnitude only."
+     },
+     "priceRealised": "Rs 3,200 per quintal",
+     "sampleDescription": "120 ginger farmers in Bidar district (58 marginal, 42 small, 20 medium), multistage sampling.",
+     "reliability": "LOW. (1) The paper is from SHUATS Prayagraj, not a Karnataka SAU. (2) Table 1 and Table 2 disagree (sample-average total 204,538.51 vs 204,868.58; medium farms 195,584 vs 197,564). (3) The abstract quotes Rs 54,659-57,278/ha, which matches no table line. (4) The size-group totals (209,774 / 201,572.80 / 195,584) equal figures that a web-search summary attributed to a 2016-17 Bidar ginger study (Journal of Pharmacognosy and Phytochemistry 2017; that page returned HTTP 403 and was not read), so the real survey year is uncertain. Use only as an order-of-magnitude check, not a default.",
+     "figureType": "journal farm-survey paper (tabular analysis); not an official SAU or department cost sheet",
+     "basis": "Sample-average cost of cultivation of ginger per hectare, Bidar district.",
+     "locator": "Table 1, Table 2 and Table 3 (JPP 2020; 9(5): 807-810), text layer read, size-group columns scrambled so only sample averages and stated totals were used",
+     "sourceId": "asha-maurya-jpp-2020-ginger-bidar",
+     "authority": "other",
+     "productBasis": "ginger, product form not stated (fresh by magnitude, inferred)"
+    }
+   ],
    "postHarvestLossPct": {
     "value": null,
     "sourceId": null,
     "note": "Not researched in this pass (ICAR-CIPHET / NABCONS loss studies not retrieved)."
    },
    "marketingCostNote": "Not researched in this pass: APMC commission and market-fee norms for Karnataka and Tamil Nadu were not retrieved; treat as unknown.",
-   "costNote": "Not a CACP kharif/rabi mandated crop; TNAU/UAS/KVK cost-of-cultivation sheets not researched in this pass."
+   "costNote": "Karnataka Bidar farm-survey paper added (low reliability, see row). No TNAU or Karnataka university cost sheet for ginger was found. TNAU Agritech cost table does not include ginger."
   },
   {
    "cropId": "turmeric",
@@ -7390,16 +7843,299 @@
      "districtAreaHa": 67.0,
      "districtProductionT": 323.0,
      "sourceId": "datagovin-dws-35be999b"
+    },
+    {
+     "region": "IN-KA",
+     "level": "state",
+     "season": "all seasons combined",
+     "cropYear": "2021-22",
+     "yieldKgPerHa": 5671,
+     "sourceUnit": "derived: production (tonnes) x 1000 kg/t / area (hectare); the table has no yield column. 110033 t x 1000 / 19402 ha = 5671.2 kg/ha (5.671 t/ha)",
+     "basis": "cured/dry turmeric inferred from magnitude only; the table does not state the product form (India total 3.5 t/ha is a cured-rhizome level, fresh turmeric yields are several times higher)",
+     "basisEvidence": "magnitude (not stated in table)",
+     "estimateStatus": "no flag in table columns (earlier than the (F) final column)",
+     "stateAreaHa": 19402,
+     "stateProductionT": 110033,
+     "table": "Major Spice/state wise area and production of spices, PDF page 2, turmeric block",
+     "sourceId": "spicesboard-state-2024-25"
+    },
+    {
+     "region": "IN-KA",
+     "level": "state",
+     "season": "all seasons combined",
+     "cropYear": "2022-23",
+     "yieldKgPerHa": 6102,
+     "sourceUnit": "derived: production (tonnes) x 1000 kg/t / area (hectare); the table has no yield column. 119390 t x 1000 / 19565 ha = 6102.2 kg/ha (6.102 t/ha)",
+     "basis": "cured/dry turmeric inferred from magnitude only; the table does not state the product form (India total 3.5 t/ha is a cured-rhizome level, fresh turmeric yields are several times higher)",
+     "basisEvidence": "magnitude (not stated in table)",
+     "estimateStatus": "no flag in table columns (earlier than the (F) final column)",
+     "stateAreaHa": 19565,
+     "stateProductionT": 119390,
+     "table": "Major Spice/state wise area and production of spices, PDF page 2, turmeric block",
+     "sourceId": "spicesboard-state-2024-25"
+    },
+    {
+     "region": "IN-KA",
+     "level": "state",
+     "season": "all seasons combined",
+     "cropYear": "2023-24",
+     "yieldKgPerHa": 5493,
+     "sourceUnit": "derived: production (tonnes) x 1000 kg/t / area (hectare); the table has no yield column. 66826 t x 1000 / 12165 ha = 5493.3 kg/ha (5.493 t/ha)",
+     "basis": "cured/dry turmeric inferred from magnitude only; the table does not state the product form (India total 3.5 t/ha is a cured-rhizome level, fresh turmeric yields are several times higher)",
+     "basisEvidence": "magnitude (not stated in table)",
+     "estimateStatus": "no flag in table columns (earlier than the (F) final column)",
+     "stateAreaHa": 12165,
+     "stateProductionT": 66826,
+     "table": "Major Spice/state wise area and production of spices, PDF page 2, turmeric block",
+     "sourceId": "spicesboard-state-2024-25"
+    },
+    {
+     "region": "IN-KA",
+     "level": "state",
+     "season": "all seasons combined",
+     "cropYear": "2024-25",
+     "yieldKgPerHa": 5625,
+     "sourceUnit": "derived: production (tonnes) x 1000 kg/t / area (hectare); the table has no yield column. 82746 t x 1000 / 14710 ha = 5625.2 kg/ha (5.625 t/ha)",
+     "basis": "cured/dry turmeric inferred from magnitude only; the table does not state the product form (India total 3.5 t/ha is a cured-rhizome level, fresh turmeric yields are several times higher)",
+     "basisEvidence": "magnitude (not stated in table)",
+     "estimateStatus": "final, per table footnote \"(F): final\" on the 2024-25 f column",
+     "stateAreaHa": 14710,
+     "stateProductionT": 82746,
+     "table": "Major Spice/state wise area and production of spices, PDF page 2, turmeric block",
+     "sourceId": "spicesboard-state-2024-25"
+    },
+    {
+     "region": "IN-KA",
+     "level": "state",
+     "season": "all seasons combined",
+     "cropYear": "2025-26",
+     "yieldKgPerHa": 6745,
+     "sourceUnit": "derived: production (tonnes) x 1000 kg/t / area (hectare); the table has no yield column. 106660 t x 1000 / 15813 ha = 6745.1 kg/ha (6.745 t/ha)",
+     "basis": "cured/dry turmeric inferred from magnitude only; the table does not state the product form (India total 3.5 t/ha is a cured-rhizome level, fresh turmeric yields are several times higher)",
+     "basisEvidence": "magnitude (not stated in table)",
+     "estimateStatus": "advance estimate, per table footnote \"(*): adv estimate\" on the 2025-26 column",
+     "stateAreaHa": 15813,
+     "stateProductionT": 106660,
+     "table": "Major Spice/state wise area and production of spices, PDF page 2, turmeric block",
+     "sourceId": "spicesboard-state-2024-25"
+    },
+    {
+     "region": "IN-TN",
+     "level": "state",
+     "season": "all seasons combined",
+     "cropYear": "2021-22",
+     "yieldKgPerHa": 5169,
+     "sourceUnit": "derived: production (tonnes) x 1000 kg/t / area (hectare); the table has no yield column. 124917 t x 1000 / 24166 ha = 5169.1 kg/ha (5.169 t/ha)",
+     "basis": "cured/dry turmeric inferred from magnitude only; the table does not state the product form (India total 3.5 t/ha is a cured-rhizome level, fresh turmeric yields are several times higher)",
+     "basisEvidence": "magnitude (not stated in table)",
+     "estimateStatus": "no flag in table columns (earlier than the (F) final column)",
+     "stateAreaHa": 24166,
+     "stateProductionT": 124917,
+     "table": "Major Spice/state wise area and production of spices, PDF page 2, turmeric block",
+     "sourceId": "spicesboard-state-2024-25"
+    },
+    {
+     "region": "IN-TN",
+     "level": "state",
+     "season": "all seasons combined",
+     "cropYear": "2022-23",
+     "yieldKgPerHa": 5511,
+     "sourceUnit": "derived: production (tonnes) x 1000 kg/t / area (hectare); the table has no yield column. 136370 t x 1000 / 24746 ha = 5510.8 kg/ha (5.511 t/ha)",
+     "basis": "cured/dry turmeric inferred from magnitude only; the table does not state the product form (India total 3.5 t/ha is a cured-rhizome level, fresh turmeric yields are several times higher)",
+     "basisEvidence": "magnitude (not stated in table)",
+     "estimateStatus": "no flag in table columns (earlier than the (F) final column)",
+     "stateAreaHa": 24746,
+     "stateProductionT": 136370,
+     "table": "Major Spice/state wise area and production of spices, PDF page 2, turmeric block",
+     "sourceId": "spicesboard-state-2024-25",
+     "crossCheck": "Equals the existing tn-shb-2022-23-ch4 state row for turmeric (same area 24746 ha, yield 5511 kg/ha): the Spices Board figure is the Tamil Nadu state series republished. Both tables leave the product form unstated."
+    },
+    {
+     "region": "IN-TN",
+     "level": "state",
+     "season": "all seasons combined",
+     "cropYear": "2023-24",
+     "yieldKgPerHa": 6024,
+     "sourceUnit": "derived: production (tonnes) x 1000 kg/t / area (hectare); the table has no yield column. 139436 t x 1000 / 23148 ha = 6023.7 kg/ha (6.024 t/ha)",
+     "basis": "cured/dry turmeric inferred from magnitude only; the table does not state the product form (India total 3.5 t/ha is a cured-rhizome level, fresh turmeric yields are several times higher)",
+     "basisEvidence": "magnitude (not stated in table)",
+     "estimateStatus": "no flag in table columns (earlier than the (F) final column)",
+     "stateAreaHa": 23148,
+     "stateProductionT": 139436,
+     "table": "Major Spice/state wise area and production of spices, PDF page 2, turmeric block",
+     "sourceId": "spicesboard-state-2024-25"
+    },
+    {
+     "region": "IN-TN",
+     "level": "state",
+     "season": "all seasons combined",
+     "cropYear": "2024-25",
+     "yieldKgPerHa": 6335,
+     "sourceUnit": "derived: production (tonnes) x 1000 kg/t / area (hectare); the table has no yield column. 167082 t x 1000 / 26375 ha = 6334.9 kg/ha (6.335 t/ha)",
+     "basis": "cured/dry turmeric inferred from magnitude only; the table does not state the product form (India total 3.5 t/ha is a cured-rhizome level, fresh turmeric yields are several times higher)",
+     "basisEvidence": "magnitude (not stated in table)",
+     "estimateStatus": "final, per table footnote \"(F): final\" on the 2024-25 f column",
+     "stateAreaHa": 26375,
+     "stateProductionT": 167082,
+     "table": "Major Spice/state wise area and production of spices, PDF page 2, turmeric block",
+     "sourceId": "spicesboard-state-2024-25"
+    },
+    {
+     "region": "IN-TN",
+     "level": "state",
+     "season": "all seasons combined",
+     "cropYear": "2025-26",
+     "yieldKgPerHa": 6335,
+     "sourceUnit": "derived: production (tonnes) x 1000 kg/t / area (hectare); the table has no yield column. 172086 t x 1000 / 27163 ha = 6335.3 kg/ha (6.335 t/ha)",
+     "basis": "cured/dry turmeric inferred from magnitude only; the table does not state the product form (India total 3.5 t/ha is a cured-rhizome level, fresh turmeric yields are several times higher)",
+     "basisEvidence": "magnitude (not stated in table)",
+     "estimateStatus": "advance estimate, per table footnote \"(*): adv estimate\" on the 2025-26 column",
+     "stateAreaHa": 27163,
+     "stateProductionT": 172086,
+     "table": "Major Spice/state wise area and production of spices, PDF page 2, turmeric block",
+     "sourceId": "spicesboard-state-2024-25",
+     "note": "Advance-estimate yield equals the 2024-25 yield to rounding (6335 kg/ha in both years), so the 2025-26 Tamil Nadu figure looks like a carried-forward yield applied to a new area, not an independent estimate."
     }
    ],
-   "costs": [],
+   "costs": [
+    {
+     "region": "IN-TN",
+     "year": null,
+     "yearPrinted": null,
+     "a2flPerHa": null,
+     "c2PerHa": null,
+     "a2PerHa": null,
+     "costPerQuintal": null,
+     "totalCostPerHa": 45000,
+     "costPerHaOriginal": {
+      "value": 45000,
+      "unit": "Rs; per-hectare wording is not printed on the page"
+     },
+     "unitCheck": "Per hectare inferred, not printed: the same page gives yield in MT/ha and its stated net income equals yield x lowest price - cost for every row (Rs 55000 at Rs 2000/quintal).",
+     "costIncludes": "Seven cash-cost lines only: field preparation, nursery and planting/sowing, weeding, plant protection, fertilizers, wages, and staking/transport/other. No land rent, interest or family-labour line is printed. Not comparable to CACP C2.",
+     "components": {
+      "fieldPreparation": 6000,
+      "nurseryAndPlantingOrSowing": 10000,
+      "weeding": 8000,
+      "plantProtection": 8000,
+      "fertilizers": 8000,
+      "wages": 5000,
+      "stakingTransportOther": null
+     },
+     "expectedYield": {
+      "original": "5 MT/ha",
+      "kgPerHa": 5000,
+      "note": "Product form not stated. A 5 t/ha yield and a price quoted per quintal are consistent with cured (dry) turmeric rather than fresh rhizome. Inferred from magnitude only."
+     },
+     "priceRangeOriginal": "Rs 2000-4000/quintal",
+     "netIncomeStatedByTable": "Rs 55000 at Rs 2000/quintal",
+     "figureType": "normative budget table for annual horticultural crops (not a farm survey); undated",
+     "basis": "TNAU Agritech portal table \"Cost of cultivation of annual horticultural crops\", Rs per hectare, with expected yield from the companion table \"Costs and benefits of annual Horticultural crops\". Undated: the page footer reads TNAU-2013 and the sub-heading reads \"Cost of cultivation NHB\", so the cost norms may derive from NHB and are likely older than 2013 (a Rs 2/kg tomato price floor points to an old base year). Do not treat as a current-year cost.",
+     "locator": "Tables \"Cost of cultivation of annual horticultural crops\" and \"Costs and benefits of annual Horticultural crops\", row \"Turmeric\"",
+     "sourceId": "tnau-agritech-hort-cost-table",
+     "authority": "sau",
+     "productBasis": "turmeric, product form not stated (cured by magnitude, inferred)"
+    },
+    {
+     "region": "IN-KA",
+     "year": "2017-18",
+     "yearPrinted": "agricultural year 2017-18 (survey)",
+     "a2flPerHa": null,
+     "c2PerHa": 183353,
+     "a2PerHa": null,
+     "costPerQuintal": null,
+     "totalCostPerHa": 183353,
+     "costPerHaOriginal": {
+      "value": 74200.43,
+      "unit": "Rs per acre"
+     },
+     "unitConversion": "Rs per acre / 0.404686 ha per acre = 183353 Rs/ha (original kept in costPerHaOriginal)",
+     "costIncludes": "Total cost of cultivation (variable 55,762.98 Rs/acre incl. interest on working capital at 7.5 per cent 3,265.32; fixed 18,437.45 incl. land rent 15,613.33, land revenue 70.00, depreciation 2,754.12). Land rent is included, so it is a C2-like total. The family-labour treatment is not separated in the extracted table; c2PerHa is the paper total, not a CACP-derived C2.",
+     "expectedYield": {
+      "original": "18.72 quintal per acre (average realised, 60 farmers)",
+      "kgPerHa": 4626,
+      "unitConversion": "18.72 q/acre x 100 kg/q = 1,872 kg/acre; / 0.404686 = 4626 kg/ha",
+      "note": "The product form is not printed in the extracted text. The realised price of Rs 6,541.67/q (gross returns 1,22,460.06 / 18.72 q) is a cured-turmeric price level, so a cured (dry) basis is inferred from magnitude only."
+     },
+     "priceRealised": "Rs 6,541.67 per quintal",
+     "grossReturnsPerAcre": 122460.06,
+     "netReturnsOverAllCostsPerAcre": 48259.63,
+     "sampleDescription": "60 turmeric growers in Aland, Bidar and Chincholi taluks (Kalaburagi and Bidar districts), the North-Eastern Transitional Zone of Karnataka, snowball sampling. This is not the southern Karnataka (Hassan) turmeric belt; average 2.56 acres under turmeric per farm.",
+     "figureType": "peer-reviewed farm-survey paper (budgeting, tabular analysis), authors at UAS Bengaluru and UAS Raichur; not an official SAU cost sheet",
+     "basis": "Survey-average cost and return of turmeric per acre, current prices of 2017-18. Table 3 text layer is scrambled; the totals were decoded and cross-checked: variable 55,762.98 + fixed 18,437.45 = 74,200.43, and fixed = 15,613.33 + 70.00 + 2,754.12.",
+     "locator": "Table 3 \"Cost of cultivation and returns in turmeric\" (journal pp.99-100), abstract (p.96)",
+     "sourceId": "ashwini-ajaees-2022-turmeric-ka",
+     "authority": "sau",
+     "productBasis": "turmeric, product form not stated (cured by magnitude, inferred)"
+    },
+    {
+     "region": "IN-KA",
+     "district": "Chamarajanagar",
+     "year": null,
+     "yearPrinted": null,
+     "a2flPerHa": null,
+     "c2PerHa": 190921,
+     "a2PerHa": null,
+     "costPerQuintal": null,
+     "totalCostPerHa": 190921,
+     "costPerHaOriginal": {
+      "value": 77263,
+      "unit": "Rs per acre"
+     },
+     "unitConversion": "Rs per acre / 0.404686 ha per acre = 190921 Rs/ha",
+     "costIncludes": "Total cost of cultivation: variable cost (labour, planting material, FYM, fertilizers, plant protection, interest on working capital) plus fixed cost (rental value of land, land revenue, depreciation, interest on fixed capital). Farm-level processing (curing, boiling, drying, polishing: Rs 11,003/acre Chamarajanagar, Rs 11,739/acre Mysuru) and marketing (Rs 8,273 and Rs 8,011/acre) are reported separately and are NOT in this figure.",
+     "sampleDescription": "96 turmeric farmers in Chamarajanagar and Mysuru districts (Gundlupet and neighbouring taluks), random sampling; survey year not found in the extracted text.",
+     "figureType": "peer-reviewed farm-survey paper (budgeting), published in the Mysore Journal of Agricultural Sciences (UAS Bengaluru) with the author at Central University of Himachal Pradesh; not an official SAU cost sheet",
+     "basis": "Per-acre cost of cultivation of turmeric, Table 1 and Table 3 agree on the totals; the Table 3 text layer is scrambled so only totals that appear in both tables were used.",
+     "locator": "Table 1 and Table 3 (journal pp.408 and 410)",
+     "sourceId": "naik-mjas-2022-turmeric-ka",
+     "authority": "other",
+     "productBasis": "turmeric, cured (processed) basis implied by the study scope; not stated as a yield unit",
+     "expectedYield": {
+      "original": null,
+      "kgPerHa": 6592,
+      "derived": true,
+      "unitConversion": "Derived, not printed: returns from main produce Rs 141,383/acre / price Rs 5,300/q = 26.68 q/acre; x 100 kg/q / 0.404686 = 6592 kg/ha",
+      "note": "Cured (processed) turmeric basis because the main-produce price is quoted after farm-level curing. The paper prints price and returns but no yield row in the extracted text."
+     }
+    },
+    {
+     "region": "IN-KA",
+     "district": "Mysuru",
+     "year": null,
+     "yearPrinted": null,
+     "a2flPerHa": null,
+     "c2PerHa": 190234,
+     "a2PerHa": null,
+     "costPerQuintal": null,
+     "totalCostPerHa": 190234,
+     "costPerHaOriginal": {
+      "value": 76985,
+      "unit": "Rs per acre"
+     },
+     "unitConversion": "Rs per acre / 0.404686 ha per acre = 190234 Rs/ha",
+     "costIncludes": "Total cost of cultivation: variable cost (labour, planting material, FYM, fertilizers, plant protection, interest on working capital) plus fixed cost (rental value of land, land revenue, depreciation, interest on fixed capital). Farm-level processing (curing, boiling, drying, polishing: Rs 11,003/acre Chamarajanagar, Rs 11,739/acre Mysuru) and marketing (Rs 8,273 and Rs 8,011/acre) are reported separately and are NOT in this figure.",
+     "sampleDescription": "96 turmeric farmers in Chamarajanagar and Mysuru districts (Gundlupet and neighbouring taluks), random sampling; survey year not found in the extracted text.",
+     "figureType": "peer-reviewed farm-survey paper (budgeting), published in the Mysore Journal of Agricultural Sciences (UAS Bengaluru) with the author at Central University of Himachal Pradesh; not an official SAU cost sheet",
+     "basis": "Per-acre cost of cultivation of turmeric, Table 1 and Table 3 agree on the totals; the Table 3 text layer is scrambled so only totals that appear in both tables were used.",
+     "locator": "Table 1 and Table 3 (journal pp.408 and 410)",
+     "sourceId": "naik-mjas-2022-turmeric-ka",
+     "authority": "other",
+     "productBasis": "turmeric, cured (processed) basis implied by the study scope; not stated as a yield unit",
+     "expectedYield": {
+      "original": null,
+      "kgPerHa": null,
+      "note": "Yield not printed and the Mysuru column of Table 3 is too scrambled to derive it with confidence."
+     }
+    }
+   ],
    "postHarvestLossPct": {
     "value": null,
     "sourceId": null,
     "note": "Not researched in this pass (ICAR-CIPHET / NABCONS loss studies not retrieved)."
    },
    "marketingCostNote": "Not researched in this pass: APMC commission and market-fee norms for Karnataka and Tamil Nadu were not retrieved; treat as unknown.",
-   "costNote": "Not a CACP kharif/rabi mandated crop; TNAU/UAS/KVK cost-of-cultivation sheets not researched in this pass."
+   "costNote": "Karnataka: UAS-authored survey (NE transitional zone, 2017-18) and a southern-Karnataka survey (Chamarajanagar, Mysuru, year not found) added. Tamil Nadu: TNAU normative budget (undated). None is a CACP/DES cost."
   },
   {
    "cropId": "sugarcane",
@@ -7810,14 +8546,53 @@
      "sourceId": "datagovin-dws-35be999b"
     }
    ],
-   "costs": [],
+   "costs": [
+    {
+     "region": "IN-TN",
+     "year": null,
+     "yearPrinted": null,
+     "a2flPerHa": null,
+     "c2PerHa": null,
+     "a2PerHa": null,
+     "costPerQuintal": null,
+     "totalCostPerHa": 32000,
+     "costPerHaOriginal": {
+      "value": 32000,
+      "unit": "Rs; per-hectare wording is not printed on the page"
+     },
+     "unitCheck": "Per hectare inferred, not printed: the same page states net income Rs 55000 at Rs 1/bundle, which equals bundles x Rs 1 - cost.",
+     "costIncludes": "Seven cash-cost lines only: field preparation, nursery and planting/sowing, weeding, plant protection, fertilizers, wages, and staking/transport/other. No land rent, interest or family-labour line is printed. Not comparable to CACP C2.",
+     "components": {
+      "fieldPreparation": 6000,
+      "nurseryAndPlantingOrSowing": 6000,
+      "weeding": 6000,
+      "plantProtection": 6000,
+      "fertilizers": 4000,
+      "wages": 4000,
+      "stakingTransportOther": null
+     },
+     "expectedYield": {
+      "original": "87000 bundles",
+      "kgPerHa": null,
+      "note": "Green coriander sold in bundles, so this is a leaf crop. The yield is a bundle count with no weight, so it cannot be paired with a seed yield in kg/ha and expectedYieldKgPerHa is null."
+     },
+     "priceRangeOriginal": "Rs 1-2/bundle",
+     "netIncomeStatedByTable": "Rs 55000 at Rs 1/bundle",
+     "figureType": "normative budget table for annual horticultural crops (not a farm survey); undated",
+     "basis": "TNAU Agritech portal table \"Cost of cultivation of annual horticultural crops\", Rs per hectare, with expected yield from the companion table \"Costs and benefits of annual Horticultural crops\". Undated: the page footer reads TNAU-2013 and the sub-heading reads \"Cost of cultivation NHB\", so the cost norms may derive from NHB and are likely older than 2013 (a Rs 2/kg tomato price floor points to an old base year). Do not treat as a current-year cost.",
+     "locator": "Tables \"Cost of cultivation of annual horticultural crops\" and \"Costs and benefits of annual Horticultural crops\", row \"Coriander\"",
+     "sourceId": "tnau-agritech-hort-cost-table",
+     "authority": "sau",
+     "productBasis": "green coriander leaf in bundles (not seed)"
+    }
+   ],
    "postHarvestLossPct": {
     "value": null,
     "sourceId": null,
     "note": "Not researched in this pass (ICAR-CIPHET / NABCONS loss studies not retrieved)."
    },
    "marketingCostNote": "Not researched in this pass: APMC commission and market-fee norms for Karnataka and Tamil Nadu were not retrieved; treat as unknown.",
-   "costNote": "Not a CACP kharif/rabi mandated crop; TNAU/UAS/KVK cost-of-cultivation sheets not researched in this pass."
+   "costNote": "Not a CACP kharif/rabi mandated crop. TNAU Agritech normative budget row added (undated, cash-cost lines only, Rs/ha inferred); Karnataka SAU/department figures not found for this crop."
   }
  ],
  "sources": {
@@ -7903,13 +8678,13 @@
   },
   "spicesboard-state-2024-25": {
    "url": "https://indianspices.com/sites/default/files/Major%20spice%20state%20wise%20area%20production%202024-25%20web.pdf",
-   "title": "Major spice state wise area production 2024-25",
+   "title": "Major spice state wise area production 2024-25 (columns 2021-22 to 2025-26)",
    "publisher": "Spices Board India",
    "retrievedAt": "2026-11-01",
-   "locator": "4 pages, downloaded, not parsed in this pass (row assignment needs visual check per docs/DATA_AUDIT.md)",
-   "excerpt": null,
+   "locator": "4 PDF pages, \"Major Spice/state wise area and production of spices (Area in Hectare, production in Tons)\". Ginger Karnataka and chilli Karnataka/Tamil Nadu on page 1, turmeric Karnataka/Tamil Nadu on page 2, coriander seed block on pages 2-3, footnotes on page 4. Values read visually from rendered page images, then each number checked to occur in the PDF text layer (the layer itself scrambles row order). The table has no Tamil Nadu row in the ginger block and no Karnataka or Tamil Nadu row in the coriander seed block.",
+   "excerpt": "\"Source :1) Otherspices - State Agri/Horti Departments/DASD, Kozhikkode ... (F): final  (*): adv estimate\". Column header \"2024-25 f\" and \"2025-26 *\". Product form (dry or fresh) is not stated for any spice row.",
    "sha256": "2e9166ab2603f912ddc77d9d916ab92ec89ba53f85373aa529772d22c06dc828",
-   "usedForValues": false
+   "usedForValues": true
   },
   "cag-report-31-2015-paddy-milling": {
    "url": "https://cag.gov.in/uploads/download_audit_report/2015/Union_Performance_Procurement_Milling_of_Paddy_Central_Pool_31_2015.pdf",
@@ -7921,6 +8696,56 @@
    "sha256": "c8645ecfe2c73999bf9f6217ad5722cb0d5055da163c6d8fff1215a1d86943fe",
    "usedForValues": true,
    "note": "Audit report dated 2015 describing Government of India norms (Gokak Committee 1994, Tariff Commission 2005). No 2024-26 DFPD notification was retrieved, so currency is unconfirmed. The ratio is a procurement and milling norm, not a measured variety-specific recovery."
+  },
+  "tnau-agritech-hort-cost-table": {
+   "url": "https://agritech.tnau.ac.in/horticulture/horti_cost%20of%20cultivation.html",
+   "title": "Horticulture :: Cost of Cultivation (TNAU Agritech Portal)",
+   "publisher": "Tamil Nadu Agricultural University, Agritech Portal",
+   "retrievedAt": "2026-11-01",
+   "locator": "Two HTML tables: \"Cost of cultivation of annual horticultural crops\" (seven cost lines per crop, total) and \"Costs and benefits of annual Horticultural crops\" (cost, yield, net income at lowest price, price range). The page does not cover potato, onion, shallot or ginger.",
+   "excerpt": "\"Cost of cultivation NHB ... Tomato 6000 7000 10000 12000 8000 13000 5000 = 61000 ... Costs and benefits ... Tomato 61000, 50 (MT/ha), 39000 (@ Rs. 2/kg), 2 - 30/kg\". Page footer: \"(c) All Rights Reserved. TNAU-2013\". Its listed source \"http://www.tnau.ac.in/horcbe/tnpfp/economics.pdf\" returned HTTP 404 on 2026-11-01.",
+   "sha256": "2af37e44d539bfcf93cf281aee84252972f70eb60e80c6c1e948d5b606d72d0b",
+   "usedForValues": true
+  },
+  "ashwini-ajaees-2022-turmeric-ka": {
+   "url": "https://ageconsearch.umn.edu/record/366975/files/Ashwini4072022AJAEES63358.pdf",
+   "title": "Economic Viability of Turmeric Cultivation in North-Eastern Transitional Zone of Karnataka (Ashwini, Hiremath and Satihal), Asian Journal of Agricultural Extension, Economics & Sociology 40(7): 96-102, 2022",
+   "publisher": "Open-access journal; authors at UAS Bengaluru (GKVK) and UAS Raichur",
+   "retrievedAt": "2026-11-01",
+   "locator": "See each cost row locator.",
+   "excerpt": "Table 3; abstract: \"The total cost of cultivation of turmeric worked out to be Rs. 74,200.43 per acre. The average yield realized by the farmers in the study area was 18.72 quintal per acre.\"",
+   "sha256": "2968444bbe42ed7ae42c5419bb59ad1792c63399ea30467cc944660caafd1ff0",
+   "usedForValues": true
+  },
+  "naik-mjas-2022-turmeric-ka": {
+   "url": "https://www.uasbangalore.edu.in/images/2022-1st-Issue/48.pdf",
+   "title": "Value Chain Analysis of Turmeric in Southern Karnataka (Vinod Naik), Mysore Journal of Agricultural Sciences 56(1): 407-416, 2022",
+   "publisher": "Mysore Journal of Agricultural Sciences (UAS Bengaluru); author at Central University of Himachal Pradesh",
+   "retrievedAt": "2026-11-01",
+   "locator": "See each cost row locator.",
+   "excerpt": "Table 1 and Table 3: Chamarajanagar total cost of cultivation 77,263 Rs/acre; Mysuru 76,985 Rs/acre; price 5,300 Rs/qtl (Chamarajanagar).",
+   "sha256": "1cd2b35bc816b1b665cb2a9aa0de79617379cdcfb54692607af5fe39d4dce42d",
+   "usedForValues": true
+  },
+  "asha-maurya-jpp-2020-ginger-bidar": {
+   "url": "https://www.phytojournal.com/archives/2020/vol9issue5S/PartN/S-9-6-213-902.pdf",
+   "title": "An economic analysis of production and marketing of ginger in Bidar district of Karnataka (Asha S and Mukesh Kumar Maurya), Journal of Pharmacognosy and Phytochemistry 2020; 9(5): 807-810",
+   "publisher": "Journal; authors at SHUATS (Naini Agricultural Institute), Prayagraj",
+   "retrievedAt": "2026-11-01",
+   "locator": "See each cost row locator.",
+   "excerpt": "Table 2: \"Total Cost of cultivation ... Yield in tons per hectare ... Price Per quintal 3200\"; Table 3 Cost C sample average 204538.50.",
+   "sha256": "470efb27cb7de711159f8aaea9d9e40afdecf1014ec8db03cb7d9c626214cb53",
+   "usedForValues": true
+  },
+  "patil-mjas-2024-onion-haveri": {
+   "url": "https://www.uasbangalore.edu.in/images/2024-3rd-Issue/36.pdf",
+   "title": "Trends in Area, Production, Productivity and Economics of Onion in Haveri District of Karnataka (Patil, Aravinda Kumar and Gaddi), Mysore Journal of Agricultural Sciences 58(3): 393-401, 2024",
+   "publisher": "Mysore Journal of Agricultural Sciences (UAS Bengaluru); authors at UAS GKVK and College of Agriculture Hassan",
+   "retrievedAt": "2026-11-01",
+   "locator": "Abstract and Table 6; see the row locator.",
+   "excerpt": "\"The average yield per acre was 41.69 quintals, each quintal fetching a price of Rs.1833.00, resulting in gross returns of 76409. The cost of cultivation of onion was Rs.49,283.87 per acre of which the variable cost constituted 87.34 per cent and fixed cost constituted 12.66 per cent. Returns per rupee of expenditure ... Rs.1.55.\"",
+   "sha256": "ada98d19ee881bcee58c2f124889e480966df5bd912320ba32aee09beba549fa",
+   "usedForValues": true
   }
  },
  "conversions": {
