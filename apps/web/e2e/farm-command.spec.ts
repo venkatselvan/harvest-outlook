@@ -1,5 +1,12 @@
 import { expect, test, type Page, type Route } from "@playwright/test";
-import { FarmCommandCenter as schema } from "@harvest/contracts";
+import {
+  FarmCommandCenter as schema,
+  TodayView as todaySchema,
+} from "@harvest/contracts";
+import {
+  todayEmptyFixture,
+  todayFixture,
+} from "../src/workspace/today/fixtures";
 const A = "11111111-1111-4111-8111-111111111111",
   B = "22222222-2222-4222-8222-222222222222",
   J = "33333333-3333-4333-8333-333333333333";
@@ -177,7 +184,12 @@ const quotes = {
 };
 async function fixture(
   page: Page,
-  options: { holdPlant?: boolean; extendedCare?: boolean } = {},
+  options: {
+    holdPlant?: boolean;
+    extendedCare?: boolean;
+    /** Answer GET /today from the synthetic Today fixture. Without it the endpoint returns an empty envelope and the Today view shows its unavailable state. */
+    today?: boolean;
+  } = {},
 ) {
   const workspaces: any = { [A]: workspace(A), [B]: workspace(B) };
   let completed = false,
@@ -336,6 +348,12 @@ async function fixture(
         }),
       });
     }
+    if (options.today && path.endsWith("/today") && method === "GET")
+      return route.fulfill({
+        json: env(
+          todaySchema.parse(id === A ? todayFixture(A) : todayEmptyFixture(B)),
+        ),
+      });
     if (path.endsWith("/complete") && method === "POST") {
       careBodies.push(route.request().postDataJSON());
       completed = true;
@@ -382,7 +400,9 @@ async function fixture(
                         })),
                       })),
                     }
-                  : path.endsWith("/monitoring")
+                  : path.endsWith("/journal")
+                    ? { entries: [] }
+                    : path.endsWith("/monitoring")
                     ? {
                         farmId: id,
                         checkedAt: asOf,
@@ -465,48 +485,69 @@ async function fixture(
   };
 }
 
-test("one selected-farm workspace contains the field scene and all five contextual views", async ({
+const tabNames = ["Today", "Plan", "Market", "Farm"];
+const farmViews = (page: Page) =>
+  page.getByRole("navigation", { name: "Farm views" });
+const noHorizontalScroll = (page: Page) =>
+  page.evaluate(
+    () => document.documentElement.scrollWidth <= window.innerWidth,
+  );
+
+test("one selected-farm workspace holds the Today view and four tabs, and the Farm tab keeps crop fit, soil records and activity", async ({
   page,
 }) => {
   await page.setViewportSize({ width: 1440, height: 1000 });
-  await fixture(page);
+  await fixture(page, { today: true });
   await page.goto("/farm");
   await expect(
     page.getByRole("heading", { name: "South field", exact: true }),
   ).toBeVisible();
   await expect(
-    page.getByRole("region", { name: "Interactive crop growth model" }),
+    page.getByRole("region", { name: "Your field", exact: true }),
   ).toBeVisible();
-  const tabs = page.getByRole("navigation", { name: "Farm views" });
-  for (const name of [
-    "Today",
-    "Soil & crop fit",
-    "Year plan",
-    "Harvest outlook",
-    "Activity",
-  ])
+  const tabs = farmViews(page);
+  await expect(tabs.getByRole("link")).toHaveCount(4);
+  for (const name of tabNames)
     await expect(tabs.getByRole("link", { name, exact: true })).toBeVisible();
+  // The due-task count is announced as the Today tab's description, not folded into its name.
   await expect(
-    page.getByRole("heading", { name: "Check field moisture", exact: true }),
+    tabs.getByRole("link", { name: "Today", exact: true }),
+  ).toHaveAccessibleDescription("1 care task due");
+  await expect(
+    page
+      .getByRole("region", { name: "Upcoming steps" })
+      .getByRole("heading", { name: "Check field moisture", exact: true }),
   ).toBeVisible();
   await page.screenshot({
     path: "../../docs/reference/redesign/command-center-planted-fixture.png",
     fullPage: true,
   });
-  await page.getByRole("button", { name: "Satellite", exact: true }).click();
-  await expect(page.locator(".map-canvas")).toBeVisible();
-  await tabs
-    .getByRole("link", { name: "Soil & crop fit", exact: true })
-    .click();
+  // Farm tab: crop fit first, then soil records and activity behind the secondary toggle.
+  await tabs.getByRole("link", { name: "Farm", exact: true }).click();
   await expect(page.locator(".focused-crop-card")).toHaveCount(14);
+  const sections = page.getByRole("navigation", { name: "Farm sections" });
+  await expect(
+    sections.getByRole("link", { name: "Crop fit", exact: true }),
+  ).toHaveAttribute("aria-current", "page");
   await page.getByRole("button", { name: "Soil reports", exact: true }).click();
   await expect(
     page.getByRole("dialog", { name: "Farm soil reports" }),
   ).toBeVisible();
   await page.getByRole("button", { name: "Close farm tool" }).click();
-  await tabs
-    .getByRole("link", { name: "Harvest outlook", exact: true })
-    .click();
+  await sections.getByRole("link", { name: "Soil records", exact: true }).click();
+  await expect(
+    page.getByRole("heading", { name: "Soil markers", exact: true }),
+  ).toBeVisible();
+  await expect(page.locator(".focused-crop-card")).toHaveCount(0);
+  await sections.getByRole("link", { name: "Activity", exact: true }).click();
+  await expect(
+    page.getByRole("heading", { name: "Crop progress", exact: true }),
+  ).toBeVisible();
+  await expect(
+    tabs.getByRole("link", { name: "Farm", exact: true }),
+  ).toHaveAttribute("aria-current", "page");
+  // Market tab.
+  await tabs.getByRole("link", { name: "Market", exact: true }).click();
   const global = page.getByRole("region", { name: "Global market context" });
   await expect(global.getByText("105.2", { exact: false })).toBeVisible();
   await expect(global).toContainText("index points");
@@ -542,15 +583,21 @@ test("planting a focused crop requires its exact product/date and exposes the sa
     establishmentDate: "2026-10-30",
     expectedWorkspaceVersion: 1,
   });
-  await expect(page.locator(".current-crop-name h3")).toHaveText("Ginger");
+  await expect(page.getByTestId("today-recorded-crop")).toContainText(
+    "Ginger",
+  );
+  const steps = page.getByRole("region", { name: "Upcoming steps" });
   await expect(
-    page.getByRole("heading", { name: "Check field moisture", exact: true }),
+    steps.getByRole("heading", { name: "Check field moisture", exact: true }),
   ).toBeVisible();
-  await page.getByRole("button", { name: "Done today", exact: true }).click();
+  await steps
+    .getByRole("button", { name: "Mark done: Check field moisture" })
+    .click();
   await expect.poll(() => api.careBodies.length).toBe(1);
   expect(api.careBodies[0].completedOn).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+  await expect(steps.locator(".today-chip")).toHaveText("Done");
   await expect(
-    page.getByRole("heading", { name: "Check field moisture", exact: true }),
+    steps.getByRole("button", { name: /Mark done/ }),
   ).toHaveCount(0);
 });
 
@@ -574,14 +621,17 @@ test("a planting save completed after farm switching cannot replace the selected
   await expect(
     page.getByRole("heading", { name: "North field", exact: true }),
   ).toBeVisible();
-  await expect(page.locator(".current-crop-name h3")).toHaveCount(0);
+  await expect(page.getByTestId("today-recorded-crop")).toHaveCount(0);
   await expect(
-    page.getByRole("heading", { name: "No crop recorded yet", exact: true }),
+    page.getByRole("heading", {
+      name: "What's growing on this field?",
+      exact: true,
+    }),
   ).toBeVisible();
 });
 
 for (const theme of ["light", "dark"] as const)
-  test(`${theme} full-screen layout remains usable at360px`, async ({
+  test(`${theme} full-screen layout remains usable at 360px`, async ({
     page,
   }) => {
     await page.emulateMedia({ colorScheme: theme });
@@ -593,34 +643,274 @@ for (const theme of ["light", "dark"] as const)
     await expect(
       page.getByRole("button", { name: "Dark mode", exact: true }),
     ).toBeInViewport();
-    await expect(page.locator(".field-growth-canvas")).toBeVisible();
-    expect(
-      await page.evaluate(
-        () => document.documentElement.scrollWidth <= window.innerWidth,
-      ),
-    ).toBe(true);
     await expect(
-      page.getByRole("link", { name: "Farm workspace", exact: true }),
-    ).toHaveAttribute("aria-label", "Farm workspace");
+      page.getByRole("region", { name: "Upcoming steps" }),
+    ).toBeVisible();
+    expect(await noHorizontalScroll(page)).toBe(true);
+    // The rail is gone; the four tabs are the bottom bar.
+    await expect(page.locator(".sidebar")).toBeHidden();
+    await expect(farmViews(page).getByRole("link")).toHaveCount(4);
+    await expect(
+      farmViews(page).getByRole("link", { name: "Today", exact: true }),
+    ).toBeInViewport();
   });
+
+for (const theme of ["light", "dark"] as const)
+  test(`${theme} 390 px: four bottom tabs replace the rail and the Evara button clears the bar and the content`, async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.emulateMedia({ colorScheme: theme });
+    await fixture(page, { today: true });
+    await page.goto("/farm");
+    await expect(
+      page.getByRole("region", { name: "Upcoming steps" }),
+    ).toBeVisible();
+    await expect(page.getByRole("region", { name: "Your field" })).toBeVisible();
+    // The rail is hidden; one tab navigation is visible and it is the bottom bar.
+    await expect(page.locator(".sidebar")).toBeHidden();
+    await expect(farmViews(page)).toHaveCount(1);
+    const bar = page.locator("nav.farm-bottom-tabs");
+    await expect(bar).toBeVisible();
+    await expect(page.locator("nav.farm-context-tabs")).toBeHidden();
+    const links = bar.getByRole("link");
+    await expect(links).toHaveCount(4);
+    for (const name of tabNames) {
+      const link = bar.getByRole("link", { name, exact: true });
+      await expect(link).toBeVisible();
+      const box = (await link.boundingBox())!;
+      expect(box.width, `${name} width`).toBeGreaterThanOrEqual(44);
+      expect(box.height, `${name} height`).toBeGreaterThanOrEqual(44);
+    }
+    await expect(
+      bar.getByRole("link", { name: "Today", exact: true }),
+    ).toHaveAttribute("aria-current", "page");
+    await expect(bar.locator('[aria-current="page"]')).toHaveCount(1);
+    await expect(
+      bar.getByRole("link", { name: "Today", exact: true }),
+    ).toHaveAccessibleDescription("1 care task due");
+    // The bar is pinned to the bottom edge and spans the screen.
+    const barBox = (await bar.boundingBox())!;
+    expect(barBox.x).toBe(0);
+    expect(barBox.width).toBe(390);
+    expect(Math.round(barBox.y + barBox.height)).toBe(844);
+    // Content uses the full width with 16 px gutters.
+    const field = (await page
+      .getByRole("region", { name: "Your field" })
+      .boundingBox())!;
+    expect(Math.round(field.x)).toBe(16);
+    expect(Math.round(field.x + field.width)).toBe(374);
+    expect(await noHorizontalScroll(page)).toBe(true);
+    // Evara sits above the bar on the right with a 12 px gap.
+    // The header also carries an Evara button (the model activity indicator); this is the floating launcher.
+  const evara = page.locator(".assistant-launcher");
+    await expect(evara).toBeVisible();
+    const evaraBox = (await evara.boundingBox())!;
+    expect(barBox.y - (evaraBox.y + evaraBox.height)).toBeGreaterThanOrEqual(
+      11.5,
+    );
+    expect(barBox.y - (evaraBox.y + evaraBox.height)).toBeLessThanOrEqual(12.5);
+    expect(Math.round(390 - (evaraBox.x + evaraBox.width))).toBe(16);
+    // The last content ends above the Evara button when scrolled to the end.
+    await page.evaluate(() =>
+      window.scrollTo(0, document.documentElement.scrollHeight),
+    );
+    const lastContent = await page
+      .locator(".today-layout")
+      .evaluate((el) => el.getBoundingClientRect().bottom);
+    expect(lastContent).toBeLessThanOrEqual(evaraBox.y);
+    await page.evaluate(() => window.scrollTo(0, 0));
+    await page.screenshot({
+      path: `../../docs/reference/redesign/shell-mobile-${theme}.png`,
+    });
+  });
+
+test("390 px: focus runs through the page, the bottom tabs, then Evara; Evara opens above the bar", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await fixture(page, { today: true });
+  await page.goto("/farm");
+  await expect(
+    page.getByRole("region", { name: "Upcoming steps" }),
+  ).toBeVisible();
+  const bar = page.locator("nav.farm-bottom-tabs");
+  // The header also carries an Evara button (the model activity indicator); this is the floating launcher.
+  const evara = page.locator(".assistant-launcher");
+  await bar.getByRole("link", { name: "Farm", exact: true }).focus();
+  await page.keyboard.press("Tab");
+  await expect(evara).toBeFocused();
+  await page.keyboard.press("Enter");
+  const panel = page.getByLabel("Evara farm assistant", { exact: true });
+  await expect(panel).toBeVisible();
+  const barBox = (await bar.boundingBox())!;
+  const panelBox = (await panel.boundingBox())!;
+  expect(panelBox.y + panelBox.height).toBeLessThanOrEqual(barBox.y);
+  expect(panelBox.x).toBeGreaterThanOrEqual(0);
+  expect(panelBox.x + panelBox.width).toBeLessThanOrEqual(390);
+  expect(await noHorizontalScroll(page)).toBe(true);
+});
+
+test("390 px: the More menu holds add a farm, crop library and manage farms", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await fixture(page, { today: true });
+  await page.goto("/farm");
+  const more = page.getByRole("button", { name: "More", exact: true });
+  await expect(more).toHaveAttribute("aria-expanded", "false");
+  await expect(
+    page.getByRole("link", { name: "Manage farms", exact: true }),
+  ).toHaveCount(0);
+  const box = (await more.boundingBox())!;
+  expect(box.width).toBeGreaterThanOrEqual(44);
+  expect(box.height).toBeGreaterThanOrEqual(44);
+  await more.click();
+  await expect(more).toHaveAttribute("aria-expanded", "true");
+  for (const name of ["Add a farm", "Crop library", "Manage farms"])
+    await expect(page.getByRole("link", { name, exact: true })).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(more).toHaveAttribute("aria-expanded", "false");
+  await expect(more).toBeFocused();
+  await more.click();
+  await page.getByRole("link", { name: "Crop library", exact: true }).click();
+  await expect(page).toHaveURL(/\/catalogue$/);
+  await expect(more).toHaveAttribute("aria-expanded", "false");
+  // Off the farm tabs no tab is current, and the bar is still there to go back.
+  await expect(
+    page.locator("nav.farm-bottom-tabs").locator('[aria-current="page"]'),
+  ).toHaveCount(0);
+  await page
+    .locator("nav.farm-bottom-tabs")
+    .getByRole("link", { name: "Plan", exact: true })
+    .click();
+  await expect(page).toHaveURL(/\/farm\?tab=year$/);
+});
+
+test("1280 px keeps the icon rail and the top tab row, with no bottom bar", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await page.emulateMedia({ colorScheme: "light" });
+  await fixture(page, { today: true });
+  await page.goto("/farm");
+  await expect(
+    page.getByRole("region", { name: "Upcoming steps" }),
+  ).toBeVisible();
+  const rail = page.locator(".sidebar");
+  await expect(rail).toBeVisible();
+  expect((await rail.boundingBox())!.width).toBe(72);
+  for (const name of [
+    "Farm workspace",
+    "Add a farm",
+    "Crop library",
+    "Manage farms",
+  ])
+    await expect(
+      rail.getByRole("link", { name, exact: true }),
+    ).toBeVisible();
+  await expect(farmViews(page)).toHaveCount(1);
+  await expect(page.locator("nav.farm-context-tabs")).toBeVisible();
+  await expect(page.locator("nav.farm-bottom-tabs")).toBeHidden();
+  await expect(page.getByRole("button", { name: "More", exact: true })).toBeHidden();
+  const main = (await page.locator(".app-body").boundingBox())!;
+  expect(main.x).toBe(72);
+  expect(await noHorizontalScroll(page)).toBe(true);
+  await page.screenshot({
+    path: "../../docs/reference/redesign/shell-desktop-light.png",
+  });
+});
+
+test("tabs switch by click and by keyboard, and only the selected tab is current", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await fixture(page, { today: true });
+  await page.goto("/farm");
+  const tabs = farmViews(page);
+  const link = (name: string) => tabs.getByRole("link", { name, exact: true });
+  await expect(link("Today")).toHaveAttribute("aria-current", "page");
+  expect(await tabs.locator('[aria-current="page"]').count()).toBe(1);
+  await link("Plan").click();
+  await expect(page).toHaveURL(/\/farm\?tab=year$/);
+  await expect(link("Plan")).toHaveAttribute("aria-current", "page");
+  expect(await tabs.locator('[aria-current="page"]').count()).toBe(1);
+  await link("Market").focus();
+  await page.keyboard.press("Enter");
+  await expect(page).toHaveURL(/\/farm\?tab=harvest$/);
+  await expect(link("Market")).toHaveAttribute("aria-current", "page");
+  await expect(
+    page.getByRole("region", { name: "Global market context" }),
+  ).toBeVisible();
+  await link("Farm").focus();
+  await page.keyboard.press("Enter");
+  await expect(page).toHaveURL(/\/farm\?tab=soil$/);
+  await expect(page.locator(".focused-crop-card")).toHaveCount(14);
+  await link("Today").click();
+  await expect(page).toHaveURL(/\/farm\?tab=today$/);
+  await expect(link("Today")).toHaveAttribute("aria-current", "page");
+  expect(await tabs.locator('[aria-current="page"]').count()).toBe(1);
+  // Tab order inside the row is the visual order.
+  await link("Today").focus();
+  for (const name of ["Plan", "Market", "Farm"]) {
+    await page.keyboard.press("Tab");
+    await expect(link(name)).toBeFocused();
+  }
+});
+
+test("legacy routes open the matching tab and Farm section", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await fixture(page, { today: true });
+  const expectTab = async (path: string, tab: string, section?: string) => {
+    await page.goto(path);
+    await expect(
+      farmViews(page).getByRole("link", { name: tab, exact: true }),
+      `${path} selects ${tab}`,
+    ).toHaveAttribute("aria-current", "page");
+    if (section)
+      await expect(
+        page
+          .getByRole("navigation", { name: "Farm sections" })
+          .getByRole("link", { name: section, exact: true }),
+        `${path} selects ${section}`,
+      ).toHaveAttribute("aria-current", "page");
+  };
+  await expectTab("/planner", "Plan");
+  await expectTab("/outlook", "Market");
+  await expectTab("/farm/settings", "Farm", "Soil records");
+  await expect(
+    page.getByRole("heading", { name: "Soil markers", exact: true }),
+  ).toBeVisible();
+  await expectTab("/journal", "Farm", "Activity");
+  await expect(
+    page.getByRole("heading", { name: "Crop progress", exact: true }),
+  ).toBeVisible();
+  await expectTab("/farm?tab=activity", "Farm", "Activity");
+  await expectTab("/farm?tab=soil&view=records", "Farm", "Soil records");
+  await expectTab("/farm?tab=year", "Plan");
+  await expectTab("/explore", "Farm", "Crop fit");
+  await expect(
+    page.getByRole("dialog", { name: "Compare crops for this farm" }),
+  ).toBeVisible();
+});
 
 test("farm query views react to navigation and survive a fresh reload", async ({
   page,
 }) => {
   await fixture(page);
   await page.goto("/farm?tab=soil");
-  const tabs = page.getByRole("navigation", { name: "Farm views" });
+  const tabs = farmViews(page);
   await expect(
-    tabs.getByRole("link", { name: "Soil & crop fit", exact: true }),
+    tabs.getByRole("link", { name: "Farm", exact: true }),
   ).toHaveAttribute("aria-current", "page");
   await expect(page.locator(".focused-crop-card")).toHaveCount(14);
   await tabs.getByRole("link", { name: "Today", exact: true }).click();
   await expect(
     page.getByRole("region", { name: "Your field", exact: true }),
   ).toBeVisible();
-  await tabs
-    .getByRole("link", { name: "Soil & crop fit", exact: true })
-    .click();
+  await tabs.getByRole("link", { name: "Farm", exact: true }).click();
   await expect(page.locator(".focused-crop-card")).toHaveCount(14);
   await page.reload();
   await expect(page.locator(".focused-crop-card")).toHaveCount(14);
@@ -632,16 +922,15 @@ test("all scheduled care stays reachable and regional references remain undated"
   await page.setViewportSize({ width: 1100, height: 900 });
   await fixture(page, { extendedCare: true });
   await page.goto("/farm");
-  await expect(
-    page.getByRole("heading", { name: "Scheduled care 3", exact: true }),
-  ).toBeVisible();
-  await expect(
-    page.getByRole("heading", { name: "Scheduled care 4", exact: true }),
-  ).toHaveCount(0);
-  await page.getByRole("button", { name: "All 4 care actions" }).click();
-  await expect(
-    page.getByRole("heading", { name: "Scheduled care 4", exact: true }),
-  ).toBeVisible();
+  // Four scheduled steps fit under the visible-step limit, so every one shows without a toggle.
+  const steps = page.getByRole("region", { name: "Upcoming steps" });
+  for (const index of [1, 2, 3, 4])
+    await expect(
+      steps.getByRole("heading", {
+        name: `Scheduled care ${index}`,
+        exact: true,
+      }),
+    ).toBeVisible();
   const guidance = page.locator(".stage-guidance-panel").first();
   await guidance.locator("summary").click();
   await expect(guidance).toContainText("This source covers another region");
@@ -655,10 +944,7 @@ test("all scheduled care stays reachable and regional references remain undated"
   await expect(
     regional.getByRole("button", { name: "Done today" }),
   ).toHaveCount(0);
-  await page
-    .getByRole("navigation", { name: "Farm views" })
-    .getByRole("link", { name: "Soil & crop fit" })
-    .click();
+  await farmViews(page).getByRole("link", { name: "Farm", exact: true }).click();
   const maize = page
     .locator(".focused-crop-card")
     .filter({ has: page.getByRole("heading", { name: "Maize", exact: true }) });

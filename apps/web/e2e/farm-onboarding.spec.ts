@@ -488,6 +488,8 @@ test("returning users can load the labelled demo repeatedly without replacing th
 }) => {
   const api = await fixture(page, { existing: true });
   await page.goto("/farm");
+  // Below 768 px the rail is hidden; its links sit behind the header More button.
+  await page.getByRole("button", { name: "More", exact: true }).click();
   await page.getByRole("link", { name: "Manage farms", exact: true }).click();
   await expect(page.getByLabel("Selected farm")).toHaveValue(A);
   await page
@@ -541,6 +543,8 @@ test("existing boundary edits finish with a saved confirmation", async ({
 }) => {
   const api = await fixture(page, { existing: true });
   await page.goto("/farm");
+  // Below 768 px the rail is hidden; its links sit behind the header More button.
+  await page.getByRole("button", { name: "More", exact: true }).click();
   await page.getByRole("link", { name: "Manage farms", exact: true }).click();
   await expect(page.locator(".boundary-label")).toBeVisible();
   await page

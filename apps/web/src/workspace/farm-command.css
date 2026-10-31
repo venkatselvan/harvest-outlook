@@ -1197,43 +1197,6 @@
   }
 }
 @media (max-width: 600px) {
-  .farm-shell .sidebar {
-    width: 56px;
-    padding: 14px 5px 10px;
-  }
-  .farm-shell .brand-lockup {
-    margin-bottom: 24px;
-  }
-  .farm-shell .brand-mark {
-    width: 34px;
-    height: 34px;
-    border-radius: 10px;
-  }
-  .farm-shell .brand-mark .harvest-logo {
-    width: 100%;
-    height: 100%;
-  }
-  .farm-shell .sidebar-link {
-    width: 39px;
-    height: 42px;
-  }
-  .farm-shell .sidebar nav {
-    gap: 9px;
-  }
-  .farm-shell .sidebar-link.selected::before {
-    left: -8px;
-  }
-  .farm-shell .app-body {
-    margin-left: 56px;
-    width: calc(100% - 56px);
-  }
-  .farm-shell .topbar {
-    padding: 0 12px;
-    height: 55px;
-  }
-  .farm-shell .topbar-actions {
-    gap: 8px;
-  }
   .farm-shell .farm-picker select {
     max-width: 135px;
     width: auto;
@@ -1261,7 +1224,7 @@
     margin: 0;
   }
   .farm-command-heading {
-    padding: 16px 14px 12px;
+    padding: 16px 16px 12px;
     align-items: flex-start;
     gap: 10px;
   }
@@ -1289,18 +1252,6 @@
   }
   .farm-command-actions .btn svg {
     width: 13px;
-  }
-  .farm-context-tabs {
-    gap: 19px;
-    padding: 0 14px;
-  }
-  .farm-context-tabs > a {
-    font-size: 11px;
-    padding: 12px 0;
-    gap: 5px;
-  }
-  .farm-context-tabs > a > svg {
-    display: none;
   }
   .farm-today-grid {
     padding: 12px 10px;
@@ -1405,7 +1356,7 @@
     padding: 17px;
   }
   .farm-tab-scroll {
-    padding: 18px 13px;
+    padding: 18px 16px;
   }
   .context-view-heading h2 {
     font-size: 21px;
@@ -1484,14 +1435,14 @@
     width: 100%;
   }
   .command-data-warning {
-    padding: 8px 13px;
+    padding: 8px 16px;
     font-size: 11px;
   }
   .farm-setup-page {
     padding: 14px 10px;
   }
   .farm-shell .workspace-page:not(.farm-command .workspace-page) {
-    padding: 20px 14px;
+    padding: 20px 16px;
   }
 }
 
@@ -1703,5 +1654,263 @@
   .field-stage-canvas .field-growth-footnote {
     font-size: 9px;
     bottom: 11px;
+  }
+}
+
+/* ---------------------------------------------------------------- navigation shell (docs/research/UI_BRIEF.md section 2)
+   From 768 px: the 72 px icon rail on the left and the tab row under the farm header.
+   Below 768 px: no rail. The same four tabs become a fixed bottom tab bar, content gets the full width with 16 px gutters,
+   the rail's other links sit behind the header "More" button, and the Evara launcher floats above the bar. */
+.farm-shell {
+  --tabbar-h: 60px;
+  --tabbar-offset: calc(var(--tabbar-h) + env(safe-area-inset-bottom, 0px));
+  --launcher: 52px;
+}
+.farm-bottom-tabs,
+.more-menu {
+  display: none;
+}
+.farm-tab-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+.farm-context-tabs > a:focus-visible {
+  outline-offset: -3px;
+  border-radius: 6px;
+}
+.farm-subnav {
+  display: flex;
+  gap: 4px;
+  width: fit-content;
+  max-width: calc(100% - 52px);
+  margin: 18px 26px 0;
+  padding: 4px;
+  background: var(--surface-soft);
+  border: 1px solid var(--border);
+  border-radius: 13px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.farm-subnav > a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 40px;
+  padding: 0 16px;
+  border: 1px solid transparent;
+  border-radius: 9px;
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.farm-subnav > a:hover {
+  background: var(--surface-hover);
+}
+.farm-subnav > a.active {
+  background: var(--surface);
+  border-color: var(--accent-border);
+  color: var(--accent);
+  box-shadow: 0 1px 3px var(--shadow-color);
+}
+.farm-subnav > a:focus-visible {
+  outline-offset: -3px;
+}
+@media (max-width: 767px) {
+  .farm-shell .sidebar {
+    display: none;
+  }
+  .farm-shell .app-body {
+    margin-left: 0;
+    width: 100%;
+    /* Content never hides behind the fixed bar. */
+    padding-bottom: var(--tabbar-offset);
+  }
+  .farm-shell .topbar {
+    height: 56px;
+    padding: 0 16px;
+    gap: 8px;
+  }
+  .farm-shell .topbar-actions {
+    width: 100%;
+    max-width: none;
+    gap: 8px;
+  }
+  .farm-shell .farm-picker {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+  .farm-shell .farm-picker select {
+    width: 100%;
+    max-width: none;
+    min-height: 44px;
+    font-size: 13px;
+  }
+  .farm-shell .more-menu {
+    display: block;
+    position: relative;
+    order: 4;
+    flex-shrink: 0;
+  }
+  .more-menu-button {
+    display: grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--surface);
+    color: var(--text-secondary);
+    cursor: pointer;
+  }
+  .more-menu-button[aria-expanded="true"] {
+    background: var(--accent-soft);
+    border-color: var(--accent-border);
+    color: var(--accent);
+  }
+  .more-menu-panel {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    z-index: 1200;
+    display: grid;
+    min-width: 220px;
+    padding: 6px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    box-shadow: 0 12px 40px var(--shadow-color);
+  }
+  .more-menu-link {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-height: 48px;
+    padding: 0 12px;
+    border-radius: 8px;
+    color: var(--text);
+    font-size: 14px;
+    font-weight: 550;
+    text-decoration: none;
+  }
+  .more-menu-link:hover {
+    background: var(--surface-soft);
+  }
+  .more-menu-link:focus-visible {
+    outline-offset: -3px;
+  }
+  .farm-context-tabs {
+    display: none;
+  }
+  .farm-bottom-tabs {
+    position: fixed;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 800;
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    height: var(--tabbar-offset);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    box-shadow: 0 -4px 18px var(--shadow-color);
+  }
+  .farm-bottom-tabs > a {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    min-width: 0;
+    min-height: 44px;
+    color: var(--text-secondary);
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1.2;
+    text-decoration: none;
+  }
+  .farm-bottom-tabs > a.active {
+    color: var(--accent);
+  }
+  .farm-bottom-tabs > a.active::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    right: 28%;
+    left: 28%;
+    height: 3px;
+    border-radius: 0 0 3px 3px;
+    background: var(--accent);
+  }
+  .farm-bottom-tabs > a:focus-visible {
+    outline-offset: -4px;
+    border-radius: 10px;
+  }
+  .farm-bottom-tabs small {
+    position: absolute;
+    top: 7px;
+    left: calc(50% + 8px);
+    display: grid;
+    place-items: center;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 4px;
+    border: 1px solid var(--accent-border);
+    border-radius: 9px;
+    background: var(--accent-soft);
+    color: var(--accent);
+    font-size: 11px;
+    font-weight: 650;
+  }
+  /* Evara: a round button above the bar on the right, 12 px clear of it. */
+  .farm-shell .assistant-launcher,
+  .farm-shell .assistant-launcher.open {
+    right: 16px;
+    bottom: calc(var(--tabbar-offset) + 12px);
+    width: var(--launcher);
+    height: var(--launcher);
+    min-height: var(--launcher);
+    padding: 0;
+    gap: 0;
+    border-radius: 50%;
+  }
+  .farm-shell .assistant-launcher > span {
+    display: none;
+  }
+  .farm-shell .assistant-launcher .evara-mascot {
+    width: 36px;
+    height: 36px;
+  }
+  .farm-shell .assistant-panel {
+    right: 12px;
+    left: auto;
+    bottom: calc(var(--tabbar-offset) + 12px + var(--launcher) + 8px);
+    width: min(420px, calc(100vw - 24px));
+    height: min(
+      600px,
+      calc(100dvh - var(--tabbar-offset) - var(--launcher) - 36px)
+    );
+  }
+  .farm-shell .toast {
+    bottom: calc(var(--tabbar-offset) + 12px + var(--launcher) + 8px);
+    left: 50%;
+    max-width: calc(100vw - 32px);
+  }
+  /* The Today view reserves its own space for the launcher; the other tabs need it too. */
+  .farm-command:not(.tab-today) {
+    padding-bottom: calc(var(--launcher) + 24px);
+  }
+  .farm-subnav {
+    max-width: calc(100% - 32px);
+    margin: 14px 16px 0;
+  }
+  .farm-subnav > a {
+    min-height: 44px;
   }
 }

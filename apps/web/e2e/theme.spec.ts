@@ -260,7 +260,10 @@ test("theme follows system until chosen, supports keyboard toggle, and persists 
   await page.emulateMedia({ colorScheme: "light" });
   await page.emulateMedia({ colorScheme: "dark" });
   await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
-  await page.getByRole("link", { name: "Year plan", exact: true }).click();
+  await page
+    .getByRole("navigation", { name: "Farm views" })
+    .getByRole("link", { name: "Plan", exact: true })
+    .click();
   await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
   await page.reload();
   await expect(toggle).toHaveAttribute("aria-pressed", "false");

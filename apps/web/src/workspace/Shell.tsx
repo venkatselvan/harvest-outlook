@@ -5,6 +5,8 @@ import {
   For,
   Show,
   createEffect,
+  createSignal,
+  on,
   onCleanup,
   onMount,
   type ParentProps,
@@ -15,6 +17,84 @@ import { Assistant } from "./Assistant";
 import { Icon } from "./icons";
 import { capabilitiesState, refreshCapabilities } from "../lib/capabilities";
 import { theme, toggleTheme } from "../lib/theme";
+import { FarmTabNav, activeFarmTab } from "./farmTabs";
+
+/**
+ * Below 768 px the left rail is hidden and the bottom tab bar replaces it. The rail's other destinations
+ * (add a farm, crop library, manage farms) live behind this header button instead of a fifth tab.
+ */
+function MoreMenu(props: { links: { href: string; icon: string; label: string }[] }) {
+  const location = useLocation();
+  const [open, setOpen] = createSignal(false);
+  let wrap: HTMLDivElement | undefined;
+  let button: HTMLButtonElement | undefined;
+  createEffect(
+    on(
+      () => location.pathname + location.search,
+      () => setOpen(false),
+      { defer: true },
+    ),
+  );
+  onMount(() => {
+    const away = (event: Event) => {
+      if (open() && wrap && !wrap.contains(event.target as Node)) setOpen(false);
+    };
+    document.addEventListener("pointerdown", away);
+    document.addEventListener("focusin", away);
+    onCleanup(() => {
+      document.removeEventListener("pointerdown", away);
+      document.removeEventListener("focusin", away);
+    });
+  });
+  return (
+    <div
+      class="more-menu"
+      ref={wrap}
+      onKeyDown={(event) => {
+        if (event.key === "Escape" && open()) {
+          setOpen(false);
+          button?.focus();
+        }
+      }}
+    >
+      <button
+        ref={button}
+        type="button"
+        class="more-menu-button"
+        aria-label="More"
+        aria-expanded={open()}
+        aria-controls="more-menu-panel"
+        title="More"
+        onClick={() => setOpen(!open())}
+      >
+        <svg
+          width="20"
+          height="20"
+          viewBox="0 0 24 24"
+          fill="currentColor"
+          aria-hidden="true"
+        >
+          <circle cx="12" cy="5" r="1.8" />
+          <circle cx="12" cy="12" r="1.8" />
+          <circle cx="12" cy="19" r="1.8" />
+        </svg>
+      </button>
+      <Show when={open()}>
+        <div class="more-menu-panel" id="more-menu-panel">
+          <For each={props.links}>
+            {(link) => (
+              <A href={link.href} class="more-menu-link">
+                <Icon name={link.icon} size={18} />
+                {link.label}
+              </A>
+            )}
+          </For>
+        </div>
+      </Show>
+    </div>
+  );
+}
+
 function Shell(props: ParentProps) {
   onMount(() => onCleanup(installModalFocus()));
   const s = useWorkspace();
@@ -31,6 +111,10 @@ function Shell(props: ParentProps) {
           location.pathname.startsWith(path),
         )
       : location.pathname.startsWith(href);
+  const activeTab = () => activeFarmTab(location.pathname, location.search);
+  /** The bottom tab bar needs a farm to show, and stays out of the way of the add-a-farm wizard. */
+  const showTabBar = () =>
+    !!s.farm() && !location.pathname.startsWith("/farm/setup");
   createEffect(() => {
     const title =
       nav.find((n) => location.pathname.startsWith(n.href))?.label ??
@@ -161,6 +245,7 @@ function Shell(props: ParentProps) {
               })}
             </span>
             <ModelActivity />
+            <MoreMenu links={nav.slice(1)} />
           </div>
         </header>
         <main id="main" tabindex="-1">
@@ -178,6 +263,9 @@ function Shell(props: ParentProps) {
           </Show>
           {props.children}
         </main>
+        <Show when={showTabBar()}>
+          <FarmTabNav variant="bottom" current={activeTab} />
+        </Show>
       </div>
       <Assistant />
       <Show when={s.notice()}>

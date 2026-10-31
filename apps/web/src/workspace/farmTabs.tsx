@@ -1,0 +1,146 @@
+import { For, Show, createSignal } from "solid-js";
+import { Icon } from "./icons";
+
+/**
+ * The four farm tabs (docs/research/UI_BRIEF.md section 2). The ids are the stable `?tab=` values and the CSS hooks
+ * (`tab-today`, `tab-year`, ...); the labels are what the farmer reads.
+ *
+ * | label  | id        | content                                                     |
+ * | Today  | `today`   | TodayView                                                   |
+ * | Plan   | `year`    | YearPlanView                                                |
+ * | Market | `harvest` | harvest context, market context, Outlook                    |
+ * | Farm   | `soil`    | crop fit, soil records (FarmSettings) and Activity (Journal) |
+ */
+export type FarmTab = "today" | "year" | "harvest" | "soil";
+/** The secondary toggle inside the Farm tab. Nothing from the old Soil, Settings and Activity views is dropped. */
+export type FarmSection = "fit" | "records" | "activity";
+
+export const farmTabs: { id: FarmTab; label: string; icon: string }[] = [
+  { id: "today", label: "Today", icon: "grid" },
+  { id: "year", label: "Plan", icon: "calendar" },
+  { id: "harvest", label: "Market", icon: "trend" },
+  { id: "soil", label: "Farm", icon: "leaf" },
+];
+export const farmSections: { id: FarmSection; label: string }[] = [
+  { id: "fit", label: "Crop fit" },
+  { id: "records", label: "Soil records" },
+  { id: "activity", label: "Activity" },
+];
+
+const isTab = (value: string | null | undefined): value is FarmTab =>
+  farmTabs.some((tab) => tab.id === value);
+const isSection = (value: string | null | undefined): value is FarmSection =>
+  farmSections.some((section) => section.id === value);
+const clean = (path: string) =>
+  path.length > 1 ? path.replace(/\/+$/, "") : path;
+
+/** Paths the farm command center renders. Every other route (catalogue, manage, setup, a saved plan) has no active tab. */
+const commandPaths = [
+  "/farm",
+  "/farm/settings",
+  "/planner",
+  "/explore",
+  "/outlook",
+  "/journal",
+  "/ask",
+];
+
+/**
+ * Which tab a path and `?tab=` value select. Legacy routes keep working:
+ * `/planner` is Plan, `/outlook` is Market, `/explore`, `/farm/settings` and `/journal` are Farm, and `?tab=activity`
+ * (the old fifth tab) is Farm. An explicit `?tab=` wins over the path.
+ */
+export const selectedTab = (path: string, query?: string): FarmTab => {
+  const route = clean(path);
+  if (isTab(query)) return query;
+  if (query === "activity") return "soil";
+  if (route === "/planner") return "year";
+  if (route === "/explore" || route === "/farm/settings") return "soil";
+  if (route === "/outlook") return "harvest";
+  if (route === "/journal") return "soil";
+  return "today";
+};
+
+/**
+ * Which sub-view of the Farm tab is selected. `?view=` wins; otherwise the legacy entry points decide:
+ * `/farm/settings` opens the soil records, `/journal` and `?tab=activity` open Activity, everything else opens crop fit.
+ */
+export const selectedSection = (
+  path: string,
+  tabQuery?: string,
+  viewQuery?: string,
+): FarmSection => {
+  const route = clean(path);
+  if (isSection(viewQuery)) return viewQuery;
+  if (tabQuery === "activity") return "activity";
+  if (isTab(tabQuery) && tabQuery !== "soil") return "fit";
+  if (route === "/farm/settings") return "records";
+  if (route === "/journal") return "activity";
+  return "fit";
+};
+
+/** The active tab for the shell chrome, or undefined on routes that are not a farm tab. */
+export const activeFarmTab = (
+  path: string,
+  search: string,
+): FarmTab | undefined =>
+  commandPaths.includes(clean(path))
+    ? selectedTab(path, new URLSearchParams(search).get("tab") ?? undefined)
+    : undefined;
+
+/** `/farm?tab=soil&view=activity`. The default sub-view stays out of the URL. */
+export const farmHref = (tab: FarmTab, section?: FarmSection) =>
+  `/farm?tab=${tab}${tab === "soil" && section && section !== "fit" ? `&view=${section}` : ""}`;
+
+/**
+ * Open care tasks that are due or overdue. The command center publishes it so the tab bars, which live in different
+ * parts of the tree, show one number. It is cleared when the command center unmounts.
+ */
+const [dueBadge, setDueBadge] = createSignal(0);
+export { dueBadge, setDueBadge };
+
+/**
+ * One list of the four tabs, drawn as the top tab row from 768 px up and as the bottom tab bar below that
+ * (`variant`). Both are links, so every tab is keyboard reachable with Tab and opens with Enter. They are plain
+ * anchors: the router intercepts same-origin links itself, and its `A` component would mark every tab as the current
+ * page because it ignores the query string.
+ */
+export function FarmTabNav(props: {
+  variant: "top" | "bottom";
+  current: () => FarmTab | undefined;
+}) {
+  return (
+    <nav
+      class={props.variant === "top" ? "farm-context-tabs" : "farm-bottom-tabs"}
+      aria-label="Farm views"
+    >
+      <For each={farmTabs}>
+        {(item) => {
+          const dueId = `farm-tab-${props.variant}-due`;
+          return (
+            <a
+              href={farmHref(item.id)}
+              aria-label={item.label}
+              classList={{ active: props.current() === item.id }}
+              aria-current={props.current() === item.id ? "page" : undefined}
+              aria-describedby={
+                item.id === "today" && dueBadge() ? dueId : undefined
+              }
+            >
+              <Icon name={item.icon} size={props.variant === "top" ? 16 : 22} />
+              <span class="farm-tab-label">{item.label}</span>
+              <Show when={item.id === "today" && dueBadge()}>
+                <small aria-hidden="true">{dueBadge()}</small>
+                <span class="farm-tab-sr" id={dueId}>
+                  {dueBadge() === 1
+                    ? "1 care task due"
+                    : `${dueBadge()} care tasks due`}
+                </span>
+              </Show>
+            </a>
+          );
+        }}
+      </For>
+    </nav>
+  );
+}

@@ -5,7 +5,7 @@ import {
   createResource,
   createSignal,
   on,
-  type JSX,
+  onCleanup,
 } from "solid-js";
 import { A, useLocation, useNavigate } from "@solidjs/router";
 import {
@@ -35,16 +35,16 @@ import { Evara } from "./Evara";
 import { TodayView } from "./today/TodayView";
 import type { Tool } from "./today/types";
 import { YearPlanView } from "./year/YearPlanView";
+import {
+  FarmTabNav,
+  farmHref,
+  farmSections,
+  selectedSection,
+  selectedTab,
+  setDueBadge,
+} from "./farmTabs";
 import "./farm-command.css";
 
-type Tab = "today" | "soil" | "year" | "harvest" | "activity";
-const tabs: { id: Tab; label: string; icon: string }[] = [
-  { id: "today", label: "Today", icon: "grid" },
-  { id: "soil", label: "Soil & crop fit", icon: "leaf" },
-  { id: "year", label: "Year plan", icon: "calendar" },
-  { id: "harvest", label: "Harvest outlook", icon: "trend" },
-  { id: "activity", label: "Activity", icon: "journal" },
-];
 const words = (value: string) =>
   value.replace(/_/g, " ").replace(/^\w/, (s) => s.toUpperCase());
 const fitLabel = (status: string) =>
@@ -54,14 +54,6 @@ const fitLabel = (status: string) =>
     within_published_ph_range: "pH within source range",
     outside_published_ph_range: "pH outside source range",
   })[status] ?? "Check source requirements";
-const selectedTab = (path: string, query?: string): Tab => {
-  if (tabs.some((tab) => tab.id === query)) return query as Tab;
-  if (path === "/planner") return "year";
-  if (path === "/explore" || path === "/farm/settings") return "soil";
-  if (path === "/outlook") return "harvest";
-  if (path === "/journal") return "activity";
-  return "today";
-};
 
 /** Keep the setup mounted through the history step when the very first farm is created. */
 export function FarmHome() {
@@ -132,6 +124,13 @@ export function FarmCommandCenter() {
   const query = () => new URLSearchParams(location.search);
   const tab = () =>
     selectedTab(location.pathname, query().get("tab") ?? undefined);
+  /** The Farm tab's secondary toggle: crop fit, soil records (FarmSettings) or Activity (Journal). */
+  const section = () =>
+    selectedSection(
+      location.pathname,
+      query().get("tab") ?? undefined,
+      query().get("view") ?? undefined,
+    );
   const tool = (): Tool =>
     query().get("tool") === "compare" || location.pathname === "/explore"
       ? "compare"
@@ -213,7 +212,12 @@ export function FarmCommandCenter() {
   const chosenCrop = () =>
     data()?.focusedCrops.find((crop) => crop.cropId === plantCrop());
   const showTool = (tool: Tool) =>
-    navigate(`/farm?tab=${tab()}${tool ? `&tool=${tool}` : ""}`);
+    navigate(
+      `${farmHref(tab(), section())}${tool ? `&tool=${tool}` : ""}`,
+    );
+  // The tab bars live in the shell, outside this component: publish the due count for the Today badge.
+  createEffect(() => setDueBadge(dueCount()));
+  onCleanup(() => setDueBadge(0));
   createEffect(
     on([() => s.farm()?.id, s.sessionEpoch], () => {
       ++plantRequest;
@@ -404,24 +408,7 @@ export function FarmCommandCenter() {
           </button>
         </div>
       </header>
-      <nav class="farm-context-tabs" aria-label="Farm views">
-        <For each={tabs}>
-          {(item) => (
-            <A
-              href={`/farm?tab=${item.id}`}
-              aria-label={item.label}
-              classList={{ active: tab() === item.id }}
-              aria-current={tab() === item.id ? "page" : undefined}
-            >
-              <Icon name={item.icon} size={16} />
-              {item.label}
-              <Show when={item.id === "today" && dueCount()}>
-                <small>{dueCount()}</small>
-              </Show>
-            </A>
-          )}
-        </For>
-      </nav>
+      <FarmTabNav variant="top" current={tab} />
       <Show when={s.planningSetupPending()}>
         <div class="command-data-warning" role="status">
           <Icon name="history" size={16} />
@@ -470,7 +457,22 @@ export function FarmCommandCenter() {
           showTool={showTool}
         />
       </Show>
-      <Show when={tab() === "soil" && location.pathname !== "/farm/settings"}>
+      <Show when={tab() === "soil"}>
+        <nav class="farm-subnav" aria-label="Farm sections">
+          <For each={farmSections}>
+            {(item) => (
+              <a
+                href={farmHref("soil", item.id)}
+                classList={{ active: section() === item.id }}
+                aria-current={section() === item.id ? "page" : undefined}
+              >
+                {item.label}
+              </a>
+            )}
+          </For>
+        </nav>
+      </Show>
+      <Show when={tab() === "soil" && section() === "fit"}>
         <div class="farm-tab-scroll soil-fit-workspace">
           <div class="context-view-heading">
             <div>
@@ -619,7 +621,7 @@ export function FarmCommandCenter() {
           </Show>
         </div>
       </Show>
-      <Show when={location.pathname === "/farm/settings"}>
+      <Show when={tab() === "soil" && section() === "records"}>
         <div class="farm-tab-scroll embedded-tool">
           <FarmSettings />
         </div>
@@ -735,7 +737,7 @@ export function FarmCommandCenter() {
           <Outlook />
         </div>
       </Show>
-      <Show when={tab() === "activity"}>
+      <Show when={tab() === "soil" && section() === "activity"}>
         <div class="farm-tab-scroll embedded-tool">
           <JournalWorkspace />
         </div>
@@ -942,7 +944,7 @@ export function FarmCommandCenter() {
         <HistoryDialog
           onClose={() => {
             setHistory(false);
-            navigate(`/farm?tab=${tab()}`);
+            navigate(farmHref(tab(), section()));
           }}
         />
       </Show>
