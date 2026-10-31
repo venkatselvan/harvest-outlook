@@ -1,4 +1,4 @@
-import { createEffect, createMemo, createSignal, For, Match, on, Show, Switch } from "solid-js";
+import { createEffect, createMemo, createSignal, For, Match, on, Show, Switch, untrack } from "solid-js";
 import type { CareTask, FarmAlert, TodayView as TodayData, UpcomingStep } from "@harvest/contracts";
 import { useWorkspace, today as browserToday } from "../state";
 import { newEntryId } from "../../features/photo-region/http";
@@ -70,6 +70,8 @@ export function TodayView(props: TodayViewProps) {
   const [sheet, setSheet] = createSignal<SheetKind | null>(null);
   const careEntries = new Map<string, string>();
   let request = 0;
+  /** Workspace version this view last saw for the selected farm; undefined until the first version is known. */
+  let seenVersion: number | undefined;
 
   const farmId = () => s.farm()?.id;
   const state = (): LoadState => {
@@ -91,8 +93,10 @@ export function TodayView(props: TodayViewProps) {
       setLoad({ status: "ready", farmId: target, view: next });
     } catch (error) {
       if (id !== request || stale(target, epoch)) return;
-      // A failed background refresh keeps the view that is already on screen.
-      if (quiet && state().status === "ready") return;
+      // A failed background refresh keeps the view that is already on screen, unless that view is the empty prompt
+      // while the farm now has a crop: showing "nothing growing" would be wrong, so the error with Retry takes over.
+      const staleEmpty = view() && !view()!.cycle && props.cycles().length > 0;
+      if (quiet && state().status === "ready" && !staleEmpty) return;
       setLoad({ status: "error", farmId: target, error: describeTodayError(error) });
     }
   }
@@ -117,6 +121,7 @@ export function TodayView(props: TodayViewProps) {
       setAlertError("");
       setSheet(null);
       careEntries.clear();
+      seenVersion = undefined;
       if (!target) {
         setLoad({ status: "idle" });
         return;
@@ -125,17 +130,19 @@ export function TodayView(props: TodayViewProps) {
     }),
   );
   // A saved workspace (for example a crop planted from the shell's dialog) refreshes the view without a skeleton.
-  createEffect(
-    on(
-      () => (s.workspace()?.farmId === farmId() ? s.workspace()?.version : undefined),
-      (version, previous) => {
-        const target = farmId();
-        if (version === undefined || previous === undefined || version === previous || !target) return;
-        void fetchView(target, s.sessionEpoch(), true);
-      },
-      { defer: true },
-    ),
-  );
+  // The previous version is kept in `seenVersion` rather than read from `on(..., { defer: true })`: with `defer`, Solid
+  // never records the first value as "previous", so the first change after the tab mounted was silently skipped and the
+  // empty "What's growing on this field?" state stayed until a reload.
+  createEffect(() => {
+    const target = farmId();
+    const version = s.workspace()?.farmId === target ? s.workspace()?.version : undefined;
+    untrack(() => {
+      const previous = seenVersion;
+      if (version !== undefined) seenVersion = version;
+      if (!target || version === undefined || previous === undefined || version === previous) return;
+      void fetchView(target, s.sessionEpoch(), true);
+    });
+  });
   // A different cycle starts the slider at today again.
   createEffect(on(() => view()?.cycle?.id, () => setPick(null), { defer: true }));
 

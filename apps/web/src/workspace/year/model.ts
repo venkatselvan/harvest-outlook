@@ -12,46 +12,11 @@ import { monthYear, partOfMonth } from "./format";
 
 /** Pure view-model logic for the Year plan: no Solid, no fetch. */
 
-export type RotationRole = "nitrogen_fixer" | "light_feeder" | "moderate_feeder" | "heavy_feeder";
+import { POOL_CROPS, ROLE_LABEL, ROLE_ORDER, isLegume, type RoleGroup, type RotationRole } from "../cropPool";
 
-/**
- * Rotation role and product ids of each pool crop, mirrored from data/research/rotation/crop-pool.json (orchestrator
- * decision 2026-11-01). The YearPlan contract does not carry a rotation role, so the slot editor groups crops with this
- * table; `year-plan.test.tsx` fails if it drifts from the JSON. Proposed contract change: add `rotationRole` to
- * YearPlanSlot (or a `pool` list to YearPlanReview) so the server is the single source.
- */
-export const POOL_CROPS: Readonly<Record<string, { role: RotationRole; productIds: readonly string[] }>> = {
-  paddy: { role: "moderate_feeder", productIds: ["paddy-grain"] },
-  maize: { role: "heavy_feeder", productIds: ["maize-grain"] },
-  "finger-millet": { role: "light_feeder", productIds: ["finger-millet-grain"] },
-  sorghum: { role: "moderate_feeder", productIds: ["sorghum-grain"] },
-  groundnut: { role: "nitrogen_fixer", productIds: ["groundnut-pod"] },
-  soybean: { role: "nitrogen_fixer", productIds: ["soybean-seed"] },
-  chickpea: { role: "nitrogen_fixer", productIds: ["chickpea-whole"] },
-  "green-gram": { role: "nitrogen_fixer", productIds: ["green-gram-whole"] },
-  "black-gram": { role: "nitrogen_fixer", productIds: ["black-gram-whole"] },
-  "pigeon-pea": { role: "nitrogen_fixer", productIds: ["pigeon-pea-whole"] },
-  sesame: { role: "light_feeder", productIds: ["sesame-seed"] },
-  sunflower: { role: "heavy_feeder", productIds: ["sunflower-seed"] },
-  cotton: { role: "heavy_feeder", productIds: ["cotton-kapas"] },
-  potato: { role: "heavy_feeder", productIds: ["potato-fresh"] },
-  onion: { role: "moderate_feeder", productIds: ["onion-bulb"] },
-  tomato: { role: "heavy_feeder", productIds: ["tomato-fresh"] },
-  chilli: { role: "moderate_feeder", productIds: ["chilli-green", "chilli-dry"] },
-  ginger: { role: "moderate_feeder", productIds: ["ginger-fresh", "ginger-dry"] },
-  turmeric: { role: "heavy_feeder", productIds: ["turmeric-fresh", "turmeric-dry"] },
-};
-
-export type RoleGroup = RotationRole | "other";
-export const ROLE_ORDER: readonly RoleGroup[] = ["nitrogen_fixer", "light_feeder", "moderate_feeder", "heavy_feeder", "other"];
-export const ROLE_LABEL: Record<RoleGroup, string> = {
-  nitrogen_fixer: "Legumes, add nitrogen",
-  light_feeder: "Light feeders",
-  moderate_feeder: "Moderate feeders",
-  heavy_feeder: "Heavy feeders",
-  other: "Other crops in this plan",
-};
-export const isLegume = (cropId: string) => POOL_CROPS[cropId]?.role === "nitrogen_fixer";
+/** The pool table lives in ../cropPool.ts (shared with the planting dialog); re-exported for existing importers. */
+export { POOL_CROPS, ROLE_LABEL, ROLE_ORDER, isLegume };
+export type { RoleGroup, RotationRole };
 
 export interface CropChoice {
   cropId: string;

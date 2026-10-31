@@ -17,6 +17,8 @@ import {payloadHash} from './hash';
 export type CommandDeps=PlanningDeps;
 const today=(now=new Date())=>new Date(now.getTime()+19800000).toISOString().slice(0,10);
 export const addCareDays=(date:string,days:number)=>new Date(Date.parse(date+'T00:00:00Z')+days*86400000).toISOString().slice(0,10);
+/** Methods offered for catalogue crops that have no reviewed focused care schedule; focused crops keep their own sourced method list. */
+export const GENERAL_ESTABLISHMENT_METHODS=['direct_sowing','transplanting','planting'] as const;
 type Cycle=ReturnType<typeof FarmWorkspaceState.parse>['cycles'][number];
 type Completion={action_key:string;completed_on:string;journal_entry_id:string;cycle_id:string};
 /** Dates are source schedules, never observed crop stages or inferred completion. */
@@ -79,7 +81,12 @@ async function journalAction(c:PoolClient,deps:CommandDeps,ownerId:string,farmId
 }
 export async function plantCrop(deps:CommandDeps,ownerId:string,farmId:string,body:PlantCrop){
  const now=today((deps.now??(()=>new Date()))());if(body.establishmentDate>now)throw new ApiError(400,'validation_error','Record actual establishment only after it occurs; future crops belong in the year plan');
- const research=await focusedResearch(),crop=research.crops.find(c=>c.cropId===body.cropId);if(!crop||!crop.establishmentMethods.includes(body.establishmentMethod))throw new ApiError(400,'validation_error','Choose a supported focused crop and its establishment method');
+ const research=await focusedResearch(),focused=research.crops.find(c=>c.cropId===body.cropId);
+ // A crop with a reviewed care schedule keeps its sourced methods; any other catalogue crop is recorded without care dates.
+ const identity=(await deps.pool.query<{name:string|null}>(`SELECT names->'en'->0->>'text' AS name FROM crop_identities WHERE slug=$1`,[body.cropId])).rows[0];
+ const methods:readonly string[]=focused?focused.establishmentMethods:identity?GENERAL_ESTABLISHMENT_METHODS:[];
+ if(!methods.includes(body.establishmentMethod))throw new ApiError(400,'validation_error','Choose a crop from the catalogue and a supported establishment method');
+ const cropName=focused?.displayName??identity?.name??body.cropId;
  const hash=payloadHash({farmId,...body,expectedWorkspaceVersion:undefined});
  return withTransaction(deps.pool,async c=>{
   const owned=(await c.query('SELECT id FROM farms WHERE id=$1 AND owner_id=$2 AND deleted_at IS NULL FOR UPDATE',[farmId,ownerId])).rows[0];if(!owned)throw notFound('Farm');
@@ -88,12 +95,14 @@ export async function plantCrop(deps:CommandDeps,ownerId:string,farmId:string,bo
   const row=(await c.query('SELECT state,version,updated_at FROM farm_workspaces WHERE farm_id=$1',[farmId])).rows[0];const state=FarmWorkspaceState.parse(row?.state??{boundary:null,previousHarvest:{status:'unknown'},cycles:[],rotationPlans:[]});
   if(old){if(old.farm_id!==farmId||old.payload_hash!==hash||old.mode!==deps.config.RUNTIME_MODE)throw new ApiError(409,'idempotency_conflict','This crop request identifier was already used for different data');const cycle=state.cycles.find(c=>c.id===old.cycle_id);if(!cycle)throw new ApiError(409,'version_conflict','The recorded cycle was removed; reload before recording a new crop');return{cycle,workspace:{...state,farmId,version:row.version,updatedAt:row.updated_at.toISOString()},journalEntryId:old.journal_entry_id,alreadyRecorded:true}}
   if(body.expectedWorkspaceVersion!==(row?.version??0))throw new ApiError(409,'version_conflict','Farm tracking changed; reload before planting');
-  const products=(await c.query<{slug:string;name:string}>('SELECT p.slug,p.name FROM crop_products p JOIN crop_identities c ON c.id=p.crop_id WHERE c.slug=$1 AND ($2::text IS NULL OR p.slug=$2 OR p.id::text=$2) ORDER BY p.slug',[crop.cropId,body.productId??null])).rows.filter(p=>!Array.isArray(crop.marketProductIds)||(crop.marketProductIds as string[]).includes(p.slug));if(!products.length)throw new ApiError(400,'validation_error','Selected product does not belong to the focused crop harvest forms');
+  const catalogue=(await c.query<{slug:string;name:string}>('SELECT p.slug,p.name FROM crop_products p JOIN crop_identities c ON c.id=p.crop_id WHERE c.slug=$1 AND ($2::text IS NULL OR p.slug=$2 OR p.id::text=$2) ORDER BY p.slug',[body.cropId,body.productId??null])).rows;
+  // An explicit product may be any catalogue harvest form of the crop; without one, a focused crop defaults to its market-mapped forms.
+  const products=body.productId?catalogue:catalogue.filter(p=>!focused||!Array.isArray(focused.marketProductIds)||(focused.marketProductIds as string[]).includes(p.slug));if(!products.length)throw new ApiError(400,'validation_error','Selected product does not belong to this crop');
   if(!body.productId&&products.length>1)throw new ApiError(400,'validation_error','Select the intended harvested product');const product=products[0]!;
-  const cycle={id:randomUUID(),cropId:crop.cropId,cropName:crop.displayName,productId:product.slug,productName:product.name,sowingDate:body.establishmentDate,establishmentDate:body.establishmentDate,establishmentMethod:body.establishmentMethod,stage:'sowed' as const,...(body.notes?{notes:body.notes}:{})};
+  const cycle={id:randomUUID(),cropId:body.cropId,cropName,productId:product.slug,productName:product.name,sowingDate:body.establishmentDate,establishmentDate:body.establishmentDate,establishmentMethod:body.establishmentMethod,stage:'sowed' as const,...(body.notes?{notes:body.notes}:{})};
   const updated=FarmWorkspaceState.parse({...state,cycles:[...state.cycles,cycle]});
   const saved=(await c.query('INSERT INTO farm_workspaces(farm_id,version,state) VALUES($1,$2,$3::jsonb) ON CONFLICT(farm_id) DO UPDATE SET version=EXCLUDED.version,state=EXCLUDED.state RETURNING version,updated_at',[farmId,(row?.version??0)+1,JSON.stringify(updated)])).rows[0]!;
-  const journalEntryId=await journalAction(c,deps,ownerId,farmId,cycle.id,'establishment',body.clientEntryId,body.establishmentDate,`${crop.displayName}: ${body.establishmentMethod} recorded on ${body.establishmentDate}.${body.notes?' '+body.notes:''}`,hash,{cycle});
+  const journalEntryId=await journalAction(c,deps,ownerId,farmId,cycle.id,'establishment',body.clientEntryId,body.establishmentDate,`${cropName}: ${body.establishmentMethod} recorded on ${body.establishmentDate}.${body.notes?' '+body.notes:''}`,hash,{cycle});
   return{cycle,workspace:{...updated,farmId,version:saved.version,updatedAt:saved.updated_at.toISOString()},journalEntryId,alreadyRecorded:false};
  });
 }

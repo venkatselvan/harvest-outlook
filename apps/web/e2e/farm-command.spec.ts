@@ -565,7 +565,8 @@ test("planting a focused crop requires its exact product/date and exposes the sa
   await page.getByRole("button", { name: "Plant crop", exact: true }).click();
   const dialog = page.getByRole("dialog");
   await expect(dialog).toHaveAccessibleName("What did you plant?");
-  await expect(dialog.getByRole("radio")).toHaveCount(14);
+  // The 19 rotation-pool crops plus the 7 mock care-schedule crops that are outside the pool (wheat, sugarcane, shallot, ...).
+  await expect(dialog.getByRole("radio")).toHaveCount(26);
   await dialog.getByRole("radio", { name: "Ginger", exact: true }).check();
   await dialog
     .getByRole("combobox", { name: "Harvest product" })
@@ -610,6 +611,8 @@ test("a planting save completed after farm switching cannot replace the selected
   const dialog = page.getByRole("dialog");
   await expect(dialog).toHaveAccessibleName("What did you plant?");
   await dialog.getByRole("radio", { name: "Tomato", exact: true }).check();
+  // Tomato now lists the pool's real product form beside the mock's own, so the product is chosen explicitly.
+  await dialog.getByRole("combobox", { name: "Harvest product" }).selectOption("tomato-fresh");
   await dialog.getByLabel("Establishment date").fill("2026-10-30");
   await dialog
     .getByRole("button", { name: "Record planting", exact: true })

@@ -521,3 +521,57 @@ for (const theme of ["light", "dark"] as const)
     await page.waitForTimeout(150);
     await page.screenshot({ path: `../../docs/reference/redesign/today-mock-${theme}.png`, fullPage: true });
   });
+
+test("recording the first planting replaces the empty state with the new cycle within one refetch, without a reload", async ({ page }) => {
+  await mock(page);
+  const fresh = { planted: false, plantBodies: [] as { cropId: string; productId?: string; expectedWorkspaceVersion: number }[], todayCalls: 0 };
+  const newCycle = { ...maizeCycle, id: "new-cycle", stage: "sowed", sowingDate: "2026-11-01", establishmentDate: "2026-11-01" };
+  const ws = () => ({ ...workspace(A), version: fresh.planted ? 2 : 1, cycles: fresh.planted ? [newCycle] : [] });
+  // Registered after mock(), so these answers take precedence for farm A; everything else falls through to mock().
+  await page.route(
+    (url) => url.pathname.startsWith(`/api/v1/farms/${A}/`),
+    async (route) => {
+      const tail = new URL(route.request().url()).pathname.slice(`/api/v1/farms/${A}/`.length);
+      if (tail === "today" && route.request().method() === "GET") {
+        fresh.todayCalls++;
+        return route.fulfill({ json: env(todaySchema.parse(fresh.planted ? todayFixture(A) : todayEmptyFixture(A))) });
+      }
+      if (tail === "workspace") return route.fulfill({ json: env(ws()) });
+      if (tail === "command-center")
+        return route.fulfill({
+          json: env(
+            commandSchema.parse({
+              ...command(A, false),
+              workspace: ws(),
+              currentCycles: fresh.planted ? [{ cycle: newCycle, careTasks: [], limitations: ["This crop has no reviewed care schedule in the focused catalogue."] }] : [],
+            }),
+          ),
+        });
+      if (tail === "cycles" && route.request().method() === "POST") {
+        fresh.plantBodies.push(route.request().postDataJSON());
+        fresh.planted = true;
+        return route.fulfill({ status: 201, json: env({ cycle: newCycle, workspace: ws(), journalEntryId: J, alreadyRecorded: false }) });
+      }
+      return route.fallback();
+    },
+  );
+  await page.goto("/farm");
+  await expect(page.getByRole("heading", { name: "What's growing on this field?" })).toBeVisible();
+  // Leave Today and return, so the view mounts with the workspace already loaded: the live path where the first
+  // workspace version change after mount used to be ignored (a fresh page load hid it).
+  await page.getByRole("link", { name: "Market", exact: true }).first().click();
+  await page.getByRole("link", { name: "Today", exact: true }).first().click();
+  await expect(page.getByRole("heading", { name: "What's growing on this field?" })).toBeVisible();
+  const callsBeforePlanting = fresh.todayCalls;
+  await page.getByRole("button", { name: "Plant a crop" }).click();
+  const dialog = page.getByRole("dialog");
+  await dialog.getByRole("radio", { name: "Maize", exact: true }).check();
+  await dialog.getByRole("button", { name: "Record planting", exact: true }).click();
+  await expect(dialog).toHaveCount(0);
+  expect(fresh.plantBodies).toHaveLength(1);
+  expect(fresh.plantBodies[0]).toMatchObject({ cropId: "maize", productId: "maize-grain", expectedWorkspaceVersion: 1 });
+  // The view switches to the new cycle on its own: the slider appears and the empty prompt is gone.
+  await expect(slider(page)).toBeVisible();
+  await expect(page.getByRole("heading", { name: "What's growing on this field?" })).toHaveCount(0);
+  expect(fresh.todayCalls - callsBeforePlanting).toBe(1); // exactly one refetch after the workspace version moved
+});

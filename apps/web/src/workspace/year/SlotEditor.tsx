@@ -2,7 +2,8 @@ import { For, Show, createSignal } from "solid-js";
 import type { YearPlanOption } from "@harvest/contracts";
 import { Chip } from "../ui/Chip";
 import { longSpan } from "./format";
-import { ROLE_LABEL, ROLE_ORDER, draftFromOption, isLegume, type CropChoice, type DraftSlot } from "./model";
+import { ROLE_LABEL, ROLE_ORDER, isLegume } from "../cropPool";
+import { draftFromOption, type CropChoice, type DraftSlot } from "./model";
 
 const MAX_SLOTS = 6;
 

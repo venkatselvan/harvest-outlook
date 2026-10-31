@@ -2,6 +2,7 @@ import {
   For,
   Show,
   createEffect,
+  createMemo,
   createResource,
   createSignal,
   on,
@@ -23,6 +24,8 @@ import {
 } from "../features/photo-region/http";
 import { useWorkspace, today, dateLabel } from "./state";
 import { ApiError } from "../lib/api";
+import { plantCropChoices, plantGroups, ROLE_LABEL, type PlantChoice } from "./cropPool";
+import { Chip } from "./ui/Chip";
 import { FarmWorkspace, HistoryDialog } from "./FarmPage";
 import { CompareWorkspace } from "./Compare";
 import { Outlook } from "./Outlook";
@@ -209,8 +212,16 @@ export function FarmCommandCenter() {
   const dueCount = () =>
     tasks().filter((task) => task.status === "due" || task.status === "overdue")
       .length;
-  const chosenCrop = () =>
-    data()?.focusedCrops.find((crop) => crop.cropId === plantCrop());
+  // Pool crops (grouped by rotation role), crops with a care schedule, and anything already recorded on this farm.
+  const plantChoices = createMemo<PlantChoice[]>(() =>
+    plantCropChoices({
+      focused: data()?.focusedCrops,
+      catalogue: s.crops(),
+      recorded: workspace()?.cycles,
+    }),
+  );
+  const plantChoiceGroups = createMemo(() => plantGroups(plantChoices()));
+  const chosenCrop = () => plantChoices().find((crop) => crop.cropId === plantCrop());
   const showTool = (tool: Tool) =>
     navigate(
       `${farmHref(tab(), section())}${tool ? `&tool=${tool}` : ""}`,
@@ -249,12 +260,8 @@ export function FarmCommandCenter() {
   }
   function chooseCrop(id: string) {
     setPlantCrop(id);
-    const crop = data()?.focusedCrops.find((crop) => crop.cropId === id);
-    setMethod(
-      crop?.establishmentMethods.length === 1
-        ? crop.establishmentMethods[0]!
-        : "",
-    );
+    const crop = plantChoices().find((crop) => crop.cropId === id);
+    setMethod(crop?.methods.length === 1 ? crop.methods[0]! : "");
     setProduct(crop?.products.length === 1 ? crop.products[0]!.productId : "");
   }
   async function recordPlanting(event: SubmitEvent) {
@@ -320,7 +327,7 @@ export function FarmCommandCenter() {
       await Promise.resolve(s.refreshWorkspace()).catch(() => undefined);
       await Promise.resolve(refetch()).catch(() => undefined);
       s.setNotice(
-        `${selected.displayName} recorded. Source-based care is ready where evidence is available.`,
+        `${selected.name} recorded. Source-based care is ready where evidence is available.`,
       );
     } catch (issue) {
       if (
@@ -824,23 +831,39 @@ export function FarmCommandCenter() {
                 disabled={plantBusy() || !!plantPayload()}
               >
                 <legend>Choose a crop</legend>
-                <For each={data()?.focusedCrops ?? []}>
-                  {(item) => (
-                    <label classList={{ chosen: plantCrop() === item.cropId }}>
-                      <input
-                        type="radio"
-                        name="plant-crop"
-                        value={item.cropId}
-                        checked={plantCrop() === item.cropId}
-                        onChange={() => chooseCrop(item.cropId)}
-                        required
-                      />
-                      <Icon name="leaf" size={19} />
-                      <span>{item.displayName}</span>
-                      <Show when={plantCrop() === item.cropId}>
-                        <Icon name="check" size={13} />
-                      </Show>
-                    </label>
+                <For each={plantChoiceGroups()}>
+                  {(group) => (
+                    <>
+                      <p
+                        class="eyebrow plant-choice-heading"
+                        style={{ "grid-column": "1 / -1", margin: "6px 0 0" }}
+                        data-testid={`plant-group-${group.role}`}
+                      >
+                        {group.role === "other" ? "Other crops" : ROLE_LABEL[group.role]}{" "}
+                        <Show when={group.role === "nitrogen_fixer"}>
+                          <Chip tone="legume">Legume</Chip>
+                        </Show>
+                      </p>
+                      <For each={group.crops}>
+                        {(item) => (
+                          <label classList={{ chosen: plantCrop() === item.cropId }}>
+                            <input
+                              type="radio"
+                              name="plant-crop"
+                              value={item.cropId}
+                              checked={plantCrop() === item.cropId}
+                              onChange={() => chooseCrop(item.cropId)}
+                              required
+                            />
+                            <Icon name="leaf" size={19} />
+                            <span>{item.name}</span>
+                            <Show when={plantCrop() === item.cropId}>
+                              <Icon name="check" size={13} />
+                            </Show>
+                          </label>
+                        )}
+                      </For>
+                    </>
                   )}
                 </For>
               </fieldset>
@@ -850,6 +873,17 @@ export function FarmCommandCenter() {
                     class="plant-date-fields"
                     disabled={plantBusy() || !!plantPayload()}
                   >
+                    <Show when={item().legume}>
+                      <p>
+                        <Chip tone="legume">Legume, adds nitrogen</Chip>
+                      </p>
+                    </Show>
+                    <Show when={!item().careSchedule}>
+                      <p class="inline-note">
+                        This crop has no reviewed care schedule yet. Your planting is still recorded in your field journal,
+                        Today view and year plan.
+                      </p>
+                    </Show>
                     <div class="form-grid">
                       <label>
                         How was it established?
@@ -859,7 +893,7 @@ export function FarmCommandCenter() {
                           onChange={(e) => setMethod(e.currentTarget.value)}
                         >
                           <option value="">Select method</option>
-                          <For each={item().establishmentMethods}>
+                          <For each={item().methods}>
                             {(value) => (
                               <option value={value}>{words(value)}</option>
                             )}
@@ -889,7 +923,7 @@ export function FarmCommandCenter() {
                           <For each={item().products}>
                             {(value) => (
                               <option value={value.productId}>
-                                {value.productName}
+                                {value.name}
                               </option>
                             )}
                           </For>
