@@ -10,8 +10,15 @@ export type CommandCycle = CommandData["currentCycles"][number];
 
 /**
  * Everything the Today tab receives from `FarmCommandCenter`.
- * The shell owns the command-center resource, the selected-cycle state, the plant-crop dialog and care completion;
- * the view only reads accessors and calls these callbacks.
+ * The shell owns the command-center resource, the selected-cycle state, the plant-crop dialog and care completion.
+ *
+ * Since the Today rebuild (UI_BRIEF 3.1) the view loads `GET /api/v1/farms/:id/today` itself and reads only:
+ * `data` (care sources and whether the plant dialog can open), `workspace` (field boundary), `cycles` (other current
+ * crops), `tasks` (care schedule shown while the Today endpoint is unavailable), `scene`/`setScene` (Illustration or
+ * Satellite, kept in the shell so it survives tab switches) and `openPlant`. Care completion goes through
+ * `today/todayApi.ts` (same endpoint and idempotency header as `complete`) so the view can roll back an optimistic
+ * Done. The other props stay in the interface so the shell compiles unchanged; the orchestrator can drop them when
+ * it next edits the shell.
  */
 export interface TodayViewProps {
   /** Parsed command-center data for the selected farm, or undefined while loading, on error, or for another farm. */

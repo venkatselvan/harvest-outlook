@@ -1,0 +1,313 @@
+import { describe, expect, it } from "vitest";
+import { renderToString } from "solid-js/web";
+import { Route, Router } from "@solidjs/router";
+import { TodayView as todaySchema, type SceneRef, type StageTimeline } from "@harvest/contracts";
+import { ApiError } from "../../lib/api";
+import {
+  FIXTURE_ALERT_IDS,
+  FIXTURE_FARM_ID,
+  FIXTURE_HARVEST,
+  FIXTURE_SOWN,
+  FIXTURE_TODAY,
+  LATEST_ITEM_ID,
+  itemIdFor,
+  todayEmptyFixture,
+  todayFixture,
+} from "./fixtures";
+import {
+  addDays,
+  dateAtIndex,
+  dayNumber,
+  daysBetween,
+  formatDay,
+  growthProgress,
+  indexOfDate,
+  nextStage,
+  priceAt,
+  priceTrend,
+  rangeLabel,
+  sceneFor,
+  shortInrRange,
+  sliderModel,
+  stageAt,
+  stageTicks,
+  weatherAt,
+} from "./model";
+import { describeTodayError, sceneImageUrl } from "./todayApi";
+import { TodayEmpty } from "./TodayEmpty";
+import { TodayCards } from "./TodayCards";
+import { TodayHero, stageOverlay } from "./TodayHero";
+import { newsReviewText, sortAlerts } from "./AlertsList";
+import { careTaskStep } from "./TodayView";
+
+const text = (html: string) => html.replace(/<!--[^>]*-->/g, "").replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
+const fixture = todayFixture();
+const timeline = fixture.timeline!;
+
+describe("Today fixture", () => {
+  it("validates against the TodayView contract, with and without a crop", () => {
+    expect(todaySchema.safeParse(fixture).success).toBe(true);
+    expect(todaySchema.safeParse(todayEmptyFixture()).success).toBe(true);
+    const other = "22222222-2222-4222-8222-222222222222";
+    const parsed = todaySchema.parse(todayFixture(other));
+    expect(parsed.farmId).toBe(other);
+    expect(parsed.alerts.every((alert) => alert.farmId === other)).toBe(true);
+    expect(parsed.scenes.every((scene) => !scene.imagePath || scene.imagePath.startsWith(`/api/v1/farms/${other}/`))).toBe(true);
+  });
+  it("covers the scenario the brief asks for", () => {
+    expect(fixture.cycle).toMatchObject({ cropId: "maize", sowingDate: "2026-09-15" });
+    expect(timeline.stages).toHaveLength(5);
+    expect(fixture.scenes.filter((scene) => scene.kind === "observed")).toHaveLength(8);
+    expect(fixture.scenes.filter((scene) => scene.kind === "illustration")).toHaveLength(1);
+    expect(new Set(fixture.alerts.map((alert) => alert.type)).size).toBe(3);
+    expect(fixture.upcoming).toHaveLength(4);
+    // Weather has one point per slider day; price points are never more than a week apart across the slider.
+    const days = daysBetween(fixture.slider!.from, fixture.slider!.to);
+    for (let i = 0; i <= days; i++) {
+      const date = addDays(fixture.slider!.from, i);
+      expect(weatherAt(fixture.weatherTrack, date)?.date).toBe(date);
+      expect(priceAt(fixture.priceTrack, date)).not.toBeNull();
+    }
+    // Nothing beyond the forecast horizon is labelled a forecast.
+    const lastForecast = fixture.weatherTrack.filter((p) => p.kind === "forecast").at(-1)!;
+    expect(daysBetween(FIXTURE_TODAY, lastForecast.date)).toBe(15);
+    expect(fixture.weatherTrack.filter((p) => p.date > lastForecast.date).every((p) => p.kind === "typical" && p.basis.years?.length === 3)).toBe(true);
+    // Every alert links to a dated source.
+    expect(fixture.alerts.every((alert) => /^https:\/\//.test(alert.source.url) && /^\d{4}-\d{2}-\d{2}$/.test(alert.source.date))).toBe(true);
+  });
+});
+
+describe("slider date math", () => {
+  it("opens at the server's today and maps every step to one calendar day", () => {
+    const model = sliderModel(fixture)!;
+    expect(model).toMatchObject({ from: FIXTURE_SOWN, to: FIXTURE_HARVEST.latest, total: 120, todayIndex: 47 });
+    expect(dateAtIndex(model, model.todayIndex)).toBe(FIXTURE_TODAY);
+    expect(dateAtIndex(model, 0)).toBe(FIXTURE_SOWN);
+    expect(dateAtIndex(model, model.total)).toBe(FIXTURE_HARVEST.latest);
+    expect(dateAtIndex(model, -5)).toBe(FIXTURE_SOWN);
+    expect(dateAtIndex(model, 999)).toBe(FIXTURE_HARVEST.latest);
+    expect(dateAtIndex(model, 86)).toBe("2026-12-10");
+    expect(indexOfDate(model, "2026-12-10")).toBe(86);
+    expect(indexOfDate(model, "2030-01-01")).toBe(120);
+  });
+  it("clamps today into the range and falls back to todayProgress only when today does not parse", () => {
+    expect(sliderModel({ ...fixture, today: "2027-03-01" })!.todayIndex).toBe(120);
+    expect(sliderModel({ ...fixture, today: "2026-09-01" })!.todayIndex).toBe(0);
+    expect(sliderModel({ ...fixture, today: "not-a-date" })!.todayIndex).toBe(Math.round(fixture.slider!.todayProgress * 120));
+    expect(sliderModel({ ...fixture, slider: null })).toBeNull();
+    expect(sliderModel({ ...fixture, slider: { from: "2026-10-01", to: "2026-09-01", todayProgress: 0 } })).toBeNull();
+  });
+  it("does calendar arithmetic in UTC, across month, year and leap-day boundaries", () => {
+    expect(addDays("2026-12-31", 1)).toBe("2027-01-01");
+    expect(addDays("2028-02-28", 1)).toBe("2028-02-29");
+    expect(daysBetween("2028-02-01", "2028-03-01")).toBe(29);
+    expect(Number.isNaN(dayNumber("2026-02-31"))).toBe(true);
+    expect(Number.isNaN(dayNumber("2026-11-1"))).toBe(true);
+    expect(formatDay("2026-11-01")).toBe("1 Nov 2026");
+    expect(rangeLabel("2026-11-12", "2026-12-03")).toBe("12 Nov to 3 Dec");
+    expect(rangeLabel("2026-12-29", "2027-01-08")).toBe(`${formatDay("2026-12-29")} to ${formatDay("2027-01-08")}`);
+  });
+});
+
+describe("stage lookup", () => {
+  it("finds the calendar stage for a date, with inclusive boundaries", () => {
+    const at = (date: string) => {
+      const found = stageAt(timeline, date);
+      return found.kind === "stage" ? found.stage.id : found.kind;
+    };
+    expect(at("2026-09-15")).toBe("emergence");
+    expect(at(FIXTURE_TODAY)).toBe("vegetative");
+    expect(at("2026-11-08")).toBe("vegetative");
+    expect(at("2026-11-09")).toBe("tasselling");
+    expect(at("2026-12-10")).toBe("grain_fill");
+    expect(at("2027-01-08")).toBe("maturity");
+    expect(at("2027-01-10")).toBe("harvest");
+    expect(at("2027-02-01")).toBe("after");
+    expect(at("2026-09-01")).toBe("before");
+    expect(stageAt(null, FIXTURE_TODAY).kind).toBe("none");
+  });
+  it("assigns a gap between stages to the earlier stage and labels basis honestly", () => {
+    const gapped: StageTimeline = {
+      ...timeline,
+      stages: [
+        { id: "a", name: "A", from: "2026-01-01", to: "2026-01-10", basis: "estimate" },
+        { id: "b", name: "B", from: "2026-01-13", to: "2026-01-20", basis: "fao_generic" },
+      ],
+      harvest: null,
+    };
+    const gap = stageAt(gapped, "2026-01-11");
+    expect(gap.kind === "stage" && gap.stage.id).toBe("a");
+    expect(stageAt(gapped, "2026-01-21")).toEqual({ kind: "after", lastDate: "2026-01-20" });
+    expect(stageOverlay(stageAt(gapped, "2026-01-15"))).toEqual({ name: "B", range: "13 Jan to 20 Jan", caption: "Stage estimate from standard crop coefficients" });
+    expect(stageOverlay(stageAt(gapped, "2026-01-02")).caption).toBe("Stage estimate");
+  });
+  it("gives the next stage, stage-boundary ticks and schematic growth progress", () => {
+    expect(nextStage(timeline, FIXTURE_TODAY)?.id).toBe("tasselling");
+    expect(nextStage(timeline, "2027-01-01")).toBeNull();
+    const ticks = stageTicks(timeline, sliderModel(fixture)!);
+    expect(ticks.map((tick) => tick.id)).toEqual(["vegetative", "tasselling", "grain_fill", "maturity"]);
+    expect(ticks[1]!.fraction).toBeCloseTo(55 / 120, 6);
+    expect(growthProgress(timeline, FIXTURE_SOWN)).toBe(0);
+    expect(growthProgress(timeline, FIXTURE_HARVEST.latest)).toBe(1);
+    expect(growthProgress(timeline, "2030-01-01")).toBe(1);
+    expect(growthProgress(timeline, FIXTURE_TODAY)).toBeCloseTo(47 / 120, 6);
+    expect(growthProgress(null, FIXTURE_TODAY)).toBe(0);
+  });
+});
+
+describe("price and weather lookup by date", () => {
+  it("uses the latest weekly price point within seven days, observed before today and reference after", () => {
+    expect(priceAt(fixture.priceTrack, FIXTURE_TODAY)).toMatchObject({ date: "2026-10-26", kind: "observed" });
+    expect(priceAt(fixture.priceTrack, "2026-12-10")).toMatchObject({ date: "2026-12-07", kind: "reference" });
+    expect(priceAt(fixture.priceTrack, "2025-10-01")).toBeNull();
+    const sparse = [fixture.priceTrack[0]!];
+    expect(priceAt(sparse, addDays(sparse[0]!.date, 7))).not.toBeNull();
+    expect(priceAt(sparse, addDays(sparse[0]!.date, 8))).toBeNull();
+    // Order of the track does not matter.
+    expect(priceAt([...fixture.priceTrack].reverse(), "2026-12-10")?.date).toBe("2026-12-07");
+  });
+  it("uses only the exact weather day and keeps observed, forecast and typical apart", () => {
+    expect(weatherAt(fixture.weatherTrack, "2026-10-31")?.kind).toBe("observed");
+    expect(weatherAt(fixture.weatherTrack, FIXTURE_TODAY)?.kind).toBe("forecast");
+    expect(weatherAt(fixture.weatherTrack, "2026-12-10")).toMatchObject({ kind: "typical", basis: { years: [2023, 2024, 2025] } });
+    expect(weatherAt(fixture.weatherTrack, "2027-02-01")).toBeNull();
+    expect(weatherAt(fixture.weatherTrack.filter((p) => p.date !== "2026-12-10"), "2026-12-10")).toBeNull();
+  });
+  it("states a price trend only over observed points in the last 12 months", () => {
+    const trend = priceTrend(fixture.priceTrack, FIXTURE_TODAY)!;
+    expect(trend).toMatchObject({ direction: "up", since: "2025-11-03", until: "2026-10-26" });
+    expect(trend.pct).toBeGreaterThanOrEqual(3);
+    expect(priceTrend(fixture.priceTrack.filter((p) => p.kind === "reference"), FIXTURE_TODAY)).toBeNull();
+    expect(priceTrend(fixture.priceTrack.slice(-13, -11), FIXTURE_TODAY)).toBeNull();
+  });
+  it("formats card ranges outward so they never look narrower than the data", () => {
+    expect(shortInrRange(19.2, 23.8)).toBe("₹19–24");
+    expect(shortInrRange(4.25, 6.81)).toBe("₹4.2–6.9");
+    expect(shortInrRange(20, 24)).toBe("₹20–24");
+    expect(shortInrRange(1840.5, 2210.2)).toBe("₹1,840–2,211");
+  });
+});
+
+describe("satellite scene selection", () => {
+  const scenes = fixture.scenes;
+  it("shows the nearest observed scene on or before a past date", () => {
+    const pick = sceneFor(scenes, "2026-10-20", FIXTURE_TODAY, "vegetative");
+    expect(pick.mode).toBe("observed");
+    expect(pick.mode !== "none" && pick.scene.acquisitionDate).toBe("2026-10-17");
+    const exact = sceneFor(scenes, "2026-10-17", FIXTURE_TODAY, "vegetative");
+    expect(exact.mode !== "none" && exact.scene.acquisitionDate).toBe("2026-10-17");
+    expect(sceneFor(scenes, "2026-09-01", FIXTURE_TODAY, null)).toEqual({ mode: "none", reason: "none_before_date" });
+    expect(sceneFor([], FIXTURE_TODAY, FIXTURE_TODAY, null)).toEqual({ mode: "none", reason: "no_scenes" });
+  });
+  it("shows the stage illustration for a future date, else the latest observed scene", () => {
+    const future = sceneFor(scenes, "2026-12-10", FIXTURE_TODAY, "grain_fill");
+    expect(future.mode).toBe("illustration");
+    expect(future.mode === "illustration" && future.derivedFrom?.itemId).toBe(LATEST_ITEM_ID);
+    const noIllustration = sceneFor(scenes, "2026-11-15", FIXTURE_TODAY, "tasselling");
+    expect(noIllustration.mode).toBe("latest");
+    expect(noIllustration.mode === "latest" && noIllustration.scene.acquisitionDate).toBe("2026-10-27");
+    // An illustration without an image falls back to the latest observed scene.
+    const withoutImage = scenes.map((scene): SceneRef => (scene.kind === "illustration" ? { ...scene, imagePath: null } : scene));
+    expect(sceneFor(withoutImage, "2026-12-10", FIXTURE_TODAY, "grain_fill").mode).toBe("latest");
+  });
+  it("only loads owner-private same-origin image paths", () => {
+    expect(sceneImageUrl(`/api/v1/farms/${FIXTURE_FARM_ID}/ndvi/${itemIdFor("2026-10-27", 7)}/image?kind=visual`)).toContain("/ndvi/");
+    expect(sceneImageUrl("https://example.org/scene.png")).toBeNull();
+    expect(sceneImageUrl("//example.org/api/v1/farms/x")).toBeNull();
+    expect(sceneImageUrl("/api/v1/farms//x")).toBeNull();
+    expect(sceneImageUrl(null)).toBeNull();
+  });
+});
+
+describe("rendered states", () => {
+  it("no crop: the planting entry and the year plan link replace the hero", () => {
+    let planted = 0;
+    const html = renderToString(() => (
+      <Router url="/farm">
+        <Route path="/farm" component={() => <TodayEmpty onPlant={() => planted++} canPlant />} />
+      </Router>
+    ));
+    expect(text(html)).toContain("What's growing on this field?");
+    expect(text(html)).toContain("Plant a crop");
+    expect(html).toContain('href="/planner"');
+    expect(planted).toBe(0);
+  });
+  it("no crop: only weather (and health when present) cards, weather from the server's today", () => {
+    const empty = todayEmptyFixture();
+    const html = text(
+      renderToString(() => (
+        <TodayCards view={empty} date={empty.today} price={null} weather={weatherAt(empty.weatherTrack, empty.today)} weatherOnly onDetails={() => undefined} />
+      )),
+    );
+    expect(html).toContain("Weather on 1 Nov");
+    expect(html).toContain("Forecast");
+    expect(html).not.toContain("Days to harvest");
+    expect(html).not.toContain("Expected price at harvest");
+    expect(html).not.toContain("Vegetation health");
+  });
+  it("cards show ranges with basis lines and the slider-date price when it differs", () => {
+    const date = "2026-12-10";
+    const html = text(
+      renderToString(() => (
+        <TodayCards view={fixture} date={date} price={priceAt(fixture.priceTrack, date)} weather={weatherAt(fixture.weatherTrack, date)} onDetails={() => undefined} />
+      )),
+    );
+    expect(html).toContain("63–73 days");
+    expect(html).toContain("Next: Tasselling and silking on 9 Nov");
+    expect(html).toContain("₹19–24 /kg");
+    expect(html).toContain("₹19.2 to ₹23.8 per kg");
+    expect(html).toContain("Based on 3 years of Karnataka mandi prices (test fixture)");
+    expect(html).toMatch(/10 Dec: ₹21\.\d\/kg typical/);
+    expect(html).toContain("Typical for this date, 2023 to 2025");
+    expect(html).toContain("0.62");
+    expect(html).toContain("Near typical");
+    expect(html).toContain("typical 0.55 to 0.70");
+  });
+  it("satellite hero names the observed date, cloud and the illustration label", () => {
+    const hero = (date: string) =>
+      renderToString(() => (
+        <TodayHero
+          mode="satellite"
+          onMode={() => undefined}
+          date={date}
+          today={FIXTURE_TODAY}
+          stage={stageAt(timeline, date)}
+          progress={growthProgress(timeline, date)}
+          cropId="maize"
+          cropName="Maize"
+          boundary={null}
+          scenes={fixture.scenes}
+          imageBbox={fixture.ndvi!.imageBbox}
+        />
+      ));
+    const past = hero("2026-10-20");
+    expect(text(past)).toContain("Observed 17 Oct 2026 Cloud 6%");
+    expect(past).toContain(`alt="Satellite image of your field, observed 17 Oct 2026, 6% cloud in the scene"`);
+    const future = text(hero("2026-12-10"));
+    expect(future).toContain("Grain filling · 29 Nov to 28 Dec");
+    expect(future).toContain("Illustration of a typical Grain filling");
+    expect(future).toContain("10 Dec 2026");
+    const later = text(hero("2026-11-15"));
+    expect(later).toContain("Latest image 27 Oct 2026");
+  });
+});
+
+describe("alerts, steps and errors", () => {
+  it("orders alerts by severity and words the news review status", () => {
+    expect(sortAlerts(fixture.alerts).map((alert) => alert.severity)).toEqual(["warning", "watch", "info"]);
+    expect(newsReviewText(fixture.newsReview, FIXTURE_TODAY)).toBe("News checked today");
+    expect(newsReviewText({ status: "paused", reason: "cap", lastReviewedAt: null }, FIXTURE_TODAY)).toBe("News check paused");
+    expect(newsReviewText(null, FIXTURE_TODAY)).toBe("News check not set up");
+    expect(fixture.upcoming.find((step) => step.kind === "alert_step")?.alertId).toBe(FIXTURE_ALERT_IDS.weather);
+  });
+  it("maps a care-schedule task to a step for the degraded view", () => {
+    const task = fixture.upcoming[0]!.careTask!;
+    expect(careTaskStep(task)).toMatchObject({ id: "care:task-moisture", kind: "care_task", status: "due", careTask: task, alertId: null });
+  });
+  it("describes a missing endpoint, a network failure and a malformed response in plain words", () => {
+    expect(describeTodayError(new ApiError("not_found", "Not Found", 404)).kind).toBe("not_available");
+    expect(describeTodayError(new ApiError("network_error", "Could not reach the server", 0)).kind).toBe("network");
+    expect(describeTodayError(new ApiError("invalid_envelope", "bad", 200)).kind).toBe("invalid");
+    expect(describeTodayError(new Error("boom")).kind).toBe("server");
+  });
+});

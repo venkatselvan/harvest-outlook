@@ -1,498 +1,389 @@
-import { For, Show } from "solid-js";
-import { A, useNavigate } from "@solidjs/router";
-import { useWorkspace, dateLabel } from "../state";
-import { FarmMap } from "../FarmMap";
-import { FieldGrowthScene } from "../FieldGrowthScene";
-import { CurrentQuote } from "../CurrentQuote";
+import { createEffect, createMemo, createSignal, For, Match, on, Show, Switch } from "solid-js";
+import type { CareTask, FarmAlert, TodayView as TodayData, UpcomingStep } from "@harvest/contracts";
+import { useWorkspace, today as browserToday } from "../state";
+import { newEntryId } from "../../features/photo-region/http";
 import { Icon } from "../icons";
-import { Evara } from "../Evara";
-import type { FarmCommandCenter as CommandData } from "@harvest/contracts";
+import type { FieldBoundary } from "../fieldGeometry";
 import type { TodayViewProps } from "./types";
+import { completeCare, describeTodayError, dismissAlert, loadToday, type TodayErrorInfo } from "./todayApi";
+import {
+  dateAtIndex,
+  formatDay,
+  growthProgress,
+  priceAt,
+  sliderModel,
+  stageAt,
+  stageTicks,
+  weatherAt,
+} from "./model";
+import { TodayHero, type HeroMode } from "./TodayHero";
+import { StageSlider } from "./StageSlider";
+import { TodayCards, type CardKind } from "./TodayCards";
+import { AlertsList } from "./AlertsList";
+import { UpcomingSteps, stepDomId } from "./UpcomingSteps";
+import { TodayEmpty } from "./TodayEmpty";
+import { TodaySheet, type SheetKind } from "./TodaySheet";
+import { CareGuidance } from "./CareGuidance";
+import "./today.css";
 
-// `words` and `SourceLinks` are copies of the shell's helpers (the shell keeps its own for the Soil & crop fit tab).
-// They are duplicated, not imported, so this file does not import from FarmCommandCenter.tsx (circular import).
-const words = (value: string) =>
-  value.replace(/_/g, " ").replace(/^\w/, (s) => s.toUpperCase());
+type LoadState =
+  | { status: "idle" }
+  | { status: "loading"; farmId: string }
+  | { status: "ready"; farmId: string; view: TodayData }
+  | { status: "error"; farmId: string; error: TodayErrorInfo };
 
-function SourceLinks(props: {
-  refs: { sourceId: string; locator: string }[];
-  data?: CommandData | undefined;
-}) {
-  return (
-    <For each={props.refs}>
-      {(ref) => {
-        const source = () =>
-          props.data?.sources.find((source) => source.id === ref.sourceId);
-        return (
-          <Show when={source()} fallback={<span>{ref.locator}</span>}>
-            {(item) => (
-              <a href={item().url} target="_blank" rel="noreferrer">
-                {item().publisher} · {ref.locator} ↗
-              </a>
-            )}
-          </Show>
-        );
-      }}
-    </For>
-  );
+/** A command-center care task as an upcoming step (used only while the Today endpoint is unavailable). */
+export function careTaskStep(task: CareTask): UpcomingStep {
+  return {
+    id: `care:${task.id}`,
+    kind: "care_task",
+    title: task.title,
+    detail: task.action,
+    dueFrom: task.dueFrom,
+    dueTo: task.dueTo,
+    status: task.status,
+    careTask: task,
+    alertId: null,
+  };
 }
 
+/**
+ * Today tab: `GET /api/v1/farms/:id/today` drives one stage slider shared by the illustration, the satellite scene,
+ * the stage label and the price and weather cards (docs/research/UI_BRIEF.md section 3.1).
+ *
+ * Isolation: every request and every local override (slider position, optimistic Done, dismissed alerts) is keyed
+ * to the selected farm and session epoch; a farm switch clears them before the next farm loads, and a late response
+ * for another farm is dropped. Degrading: when the endpoint is missing (404), unreachable or malformed, the hero shows
+ * an error with Retry, the planting entry still shows when the farm has no crop, and the care schedule the shell
+ * already loaded stays usable as the step list.
+ */
 export function TodayView(props: TodayViewProps) {
   const s = useWorkspace();
-  const navigate = useNavigate();
-  // Every prop is a stable accessor or callback owned by the shell, so destructuring keeps the markup below unchanged.
-  const {
-    data,
-    resource,
-    workspace,
-    cycles,
-    active,
-    tasks,
-    dueCount,
-    scene,
-    setScene,
-    allCare,
-    setAllCare,
-    careBusy,
-    setCycleId,
-    complete,
-    openPlant,
-    showTool,
-  } = props;
-  // Today-only derivations, moved here from the shell unchanged.
-  const crop = () =>
-    data()?.focusedCrops.find((crop) => crop.cropId === active()?.cycle.cropId);
-  const weather = () => data()?.weather;
-  const day = () => weather()?.days[0];
-  const markers = () =>
-    data()?.soil.markers.samples.flatMap((sample) => sample.markers) ?? [];
-  const activeQuote = () =>
-    data()?.currentQuotes.products.find(
-      (quote) => quote.productId === active()?.cycle.productId,
-    );
-  const activeFit = () =>
-    data()?.soil.fit.find((fit) => fit.cropId === active()?.cycle.cropId);
-  const askCare = () =>
-    window.dispatchEvent(
-      new CustomEvent("ho:ask", {
-        detail: {
-          text: "Review my current crop, confirmed soil report and upcoming source-based care. Explain what needs attention, and keep forecasts separate from observations.",
-        },
-      }),
-    );
+  const [load, setLoad] = createSignal<LoadState>({ status: "idle" });
+  /** Slider index the farmer picked; null means "today". */
+  const [pick, setPick] = createSignal<number | null>(null);
+  const [completed, setCompleted] = createSignal<ReadonlySet<string>>(new Set());
+  const [busyStep, setBusyStep] = createSignal("");
+  const [stepError, setStepError] = createSignal("");
+  const [dismissed, setDismissed] = createSignal<ReadonlySet<string>>(new Set());
+  const [alertError, setAlertError] = createSignal("");
+  const [sheet, setSheet] = createSignal<SheetKind | null>(null);
+  const careEntries = new Map<string, string>();
+  let request = 0;
+
+  const farmId = () => s.farm()?.id;
+  const state = (): LoadState => {
+    const current = load();
+    return current.status === "idle" || current.farmId === farmId() ? current : { status: "idle" };
+  };
+  const view = () => {
+    const current = state();
+    return current.status === "ready" ? current.view : undefined;
+  };
+  const stale = (target: string, epoch: number) => target !== farmId() || epoch !== s.sessionEpoch();
+
+  async function fetchView(target: string, epoch: number, quiet: boolean) {
+    const id = ++request;
+    if (!quiet) setLoad({ status: "loading", farmId: target });
+    try {
+      const next = await loadToday(target);
+      if (id !== request || stale(target, epoch)) return;
+      setLoad({ status: "ready", farmId: target, view: next });
+    } catch (error) {
+      if (id !== request || stale(target, epoch)) return;
+      // A failed background refresh keeps the view that is already on screen.
+      if (quiet && state().status === "ready") return;
+      setLoad({ status: "error", farmId: target, error: describeTodayError(error) });
+    }
+  }
+  const errorInfo = () => {
+    const current = state();
+    return current.status === "error" ? current.error : null;
+  };
+  const retry = () => {
+    const target = farmId();
+    if (target) void fetchView(target, s.sessionEpoch(), false);
+  };
+
+  // Farm or session change: drop everything that belonged to the previous farm, then load the next one.
+  createEffect(
+    on([farmId, s.sessionEpoch], ([target, epoch]) => {
+      ++request;
+      setPick(null);
+      setCompleted(new Set<string>());
+      setDismissed(new Set<string>());
+      setBusyStep("");
+      setStepError("");
+      setAlertError("");
+      setSheet(null);
+      careEntries.clear();
+      if (!target) {
+        setLoad({ status: "idle" });
+        return;
+      }
+      void fetchView(target, epoch, false);
+    }),
+  );
+  // A saved workspace (for example a crop planted from the shell's dialog) refreshes the view without a skeleton.
+  createEffect(
+    on(
+      () => (s.workspace()?.farmId === farmId() ? s.workspace()?.version : undefined),
+      (version, previous) => {
+        const target = farmId();
+        if (version === undefined || previous === undefined || version === previous || !target) return;
+        void fetchView(target, s.sessionEpoch(), true);
+      },
+      { defer: true },
+    ),
+  );
+  // A different cycle starts the slider at today again.
+  createEffect(on(() => view()?.cycle?.id, () => setPick(null), { defer: true }));
+
+  // ---------------------------------------------------------------- slider-driven values
+  const slider = createMemo(() => {
+    const current = view();
+    return current ? sliderModel(current) : null;
+  });
+  const index = () => {
+    const model = slider();
+    if (!model) return 0;
+    const chosen = pick();
+    return chosen == null ? model.todayIndex : Math.max(0, Math.min(model.total, chosen));
+  };
+  const date = () => {
+    const model = slider();
+    return model ? dateAtIndex(model, index()) : view()?.today ?? browserToday();
+  };
+  const stage = createMemo(() => stageAt(view()?.timeline, date()));
+  const progress = () => growthProgress(view()?.timeline, date());
+  const price = createMemo(() => priceAt(view()?.priceTrack ?? [], date()));
+  const weather = createMemo(() => weatherAt(view()?.weatherTrack ?? [], date()));
+  const ticks = createMemo(() => {
+    const model = slider();
+    return model ? stageTicks(view()?.timeline, model) : [];
+  });
+  const mode = (): HeroMode => (props.scene() === "satellite" ? "satellite" : "illustration");
+  const boundary = () => (props.workspace()?.boundary ?? null) as FieldBoundary | null;
+  const cropName = () => {
+    const current = view();
+    if (!current?.cycle) return "";
+    return current.product?.cropName ?? current.cycle.cropName ?? s.cropName(current.cycle.cropId);
+  };
+  const otherCycles = () => {
+    const current = view()?.cycle?.id;
+    return current ? props.cycles().filter((entry) => entry.cycle.id !== current) : [];
+  };
+
+  // ---------------------------------------------------------------- steps and alerts
+  const fallbackSteps = () =>
+    state().status === "error" && props.data() ? props.tasks().map(careTaskStep) : [];
+  const steps = createMemo(() => {
+    const source = view()?.upcoming ?? fallbackSteps();
+    const done = completed();
+    return source.map((step) => (done.has(step.id) && step.status !== "completed" ? { ...step, status: "completed" as const } : step));
+  });
+  const alerts = () => (view()?.alerts ?? []).filter((alert) => !dismissed().has(alert.id));
+  /** Command-center entry for the crop the Today view shows (undated guidance lives there). */
+  const guidanceEntry = () => {
+    const cycleId = view()?.cycle?.id;
+    return cycleId ? props.cycles().find((entry) => entry.cycle.id === cycleId) : undefined;
+  };
+  const stepAlertIds = () => new Set(steps().flatMap((step) => (step.alertId ? [step.alertId] : [])));
+
+  async function markDone(step: UpcomingStep) {
+    const task = step.careTask,
+      target = farmId(),
+      epoch = s.sessionEpoch();
+    if (!task || !target || busyStep()) return;
+    const key = `${target}|${task.cycleId}|${task.id}`;
+    const entry = careEntries.get(key) ?? newEntryId("care");
+    careEntries.set(key, entry);
+    setBusyStep(step.id);
+    setStepError("");
+    setCompleted((previous) => new Set(previous).add(step.id));
+    try {
+      await completeCare(target, task, entry, view()?.today ?? browserToday());
+      if (stale(target, epoch)) return;
+      s.setNotice("Care activity recorded in your field journal.");
+      if (state().status === "ready") void fetchView(target, epoch, true);
+    } catch (error) {
+      if (stale(target, epoch)) return;
+      setCompleted((previous) => {
+        const next = new Set(previous);
+        next.delete(step.id);
+        return next;
+      });
+      setStepError(`Could not record "${step.title}". ${(error as Error).message}`);
+    } finally {
+      if (!stale(target, epoch)) setBusyStep("");
+    }
+  }
+
+  async function dismiss(alert: FarmAlert) {
+    const target = farmId(),
+      epoch = s.sessionEpoch();
+    if (!target) return;
+    setAlertError("");
+    setDismissed((previous) => new Set(previous).add(alert.id));
+    try {
+      await dismissAlert(target, alert.id);
+    } catch (error) {
+      if (stale(target, epoch)) return;
+      setDismissed((previous) => {
+        const next = new Set(previous);
+        next.delete(alert.id);
+        return next;
+      });
+      setAlertError(`Could not dismiss "${alert.title}". ${(error as Error).message}`);
+    }
+  }
+
+  const showStep = (alert: FarmAlert) => {
+    const step = steps().find((item) => item.alertId === alert.id);
+    const node = step ? document.getElementById(stepDomId(step.id)) : null;
+    node?.scrollIntoView({ block: "center", behavior: "smooth" });
+    node?.focus({ preventScroll: true });
+  };
+  const openDetails = (kind: CardKind) => setSheet(kind);
+  const canPlant = () => !!props.data();
+
+  const lists = (current: TodayData) => (
+    <div class="today-lists">
+      <AlertsList
+        alerts={alerts()}
+        newsReview={current.newsReview}
+        today={current.today}
+        stepAlertIds={stepAlertIds()}
+        onDismiss={(alert) => void dismiss(alert)}
+        onSuggested={showStep}
+        error={alertError()}
+      />
+      <Show when={current.cycle}>
+        <UpcomingSteps steps={steps()} busyId={busyStep()} onDone={(step) => void markDone(step)} error={stepError()} sources={props.data()?.sources}>
+          <CareGuidance entry={guidanceEntry()} sources={props.data()?.sources} />
+        </UpcomingSteps>
+      </Show>
+    </div>
+  );
 
   return (
-    <div class="farm-today-grid">
-      <section class="command-field-stage" aria-label="Your field">
-        <div class="field-stage-toolbar">
-          <div
-            class="field-view-switch"
-            role="group"
-            aria-label="Field view"
-          >
-            <button
-              aria-pressed={scene() === "growth"}
-              classList={{ active: scene() === "growth" }}
-              onClick={() => setScene("growth")}
-            >
-              <Icon name="leaf" size={15} /> Growth model
-            </button>
-            <button
-              aria-pressed={scene() === "satellite"}
-              classList={{ active: scene() === "satellite" }}
-              onClick={() => setScene("satellite")}
-            >
-              <Icon name="map" size={15} /> Satellite
-            </button>
-          </div>
-          <Show when={active()}>
-            <span class="stage-crop-label">
-              <span class="status-dot" />
-              {active()!.cycle.cropName ??
-                crop()?.displayName ??
-                s.cropName(active()!.cycle.cropId)}
-            </span>
-          </Show>
-        </div>
-        <div class="field-stage-canvas">
-          <Show
-            when={workspace()}
-            fallback={
-              <div class="command-loading" role="status">
-                {s.workspace.loading || resource.loading
-                  ? "Loading your saved field boundary…"
-                  : "Your field boundary could not load. Retry farm context."}
-              </div>
-            }
-          >
-            <Show
-              when={scene() === "growth"}
-              fallback={
-                <FarmMap
-                  boundary={workspace()?.boundary ?? null}
-                  editing={false}
-                  onBoundary={() => {}}
-                  farmName={s.farm()?.name ?? "Your farm"}
-                  onEdit={() => navigate("/farm/manage")}
-                />
-              }
-            >
-              <FieldGrowthScene
-                cropId={active()?.cycle.cropId ?? null}
-                cropName={
-                  crop()?.displayName ?? active()?.cycle.cropName ?? null
-                }
-                stage={active()?.cycle.stage ?? null}
-                boundary={workspace()?.boundary ?? null}
-                plantingDate={active()?.cycle.sowingDate ?? null}
-                harvestDate={active()?.cycle.harvestDate ?? null}
-                onPlant={() => openPlant()}
-              />
-            </Show>
-          </Show>
-        </div>
-        <div class="field-stage-footer">
-          <span>
-            <Icon name="target" size={14} />
-            {workspace()?.boundary
-              ? "Your saved field outline"
-              : workspace()
-                ? "Boundary not mapped"
-                : "Boundary not loaded"}
-          </span>
-          <A href="/farm/manage">
-            Edit boundary <Icon name="arrow" size={13} />
-          </A>
-        </div>
-      </section>
-      <aside class="farm-live-inspector">
-        <section class="command-panel crop-status-panel">
-          <div class="command-panel-heading">
-            <h2>Growing now</h2>
-            <span class="tiny-pill">Recorded</span>
-          </div>
-          <Show
-            when={active()}
-            fallback={
-              <div class="command-empty-crop">
-                <Icon name="leaf" size={28} />
-                <h3>No crop recorded yet</h3>
-                <p>
-                  Record what you planted and when. Care dates will use that
-                  event and available sources.
-                </p>
-                <button
-                  class="text-button"
-                  onClick={() => openPlant()}
-                  disabled={!data()}
-                >
-                  Plant your first crop <Icon name="arrow" size={15} />
-                </button>
-              </div>
-            }
-          >
-            <Show when={cycles().length > 1}>
-              <label class="command-sr-label">
-                Current crop
-                <select
-                  aria-label="Current crop"
-                  value={active()?.cycle.id}
-                  onChange={(e) => setCycleId(e.currentTarget.value)}
-                >
-                  <For each={cycles()}>
-                    {(entry) => (
-                      <option value={entry.cycle.id}>
-                        {entry.cycle.cropName ??
-                          s.cropName(entry.cycle.cropId)}
-                      </option>
-                    )}
-                  </For>
-                </select>
-              </label>
-            </Show>
-            <div class="current-crop-name">
-              <span class="crop-status-glyph">
-                <Icon name="leaf" size={27} />
-              </span>
-              <div>
-                <h3>
-                  {crop()?.displayName ??
-                    active()?.cycle.cropName ??
-                    "Crop"}
-                </h3>
-                <p>{words(active()?.cycle.stage ?? "")}</p>
-              </div>
+    <div class="today-view" aria-busy={state().status === "loading"}>
+      <Switch>
+        <Match when={state().status === "idle" || state().status === "loading"}>
+          <div class="today-layout" role="status" aria-label="Loading today's field view">
+            <div class="today-primary">
+              <div class="today-skeleton today-skeleton-hero" />
+              <div class="today-skeleton today-skeleton-slider" />
             </div>
-            <dl class="crop-anchor-list">
-              <div>
-                <dt>
-                  {words(active()?.cycle.establishmentMethod ?? "sowed")}
-                </dt>
-                <dd>
-                  {active()?.cycle.sowingDate
-                    ? dateLabel(active()!.cycle.sowingDate)
-                    : "Date unknown"}
-                </dd>
-              </div>
-              <div>
-                <dt>Care needing attention</dt>
-                <dd>
-                  {data() ? dueCount() : "—"}{" "}
-                  <small>source-scheduled</small>
-                </dd>
-              </div>
-            </dl>
-            <Show when={active()?.limitations.length}>
-              <details class="command-source-details">
-                <summary>Care evidence & gaps</summary>
-                <For each={active()?.limitations}>
-                  {(line) => <p>{line}</p>}
-                </For>
-              </details>
-            </Show>
-          </Show>
-        </section>
-        <section class="command-panel command-weather">
-          <div class="command-panel-heading">
-            <h2>Field weather</h2>
-            <span class="tiny-pill">
-              {weather()?.status === "stale"
-                ? "Stale forecast"
-                : "Forecast"}
-            </span>
-          </div>
-          <div class="command-weather-reading">
-            <Icon
-              name={(day()?.rainMm ?? 0) > 1 ? "rain" : "sun"}
-              size={34}
-            />
-            <strong>
-              {day()?.tMaxC != null ? `${day()!.tMaxC}°` : "—"}
-            </strong>
-            <div>
-              <span>
-                {day()?.date
-                  ? dateLabel(day()!.date)
-                  : "No forecast available"}
-              </span>
-              <small>
-                {day()?.tMinC != null
-                  ? `${day()!.tMinC}° low`
-                  : "Temperature unknown"}
-              </small>
+            <div class="today-cards" aria-hidden="true">
+              <For each={[0, 1, 2, 3]}>{() => <div class="today-skeleton today-skeleton-card" />}</For>
             </div>
           </div>
-          <div class="weather-rain-line">
-            <Icon name="rain" size={15} />
-            <span>
-              {day()?.rainMm != null
-                ? `${day()!.rainMm} mm rain forecast`
-                : "Rain forecast unavailable"}
-            </span>
-          </div>
-          <A href="/farm?tab=harvest" class="text-link">
-            Weather & market detail <Icon name="arrow" size={14} />
-          </A>
-          <Show when={weather()?.issuedAt}>
-            <small class="command-issued">
-              Issued{" "}
-              {new Date(weather()!.issuedAt!).toLocaleString("en-IN", {
-                day: "numeric",
-                month: "short",
-                hour: "2-digit",
-                minute: "2-digit",
-              })}{" "}
-              · {weather()?.source}
-            </small>
-          </Show>
-        </section>
-        <section class="command-panel command-soil-glance">
-          <div class="command-panel-heading">
-            <h2>Soil evidence</h2>
-            <button
-              class="text-button"
-              onClick={() => showTool("soil")}
-              aria-label="Open soil reports"
-            >
-              <Icon name="arrow" size={15} />
-            </button>
-          </div>
-          <div class="soil-reading-count">
-            <strong>{markers().length || "—"}</strong>
-            <span>
-              {markers().length
-                ? "confirmed lab readings"
-                : data()
-                  ? "No confirmed field readings"
-                  : "Lab readings not loaded"}
-            </span>
-          </div>
-          <p>
-            {activeFit()?.summary ??
-              "Upload a laboratory report to check compatible measurements against published crop requirements."}
-          </p>
-          <button
-            class="text-button"
-            onClick={() => navigate("/farm?tab=soil")}
-          >
-            Review soil & crop fit <Icon name="arrow" size={14} />
-          </button>
-        </section>
-        <Show when={activeQuote()}>
-          {(quote) => (
-            <section class="command-panel command-market-glance">
-              <div class="command-panel-heading">
-                <h2>Latest market quote</h2>
-                <span class="tiny-pill">Dated observation</span>
-              </div>
-              <CurrentQuote
-                product={quote()}
-                name={crop()?.displayName ?? "Current crop"}
-                compact
-              />
-            </section>
-          )}
-        </Show>
-      </aside>
-      <section class="command-care-strip" aria-label="Crop care schedule">
-        <div class="care-strip-title">
-          <div>
-            <span class="eyebrow">FROM YOUR CROP & DATE</span>
-            <h2>Next in the field</h2>
-          </div>
-          <div class="care-strip-actions">
-            <Show when={tasks().length > 3}>
-              <button
-                class="text-button"
-                onClick={() => setAllCare(!allCare())}
-                aria-expanded={allCare()}
+        </Match>
+        <Match when={state().status === "error"}>
+          <div class="today-layout">
+            <div class="today-primary">
+              <Show
+                when={props.cycles().length || !props.data()}
+                fallback={<TodayEmpty onPlant={() => props.openPlant()} canPlant={canPlant()} />}
               >
-                {allCare()
-                  ? "Show next actions"
-                  : `All ${tasks().length} care actions`}
-              </button>
+                <section class="today-hero" aria-label="Your field">
+                  <div class="today-hero-frame today-hero-error">
+                    <div class="today-hero-message" role="alert">
+                      <Icon name="info" size={22} />
+                      <strong>Today's field view is unavailable</strong>
+                      <span>{errorInfo()?.message}</span>
+                      <Show when={props.active()}>
+                        {(entry) => (
+                          <span class="today-recorded-crop" data-testid="today-recorded-crop">
+                            Recorded crop: {entry().cycle.cropName ?? s.cropName(entry().cycle.cropId)}, sown {formatDay(entry().cycle.sowingDate)}
+                          </span>
+                        )}
+                      </Show>
+                      <button type="button" class="btn compact secondary" onClick={retry}>
+                        Retry
+                      </button>
+                    </div>
+                  </div>
+                </section>
+              </Show>
+            </div>
+            <Show when={props.cycles().length}>
+              <div class="today-lists">
+                <UpcomingSteps
+                  steps={steps()}
+                  busyId={busyStep()}
+                  onDone={(step) => void markDone(step)}
+                  error={stepError()}
+                  sources={props.data()?.sources}
+                  note={props.data() ? "From your crop care schedule" : "Care schedule not loaded"}
+                >
+                  <CareGuidance entry={props.active()} sources={props.data()?.sources} />
+                </UpcomingSteps>
+              </div>
             </Show>
-            <button class="text-button" onClick={askCare}>
-              <Evara size={20} /> Ask Evara
+          </div>
+        </Match>
+        <Match when={view() && !view()!.cycle}>
+          <div class="today-layout is-empty">
+            <div class="today-primary">
+              <TodayEmpty onPlant={() => props.openPlant()} canPlant={canPlant()} />
+            </div>
+            <TodayCards view={view()!} date={view()!.today} price={null} weather={weatherAt(view()!.weatherTrack, view()!.today)} weatherOnly onDetails={openDetails} />
+            {lists(view()!)}
+          </div>
+        </Match>
+        <Match when={view()?.cycle}>
+          <div class="today-layout">
+            <div class="today-primary">
+              <TodayHero
+                mode={mode()}
+                onMode={(next) => props.setScene(next === "satellite" ? "satellite" : "growth")}
+                date={date()}
+                today={view()!.today}
+                stage={stage()}
+                progress={progress()}
+                cropId={view()!.cycle!.cropId}
+                cropName={cropName()}
+                boundary={boundary()}
+                scenes={view()!.scenes}
+                imageBbox={view()!.ndvi?.imageBbox ?? null}
+              />
+              <Show
+                when={slider()}
+                fallback={<p class="today-note">Stage dates are not available for this crop yet, so the season slider is hidden.</p>}
+              >
+                {(model) => (
+                  <StageSlider
+                    model={model()}
+                    value={index()}
+                    onChange={(next) => setPick(next)}
+                    valueDate={date()}
+                    ticks={ticks()}
+                    onBackToToday={() => setPick(null)}
+                    startLabel={`Sown ${formatDay(view()!.cycle!.sowingDate, false)}`}
+                    endLabel={`Harvest by ${formatDay(model().to, false)}`}
+                  />
+                )}
+              </Show>
+              <Show when={otherCycles().length}>
+                <p class="today-note">
+                  Also growing: {otherCycles().map((entry) => entry.cycle.cropName ?? s.cropName(entry.cycle.cropId)).join(", ")}. This view
+                  shows {cropName()}.
+                </p>
+              </Show>
+            </div>
+            <TodayCards view={view()!} date={date()} price={price()} weather={weather()} onDetails={openDetails} />
+            {lists(view()!)}
+            <button type="button" class="text-button today-about" onClick={() => setSheet("about")}>
+              <Icon name="info" size={14} /> About this view
             </button>
           </div>
-        </div>
-        <div class="command-care-cards" classList={{ expanded: allCare() }}>
-          <Show
-            when={tasks().length}
-            fallback={
-              <div class="care-empty">
-                <Icon name="calendar" size={24} />
-                <p>
-                  {active()
-                    ? "No source-scheduled task is available for this crop and establishment method. Record your own observations in Activity."
-                    : "Care appears here after you record a crop and establishment date."}
-                </p>
-                <A href="/farm?tab=activity" class="text-link">
-                  Open activity <Icon name="arrow" size={14} />
-                </A>
-              </div>
-            }
-          >
-            <For each={allCare() ? tasks() : tasks().slice(0, 3)}>
-              {(task) => (
-                <article class={`command-care-card ${task.status}`}>
-                  <div class="care-task-title">
-                    <span class="care-status-dot" />
-                    <h3>{task.title}</h3>
-                    <small>{words(task.status)}</small>
-                  </div>
-                  <p>
-                    {task.dueFrom === task.dueTo
-                      ? dateLabel(task.dueFrom)
-                      : `${dateLabel(task.dueFrom)} – ${dateLabel(task.dueTo)}`}
-                  </p>
-                  <details>
-                    <summary>Action & source</summary>
-                    <p>{task.action}</p>
-                    <For each={task.conditions}>
-                      {(condition) => <p>{condition}</p>}
-                    </For>
-                    <SourceLinks refs={task.sourceRefs} data={data()} />
-                  </details>
-                  <button
-                    class="text-button"
-                    disabled={!!careBusy()}
-                    onClick={() => void complete(task)}
-                  >
-                    {careBusy() === task.id ? "Saving…" : "Done today"}
-                    <Icon name="check" size={14} />
-                  </button>
-                </article>
-              )}
-            </For>
-          </Show>
-        </div>
-        <Show when={active()?.stageGuidance?.length}>
-          <details class="stage-guidance-panel">
-            <summary>
-              Stage-dependent guidance · observation required (
-              {active()?.stageGuidance?.length})
-            </summary>
-            <For each={active()?.stageGuidance}>
-              {(guidance) => (
-                <article>
-                  <h3>{guidance.title}</h3>
-                  <p>{guidance.action}</p>
-                  <Show
-                    when={
-                      guidance.applicability &&
-                      guidance.applicability !== "matched"
-                    }
-                  >
-                    <p class="source-applicability-note">
-                      {guidance.applicability === "outside_source_region"
-                        ? "This source covers another region. Confirm local applicability before acting."
-                        : "The field location has not been matched to this source region. Confirm local applicability before acting."}
-                    </p>
-                  </Show>
-                  <Show when={guidance.stage}>
-                    <span class="tiny-pill">{words(guidance.stage!)}</span>
-                  </Show>
-                  <For each={guidance.conditions}>
-                    {(condition) => <p>{condition}</p>}
-                  </For>
-                  <SourceLinks refs={guidance.sourceRefs} data={data()} />
-                  <p class="muted">
-                    No date has been assigned. Check the actual crop stage
-                    before acting.
-                  </p>
-                </article>
-              )}
-            </For>
-          </details>
-        </Show>
-        <Show when={active()?.referenceGuidance?.length}>
-          <details class="stage-guidance-panel">
-            <summary>
-              Other-region care references (
-              {active()?.referenceGuidance?.length})
-            </summary>
-            <p class="source-applicability-note">
-              These references have no scheduled field dates. Confirm local
-              applicability with an agronomist before acting.
-            </p>
-            <For each={active()?.referenceGuidance}>
-              {(guidance) => (
-                <article>
-                  <h3>{guidance.title}</h3>
-                  <p>{guidance.action}</p>
-                  <p>{guidance.reason}</p>
-                  <For each={guidance.conditions}>
-                    {(condition) => <p>{condition}</p>}
-                  </For>
-                  <SourceLinks refs={guidance.sourceRefs} data={data()} />
-                </article>
-              )}
-            </For>
-          </details>
-        </Show>
-      </section>
+        </Match>
+      </Switch>
+      <Show when={sheet() && view()}>
+        <TodaySheet kind={sheet()!} view={view()!} date={date()} price={price()} weather={weather()} onClose={() => setSheet(null)} />
+      </Show>
     </div>
   );
 }
