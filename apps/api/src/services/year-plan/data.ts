@@ -360,6 +360,8 @@ function acceptYieldRow(cropId: string, productId: string, row: YieldRow): Accep
   const accept = MULTI_FORM_PRODUCTS[productId] ?? (MULTI_FORM_CROPS.has(cropId) ? [] : ['main', 'fresh', 'unstated']);
   return accept.includes(form) ? { row, value: row.yieldKgPerHa, form, factor: 1 } : null;
 }
+/** Start year of the Indian crop year (July to June) that contains a calendar date. */
+const cropYearStart = (date: string): number => { const y = Number(date.slice(0, 4)); return Number(date.slice(5, 7)) >= 7 ? y : y - 1; };
 const yearKey = (y: string | null | undefined): number => { const m = /(\d{4})/.exec(y ?? ''); return m ? Number(m[1]) : Number.NEGATIVE_INFINITY; };
 const COMBINED_SEASON = /total|all seasons|whole year|&|combined/i;
 const quantile7 = (xs: number[], p: number): number => {
@@ -400,10 +402,13 @@ export interface YieldRef {
  * (milled) rows for paddy-grain are converted with conversions.riceToPaddy and carry a note. Reference yield is the
  * best state year of the same form. Returns null when no row of the product's form exists for the state.
  */
-export function yieldFor(cropId: string, productId: string, where: Where & { season: Season | null }): YieldRef | null {
+export function yieldFor(cropId: string, productId: string, where: Where & { season: Season | null; asOf?: string | null | undefined }): YieldRef | null {
   if (!where.stateId) return null;
   const accepted = (yieldCostCrop(cropId)?.yields ?? []).map((r) => acceptYieldRow(cropId, productId, r)).filter((a): a is Accepted => a !== null);
-  const district = where.districtId ? accepted.filter((a) => a.row.region === where.districtId && a.row.districtYieldIndependent !== false) : [];
+  const districtAll = where.districtId ? accepted.filter((a) => a.row.region === where.districtId && a.row.districtYieldIndependent !== false) : [];
+  // ASSUMPTIONS.districtYieldMaxAgeYears: district rows older than 6 crop years before asOf are not a district basis.
+  const oldest = where.asOf ? cropYearStart(where.asOf) - ASSUMPTIONS.districtYieldMaxAgeYears.value : Number.NEGATIVE_INFINITY;
+  const district = districtAll.filter((a) => yearKey(a.row.cropYear) >= oldest);
   const state = accepted.filter((a) => a.row.region === where.stateId);
   const seasonSets = (set: Accepted[]) => [
     { match: 'exact' as const, list: where.season ? set.filter((a) => a.row.season.trim().toLowerCase() === where.season) : [] },
@@ -411,7 +416,8 @@ export function yieldFor(cropId: string, productId: string, where: Where & { sea
   ];
   const notes: string[] = [];
   const rawDistrict = where.districtId ? (yieldCostCrop(cropId)?.yields ?? []).filter((r) => r.region === where.districtId) : [];
-  if (rawDistrict.length && !district.length) notes.push(rawDistrict.every((r) => r.districtYieldIndependent === false) ? 'District rows restate the state average; the state yield is used.' : 'District yield rows are not published in this product form; the state yield is used.');
+  if (districtAll.length && !district.length) notes.push(`District figures too old (latest ${[...districtAll].sort((a, b) => yearKey(b.row.cropYear) - yearKey(a.row.cropYear))[0]!.row.cropYear}); the state yield is used.`);
+  if (rawDistrict.length && !districtAll.length) notes.push(rawDistrict.every((r) => r.districtYieldIndependent === false) ? 'District rows restate the state average; the state yield is used.' : 'District yield rows are not published in this product form; the state yield is used.');
   const nYears = ASSUMPTIONS.yieldYears.value;
   let chosen: { level: 'district' | 'state' | 'reference'; match: 'exact' | 'combined'; years: ReturnType<typeof lastYears> } | null = null;
   for (const [level, set] of [['district', district], ['state', state]] as const) {

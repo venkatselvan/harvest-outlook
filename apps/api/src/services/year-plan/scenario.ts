@@ -68,12 +68,14 @@ function fixedSlotFor(cycle: FarmWorkspaceState['cycles'][number], stateId: stri
   for (const s of occ.sources.flatMap((x) => agronomySources(x)).slice(0, 3)) basis.push({ kind: 'duration', label: s.title ?? s.id, sourceId: s.id, url: s.url, scope: null, note: s.locator });
   if (occ.basis !== 'recorded') basis.push(assumptionBasis(occ.basis === 'assumed_duration' ? 'unknownDurationDays' : 'unknownHarvestBufferDays'));
   basis.push(assumptionBasis('landPrepGapDays'));
-  const windowFit = !hit ? ASSUMPTIONS.windowFit.value.outside : hit.provisional ? ASSUMPTIONS.windowFit.value.provisional : hit.scope === 'district' ? ASSUMPTIONS.windowFit.value.district : ASSUMPTIONS.windowFit.value.state;
+  // The current crop is already in the ground: window fit 1 and no outside_window reason (ASSUMPTIONS.fixedSlotWindowFit).
+  basis.push(assumptionBasis('fixedSlotWindowFit'));
+  const windowFit = ASSUMPTIONS.fixedSlotWindowFit.value;
   return {
     key: `fixed:${cycle.id}`, cycleId: cycle.id, cropId: cycle.cropId, productId, method, season: hit?.season ?? seasonOfMonth(monthOf(cycle.sowingDate)), fixed: true,
     sowing: cycle.sowingDate, harvest: occ.harvest, occupancy: { from: cycle.sowingDate, to: occ.to }, durationDays: occ.durationDays,
     durationSourced: occ.basis === 'sourced_duration', window: hit, windowFit, harvestBasis: occ.basis,
-    flags: { stateWindowFallback: hit?.scope === 'state', provisionalWindow: !!hit?.provisional, outsideWindow: !hit, landPrepGapAssumed: true, conditional: false, durationOtherState: false, harvestAssumed: occ.basis !== 'recorded' },
+    flags: { stateWindowFallback: hit?.scope === 'state', provisionalWindow: !!hit?.provisional, outsideWindow: false, landPrepGapAssumed: true, conditional: false, durationOtherState: false, harvestAssumed: occ.basis !== 'recorded' },
     uncertainties: occ.notes, basis,
   };
 }

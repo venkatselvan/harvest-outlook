@@ -27,7 +27,7 @@ export const ASSUMPTIONS = {
   priceParts: { value: { margin: 25, timing: 15 }, text: 'Price component = (25 x margin-rate score + 15 x harvest-timing score) / 40 (spec 5.1).' },
   harvestTimingClip: { value: [0.5, 1.5], text: 'Harvest-week p50 / annual mean is clipped to 0.5..1.5 and rescaled to 0..1 (spec 5.1).' },
   priceHarvestDate: { value: 'midpoint', text: 'The harvest-week price uses the midpoint of the earliest and latest harvest dates.' },
-  uncomputablePart: { value: 0, text: 'A score part whose input is missing (price, yield or cost) scores 0 and is flagged; nothing is imputed.' },
+  uncomputablePart: { value: 0, text: 'A score part whose input is missing (price or yield) scores 0 and is flagged; nothing is imputed. A missing cost is scored with missingCostRevenueFactor instead.' },
   waterNeedPoint: { value: 'midpoint', text: 'Crop water need is the midpoint of the sourced min-max seasonal need (FAO totals for the growing period).' },
   unknownWaterFit: { value: 0.5, text: 'When climatology or the crop water need is missing, water fit is a neutral 0.5 and flagged water_data_missing; it is not a measurement.' },
   rainfedCap: { value: 0.4, text: 'On a rainfed field a crop not marked rainfed-suitable scores at most 0.4 water fit (spec 5.1).' },
@@ -43,6 +43,9 @@ export const ASSUMPTIONS = {
   idlePenalty: { value: { perMonth: 0.02, freeMonths: 2 }, text: 'Idle penalty 0.02 per idle month beyond the first two; idle months are fractional (idle days / 30.4375) (spec 5.2).' },
   daysPerMonth: { value: 30.4375, text: 'Average month length used for margin per month of occupancy and idle months.' },
   harvestInsideHorizon: { value: true, text: 'A suggested slot must be sown on or after the first free day and harvested before the 12-month horizon ends; its land preparation gap may run past it.' },
+  missingCostRevenueFactor: { value: 0.7, text: 'When the cost of cultivation is not sourced, the margin part scores the gross revenue rate (price p50 x yield p50 x (1 - loss) per month of occupancy, no cost deducted) relative to the largest gross revenue rate among the candidates, multiplied by 0.7 so an unsourced cost never outranks a sourced margin; the reason cost_not_sourced is shown and profit stays empty.' },
+  districtYieldMaxAgeYears: { value: 6, text: 'District yield rows whose crop year (July to June) starts more than 6 years before the review crop year are not used as the district basis; recent state rows are used instead and the slot notes that the district figures are too old.' },
+  fixedSlotWindowFit: { value: 1, text: 'The crop already growing in the field (the fixed slot) has window fit 1 and no outside_window reason: it is in the ground, so the sowing window no longer applies. Its price and yield parts still come from data.' },
 } as const;
 export type AssumptionKey = keyof typeof ASSUMPTIONS;
 
@@ -118,7 +121,7 @@ export interface PriceSlotFacts {
   /** Occupancy days (sowing to latest harvest plus the land preparation gap). */
   occupancyDays: number;
 }
-export interface PriceScoreResult { value: number; marginPart: number; timingPart: number; marginRate: number | null; timingRatio: number | null; reasonCodes: ReasonCode[] }
+export interface PriceScoreResult { value: number; marginPart: number; timingPart: number; marginRate: number | null; revenueRate: number | null; timingRatio: number | null; reasonCodes: ReasonCode[] }
 
 /** Expected gross margin per ha per month of occupancy: (p50 x yieldP50 x (1 - loss) - cost) / months. */
 export function marginRate(slot: PriceSlotFacts, priceP50: number | null): number | null {
@@ -127,14 +130,25 @@ export function marginRate(slot: PriceSlotFacts, priceP50: number | null): numbe
   return (priceP50 * slot.yieldP50 * (1 - loss) - slot.costPerHa) / (slot.occupancyDays / ASSUMPTIONS.daysPerMonth.value);
 }
 
-export function priceScore(slot: PriceSlotFacts, outlook: HarvestPriceOutlook | null, annualMean: number | null, candidateMaxMarginRate: number | null): PriceScoreResult {
+/** Gross revenue per ha per month of occupancy, no cost deducted: p50 x yieldP50 x (1 - loss) / months. */
+export function revenueRate(slot: PriceSlotFacts, priceP50: number | null): number | null {
+  if (priceP50 === null || slot.yieldP50 === null || slot.occupancyDays <= 0) return null;
+  const loss = (slot.postHarvestLossPct ?? 0) / 100;
+  return (priceP50 * slot.yieldP50 * (1 - loss)) / (slot.occupancyDays / ASSUMPTIONS.daysPerMonth.value);
+}
+
+/** Missing cost: margin part = 0.7 x gross revenue rate / candidate maximum gross revenue rate (ASSUMPTIONS.missingCostRevenueFactor). */
+export function priceScore(slot: PriceSlotFacts, outlook: HarvestPriceOutlook | null, annualMean: number | null, candidateMaxMarginRate: number | null, candidateMaxRevenueRate: number | null = null): PriceScoreResult {
   const p50 = outlook && outlook.status === 'available' ? outlook.p50 : null;
-  if (p50 === null || !(p50 > 0)) return { value: 0, marginPart: 0, timingPart: 0, marginRate: null, timingRatio: null, reasonCodes: ['price_insufficient'] };
+  if (p50 === null || !(p50 > 0)) return { value: 0, marginPart: 0, timingPart: 0, marginRate: null, revenueRate: null, timingRatio: null, reasonCodes: ['price_insufficient'] };
   const codes: ReasonCode[] = [];
   if (slot.costPerHa === null) codes.push('cost_not_sourced');
   if (slot.yieldP50 === null) codes.push('yield_not_sourced');
   const rate = marginRate(slot, p50);
-  const marginPart = rate === null || rate <= 0 || candidateMaxMarginRate === null || candidateMaxMarginRate <= 0 ? 0 : Math.min(1, rate / candidateMaxMarginRate);
+  const revRate = revenueRate(slot, p50);
+  const marginPart = slot.costPerHa === null
+    ? (revRate === null || revRate <= 0 || candidateMaxRevenueRate === null || candidateMaxRevenueRate <= 0 ? 0 : ASSUMPTIONS.missingCostRevenueFactor.value * Math.min(1, revRate / candidateMaxRevenueRate))
+    : (rate === null || rate <= 0 || candidateMaxMarginRate === null || candidateMaxMarginRate <= 0 ? 0 : Math.min(1, rate / candidateMaxMarginRate));
   const mean = annualMean ?? outlook!.annualMean;
   const [lo, hi] = ASSUMPTIONS.harvestTimingClip.value;
   let ratio: number | null = null;
@@ -148,7 +162,7 @@ export function priceScore(slot: PriceSlotFacts, outlook: HarvestPriceOutlook | 
   if (ratio !== null && ratio <= t.timingWeak) codes.push('price_timing_weak');
   if (marginPart >= t.marginHigh) codes.push('margin_rate_high');
   const { margin, timing } = ASSUMPTIONS.priceParts.value;
-  return { value: (margin * marginPart + timing * timingPart) / (margin + timing), marginPart, timingPart, marginRate: rate, timingRatio: ratio, reasonCodes: codes };
+  return { value: (margin * marginPart + timing * timingPart) / (margin + timing), marginPart, timingPart, marginRate: rate, revenueRate: revRate, timingRatio: ratio, reasonCodes: codes };
 }
 
 // ------------------------------------------------------------------ yield (30)

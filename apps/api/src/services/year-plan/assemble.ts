@@ -4,14 +4,18 @@ import { coveredDays, enumerateCandidates, enumerateSequences, makeSlotPlan, pre
 import { addDays, clippedDays, daysBetween, isCalendarDate, isoWeek, monthOf, overlaps } from './dates';
 import { collectInputKeys, priceHarvestDate, slotPriceKey, type Inputs, type PriceInputKey } from './inputs';
 import {
-  ASSUMPTIONS, assumptionBasis, clip, confidenceScore, irrigationClass, marginRate, POSITIVE_CODES, priceScore, REASON_TEXT, reasonCodes, sequenceScore, slotDisplayScore, slotScore,
+  ASSUMPTIONS, assumptionBasis, clip, confidenceScore, irrigationClass, marginRate, revenueRate, POSITIVE_CODES, priceScore, REASON_TEXT, reasonCodes, sequenceScore, slotDisplayScore, slotScore,
   soilRotationScore, waterFit, yieldScore, type ConfidenceFlags, type PriceScoreResult, type PriceSlotFacts, type ReasonCode, type RotationScoreResult, type WaterFitResult, type YieldScoreResult,
 } from './scoring';
 import type { Candidate, EngineContext, Sequence, SlotPlan } from './types';
 import { placeWindows, windowForDate } from './windows';
 
 /** Normalisation shared by every option of one review; persist it with the review so farmer edits rescore on the same scale. */
-export interface ScoringNorm { maxMarginRate: number | null }
+export interface ScoringNorm {
+  maxMarginRate: number | null;
+  /** Largest positive gross revenue rate (no cost deducted); scores slots whose cost is not sourced. */
+  maxRevenueRate?: number | null | undefined;
+}
 
 export interface EvaluatedSlot {
   plan: SlotPlan;
@@ -44,7 +48,7 @@ const irrigationOf = (ctx: EngineContext, inputs: Inputs) => irrigationClass(inp
 
 interface SlotFacts { yieldRef: data.YieldRef | null; override: number | null; cost: data.CostRef | null; loss: { pct: number; sourceId: string | null } | null; facts: PriceSlotFacts; outlook: HarvestPriceOutlook | null; key: string }
 function slotFacts(ctx: EngineContext, inputs: Inputs, plan: SlotPlan): SlotFacts {
-  const yieldRef = data.yieldFor(plan.cropId, plan.productId, { ...where(ctx), season: plan.season });
+  const yieldRef = data.yieldFor(plan.cropId, plan.productId, { ...where(ctx), season: plan.season, asOf: ctx.asOf });
   const override = inputs.yieldOverrides?.get(plan.productId) ?? null;
   const cost = data.costFor(plan.cropId, where(ctx));
   const loss = data.postHarvestLoss(plan.cropId);
@@ -58,13 +62,16 @@ function slotFacts(ctx: EngineContext, inputs: Inputs, plan: SlotPlan): SlotFact
 /** Largest positive margin rate among the slots (spec 5.1 normalisation); null when none can be computed. */
 export function marginNormaliser(ctx: EngineContext, slots: Iterable<SlotPlan>, inputs: Inputs): ScoringNorm {
   let max: number | null = null;
+  let maxRev: number | null = null;
   for (const plan of slots) {
     const f = slotFacts(ctx, inputs, plan);
     const p50 = f.outlook?.status === 'available' ? f.outlook.p50 : null;
     const r = marginRate(f.facts, p50);
     if (r !== null && r > 0 && (max === null || r > max)) max = r;
+    const g = revenueRate(f.facts, p50);
+    if (g !== null && g > 0 && (maxRev === null || g > maxRev)) maxRev = g;
   }
-  return { maxMarginRate: max };
+  return { maxMarginRate: max, maxRevenueRate: maxRev };
 }
 
 function evaluationBasis(ctx: EngineContext, inputs: Inputs, plan: SlotPlan, f: SlotFacts, water: WaterFitResult): BasisRef[] {
@@ -117,7 +124,7 @@ export function evaluateSlot(ctx: EngineContext, inputs: Inputs, plan: SlotPlan,
   const f = slotFacts(ctx, inputs, plan);
   const water = waterFit({ sowing: plan.sowing, harvestLatest: plan.harvest.latest, waterNeedMm: data.waterNeedMm(plan.cropId) }, inputs.climatologyRainByMonth, irrigationOf(ctx, inputs), data.rainfedSuitable(plan.cropId), inputs.neighbourhoodActiveMonths, inputs.neighbourhoodObservedMonths);
   const yieldS = yieldScore({ yieldOverrideKgPerHa: f.override }, f.yieldRef, plan.windowFit, water.value);
-  const price = priceScore(f.facts, f.outlook, inputs.annualMeans.get(plan.productId) ?? null, norm.maxMarginRate);
+  const price = priceScore(f.facts, f.outlook, inputs.annualMeans.get(plan.productId) ?? null, norm.maxMarginRate, norm.maxRevenueRate ?? null);
   const flags: ConfidenceFlags = {
     priceVerified: f.outlook?.status === 'available' && f.outlook.yearsUsed.length >= 2,
     districtYield: f.override !== null || (f.yieldRef?.basis === 'district' && !f.yieldRef.stale),

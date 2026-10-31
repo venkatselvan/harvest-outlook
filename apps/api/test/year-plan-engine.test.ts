@@ -327,6 +327,12 @@ describe('slot scoring', () => {
     expect(without.revenue).not.toBeNull();
     expect(without.codes).toContain('cost_not_sourced');
     expect(without.price.marginPart).toBe(0);
+    // Rule change 2026-11-01: a missing cost scores 0.7 x gross revenue rate / candidate maximum; profit stays null.
+    const rev = without.price.revenueRate!;
+    const scaled = evaluateSlot(ctx, inputs, tomato, { maxMarginRate: 1000, maxRevenueRate: rev * 2 });
+    expect(scaled.price.marginPart).toBeCloseTo(ASSUMPTIONS.missingCostRevenueFactor.value * 0.5, 12);
+    expect(scaled.profit).toBeNull();
+    expect(scaled.codes).toContain('cost_not_sourced');
     const fx = fixtures();
     fx.yieldCost.crops.find((c) => c.cropId === 'tomato')!.costs = [desCost(100000, 130000)] as never;
     data.invalidate(fx);
@@ -336,7 +342,7 @@ describe('slot scoring', () => {
   });
 
   it('price insufficient gives price component 0 with a reason and no revenue', () => {
-    expect(priceScore({ yieldP50: 1000, costPerHa: 1, postHarvestLossPct: null, occupancyDays: 100 }, outlook('maize-grain', '2027-09-01', null), null, 10)).toEqual({ value: 0, marginPart: 0, timingPart: 0, marginRate: null, timingRatio: null, reasonCodes: ['price_insufficient'] });
+    expect(priceScore({ yieldP50: 1000, costPerHa: 1, postHarvestLossPct: null, occupancyDays: 100 }, outlook('maize-grain', '2027-09-01', null), null, 10)).toEqual({ value: 0, marginPart: 0, timingPart: 0, marginRate: null, revenueRate: null, timingRatio: null, reasonCodes: ['price_insufficient'] });
     const ctx = buildScenario(freshArgs('maize'));
     const set = enumerateCandidates(ctx);
     const gn = find(set.candidates, 'groundnut', '2027-06-01');
