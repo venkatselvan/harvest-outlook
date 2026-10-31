@@ -244,7 +244,12 @@ function buildOption(ctx: EngineContext, inputs: Inputs, plans: SlotPlan[], eval
     if (!s.price || s.price.status !== 'available') warnings.push(`${s.cropName}: no harvest-week price range.`);
     if (!s.yieldKgPerHa) warnings.push(`${s.cropName}: no regional yield for this product form.`);
   }
-  if (ctx.fixedSlot && ctx.fixedSlot.harvestBasis !== 'recorded') warnings.push(`${cropName(ctx, ctx.fixedSlot.cropId)}: harvest date not recorded; the field is held until ${ctx.fixedSlot.occupancy.to} as a precaution.`);
+  if (ctx.fixedSlot && ctx.fixedSlot.harvestBasis !== 'recorded') {
+    const fs = ctx.fixedSlot;
+    warnings.push(fs.timelineEstimate
+      ? `${cropName(ctx, fs.cropId)}: harvest date not recorded; estimated from the recorded sowing date and the crop's stage model (${fs.harvest.earliest} to ${fs.harvest.latest}), and the field is held until ${fs.occupancy.to}.`
+      : `${cropName(ctx, fs.cropId)}: harvest date not recorded; the field is held until ${fs.occupancy.to} as a precaution.`);
+  }
   if (!totalRevenuePerHa || !totalProfitPerHa) warnings.push('Plan totals are shown only when every slot has a price, yield and cost.');
   const dominant = (['price', 'yield', 'soilRotation', 'water'] as const).reduce((best, k) => (components[k] > components[best] ? k : best), 'price' as 'price' | 'yield' | 'soilRotation' | 'water');
   const option: YearPlanOption = {

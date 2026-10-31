@@ -75,6 +75,8 @@ export interface OccupiedInterval extends DateRange {
 export interface FixedSlot extends SlotPlan {
   cycleId: string;
   harvestBasis: 'recorded' | 'sourced_duration' | 'assumed_duration';
+  /** The harvest window is the crop's stage-timeline window (the Today view's), not the older duration rule. */
+  timelineEstimate?: boolean | undefined;
 }
 
 /** Everything the deterministic engine needs about the field; produced by buildScenario. */

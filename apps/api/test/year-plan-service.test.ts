@@ -6,7 +6,9 @@ import { Budget } from '../src/services/budget';
 import { getWorkspace, putWorkspace } from '../src/services/workspace';
 import { patchFarm } from '../src/services/farms';
 import { ASSUMPTIONS, buildScenario, data, emptyInputs, priceScore, runYearPlanEngine } from '../src/services/year-plan';
-import { applyYearPlan, ensureYearPlan, generateYearPlan, readYearPlan, rescoreYearPlan, type YearPlanDeps } from '../src/services/year-plan/service';
+import { applyYearPlan, ensureYearPlan, generateYearPlan, readYearPlan, rescoreYearPlan, yearPlanContext, type YearPlanDeps } from '../src/services/year-plan/service';
+import { stageTimeline } from '../src/services/today/stage-timeline';
+import { addDays } from '../src/services/year-plan/dates';
 import { gateSelection, PLAN_LABELS, selectionCandidates } from '../src/services/year-plan/select';
 import type { TextModelProvider } from '../src/agent/provider';
 import { farmBody, login, setupHarness, type Client, type Harness } from './helpers';
@@ -225,5 +227,39 @@ describe('engine adjustments (2026-11-01)', () => {
     expect(ctx.fixedSlot!.flags.outsideWindow).toBe(false);
     const run = runYearPlanEngine(ctx, emptyInputs('2026-11-01'));
     for (const o of run.options) expect(o.slots[0]!.reasonCodes).not.toContain('outside_window');
+  });
+});
+
+describe('current crop harvest window and label evidence through the service (2026-11-01)', () => {
+  afterEach(() => data.invalidate());
+  it('the plan holds the field until the Today stage-timeline latest harvest date + 7 + 10 days and shows the same harvest window', async () => {
+    data.invalidate();
+    const { f, auth } = await farm();
+    await putWorkspace(h.pool, auth.ownerId, f.id, { expectedVersion: 0, boundary: null, previousHarvest: { status: 'none' }, cycles: [{ id: randomUUID(), cropId: 'maize', sowingDate: '2026-09-20', stage: 'growing' }], rotationPlans: [] } as never);
+    const c = await yearPlanContext(deps(), auth.ownerId, f.id, '2026-11-01');
+    const tl = stageTimeline({ cropId: 'maize', productId: null, establishmentMethod: null, anchorDate: '2026-09-20', stateId: 'IN-KA', districtId: 'IN-KA-hassan' });
+    expect(tl.harvest).not.toBeNull();
+    expect(c.ctx.scenario.kind).toBe('occupied');
+    expect(c.ctx.fixedSlot!.harvest).toEqual(tl.harvest);
+    expect(c.ctx.fixedSlot!.occupancy.to).toBe(addDays(tl.harvest!.latest, ASSUMPTIONS.timelineHarvestBufferDays.value + ASSUMPTIONS.landPrepGapDays.value));
+    expect(c.ctx.fixedSlot!.timelineEstimate).toBe(true);
+    // A stage timeline without a harvest window gives back the older rule.
+    const none = await yearPlanContext({ ...deps(), timeline: (i) => ({ ...stageTimeline(i), stages: [], harvest: null }) }, auth.ownerId, f.id, '2026-11-01');
+    expect(none.ctx.fixedSlot!.timelineEstimate).toBe(false);
+    expect(none.ctx.fixedSlot!.occupancy.to > c.ctx.fixedSlot!.occupancy.to).toBe(true);
+  });
+
+  it('a stored plan carries a label other than Best overall or Alternative only with price and yield on every suggested crop', async () => {
+    data.invalidate();
+    const { f, auth } = await farm();
+    const review = await generate(liveDeps(fakeMeta('valid').provider), auth, f.id);
+    expect(review.options.length).toBeGreaterThan(0);
+    for (const o of review.options) {
+      if (o.label === 'Best overall' || o.label === 'Alternative') continue;
+      for (const s of o.slots.filter((x) => !x.fixed)) {
+        expect(s.price?.status, `${o.label} / ${s.cropId} price`).toBe('available');
+        expect(s.yieldKgPerHa, `${o.label} / ${s.cropId} yield`).not.toBeNull();
+      }
+    }
   });
 });

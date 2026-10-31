@@ -21,18 +21,24 @@ import { REASON_CODES, REASON_TEXT, type ReasonCode } from './scoring';
  */
 export const PLAN_LABELS = ['Best overall', 'Soil enrichment', 'Lowest water', 'Best price timing', 'Steady income', 'Low risk'] as const;
 export type PlanLabel = (typeof PLAN_LABELS)[number];
+const EVIDENCE = ' Only for a plan whose every suggested crop has a harvest-week price range and a regional yield (price available, yield not null).';
 export const LABEL_RULES: Record<PlanLabel, string> = {
   'Best overall': 'Score within 0.5 points of the highest score among the shortlisted plans.',
-  'Soil enrichment': 'Highest soil and rotation component among the shortlisted plans (within 0.01) and better than neutral.',
-  'Lowest water': 'Highest water fit among the shortlisted plans (within 0.01): usual rain plus the recorded irrigation covers the crop water need best; rain normals and water needs known for every suggested crop.',
-  'Best price timing': 'Highest price component among the shortlisted plans (within 0.01), with a harvest-week price range for every suggested crop.',
-  'Steady income': 'Profit is above zero even at the low end of the plan total (every slot has price, yield and cost).',
-  'Low risk': 'High data confidence (0.8 or more) and no window, water, overlap, assumed-harvest or missing-data warning codes on any suggested crop.',
+  'Soil enrichment': 'Highest soil and rotation component among the shortlisted plans (within 0.01) and better than neutral.' + EVIDENCE,
+  'Lowest water': 'Highest water fit among the shortlisted plans (within 0.01): usual rain plus the recorded irrigation covers the crop water need best; rain normals and water needs known for every suggested crop.' + EVIDENCE,
+  'Best price timing': 'Highest price component among the shortlisted plans (within 0.01), with a harvest-week price range for every suggested crop.' + EVIDENCE,
+  'Steady income': 'Profit is above zero even at the low end of the plan total (every slot has price, yield and cost).' + EVIDENCE,
+  'Low risk': 'High data confidence (0.8 or more) and no window, water, overlap, assumed-harvest or missing-data warning codes on any suggested crop.' + EVIDENCE,
 };
 const RISK_CODES: readonly ReasonCode[] = ['outside_window', 'provisional_window', 'conditional_irrigation', 'occupancy_conflict', 'harvest_assumed', 'water_fit_poor', 'rainfed_unsuitable', 'low_data_confidence', 'price_insufficient', 'yield_not_sourced', 'avoid_after_violation', 'same_family_repeat'];
 const isCode = (c: string): c is ReasonCode => (REASON_CODES as readonly string[]).includes(c);
 export const MAX_SENTENCE_WORDS = 20;
 const MAX_OUTPUT_TOKENS = 2000;
+
+/** ASSUMPTIONS.labelNeedsPriceAndYield: every non-fixed slot has an available price and a regional yield. */
+export function hasPriceAndYield(option: YearPlanOption): boolean {
+  return option.slots.filter((s) => !s.fixed).every((s) => s.price?.status === 'available' && s.yieldKgPerHa != null);
+}
 
 export interface SelectionCandidate { option: YearPlanOption; codes: ReasonCode[]; allowedLabels: PlanLabel[] }
 
@@ -46,12 +52,13 @@ export function selectionCandidates(shortlist: readonly YearPlanOption[]): Selec
     const slotCodes = new Set(suggested.flatMap((s) => s.reasonCodes));
     const codes = [...new Set(option.slots.flatMap((s) => s.reasonCodes))].filter(isCode);
     const allowed: PlanLabel[] = [];
+    const evidenced = hasPriceAndYield(option);
     if (option.score >= maxScore - 0.5) allowed.push('Best overall');
-    if (option.components.soilRotation > 0.5 && option.components.soilRotation >= maxSoil - 0.01) allowed.push('Soil enrichment');
-    if (suggested.length && !slotCodes.has('water_data_missing') && option.components.water >= maxWater - 0.01) allowed.push('Lowest water');
-    if (suggested.length && option.components.price > 0 && suggested.every((s) => s.price?.status === 'available') && option.components.price >= maxPrice - 0.01) allowed.push('Best price timing');
-    if (option.totalProfitPerHa && option.totalProfitPerHa.low > 0) allowed.push('Steady income');
-    if (suggested.length && option.components.confidence >= 0.8 && !RISK_CODES.some((c) => slotCodes.has(c))) allowed.push('Low risk');
+    if (evidenced && option.components.soilRotation > 0.5 && option.components.soilRotation >= maxSoil - 0.01) allowed.push('Soil enrichment');
+    if (evidenced && suggested.length && !slotCodes.has('water_data_missing') && option.components.water >= maxWater - 0.01) allowed.push('Lowest water');
+    if (evidenced && suggested.length && option.components.price > 0 && suggested.every((s) => s.price?.status === 'available') && option.components.price >= maxPrice - 0.01) allowed.push('Best price timing');
+    if (evidenced && option.totalProfitPerHa && option.totalProfitPerHa.low > 0) allowed.push('Steady income');
+    if (evidenced && suggested.length && option.components.confidence >= 0.8 && !RISK_CODES.some((c) => slotCodes.has(c))) allowed.push('Low risk');
     return { option, codes, allowedLabels: allowed };
   });
 }

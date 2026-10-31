@@ -1,6 +1,7 @@
-import type { BasisRef, FarmWorkspaceState, YearPlanScenario } from '@harvest/contracts';
+import type { BasisRef, FarmWorkspaceState, StageTimeline, YearPlanScenario } from '@harvest/contracts';
 import { agronomyCrop, agronomySources, durationFor, poolEntry, seasonOfMonth, windowsFor } from './data';
-import { addDays, addYears, isCalendarDate, monthOf, overlaps } from './dates';
+import { addDays, addYears, daysBetween, isCalendarDate, monthOf, overlaps } from './dates';
+import type { StageTimelineInput } from '../today/stage-timeline';
 import { placeWindows } from './windows';
 import { ASSUMPTIONS, assumptionBasis, irrigationClass } from './scoring';
 import type { EngineContext, FixedSlot, HarvestRange, OccupiedInterval } from './types';
@@ -11,6 +12,8 @@ export interface ScenarioFarm {
   areaHectares: number | null;
   facts?: Record<string, { value: unknown; basis?: string | null | undefined; confirmed?: boolean | undefined }> | undefined;
 }
+/** The Today view's stage timeline (`stageTimeline` in services/today/stage-timeline.ts); injected so tests stay synthetic. */
+export type TimelineFn = (input: StageTimelineInput) => StageTimeline;
 export interface BuildScenarioArgs {
   workspace: Pick<FarmWorkspaceState, 'previousHarvest' | 'cycles' | 'rotationPlans'>;
   farm: ScenarioFarm;
@@ -19,6 +22,12 @@ export interface BuildScenarioArgs {
   soilSummary?: string | null | undefined;
   neighbourhoodActiveMonths?: number[] | null | undefined;
   names?: EngineContext['names'];
+  /**
+   * Stage timeline source for the current cycle. When given and the cycle has no recorded harvest date, the fixed slot uses
+   * the timeline's harvest window (ASSUMPTIONS.timelineHarvestBufferDays). Omitted: the duration rule is used. The year-plan
+   * service always passes the real `stageTimeline`.
+   */
+  timeline?: TimelineFn | undefined;
 }
 
 function factValue(farm: ScenarioFarm, key: string): unknown {
@@ -27,7 +36,7 @@ function factValue(farm: ScenarioFarm, key: string): unknown {
   return f.basis === 'farmer_reported' || f.basis === 'lab_test' || f.confirmed ? f.value : undefined;
 }
 
-interface Occupancy { harvest: HarvestRange; to: string; basis: 'recorded' | 'sourced_duration' | 'assumed_duration'; durationDays: { low: number; high: number }; sources: string[]; notes: string[] }
+interface Occupancy { harvest: HarvestRange; to: string; basis: 'recorded' | 'sourced_duration' | 'assumed_duration'; durationDays: { low: number; high: number }; sources: string[]; notes: string[]; timelineBasis?: BasisRef | undefined }
 
 /**
  * Field occupancy of a cycle or saved season. Recorded harvest: until harvest + land preparation gap. Otherwise the
@@ -58,15 +67,44 @@ export function occupancyFor(cropId: string, productId: string | null, method: s
   };
 }
 
-function fixedSlotFor(cycle: FarmWorkspaceState['cycles'][number], stateId: string | null, districtId: string | null): FixedSlot {
+/**
+ * Occupancy from the crop's stage timeline (the harvest window the Today view shows): the field is held until the latest
+ * harvest date + ASSUMPTIONS.timelineHarvestBufferDays + the land preparation gap. Null when the timeline has no harvest window.
+ */
+export function timelineOccupancy(tl: StageTimeline, sowing: string): Occupancy | null {
+  if (!tl.harvest) return null;
+  const gap = ASSUMPTIONS.landPrepGapDays.value;
+  const buffer = ASSUMPTIONS.timelineHarvestBufferDays.value;
+  const { earliest, latest } = tl.harvest;
+  const to = addDays(latest, buffer + gap);
+  return {
+    harvest: { earliest, latest }, to, basis: tl.basis.sourceId ? 'sourced_duration' : 'assumed_duration',
+    durationDays: { low: Math.max(0, daysBetween(sowing, earliest)), high: Math.max(0, daysBetween(sowing, latest)) }, sources: [],
+    notes: [`Harvest date not recorded; estimated from the recorded sowing date and the crop's stage model (${earliest} to ${latest}). The field is held until ${buffer} days after the latest date plus a ${gap}-day land preparation gap.`],
+    timelineBasis: tl.basis,
+  };
+}
+
+function fixedSlotFor(cycle: FarmWorkspaceState['cycles'][number], stateId: string | null, districtId: string | null, timeline: TimelineFn | undefined, warnings: string[]): FixedSlot {
   const productId = cycle.productId ?? poolEntry(cycle.cropId)?.productIds[0] ?? agronomyCrop(cycle.cropId)?.productIds[0] ?? cycle.cropId;
   const method = cycle.establishmentMethod ?? null;
-  const occ = occupancyFor(cycle.cropId, productId, method, cycle.sowingDate, cycle.harvestDate ?? null, stateId);
+  let occ: Occupancy | null = null;
+  if (!cycle.harvestDate && timeline) {
+    // Same inputs as the Today view (services/today/view.ts), so the displayed harvest window is identical.
+    try {
+      occ = timelineOccupancy(timeline({ cropId: cycle.cropId, productId: cycle.productId ?? null, establishmentMethod: cycle.establishmentMethod ?? null, anchorDate: cycle.establishmentDate ?? cycle.sowingDate, stateId, districtId }), cycle.sowingDate);
+    } catch (e) {
+      warnings.push(`The stage timeline for ${cycle.cropId} could not be computed (${(e as Error).message.slice(0, 120)}); the longest sourced duration plus a precaution is used for the harvest date instead.`);
+    }
+  }
+  const timelineUsed = occ !== null;
+  occ ??= occupancyFor(cycle.cropId, productId, method, cycle.sowingDate, cycle.harvestDate ?? null, stateId);
   const scoped = windowsFor(cycle.cropId, { stateId, districtId }).filter((w) => w.usable);
   const hit = placeWindows(scoped, { from: addDays(cycle.sowingDate, -400), to: addDays(cycle.sowingDate, 400) }).find((p) => p.from <= cycle.sowingDate && cycle.sowingDate <= p.to) ?? null;
   const basis: BasisRef[] = [];
   for (const s of occ.sources.flatMap((x) => agronomySources(x)).slice(0, 3)) basis.push({ kind: 'duration', label: s.title ?? s.id, sourceId: s.id, url: s.url, scope: null, note: s.locator });
-  if (occ.basis !== 'recorded') basis.push(assumptionBasis(occ.basis === 'assumed_duration' ? 'unknownDurationDays' : 'unknownHarvestBufferDays'));
+  if (occ.timelineBasis) { basis.push(occ.timelineBasis); basis.push(assumptionBasis('timelineHarvestBufferDays')); }
+  else if (occ.basis !== 'recorded') basis.push(assumptionBasis(occ.basis === 'assumed_duration' ? 'unknownDurationDays' : 'unknownHarvestBufferDays'));
   basis.push(assumptionBasis('landPrepGapDays'));
   // The current crop is already in the ground: window fit 1 and no outside_window reason (ASSUMPTIONS.fixedSlotWindowFit).
   basis.push(assumptionBasis('fixedSlotWindowFit'));
@@ -74,7 +112,7 @@ function fixedSlotFor(cycle: FarmWorkspaceState['cycles'][number], stateId: stri
   return {
     key: `fixed:${cycle.id}`, cycleId: cycle.id, cropId: cycle.cropId, productId, method, season: hit?.season ?? seasonOfMonth(monthOf(cycle.sowingDate)), fixed: true,
     sowing: cycle.sowingDate, harvest: occ.harvest, occupancy: { from: cycle.sowingDate, to: occ.to }, durationDays: occ.durationDays,
-    durationSourced: occ.basis === 'sourced_duration', window: hit, windowFit, harvestBasis: occ.basis,
+    durationSourced: occ.basis === 'sourced_duration', window: hit, windowFit, harvestBasis: occ.basis, timelineEstimate: timelineUsed,
     flags: { stateWindowFallback: hit?.scope === 'state', provisionalWindow: !!hit?.provisional, outsideWindow: false, landPrepGapAssumed: true, conditional: false, durationOtherState: false, harvestAssumed: occ.basis !== 'recorded' },
     uncertainties: occ.notes, basis,
   };
@@ -103,7 +141,7 @@ export function buildScenario(args: BuildScenarioArgs): EngineContext {
   const current = [...active].filter((c) => c.sowingDate <= asOf).sort((a, b) => b.sowingDate.localeCompare(a.sowingDate) || a.id.localeCompare(b.id))[0] ?? null;
   const from = current ? current.sowingDate : asOf;
   const horizon = { from, to: addYears(from, 1) };
-  const fixedSlot = current ? fixedSlotFor(current, stateId, districtId) : null;
+  const fixedSlot = current ? fixedSlotFor(current, stateId, districtId, args.timeline, warnings) : null;
 
   const occupied: OccupiedInterval[] = [];
   for (const c of active) {

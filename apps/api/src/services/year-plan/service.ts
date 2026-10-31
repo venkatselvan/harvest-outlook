@@ -19,7 +19,8 @@ import { farmSoilMarkers, planningMeasuredPh } from '../soil-reports';
 import { neighbourhoodSeasonality } from '../today/ndvi';
 import * as data from './data';
 import { addDays, monthOf, overlaps } from './dates';
-import { buildScenario, occupancyFor } from './scenario';
+import { buildScenario, occupancyFor, type TimelineFn } from './scenario';
+import { stageTimeline } from '../today/stage-timeline';
 import { enumerateCandidates, shortHash, type CandidateSet } from './candidates';
 import { distinctOptions, editInputKeys, rescoreOption, runInputKeys, runYearPlanEngine, type ScoringNorm } from './assemble';
 import { emptyInputs, monthlyRainFromDaily, slotPriceKey, type Inputs, type PriceInputKey } from './inputs';
@@ -34,7 +35,7 @@ import { deterministicSelection, labelAdjustedNote, selectionCandidates, selectW
  * input_context.edits["<base>:edit"]; ApplyYearPlan carries no slots, so apply resolves a ":edit" optionId from that store.
  * Rescoring "<base>:edit" again replaces the stored edit of the same base option.
  */
-export const ENGINE_VERSION = 'year-plan-v2-2026-11-01';
+export const ENGINE_VERSION = 'year-plan-v3-2026-11-01';
 export const JOB_TYPE = 'farm.year-plan';
 export const EDIT_SUFFIX = ':edit';
 /**
@@ -53,6 +54,8 @@ export interface YearPlanDeps {
   fetchImpl?: typeof fetch | undefined;
   now?: (() => Date) | undefined;
   priceLookupCap?: number | undefined;
+  /** Stage timeline for the current crop's harvest window (default: the Today view's `stageTimeline`). */
+  timeline?: TimelineFn | undefined;
   sources?: {
     priceOutlook?: ((args: HarvestPriceOutlookArgs) => Promise<HarvestPriceOutlook>) | undefined;
     climatology?: ((scope: WeatherScope, range: { start: string; end: string }) => Promise<ClimatologyBundle | null>) | undefined;
@@ -93,7 +96,7 @@ function fileHash(rel: string): string {
 }
 
 /** Farm, workspace, confirmed soil, scenario and candidates; the hash covers every material input (spec: cache by context hash). */
-export async function yearPlanContext(deps: Pick<YearPlanDeps, 'pool' | 'config'>, ownerId: string, farmId: string, asOf: string): Promise<YearPlanContext> {
+export async function yearPlanContext(deps: Pick<YearPlanDeps, 'pool' | 'config'> & { timeline?: TimelineFn | undefined }, ownerId: string, farmId: string, asOf: string): Promise<YearPlanContext> {
   const farm = await getFarm(deps.pool, ownerId, farmId);
   if (!farm) throw notFound('Farm');
   const workspace = await getWorkspace(deps.pool, ownerId, farmId);
@@ -102,7 +105,7 @@ export async function yearPlanContext(deps: Pick<YearPlanDeps, 'pool' | 'config'
   const n = soil.samples.length;
   const soilSummary = !n ? 'No confirmed soil report for this field.' : soilPh !== undefined ? `Confirmed laboratory soil pH ${soilPh} (${n} confirmed sample${n > 1 ? 's' : ''}).` : `${n} confirmed soil sample${n > 1 ? 's' : ''}; no single compatible laboratory pH.`;
   const facts = Object.fromEntries(Object.entries(farm.facts).map(([k, f]) => [k, { value: f.value, basis: f.basis, confirmed: f.confirmed }]));
-  const ctx = buildScenario({ workspace, farm: { location: { stateCode: farm.location.stateCode, districtId: farm.location.districtId }, areaHectares: farm.areaHectares, facts }, asOf, soilSummary });
+  const ctx = buildScenario({ workspace, farm: { location: { stateCode: farm.location.stateCode, districtId: farm.location.districtId }, areaHectares: farm.areaHectares, facts }, asOf, soilSummary, timeline: deps.timeline ?? stageTimeline });
   const set = enumerateCandidates(ctx);
   const material = {
     v: ENGINE_VERSION,
@@ -398,9 +401,10 @@ export async function rescoreYearPlan(deps: YearPlanDeps, ownerId: string, farmI
 }
 
 const capitalise = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
-function occupiedNow(workspace: FarmWorkspace, stateId: string | null): { id: string; from: string; to: string; cropId: string }[] {
+function occupiedNow(workspace: FarmWorkspace, stateId: string | null, fixed: { cycleId: string; to: string } | null): { id: string; from: string; to: string; cropId: string }[] {
   const out: { id: string; from: string; to: string; cropId: string }[] = [];
-  for (const cy of workspace.cycles.filter((x) => x.stage !== 'harvested')) out.push({ id: cy.id, cropId: cy.cropId, from: cy.sowingDate, to: occupancyFor(cy.cropId, cy.productId ?? null, cy.establishmentMethod ?? null, cy.sowingDate, cy.harvestDate ?? null, stateId).to });
+  // The current crop keeps the release date the plan itself used (stage-timeline window when its harvest is not recorded).
+  for (const cy of workspace.cycles.filter((x) => x.stage !== 'harvested')) out.push({ id: cy.id, cropId: cy.cropId, from: cy.sowingDate, to: fixed && fixed.cycleId === cy.id ? fixed.to : occupancyFor(cy.cropId, cy.productId ?? null, cy.establishmentMethod ?? null, cy.sowingDate, cy.harvestDate ?? null, stateId).to });
   for (const p of workspace.rotationPlans) if (p.plannedSowingDate) out.push({ id: p.id, cropId: p.cropId, from: p.plannedSowingDate, to: occupancyFor(p.cropId, p.productId ?? null, null, p.plannedSowingDate, p.plannedHarvestDate ?? null, stateId).to });
   return out;
 }
@@ -425,7 +429,7 @@ export async function applyYearPlan(deps: YearPlanDeps, ownerId: string, farmId:
   if (c.hash !== row.context_hash) throw staleError();
   if (workspace.version !== body.expectedWorkspaceVersion) throw new ApiError(409, 'version_conflict', 'Saved seasons changed; reload before applying this plan', { currentVersion: workspace.version });
   const additions = slots.filter((s) => !workspace.rotationPlans.some((p) => p.id === key(s.slotId)));
-  const occupied = occupiedNow(workspace, c.ctx.stateId);
+  const occupied = occupiedNow(workspace, c.ctx.stateId, c.ctx.fixedSlot ? { cycleId: c.ctx.fixedSlot.cycleId, to: c.ctx.fixedSlot.occupancy.to } : null);
   for (const [i, s] of additions.entries()) {
     if (s.sowing < asOf) throw new ApiError(409, 'plan_window_passed', `${s.cropName}: the sowing date ${s.sowing} has passed`);
     const hit = occupied.find((o) => overlaps(s.occupancy.from, s.occupancy.to, o.from, o.to));

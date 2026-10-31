@@ -1,5 +1,9 @@
 import { afterAll, beforeEach, describe, expect, it } from 'vitest';
-import { YearPlanOption, YearPlanScenario, type HarvestPriceOutlook } from '@harvest/contracts';
+import { StageTimeline, YearPlanOption, YearPlanScenario, type HarvestPriceOutlook } from '@harvest/contracts';
+import { parseAgronomyPool, parseFocusedPool, stageTimeline } from '../src/services/today/stage-timeline';
+import { addDays } from '../src/services/year-plan/dates';
+import type { TimelineFn } from '../src/services/year-plan/scenario';
+import { deterministicSelection, gateSelection, hasPriceAndYield, selectionCandidates } from '../src/services/year-plan/select';
 import {
   ASSUMPTIONS, PRUNED_RULES, buildScenario, collectInputKeys, data, emptyInputs, enumerateCandidates, enumerateSequences, evaluateSlot, marginNormaliser,
   monthlyRainFromDaily, predecessorOf, priceKey, priceScore, rescoreOption, runInputKeys, runYearPlanEngine, scoreSequences, sequenceScore, shortlist,
@@ -243,6 +247,105 @@ describe('scenario', () => {
     expect(gg.reasonCodes).toContain('legume_after_heavy_feeder');
     expect(gg.transitionNote).toContain('After maize');
     expect(predecessorOf(ctx, [], gg.sowing)).toBe('maize');
+  });
+});
+
+describe('current crop without a recorded harvest: stage-timeline window (2026-11-01)', () => {
+  // SYNTHETIC maize with stage lengths and a 100-110 day duration; the harvest window is therefore sowing + 100 .. + 110 days.
+  const SOWN = '2026-09-20';
+  const maizeStages = [{ id: 'establishment', name: 'Establishment', startDay: 0, endDay: 30 }, { id: 'vegetative', name: 'Vegetative growth', startDay: 30, endDay: 70 }, { id: 'grain_filling', name: 'Grain filling', startDay: 70, endDay: 105 }];
+  const todayTimeline: TimelineFn = (input) => {
+    const fx = fixtures();
+    const maize = fx.agronomy.crops.find((c) => c.cropId === 'maize')!;
+    maize.stages = maizeStages;
+    maize.stagesBasis = { type: 'crop_specific', source: SRC };
+    return stageTimeline({ ...input, agronomy: parseAgronomyPool(fx.agronomy), focused: parseFocusedPool({}), snapshot: { stages: [] } });
+  };
+  const noWindow: TimelineFn = (i) => StageTimeline.parse({ cropId: i.cropId, productId: i.productId, establishmentMethod: i.establishmentMethod, anchorDate: i.anchorDate, stages: [], harvest: null, basis: { kind: 'duration', label: 'No sourced stage data', sourceId: null, url: null, scope: null, note: 'no sourced stage data' } });
+  const argsFor = (harvestDate?: string): BuildScenarioArgs => ({
+    workspace: { previousHarvest: { status: 'unknown' }, cycles: [{ id: 'cyc-maize', cropId: 'maize', sowingDate: SOWN, stage: 'growing', ...(harvestDate ? { harvestDate } : {}) }], rotationPlans: [] }, farm: farm(), asOf: ASOF,
+  });
+  const todayInput = { cropId: 'maize', productId: null, establishmentMethod: null, anchorDate: SOWN, stateId: 'IN-KA', districtId: H };
+
+  it('holds the field until the Today harvest window latest date + 7 days + the 10-day gap, and shows the same window', () => {
+    const calls: unknown[] = [];
+    const ctx = buildScenario({ ...argsFor(), timeline: (i) => { calls.push(i); return todayTimeline(i); } });
+    const tl = todayTimeline(todayInput);
+    expect(tl.harvest).toEqual({ earliest: '2026-12-29', latest: '2027-01-08' });
+    expect(calls).toEqual([todayInput]);
+    expect(ctx.fixedSlot!.harvest).toEqual(tl.harvest);
+    expect(ASSUMPTIONS.timelineHarvestBufferDays.value).toBe(7);
+    expect(ctx.fixedSlot!.occupancy).toEqual({ from: SOWN, to: addDays(tl.harvest!.latest, 7 + ASSUMPTIONS.landPrepGapDays.value) });
+    expect(ctx.fixedSlot!.occupancy.to).toBe('2027-01-25');
+    expect(ctx.fixedSlot!.durationDays).toEqual({ low: 100, high: 110 });
+    expect(ctx.fixedSlot).toMatchObject({ timelineEstimate: true, harvestBasis: 'sourced_duration', durationSourced: true });
+    expect(ctx.fixedSlot!.uncertainties.join(' ')).toContain("Harvest date not recorded; estimated from the recorded sowing date and the crop's stage model");
+    expect(ctx.fixedSlot!.basis.map((b) => b.sourceId)).toContain('year-plan-assumption:timelineHarvestBufferDays');
+    expect(ctx.earliestSowing).toBe('2027-01-25');
+    // The older rule (110 + 15 + 10 days) held the field until 2 February and so skipped the 1 February chilli sowing.
+    const old = buildScenario(argsFor());
+    expect(old.fixedSlot!.occupancy.to).toBe('2027-02-02');
+    expect(old.fixedSlot!.timelineEstimate).toBe(false);
+    const sowings = (c: EngineContext) => enumerateCandidates(c).candidates.filter((x) => x.cropId === 'chilli').map((x) => x.sowing);
+    expect(sowings(ctx)).toContain('2027-02-01');
+    expect(sowings(old)).not.toContain('2027-02-01');
+    const set = enumerateCandidates(ctx);
+    const run = runYearPlanEngine(ctx, inputsFor(ctx, set.candidates), { candidateSet: set });
+    expect(run.options.length).toBeGreaterThan(0);
+    for (const o of run.options) {
+      expect(o.slots[0]!.harvest).toEqual(tl.harvest);
+      expect(o.warnings.join(' ')).toContain("estimated from the recorded sowing date and the crop's stage model");
+    }
+  });
+
+  it('falls back to the duration rule when the timeline has no harvest window or cannot be computed, and ignores it when a harvest date is recorded', () => {
+    const none = buildScenario({ ...argsFor(), timeline: noWindow });
+    expect(none.fixedSlot).toMatchObject({ timelineEstimate: false, harvestBasis: 'sourced_duration', harvest: { earliest: '2026-12-29', latest: '2027-01-08' }, occupancy: { to: '2027-02-02' } });
+    expect(none.fixedSlot!.uncertainties.join(' ')).toContain('15 days');
+    // A stage model with a window but no named source is still used for the dates, but the duration is not counted as sourced.
+    const unsourced = buildScenario({ ...argsFor(), timeline: (i) => { const t = todayTimeline(i); return { ...t, basis: { ...t.basis, sourceId: null } }; } });
+    expect(unsourced.fixedSlot).toMatchObject({ timelineEstimate: true, harvestBasis: 'assumed_duration', durationSourced: false, occupancy: { to: '2027-01-25' } });
+    const broken = buildScenario({ ...argsFor(), timeline: () => { throw new Error('stage file unreadable'); } });
+    expect(broken.fixedSlot!.occupancy.to).toBe('2027-02-02');
+    expect(broken.warnings.join(' ')).toContain('could not be computed');
+    let called = 0;
+    const recorded = buildScenario({ ...argsFor('2026-12-20'), timeline: (i) => { called++; return todayTimeline(i); } });
+    expect(called).toBe(0);
+    expect(recorded.fixedSlot).toMatchObject({ harvestBasis: 'recorded', timelineEstimate: false, occupancy: { to: '2026-12-30' } });
+  });
+});
+
+describe('labels need price and yield on every suggested crop (2026-11-01)', () => {
+  const NEEDS_EVIDENCE = ['Soil enrichment', 'Lowest water', 'Best price timing', 'Steady income', 'Low risk'] as const;
+  const twin = (o: YearPlanOption, id: string, score: number): YearPlanOption => ({ ...structuredClone(o), optionId: id, score, totalProfitPerHa: { low: 1000, high: 2000 } });
+  const base = (): YearPlanOption => {
+    const ctx = buildScenario(freshArgs('maize'));
+    const set = enumerateCandidates(ctx);
+    return runYearPlanEngine(ctx, inputsFor(ctx, set.candidates), { candidateSet: set }).shortlist[0]!;
+  };
+  it.each([
+    ['price', (s: YearPlanOption['slots'][number]) => { s.price = null; }],
+    ['yield', (s: YearPlanOption['slots'][number]) => { s.yieldKgPerHa = null; }],
+  ])('a plan with a suggested crop that has no %s is never labelled Lowest water or Steady income; it is Alternative in the fallback and when Meta proposes the label', (_what, strip) => {
+    const b = base();
+    const a = twin(b, 'opt-a', 80), c = twin(b, 'opt-c', 79.9), bare = twin(b, 'opt-bare', 70);
+    strip(bare.slots.find((s) => !s.fixed)!);
+    expect([hasPriceAndYield(a), hasPriceAndYield(bare)]).toEqual([true, false]);
+    const cands = selectionCandidates([a, c, bare]);
+    // The evidenced twins of the same plan are allowed the labels, so only the evidence precondition excludes the bare plan.
+    expect(cands[0]!.allowedLabels).toEqual(expect.arrayContaining(['Lowest water', 'Steady income']));
+    for (const l of NEEDS_EVIDENCE) expect(cands[2]!.allowedLabels).not.toContain(l);
+    expect(cands[2]!.allowedLabels).not.toContain('Best overall');
+    const picked = deterministicSelection(cands);
+    expect(picked.map((o) => [o.optionId, o.label === 'Alternative'])).toContainEqual(['opt-bare', true]);
+    expect(picked.filter((o) => o.optionId !== 'opt-bare').every((o) => o.label !== 'Alternative')).toBe(true);
+    const plan = (i: number, label: string) => ({ candidateId: cands[i]!.option.optionId, label, reasonCodes: cands[i]!.codes.slice(0, 1), sentence: 'Fits the free months of this field.' });
+    expect(cands.every((x) => x.codes.length > 0)).toBe(true);
+    const gate = gateSelection({ plans: [plan(0, 'Best overall'), plan(1, 'Lowest water'), plan(2, 'Steady income')] }, cands);
+    expect(gate.ok).toBe(true);
+    if (!gate.ok) return;
+    expect(gate.labelAdjusted).toEqual([{ candidateId: 'opt-bare', proposed: 'Steady income', assigned: 'Alternative', reason: 'label_not_supported' }]);
+    expect(gate.options.map((o) => [o.optionId, o.label])).toEqual([['opt-a', 'Best overall'], ['opt-c', 'Lowest water'], ['opt-bare', 'Alternative']]);
   });
 });
 
