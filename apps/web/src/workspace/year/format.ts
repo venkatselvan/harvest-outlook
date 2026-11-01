@@ -181,3 +181,47 @@ export const formatPerKg = (value: number) =>
   `₹${value >= 100 ? grouped(value) : value.toFixed(1).replace(/\.0$/, "")}`;
 export const formatPerKgRange = (range: { low: number; high: number }) =>
   `${formatPerKg(range.low)} to ${formatPerKg(range.high)} per kg`;
+
+// ---------------------------------------------------------------------------------------------------------------------
+// Full rupee figures for profit headlines and estimate bands (round 2). The words form above ("₹52 thousand") hides
+// the size of a small field's profit and turns "-₹3 thousand to ₹84 thousand" into a puzzle, so these keep every digit,
+// rounded to the nearest ₹100, with Indian digit grouping (₹1,23,400).
+
+/** 123400 -> "1,23,400"; 4100 -> "4,100". Non-negative integers only. */
+function groupIndian(n: number): string {
+  const digits = String(n);
+  if (digits.length <= 3) return digits;
+  const head = digits.slice(0, -3).replace(/\B(?=(\d{2})+(?!\d))/g, ",");
+  return `${head},${digits.slice(-3)}`;
+}
+
+/** Nearest ₹100, rounding halves away from zero so a loss and a gain of the same size read alike. */
+export const roundToHundred = (value: number) => Math.sign(value) * Math.round(Math.abs(value) / 100) * 100;
+
+/** 123400 -> "₹1,23,400"; 4149 -> "₹4,100"; -3150 -> "−₹3,200"; a value that rounds to zero is "₹0". */
+export function formatInrFull(value: number): string {
+  if (!Number.isFinite(value)) return "not available";
+  const rounded = roundToHundred(value);
+  if (rounded === 0) return "₹0";
+  return `${rounded < 0 ? MINUS : ""}₹${groupIndian(Math.abs(rounded))}`;
+}
+
+/**
+ * A band in full rupees, ordered low to high: "₹4,100 to ₹9,800", "−₹3,100 to ₹84,000". A band whose two ends are the
+ * same number (a cost known exactly) is that one figure; ends that only round to the same ₹100 read "about ₹4,100".
+ */
+export function formatInrBand(range: { low: number; high: number }): string {
+  const lowest = Math.min(range.low, range.high);
+  const highest = Math.max(range.low, range.high);
+  if (lowest === highest) return formatInrFull(highest);
+  const low = formatInrFull(lowest);
+  const high = formatInrFull(highest);
+  return low === high ? `about ${high}` : `${low} to ${high}`;
+}
+
+/** Field area in hectares with at most two decimals and no trailing zeros: 0.16 -> "0.16", 1.2 -> "1.2", 2 -> "2". */
+export function formatAreaHa(ha: number): string {
+  if (!Number.isFinite(ha) || ha <= 0) return "0";
+  if (ha < 0.005) return "under 0.01";
+  return ha.toFixed(2).replace(/\.?0+$/, "");
+}

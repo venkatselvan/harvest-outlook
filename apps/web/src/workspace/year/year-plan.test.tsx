@@ -1,17 +1,24 @@
 import { describe, expect, it } from "vitest";
+import { renderToString } from "solid-js/web";
 import {
   ApplyYearPlanResult,
   PriceTrend,
   RescoreYearPlan,
   YearPlanOption,
   YearPlanReview,
+  YearPlanSlot,
 } from "@harvest/contracts";
 import pool from "../../../../../data/research/rotation/crop-pool.json";
 import {
   FIXTURE_FARM_ID,
+  FIXTURE_FIELD_AREA_HA,
   applyResult,
+  bestOverallV2,
   emptyReview,
+  fourOptionReview,
   freshReview,
+  greenManureFirst,
+  lowestWaterV2,
   maizeTrend,
   occupiedReview,
   pendingReview,
@@ -19,11 +26,27 @@ import {
   staleReview,
   unavailableReview,
 } from "./fixtures";
-import { columnOf, formatInr, formatInrRange, formatKgRange, monthColumns, stripPlacement } from "./format";
+import {
+  columnOf,
+  formatAreaHa,
+  formatInr,
+  formatInrBand,
+  formatInrFull,
+  formatInrRange,
+  formatKgRange,
+  monthColumns,
+  stripPlacement,
+} from "./format";
 import {
   POOL_CROPS,
+  CALENDAR_TEXT_MAX,
+  FALLBACK_GREEN_MANURE,
+  calendarWarnings,
   cropChoices,
   isLegume,
+  noteLines,
+  nitrogenCreditText,
+  profitText,
   mergeServerReview,
   modelUnavailable,
   needsGeneration,
@@ -33,12 +56,16 @@ import {
   draftFromOption,
 } from "./model";
 import { ensureYearPlan, generateYearPlan, pollYearPlan } from "./yearPlanApi";
+import { PlanCalendar, gapLabel, stripLabel, trackItems } from "./PlanCalendar";
+import { SlotDetail } from "./OptionSheet";
+import { BAND_EXPLANATION } from "./Estimates";
+import { SlotEditor } from "./SlotEditor";
 import { sparklineGeometry } from "../ui/Sparkline";
 import { summarizeTrend } from "../ui/PriceTrendChart";
 
 describe("year plan fixtures", () => {
   it("validate against the shared contracts", () => {
-    for (const review of [occupiedReview, freshReview, pendingReview, unavailableReview, staleReview, emptyReview])
+    for (const review of [occupiedReview, fourOptionReview, freshReview, pendingReview, unavailableReview, staleReview, emptyReview])
       expect(() => YearPlanReview.parse(review)).not.toThrow();
     expect(() => YearPlanOption.parse(rescoredBestOverall)).not.toThrow();
     expect(() => PriceTrend.parse(maizeTrend)).not.toThrow();
@@ -224,5 +251,369 @@ describe("shared chart geometry", () => {
     const s = summarizeTrend(maizeTrend);
     expect(s.monthsWithData).toBe(35);
     expect(s.latest?.month).toBe("2026-10");
+  });
+});
+
+// ---------------------------------------------------------------------------------------------------------------------
+// Round 2: full-rupee bands, the headline fallback order, gaps, green manure, a fourth row
+
+/** Text nodes of rendered markup (tags, comments and attributes removed), for "what is drawn on the surface" checks. */
+const textNodes = (html: string) =>
+  html
+    .replace(/<!--[^>]*-->/g, "")
+    .split(/<[^>]+>/)
+    .map((t) => t.replace(/&amp;/g, "&").replace(/&#39;/g, "'").replace(/&quot;/g, '"').replace(/\s+/g, " ").trim())
+    .filter(Boolean);
+
+const calendarHtml = (review: YearPlanReview, appliedOptionIds: string[] = []) =>
+  renderToString(() => (
+    <PlanCalendar
+      horizonFrom={review.scenario.horizon.from}
+      todayIso="2026-11-01"
+      options={review.options}
+      appliedOptionIds={appliedOptionIds}
+      onOpen={() => {}}
+    />
+  ));
+
+describe("full-rupee formatting for profit bands", () => {
+  it("uses Indian digit grouping and rounds to the nearest 100", () => {
+    expect(formatInrFull(123400)).toBe("₹1,23,400");
+    expect(formatInrFull(4149)).toBe("₹4,100");
+    expect(formatInrFull(4150)).toBe("₹4,200");
+    expect(formatInrFull(99950)).toBe("₹1,00,000");
+    expect(formatInrFull(12345678)).toBe("₹1,23,45,700");
+    expect(formatInrFull(950)).toBe("₹1,000");
+    expect(formatInrFull(0)).toBe("₹0");
+  });
+  it("keeps the sign on losses, rounds them symmetrically and never prints a negative zero", () => {
+    expect(formatInrFull(-3149)).toBe("−₹3,100");
+    expect(formatInrFull(-3150)).toBe("−₹3,200");
+    expect(formatInrFull(-1234567)).toBe("−₹12,34,600");
+    expect(formatInrFull(-30)).toBe("₹0");
+  });
+  it("writes a band low to high in full figures, never as thousands, and says 'about' when both ends round alike", () => {
+    expect(formatInrBand({ low: 4149, high: 9849 })).toBe("₹4,100 to ₹9,800");
+    const crossing = formatInrBand({ low: -3149, high: 84040 });
+    expect(crossing).toBe("−₹3,100 to ₹84,000");
+    expect(crossing).not.toMatch(/thousand|lakh|crore/);
+    expect(formatInrBand({ low: 9849, high: 4149 })).toBe("₹4,100 to ₹9,800");
+    expect(formatInrBand({ low: 4120, high: 4140 })).toBe("about ₹4,100");
+    expect(formatInrBand({ low: -5200, high: -5200 })).toBe("−₹5,200");
+    expect(formatInrBand({ low: 123400, high: 184000 })).toBe("₹1,23,400 to ₹1,84,000");
+  });
+  it("trims the field area to two decimals without trailing zeros", () => {
+    expect(formatAreaHa(0.16)).toBe("0.16");
+    expect(formatAreaHa(1.2)).toBe("1.2");
+    expect(formatAreaHa(2)).toBe("2");
+    expect(formatAreaHa(10)).toBe("10");
+    expect(formatAreaHa(0.1 + 0.2)).toBe("0.3");
+    expect(formatAreaHa(1.234)).toBe("1.23");
+    expect(formatAreaHa(0.001)).toBe("under 0.01");
+  });
+});
+
+describe("profit headline: field total, then per hectare, then the old range", () => {
+  const range = { low: 52_000, high: 142_000 };
+  const est = (low: number, high: number) => ({ central: (low + high) / 2, likely: { low, high }, possible: { low: low - 5000, high: high + 5000 } });
+  it("shows the field total's likely band with the area as the caption", () => {
+    const h = profitText({ totalProfitForField: est(4149, 9849), fieldAreaHa: 0.16, totalProfitEstimate: est(25000, 61000), totalProfitPerHa: range });
+    expect(h).toEqual({ value: "₹4,100 to ₹9,800", caption: "for your 0.16 ha", source: "field" });
+  });
+  it("falls back to the per-hectare estimate with the boundary hint when there is no field total", () => {
+    const base = { totalProfitEstimate: est(25_000, 61_000), totalProfitPerHa: range, fieldAreaHa: null };
+    for (const forField of [null, undefined]) {
+      expect(profitText({ ...base, totalProfitForField: forField })).toEqual({
+        value: "₹25,000 to ₹61,000",
+        caption: "per hectare · draw the boundary for your field total",
+        source: "per_ha",
+      });
+    }
+  });
+  it("falls back to the existing per-hectare range, then to 'not available'", () => {
+    expect(profitText({ totalProfitPerHa: range })).toEqual({ value: "₹52 thousand to ₹1.4 lakh", caption: "profit per ha", source: "range" });
+    expect(profitText({ totalProfitPerHa: null }).source).toBe("none");
+    expect(profitText({}).value).toBe("Profit not available");
+  });
+  it("matches the old three-option fixture exactly (no round-2 fields) and the new field headline", () => {
+    expect(occupiedReview.options.map((o) => profitText(o).value)).toEqual([
+      "₹52 thousand to ₹1.4 lakh",
+      "₹45 thousand to ₹1.3 lakh",
+      "₹26 to 80 thousand",
+    ]);
+    expect(occupiedReview.options.every((o) => profitText(o).source === "range")).toBe(true);
+    const h = profitText(bestOverallV2);
+    expect(h.source).toBe("field");
+    expect(h.caption).toBe(`for your ${formatAreaHa(FIXTURE_FIELD_AREA_HA)} ha`);
+    expect(h.value).toBe(formatInrBand(bestOverallV2.totalProfitForField!.likely));
+    expect(h.value).toMatch(/^₹[\d,]+ to ₹[\d,]+$/);
+  });
+});
+
+describe("round 2 fixtures keep the estimate contract", () => {
+  it("orders possible.low <= likely.low <= central <= likely.high <= possible.high everywhere and ties the field total to the area", () => {
+    for (const option of fourOptionReview.options) {
+      const estimates = [option.totalProfitEstimate, option.totalRevenueEstimate, ...option.slots.flatMap((s) => [s.profitEstimate, s.revenueEstimate])];
+      for (const e of estimates) {
+        if (!e) continue;
+        expect(e.possible.low).toBeLessThanOrEqual(e.likely.low);
+        expect(e.likely.low).toBeLessThanOrEqual(e.central);
+        expect(e.central).toBeLessThanOrEqual(e.likely.high);
+        expect(e.likely.high).toBeLessThanOrEqual(e.possible.high);
+      }
+      expect(option.fieldAreaHa).toBe(0.16);
+      expect(Math.abs(option.totalProfitForField!.central - option.totalProfitEstimate!.central * 0.16)).toBeLessThanOrEqual(100);
+    }
+  });
+  it("has four options, exactly one green manure slot, gaps with dated reasons, and a deterministic fourth", () => {
+    expect(fourOptionReview.options.map((o) => o.label)).toEqual(["Best overall", "Soil enrichment", "Lowest water", "Green manure first"]);
+    const manures = fourOptionReview.options.flatMap((o) => o.slots).filter((s) => s.kind === "green_manure");
+    expect(manures).toHaveLength(1);
+    expect(manures[0]).toMatchObject({ revenuePerHa: { low: 0, high: 0 }, nitrogenCreditKgPerHa: { low: 60, high: 80 }, price: null });
+    expect(greenManureFirst.origin).toBe("deterministic");
+    expect(bestOverallV2.gaps![0]!.reason).toMatch(/19 Apr and 19 May/);
+    expect(lowestWaterV2.gaps).toEqual([]);
+  });
+});
+
+describe("calendar surface", () => {
+  const html = calendarHtml(fourOptionReview);
+  it("draws a fourth row", () => {
+    expect(html.match(/class="yp-cal-row"/g)).toHaveLength(4);
+    expect(html).toContain("Green manure first");
+  });
+  it("shows the field profit headline and its caption on each row, not the per-hectare range", () => {
+    const nodes = textNodes(html);
+    for (const option of fourOptionReview.options) {
+      expect(nodes).toContain(formatInrBand(option.totalProfitForField!.likely));
+    }
+    expect(nodes.filter((t) => t === "for your 0.16 ha")).toHaveLength(4);
+    expect(nodes.join(" ")).not.toContain("profit per ha");
+  });
+  it("marks model options with the AI spark and deterministic options with a Calculated chip", () => {
+    expect(html.match(/aria-label="AI used: Choosing your three year plans"/g)).toHaveLength(3);
+    const nodes = textNodes(html);
+    expect(nodes.filter((t) => t === "Calculated")).toHaveLength(1);
+    const lastRow = html.slice(html.lastIndexOf('class="yp-cal-row"'));
+    expect(lastRow).toContain("Calculated");
+    expect(lastRow).not.toContain("AI used");
+  });
+  it("does not nest buttons: the head is a div with one stretched button and the spark is its sibling", () => {
+    const row = html.slice(html.indexOf('class="yp-cal-row"'), html.indexOf('class="yp-track"'));
+    expect(row).toContain('class="yp-row-head"');
+    expect(row.match(/<button/g)).toHaveLength(2); // the open button and the spark
+    expect(row).toContain("Best overall, score 78 out of 100, ");
+  });
+  it("draws a Field rests strip for each gap, with the reason in its accessible name but not on the surface", () => {
+    const gaps = fourOptionReview.options.flatMap((o) => o.gaps ?? []);
+    expect(gaps).toHaveLength(3);
+    expect(html.match(/class="yp-gap[ "]/g)).toHaveLength(3);
+    for (const gap of gaps) {
+      expect(html).toContain(`aria-label="${gapLabel(gap).replace(/'/g, "&#39;")}"`);
+      expect(textNodes(html).join(" ")).not.toContain(gap.reason);
+    }
+    expect(gapLabel(gaps[0]!)).toBe(
+      "Field rests 19 Apr to 19 May, 31 days. No sourced sowing window for a pool crop between 19 Apr and 19 May on this field; the next windows open 20 May (kharif).",
+    );
+    expect(textNodes(html).filter((t) => t === "Field rests").length).toBeGreaterThanOrEqual(3);
+  });
+  it("starts every strip's accessible name with the text drawn on it (WCAG 2.5.3), then adds the full dates", () => {
+    const slots = fourOptionReview.options.flatMap((o) => o.slots);
+    expect(stripLabel(slots.find((s) => s.slotId === "a-maize")!)).toBe(
+      "Maize, 1 Dec to 8 Apr. Sow 1 Dec 2026, harvest by 8 Apr 2027. Open details",
+    );
+    expect(stripLabel(slots.find((s) => s.fixed)!)).toBe("Paddy, growing now. Harvest 10 to 18 Nov 2026. Open details");
+    expect(stripLabel({ ...slots.find((s) => s.slotId === "a-maize")!, price: null })).toContain("harvest by 8 Apr 2027, no price series yet. Open details");
+    const manure = slots.find((s) => s.kind === "green_manure")!;
+    expect(stripLabel({ ...manure, nitrogenCreditKgPerHa: null })).toBe(
+      "Green manure, Cowpea, 8 Jan to 8 Mar. Sow 8 Jan 2027, ploughed in by 8 Mar 2027. Open details",
+    );
+    // Every drawn strip text is a prefix of its label once punctuation is dropped.
+    const html = calendarHtml(fourOptionReview);
+    const norm = (t: string) => t.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+    const strips = [...html.matchAll(/<button[^>]*class="yp-strip[^"]*"[^>]*aria-label="([^"]*)"[^>]*>(.*?)<\/button>/g)];
+    expect(strips).toHaveLength(fourOptionReview.options.reduce((n, o) => n + o.slots.length, 0));
+    for (const m of strips) {
+      const drawn = norm(textNodes(m[2]!).join(" "));
+      expect(drawn.length).toBeGreaterThan(0);
+      expect(norm(m[1]!.replace(/&#39;/g, "'")).startsWith(drawn)).toBe(true);
+    }
+  });
+  it("puts crops and gaps in calendar order so Tab follows the timeline", () => {
+    expect(trackItems(bestOverallV2).map((i) => (i.kind === "slot" ? i.slot.cropId : "gap"))).toEqual(["paddy", "maize", "gap", "green-gram"]);
+    expect(trackItems(lowestWaterV2).map((i) => i.kind)).toEqual(["slot", "slot"]);
+  });
+  it("draws the green manure strip with its label, the crop name and the nitrogen credit", () => {
+    const row = html.slice(html.lastIndexOf('class="yp-cal-row"'));
+    expect(row).toContain("is-green-manure");
+    const nodes = textNodes(row);
+    expect(nodes).toContain("Green manure · Cowpea");
+    expect(nodes).toContain("+N 60 to 80 kg/ha");
+    expect(row).toContain("Green manure, Cowpea, +N 60 to 80 kg/ha. Sow 8 Jan 2027, ploughed in by 8 Mar 2027. Open details");
+    // no harvest band on a crop that is ploughed in
+    expect(row.slice(row.indexOf("is-green-manure"), row.indexOf("is-green-manure") + 400)).not.toContain("yp-strip-harvest");
+    expect(html.match(/is-green-manure/g)).toHaveLength(2); // the strip and the legend swatch
+  });
+  it("lists Green manure and Field rests in the legend", () => {
+    const legend = textNodes(html.slice(html.indexOf('class="yp-legend"')));
+    expect(legend).toEqual(expect.arrayContaining(["Growing now", "Planned crop", "Legume", "Green manure", "Field rests", "Harvest window"]));
+  });
+  it("shows the growing crop's two short lines and never draws a sentence longer than 90 characters", () => {
+    const nodes = textNodes(html);
+    expect(nodes).toContain("Harvest expected 10 Nov to 18 Nov (estimated from the sowing date)");
+    expect(nodes).toContain("Next crop from 1 Dec");
+    expect(nodes).toContain("Next crop from 8 Jan");
+    // Soil enrichment still carries the old long warning; it is counted, not drawn.
+    expect(nodes).toContain("1 note in the details");
+    for (const node of nodes) expect(node.length).toBeLessThanOrEqual(CALENDAR_TEXT_MAX);
+  });
+  it("keeps the old three-option review rendering with the per-hectare range and no round-2 marks", () => {
+    const old = calendarHtml(occupiedReview);
+    expect(old.match(/class="yp-cal-row"/g)).toHaveLength(3);
+    expect(old).not.toMatch(/class="yp-gap[ "]/);
+    expect(textNodes(old).filter((t) => t === "profit per ha")).toHaveLength(3);
+    expect(textNodes(old)).toContain("₹52 thousand to ₹1.4 lakh");
+  });
+});
+
+describe("short lines and warnings for the calendar", () => {
+  it("splits the growing crop's note on a line break and drops anything over 90 characters", () => {
+    expect(noteLines("Harvest expected 13 Feb to 15 Mar (estimated from the sowing date)\nNext crop from 25 Mar")).toEqual([
+      "Harvest expected 13 Feb to 15 Mar (estimated from the sowing date)",
+      "Next crop from 25 Mar",
+    ]);
+    expect(noteLines(null)).toEqual([]);
+    expect(noteLines("x".repeat(91))).toEqual([]);
+    expect(noteLines("Harvest expected soon. Next crop from 25 Mar.")).toEqual(["Harvest expected soon", "Next crop from 25 Mar"]);
+    expect(noteLines("a\nb\nc")).toEqual(["a", "b"]);
+  });
+  it("counts warnings that do not fit instead of drawing them", () => {
+    const long = "w".repeat(CALENDAR_TEXT_MAX + 1);
+    expect(calendarWarnings(["Sunflower: outside the district sowing window", long, long])).toEqual({
+      short: ["Sunflower: outside the district sowing window"],
+      hidden: 2,
+    });
+  });
+  it("writes the nitrogen credit as a range, a single value, or nothing", () => {
+    expect(nitrogenCreditText({ low: 60, high: 80 })).toBe("+N 60 to 80 kg/ha");
+    expect(nitrogenCreditText({ low: 70, high: 70 })).toBe("+N 70 kg/ha");
+    expect(nitrogenCreditText(null)).toBeNull();
+  });
+});
+
+describe("editing with a green manure", () => {
+  const editorHtml = (review: YearPlanReview, optionIndex: number) =>
+    renderToString(() => (
+      <SlotEditor
+        option={review.options[optionIndex]!}
+        horizon={review.scenario.horizon}
+        choices={cropChoices(review, undefined)}
+        busy={false}
+        error=""
+        onCancel={() => {}}
+        onSubmit={() => {}}
+      />
+    ));
+  it("offers a Green manure group with the ids the review uses, and keeps them out of 'Other crops'", () => {
+    const choices = cropChoices(fourOptionReview, undefined);
+    expect(choices.filter((c) => c.role === "green_manure").map((c) => c.cropId)).toEqual(["gm-cowpea"]);
+    expect(choices.filter((c) => c.role === "other")).toEqual([]);
+    expect(choices.find((c) => c.cropId === "gm-cowpea")!.products).toEqual([{ productId: "gm-cowpea", name: "Cowpea (green manure)" }]);
+    const html = editorHtml(fourOptionReview, 0);
+    expect(html).toMatch(/<optgroup[^>]*label="Green manure"/);
+    expect(html).toContain("+ Add green manure");
+  });
+  it("falls back to dhaincha, sunn hemp and cowpea when the review has no green manure slot", () => {
+    const choices = cropChoices(occupiedReview, undefined).filter((c) => c.role === "green_manure");
+    expect(choices.map((c) => [c.cropId, c.name])).toEqual([
+      ["gm-cowpea", "Cowpea (green manure)"],
+      ["gm-dhaincha", "Dhaincha"],
+      ["gm-sunn-hemp", "Sunn hemp"],
+    ]);
+    expect(FALLBACK_GREEN_MANURE.map((g) => g.cropId).sort()).toEqual(choices.map((c) => c.cropId));
+    const html = editorHtml(occupiedReview, 0);
+    for (const name of ["Dhaincha", "Sunn hemp", "Cowpea (green manure)"]) expect(html).toContain(name);
+  });
+  it("sorts the green manure group after the feeders and before 'other'", () => {
+    const order = cropChoices(fourOptionReview, [{ cropId: "wheat", name: "Wheat", products: [] }]).map((c) => c.role);
+    const rank = ["nitrogen_fixer", "light_feeder", "moderate_feeder", "heavy_feeder", "green_manure", "other"];
+    expect(order.map((r) => rank.indexOf(r))).toEqual([...order.map((r) => rank.indexOf(r))].sort((a, b) => a - b));
+  });
+  it("submits a green manure with kind and productId equal to the crop id; ordinary rows send neither", () => {
+    const drafts = draftFromOption(greenManureFirst);
+    const gm = drafts.find((d) => d.cropId === "gm-cowpea")!;
+    expect(gm.kind).toBe("green_manure");
+    const swapped = drafts.map((d) => (d.cropId === "gm-cowpea" ? { ...d, cropId: "gm-dhaincha", productId: "gm-dhaincha", sowing: "2027-01-20" } : d));
+    const body = rescoreBody(fourOptionReview.reviewId!, greenManureFirst.optionId, swapped);
+    expect(() => RescoreYearPlan.parse(body)).not.toThrow();
+    const sent = body.slots.find((s) => s.cropId === "gm-dhaincha")!;
+    expect(sent).toMatchObject({ kind: "green_manure", productId: "gm-dhaincha", sowing: "2027-01-20" });
+    expect(sent.slotId).toBeUndefined(); // a changed crop is a new slot
+    const inserted = rescoreBody(fourOptionReview.reviewId!, "opt-best-overall", [
+      ...draftFromOption(bestOverallV2),
+      { key: "added-1", fixed: false, cropId: "gm-sunn-hemp", productId: "gm-sunn-hemp", kind: "green_manure", sowing: "2027-05-01" },
+    ]);
+    expect(() => RescoreYearPlan.parse(inserted)).not.toThrow();
+    expect(inserted.slots.filter((s) => s.kind === "green_manure").map((s) => [s.cropId, s.productId])).toEqual([["gm-sunn-hemp", "gm-sunn-hemp"]]);
+    expect(inserted.slots.filter((s) => s.kind !== "green_manure").every((s) => !("kind" in s))).toBe(true);
+  });
+});
+
+describe("detail sheet: profit as central, likely and possible", () => {
+  const detail = (slot: YearPlanSlot, areaHa: number | null | undefined = 0.16) =>
+    renderToString(() => <SlotDetail slot={slot} areaHa={areaHa} trend={undefined} />);
+  const maize = bestOverallV2.slots.find((s) => s.slotId === "a-maize")!;
+  it("keeps the yield, price, cost and profit rows with their basis lines", () => {
+    const html = detail(maize);
+    const dts = [...html.matchAll(/<dt[^>]*>([^<]*)<\/dt>/g)].map((m) => m[1]);
+    expect(dts).toContain("Yield");
+    expect(dts).toContain("Price at harvest");
+    expect(dts).toContain("Cost");
+    expect(dts).toContain("Profit");
+    const nodes = textNodes(html);
+    expect(nodes).toContain("₹21 to ₹25 per kg");
+    expect(nodes.some((t) => t.startsWith("Recent district yields"))).toBe(true);
+    expect(nodes.some((t) => t.startsWith("Paid-out cost plus family labour"))).toBe(true);
+  });
+  it("shows central, likely and possible per hectare and for the field, with the one-line key", () => {
+    const html = detail(maize);
+    const nodes = textNodes(html);
+    const e = maize.profitEstimate!;
+    const f = maize.profitForField!;
+    expect(nodes).toEqual(expect.arrayContaining(["Per hectare", "For your 0.16 ha", "Central", "Likely", "Possible"]));
+    expect(nodes.filter((t) => t === "Likely")).toHaveLength(2);
+    for (const value of [formatInrFull(e.central), formatInrBand(e.likely), formatInrBand(e.possible), formatInrFull(f.central), formatInrBand(f.likely), formatInrBand(f.possible)])
+      expect(nodes).toContain(value);
+    expect(BAND_EXPLANATION).toBe("Likely = middle half of the simulated outcomes; possible = 10th to 90th percentile");
+    expect(nodes).toContain(BAND_EXPLANATION);
+  });
+  it("shows only the per-hectare block when the field total is missing", () => {
+    const nodes = textNodes(detail({ ...maize, profitForField: null }, null));
+    expect(nodes).toContain("Per hectare");
+    expect(nodes.some((t) => t.startsWith("For your"))).toBe(false);
+  });
+  it("falls back to the per-hectare range for a slot without estimates", () => {
+    const old = occupiedReview.options[0]!.slots.find((s) => s.slotId === "a-maize")!;
+    const nodes = textNodes(detail(old, undefined));
+    expect(nodes).toContain(`${formatInrRange(old.profitPerHa!)} per ha`);
+    expect(nodes).not.toContain("Central");
+    expect(nodes).not.toContain(BAND_EXPLANATION);
+  });
+  it("describes a green manure without a yield or price row, and shows its loss as a negative value", () => {
+    const gm = greenManureFirst.slots.find((s) => s.kind === "green_manure")!;
+    const html = detail(gm);
+    const dts = [...html.matchAll(/<dt[^>]*>([^<]*)<\/dt>/g)].map((m) => m[1]);
+    expect(dts).toEqual(["Green manure", "Cost", "Profit"]);
+    const nodes = textNodes(html);
+    expect(nodes).toContain("+N 60 to 80 kg/ha for the next crop");
+    expect(nodes).toContain("−₹5,200");
+    expect(nodes.some((t) => t.includes("Not harvested or sold"))).toBe(true);
+  });
+  it("lists the long fixed-crop sentence among the uncertainties, not as the slot note", () => {
+    const paddy = bestOverallV2.slots[0]!;
+    const html = detail(paddy);
+    expect(html).toContain("harvest date not recorded");
+    expect(paddy.transitionNote).toContain("\n");
+    expect(paddy.transitionNote!.split("\n").every((l) => l.length <= CALENDAR_TEXT_MAX)).toBe(true);
   });
 });

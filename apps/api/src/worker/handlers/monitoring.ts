@@ -16,6 +16,7 @@ import {
   type GroundedReviewResult, type GroundedTransport,
 } from '../../services/today/alerts';
 import type { JobHandler } from '../main';
+import { refreshOutlookNote } from './outlook-note';
 
 /** Small current-price refresh. Only audited commodity mappings are eligible; no inferred products. */
 export async function refreshMarket(deps: MonitoringDeps, ownerId: string, farmId: string, candidateProducts?: string[]): Promise<string | null> {
@@ -98,6 +99,10 @@ export function createMonitorHandler(deps: MonitorHandlerDeps): JobHandler {
       } catch { climatology = 'check_failed'; }
     } else if (mode === 'live') climatology = 'no_point';
 
+    // (d) Harvest outlook note for the current cycle (ROUND2_SPEC.md 2.2): facts rebuilt from stored prices; the note job
+    // is queued only when they changed (same hourly rule as the Today view). Never throws; live only.
+    const outlookNote = await refreshOutlookNote({ config: deps.config, pool: deps.pool }, ownerId, farmId, snapshot.checkedAt);
+
     // (b) Grounded news review, at most once per farm per 24 h. A session is not required: this is farm-level
     // automatic monitoring authorised by the user on 2026-11-01 (on by default for every farm, one grounded review
     // per farm per day), so spend is attributed to the farm owner and bounded by the owner-day budget limit and the
@@ -130,6 +135,6 @@ export function createMonitorHandler(deps: MonitorHandlerDeps): JobHandler {
       }
     }
     if (record) await deps.pool.query('UPDATE farm_monitors SET meta_review=$2::jsonb WHERE farm_id=$1', [farmId, JSON.stringify(record)]);
-    return { status: 'checked', farmId, changed, checkedAt: snapshot.checkedAt, marketRefreshReason, metaStatus, alerts: alertSummary, climatology };
+    return { status: 'checked', farmId, changed, checkedAt: snapshot.checkedAt, marketRefreshReason, metaStatus, alerts: alertSummary, climatology, outlookNote };
   };
 }

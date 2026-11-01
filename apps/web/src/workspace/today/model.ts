@@ -3,6 +3,7 @@ import type {
   SceneRef,
   StageTimeline,
   TodayView,
+  UpcomingStep,
   WeatherPoint,
 } from "@harvest/contracts";
 
@@ -285,3 +286,45 @@ export function formatRain(value: number | null | undefined): string {
 }
 export const words = (value: string) =>
   value.replace(/_/g, " ").replace(/^\w/, (c) => c.toUpperCase());
+
+// ---------------------------------------------------------------- step windows and the next action (ROUND2_SPEC 2.1)
+
+/** Two dates joined by `joiner`, sharing the month ("3 to 9 Nov"), else full day-month ("28 Oct to 3 Nov"), years when crossing one. */
+function joinDays(from: string, to: string, joiner: string): string {
+  if (from === to) return formatDay(from, false);
+  const years = from.slice(0, 4) !== to.slice(0, 4);
+  if (!years && from.slice(0, 7) === to.slice(0, 7)) return `${Number(from.slice(8, 10))} ${joiner} ${formatDay(to, false)}`;
+  return `${formatDay(from, years)} ${joiner} ${formatDay(to, years)}`;
+}
+/** Step window for a list line: "3 to 9 Nov", "28 Oct to 3 Nov", "9 Nov". */
+export const windowLabel = (from: string, to: string) => joinDays(from, to, "to");
+
+const STEP_RANK: Record<UpcomingStep["status"], number> = { overdue: 0, due: 1, upcoming: 2, completed: 3 };
+const preferredTier = (step: UpcomingStep) => (step.kind === "care_task" || step.kind === "alert_step" ? 0 : 1);
+/**
+ * Client copy of the server's next-action rule, used only when the view has no `nextAction` (the degraded care-schedule
+ * list): care tasks and alert steps first, then overdue, due, upcoming, then the earlier start.
+ */
+export function pickNextStep(steps: readonly UpcomingStep[]): UpcomingStep | null {
+  return (
+    [...steps]
+      .filter((step) => step.status !== "completed")
+      .sort(
+        (a, b) =>
+          preferredTier(a) - preferredTier(b) ||
+          STEP_RANK[a.status] - STEP_RANK[b.status] ||
+          a.dueFrom.localeCompare(b.dueFrom) ||
+          a.dueTo.localeCompare(b.dueTo) ||
+          a.id.localeCompare(b.id),
+      )[0] ?? null
+  );
+}
+
+/** When-line of the next-action card: "Do between 3 and 9 Nov", "Do on 9 Nov", "Due today", "Overdue since 28 Oct", "Done". */
+export function nextActionWhen(step: UpcomingStep, today: string): string {
+  if (step.status === "completed") return "Done";
+  if (step.status === "overdue") return `Overdue since ${formatDay(step.dueTo, step.dueTo.slice(0, 4) !== today.slice(0, 4))}`;
+  if (step.status === "due" && step.dueTo === today) return "Due today";
+  if (step.dueFrom === step.dueTo) return `Do on ${formatDay(step.dueFrom, step.dueFrom.slice(0, 4) !== today.slice(0, 4))}`;
+  return `Do between ${joinDays(step.dueFrom, step.dueTo, "and")}`;
+}

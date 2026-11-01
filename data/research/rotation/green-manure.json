@@ -1,0 +1,108 @@
+{
+  "generatedAt": "2026-11-01",
+  "status": "builder research (packet R2-P1, Claude Opus 5.5), pending orchestrator review; every entry is provisional",
+  "scope": "Green manure crops for year-plan slots (ROUND2_SPEC.md 1.2 item 4): dhaincha, sunn hemp and cowpea grown and ploughed in. No product, no price, revenue 0.",
+  "methods": {
+    "retrieval": "Pages read 2026-11-01 with curl (TLS verified). WebFetch refused agritech.tnau.ac.in (certificate check), so the text was extracted locally from the fetched HTML; the TNAU seed price page was read the same way.",
+    "seasonLabel": "Year-round windows ('grown in all seasons') are split into the project's season bands by start month, as in crop-agronomy.json methods.seasonLabel: summer 02-01..04-30, kharif 05-01..08-31, rabi 09-01..01-31. The split is a labelling convention, not a source value.",
+    "irrigation": "TNAU gives dhaincha and sunn hemp as grown in all seasons with an irrigation interval (dhaincha once in 15-20 days, sunn hemp once in 30 days), so their year-round windows carry condition 'irrigated': not used on rainfed fields, conditional on supplemental or unrecorded irrigation (windows.ts irrigationCompat). No rainfed window for dhaincha or sunn hemp was found in a Karnataka or Tamil Nadu source.",
+    "nitrogen": "nitrogenAddedKgPerHa is the N accumulated in the green manure biomass at 60 days (TNAU organic farming table). The column header prints no unit; kg/ha is read from the per-hectare dry-matter column beside it. Incorporation at 45 days accumulates less N; the source does not quantify it, so the single 60-day figure is kept as min = max.",
+    "cost": "costPerHa = mid seed rate x TNAU certified seed sale price (w.e.f. 01.10.2023). Sowing and ploughing-in costs are not sourced (the TNAU cost-of-cultivation pages list costs by input category, not by operation), so the engine adds ASSUMPTIONS.greenManureFieldOpsCostPerHa, which is null: the cost is the seed only and is understated (flagged on the slot).",
+    "provisional": "Every entry is provisional: the figures come from state package-of-practice pages (TNAU) and a 2011 district contingency plan (CRIDA Hassan), not from a district green manure plan."
+  },
+  "sources": [
+    { "id": "TNAU-GM-AGRONOMY", "url": "https://agritech.tnau.ac.in/agriculture/agri_greenmanuring_agronomygreenmanures.html", "title": "Major Areas :: Green Manuring :: Agronomy of Green manure crops", "publisher": "TNAU Agritech Portal", "locator": "page updated 2013", "retrievedAt": "2026-11-01" },
+    { "id": "TNAU-ORG-GM", "url": "https://agritech.tnau.ac.in/org_farm/orgfarm_green%20manure.html", "title": "Organic Farming :: Green Manure", "publisher": "TNAU Agritech Portal", "locator": "table 'Biomass production and N accumulation of green manure crops'", "retrievedAt": "2026-11-01" },
+    { "id": "TNAU-SEED-GM-2023", "url": "https://agritech.tnau.ac.in/input_source/input_source_tnau_seed_new_green%20manures.html", "title": "Seeds - TNAU Sale: Green manures, Revised Procurement and Sale Price w.e.f. 01.10.2023", "publisher": "TNAU Agritech Portal", "locator": "Sale price (Rs.), Certified column", "retrievedAt": "2026-11-01" },
+    { "id": "TNAU-SEED-PULSES-2023", "url": "https://agritech.tnau.ac.in/input_source/input_source_tnau_seed_new_pulses%20.html", "title": "Seeds - TNAU Sale: Pulses crops, Revised Procurement and Sale Price w.e.f. 01.10.2023", "publisher": "TNAU Agritech Portal", "locator": "Sale price (Rs.), Certified column", "retrievedAt": "2026-11-01" },
+    { "id": "TNAU-RICE-ORGANIC", "url": "https://agritech.tnau.ac.in/agriculture/agri_Nutrient_mainfeild_%20Organic_biofertilizers_Rice.html", "title": "Nutrient Management :: Rice : Main Field, Application of Organic Manures", "publisher": "TNAU Agritech Portal", "locator": "page updated Jan 2023", "retrievedAt": "2026-11-01" },
+    { "id": "TNAU-COWPEA", "url": "https://agritech.tnau.ac.in/agriculture/pulses_cowpea.html", "title": "Crop Production :: Pulses :: Cowpea", "publisher": "TNAU Agritech Portal", "locator": "page updated 04.06.2013", "retrievedAt": "2026-11-01" },
+    { "id": "CRIDA-HAS", "url": "https://www.icar-crida.res.in/CP-2012/statewiseplans/Karnataka%20(Pdf)/GKVK,%20Bangalore/KA28-Hassan%20%2004.10.2011.pdf", "title": "Agriculture Contingency Plan for District: Hassan (2011-10-04)", "publisher": "ICAR-CRIDA / UAS Bangalore (GKVK)", "locator": "repo copy data/raw/crida/KA28-Hassan-2011-10-04.pdf", "retrievedAt": "2026-10-30" }
+  ],
+  "crops": [
+    {
+      "cropId": "gm-dhaincha",
+      "name": "Dhaincha",
+      "botanicalName": "Sesbania aculeata (syn. S. bispinosa)",
+      "family": "Fabaceae",
+      "provisional": true,
+      "daysToIncorporation": { "min": 45, "max": 60, "source": "TNAU-GM-AGRONOMY DHAINCHA, Harvest", "note": "'Incorporate the green matter within 45-60 DAS'." },
+      "nitrogenAddedKgPerHa": { "min": 133, "max": 133, "source": "TNAU-ORG-GM Biomass production and N accumulation table, Sesbania aculeata", "note": "Age 60 days, dry matter 23.2 t/ha (as printed; the magnitude reads like green matter), N accumulated 133 (unit not printed, kg/ha read). Single figure at 60 days." },
+      "seedRateKgPerHa": { "min": 50, "max": 50, "source": "TNAU-GM-AGRONOMY DHAINCHA, Seed rate", "note": "'Green manure: 50 kg/ha' (seed purpose 20 kg/ha). TNAU-RICE-ORGANIC also gives 50 kg seeds/ha for in-situ green manure before rice." },
+      "seedPriceInrPerKg": { "value": 52, "grade": "certified", "year": "w.e.f. 01.10.2023", "region": "IN-TN", "source": "TNAU-SEED-GM-2023 Daincha", "note": "Sale price Foundation 55, Certified 52, TFL 50 (Rs.; per kg as in the TNAU 2015 schedule for the same rows). A Tamil Nadu university outlet price, used for Karnataka too." },
+      "fieldOpsCostPerHa": null,
+      "waterNeedMm": null,
+      "waterNote": "Irrigation once in 15-20 days (TNAU-GM-AGRONOMY); no seasonal water need in mm is sourced.",
+      "rainfedSuitable": null,
+      "districtSupport": [
+        { "region": "IN-KA-hassan", "source": "CRIDA-HAS p26 Table 2.1.2 (irrigated situations)", "text": "Lowland Paddy-fallow ... Lime application 200 kg/acre and Green manuring Sunhemp, Diencha" }
+      ],
+      "windows": [
+        { "region": "IN-TN", "season": "summer", "from": "02-01", "to": "04-30", "condition": "irrigated", "reviewStatus": "provisional", "source": "TNAU-GM-AGRONOMY DHAINCHA, Season; Irrigation", "note": "'Grown in all seasons when sufficient moisture is available'; irrigation once in 15-20 days. Year-round window split by season band (methods.seasonLabel)." },
+        { "region": "IN-TN", "season": "kharif", "from": "05-01", "to": "08-31", "condition": "irrigated", "reviewStatus": "provisional", "source": "TNAU-GM-AGRONOMY DHAINCHA, Season; Irrigation", "note": "As above." },
+        { "region": "IN-TN", "season": "rabi", "from": "09-01", "to": "01-31", "condition": "irrigated", "reviewStatus": "provisional", "source": "TNAU-GM-AGRONOMY DHAINCHA, Season; Irrigation", "note": "As above." },
+        { "region": "IN-KA", "season": "summer", "from": "02-01", "to": "04-30", "condition": "irrigated", "reviewStatus": "provisional", "source": "TNAU-GM-AGRONOMY DHAINCHA, Season; Irrigation", "note": "TNAU (Tamil Nadu) general guidance applied to Karnataka; CRIDA-HAS p26 names dhaincha green manuring for Hassan lowland paddy-fallow. No Karnataka window was found." },
+        { "region": "IN-KA", "season": "kharif", "from": "05-01", "to": "08-31", "condition": "irrigated", "reviewStatus": "provisional", "source": "TNAU-GM-AGRONOMY DHAINCHA, Season; Irrigation", "note": "As above." },
+        { "region": "IN-KA", "season": "rabi", "from": "09-01", "to": "01-31", "condition": "irrigated", "reviewStatus": "provisional", "source": "TNAU-GM-AGRONOMY DHAINCHA, Season; Irrigation", "note": "As above." }
+      ]
+    },
+    {
+      "cropId": "gm-sunn-hemp",
+      "name": "Sunn hemp",
+      "botanicalName": "Crotalaria juncea",
+      "family": "Fabaceae",
+      "provisional": true,
+      "daysToIncorporation": { "min": 45, "max": 60, "source": "TNAU-GM-AGRONOMY SUNNHEMP, Harvest", "note": "'Incorporate the green mater within 45-60 DAS'." },
+      "nitrogenAddedKgPerHa": { "min": 134, "max": 134, "source": "TNAU-ORG-GM Biomass production and N accumulation table, Sunnhemp", "note": "Age 60 days, dry matter 30.6 t/ha (as printed), N accumulated 134 (unit not printed, kg/ha read). Single figure at 60 days." },
+      "seedRateKgPerHa": { "min": 25, "max": 35, "source": "TNAU-GM-AGRONOMY SUNNHEMP, Seed rate", "note": "'25-35 kg/ha for green manure' (seed purpose 20 kg/ha)." },
+      "seedPriceInrPerKg": { "value": 77, "grade": "certified", "year": "w.e.f. 01.10.2023", "region": "IN-TN", "source": "TNAU-SEED-GM-2023 Sunnhemp", "note": "Sale price Foundation 80, Certified 77, TFL 75 (Rs. per kg)." },
+      "fieldOpsCostPerHa": null,
+      "waterNeedMm": null,
+      "waterNote": "Irrigation once in 30 days; does not withstand heavy irrigation or continuous waterlogging (TNAU-GM-AGRONOMY). No seasonal water need in mm is sourced.",
+      "rainfedSuitable": null,
+      "districtSupport": [
+        { "region": "IN-KA-hassan", "source": "CRIDA-HAS p26 Table 2.1.2 (irrigated situations)", "text": "Lowland Paddy-fallow ... Lime application 200 kg/acre and Green manuring Sunhemp, Diencha" }
+      ],
+      "windows": [
+        { "region": "IN-TN", "season": "summer", "from": "02-01", "to": "04-30", "condition": "irrigated", "reviewStatus": "provisional", "source": "TNAU-GM-AGRONOMY SUNNHEMP, Season; Irrigation", "note": "'Grown in all seasons'; irrigation once in 30 days. Year-round window split by season band (methods.seasonLabel)." },
+        { "region": "IN-TN", "season": "kharif", "from": "05-01", "to": "08-31", "condition": "irrigated", "reviewStatus": "provisional", "source": "TNAU-GM-AGRONOMY SUNNHEMP, Season; Irrigation", "note": "As above." },
+        { "region": "IN-TN", "season": "rabi", "from": "09-01", "to": "01-31", "condition": "irrigated", "reviewStatus": "provisional", "source": "TNAU-GM-AGRONOMY SUNNHEMP, Season; Irrigation", "note": "As above." },
+        { "region": "IN-KA", "season": "summer", "from": "02-01", "to": "04-30", "condition": "irrigated", "reviewStatus": "provisional", "source": "TNAU-GM-AGRONOMY SUNNHEMP, Season; Irrigation", "note": "TNAU (Tamil Nadu) general guidance applied to Karnataka; CRIDA-HAS p26 names sunhemp green manuring for Hassan lowland paddy-fallow. No Karnataka window was found." },
+        { "region": "IN-KA", "season": "kharif", "from": "05-01", "to": "08-31", "condition": "irrigated", "reviewStatus": "provisional", "source": "TNAU-GM-AGRONOMY SUNNHEMP, Season; Irrigation", "note": "As above." },
+        { "region": "IN-KA", "season": "rabi", "from": "09-01", "to": "01-31", "condition": "irrigated", "reviewStatus": "provisional", "source": "TNAU-GM-AGRONOMY SUNNHEMP, Season; Irrigation", "note": "As above." }
+      ]
+    },
+    {
+      "cropId": "gm-cowpea",
+      "name": "Cowpea",
+      "botanicalName": "Vigna unguiculata",
+      "family": "Fabaceae",
+      "provisional": true,
+      "daysToIncorporation": { "min": 60, "max": 60, "source": "TNAU-ORG-GM Biomass production and N accumulation table, Cow pea", "note": "The table gives the N figure at age 60 days; no cowpea-specific incorporation day was found. TNAU-COWPEA gives 50% flowering at 35-45 days for the current varieties." },
+      "nitrogenAddedKgPerHa": { "min": 74, "max": 74, "source": "TNAU-ORG-GM Biomass production and N accumulation table, Cow pea", "note": "Age 60 days, dry matter 23.2 t/ha (as printed), N accumulated 74 (unit not printed, kg/ha read)." },
+      "seedRateKgPerHa": { "min": 25, "max": 25, "source": "TNAU-COWPEA Seed rate, pure crop", "note": "Grain-crop pure-stand seed rate (25 kg/ha; mixed crop 12.5). No green-manure seed rate for cowpea was found; green manure stands are often sown denser, so the seed cost may be understated." },
+      "seedPriceInrPerKg": { "value": 97, "grade": "certified", "year": "w.e.f. 01.10.2023", "region": "IN-TN", "source": "TNAU-SEED-PULSES-2023 Cowpea", "note": "Sale price Foundation 103, Certified 97, TFL 95 (Rs. per kg)." },
+      "fieldOpsCostPerHa": null,
+      "waterNeedMm": null,
+      "waterNote": "No seasonal water need in mm for cowpea grown as green manure is sourced.",
+      "rainfedSuitable": true,
+      "districtSupport": [
+        { "region": "IN-KA-hassan", "source": "CRIDA-HAS pp22-25 Table 2.1.1 mid-season drought, Zone-4", "text": "Horsegram/ greengram/ Cowpea ... Incorporate biomass into soil. Go for the 2nd crop with Ragi" }
+      ],
+      "windows": [
+        { "region": "IN-KA-hassan", "season": "kharif", "from": "05-15", "to": "05-21", "condition": "rainfed", "reviewStatus": "provisional", "evidenceType": "contingency_plan", "source": "CRIDA-HAS p11 Table 2.1.1 rainfed, delay by 2 weeks, Zone-4", "note": "'May 3rd week' (2-week monsoon delay, Zone-4 deep red soils): 'Horsegram/ greengram/ Cowpea' (same evidence and week-to-date rule as the green-gram row in crop-agronomy.json). pp22-25 advise incorporating that pulse biomass before a second crop of ragi. A 2011 contingency recommendation, not a normal green manure window." },
+        { "region": "IN-TN", "season": "kharif", "from": "06-01", "to": "08-31", "condition": "any", "reviewStatus": "provisional", "source": "TNAU-COWPEA Season and varieties, Adipattam", "note": "Adipattam (June-August), all districts except Kanyakumari and Nilgiris. Grain-crop sowing season used for cowpea grown as green manure." },
+        { "region": "IN-TN-coimbatore", "season": "rabi", "from": "09-01", "to": "11-30", "condition": "any", "reviewStatus": "provisional", "source": "TNAU-COWPEA Season and varieties, Purattasipattam", "note": "Purattasipattam (September-November); Coimbatore named. Grain-crop season used for green manure." },
+        { "region": "IN-TN-coimbatore", "season": "rabi", "from": "12-01", "to": "02-28", "condition": "any", "reviewStatus": "provisional", "source": "TNAU-COWPEA Season and varieties, Margazhi - Thaipattam", "note": "Margazhi-Thaipattam (December-February); Coimbatore named. Grain-crop season used for green manure." }
+      ]
+    }
+  ],
+  "rejectedSources": [
+    { "what": "TNAU seed sale prices w.e.f. 01.04.2015 (Daincha, Sunhemp 60 Rs/kg)", "why": "Superseded by the 01.10.2023 prices." },
+    { "what": "AP State Seeds Development Corporation green manure page", "why": "No nitrogen figure or price; Andhra Pradesh." },
+    { "what": "AP G.O. 2016 seed prices (apagrisnet.gov.in)", "why": "Certificate verification failed; not read, not used." },
+    { "what": "Assam agriculture department green manure table", "why": "HTTP 404; not read, not used." },
+    { "what": "Tamil Nadu CMMKMKS 2026-27 'Rs.70 per kg or 50% of the actual cost'", "why": "A subsidy cap, not a seed price." },
+    { "what": "TNAU cost of cultivation 2020-21 (rice, green gram)", "why": "Costs by input category (labour, machine, seed), not by operation; no sowing or incorporation cost per hectare." }
+  ]
+}

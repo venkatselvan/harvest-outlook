@@ -4,6 +4,8 @@
  *     the real provider. Nothing is applied to it; the review row stays as the product cache, its queued job is removed.
  * (2) A temporary Tamil Nadu (Coimbatore) owner and farm with a paddy cycle sown 2026-09-01 (occupied scenario), deleted
  *     afterwards. Records sanitized results only (no key, no owner data beyond ids of the temporary rows).
+ * Round 2 (engine year-plan-v4-2026-11-01): prints the plan labels (up to four, the fourth 'Green manure first' added by
+ * code), the field profit likely band (per ha when the area is unknown) and the idle gaps with their reasons.
  * Run: pnpm --filter @harvest/api exec tsx ../../scripts/smoke/year-plan-smoke.ts
  */
 import '../../apps/api/src/env';
@@ -24,7 +26,7 @@ if (config.RUNTIME_MODE !== 'live') throw new Error('smoke_requires_live_mode');
 const key = config.MODEL_API_KEY;
 if (!key) { console.log('MODEL_API_KEY not set; skipping year-plan smoke'); process.exit(0); }
 const pool = createPool(config.DATABASE_URL);
-const OUT = resolve(import.meta.dirname, '../../evals/results/live-smoke/year-plan-2026-11-01.json');
+const OUT = resolve(import.meta.dirname, '../../evals/results/live-smoke/year-plan-v4-2026-11-01.json');
 const deps: YearPlanDeps = {pool, config, budget: Budget.fromConfig(pool, config)};
 
 async function runOne(label: string, ownerId: string, sessionId: string, farmId: string) {
@@ -43,8 +45,9 @@ async function runOne(label: string, ownerId: string, sessionId: string, farmId:
     modelInvocation: review.modelInvocation && {requestedModel: review.modelInvocation.requestedModel, model: review.modelInvocation.model, status: review.modelInvocation.status, responseDeleted: review.modelInvocation.responseDeleted},
     options: review.options.map((o) => ({
       optionId: o.optionId, label: o.label, origin: o.origin, score: o.score, components: o.components, idleMonths: o.idleMonths,
-      reasons: o.reasons, totalProfitPerHa: o.totalProfitPerHa, warnings: o.warnings.slice(0, 4),
-      slots: o.slots.map((s) => ({crop: s.cropName, product: s.productId, fixed: s.fixed, sowing: s.sowing, harvest: s.harvest, score: s.score, components: s.components, yieldKgPerHa: s.yieldKgPerHa, yieldBasis: s.yieldBasis, price: s.price && {status: s.price.status, range: s.price.range, scope: `${s.price.scope.level}: ${[s.price.scope.districtName, s.price.scope.stateName].filter(Boolean).join(', ')}`, reason: s.price.reason}, profitPerHa: s.profitPerHa, reasonCodes: s.reasonCodes})),
+      reasons: o.reasons, totalProfitPerHa: o.totalProfitPerHa, totalProfitEstimate: o.totalProfitEstimate ?? null, totalProfitForField: o.totalProfitForField ?? null, fieldAreaHa: o.fieldAreaHa ?? null,
+      gaps: o.gaps ?? [], warnings: o.warnings.slice(0, 4),
+      slots: o.slots.map((s) => ({crop: s.cropName, product: s.productId, kind: s.kind ?? 'crop', fixed: s.fixed, sowing: s.sowing, transitionNote: s.transitionNote, nitrogenCreditKgPerHa: s.nitrogenCreditKgPerHa ?? null, profitEstimate: s.profitEstimate ?? null, cost: s.cost?.a2flPerHa ?? null, harvest: s.harvest, score: s.score, components: s.components, yieldKgPerHa: s.yieldKgPerHa, yieldBasis: s.yieldBasis, price: s.price && {status: s.price.status, range: s.price.range, scope: `${s.price.scope.level}: ${[s.price.scope.districtName, s.price.scope.stateName].filter(Boolean).join(', ')}`, reason: s.price.reason}, profitPerHa: s.profitPerHa, reasonCodes: s.reasonCodes})),
     })),
     limitations: review.limitations,
   };
@@ -84,7 +87,9 @@ try {
   report.completedAt = new Date().toISOString();
   await mkdir(resolve(OUT, '..'), {recursive: true});
   await writeFile(OUT, `${JSON.stringify(report, null, 2).split(key).join('[redacted]')}\n`);
-  const brief = (r: any) => r && {status: r.status, ms: r.ms, meta: r.meta, invocation: r.modelInvocation, priceKeys: r.priceKeys, climatology: r.climatology, options: r.options.map((o: any) => ({label: o.label, origin: o.origin, score: o.score, components: o.components, seq: o.slots.map((x: any) => `${x.crop}${x.fixed ? '(growing)' : ''} ${x.sowing}`).join(' > '), price: o.slots.map((x: any) => x.price?.status === 'available' ? x.price.scope : x.price?.reason ?? 'none').join(' | '), reasons: o.reasons.map((x: any) => x.text)}))};
+  const brief = (r: any) => r && {status: r.status, ms: r.ms, meta: r.meta, invocation: r.modelInvocation, priceKeys: r.priceKeys, climatology: r.climatology, options: r.options.map((o: any) => ({label: o.label, origin: o.origin, score: o.score, components: o.components, seq: o.slots.map((x: any) => `${x.crop}${x.fixed ? '(growing)' : ''}${x.kind === 'green_manure' ? '(green manure)' : ''} ${x.sowing}`).join(' > '),
+    profitLikely: o.totalProfitForField ? `Rs ${o.totalProfitForField.likely.low} to ${o.totalProfitForField.likely.high} for ${o.fieldAreaHa} ha` : o.totalProfitEstimate ? `Rs ${o.totalProfitEstimate.likely.low} to ${o.totalProfitEstimate.likely.high} per ha` : 'not computable',
+    gaps: o.gaps.map((g: any) => `${g.from}..${g.to} (${g.days} d): ${g.reason}`), fixedNote: o.slots.find((x: any) => x.fixed)?.transitionNote ?? null, price: o.slots.map((x: any) => x.price?.status === 'available' ? x.price.scope : x.price?.reason ?? 'none').join(' | '), reasons: o.reasons.map((x: any) => x.text)}))};
   console.log(JSON.stringify({failed: report.failed ?? false, reason: report.reason, hassan: brief(report.hassan), coimbatore: brief(report.coimbatore), totalCostUsdEstimate: report.totalCostUsdEstimate, cleanup: report.cleanup}, null, 2));
   await app.close();
   await pool.end();

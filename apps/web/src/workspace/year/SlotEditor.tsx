@@ -2,8 +2,8 @@ import { For, Show, createSignal } from "solid-js";
 import type { YearPlanOption } from "@harvest/contracts";
 import { Chip } from "../ui/Chip";
 import { longSpan } from "./format";
-import { ROLE_LABEL, ROLE_ORDER, isLegume } from "../cropPool";
-import { draftFromOption, type CropChoice, type DraftSlot } from "./model";
+import { isLegume } from "../cropPool";
+import { GROUP_LABEL, GROUP_ORDER, draftFromOption, type CropChoice, type DraftSlot } from "./model";
 
 const MAX_SLOTS = 6;
 
@@ -19,7 +19,8 @@ function nextSowing(drafts: readonly DraftSlot[], horizon: { from: string; to: s
 /**
  * Inline editor for one option, shown inside the detail sheet. The crop already growing stays fixed. Each other crop
  * can be swapped (pool crops only, grouped by rotation role, legumes badged), moved to another sowing date, or removed.
- * Submitting asks the server to re-score by code; no model call is involved.
+ * A green manure can be inserted from the "Green manure" group (it is sent as kind 'green_manure' with productId equal
+ * to the crop id). Submitting asks the server to re-score by code; no model call is involved.
  */
 export function SlotEditor(props: {
   option: YearPlanOption;
@@ -36,7 +37,14 @@ export function SlotEditor(props: {
     setDrafts((list) => list.map((d) => (d.key === key ? { ...d, ...patch } : d)));
   const choice = (cropId: string) => props.choices.find((c) => c.cropId === cropId);
   const groups = () =>
-    ROLE_ORDER.map((role) => ({ role, crops: props.choices.filter((c) => c.role === role) })).filter((g) => g.crops.length);
+    GROUP_ORDER.map((role) => ({ role, crops: props.choices.filter((c) => c.role === role) })).filter((g) => g.crops.length);
+  const manures = () => props.choices.filter((c) => c.role === "green_manure");
+  /** Switch a row to another crop; a green manure also sets kind and uses its crop id as the product. */
+  const pick = (key: string, cropId: string) => {
+    const next = choice(cropId);
+    if (next?.role === "green_manure") update(key, { cropId, productId: cropId, kind: "green_manure" });
+    else update(key, { cropId, productId: next?.products[0]?.productId ?? "", kind: "crop" });
+  };
 
   return (
     <form
@@ -71,17 +79,14 @@ export function SlotEditor(props: {
                     <span>Crop</span>
                     <select
                       value={draft.cropId}
-                      onChange={(event) => {
-                        const next = choice(event.currentTarget.value);
-                        update(draft.key, { cropId: event.currentTarget.value, productId: next?.products[0]?.productId ?? "" });
-                      }}
+                      onChange={(event) => pick(draft.key, event.currentTarget.value)}
                     >
                       <Show when={!draft.cropId}>
                         <option value="">Choose a crop</option>
                       </Show>
                       <For each={groups()}>
                         {(group) => (
-                          <optgroup label={ROLE_LABEL[group.role]}>
+                          <optgroup label={GROUP_LABEL[group.role]}>
                             <For each={group.crops}>
                               {(crop) => (
                                 <option value={crop.cropId}>
@@ -120,6 +125,9 @@ export function SlotEditor(props: {
                   <Show when={isLegume(draft.cropId)}>
                     <Chip tone="legume">Legume, adds nitrogen</Chip>
                   </Show>
+                  <Show when={draft.kind === "green_manure"}>
+                    <Chip tone="legume">Green manure, ploughed in</Chip>
+                  </Show>
                   <button
                     type="button"
                     class="yp-link-button is-danger"
@@ -135,18 +143,44 @@ export function SlotEditor(props: {
         }}
       </For>
       <Show when={drafts().length < MAX_SLOTS}>
-        <button
-          type="button"
-          class="yp-link-button"
-          onClick={() =>
-            setDrafts((list) => [
-              ...list,
-              { key: `added-${++added}`, fixed: false, cropId: "", productId: "", sowing: nextSowing(list, props.horizon) },
-            ])
-          }
-        >
-          + Add a crop
-        </button>
+        <div class="yp-edit-add">
+          <button
+            type="button"
+            class="yp-link-button"
+            onClick={() =>
+              setDrafts((list) => [
+                ...list,
+                { key: `added-${++added}`, fixed: false, cropId: "", productId: "", sowing: nextSowing(list, props.horizon) },
+              ])
+            }
+          >
+            + Add a crop
+          </button>
+          <Show when={manures().length}>
+            <button
+              type="button"
+              class="yp-link-button"
+              onClick={() =>
+                setDrafts((list) => {
+                  const first = manures()[0]!;
+                  return [
+                    ...list,
+                    {
+                      key: `added-${++added}`,
+                      fixed: false,
+                      cropId: first.cropId,
+                      productId: first.cropId,
+                      kind: "green_manure",
+                      sowing: nextSowing(list, props.horizon),
+                    },
+                  ];
+                })
+              }
+            >
+              + Add green manure
+            </button>
+          </Show>
+        </div>
       </Show>
       <Show when={props.error}>
         <p class="yp-inline-error" role="alert">

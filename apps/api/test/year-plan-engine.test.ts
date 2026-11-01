@@ -3,7 +3,7 @@ import { StageTimeline, YearPlanOption, YearPlanScenario, type HarvestPriceOutlo
 import { parseAgronomyPool, parseFocusedPool, stageTimeline } from '../src/services/today/stage-timeline';
 import { addDays } from '../src/services/year-plan/dates';
 import type { TimelineFn } from '../src/services/year-plan/scenario';
-import { deterministicSelection, gateSelection, hasPriceAndYield, selectionCandidates } from '../src/services/year-plan/select';
+import { appendGreenManureOption, deterministicSelection, gateSelection, greenManureEvidenced, hasPriceAndYield, selectionCandidates, startsWithGreenManure } from '../src/services/year-plan/select';
 import {
   ASSUMPTIONS, PRUNED_RULES, buildScenario, collectInputKeys, data, emptyInputs, enumerateCandidates, enumerateSequences, evaluateSlot, marginNormaliser,
   monthlyRainFromDaily, predecessorOf, priceKey, priceScore, rescoreOption, runInputKeys, runYearPlanEngine, scoreSequences, sequenceScore, shortlist,
@@ -267,21 +267,21 @@ describe('current crop without a recorded harvest: stage-timeline window (2026-1
   });
   const todayInput = { cropId: 'maize', productId: null, establishmentMethod: null, anchorDate: SOWN, stateId: 'IN-KA', districtId: H };
 
-  it('holds the field until the Today harvest window latest date + 7 days + the 10-day gap, and shows the same window', () => {
+  it('holds the field until the Today harvest window latest date + the 10-day gap (buffer 0 since round 2), and shows the same window', () => {
     const calls: unknown[] = [];
     const ctx = buildScenario({ ...argsFor(), timeline: (i) => { calls.push(i); return todayTimeline(i); } });
     const tl = todayTimeline(todayInput);
     expect(tl.harvest).toEqual({ earliest: '2026-12-29', latest: '2027-01-08' });
     expect(calls).toEqual([todayInput]);
     expect(ctx.fixedSlot!.harvest).toEqual(tl.harvest);
-    expect(ASSUMPTIONS.timelineHarvestBufferDays.value).toBe(7);
-    expect(ctx.fixedSlot!.occupancy).toEqual({ from: SOWN, to: addDays(tl.harvest!.latest, 7 + ASSUMPTIONS.landPrepGapDays.value) });
-    expect(ctx.fixedSlot!.occupancy.to).toBe('2027-01-25');
+    expect(ASSUMPTIONS.timelineHarvestBufferDays.value).toBe(0);
+    expect(ctx.fixedSlot!.occupancy).toEqual({ from: SOWN, to: addDays(tl.harvest!.latest, ASSUMPTIONS.landPrepGapDays.value) });
+    expect(ctx.fixedSlot!.occupancy.to).toBe('2027-01-18');
     expect(ctx.fixedSlot!.durationDays).toEqual({ low: 100, high: 110 });
     expect(ctx.fixedSlot).toMatchObject({ timelineEstimate: true, harvestBasis: 'sourced_duration', durationSourced: true });
     expect(ctx.fixedSlot!.uncertainties.join(' ')).toContain("Harvest date not recorded; estimated from the recorded sowing date and the crop's stage model");
     expect(ctx.fixedSlot!.basis.map((b) => b.sourceId)).toContain('year-plan-assumption:timelineHarvestBufferDays');
-    expect(ctx.earliestSowing).toBe('2027-01-25');
+    expect(ctx.earliestSowing).toBe('2027-01-18');
     // The older rule (110 + 15 + 10 days) held the field until 2 February and so skipped the 1 February chilli sowing.
     const old = buildScenario(argsFor());
     expect(old.fixedSlot!.occupancy.to).toBe('2027-02-02');
@@ -294,7 +294,10 @@ describe('current crop without a recorded harvest: stage-timeline window (2026-1
     expect(run.options.length).toBeGreaterThan(0);
     for (const o of run.options) {
       expect(o.slots[0]!.harvest).toEqual(tl.harvest);
-      expect(o.warnings.join(' ')).toContain("estimated from the recorded sowing date and the crop's stage model");
+      // Round 2: two short lines on the strip; the long sentence moved from the warnings to the slot's uncertainties (the sheet).
+      expect(o.slots[0]!.transitionNote).toBe('Harvest expected 29 Dec to 8 Jan (estimated from the sowing date)\nNext crop from 18 Jan');
+      expect(o.slots[0]!.uncertainties[0]).toContain("estimated from the recorded sowing date and the crop's stage model");
+      expect(o.warnings.join(' ')).not.toContain("estimated from the recorded sowing date and the crop's stage model");
     }
   });
 
@@ -304,7 +307,7 @@ describe('current crop without a recorded harvest: stage-timeline window (2026-1
     expect(none.fixedSlot!.uncertainties.join(' ')).toContain('15 days');
     // A stage model with a window but no named source is still used for the dates, but the duration is not counted as sourced.
     const unsourced = buildScenario({ ...argsFor(), timeline: (i) => { const t = todayTimeline(i); return { ...t, basis: { ...t.basis, sourceId: null } }; } });
-    expect(unsourced.fixedSlot).toMatchObject({ timelineEstimate: true, harvestBasis: 'assumed_duration', durationSourced: false, occupancy: { to: '2027-01-25' } });
+    expect(unsourced.fixedSlot).toMatchObject({ timelineEstimate: true, harvestBasis: 'assumed_duration', durationSourced: false, occupancy: { to: '2027-01-18' } });
     const broken = buildScenario({ ...argsFor(), timeline: () => { throw new Error('stage file unreadable'); } });
     expect(broken.fixedSlot!.occupancy.to).toBe('2027-02-02');
     expect(broken.warnings.join(' ')).toContain('could not be computed');
@@ -321,7 +324,8 @@ describe('labels need price and yield on every suggested crop (2026-11-01)', () 
   const base = (): YearPlanOption => {
     const ctx = buildScenario(freshArgs('maize'));
     const set = enumerateCandidates(ctx);
-    return runYearPlanEngine(ctx, inputsFor(ctx, set.candidates), { candidateSet: set }).shortlist[0]!;
+    // The first shortlisted plan whose suggested crops all have price and yield (the round-2 idle penalty reorders the shortlist).
+    return runYearPlanEngine(ctx, inputsFor(ctx, set.candidates), { candidateSet: set }).shortlist.find(hasPriceAndYield)!;
   };
   it.each([
     ['price', (s: YearPlanOption['slots'][number]) => { s.price = null; }],
@@ -356,17 +360,20 @@ describe('rotation scoring and pruning', () => {
     const cereal = soilRotationScore(data.rotationFacts('maize'), data.rotationFacts('sorghum'), credit, undefined);
     expect([legume.rule, legume.value]).toEqual(['legume_after_heavy_feeder', 1]);
     expect([cereal.rule, cereal.value]).toEqual(['same_family', 0]);
-    // Same sowing date, same duration, yields, cost, water and prices: only family, role and N credit differ.
+    // Same sowing date, same duration, yields, cost, water and prices: only family, role and N credit differ. A potato slot
+    // (heavy feeder) comes first so the plans keep enough of the year in use to score above zero under the round-2 idle penalty.
     const ctx = buildScenario(freshArgs('maize'));
     const set = enumerateCandidates(ctx);
+    const po = find(set.candidates, 'potato', '2026-11-01');
     const gn = find(set.candidates, 'groundnut', '2027-06-01');
     const so = find(set.candidates, 'sorghum', '2027-06-01');
-    const [a, b] = scoreSequences(ctx, [{ sequenceId: 'legume', slots: [gn] }, { sequenceId: 'cereal', slots: [so] }], inputsFor(ctx, [gn, so]));
-    const byCrop = Object.fromEntries([a!, b!].map((o) => [o.slots[0]!.cropId, o]));
+    const [a, b] = scoreSequences(ctx, [{ sequenceId: 'legume', slots: [po, gn] }, { sequenceId: 'cereal', slots: [po, so] }], inputsFor(ctx, [po, gn, so]));
+    const byCrop = Object.fromEntries([a!, b!].map((o) => [o.slots[1]!.cropId, o]));
     expect(byCrop.groundnut!.components.soilRotation).toBeGreaterThan(byCrop.sorghum!.components.soilRotation);
     for (const k of ['price', 'yield', 'water', 'confidence'] as const) expect(byCrop.groundnut!.components[k]).toBe(byCrop.sorghum!.components[k]);
+    expect(byCrop.sorghum!.score).toBeGreaterThan(0);
     expect(byCrop.groundnut!.score).toBeGreaterThan(byCrop.sorghum!.score);
-    expect(byCrop.groundnut!.slots[0]!.reasonCodes).toContain('legume_after_heavy_feeder');
+    expect(byCrop.groundnut!.slots[1]!.reasonCodes).toContain('legume_after_heavy_feeder');
   });
 
   it('prunes avoidAfter and same-family transitions, including from the previous crop', () => {
@@ -478,13 +485,18 @@ describe('slot scoring', () => {
 });
 
 describe('sequence score, reproducibility and shortlist', () => {
-  it('sequenceScore matches the hand-computed formula', () => {
-    // base = 120/365 x 0.6 + 100/365 x 0.5 = 0.3342466; idle 145 d = 4.7638604 months -> penalty 0.02 x 2.7638604 = 0.0552772;
-    // value = 0.3342466 + 0.15 x 0.75 - 0.0552772 = 0.3914694 -> 39.15.
-    const r = sequenceScore({ slots: [{ weightDays: 120, slotScore: 0.6 }, { weightDays: 100, slotScore: 0.5 }], horizonDays: 365, rotationFit: 0.75, idleDays: 145 });
-    expect(r.value).toBeCloseTo(0.39146936795, 10);
-    expect(r.score).toBe(39.15);
-    expect(r.idlePenalty).toBeCloseTo(0.05527720739, 10);
+  it('sequenceScore matches the hand-computed formula (round 2 idle penalty, trailing idle at half weight)', () => {
+    // base = 120/365 x 0.6 + 100/365 x 0.5 = 0.3342466; idle 145 d = 4.7638604 months -> penalty 0.04 x (4.7638604 - 0.5) = 0.1705544;
+    // value = 0.3342466 + 0.15 x 0.75 - 0.1705544 = 0.2761922 -> 27.62 (Python check).
+    const terms = { slots: [{ weightDays: 120, slotScore: 0.6 }, { weightDays: 100, slotScore: 0.5 }], horizonDays: 365, rotationFit: 0.75, idleDays: 145 };
+    const r = sequenceScore(terms);
+    expect(r.value).toBeCloseTo(0.27619216056, 10);
+    expect(r.score).toBe(27.62);
+    expect(r.idlePenalty).toBeCloseTo(0.17055441478, 10);
+    // 45 of the 145 idle days after the last slot count half: weighted (145 - 22.5) / 30.4375 months -> 30.58.
+    const t = sequenceScore({ ...terms, trailingIdleDays: 45 });
+    expect(t.score).toBe(30.58);
+    expect(t.idleMonths).toBe(r.idleMonths);
   });
 
   it('small case: every component reproduces the hand computation, and identical inputs give identical output', () => {
@@ -504,10 +516,20 @@ describe('sequence score, reproducibility and shortlist', () => {
     // slot = 0.4 x 0.8875 + 0.3 x 0.536420 + 0.1 x 0.877778 + 0.05 x 1 = 0.653704; + 0.15 x 1 -> 80.37
     expect(slot.score).toBe(80.37);
     expect(slot.confidence).toBe('high');
-    // revenue = 1050 x 50 .. 1150 x 70 = 52500 .. 80500; profit minus A2+FL 30000.
-    expect([slot.revenuePerHa, slot.profitPerHa]).toEqual([{ low: 52500, high: 80500 }, { low: 22500, high: 50500 }]);
-    // sequence = 110/365 x 0.653704 + 0.15 x 1 - 0.02 x (255/30.4375 - 2) = 0.219450 -> 21.95
-    expect([opt!.score, opt!.idleMonths]).toEqual([21.95, 8.38]);
+    // Round 2: revenue is simulated (lognormal yield x price); closed form median 66000 x exp(0.2583791 x z), p25 55444, p75 78565,
+    // p10 47396, p90 91907 (Python); the likely band is p25..p75 and profit subtracts A2+FL 30000. Field area 1.2 ha.
+    const near = (got: number, want: number) => expect(Math.abs(got - want)).toBeLessThanOrEqual(200);
+    near(slot.revenuePerHa!.low, 55444); near(slot.revenuePerHa!.high, 78565);
+    near(slot.profitPerHa!.low, 25444); near(slot.profitPerHa!.high, 48565);
+    expect(slot.profitEstimate!.likely).toEqual(slot.profitPerHa);
+    near(slot.profitEstimate!.central, 36000); near(slot.profitEstimate!.possible.low, 17396); near(slot.profitEstimate!.possible.high, 61907);
+    near(slot.profitForField!.central, 36000 * 1.2);
+    expect(opt!.fieldAreaHa).toBe(1.2);
+    expect(opt!.totalProfitEstimate).toEqual(slot.profitEstimate);
+    // sequence = 110/365 x 0.653704 + 0.15 x 1 - 0.04 x ((212 + 43 / 2) / 30.4375 - 0.5) = 0.060148 -> 6.01 (212 idle days before the
+    // slot, 43 after it at half weight); idleMonths stays the unweighted 255 / 30.4375 = 8.38.
+    expect([opt!.score, opt!.idleMonths]).toEqual([6.01, 8.38]);
+    expect(opt!.gaps).toEqual([{ from: ASOF, to: '2027-06-01', days: 212, reason: 'Chilli could be sown from 1 Nov but scored lower than this plan; edit the plan to add it.' }]);
     expect(slot.reasonCodes).toEqual(expect.arrayContaining(['legume_after_heavy_feeder', 'price_timing_strong', 'margin_rate_high', 'district_window', 'water_fit_good']));
     expect(slot.basis.length).toBeGreaterThan(3);
     expect(slot.basis.every((b) => b.kind && b.label)).toBe(true);
@@ -626,5 +648,183 @@ describe('real research files (read-only)', () => {
       for (const s of o.slots.slice(1)) expect(s.sowing >= ctx.fixedSlot!.occupancy.to).toBe(true);
     }
     expect(set.skipped.find((s) => s.cropId === 'ginger')?.reason).toContain('user decision');
+  });
+});
+
+describe('round 2: idle penalty, gaps with reasons, estimates on options (2026-11-01)', () => {
+  it('a six-week gap lowers the score; filling it with a neutral slot outranks the same plan with the gap', () => {
+    const base = { slots: [{ weightDays: 200, slotScore: 0.6 }], horizonDays: 365, rotationFit: 0.7 };
+    const noGap = sequenceScore({ ...base, idleDays: 15 });
+    const gap = sequenceScore({ ...base, idleDays: 15 + 42 });
+    expect(noGap.idlePenalty).toBe(0); // 15 days is under the free half month
+    expect(gap.idlePenalty).toBeCloseTo(0.04 * (57 / 30.4375 - 0.5), 12);
+    expect(gap.value).toBeLessThan(noGap.value);
+    const filled = sequenceScore({ ...base, slots: [...base.slots, { weightDays: 42, slotScore: 0.5 }], idleDays: 15 });
+    expect(filled.value).toBeGreaterThan(gap.value);
+  });
+
+  const occupiedArgs = (): BuildScenarioArgs => ({
+    workspace: { previousHarvest: { status: 'unknown' }, cycles: [{ id: 'cyc-maize', cropId: 'maize', sowingDate: '2026-10-25', stage: 'growing', harvestDate: '2027-02-19' }], rotationPlans: [] }, farm: farm(), asOf: ASOF,
+  });
+  it('a gap without any sourced window names its dates and the next window; irrigated-only windows on a rainfed field say so', () => {
+    const ctx = buildScenario(occupiedArgs());
+    expect(ctx.fixedSlot!.occupancy.to).toBe('2027-03-01');
+    const gg = find(enumerateCandidates(ctx).candidates, 'green-gram', '2027-04-20');
+    const [opt] = scoreSequences(ctx, [{ sequenceId: 'g', slots: [gg] }], inputsFor(ctx, [gg]));
+    YearPlanOption.parse(opt);
+    expect(opt!.gaps).toEqual([{ from: '2027-03-01', to: '2027-04-20', days: 50, reason: 'No sourced sowing window for a pool crop between 1 Mar and 19 Apr on this field; the next windows open 20 Apr (summer).' }]);
+    expect(opt!.slots[0]!.transitionNote).toBe('Harvest expected 19 Feb (recorded)\nNext crop from 1 Mar');
+    const fx = fixtures();
+    fx.agronomy.crops.find((c) => c.cropId === 'potato')!.sowingWindows = [RABI_NOV, win(H, 'summer', '03-01', '03-31', { condition: 'irrigated' })];
+    data.invalidate(fx);
+    const ctx2 = buildScenario(occupiedArgs());
+    const gg2 = find(enumerateCandidates(ctx2).candidates, 'green-gram', '2027-04-20');
+    const [opt2] = scoreSequences(ctx2, [{ sequenceId: 'g', slots: [gg2] }], inputsFor(ctx2, [gg2]));
+    expect(opt2!.gaps![0]!.reason).toBe('Summer sowing here needs irrigation; the field is recorded as rainfed.');
+  });
+
+  it('every option with a gap of 21 days or more lists it; estimates are ordered, field = per ha x area, kind crop, reproducible', () => {
+    const ctx = buildScenario(freshArgs('maize'));
+    const set = enumerateCandidates(ctx);
+    const run = () => runYearPlanEngine(ctx, inputsFor(ctx, set.candidates), { candidateSet: set });
+    const r = run();
+    const ordered = (e: { central: number; likely: { low: number; high: number }; possible: { low: number; high: number } }) => e.possible.low <= e.likely.low && e.likely.low <= e.central && e.central <= e.likely.high && e.likely.high <= e.possible.high;
+    let withTotals = 0;
+    for (const o of [...r.options, ...r.shortlist]) {
+      YearPlanOption.parse(o);
+      expect(o.fieldAreaHa).toBe(1.2);
+      for (const s of o.slots) expect(s.kind).toBe('crop');
+      // Gaps before each slot, recomputed independently from the slot dates.
+      let prev = ctx.earliestSowing;
+      const want = o.slots.filter((s) => !s.fixed).flatMap((s) => { const d = Math.round((Date.parse(s.occupancy.from) - Date.parse(prev)) / 864e5); const g = d >= 21 ? [{ from: prev, to: s.occupancy.from, days: d }] : []; prev = s.occupancy.to; return g; });
+      expect(o.gaps!.map(({ from, to, days }) => ({ from, to, days }))).toEqual(want);
+      for (const g of o.gaps!) expect(g.reason).toMatch(/\d{1,2} (Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)/);
+      if (!o.totalProfitEstimate) continue;
+      withTotals++;
+      expect(ordered(o.totalProfitEstimate)).toBe(true);
+      expect(o.totalProfitPerHa).toEqual(o.totalProfitEstimate.likely);
+      const f = o.totalProfitForField!;
+      for (const [a, b] of [[f.central, o.totalProfitEstimate.central], [f.likely.low, o.totalProfitEstimate.likely.low], [f.possible.high, o.totalProfitEstimate.possible.high]] as const) expect(Math.abs(a - b * 1.2)).toBeLessThanOrEqual(50 * 2.2);
+      for (const s of o.slots) if (s.profitEstimate) { expect(ordered(s.profitEstimate)).toBe(true); expect(s.profitPerHa).toEqual(s.profitEstimate.likely); }
+    }
+    expect(withTotals).toBeGreaterThan(0);
+    expect(JSON.stringify(run().options)).toBe(JSON.stringify(r.options));
+  });
+});
+
+describe('round 2: green manure slots and the fourth plan (2026-11-01)', () => {
+  // SYNTHETIC green manure fixture (not research values): 35-40 days to incorporation, 100-130 kg N/ha, seed 40-60 kg/ha at Rs 50/kg.
+  const GM = {
+    sources: [{ id: 'SYN-GM', url: 'https://example.org/synthetic-green-manure', title: 'Synthetic green manure fixture' }],
+    crops: [{
+      cropId: 'gm-dhaincha', name: 'Dhaincha', family: 'Fabaceae', provisional: true,
+      daysToIncorporation: { min: 35, max: 40, source: 'SYN-GM days' }, nitrogenAddedKgPerHa: { min: 100, max: 130, source: 'SYN-GM nitrogen' },
+      seedRateKgPerHa: { min: 40, max: 60, source: 'SYN-GM seed rate' }, seedPriceInrPerKg: { value: 50, grade: 'certified', year: '2023', region: 'IN-KA', source: 'SYN-GM price' },
+      fieldOpsCostPerHa: null, waterNeedMm: null, rainfedSuitable: true,
+      windows: [win(H, 'summer', '02-01', '04-30', { condition: 'irrigated', reviewStatus: 'provisional' }), win(H, 'kharif', '05-01', '05-31', { condition: 'rainfed', reviewStatus: 'provisional' })],
+    }],
+  };
+  const withGm = () => { const fx = fixtures() as Fx & { greenManure?: unknown }; (fx.pool as { greenManure?: unknown }).greenManure = [{ cropId: 'gm-dhaincha', why: 'synthetic' }]; fx.greenManure = structuredClone(GM); return fx; };
+  beforeEach(() => data.invalidate(withGm()));
+
+  it('candidates: kind green_manure, provisional fit, irrigated windows skipped on a rainfed field, no price lookup; never the last slot', () => {
+    const ctx = buildScenario(freshArgs(null));
+    const set = enumerateCandidates(ctx);
+    const gm = set.candidates.filter((c) => c.kind === 'green_manure');
+    expect(gm.map((c) => c.sowing)).toEqual(['2027-05-01', '2027-05-08', '2027-05-15', '2027-05-22', '2027-05-29']);
+    expect(gm.every((c) => c.windowFit === 0.5 && c.productId === 'gm-dhaincha' && c.durationDays.low === 35)).toBe(true);
+    expect(runInputKeys(ctx, set).some((k) => k.productId.startsWith('gm-'))).toBe(false);
+    const seqs = enumerateSequences(ctx, set.candidates);
+    for (const s of seqs) {
+      expect(s.slots.at(-1)!.kind).not.toBe('green_manure');
+      s.slots.forEach((x, i) => { if (x.kind === 'green_manure') expect(Math.round((Date.parse(s.slots[i + 1]!.sowing) - Date.parse(x.occupancy.to)) / 864e5)).toBeLessThanOrEqual(ASSUMPTIONS.greenManureMaxLeadDays.value); });
+    }
+    expect(seqs.some((s) => s.slots[0]!.kind === 'green_manure')).toBe(true);
+  });
+
+  it('a green manure slot has revenue 0 and a flagged seed-only cost, gives the next slot the bonus, and the filled plan outranks the plan with the gap', () => {
+    const ctx = buildScenario(freshArgs(null));
+    const set = enumerateCandidates(ctx);
+    // Same sorghum slots in both plans (November and June); the filled plan puts a green manure in the dry-season gap.
+    const first = find(set.candidates, 'sorghum', '2026-11-01');
+    const gm = find(set.candidates, 'gm-dhaincha', '2027-05-01');
+    const so = find(set.candidates, 'sorghum', '2027-06-22');
+    const inputs = inputsFor(ctx, [first, so]);
+    const opts = scoreSequences(ctx, [{ sequenceId: 'gm', slots: [first, gm, so] }, { sequenceId: 'plain', slots: [first, so] }], inputs);
+    const filled = opts.find((o) => o.slots.length === 3)!, plain = opts.find((o) => o.slots.length === 2)!;
+    YearPlanOption.parse(filled);
+    expect(plain.score).toBeGreaterThan(0);
+    const g = filled.slots[1]!;
+    expect(g).toMatchObject({ kind: 'green_manure', cropName: 'Dhaincha (green manure)', price: null, yieldKgPerHa: null, nitrogenCreditKgPerHa: { low: 100, high: 130 }, cost: { a2flPerHa: 2500, authority: 'sau' } });
+    expect(g.revenueEstimate).toEqual({ central: 0, likely: { low: 0, high: 0 }, possible: { low: 0, high: 0 } });
+    expect(g.profitEstimate!.central).toBe(-2500);
+    expect(g.profitForField!.central).toBe(-3000);
+    expect([g.components.price, g.components.yield]).toEqual([0, 0]);
+    expect(g.reasonCodes).toContain('green_manure');
+    expect(g.reasonCodes).not.toContain('price_insufficient');
+    expect(g.basis.map((b) => b.sourceId)).toEqual(expect.arrayContaining(['year-plan-assumption:greenManureFieldOpsCostPerHa', 'year-plan-assumption:greenManureScoring']));
+    expect(filled.warnings.join(' ')).toContain('cost is the seed only');
+    const s = filled.slots[2]!;
+    // Sorghum after a green manure (a nitrogen fixer of another family): family break 0.65 + bonus 0.15 = 0.8.
+    expect(s.components.soilRotation).toBe(0.8);
+    expect(s.reasonCodes).toContain('green_manure_successor');
+    expect(s.transitionNote).toContain('green manure ploughed in before sowing');
+    expect(s.basis.map((b) => b.sourceId)).toContain('year-plan-assumption:greenManureSuccessorBonus');
+    expect(filled.score).toBeGreaterThan(plain.score);
+    expect(filled.idleMonths).toBeLessThan(plain.idleMonths);
+    expect(Math.abs(filled.totalProfitEstimate!.central - (plain.totalProfitEstimate!.central - 2500))).toBeLessThanOrEqual(100);
+    expect(filled.reasons.map((r) => r.code)).toContain('green_manure_successor');
+  });
+
+  it('soilRotationScore: the bonus adds 0.15 (clipped) after a green manure only; same-family orders stay pruned', () => {
+    const facts = data.rotationFacts;
+    const afterGm = soilRotationScore(facts('gm-dhaincha'), facts('sorghum'), data.legumeCredit, undefined);
+    const afterLegume = soilRotationScore(facts('green-gram'), facts('sorghum'), data.legumeCredit, undefined);
+    expect([afterGm.value, afterGm.greenManureBonus, afterLegume.value, afterLegume.greenManureBonus]).toEqual([0.8, true, 0.65, false]);
+    expect(soilRotationScore(facts('gm-dhaincha'), facts('maize'), data.legumeCredit, undefined)).toMatchObject({ rule: 'heavy_feeder_after_legume', value: 1, greenManureBonus: true });
+    expect(soilRotationScore(facts('gm-dhaincha'), facts('groundnut'), data.legumeCredit, undefined)).toMatchObject({ rule: 'same_family', greenManureBonus: false });
+    expect(soilRotationScore(facts('maize'), facts('gm-dhaincha'), data.legumeCredit, undefined).rule).toBe('legume_after_heavy_feeder');
+  });
+
+  it('the fourth plan: Green manure first appended after three chosen plans, next-best when one already starts with green manure, a limitation when none fits', () => {
+    const ctx = buildScenario(freshArgs(null));
+    const set = enumerateCandidates(ctx);
+    const run = runYearPlanEngine(ctx, inputsFor(ctx, set.candidates), { candidateSet: set });
+    expect(run.greenManureFirst.length).toBeGreaterThan(0);
+    expect(run.greenManureFirst.every(startsWithGreenManure)).toBe(true);
+    const evidenced = run.greenManureFirst.filter(greenManureEvidenced);
+    expect(evidenced.length).toBeGreaterThan(0);
+    const chosen = deterministicSelection(selectionCandidates(run.shortlist.filter((o) => !startsWithGreenManure(o)))).slice(0, 3);
+    const four = appendGreenManureOption(chosen, run.greenManureFirst);
+    expect(four.limitation).toBeNull();
+    expect(four.options).toHaveLength(chosen.length + 1);
+    expect(four.options.at(-1)).toMatchObject({ optionId: evidenced[0]!.optionId, label: 'Green manure first', origin: 'deterministic' });
+    const withOwn = [...chosen.slice(0, 2), { ...evidenced[0]!, label: 'Soil enrichment', origin: 'model' as const }];
+    const next = appendGreenManureOption(withOwn, run.greenManureFirst);
+    expect(next.options[2]!.label).toBe('Soil enrichment');
+    if (evidenced.length > 1) expect(next.options[3]!.optionId).not.toBe(evidenced[0]!.optionId);
+    else expect(next.limitation).toContain('already starts with a green manure');
+    expect(appendGreenManureOption(chosen, [])).toMatchObject({ options: chosen, limitation: expect.stringContaining('No crop sequence that starts with a green manure') });
+    expect(selectionCandidates([evidenced[0]!])[0]!.allowedLabels).toContain('Green manure first');
+  });
+
+  it('farmer edits accept a green manure slot by kind; a crop marked green manure is left out with a warning', () => {
+    const ctx = buildScenario(freshArgs(null));
+    const opt = rescoreOption(ctx, emptyInputs(ASOF, 'rainfed'), [{ cropId: 'gm-dhaincha', productId: 'gm-dhaincha', kind: 'green_manure', sowing: '2027-05-01' }, { cropId: 'sorghum', productId: 'sorghum-grain', sowing: '2027-06-22' }]);
+    YearPlanOption.parse(opt);
+    expect(opt.slots.map((s) => s.kind)).toEqual(['green_manure', 'crop']);
+    expect(opt.slots[0]!.revenueEstimate!.central).toBe(0);
+    expect(opt.slots[1]!.reasonCodes).toContain('green_manure_successor');
+    const bad = rescoreOption(ctx, emptyInputs(ASOF, 'rainfed'), [{ cropId: 'sorghum', productId: 'sorghum-grain', kind: 'green_manure', sowing: '2027-06-22' }, { cropId: 'groundnut', productId: 'groundnut-pod', sowing: '2027-06-01' }]);
+    expect(bad.slots.map((s) => s.cropId)).toEqual(['groundnut']);
+    expect(bad.warnings.join(' ')).toContain('not a green manure crop');
+  });
+
+  it('gap reason 3 counts a green manure that fits the gap (supplemental irrigation makes the irrigated window usable)', () => {
+    const args: BuildScenarioArgs = { workspace: { previousHarvest: { status: 'unknown' }, cycles: [{ id: 'cyc-maize', cropId: 'maize', sowingDate: '2026-10-25', stage: 'growing', harvestDate: '2027-02-19' }], rotationPlans: [] }, farm: farm('supplemental'), asOf: ASOF };
+    const ctx = buildScenario(args);
+    const gg = find(enumerateCandidates(ctx).candidates, 'green-gram', '2027-04-20');
+    const [opt] = scoreSequences(ctx, [{ sequenceId: 'g', slots: [gg] }], inputsFor(ctx, [gg], FLAT, 'supplemental'));
+    expect(opt!.gaps).toEqual([{ from: '2027-03-01', to: '2027-04-20', days: 50, reason: 'Dhaincha (green manure) could be sown from 1 Mar but scored lower than this plan; edit the plan to add it.' }]);
   });
 });

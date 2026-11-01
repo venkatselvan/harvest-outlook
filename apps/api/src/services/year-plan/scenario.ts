@@ -80,7 +80,7 @@ export function timelineOccupancy(tl: StageTimeline, sowing: string): Occupancy 
   return {
     harvest: { earliest, latest }, to, basis: tl.basis.sourceId ? 'sourced_duration' : 'assumed_duration',
     durationDays: { low: Math.max(0, daysBetween(sowing, earliest)), high: Math.max(0, daysBetween(sowing, latest)) }, sources: [],
-    notes: [`Harvest date not recorded; estimated from the recorded sowing date and the crop's stage model (${earliest} to ${latest}). The field is held until ${buffer} days after the latest date plus a ${gap}-day land preparation gap.`],
+    notes: [`Harvest date not recorded; estimated from the recorded sowing date and the crop's stage model (${earliest} to ${latest}). The field is held until ${buffer ? `${buffer} days after the latest date plus ` : 'the latest date plus '}a ${gap}-day land preparation gap.`],
     timelineBasis: tl.basis,
   };
 }

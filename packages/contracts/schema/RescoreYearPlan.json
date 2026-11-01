@@ -34,6 +34,13 @@
             "type": "string",
             "maxLength": 80
           },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "crop",
+              "green_manure"
+            ]
+          },
           "sowing": {
             "type": "string",
             "format": "date",

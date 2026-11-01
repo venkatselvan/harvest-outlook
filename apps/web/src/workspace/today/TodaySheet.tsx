@@ -94,10 +94,24 @@ export function TodaySheet(props: TodaySheetProps) {
               <Show when={price().status === "available" && price().range} fallback={<p>{priceGapText(price().reason)}</p>}>
                 <p>
                   Harvest weeks: {formatInr(price().range!.low)} to {formatInr(price().range!.high)} per kg
-                  <Show when={price().p50 != null}>, middle {formatInr(price().p50!)}</Show>.
+                  <Show when={price().p50 != null}>, middle {formatInr(price().p50!)}</Show>. This is the likely range: the middle
+                  half of past years.
                 </p>
               </Show>
               <p>{price().scopeLabel}</p>
+              <Show when={props.view.outlookNote?.status === "ready" && props.view.outlookNote.text ? props.view.outlookNote : null}>
+                {(note) => (
+                  <div class="today-sheet-outlook" data-testid="today-sheet-outlook">
+                    <p>
+                      <strong>{note().origin === "model" ? "Outlook in words (written by Meta from these facts)" : "Outlook in words (written by code)"}</strong>:{" "}
+                      {note().text}
+                    </p>
+                    <ul>
+                      <For each={note().facts}>{(fact) => <li>{fact}</li>}</For>
+                    </ul>
+                  </div>
+                )}
+              </Show>
               <p>
                 Wholesale mandi modal prices in rupees per kg. The range comes from the same weeks in past years; it is a
                 seasonal reference, not a forecast and not a farm-gate price.

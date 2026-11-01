@@ -40,6 +40,8 @@ export interface SlotFlags {
 /** A crop placed on the calendar: a generated candidate, the fixed current cycle, or a farmer edit. */
 export interface SlotPlan {
   key: string;
+  /** Round 2: 'green_manure' slots are grown and ploughed in (no product, no price, revenue 0). Absent = 'crop'. */
+  kind?: 'crop' | 'green_manure' | undefined;
   cropId: string;
   productId: string;
   /** Establishment method of the duration rows used; null when the source says 'any' or the method is unknown. */

@@ -1,0 +1,388 @@
+/* Soil review panel and biomarker rows (ROUND2_SPEC 5.3). Theme tokens only; 390 px first; light and dark come from the tokens. */
+.sr-panel {
+  display: grid;
+  gap: 12px;
+  align-content: start;
+  min-width: 0;
+  padding: 16px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+}
+.sr-head {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px 10px;
+}
+.sr-title {
+  margin: 0;
+  font-size: 20px;
+  line-height: 1.2;
+}
+.sr-refresh {
+  margin-left: auto;
+  min-height: 44px;
+}
+.sr-refresh:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+.sr-context {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 14px;
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+.sr-muted,
+.sr-origin {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+.sr-pending {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+.sr-error {
+  margin: 0;
+  padding: 10px 12px;
+  background: var(--danger-soft);
+  border: 1px solid color-mix(in srgb, var(--danger) 40%, transparent);
+  border-radius: 10px;
+  color: var(--danger);
+  font-size: 14px;
+}
+.sr-empty {
+  display: grid;
+  gap: 8px;
+  color: var(--text-secondary);
+}
+.sr-empty p {
+  margin: 0;
+}
+.sr-narrative {
+  display: grid;
+  gap: 12px;
+}
+.sr-lines {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding-left: 18px;
+  font-size: 15px;
+  line-height: 1.45;
+}
+.sr-block {
+  display: grid;
+  gap: 6px;
+  padding: 12px;
+  background: var(--surface-soft);
+  border-radius: 10px;
+}
+.sr-block h3 {
+  margin: 0;
+  font-size: 15px;
+}
+.sr-details {
+  border-top: 1px solid var(--border);
+  padding-top: 8px;
+  font-size: 14px;
+}
+.sr-details summary {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  color: var(--text-secondary);
+}
+.sr-details ul {
+  display: grid;
+  gap: 6px;
+  margin: 4px 0 8px;
+  padding-left: 18px;
+  color: var(--text-secondary);
+}
+.sr-full {
+  margin: 0;
+}
+
+/* Biomarker rows */
+.sb-section {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+}
+.sb-title {
+  margin: 0;
+  font-size: 16px;
+}
+.sb-empty {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+.sb-list,
+.sb-other-list {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.sb-row {
+  display: grid;
+  gap: 8px;
+  width: 100%;
+  min-height: 44px;
+  padding: 12px;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+  background: var(--surface-soft);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  cursor: pointer;
+}
+.sb-row:hover {
+  background: var(--surface-hover);
+}
+.sb-row:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+.sb-row-head,
+.sb-other-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  min-width: 0;
+}
+.sb-label {
+  min-width: 0;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+.sb-value {
+  flex: none;
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+}
+.sb-rated-as,
+.sb-note,
+.sb-date,
+.sb-footnote {
+  color: var(--muted);
+  font-size: 13px;
+}
+.sb-rated-as {
+  margin: 0;
+}
+.sb-row-foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 8px;
+}
+.sb-date {
+  margin-left: auto;
+}
+
+/* The band bar: zones tile the axis, the marker sits at the value. */
+.sb-bar {
+  position: relative;
+  padding: 7px 0 0;
+}
+.sb-track {
+  position: relative;
+  height: 12px;
+  overflow: hidden;
+  border-radius: 6px;
+  background: var(--surface-hover);
+}
+.sb-bar-tall .sb-track {
+  height: 16px;
+}
+.sb-zone {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  box-shadow: inset -2px 0 0 var(--surface-soft);
+}
+.sb-zone-bad,
+.sb-swatch.sb-zone-bad {
+  background: color-mix(in srgb, var(--danger) 62%, var(--surface-soft));
+}
+.sb-zone-caution,
+.sb-swatch.sb-zone-caution {
+  background: color-mix(in srgb, var(--danger) 26%, var(--surface-soft));
+}
+.sb-zone-ok,
+.sb-swatch.sb-zone-ok {
+  background: color-mix(in srgb, var(--accent-ui) 38%, var(--surface-soft));
+}
+.sb-zone-good,
+.sb-swatch.sb-zone-good {
+  background: var(--accent-ui);
+}
+.sb-zone-none,
+.sb-swatch.sb-zone-none {
+  background: var(--border);
+}
+.sb-marker {
+  position: absolute;
+  top: 0;
+  width: 0;
+  height: 0;
+  margin-left: -6px;
+  border-left: 6px solid transparent;
+  border-right: 6px solid transparent;
+  border-top: 8px solid var(--text);
+}
+.sb-marker::after {
+  content: "";
+  position: absolute;
+  top: -8px;
+  left: -1px;
+  width: 2px;
+  height: 22px;
+  background: var(--text);
+  opacity: 0.85;
+}
+.sb-bar-tall .sb-marker::after {
+  height: 26px;
+}
+.sb-marker-edge {
+  margin-left: -6px;
+  filter: drop-shadow(0 0 0 var(--surface));
+}
+
+/* Other values */
+.sb-other {
+  border-top: 1px solid var(--border);
+  padding-top: 6px;
+}
+.sb-other summary {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+.sb-other-list > li {
+  display: grid;
+  gap: 6px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+.sb-other-list p {
+  margin: 0;
+}
+
+/* Reading sheet */
+.sb-detail {
+  display: grid;
+  gap: 12px;
+  padding-bottom: 8px;
+}
+.sb-zones {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.sb-zones li {
+  display: grid;
+  grid-template-columns: 14px minmax(0, auto) minmax(0, 1fr);
+  align-items: center;
+  gap: 4px 10px;
+  padding: 6px 8px;
+  border-radius: 8px;
+  font-size: 14px;
+}
+.sb-zones li.is-current {
+  background: var(--accent-soft);
+  outline: 1px solid var(--accent-border);
+}
+.sb-swatch {
+  width: 14px;
+  height: 14px;
+  border-radius: 4px;
+}
+.sb-zone-name {
+  font-weight: 600;
+}
+.sb-zone-range {
+  color: var(--text-secondary);
+  overflow-wrap: anywhere;
+}
+.sb-zone-here {
+  grid-column: 2 / -1;
+  color: var(--accent);
+  font-size: 12px;
+  font-weight: 600;
+}
+.sb-callout {
+  padding: 12px;
+  background: var(--info-soft);
+  border: 1px solid color-mix(in srgb, var(--info) 35%, transparent);
+  border-radius: 10px;
+}
+.sb-callout h3 {
+  margin: 0 0 4px;
+  font-size: 14px;
+  color: var(--info);
+}
+.sb-callout p {
+  margin: 0;
+  font-size: 14px;
+}
+.sb-facts {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+}
+.sb-facts > div {
+  display: grid;
+  gap: 2px;
+}
+.sb-facts dt {
+  color: var(--muted);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.sb-facts dd {
+  display: grid;
+  gap: 2px;
+  margin: 0;
+  font-size: 14px;
+  overflow-wrap: anywhere;
+}
+.sb-footnote {
+  margin: 0;
+}
+
+@media (min-width: 640px) {
+  .sr-panel {
+    padding: 20px;
+  }
+  .sb-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .sb-row {
+    transition: background-color 120ms ease;
+  }
+}

@@ -1,14 +1,15 @@
-import type { BasisRef, HarvestPriceOutlook, PriceEstimate, RescoreYearPlan, ScoreComponents, YearPlanOption, YearPlanSlot } from '@harvest/contracts';
+import type { BasisRef, HarvestPriceOutlook, PriceEstimate, RescoreYearPlan, ScoreComponents, YearPlanGap, YearPlanOption, YearPlanSlot } from '@harvest/contracts';
+import { estimateProfit, sumEstimates, type ProfitEstimate } from '../estimate';
 import * as data from './data';
-import { coveredDays, enumerateCandidates, enumerateSequences, makeSlotPlan, predecessorOf, shortHash, transitionScorer, type CandidateSet } from './candidates';
+import { coveredDays, enumerateCandidates, enumerateSequences, makeSlotPlan, predecessorOf, shortHash, trailingIdleDays, transitionScorer, type CandidateSet } from './candidates';
 import { addDays, clippedDays, daysBetween, isCalendarDate, isoWeek, monthOf, overlaps } from './dates';
 import { collectInputKeys, priceHarvestDate, slotPriceKey, type Inputs, type PriceInputKey } from './inputs';
 import {
   ASSUMPTIONS, assumptionBasis, clip, confidenceScore, irrigationClass, marginRate, revenueRate, POSITIVE_CODES, priceScore, REASON_TEXT, reasonCodes, sequenceScore, slotDisplayScore, slotScore,
   soilRotationScore, waterFit, yieldScore, type ConfidenceFlags, type PriceScoreResult, type PriceSlotFacts, type ReasonCode, type RotationScoreResult, type WaterFitResult, type YieldScoreResult,
 } from './scoring';
-import type { Candidate, EngineContext, Sequence, SlotPlan } from './types';
-import { placeWindows, windowForDate } from './windows';
+import type { Candidate, EngineContext, IrrigationClass, PlacedWindow, Sequence, SlotPlan } from './types';
+import { irrigationCompat, placeWindows, windowForDate } from './windows';
 
 /** Normalisation shared by every option of one review; persist it with the review so farmer edits rescore on the same scale. */
 export interface ScoringNorm {
@@ -34,8 +35,11 @@ export interface EvaluatedSlot {
   /** Sequence-level slot score (price, yield, water, confidence). */
   slotScore: number;
   codes: ReasonCode[];
+  /** Likely band (p25 to p75) of the simulated revenue and profit per ha (round 2); null when not computable. */
   revenue: { low: number; high: number } | null;
   profit: { low: number; high: number } | null;
+  /** Simulated estimates and the draw matrix (services/estimate.ts), seeded by the slot key. */
+  estimate: ProfitEstimate;
   uncertainties: string[];
   basis: BasisRef[];
 }
@@ -119,8 +123,56 @@ function evaluationUncertainties(ctx: EngineContext, plan: SlotPlan, f: SlotFact
   return [...new Set(out)];
 }
 
+const ESTIMATE_BASIS: BasisRef = {
+  kind: 'model', label: 'Profit estimate: lognormal yield x harvest-week price, 2000 seeded draws', sourceId: 'estimate:lognormal-yield-price-v1', url: null, scope: null,
+  note: 'Yield and price are independent lognormals with medians at the regional yield p50 and the price p50 and sigma = ln(p75/p25)/1.349; cost is deterministic. Likely = middle half of the simulated outcomes (p25 to p75); possible = 10th to 90th percentile; rounded to Rs 100.',
+};
+
+/**
+ * Green manure slot (ROUND2_SPEC 1.2 item 4, ASSUMPTIONS.greenManureScoring): no product, price and yield parts 0,
+ * revenue exactly 0, profit minus the sourced seed cost (plus field operations when sourced), water fit as for crops,
+ * confidence over the four flags that apply. No price lookup is made for it.
+ */
+function evaluateGreenManure(ctx: EngineContext, inputs: Inputs, plan: SlotPlan): EvaluatedSlot {
+  const g = data.greenManure(plan.cropId);
+  const cost = data.greenManureCost(plan.cropId);
+  const credit = data.legumeCredit(plan.cropId);
+  const water = waterFit({ sowing: plan.sowing, harvestLatest: plan.harvest.latest, waterNeedMm: data.waterNeedMm(plan.cropId) }, inputs.climatologyRainByMonth, irrigationOf(ctx, inputs), data.rainfedSuitable(plan.cropId), inputs.neighbourhoodActiveMonths, inputs.neighbourhoodObservedMonths);
+  const fullyCosted = !!cost && (g?.fieldOpsCostPerHa?.value ?? ASSUMPTIONS.greenManureFieldOpsCostPerHa.value) !== null;
+  const districtWindow = plan.window?.scope === 'district' && !plan.window.provisional;
+  const applicable = [plan.durationSourced, districtWindow, credit !== null, fullyCosted];
+  const value = applicable.filter(Boolean).length / applicable.length;
+  const bands = ASSUMPTIONS.confidenceBands.value;
+  const confidence = { value, label: (value >= bands.high ? 'high' : value >= bands.medium ? 'medium' : 'low') as 'high' | 'medium' | 'low' };
+  const price: PriceScoreResult = { value: 0, marginPart: 0, timingPart: 0, marginRate: null, revenueRate: null, timingRatio: null, reasonCodes: [] };
+  const yieldS: YieldScoreResult = { value: 0, ratio: null, localKgPerHa: null, reasonCodes: [] };
+  const estimate = estimateProfit({ seed: plan.key, yieldKgPerHa: null, pricePerKg: null, costPerHa: cost?.deductionPerHa ?? null, areaHa: ctx.scenario.fieldAreaHa, noRevenue: true });
+  const components = { price: 0, yield: 0, water: water.value, confidence: value };
+  const uncertainties = [...plan.uncertainties, 'Green manure: grown and ploughed in; it has no product and earns nothing. Its value is the nitrogen and organic matter left for the next crop.'];
+  if (g?.provisional) uncertainties.push('Green manure figures come from state package-of-practice pages and a district contingency plan (provisional).');
+  if (cost) uncertainties.push(`Cost: ${cost.notes.join(' ')}`); else uncertainties.push('Green manure seed rate or seed price is not sourced; no cost.');
+  if (!water.known) uncertainties.push('The green manure water need is not sourced; water fit is neutral (0.5).');
+  if (water.capped) uncertainties.push('Rainfed field and the green manure is not marked rainfed-suitable: water fit is capped at 0.4.');
+  const basis: BasisRef[] = [...plan.basis];
+  if (credit) for (const s of data.agronomySources(credit.source).slice(0, 1)) basis.push({ kind: 'rotation', label: `Green manure nitrogen: ${s.title ?? s.id}`.slice(0, 200), sourceId: s.id, url: s.url, scope: null, note: `${credit.min === credit.max ? credit.min : `${credit.min}-${credit.max}`} kg N/ha in the biomass at 60 days${s.locator ? `; ${s.locator}` : ''}`.slice(0, 1000) });
+  if (cost) for (const s of data.agronomySources(cost.locator).slice(0, 1)) basis.push({ kind: 'cost_reference', label: `Green manure seed price: ${s.title ?? s.id}`.slice(0, 200), sourceId: s.id, url: s.url, scope: cost.estimate.region, note: cost.notes.join(' ').slice(0, 1000) });
+  const seedRate = g?.seedRateKgPerHa?.source;
+  if (seedRate) for (const s of data.agronomySources(seedRate).slice(0, 1)) basis.push({ kind: 'cost_reference', label: `Green manure seed rate: ${s.title ?? s.id}`.slice(0, 200), sourceId: s.id, url: s.url, scope: null, note: `${g!.seedRateKgPerHa!.min}-${g!.seedRateKgPerHa!.max} kg/ha${s.locator ? `; ${s.locator}` : ''}`.slice(0, 1000) });
+  if (!fullyCosted) basis.push(assumptionBasis('greenManureFieldOpsCostPerHa'));
+  basis.push(assumptionBasis('greenManureScoring'));
+  if (inputs.climatologySource && inputs.climatologyRainByMonth) basis.push({ kind: 'climatology', label: 'Rain normals for the field point', sourceId: inputs.climatologySource.sourceId, url: null, scope: null, note: `Daily normals ${inputs.climatologySource.years.from}-${inputs.climatologySource.years.to}, summed by month` });
+  if (!water.known) basis.push(assumptionBasis('unknownWaterFit'));
+  return {
+    plan, yieldRef: null, yieldRange: null, yieldBasis: null, cost, loss: null, priceKey: slotPriceKey(plan), outlook: null, price, yield: yieldS, water, confidence,
+    confidenceFlags: { priceVerified: false, districtYield: false, costSourced: fullyCosted, durationSourced: plan.durationSourced, districtWindow },
+    slotScore: slotScore(components), codes: ['green_manure', ...water.reasonCodes], revenue: estimate.revenuePerHa ? { ...estimate.revenuePerHa.likely } : null,
+    profit: estimate.profitPerHa ? { ...estimate.profitPerHa.likely } : null, estimate, uncertainties: [...new Set(uncertainties)], basis,
+  };
+}
+
 /** Sequence-independent evaluation of one slot (spec 5.1); deterministic for identical inputs. */
 export function evaluateSlot(ctx: EngineContext, inputs: Inputs, plan: SlotPlan, norm: ScoringNorm): EvaluatedSlot {
+  if (plan.kind === 'green_manure') return evaluateGreenManure(ctx, inputs, plan);
   const f = slotFacts(ctx, inputs, plan);
   const water = waterFit({ sowing: plan.sowing, harvestLatest: plan.harvest.latest, waterNeedMm: data.waterNeedMm(plan.cropId) }, inputs.climatologyRainByMonth, irrigationOf(ctx, inputs), data.rainfedSuitable(plan.cropId), inputs.neighbourhoodActiveMonths, inputs.neighbourhoodObservedMonths);
   const yieldS = yieldScore({ yieldOverrideKgPerHa: f.override }, f.yieldRef, plan.windowFit, water.value);
@@ -145,13 +197,25 @@ export function evaluateSlot(ctx: EngineContext, inputs: Inputs, plan: SlotPlan,
   const o = f.outlook;
   const priceRange = o && o.status === 'available' && o.p25 !== null && o.p75 !== null ? { low: o.p25, high: o.p75 } : null;
   const keep = 1 - (f.loss?.pct ?? 0) / 100;
-  const revenue = yieldRange && priceRange ? { low: Math.round(yieldRange.low * priceRange.low * keep), high: Math.round(yieldRange.high * priceRange.high * keep) } : null;
-  const profit = revenue && f.cost ? { low: revenue.low - f.cost.deductionPerHa, high: revenue.high - f.cost.deductionPerHa } : null;
+  const yieldP50 = f.override ?? f.yieldRef?.p50 ?? null;
+  const estimate = estimateProfit({
+    seed: plan.key, keep, costPerHa: f.cost?.deductionPerHa ?? null, areaHa: ctx.scenario.fieldAreaHa,
+    yieldKgPerHa: yieldRange && yieldP50 !== null ? { p25: yieldRange.low, p50: yieldP50, p75: yieldRange.high } : null,
+    pricePerKg: priceRange && o?.p50 != null ? { p25: priceRange.low, p50: o.p50, p75: priceRange.high } : null,
+  });
+  const revenue = estimate.revenuePerHa ? { ...estimate.revenuePerHa.likely } : null;
+  const profit = estimate.profitPerHa ? { ...estimate.profitPerHa.likely } : null;
   const components = { price: price.value, yield: yieldS.value, water: water.value, confidence: confidence.value };
+  const uncertainties = evaluationUncertainties(ctx, plan, f, water, inputs.asOf);
+  const basis = evaluationBasis(ctx, inputs, plan, f, water);
+  if (estimate.revenuePerHa) basis.push(ESTIMATE_BASIS);
+  if (estimate.yieldSigmaAssumed) {
+    uncertainties.push(`The yield has no year-to-year range; the profit simulation assumes a yield spread (sigma ${ASSUMPTIONS.singleYearYieldSigma.value}).`);
+    basis.push(assumptionBasis('singleYearYieldSigma'));
+  }
   return {
     plan, yieldRef: f.yieldRef, yieldRange, yieldBasis: f.override !== null ? 'farmer' : f.yieldRef?.basis ?? null, cost: f.cost, loss: f.loss, priceKey: f.key, outlook: o,
-    price, yield: yieldS, water, confidence, confidenceFlags: flags, slotScore: slotScore(components), codes: [...codes], revenue, profit,
-    uncertainties: evaluationUncertainties(ctx, plan, f, water, inputs.asOf), basis: evaluationBasis(ctx, inputs, plan, f, water),
+    price, yield: yieldS, water, confidence, confidenceFlags: flags, slotScore: slotScore(components), codes: [...codes], revenue, profit, estimate, uncertainties, basis,
   };
 }
 
@@ -173,6 +237,7 @@ function transitionNote(ctx: EngineContext, prev: string | null, next: string, t
   if (credit) text += `; cited residual nitrogen ${credit.min === credit.max ? credit.min : `${credit.min}-${credit.max}`} kg N/ha (${credit.specificity ?? 'specificity not stated'}, ${credit.source})`;
   if (t.rule === 'cited_succession' && t.sameFamily) text += ' (same family, kept because a source recommends it)';
   if (t.sources.length && t.rule !== 'legume_after_heavy_feeder' && t.rule !== 'heavy_feeder_after_legume') text += `; ${t.sources.join('; ')}`;
+  if (t.greenManureBonus) text += `; green manure ploughed in before sowing (+${ASSUMPTIONS.greenManureSuccessorBonus.value} soil and rotation fit, engine assumption)`;
   if (t.phMismatch) text += '; confirmed soil pH is outside the cited range';
   return `${text}.`.slice(0, 1000);
 }
@@ -201,12 +266,99 @@ const DOMINANT_LABEL = { price: 'Price-led', yield: 'Yield-led', soilRotation: '
 interface BuildMeta { origin: YearPlanOption['origin']; idSeed: string; warnings: string[]; slotIds?: Map<string, string> | undefined; extraCodes?: Map<string, ReasonCode[]> | undefined }
 export interface ScoredOption { option: YearPlanOption; value: number }
 
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'] as const;
+/** "25 Mar" from an ISO date. */
+export const dayMonth = (d: string): string => `${Number(d.slice(8, 10))} ${MONTHS[monthOf(d) - 1]}`;
+const capitalise = (s: string) => (s ? s[0]!.toUpperCase() + s.slice(1) : s);
+
+/**
+ * Code-written reason for an idle gap [from, to) (ROUND2_SPEC 1.2 item 3), first match wins: (1) no pool crop has a
+ * usable sourced window touching the gap (names the next window opening on or after `to`); (2) windows exist but none
+ * fits the field's irrigation; (3) a compatible pool crop could be sown in the gap and harvested before the next slot
+ * but scored lower. When compatible windows exist but no such crop finishes before the next slot, that is said instead.
+ */
+export function gapReason(ctx: EngineContext, irrigation: IrrigationClass | null, from: string, to: string): string {
+  const last = addDays(to, -1);
+  // Pool crops and the pool's green manure crops (round 2) both count.
+  const pool = [...data.poolEntries().filter((e) => data.agronomyCrop(e.cropId)).map((e) => ({ cropId: e.cropId, productId: e.productIds[0] ?? null })), ...data.greenManureEntries().map((g) => ({ cropId: g.cropId, productId: g.cropId }))]
+    .filter((e) => !ctx.excludedCropIds.includes(e.cropId));
+  const hits: { cropId: string; productId: string | null; w: PlacedWindow; ok: boolean }[] = [];
+  for (const e of pool) for (const w of placeWindows(data.windowsFor(e.cropId, where(ctx)), { from, to })) hits.push({ cropId: e.cropId, productId: e.productId, w, ok: irrigationCompat(w.condition, irrigation).ok });
+  if (!hits.length) {
+    let next: PlacedWindow | null = null;
+    for (const e of pool) for (const w of placeWindows(data.windowsFor(e.cropId, where(ctx)), { from: to, to: addDays(to, 366) })) if (w.from >= to && (!next || w.from < next.from)) next = w;
+    return `No sourced sowing window for a pool crop between ${dayMonth(from)} and ${dayMonth(last)} on this field; ${next ? `the next windows open ${dayMonth(next.from)} (${next.season})` : 'no later window opens within a year'}.`;
+  }
+  const ok = hits.filter((h) => h.ok);
+  if (!ok.length) {
+    const first = [...hits].sort((a, b) => a.w.from.localeCompare(b.w.from))[0]!;
+    if (irrigation === 'none' && hits.every((h) => h.w.condition.toLowerCase() === 'irrigated')) return `${capitalise(first.w.season)} sowing here needs irrigation; the field is recorded as rainfed.`;
+    return `The sowing windows between ${dayMonth(from)} and ${dayMonth(last)} are irrigated or rice-fallow relay windows that do not fit this field.`;
+  }
+  const gapDays = ASSUMPTIONS.landPrepGapDays.value;
+  let best: { cropId: string; sowing: string } | null = null;
+  let earliest: string | null = null;
+  for (const h of ok) {
+    const sowing = h.w.from > from ? h.w.from : from;
+    if (sowing > (h.w.to < last ? h.w.to : last)) continue;
+    if (earliest === null || sowing < earliest) earliest = sowing;
+    const cls = data.durationFor(h.cropId, null, ctx.stateId, h.productId)[0];
+    if (cls && addDays(sowing, cls.max + gapDays) <= to && (!best || sowing < best.sowing || (sowing === best.sowing && h.cropId < best.cropId))) best = { cropId: h.cropId, sowing };
+  }
+  if (best) return `${cropName(ctx, best.cropId)} could be sown from ${dayMonth(best.sowing)} but scored lower than this plan; edit the plan to add it.`;
+  return `Pool crops could be sown from ${dayMonth(earliest ?? from)} but none would be harvested before the next crop on ${dayMonth(to)}.`;
+}
+
+const gapMemo = new WeakMap<EngineContext, Map<string, string>>();
+/** Idle gaps of ASSUMPTIONS.gapReportDays or more before each suggested slot; `to` is the slot's first day (exclusive end). */
+export function planGaps(ctx: EngineContext, inputs: Inputs, plans: readonly SlotPlan[]): YearPlanGap[] {
+  const irrigation = irrigationOf(ctx, inputs);
+  let memo = gapMemo.get(ctx);
+  if (!memo) { memo = new Map(); gapMemo.set(ctx, memo); }
+  const ends = [...(ctx.fixedSlot ? [ctx.fixedSlot.occupancy.to] : []), ...ctx.occupied.map((o) => o.to)];
+  const out: YearPlanGap[] = [];
+  const suggested = plans.filter((p) => !p.fixed).sort((a, b) => a.occupancy.from.localeCompare(b.occupancy.from));
+  for (const slot of suggested) {
+    let from = ctx.earliestSowing;
+    for (const e of ends) if (e <= slot.occupancy.from && e > from) from = e;
+    const days = daysBetween(from, slot.occupancy.from);
+    if (days >= ASSUMPTIONS.gapReportDays.value) {
+      const k = `${from}|${slot.occupancy.from}|${irrigation ?? ''}`;
+      let reason = memo.get(k);
+      if (reason === undefined) { reason = gapReason(ctx, irrigation, from, slot.occupancy.from); memo.set(k, reason); }
+      out.push({ from, to: slot.occupancy.from, days, reason: reason.slice(0, 300) });
+    }
+    ends.push(slot.occupancy.to);
+  }
+  return out.slice(0, 6);
+}
+
+/** Two short lines for the fixed slot's strip (ROUND2_SPEC 1.2 item 7); the long sentence stays in its uncertainties. */
+export function fixedSlotNote(ctx: EngineContext): string | null {
+  const fs = ctx.fixedSlot;
+  if (!fs) return null;
+  const h = fs.harvest;
+  const when = h.earliest === h.latest ? dayMonth(h.earliest) : `${dayMonth(h.earliest)} to ${dayMonth(h.latest)}`;
+  const basis = fs.harvestBasis === 'recorded' ? 'recorded' : fs.timelineEstimate ? 'estimated from the sowing date' : fs.harvestBasis === 'sourced_duration' ? 'estimated from the sourced crop duration' : 'assumed; record the harvest date';
+  return `Harvest expected ${when} (${basis})\nNext crop from ${dayMonth(fs.occupancy.to)}`;
+}
+
+function fixedSlotSentence(ctx: EngineContext): string | null {
+  const fs = ctx.fixedSlot;
+  if (!fs || fs.harvestBasis === 'recorded') return null;
+  return fs.timelineEstimate
+    ? `${cropName(ctx, fs.cropId)}: harvest date not recorded; estimated from the recorded sowing date and the crop's stage model (${fs.harvest.earliest} to ${fs.harvest.latest}), and the field is held until ${fs.occupancy.to}.`
+    : `${cropName(ctx, fs.cropId)}: harvest date not recorded; the field is held until ${fs.occupancy.to} as a precaution.`;
+}
+
 function buildOption(ctx: EngineContext, inputs: Inputs, plans: SlotPlan[], evaluate: (p: SlotPlan) => EvaluatedSlot, meta: BuildMeta): ScoredOption {
   const h = ctx.horizon;
   const horizonDays = daysBetween(h.from, h.to);
+  const area = ctx.scenario.fieldAreaHa !== null && Number.isFinite(ctx.scenario.fieldAreaHa) && ctx.scenario.fieldAreaHa > 0 ? ctx.scenario.fieldAreaHa : null;
   const rot = (prev: string | null, next: string) => soilRotationScore(prev ? data.rotationFacts(prev) : null, data.rotationFacts(next), data.legumeCredit, inputs.soilPh);
   const evals = plans.map(evaluate);
   const counted: number[] = [];
+  const fixedSentence = fixedSlotSentence(ctx);
   const slots: YearPlanSlot[] = plans.map((plan, i) => {
     const ev = evals[i]!;
     const prev = plan.fixed ? ctx.previousCropId : predecessorOf(ctx, plans.slice(0, i), plan.sowing);
@@ -214,47 +366,54 @@ function buildOption(ctx: EngineContext, inputs: Inputs, plans: SlotPlan[], eval
     if (!plan.fixed) counted.push(t.value);
     const components: ScoreComponents = { price: ev.price.value, yield: ev.yield.value, soilRotation: t.value, water: ev.water.value, confidence: ev.confidence.value };
     const codes = reasonCodes({ codes: [...ev.codes, ...t.reasonCodes, ...(meta.extraCodes?.get(plan.key) ?? [])], flags: plan.flags, windowScope: plan.window?.scope ?? null, fixed: plan.fixed }, components);
+    const credit = data.legumeCredit(plan.cropId);
+    const uncertainties = plan.fixed && fixedSentence ? [fixedSentence, ...ev.uncertainties] : ev.uncertainties;
+    const basis = t.greenManureBonus ? [...ev.basis, assumptionBasis('greenManureSuccessorBonus')] : ev.basis;
     return {
       slotId: meta.slotIds?.get(plan.key) ?? `slot-${shortHash(plan.key)}`, cropId: plan.cropId, productId: plan.productId,
       cropName: cropName(ctx, plan.cropId).slice(0, 120), productName: productName(ctx, plan.cropId, plan.productId).slice(0, 120),
-      establishmentMethod: plan.method ? plan.method.slice(0, 80) : null, fixed: plan.fixed, sowing: plan.sowing, harvest: { ...plan.harvest },
+      establishmentMethod: plan.method ? plan.method.slice(0, 80) : null, kind: plan.kind ?? 'crop', nitrogenCreditKgPerHa: credit ? { low: credit.min, high: credit.max } : null,
+      fixed: plan.fixed, sowing: plan.sowing, harvest: { ...plan.harvest },
       occupancy: { from: plan.occupancy.from, to: plan.occupancy.to }, durationDays: { ...plan.durationDays }, yieldKgPerHa: ev.yieldRange, yieldBasis: ev.yieldBasis,
       price: priceEstimate(ev), cost: ev.cost?.estimate ?? null, revenuePerHa: ev.revenue, profitPerHa: ev.profit,
+      revenueEstimate: ev.estimate.revenuePerHa, profitEstimate: ev.estimate.profitPerHa, profitForField: ev.estimate.profitForField,
       score: Math.round(clip(slotDisplayScore(components), 0, 1) * 10000) / 100,
       components: { price: round4(clip(components.price, 0, 1)), yield: round4(clip(components.yield, 0, 1)), soilRotation: round4(clip(components.soilRotation, 0, 1)), water: round4(clip(components.water, 0, 1)), confidence: round4(clip(components.confidence, 0, 1)) },
-      confidence: ev.confidence.label, transitionNote: transitionNote(ctx, prev, plan.cropId, t), reasonCodes: codes,
-      uncertainties: ev.uncertainties.slice(0, 10).map((u) => u.slice(0, 1000)), basis: dedupeBasis(ev.basis),
+      confidence: ev.confidence.label, transitionNote: plan.fixed ? fixedSlotNote(ctx) : transitionNote(ctx, prev, plan.cropId, t), reasonCodes: codes,
+      uncertainties: uncertainties.slice(0, 10).map((u) => u.slice(0, 1000)), basis: dedupeBasis(basis),
     };
   });
   const rotationFit = counted.length ? counted.reduce((a, b) => a + b, 0) / counted.length : ASSUMPTIONS.neutralRotationFit.value;
   const weights = plans.map((p) => clippedDays(p.occupancy.from, p.occupancy.to, h.from, h.to));
-  const idleDays = horizonDays - coveredDays(plans.map((p) => p.occupancy), h);
-  const seq = sequenceScore({ slots: plans.map((_, i) => ({ weightDays: weights[i]!, slotScore: evals[i]!.slotScore })), horizonDays, rotationFit, idleDays });
+  const occupancies = plans.map((p) => p.occupancy);
+  const idleDays = horizonDays - coveredDays(occupancies, h);
+  const seq = sequenceScore({ slots: plans.map((_, i) => ({ weightDays: weights[i]!, slotScore: evals[i]!.slotScore })), horizonDays, rotationFit, idleDays, trailingIdleDays: trailingIdleDays(occupancies, h) });
   const wsum = weights.reduce((a, b) => a + b, 0);
   const wmean = (pick: (e: EvaluatedSlot) => number) => (wsum > 0 ? evals.reduce((s, e, i) => s + weights[i]! * pick(e), 0) / wsum : 0);
   const components: ScoreComponents = { price: round4(clip(wmean((e) => e.price.value), 0, 1)), yield: round4(clip(wmean((e) => e.yield.value), 0, 1)), soilRotation: round4(clip(rotationFit, 0, 1)), water: round4(clip(wmean((e) => e.water.value), 0, 1)), confidence: round4(clip(wmean((e) => e.confidence.value), 0, 1)) };
   const suggested = slots.filter((s) => !s.fixed);
   const reasons = POSITIVE_CODES.filter((c) => suggested.some((s) => s.reasonCodes.includes(c))).slice(0, 3).map((code) => ({ code, text: REASON_TEXT[code] }));
-  const sum = (pick: (s: YearPlanSlot) => { low: number; high: number } | null) => (slots.every((s) => pick(s)) ? { low: slots.reduce((a, s) => a + pick(s)!.low, 0), high: slots.reduce((a, s) => a + pick(s)!.high, 0) } : null);
-  const totalRevenuePerHa = sum((s) => s.revenuePerHa);
-  const totalProfitPerHa = sum((s) => s.profitPerHa);
+  // Totals from the same draw matrix (sum per draw, then quantiles); the per-ha range fields carry the likely band.
+  const totals = sumEstimates(evals.map((e) => e.estimate.draws), area);
   const warnings = [...meta.warnings];
   for (const s of slots) {
+    if (s.kind === 'green_manure') {
+      if (!s.cost) warnings.push(`${s.cropName}: seed cost not sourced; plan totals not shown.`);
+      else if (evals.some((e) => e.plan.key === plans[slots.indexOf(s)]!.key && !e.confidenceFlags.costSourced)) warnings.push(`${s.cropName}: cost is the seed only; sowing and ploughing in are not costed (no sourced figure).`);
+      continue;
+    }
     if (!s.cost) warnings.push(`${s.cropName}: cost of cultivation not sourced; profit not shown.`);
     if (!s.price || s.price.status !== 'available') warnings.push(`${s.cropName}: no harvest-week price range.`);
     if (!s.yieldKgPerHa) warnings.push(`${s.cropName}: no regional yield for this product form.`);
   }
-  if (ctx.fixedSlot && ctx.fixedSlot.harvestBasis !== 'recorded') {
-    const fs = ctx.fixedSlot;
-    warnings.push(fs.timelineEstimate
-      ? `${cropName(ctx, fs.cropId)}: harvest date not recorded; estimated from the recorded sowing date and the crop's stage model (${fs.harvest.earliest} to ${fs.harvest.latest}), and the field is held until ${fs.occupancy.to}.`
-      : `${cropName(ctx, fs.cropId)}: harvest date not recorded; the field is held until ${fs.occupancy.to} as a precaution.`);
-  }
-  if (!totalRevenuePerHa || !totalProfitPerHa) warnings.push('Plan totals are shown only when every slot has a price, yield and cost.');
+  if (!totals.revenuePerHa || !totals.profitPerHa) warnings.push('Plan totals are shown only when every slot has a price, yield and cost.');
   const dominant = (['price', 'yield', 'soilRotation', 'water'] as const).reduce((best, k) => (components[k] > components[best] ? k : best), 'price' as 'price' | 'yield' | 'soilRotation' | 'water');
   const option: YearPlanOption = {
     optionId: `${meta.origin === 'farmer_edit' ? 'edit' : 'opt'}-${shortHash(meta.idSeed)}`, label: DOMINANT_LABEL[dominant], origin: meta.origin, score: seq.score, components,
-    slots, idleMonths: Math.round(clip(seq.idleMonths, 0, 12) * 100) / 100, reasons, totalRevenuePerHa, totalProfitPerHa,
+    slots, idleMonths: Math.round(clip(seq.idleMonths, 0, 12) * 100) / 100, reasons,
+    totalRevenuePerHa: totals.revenuePerHa ? { ...totals.revenuePerHa.likely } : null, totalProfitPerHa: totals.profitPerHa ? { ...totals.profitPerHa.likely } : null,
+    totalRevenueEstimate: totals.revenuePerHa, totalProfitEstimate: totals.profitPerHa, totalProfitForField: totals.profitForField, fieldAreaHa: area,
+    gaps: planGaps(ctx, inputs, plans),
     warnings: [...new Set(warnings)].slice(0, 10).map((w) => w.slice(0, 1000)), editable: true,
   };
   return { option, value: seq.value };
@@ -339,7 +498,10 @@ type Edit = RescoreYearPlan['slots'][number];
 function planEdit(ctx: EngineContext, inputs: Inputs, e: Edit, warnings: string[], codes: ReasonCode[]): SlotPlan | null {
   const name = cropName(ctx, e.cropId);
   if (!isCalendarDate(e.sowing)) { warnings.push(`${name}: sowing date ${e.sowing} is not a calendar date; slot left out.`); return null; }
-  if (!data.agronomyCrop(e.cropId)) warnings.push(`${name}: no agronomy record; no sourced window or duration.`);
+  const gm = data.isGreenManure(e.cropId);
+  if (e.kind === 'green_manure' && !gm) { warnings.push(`${name}: not a green manure crop in green-manure.json; slot left out.`); return null; }
+  if (gm && e.productId !== e.cropId) warnings.push(`${name}: a green manure has no product; the product is ignored.`);
+  if (!gm && !data.agronomyCrop(e.cropId)) warnings.push(`${name}: no agronomy record; no sourced window or duration.`);
   const method = e.establishmentMethod ?? null;
   const classes = data.durationFor(e.cropId, method, ctx.stateId, e.productId);
   let cls = classes[0] ?? null;
@@ -360,7 +522,7 @@ function planEdit(ctx: EngineContext, inputs: Inputs, e: Edit, warnings: string[
   else if (hit.window.provisional) warnings.push(`${name}: sowing falls in a provisional window only.`);
   const span = { low: daysBetween(e.sowing, harvest.earliest), high: daysBetween(e.sowing, harvest.latest) };
   const plan = makeSlotPlan(ctx, {
-    key: `edit:${e.cropId}|${e.productId}|${method ?? 'any'}|${e.sowing}|${harvest.latest}`, cropId: e.cropId, productId: e.productId, method: method ?? cls?.method ?? null, sowing: e.sowing, harvest,
+    key: `edit:${e.cropId}|${gm ? e.cropId : e.productId}|${method ?? 'any'}|${e.sowing}|${harvest.latest}`, kind: gm ? 'green_manure' : 'crop', cropId: e.cropId, productId: gm ? e.cropId : e.productId, method: gm ? null : method ?? cls?.method ?? null, sowing: e.sowing, harvest,
     season: hit?.window.season ?? data.seasonOfMonth(monthOf(e.sowing)), durationDays: span, duration: cls, hit,
   });
   if (e.harvestLatest && cls && (span.high < cls.min || span.high > cls.max)) plan.flags.harvestAssumed = true;
@@ -406,6 +568,9 @@ export function rescoreOption(ctx: EngineContext, inputs: Inputs, edits: readonl
     const r = prev ? rot(prev, p.cropId) : null;
     if (r?.rule === 'avoid_after') warnings.push(`${cropName(ctx, p.cropId)} after ${cropName(ctx, prev!).toLowerCase()}: a source advises against this order.`);
     if (r?.rule === 'same_family') warnings.push(`${cropName(ctx, p.cropId)} after ${cropName(ctx, prev!).toLowerCase()}: same crop family.`);
+    const before = plans.slice(0, i).filter((x) => !x.fixed).at(-1);
+    if (before?.kind === 'green_manure' && daysBetween(before.occupancy.to, p.sowing) > ASSUMPTIONS.greenManureMaxLeadDays.value) warnings.push(`${cropName(ctx, p.cropId)} is sown more than ${ASSUMPTIONS.greenManureMaxLeadDays.value} days after the green manure is ploughed in; much of its nitrogen may be lost.`);
+    if (p.kind === 'green_manure' && i === plans.length - 1) warnings.push(`${cropName(ctx, p.cropId)} is the last slot; a green manure is meant to feed a following crop.`);
   });
   if (plans.length > 6) { warnings.push('Only the first six slots are kept.'); plans.length = 6; }
   if (!plans.length) throw new Error('rescoreOption: no slot could be placed');
@@ -418,7 +583,7 @@ export function rescoreOption(ctx: EngineContext, inputs: Inputs, edits: readonl
 /** Price keys for every slot of a farmer edit (fixed slot included), so packet 2 can prefetch before rescoreOption. */
 export function editInputKeys(ctx: EngineContext, inputs: Inputs, edits: readonly Edit[]): PriceInputKey[] {
   const plans: SlotPlan[] = ctx.fixedSlot ? [ctx.fixedSlot] : [];
-  for (const e of edits) { const p = planEdit(ctx, inputs, e, [], []); if (p) plans.push(p); }
+  for (const e of edits) { const p = planEdit(ctx, inputs, e, [], []); if (p && p.kind !== 'green_manure') plans.push(p); }
   return collectInputKeys(plans);
 }
 
@@ -431,14 +596,19 @@ export const ENGINE_LIMITATIONS: readonly string[] = [
   'Water fit compares climatological rain plus an assumed irrigation allowance with the crop water need; it is not a field water balance.',
   'Sowing windows come from 2011 district contingency plans and university season tables; provisional windows are marked.',
   'Rice-fallow relay sowing and perennial crops are not part of annual sequences.',
+  'Green manure figures (days to incorporation, nitrogen, seed cost) come from state package-of-practice pages and are provisional; their cost is the seed only.',
 ];
 
 export interface EngineRunOptions { maxSequences?: number | undefined; maxSlots?: number | undefined; keep?: number | undefined; shortlistSize?: number | undefined; candidateSet?: CandidateSet | undefined }
-export interface EngineRun { candidateSet: CandidateSet; norm: ScoringNorm; sequencesConsidered: number; options: YearPlanOption[]; shortlist: YearPlanOption[]; limitations: string[] }
+export interface EngineRun {
+  candidateSet: CandidateSet; norm: ScoringNorm; sequencesConsidered: number; options: YearPlanOption[]; shortlist: YearPlanOption[]; limitations: string[];
+  /** Round 2: best distinct sequences whose first suggested slot is a green manure, by score (for the fourth plan). */
+  greenManureFirst: YearPlanOption[];
+}
 
 /** Keys to prefetch for a run: the fixed slot and every candidate. */
 export function runInputKeys(ctx: EngineContext, set: CandidateSet): PriceInputKey[] {
-  return collectInputKeys([...(ctx.fixedSlot ? [ctx.fixedSlot] : []), ...set.candidates]);
+  return collectInputKeys([...(ctx.fixedSlot ? [ctx.fixedSlot] : []), ...set.candidates.filter((c) => c.kind !== 'green_manure')]);
 }
 
 /** Candidates -> normalisation -> slot evaluation -> sequences -> scored options (top `keep` distinct crop sequences, default 12) -> shortlist. */
@@ -452,5 +622,12 @@ export function runYearPlanEngine(ctx: EngineContext, inputs: Inputs, opts: Engi
   const scored = sequences.length || !ctx.fixedSlot ? sequences : [{ sequenceId: 'seq-current-crop-only', slots: [] }];
   const options = scoreSequences(ctx, scored, inputs, { norm, evaluations });
   const limitations = [...ENGINE_LIMITATIONS, ...ctx.warnings, ...set.notes];
-  return { candidateSet: set, norm, sequencesConsidered: sequences.length, options: distinctOptions(options).slice(0, opts.keep ?? 12), shortlist: shortlist(options, opts.shortlistSize ?? 8, daysBetween(ctx.horizon.from, ctx.horizon.to)), limitations };
+  // Saved seasons can fill every free month after the growing crop (for example after applying a plan): say so plainly.
+  if (!sequences.length && ctx.fixedSlot && ctx.occupied.length) {
+    const list = ctx.occupied.map((o) => `${cropName(ctx, o.cropId).toLowerCase()} ${dayMonth(o.from)} to ${dayMonth(o.to)}`).join(', ');
+    limitations.push(`Saved seasons on this field (${list}) fill the months after the growing crop, so no new crop fits and only the growing crop is shown; remove or move a saved season to see other plans.`);
+  }
+  const distinct = distinctOptions(options);
+  const greenManureFirst = distinct.filter((o) => o.slots.find((s) => !s.fixed)?.kind === 'green_manure').slice(0, 6);
+  return { candidateSet: set, norm, sequencesConsidered: sequences.length, options: distinct.slice(0, opts.keep ?? 12), shortlist: shortlist(options, opts.shortlistSize ?? 8, daysBetween(ctx.horizon.from, ctx.horizon.to)), limitations, greenManureFirst };
 }

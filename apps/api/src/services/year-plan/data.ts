@@ -16,6 +16,8 @@ export const DATA_FILES = {
   pool: 'data/research/rotation/crop-pool.json',
   agronomy: 'data/research/rotation/crop-agronomy.json',
   yieldCost: 'data/research/rotation/yield-cost.json',
+  /** Round 2 (ROUND2_SPEC 1.2 item 4): green manure crops; the pool file's greenManure list says which are offered. */
+  greenManure: 'data/research/rotation/green-manure.json',
 } as const;
 
 const issues: string[] = [];
@@ -45,7 +47,8 @@ const yearText = z.union([z.string(), z.number()]).transform(String);
 
 // ------------------------------------------------------------------ schemas
 const PoolEntry = z.object({ cropId: z.string().min(1), productIds: z.array(z.string().min(1)).default([]), rotationRole: optStr, why: optStr });
-const PoolFile = z.object({ pool: tolerantArray(PoolEntry, 'crop-pool.pool') });
+const PoolGreenManure = z.object({ cropId: z.string().min(1), why: optStr });
+const PoolFile = z.object({ pool: tolerantArray(PoolEntry, 'crop-pool.pool'), greenManure: tolerantArray(PoolGreenManure, 'crop-pool.greenManure') });
 
 const SourceInfo = z.object({ id: z.string().min(1), url: optStr, title: optStr, publisher: optStr, locator: optStr });
 const DurationRow = z.object({ method: z.string().default('any'), cultivar: optStr, productId: optStr, min: optNum, max: optNum, source: optStr, note: optStr });
@@ -105,6 +108,26 @@ const YieldCostFile = z.object({
   conversions: z.object({ riceToPaddy: soft(z.object({ paddyKgPerKgRiceRaw: z.number().positive(), riceKgPerKgPaddyRaw: optNum, sourceId: optStr, locator: optStr, basis: optStr }), 'riceToPaddy') }).default({ riceToPaddy: null }),
 });
 
+const GmRange = z.object({ min: z.number().nonnegative(), max: z.number().nonnegative(), source: optStr, note: optStr });
+const GreenManureCrop = z.object({
+  cropId: z.string().regex(/^gm-[a-z0-9-]+$/),
+  name: z.string().min(1),
+  botanicalName: optStr,
+  family: optStr,
+  provisional: z.boolean().default(true),
+  daysToIncorporation: soft(GmRange, 'green-manure.daysToIncorporation'),
+  nitrogenAddedKgPerHa: soft(GmRange, 'green-manure.nitrogenAddedKgPerHa'),
+  seedRateKgPerHa: soft(GmRange, 'green-manure.seedRateKgPerHa'),
+  seedPriceInrPerKg: soft(z.object({ value: z.number().positive(), grade: optStr, year: optStr, region: optStr, source: optStr, note: optStr }), 'green-manure.seedPriceInrPerKg'),
+  fieldOpsCostPerHa: soft(z.object({ value: z.number().nonnegative(), source: optStr, note: optStr }), 'green-manure.fieldOpsCostPerHa'),
+  waterNeedMm: soft(z.object({ min: optNum, max: optNum, source: optStr, note: optStr }), 'green-manure.waterNeedMm'),
+  rainfedSuitable: z.boolean().nullable().optional().catch(null),
+  windows: tolerantArray(WindowRow, 'green-manure.windows'),
+});
+const GreenManureFile = z.object({ sources: tolerantArray(SourceInfo, 'green-manure.sources'), crops: tolerantArray(GreenManureCrop, 'green-manure.crops') });
+export type GreenManureCrop = z.output<typeof GreenManureCrop>;
+type GreenManureData = z.output<typeof GreenManureFile>;
+
 export type PoolEntry = z.output<typeof PoolEntry>;
 export type AgronomyCrop = z.output<typeof AgronomyCrop>;
 export type WindowRow = z.output<typeof WindowRow>;
@@ -117,9 +140,10 @@ type AgronomyData = z.output<typeof AgronomyFile>;
 type YieldCostData = z.output<typeof YieldCostFile>;
 
 // ------------------------------------------------------------------ cache and fixtures
-export interface DataFixtures { pool?: unknown; agronomy?: unknown; yieldCost?: unknown }
+/** With fixtures set, a missing greenManure fixture means no green manure data (existing fixtures stay unchanged). */
+export interface DataFixtures { pool?: unknown; agronomy?: unknown; yieldCost?: unknown; greenManure?: unknown }
 let fixtures: DataFixtures | null = null;
-let cache: { pool?: PoolData; agronomy?: AgronomyData; yieldCost?: YieldCostData; agronomyIndex?: Map<string, AgronomyCrop>; ycIndex?: Map<string, YieldCostCrop>; poolIndex?: Map<string, PoolEntry>; sourceIndex?: Map<string, z.output<typeof SourceInfo>> } = {};
+let cache: { pool?: PoolData; agronomy?: AgronomyData; yieldCost?: YieldCostData; greenManure?: GreenManureData; agronomyIndex?: Map<string, AgronomyCrop>; ycIndex?: Map<string, YieldCostCrop>; poolIndex?: Map<string, PoolEntry>; gmIndex?: Map<string, GreenManureCrop>; sourceIndex?: Map<string, z.output<typeof SourceInfo>> } = {};
 
 /** Clears the module cache. With `next`, later loads use those raw objects instead of the files (tests and replays). */
 export function invalidate(next?: DataFixtures | null): void {
@@ -131,6 +155,7 @@ const readJson = (rel: string): unknown => JSON.parse(readFileSync(resolve(REPO_
 export function loadPool(): PoolData { return (cache.pool ??= PoolFile.parse(fixtures?.pool ?? readJson(DATA_FILES.pool))); }
 export function loadAgronomy(): AgronomyData { return (cache.agronomy ??= AgronomyFile.parse(fixtures?.agronomy ?? readJson(DATA_FILES.agronomy))); }
 export function loadYieldCost(): YieldCostData { return (cache.yieldCost ??= YieldCostFile.parse(fixtures?.yieldCost ?? readJson(DATA_FILES.yieldCost))); }
+export function loadGreenManure(): GreenManureData { return (cache.greenManure ??= GreenManureFile.parse(fixtures ? (fixtures.greenManure ?? { crops: [] }) : readJson(DATA_FILES.greenManure))); }
 
 const agronomyIndex = () => (cache.agronomyIndex ??= new Map(loadAgronomy().crops.map((c) => [c.cropId, c])));
 const ycIndex = () => (cache.ycIndex ??= new Map(loadYieldCost().crops.map((c) => [c.cropId, c])));
@@ -139,6 +164,12 @@ export const poolEntries = (): readonly PoolEntry[] => loadPool().pool;
 export const agronomyCrop = (cropId: string): AgronomyCrop | null => agronomyIndex().get(cropId) ?? null;
 export const yieldCostCrop = (cropId: string): YieldCostCrop | null => ycIndex().get(cropId) ?? null;
 export const poolEntry = (cropId: string): PoolEntry | null => poolIndex().get(cropId) ?? null;
+const gmIndex = () => (cache.gmIndex ??= new Map(loadGreenManure().crops.map((c) => [c.cropId, c])));
+/** Green manure record (green-manure.json), or null. */
+export const greenManure = (cropId: string): GreenManureCrop | null => gmIndex().get(cropId) ?? null;
+export const isGreenManure = (cropId: string): boolean => greenManure(cropId) !== null;
+/** Green manure crops offered by the pool (crop-pool.json greenManure) that have a data record. */
+export const greenManureEntries = (): GreenManureCrop[] => loadPool().greenManure.map((e) => greenManure(e.cropId)).filter((g): g is GreenManureCrop => g !== null);
 
 // ------------------------------------------------------------------ sources
 export interface SourceRef { id: string; url: string | null; title: string | null; locator: string | null }
@@ -151,6 +182,7 @@ function sourceIndex() {
   const m = new Map<string, z.output<typeof SourceInfo>>();
   for (const s of loadAgronomy().sourceCatalog) m.set(s.id, s);
   for (const c of loadAgronomy().crops) for (const s of c.sources) if (!m.has(s.id)) m.set(s.id, s);
+  for (const s of loadGreenManure().sources) if (!m.has(s.id)) m.set(s.id, s);
   return (cache.sourceIndex = m);
 }
 /** Splits an agronomy source string ("CRIDA-HAS pp13-14; TNAU-ORG-ROT") into catalogue ids with locators. */
@@ -172,8 +204,9 @@ export function yieldCostSource(id: string | null | undefined): SourceRef | null
 
 // ------------------------------------------------------------------ names
 const capitalise = (s: string) => (s ? s[0]!.toUpperCase() + s.slice(1) : s);
-export const cropDisplayName = (cropId: string): string => capitalise(cropId.replace(/-/g, ' '));
+export const cropDisplayName = (cropId: string): string => { const g = greenManure(cropId); return g ? `${g.name} (green manure)` : capitalise(cropId.replace(/-/g, ' ')); };
 export function productDisplayName(cropId: string, productId: string): string {
+  if (isGreenManure(cropId)) return 'Ploughed in (no product)';
   const rest = productId.startsWith(`${cropId}-`) ? productId.slice(cropId.length + 1) : productId;
   return capitalise(rest.replace(/-/g, ' '));
 }
@@ -234,10 +267,10 @@ function windowScope(row: WindowRow, w: Where): { scope: WindowScope | 'region';
  * but not usable.
  */
 export function windowsFor(cropId: string, where: Where): ScopedWindow[] {
-  const crop = agronomyCrop(cropId);
-  if (!crop) return [];
+  const rows = agronomyCrop(cropId)?.sowingWindows ?? greenManure(cropId)?.windows;
+  if (!rows) return [];
   const out: ScopedWindow[] = [];
-  for (const row of crop.sowingWindows) {
+  for (const row of rows) {
     const placed = windowScope(row, where);
     if (!placed) continue;
     const reviewStatus = row.reviewStatus ?? 'sourced';
@@ -292,6 +325,12 @@ export interface DurationClass { method: string; min: number; max: number; sourc
  * bound (no completion duration) or longer than a year (perennial) is not used.
  */
 export function durationFor(cropId: string, method: string | null, region: string | null, productId?: string | null): DurationClass[] {
+  const gm = greenManure(cropId);
+  if (gm) {
+    // Green manure: sowing to incorporation (one class); the land preparation gap follows as for any slot.
+    const d = gm.daysToIncorporation;
+    return d && d.max > 0 ? [{ method: method ?? 'any', min: Math.min(d.min, d.max), max: d.max, sources: d.source ? [d.source] : [], regionMatch: 'unspecified', notes: d.note ? [`Days to incorporation: ${d.note}`] : [] }] : [];
+  }
   const all = (agronomyCrop(cropId)?.durationDays ?? []).filter((r) => !NOT_MODELLED_METHOD.test(r.method) || (method !== null && r.method === method));
   const forProduct = productId && all.some((r) => r.productId === productId) ? all.filter((r) => r.productId === productId) : all.filter((r) => !r.productId);
   const rows = forProduct.filter((r) => methodMatches(r.method, method));
@@ -524,6 +563,8 @@ const ROLES: readonly RotationRole[] = ['nitrogen_fixer', 'heavy_feeder', 'moder
 const asRole = (v: string | null | undefined): RotationRole | null => (ROLES as readonly string[]).includes(v ?? '') ? (v as RotationRole) : null;
 /** Agronomy role (rule v1, cited N figure) first; else the crop-pool classification, flagged as the pool's. */
 export function rotationRole(cropId: string): { value: RotationRole | null; source: 'agronomy' | 'pool' | null; sources: string[] } {
+  const gm = greenManure(cropId);
+  if (gm) return { value: 'nitrogen_fixer', source: 'agronomy', sources: gm.nitrogenAddedKgPerHa?.source ? [gm.nitrogenAddedKgPerHa.source] : [] };
   const a = agronomyCrop(cropId)?.rotationRole;
   const v = asRole(a?.value);
   if (v) return { value: v, source: 'agronomy', sources: a?.sources ?? [] };
@@ -532,6 +573,11 @@ export function rotationRole(cropId: string): { value: RotationRole | null; sour
 }
 /** Cited residual N credit of a nitrogen-fixing crop (kg N/ha), or null. */
 export function legumeCredit(cropId: string): LegumeCredit | null {
+  const gm = greenManure(cropId);
+  if (gm) {
+    const n = gm.nitrogenAddedKgPerHa;
+    return n && n.source ? { min: Math.min(n.min, n.max), max: n.max, specificity: 'green_manure_biomass_n_at_60_days', successorCrop: null, source: n.source } : null;
+  }
   const crop = agronomyCrop(cropId);
   const c = crop?.nitrogenCreditKgPerHa;
   if (!crop || rotationRole(cropId).value !== 'nitrogen_fixer' || !c || !c.source) return null;
@@ -545,13 +591,13 @@ export const avoidAfter = (cropId: string): CropLink[] => (agronomyCrop(cropId)?
 export const recommendedSuccessors = (cropId: string): CropLink[] => (agronomyCrop(cropId)?.recommendedSuccessors ?? []).filter((l) => l.cropId && l.candidate !== false).map(toLink);
 export const recommendedPredecessors = (cropId: string): CropLink[] => (agronomyCrop(cropId)?.recommendedPredecessors ?? []).filter((l) => l.cropId && l.candidate !== false).map(toLink);
 export function waterNeedMm(cropId: string): { min: number; max: number; source: string | null } | null {
-  const w = agronomyCrop(cropId)?.waterNeedMm;
+  const w = agronomyCrop(cropId)?.waterNeedMm ?? greenManure(cropId)?.waterNeedMm;
   const min = w?.min ?? w?.max;
   const max = w?.max ?? w?.min;
   return w && min != null && max != null && max > 0 ? { min, max, source: w.source ?? null } : null;
 }
-export const rainfedSuitable = (cropId: string): boolean | null => agronomyCrop(cropId)?.rainfedSuitable ?? null;
-export const family = (cropId: string): string | null => agronomyCrop(cropId)?.family ?? null;
+export const rainfedSuitable = (cropId: string): boolean | null => agronomyCrop(cropId)?.rainfedSuitable ?? greenManure(cropId)?.rainfedSuitable ?? null;
+export const family = (cropId: string): string | null => agronomyCrop(cropId)?.family ?? greenManure(cropId)?.family ?? null;
 export function phRange(cropId: string): { min: number; max: number; source: string | null } | null {
   const crop = agronomyCrop(cropId);
   const r = crop?.phRange ?? crop?.soilPhRange ?? null;
@@ -559,5 +605,24 @@ export function phRange(cropId: string): { min: number; max: number; source: str
 }
 export function rotationFacts(cropId: string): RotationFacts {
   const role = rotationRole(cropId);
-  return { cropId, family: family(cropId), role: role.value, roleSource: role.source, avoidAfter: avoidAfter(cropId), successors: recommendedSuccessors(cropId), predecessors: recommendedPredecessors(cropId), phRange: phRange(cropId) };
+  return { cropId, family: family(cropId), role: role.value, roleSource: role.source, avoidAfter: avoidAfter(cropId), successors: recommendedSuccessors(cropId), predecessors: recommendedPredecessors(cropId), phRange: phRange(cropId), greenManure: isGreenManure(cropId) };
+}
+
+/**
+ * Cost of a green manure slot per ha: mid seed rate x the sourced seed price, plus the field-operation cost when the
+ * file or ASSUMPTIONS.greenManureFieldOpsCostPerHa gives one (null today, so the cost is the seed only and flagged).
+ */
+export function greenManureCost(cropId: string): CostRef | null {
+  const g = greenManure(cropId);
+  const rate = g?.seedRateKgPerHa;
+  const price = g?.seedPriceInrPerKg;
+  if (!g || !rate || !price) return null;
+  const seed = Math.round(((rate.min + rate.max) / 2) * price.value);
+  const ops = g.fieldOpsCostPerHa?.value ?? (ASSUMPTIONS.greenManureFieldOpsCostPerHa.value as number | null);
+  const notes = [`Seed ${rate.min === rate.max ? rate.min : `${rate.min}-${rate.max} (mid ${(rate.min + rate.max) / 2})`} kg/ha at Rs ${price.value}/kg (${price.grade ?? 'grade not stated'} seed, ${price.year ?? 'year not stated'}) = Rs ${seed}/ha.`];
+  if (ops === null) notes.push('Sowing and ploughing-in are not costed (no sourced per-hectare figure), so the cost is the seed only and is understated.');
+  return {
+    estimate: { a2flPerHa: seed + (ops ?? 0), c2PerHa: null, authority: 'sau', year: (price.year ?? '').slice(0, 20) || null, region: (price.region ?? '').slice(0, 40) || null },
+    deductionPerHa: seed + (ops ?? 0), deductionBasis: 'a2fl', sourceId: price.source?.split(/\s+/)[0] ?? null, locator: price.source ?? null, notes,
+  };
 }

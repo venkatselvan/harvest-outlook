@@ -3,6 +3,7 @@ import type { NdviSeries, SceneRef } from "@harvest/contracts";
 import { FieldGrowthScene } from "../FieldGrowthScene";
 import type { FieldBoundary } from "../fieldGeometry";
 import { Icon } from "../icons";
+import { AiSpark } from "../ui/AiSpark";
 import { formatDay, rangeLabel, sceneDate, sceneFor, type ScenePick, type StageAt } from "./model";
 import { sceneImageUrl } from "./todayApi";
 
@@ -153,6 +154,7 @@ function SatelliteCaption(props: { pick: ScenePick; stage: StageAt }) {
                 Illustration of a typical {stageName(props.stage)}
                 <Show when={pick().derivedFrom}> · from image of {formatDay(sceneDate(pick().derivedFrom!), false)}</Show>
               </span>
+              <AiSpark use="future_look" size={14} />
             </span>
           );
         })()}

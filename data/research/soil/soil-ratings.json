@@ -1,0 +1,200 @@
+{
+  "version": "2026-11-01",
+  "description": "Soil test rating bands for confirmed soil markers. Every figure carries a source with verified true/false; a band set whose source is not verified must not rate anything (rateMarker returns status unrated). Bands are listed low to high; a band matches when value >= from (> when fromExclusive) and value < to (<= when toInclusive), exactly as the source prints the limits. Rating is arithmetic on the report value, never agronomic advice.",
+  "sources": [
+    {"id": "dac-2011-table-1", "title": "Methods Manual: Soil Testing in India, Department of Agriculture & Cooperation, Ministry of Agriculture, Government of India (January 2011), Table 1 Soil Fertility Ratings", "url": "https://biharsoilhealth.in/documents/manualgoi.pdf", "locator": "Section 4.1 Table 1, printed page 33 (PDF page 34)", "verified": true},
+    {"id": "dac-2011-table-6", "title": "Methods Manual: Soil Testing in India, Department of Agriculture & Cooperation (January 2011), Table 6 critical levels of nutrients in soils", "url": "https://biharsoilhealth.in/documents/manualgoi.pdf", "locator": "Table 6, printed page 39 (PDF page 40)", "verified": true},
+    {"id": "dac-2011-conversion", "title": "Methods Manual: Soil Testing in India, Department of Agriculture & Cooperation (January 2011), unit and plant nutrient conversion annex (after Motsara and Roy 2008, FAO Fertilizer and Plant Nutrition Bulletin 19)", "url": "https://biharsoilhealth.in/documents/manualgoi.pdf", "locator": "Conversion tables, printed pages 189-190: P to P2O5 2.29, K to K2O 1.20, mg/kg = ppm", "verified": true},
+    {"id": "nrcs-ssm-2017-table-3-15", "title": "Soil Survey Manual 2017 (USDA NRCS), Table 3-15 Reaction Class Terms and Their Ranges in pH", "url": "https://www.nrcs.usda.gov/sites/default/files/2022-09/The-Soil-Survey-Manual.pdf", "locator": "Chapter 3, Table 3-15, printed pages 199-200", "verified": true},
+    {"id": "tnau-soil-rating-chart", "title": "Resource Management, Soil, Soil Rating Chart, TNAU Agritech Portal (c) TNAU 2016, total soluble salts table", "url": "https://agritech.tnau.ac.in/agriculture/agri_soil_soilratingchart.html", "locator": "Total soluble salts (electrical conductivity): below 1 normal, 1-2 critical for germination, 2-4 critical for growth of sensitive crops, above 4 injurious to most crops", "verified": true},
+    {"id": "convention-ppm-kg-ha-2.24", "title": "Convention 1 mg/kg = 2.24 kg/ha (about 2.24 million kg of soil per hectare, 15 cm at bulk density about 1.5); seen only in secondary and vendor pages, not in a primary Indian manual", "url": null, "locator": "Not verified. The DAC manual itself uses about 2 million kg/ha for the surface 0-22 cm, which gives a different factor", "verified": false}
+  ],
+  "conversions": [
+    {"id": "p_to_p2o5", "from": "P", "to": "P2O5", "factor": 2.29, "sourceId": "dac-2011-conversion", "verified": true},
+    {"id": "k_to_k2o", "from": "K", "to": "K2O", "factor": 1.2, "sourceId": "dac-2011-conversion", "verified": true},
+    {"id": "om_to_oc", "from": "organic matter %", "to": "organic carbon %", "factor": 0.58, "sourceId": "dac-2011-conversion", "verified": true, "note": "Printed as organic C x 1.724 = organic matter and organic matter x 0.580 = organic C (1/1.724 = 0.58). Used only by rateMarkerAssumed, never by rateMarker."},
+    {"id": "mgkg_to_ppm", "from": "mg/kg", "to": "ppm", "factor": 1, "sourceId": "dac-2011-conversion", "verified": true},
+    {"id": "ppm_to_kg_ha", "from": "mg/kg", "to": "kg/ha", "factor": 2.24, "sourceId": "convention-ppm-kg-ha-2.24", "verified": false, "note": "Not used. Macronutrient values reported in mg/kg stay unit_mismatch until a primary source and the soil depth and bulk density are confirmed."}
+  ],
+  "profiles": [
+    {
+      "id": "ph", "parameter": "ph", "label": "Soil pH", "unit": "pH", "ratedUnit": "pH", "form": null,
+      "sourceId": "nrcs-ssm-2017-table-3-15", "axis": {"min": 4, "max": 10},
+      "methodAccept": null, "methodReject": "cacl|kcl|calcium\\s+chloride|potassium\\s+chloride",
+      "rejectNote": "pH measured in a salt solution reads lower than pH in water; these classes are for pH in water, so no rating is given.",
+      "assumeNote": null,
+      "bands": [
+        {"label": "strongly_acidic", "from": null, "to": 5.6, "note": "Ultra acid to strongly acid, 5.5 and below"},
+        {"label": "acidic", "from": 5.6, "to": 6.6, "note": "Moderately and slightly acid, 5.6 to 6.5"},
+        {"label": "neutral", "from": 6.6, "to": 7.4, "note": "Neutral, 6.6 to 7.3"},
+        {"label": "alkaline", "from": 7.4, "to": 8.5, "note": "Slightly and moderately alkaline, 7.4 to 8.4"},
+        {"label": "strongly_alkaline", "from": 8.5, "to": null, "note": "Strongly and very strongly alkaline, 8.5 and above"}
+      ],
+      "limitations": "The source prints classes to one decimal (5.5 then 5.6); a value between them is placed in the lower class because each class starts at the next printed lower limit. The DAC soil testing manual Table 14 lists slightly acid 6.6-6.9, neutral 7.0 and moderately alkaline 7.1-8.5, which gives no usable neutral band; it was read and not used."
+    },
+    {
+      "id": "ec", "parameter": "electrical_conductivity", "label": "Electrical conductivity", "unit": "dS/m", "ratedUnit": "dS/m", "form": null,
+      "sourceId": "tnau-soil-rating-chart", "axis": {"min": 0, "max": 5},
+      "methodAccept": null, "methodReject": null, "rejectNote": null,
+      "assumeNote": "The source does not state the extract; the report's soil to water ratio is shown separately and is not corrected.",
+      "bands": [
+        {"label": "normal", "from": null, "to": 1, "note": "Below 1 dS/m, normal"},
+        {"label": "critical", "from": 1, "to": 2, "note": "1 to 2, critical for germination"},
+        {"label": "critical", "from": 2, "to": 4, "toInclusive": true, "note": "2 to 4, critical for growth of sensitive crops"},
+        {"label": "injurious", "from": 4, "fromExclusive": true, "to": null, "note": "Above 4, injurious to most crops"}
+      ],
+      "limitations": "The 2015 Soil Health Card operational guidelines sample card prints normal below 1, medium 1-3, harmful above 3; the two agree only at 1 dS/m. A planning figure of 2 dS/m as injurious was not found in any source read."
+    },
+    {
+      "id": "oc", "parameter": "organic_carbon", "label": "Organic carbon", "unit": "%", "ratedUnit": "%", "form": null,
+      "sourceId": "dac-2011-table-1", "axis": {"min": 0, "max": 1.5},
+      "methodAccept": null, "methodReject": null, "rejectNote": null, "assumeNote": null,
+      "bands": [
+        {"label": "low", "from": null, "to": 0.5, "note": "Below 0.5 %"},
+        {"label": "medium", "from": 0.5, "to": 0.75, "toInclusive": true, "note": "0.5 to 0.75 %"},
+        {"label": "high", "from": 0.75, "fromExclusive": true, "to": null, "note": "Above 0.75 %"}
+      ],
+      "limitations": "Organic matter is not converted to organic carbon and is not rated."
+    },
+    {
+      "id": "n", "parameter": "nitrogen_available", "label": "Available nitrogen", "unit": "kg/ha", "ratedUnit": "kg/ha", "form": null,
+      "sourceId": "dac-2011-table-1", "axis": {"min": 0, "max": 840},
+      "methodAccept": "permanganate|kmno4|subbiah|asija", "methodReject": null,
+      "rejectNote": "The rating is defined for alkaline permanganate nitrogen; this report states a different method, so no rating is given.",
+      "assumeNote": "The report does not state the nitrogen method; the rating is defined for alkaline permanganate nitrogen.",
+      "bands": [
+        {"label": "low", "from": null, "to": 280, "note": "Below 280 kg/ha"},
+        {"label": "medium", "from": 280, "to": 560, "toInclusive": true, "note": "280 to 560 kg/ha"},
+        {"label": "high", "from": 560, "fromExclusive": true, "to": null, "note": "Above 560 kg/ha"}
+      ],
+      "limitations": "Nitrogen without a stated available pool (nitrogen_unspecified) and total nitrogen are never rated."
+    },
+    {
+      "id": "p", "parameter": "phosphorus_available", "label": "Available phosphorus", "unit": "kg/ha", "ratedUnit": "kg P/ha", "form": "element",
+      "sourceId": "dac-2011-table-1", "axis": {"min": 0, "max": 40},
+      "methodAccept": "olsen|bicarbonate|nahco3", "methodReject": null,
+      "rejectNote": "The rating is defined for Olsen phosphorus; this report states a different extraction, so no rating is given.",
+      "assumeNote": "The report does not state the phosphorus method; the rating is defined for Olsen phosphorus.",
+      "bands": [
+        {"label": "low", "from": null, "to": 10, "note": "Below 10 kg P/ha"},
+        {"label": "medium", "from": 10, "to": 24.6, "toInclusive": true, "note": "10 to 24.6 kg P/ha"},
+        {"label": "high", "from": 24.6, "fromExclusive": true, "to": null, "note": "Above 24.6 kg P/ha"}
+      ],
+      "limitations": "Elemental P in kg/ha, Olsen method (the table states alkaline soil). Total phosphorus is never rated."
+    },
+    {
+      "id": "p2o5", "parameter": "phosphorus_available", "label": "Available phosphorus (P2O5)", "unit": "kg/ha", "ratedUnit": "kg P2O5/ha", "form": "oxide",
+      "sourceId": "dac-2011-table-1", "axis": {"min": 0, "max": 90},
+      "methodAccept": "olsen|bicarbonate|nahco3", "methodReject": null,
+      "rejectNote": "The rating is defined for Olsen phosphorus; this report states a different extraction, so no rating is given.",
+      "assumeNote": "The report does not state the phosphorus method; the rating is defined for Olsen phosphorus.",
+      "derivedFrom": {"profile": "p", "factor": 2.29, "conversionId": "p_to_p2o5"},
+      "bands": [
+        {"label": "low", "from": null, "to": 22.9, "note": "Below 22.9 kg P2O5/ha (10 kg P/ha x 2.29)"},
+        {"label": "medium", "from": 22.9, "to": 56.334, "toInclusive": true, "note": "22.9 to 56.334 kg P2O5/ha (10 to 24.6 kg P/ha x 2.29)"},
+        {"label": "high", "from": 56.334, "fromExclusive": true, "to": null, "note": "Above 56.334 kg P2O5/ha (24.6 kg P/ha x 2.29)"}
+      ],
+      "limitations": "Element bands multiplied by the manual's P to P2O5 factor; the value itself is not converted."
+    },
+    {
+      "id": "k", "parameter": "potassium_available", "label": "Available potassium", "unit": "kg/ha", "ratedUnit": "kg K/ha", "form": "element",
+      "sourceId": "dac-2011-table-1", "axis": {"min": 0, "max": 420},
+      "methodAccept": "ammonium\\s+acetate|nh4oac|nh4\\s+oac|neutral\\s+n", "methodReject": null,
+      "rejectNote": "The rating is defined for neutral normal ammonium acetate potassium; this report states a different extraction, so no rating is given.",
+      "assumeNote": "The report does not state the potassium method; the rating is defined for neutral normal ammonium acetate potassium.",
+      "bands": [
+        {"label": "low", "from": null, "to": 108, "note": "Below 108 kg K/ha"},
+        {"label": "medium", "from": 108, "to": 280, "toInclusive": true, "note": "108 to 280 kg K/ha"},
+        {"label": "high", "from": 280, "fromExclusive": true, "to": null, "note": "Above 280 kg K/ha"}
+      ],
+      "limitations": "Elemental K in kg/ha, neutral normal ammonium acetate. Total, water-extracted and exchangeable-only potassium are never rated."
+    },
+    {
+      "id": "k2o", "parameter": "potassium_available", "label": "Available potassium (K2O)", "unit": "kg/ha", "ratedUnit": "kg K2O/ha", "form": "oxide",
+      "sourceId": "dac-2011-table-1", "axis": {"min": 0, "max": 500},
+      "methodAccept": "ammonium\\s+acetate|nh4oac|nh4\\s+oac|neutral\\s+n", "methodReject": null,
+      "rejectNote": "The rating is defined for neutral normal ammonium acetate potassium; this report states a different extraction, so no rating is given.",
+      "assumeNote": "The report does not state the potassium method; the rating is defined for neutral normal ammonium acetate potassium.",
+      "derivedFrom": {"profile": "k", "factor": 1.2, "conversionId": "k_to_k2o"},
+      "bands": [
+        {"label": "low", "from": null, "to": 129.6, "note": "Below 129.6 kg K2O/ha (108 kg K/ha x 1.20)"},
+        {"label": "medium", "from": 129.6, "to": 336, "toInclusive": true, "note": "129.6 to 336 kg K2O/ha (108 to 280 kg K/ha x 1.20)"},
+        {"label": "high", "from": 336, "fromExclusive": true, "to": null, "note": "Above 336 kg K2O/ha (280 kg K/ha x 1.20)"}
+      ],
+      "limitations": "Element bands multiplied by the manual's K to K2O factor; the value itself is not converted."
+    },
+    {
+      "id": "zn", "parameter": "zinc_available", "label": "Zinc (DTPA)", "unit": "mg/kg", "ratedUnit": "mg/kg", "form": null,
+      "sourceId": "dac-2011-table-6", "axis": {"min": 0, "max": 2},
+      "methodAccept": "dtpa", "methodReject": null,
+      "rejectNote": "The critical limit is for DTPA-extractable zinc; this report states a different extractant, so no rating is given.",
+      "assumeNote": "The report does not state the extractant; the critical limit is for DTPA-extractable zinc.",
+      "bands": [
+        {"label": "deficient", "from": null, "to": 0.6, "note": "Below the 0.6 ppm critical limit (printed 0.6, range 0.4 to 1.2)"},
+        {"label": "sufficient", "from": 0.6, "to": null, "note": "0.6 ppm and above"}
+      ],
+      "limitations": "mg/kg and ppm are the same unit. The manual also prints a five-class DTPA table (Table 21, after Lindsay and Norvell 1978) that classes zinc 0.5-1 as low; it was read and not used."
+    },
+    {
+      "id": "fe", "parameter": "iron_available", "label": "Iron (DTPA)", "unit": "mg/kg", "ratedUnit": "mg/kg", "form": null,
+      "sourceId": "dac-2011-table-6", "axis": {"min": 0, "max": 10},
+      "methodAccept": "dtpa", "methodReject": null,
+      "rejectNote": "The critical limit is for DTPA-extractable iron; this report states a different extractant, so no rating is given.",
+      "assumeNote": "The report does not state the extractant; the critical limit is for DTPA-extractable iron.",
+      "bands": [
+        {"label": "deficient", "from": null, "to": 2.5, "note": "Below 2.5 ppm"},
+        {"label": "critical", "from": 2.5, "to": 4.5, "toInclusive": true, "note": "2.5 to 4.5 ppm, the critical range printed for DTPA iron"},
+        {"label": "sufficient", "from": 4.5, "fromExclusive": true, "to": null, "note": "Above 4.5 ppm"}
+      ],
+      "limitations": "The source prints the DTPA critical level for iron as a range (2.5 to 4.5 ppm), not a single limit."
+    },
+    {
+      "id": "mn", "parameter": "manganese_available", "label": "Manganese (DTPA)", "unit": "mg/kg", "ratedUnit": "mg/kg", "form": null,
+      "sourceId": "dac-2011-table-6", "axis": {"min": 0, "max": 6},
+      "methodAccept": "dtpa", "methodReject": null,
+      "rejectNote": "The critical limit is for DTPA-extractable manganese; this report states a different extractant, so no rating is given.",
+      "assumeNote": "The report does not state the extractant; the critical limit is for DTPA-extractable manganese.",
+      "bands": [
+        {"label": "deficient", "from": null, "to": 2, "note": "Below the 2 ppm critical limit"},
+        {"label": "sufficient", "from": 2, "to": null, "note": "2 ppm and above"}
+      ],
+      "limitations": "mg/kg and ppm are the same unit."
+    },
+    {
+      "id": "cu", "parameter": "copper_available", "label": "Copper (DTPA)", "unit": "mg/kg", "ratedUnit": "mg/kg", "form": null,
+      "sourceId": "dac-2011-table-6", "axis": {"min": 0, "max": 1},
+      "methodAccept": "dtpa|ammonium\\s+acetate", "methodReject": null,
+      "rejectNote": "The critical limit is for DTPA or ammonium acetate extractable copper; this report states a different extractant, so no rating is given.",
+      "assumeNote": "The report does not state the extractant; the critical limit is for DTPA-extractable copper.",
+      "bands": [
+        {"label": "deficient", "from": null, "to": 0.2, "note": "Below the 0.2 ppm critical limit"},
+        {"label": "sufficient", "from": 0.2, "to": null, "note": "0.2 ppm and above"}
+      ],
+      "limitations": "mg/kg and ppm are the same unit."
+    },
+    {
+      "id": "b", "parameter": "boron_available", "label": "Boron (hot water)", "unit": "mg/kg", "ratedUnit": "mg/kg", "form": null,
+      "sourceId": "dac-2011-table-6", "axis": {"min": 0, "max": 1.5},
+      "methodAccept": "hot[\\s-]*water|azomethine", "methodReject": null,
+      "rejectNote": "The critical limit is for hot-water-extractable boron; this report states a different extractant, so no rating is given.",
+      "assumeNote": "The report does not state the extractant; the critical limit is for hot-water-extractable boron.",
+      "bands": [
+        {"label": "deficient", "from": null, "to": 0.5, "note": "Below the 0.5 ppm critical limit"},
+        {"label": "sufficient", "from": 0.5, "to": null, "note": "0.5 ppm and above"}
+      ],
+      "limitations": "mg/kg and ppm are the same unit."
+    },
+    {
+      "id": "s", "parameter": "sulphur_available", "label": "Sulphur", "unit": "mg/kg", "ratedUnit": "mg/kg", "form": null,
+      "sourceId": "dac-2011-table-6", "axis": {"min": 0, "max": 30},
+      "methodAccept": "hot[\\s-]*water|cacl|calcium\\s+chloride|phosphate", "methodReject": null,
+      "rejectNote": "The critical limit is for hot-water, CaCl2 or phosphate extractable sulphur; this report states a different extractant, so no rating is given.",
+      "assumeNote": "The report does not state the extractant; the critical limit is for hot-water, CaCl2 or phosphate extractable sulphur.",
+      "bands": [
+        {"label": "deficient", "from": null, "to": 10, "note": "Below the usual 10 ppm critical level (printed range 8 to 30 by crop and extractant)"},
+        {"label": "sufficient", "from": 10, "to": null, "note": "10 ppm and above"}
+      ],
+      "limitations": "The source gives a usual critical level of 10 ppm within a range of 8 to 30; the 2015 Soil Health Card sample card rates 10 to 20 as medium and above 20 as high, which was read and not used."
+    }
+  ]
+}

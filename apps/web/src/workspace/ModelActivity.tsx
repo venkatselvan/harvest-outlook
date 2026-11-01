@@ -25,6 +25,12 @@ const activityPurpose = (purpose: string | undefined) =>
     ? "Planning your year"
     : purpose?.startsWith("soil_report")
       ? "Soil report extraction"
+      : purpose?.startsWith("soil_review/")
+        ? "Reviewing your soil"
+        : purpose?.startsWith("crop_fit/")
+          ? "Picking crops for your field"
+          : purpose?.startsWith("harvest_outlook_note/")
+            ? "Writing the price outlook"
       : purpose?.startsWith("speech") || purpose?.startsWith("voice")
         ? "Voice transcription"
         : purpose?.replace(/_/g, " ");

@@ -4,6 +4,7 @@ import { analysisFailureMessage, loadEntry, requestAnalysis, waitForJob, type Co
 import { ACTIVITIES } from "./model";
 import { fieldLabel, ProposalItem, valueLabel } from "./ProposalItem";
 import { WhyChanged } from "./WhyChanged";
+import { AiSparkInline } from "../../workspace/ui/AiSpark";
 
 const QUALITY_TEXT: Record<string, string> = {
   blur: "may be blurry",
@@ -60,7 +61,7 @@ function Analysis(props: { entry: JournalEntry; plan: Timeline["currentPlan"]; s
       </Show>
       <Show when={a()?.status === "succeeded"}>
         <section class="jr-ai" aria-label="AI reading of your photo">
-          <p class="jr-ai-label">{a()!.label}</p>
+          <p class="jr-ai-label">{a()!.label} <AiSparkInline use="journal_observation" label="Interpreted by AI" /></p>
           <Show when={a()!.provenance === "synthetic_fixture"}>
             <p class="jr-synthetic" role="note">Synthetic demonstration answer from a fixture. It is not a reading of your photo.</p>
           </Show>

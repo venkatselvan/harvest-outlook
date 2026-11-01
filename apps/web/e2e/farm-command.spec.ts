@@ -1,8 +1,22 @@
 import { expect, test, type Page, type Route } from "@playwright/test";
 import {
+  CropFitReview as cropFitSchema,
   FarmCommandCenter as schema,
+  MarketTimeline as marketSchema,
+  SoilReview as soilReviewSchema,
   TodayView as todaySchema,
 } from "@harvest/contracts";
+import {
+  dateFreshReview as cropFitDateReview,
+  readyModelReview as cropFitReadyReview,
+  seasonReview as cropFitSeasonReview,
+} from "../src/workspace/farm/cropFitFixtures";
+import { readyModelReview as soilReadyReview } from "../src/workspace/farm/soilReviewFixtures";
+import {
+  marketFixture,
+  marketNoPriceFixture,
+  FIXTURE_TODAY_INDEX,
+} from "../src/workspace/market/fixtures";
 import {
   todayEmptyFixture,
   todayFixture,
@@ -147,12 +161,16 @@ async function fixture(
     extendedCare?: boolean;
     /** Answer GET /today from the synthetic Today fixture. Without it the endpoint returns an empty envelope and the Today view shows its unavailable state. */
     today?: boolean;
+    /** Answer GET /today for the first farm with this (synthetic) view instead of the default fixture; implies `today`. */
+    todayView?: (farmId: string) => unknown;
     /** Adds a saved ginger season to the first farm and answers GET /price-trend (full series for maize, none for ginger). */
     trends?: boolean;
   } = {},
 ) {
   const workspaces: any = { [A]: workspace(A), [B]: workspace(B) };
   const trendRequests: URLSearchParams[] = [];
+  const timelineRequests: URLSearchParams[] = [];
+  const cropFitRequests: URLSearchParams[] = [];
   if (options.trends)
     workspaces[A].rotationPlans = [
       {
@@ -333,10 +351,62 @@ async function fixture(
         }),
       });
     }
-    if (options.today && path.endsWith("/today") && method === "GET")
+    // Round-2 routes, answered from the SYNTHETIC fixtures of their views so no test depends on the live database.
+    if (path.endsWith("/market-timeline") && method === "GET") {
+      const query = new URL(route.request().url()).searchParams;
+      timelineRequests.push(query);
+      const productId = query.get("productId") ?? "unknown";
+      const base =
+        productId === "ginger-fresh"
+          ? marketNoPriceFixture(id)
+          : marketFixture(id);
       return route.fulfill({
         json: env(
-          todaySchema.parse(id === A ? todayFixture(A) : todayEmptyFixture(B)),
+          marketSchema.parse({
+            ...base,
+            productId,
+            productName: productId === "ginger-fresh" ? "Fresh ginger" : "Maize",
+            cropName: productId === "ginger-fresh" ? "Ginger" : "Maize",
+          }),
+        ),
+      });
+    }
+    if (path.endsWith("/crop-fit")) {
+      const query = new URL(route.request().url()).searchParams;
+      if (method === "GET") cropFitRequests.push(query);
+      const mode = query.get("mode");
+      return route.fulfill({
+        json: env(
+          cropFitSchema.parse(
+            mode === "season"
+              ? cropFitSeasonReview
+              : mode === "date"
+                ? cropFitDateReview
+                : cropFitReadyReview,
+          ),
+        ),
+      });
+    }
+    if (path.endsWith("/soil-review"))
+      return route.fulfill({
+        json: env(
+          soilReviewSchema.parse(
+            { ...soilReadyReview, farmId: id },
+          ),
+        ),
+      });
+    if (
+      (options.today || options.todayView) &&
+      path.endsWith("/today") &&
+      method === "GET"
+    )
+      return route.fulfill({
+        json: env(
+          todaySchema.parse(
+            id === A
+              ? (options.todayView?.(A) ?? todayFixture(A))
+              : todayEmptyFixture(B),
+          ),
         ),
       });
     if (path.endsWith("/complete") && method === "POST") {
@@ -453,6 +523,8 @@ async function fixture(
     plantBodies,
     careBodies,
     trendRequests,
+    timelineRequests,
+    cropFitRequests,
     get pending() {
       return pending;
     },
@@ -481,7 +553,7 @@ test("one selected-farm workspace holds the Today view and four tabs, and the Fa
   page,
 }) => {
   await page.setViewportSize({ width: 1440, height: 1000 });
-  await fixture(page, { today: true });
+  const api = await fixture(page, { today: true });
   await page.goto("/farm");
   await expect(
     page.getByRole("heading", { name: "South field", exact: true }),
@@ -508,21 +580,53 @@ test("one selected-farm workspace holds the Today view and four tabs, and the Fa
   });
   // Farm tab: crop fit first, then soil records and activity behind the secondary toggle.
   await tabs.getByRole("link", { name: "Farm", exact: true }).click();
-  await expect(page.locator(".focused-crop-card")).toHaveCount(14);
   const sections = page.getByRole("navigation", { name: "Farm sections" });
   await expect(
     sections.getByRole("link", { name: "Crop fit", exact: true }),
   ).toHaveAttribute("aria-current", "page");
+  const fit = page.getByRole("region", { name: "Which crop fits next?" });
+  await expect(
+    fit.getByRole("heading", { name: "Which crop fits next?", level: 2 }),
+  ).toBeVisible();
+  // The old focused-crop grid is gone; the review's three picks replace it.
+  await expect(page.locator(".focused-crop-card")).toHaveCount(0);
+  await expect(fit.getByRole("heading", { name: "Top picks", exact: true })).toBeVisible();
+  await expect(fit.locator(".cf-card")).toHaveCount(3);
+  await expect(fit.getByRole("button", { name: "Groundnut", exact: true })).toBeVisible();
+  // Mode controls: the server's default (next crop) is shown as pressed and its resolved sowing date is stated.
+  const when = fit.getByRole("group", { name: "When to sow" });
+  for (const name of ["Next crop", "By season", "Pick a date"])
+    await expect(when.getByRole("button", { name, exact: true })).toBeVisible();
+  await expect(when.getByRole("button", { name: "Next crop", exact: true })).toHaveAttribute("aria-pressed", "true");
+  await expect(when.getByRole("button", { name: "By season", exact: true })).toHaveAttribute("aria-pressed", "false");
+  await expect(fit.getByText("Sowing from 4 Feb 2027, after paddy")).toBeVisible();
+  expect(api.cropFitRequests[0]!.has("mode")).toBe(false); // the first GET leaves the mode to the server
+  // Switching mode asks the server again for that mode and shows the season chips.
+  await when.getByRole("button", { name: "By season", exact: true }).click();
+  await expect(when.getByRole("button", { name: "By season", exact: true })).toHaveAttribute("aria-pressed", "true");
+  await expect(fit.getByRole("group", { name: "Season" })).toBeVisible();
+  await expect(fit.getByText(/windows from 1 Apr 2027/)).toBeVisible();
+  const seasonRequest = api.cropFitRequests.find((q) => q.get("mode") === "season")!;
+  expect(seasonRequest.get("season")).toMatch(/^(kharif|rabi|summer)$/);
+  await expect(page.getByRole("button", { name: "Compare crops", exact: true })).toBeVisible();
   await page.getByRole("button", { name: "Soil reports", exact: true }).click();
   await expect(
     page.getByRole("dialog", { name: "Farm soil reports" }),
   ).toBeVisible();
   await page.getByRole("button", { name: "Close farm tool" }).click();
   await sections.getByRole("link", { name: "Soil records", exact: true }).click();
+  // The soil review sits above the report list (soil markers).
+  const review = page.getByRole("heading", { name: "Soil review", exact: true });
+  const markers = page.getByRole("heading", { name: "Soil markers", exact: true });
+  await expect(review).toBeVisible();
   await expect(
-    page.getByRole("heading", { name: "Soil markers", exact: true }),
+    page.getByText("Soil pH 7.2 rates neutral and salinity is normal."),
   ).toBeVisible();
-  await expect(page.locator(".focused-crop-card")).toHaveCount(0);
+  await expect(markers).toBeVisible();
+  expect((await review.boundingBox())!.y).toBeLessThan(
+    (await markers.boundingBox())!.y,
+  );
+  await expect(fit).toHaveCount(0);
   await sections.getByRole("link", { name: "Activity", exact: true }).click();
   await expect(
     page.getByRole("heading", { name: "Crop progress", exact: true }),
@@ -530,8 +634,16 @@ test("one selected-farm workspace holds the Today view and four tabs, and the Fa
   await expect(
     tabs.getByRole("link", { name: "Farm", exact: true }),
   ).toHaveAttribute("aria-current", "page");
-  // Market tab.
+  // Market tab: the timeline first, the FAO bulletin collapsed below it until opened.
   await tabs.getByRole("link", { name: "Market", exact: true }).click();
+  await expect(
+    page.getByRole("heading", { name: "Market timeline", exact: true }),
+  ).toBeVisible();
+  const context = page.locator("details.market-context-details");
+  await expect(context).not.toHaveAttribute("open", "");
+  await context
+    .getByText("Wider market context (FAO monthly bulletin)", { exact: true })
+    .click();
   const global = page.getByRole("region", { name: "Global market context" });
   await expect(global.getByText("105.2", { exact: false })).toBeVisible();
   await expect(global).toContainText("index points");
@@ -541,31 +653,71 @@ test("one selected-farm workspace holds the Today view and four tabs, and the Fa
   await expect(global).toContainText("no crop-specific indicator");
 });
 
-test("Market tab charts a 36-month price trend for each tracked product and says so when a product has no series", async ({
+test("Market tab shows the market timeline for each tracked product, moves its three cards with the week slider, and says so when no product is tracked", async ({
   page,
 }) => {
   await page.setViewportSize({ width: 1280, height: 900 });
   const api = await fixture(page, { trends: true });
   await page.goto("/farm?tab=harvest");
-  const trends = page.getByRole("region", { name: "Price trends", exact: true });
-  await expect(trends).toBeVisible();
-  // One card per tracked product: the growing maize cycle and the saved ginger season.
-  await expect(trends.locator(".market-trend")).toHaveCount(2);
-  const maize = trends.getByRole("article", { name: "Maize · Maize price trend" });
-  await expect(maize.locator("figure.ui-trend")).toHaveCount(1);
-  await expect(maize).not.toContainText("No price series yet");
-  const ginger = trends.getByRole("article", { name: "Ginger · Fresh ginger price trend" });
-  await expect(ginger.locator("figure.ui-trend")).toHaveCount(0);
-  await expect(ginger).toContainText("No price series yet");
-  // The request carries the farm's own place and the 36-month window.
-  const maizeRequest = api.trendRequests.find((q) => q.get("productId") === "maize-product")!;
-  expect(Object.fromEntries(maizeRequest)).toMatchObject({
-    state: "IN-KA",
-    district: "Hassan",
-    months: "36",
+  const view = page.getByRole("region", { name: "Market timeline", exact: true });
+  await expect(
+    view.getByRole("heading", { name: "Market timeline", exact: true }),
+  ).toBeVisible();
+  // One chip per tracked product, the growing maize cycle first, then the saved ginger season.
+  const products = view.getByRole("group", { name: "Product" });
+  await expect(products.getByRole("button")).toHaveText(["Maize", "Fresh ginger"]);
+  await expect(products.getByRole("button", { name: "Maize", exact: true })).toHaveAttribute("aria-pressed", "true");
+  await expect(products.getByRole("button", { name: "Fresh ginger", exact: true })).toHaveAttribute("aria-pressed", "false");
+  // The request carries the product and the 36-months-back, 12-months-ahead window.
+  await expect(view.getByTestId("market-chart")).toBeVisible();
+  expect(Object.fromEntries(api.timelineRequests[0]!)).toEqual({
+    productId: "maize-product",
+    monthsBack: "36",
+    monthsAhead: "12",
   });
-  // The existing Market content and the monitoring controls are still there below the trends.
-  await expect(page.getByRole("region", { name: "Global market context" })).toBeVisible();
+  // The slider spans the whole range with its thumb at today's week.
+  const slider = view.getByRole("slider", { name: "Move through the weeks" });
+  await expect(slider).toHaveValue(String(FIXTURE_TODAY_INDEX));
+  await expect(slider).toHaveAttribute("aria-valuetext", "Week of 26 Oct 2026");
+  await expect(view.getByRole("button", { name: "Back to today" })).toHaveCount(0);
+  // Three cards for the selected week: Price, Weather and Events.
+  const card = (kind: string) => view.locator(`[data-card="${kind}"]`);
+  for (const [kind, title] of [
+    ["price", "Price"],
+    ["weather", "Weather"],
+    ["events", "Events"],
+  ] as const) {
+    await expect(card(kind)).toBeVisible();
+    await expect(card(kind).getByRole("heading", { name: title, exact: true })).toBeVisible();
+  }
+  await expect(card("price")).toContainText("Observed");
+  await expect(card("events")).toContainText("Fall armyworm scouting window");
+  // One week later the cards follow the slider: a seasonal reference price and no events.
+  await slider.focus();
+  await slider.press("ArrowRight");
+  await expect(slider).toHaveAttribute("aria-valuetext", "Week of 2 Nov 2026");
+  await expect(card("price")).toContainText("Reference");
+  await expect(card("events")).toContainText("No alerts or price moves this week");
+  await view.getByRole("button", { name: "Back to today" }).click();
+  await expect(slider).toHaveAttribute("aria-valuetext", "Week of 26 Oct 2026");
+  // A product with no stored price series says so and keeps weather and events.
+  await products.getByRole("button", { name: "Fresh ginger", exact: true }).click();
+  await expect(
+    view.getByTestId("market-no-price"),
+  ).toContainText("No mandi price series is stored for Fresh ginger yet");
+  expect(api.timelineRequests.map((q) => q.get("productId"))).toContain("ginger-fresh");
+  await expect(card("weather")).toBeVisible();
+  // The FAO bulletin is still on the tab, collapsed under the timeline.
+  await expect(
+    page.locator("details.market-context-details > summary"),
+  ).toHaveText("Wider market context (FAO monthly bulletin)");
+  // A farm that tracks no product gets the empty state instead of a chart.
+  await page.getByLabel("Selected farm", { exact: true }).selectOption(B);
+  await expect(page.getByTestId("market-empty")).toHaveText(
+    "Add a crop to your farm or plan to see its market timeline.",
+  );
+  await expect(view.getByRole("slider")).toHaveCount(0);
+  await expect(view.getByRole("group", { name: "Product" })).toHaveCount(0);
 });
 
 test("planting a focused crop requires its exact product/date and exposes the saved crop care", async ({
@@ -854,12 +1006,17 @@ test("tabs switch by click and by keyboard, and only the selected tab is current
   await expect(page).toHaveURL(/\/farm\?tab=harvest$/);
   await expect(link("Market")).toHaveAttribute("aria-current", "page");
   await expect(
-    page.getByRole("region", { name: "Global market context" }),
+    page.getByRole("heading", { name: "Market timeline", exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByText("Wider market context (FAO monthly bulletin)", { exact: true }),
   ).toBeVisible();
   await link("Farm").focus();
   await page.keyboard.press("Enter");
   await expect(page).toHaveURL(/\/farm\?tab=soil$/);
-  await expect(page.locator(".focused-crop-card")).toHaveCount(14);
+  await expect(
+    page.getByRole("heading", { name: "Which crop fits next?", level: 2 }),
+  ).toBeVisible();
   await link("Today").click();
   await expect(page).toHaveURL(/\/farm\?tab=today$/);
   await expect(link("Today")).toHaveAttribute("aria-current", "page");
@@ -916,58 +1073,106 @@ test("farm query views react to navigation and survive a fresh reload", async ({
   await fixture(page);
   await page.goto("/farm?tab=soil");
   const tabs = farmViews(page);
+  const cropFit = page.getByRole("heading", {
+    name: "Which crop fits next?",
+    level: 2,
+  });
   await expect(
     tabs.getByRole("link", { name: "Farm", exact: true }),
   ).toHaveAttribute("aria-current", "page");
-  await expect(page.locator(".focused-crop-card")).toHaveCount(14);
+  await expect(cropFit).toBeVisible();
   await tabs.getByRole("link", { name: "Today", exact: true }).click();
   await expect(
     page.getByRole("region", { name: "Your field", exact: true }),
   ).toBeVisible();
+  await expect(cropFit).toHaveCount(0);
   await tabs.getByRole("link", { name: "Farm", exact: true }).click();
-  await expect(page.locator(".focused-crop-card")).toHaveCount(14);
+  await expect(cropFit).toBeVisible();
+  await expect(page.locator(".cf-card")).toHaveCount(3);
   await page.reload();
-  await expect(page.locator(".focused-crop-card")).toHaveCount(14);
+  await expect(cropFit).toBeVisible();
+  await expect(page.locator(".cf-card")).toHaveCount(3);
 });
 
-test("all scheduled care stays reachable and regional references remain undated", async ({
+test("regional care references appear as dated steps whose detail starts with Guidance from, and the next action leads the list", async ({
   page,
 }) => {
   await page.setViewportSize({ width: 1100, height: 900 });
-  await fixture(page, { extendedCare: true });
+  // SYNTHETIC Today view for a farm whose region has no matched care schedule: one local care task plus Tamil Nadu
+  // references dated on the sowing date (care_task steps with a "Guidance from" detail), a dated stage check and a
+  // transition. The server dates all of them; the view must show each window and never an undated panel.
+  const prefix =
+    "Guidance from Tamil Nadu sources (no local schedule for Hassan).";
+  const base = todayFixture(A);
+  const reference = (id: string, title: string, dueFrom: string, dueTo: string, action: string) => ({
+    id,
+    kind: "care_task" as const,
+    title,
+    detail: `${prefix} ${action}`,
+    dueFrom,
+    dueTo,
+    status: "upcoming" as const,
+    careTask: null,
+    alertId: null,
+  });
+  const steps = [
+    base.upcoming[0]!, // "Check field moisture", due 31 Oct to 2 Nov, completable
+    reference("ref:maize-cycle:irrigation:49", "Regional irrigation reference", "2026-11-03", "2026-11-09", "Irrigate at tasselling if the top soil is dry."),
+    reference("ref:maize-cycle:weeding:60", "Second weeding reference", "2026-11-14", "2026-11-14", "Hoe between rows once weeds reach the knee."),
+    {
+      id: "check:maize-cycle:stage-check",
+      kind: "stage_check" as const,
+      title: "Check: Inspect the observed crop stage",
+      detail: `${prefix} Dated from the calendar estimate of the Tasselling and silking stage; check the actual crop stage first. Check the actual crop before using this regional reference.`,
+      dueFrom: "2026-11-09",
+      dueTo: "2026-11-28",
+      status: "upcoming" as const,
+      careTask: null,
+      alertId: null,
+    },
+  ];
+  await fixture(page, {
+    todayView: () => ({ ...base, upcoming: steps, nextAction: steps[0] }),
+  });
   await page.goto("/farm");
-  // Four scheduled steps fit under the visible-step limit, so every one shows without a toggle.
-  const steps = page.getByRole("region", { name: "Upcoming steps" });
-  for (const index of [1, 2, 3, 4])
-    await expect(
-      steps.getByRole("heading", {
-        name: `Scheduled care ${index}`,
-        exact: true,
-      }),
-    ).toBeVisible();
-  const guidance = page.locator(".stage-guidance-panel").first();
-  await guidance.locator("summary").click();
-  await expect(guidance).toContainText("This source covers another region");
-  await expect(guidance).toContainText("No date has been assigned");
-  await expect(
-    guidance.getByRole("button", { name: "Done today" }),
-  ).toHaveCount(0);
-  const regional = page.locator(".stage-guidance-panel").last();
-  await regional.locator("summary").click();
-  await expect(regional).toContainText("no scheduled field dates");
-  await expect(
-    regional.getByRole("button", { name: "Done today" }),
-  ).toHaveCount(0);
-  await farmViews(page).getByRole("link", { name: "Farm", exact: true }).click();
-  const maize = page
-    .locator(".focused-crop-card")
-    .filter({ has: page.getByRole("heading", { name: "Maize", exact: true }) });
-  await expect(maize).toContainText(
-    "Retained crop residues can contribute organic material.",
-  );
-  await maize.getByText("Before the next crop", { exact: true }).click();
-  await expect(maize).toContainText(
-    "Check the previous crop and residue management",
+  const panel = page.getByRole("region", { name: "Upcoming steps" });
+  await expect(panel).toBeVisible();
+  // The undated panels no longer exist anywhere on Today.
+  await expect(page.locator(".stage-guidance-panel")).toHaveCount(0);
+  await expect(page.getByText("Other-region care references")).toHaveCount(0);
+  await expect(page.getByText("Stage checks without a date")).toHaveCount(0);
+  // The next-action card leads, with its window and a Done button for the completable care task.
+  const next = panel.getByTestId("today-next-action");
+  await expect(next).toBeVisible();
+  await expect(next.getByRole("heading", { name: "Check field moisture", exact: true })).toBeVisible();
+  await expect(next).toContainText("Next action");
+  await expect(next).toContainText("Do between 31 Oct and 2 Nov");
+  await expect(next.getByRole("button", { name: "Mark done: Check field moisture" })).toBeVisible();
+  // The list below starts with the second step; the card's step is not repeated.
+  const later = panel.getByRole("list", { name: "Later steps" });
+  const items = later.getByRole("listitem");
+  await expect(items).toHaveCount(3);
+  await expect(items.first().getByRole("heading")).toHaveText("Regional irrigation reference");
+  await expect(later.getByRole("heading", { name: "Check field moisture" })).toHaveCount(0);
+  // Every step shows a date window; none says "Expected" without a date.
+  await expect(items.nth(0).locator(".today-step-when")).toHaveText("3 to 9 Nov");
+  await expect(items.nth(1).locator(".today-step-when")).toHaveText("14 Nov");
+  await expect(items.nth(2).locator(".today-step-when")).toHaveText("9 to 28 Nov");
+  const month = "(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)";
+  const windows = panel.locator(".today-step-when, .today-next-when");
+  await expect(windows).toHaveCount(4);
+  for (const when of await windows.all())
+    await expect(when).toContainText(new RegExp(`\\d{1,2}.*${month}`));
+  await expect(panel).not.toContainText("Expected");
+  // The regional references are dated steps whose detail starts with "Guidance from", and they cannot be marked done.
+  for (const index of [0, 1, 2]) {
+    await expect(items.nth(index).locator(".today-step-detail")).toHaveText(
+      /^Guidance from Tamil Nadu sources \(no local schedule for Hassan\)\./,
+    );
+    await expect(items.nth(index).getByRole("button")).toHaveCount(0);
+  }
+  await expect(items.nth(0).locator(".today-step-detail")).toContainText(
+    "Irrigate at tasselling if the top soil is dry.",
   );
 });
 

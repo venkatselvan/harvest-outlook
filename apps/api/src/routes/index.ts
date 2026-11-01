@@ -38,6 +38,9 @@ import {todayAlertRoutes, type TodayAlertRouteDeps} from './today-alerts';
 import {todayTimelineRoutes, type TodayTimelineDeps} from './today-timeline';
 import {todayFutureRoutes, type TodayFutureDeps} from './today-future';
 import {priceSeriesRoutes} from './price-series';
+import {marketTimelineRoutes} from './market-timeline';
+import {cropFitRoutes} from './crop-fit';
+import {soilReviewRoutes} from './soil-review';
 
 export interface RouteDeps {
   config: Config;
@@ -93,6 +96,11 @@ export async function registerRoutes(app: FastifyInstance, deps: RouteDeps): Pro
   await app.register(todayTimelineRoutes,{config,pool,...(deps.weatherFetch?{fetchImpl:deps.weatherFetch}:{}),...deps.today?.timeline});
   await app.register(todayFutureRoutes,{config,pool,storage:deps.storage,...deps.today?.future});
   await app.register(priceSeriesRoutes,{config,pool});
+  // Round 2 (docs/research/ROUND2_SPEC.md sections 3 to 5): market timeline, crop fit v2, soil review. Job types farm.crop-fit,
+  // farm.soil-review and today.outlook-note are registered in worker/handlers/index.ts.
+  await app.register(marketTimelineRoutes,{config,pool,...(deps.weatherFetch?{weatherFetch:deps.weatherFetch}:{})});
+  await app.register(cropFitRoutes,{config,pool,budget:deps.budget,...(deps.weatherFetch?{fetchImpl:deps.weatherFetch as unknown as typeof fetch}:{})});
+  await app.register(soilReviewRoutes,{config,pool,budget:deps.budget,...(deps.weatherFetch?{fetchImpl:deps.weatherFetch as unknown as typeof fetch}:{})});
 
   await registerPlanRoutes(app, {
     config,

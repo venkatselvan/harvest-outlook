@@ -1,6 +1,7 @@
 import { For, Show } from "solid-js";
 import type { FarmAlert, FarmNewsReviewStatus } from "@harvest/contracts";
 import { Icon } from "../icons";
+import { AiSpark } from "../ui/AiSpark";
 import { formatDay, rangeLabel } from "./model";
 
 export interface AlertsListProps {
@@ -25,20 +26,27 @@ const typeLabel: Record<FarmAlert["type"], string> = {
   crop_threat: "Crop threat",
 };
 
-/** Header line for the once-a-day grounded news review. */
+/**
+ * Header line for the once-a-day grounded review (ROUND2_SPEC 2.3): Meta's web search covers news and official warnings
+ * (IMD bulletins, state disaster authorities). The missing direct IMD feed is named in the limitations sheet only.
+ */
 export function newsReviewText(status: FarmNewsReviewStatus | null, today: string): string {
-  if (!status) return "News check not set up";
+  if (!status) return "News and warnings search not set up";
   switch (status.status) {
     case "active": {
       const day = status.lastReviewedAt ? new Date(status.lastReviewedAt).toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" }) : null;
-      return day === today ? "News checked today" : day ? `News checked ${formatDay(day, false)}` : "News check active";
+      return day === today
+        ? "News and official warnings checked today via Meta search"
+        : day
+          ? `News and official warnings checked ${formatDay(day, false)} via Meta search`
+          : "News and official warnings search active";
     }
     case "paused":
-      return "News check paused";
+      return "News and warnings search paused";
     case "not_run":
-      return "News check not run yet";
+      return "News and warnings search not run yet";
     default:
-      return "News check unavailable";
+      return "News and warnings search unavailable";
   }
 }
 
@@ -56,8 +64,8 @@ export function AlertsList(props: AlertsListProps) {
           Alerts
         </h2>
         <p class="today-section-status">
-          <span>{newsReviewText(props.newsReview, props.today)}</span>
-          <span>IMD warnings not connected</span>
+          <span data-testid="today-news-status">{newsReviewText(props.newsReview, props.today)}</span>
+          <AiSpark use="news_review" size={14} />
         </p>
       </div>
       <Show when={props.error}>

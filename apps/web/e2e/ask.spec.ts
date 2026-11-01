@@ -365,7 +365,8 @@ test("recorder construction failure releases microphone tracks", async ({
   await page
     .getByRole("button", { name: "I understand, start recording" })
     .click();
-  await expect(page.getByRole("alert")).toContainText(
+  // Scoped to the speech error: the Today hero also renders a role="alert" message when its route is stubbed.
+  await expect(page.locator(".speech-error")).toContainText(
     "microphone has been released",
   );
   expect(await page.evaluate(() => (window as any).__mic.stopped)).toBe(1);

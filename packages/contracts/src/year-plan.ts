@@ -10,6 +10,13 @@ import {FarmWorkspace} from './workspace';
 const text = z.string().max(1000);
 const isoDate = z.iso.date();
 export const NumberRange = z.object({low: z.number(), high: z.number()}).strict();
+/**
+ * Round 2 (ROUND2_SPEC.md 1.2): an estimate with a central value, the likely band (middle half of simulated outcomes,
+ * p25 to p75) and the possible band (p10 to p90). Produced by apps/api/src/services/estimate.ts.
+ */
+export const NumberEstimate = z.object({central: z.number(), likely: NumberRange, possible: NumberRange}).strict();
+/** An idle gap on the calendar with the code-written reason (ROUND2_SPEC.md 1.2 item 3). */
+export const YearPlanGap = z.object({from: isoDate, to: isoDate, days: z.number().int().nonnegative(), reason: z.string().max(300)}).strict();
 export const DateWindow = z.object({from: isoDate, to: isoDate}).strict();
 export const HarvestWindow = z.object({earliest: isoDate, latest: isoDate}).strict();
 
@@ -69,6 +76,10 @@ export const YearPlanSlot = z.object({
  cropName: z.string().max(120),
  productName: z.string().max(120),
  establishmentMethod: z.string().max(80).nullable(),
+ /** Round 2: 'green_manure' slots are grown and ploughed in (no product, no price, revenue 0). Absent = 'crop'. */
+ kind: z.enum(['crop', 'green_manure']).optional(),
+ /** Nitrogen a legume or green manure leaves for the next crop, kg/ha (sourced range), for display. */
+ nitrogenCreditKgPerHa: NumberRange.nullable().optional(),
  /** True for the farmer's current growing cycle (occupied-field scenario); never editable. */
  fixed: z.boolean(),
  sowing: isoDate,
@@ -79,8 +90,13 @@ export const YearPlanSlot = z.object({
  yieldBasis: z.enum(['district', 'state', 'reference', 'farmer']).nullable(),
  price: PriceEstimate.nullable(),
  cost: CostEstimate.nullable(),
+ /** Round 2: revenuePerHa and profitPerHa carry the likely band (p25 to p75); the estimates below add central and possible. */
  revenuePerHa: NumberRange.nullable(),
  profitPerHa: NumberRange.nullable(),
+ revenueEstimate: NumberEstimate.nullable().optional(),
+ profitEstimate: NumberEstimate.nullable().optional(),
+ /** profitEstimate times the field area in hectares; null when the area is unknown. */
+ profitForField: NumberEstimate.nullable().optional(),
  score: z.number().min(0).max(100),
  components: ScoreComponents,
  confidence: z.enum(['high', 'medium', 'low']),
@@ -103,6 +119,13 @@ export const YearPlanOption = z.object({
  reasons: z.array(YearPlanReason).max(3),
  totalRevenuePerHa: NumberRange.nullable(),
  totalProfitPerHa: NumberRange.nullable(),
+ /** Round 2 (ROUND2_SPEC.md 1.2): simulated totals, per hectare and for the field; fieldAreaHa from the boundary. */
+ totalRevenueEstimate: NumberEstimate.nullable().optional(),
+ totalProfitEstimate: NumberEstimate.nullable().optional(),
+ totalProfitForField: NumberEstimate.nullable().optional(),
+ fieldAreaHa: z.number().nullable().optional(),
+ /** Idle gaps of 21 days or more with their reasons. */
+ gaps: z.array(YearPlanGap).max(6).optional(),
  warnings: z.array(text).max(10),
  editable: z.boolean(),
 }).strict();
@@ -132,7 +155,8 @@ export const YearPlanReview = z.object({
  modelInvocation: ModelInvocation.nullable(),
  scenario: YearPlanScenario,
  weights: ScoreWeights,
- options: z.array(YearPlanOption).max(3),
+ /** Round 2: up to four options (the fourth is 'Green manure first' when such a sequence exists). */
+ options: z.array(YearPlanOption).max(4),
  candidatesConsidered: z.number().int().nonnegative(),
  summary: text,
  limitations: z.array(text),
@@ -148,6 +172,8 @@ export const RescoreYearPlan = z.object({
   cropId: z.string().max(120),
   productId: z.string().max(200),
   establishmentMethod: z.string().max(80).optional(),
+  /** Round 2: a farmer may insert a green manure slot (cropId from green-manure.json, productId = cropId). */
+  kind: z.enum(['crop', 'green_manure']).optional(),
   sowing: isoDate,
   harvestLatest: isoDate.optional(),
  }).strict()).min(1).max(6),
@@ -161,6 +187,9 @@ export const ApplyYearPlan = z.object({
 }).strict();
 export const ApplyYearPlanResult = z.object({workspace: FarmWorkspace, review: YearPlanReview}).strict();
 
+export type NumberRange = z.infer<typeof NumberRange>;
+export type NumberEstimate = z.infer<typeof NumberEstimate>;
+export type YearPlanGap = z.infer<typeof YearPlanGap>;
 export type BasisRef = z.infer<typeof BasisRef>;
 export type ScoreComponents = z.infer<typeof ScoreComponents>;
 export type PriceEstimate = z.infer<typeof PriceEstimate>;

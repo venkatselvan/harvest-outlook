@@ -2,6 +2,7 @@ import { Evara } from "./Evara";
 import { For, Show, createEffect, createSignal, on, onCleanup } from "solid-js";
 import { useLocation } from "@solidjs/router";
 import { Icon } from "./icons";
+import { AiSpark } from "./ui/AiSpark";
 import { useWorkspace } from "./state";
 import { postTurn } from "../features/ask/askApi";
 import {
@@ -198,6 +199,7 @@ export function Assistant() {
               <strong>Evara</strong>
               <span>{s.farm()?.name ?? "Let's get growing"}</span>
             </div>
+            <AiSpark use="assistant" />
             <button
               class="icon-button"
               aria-label="Close assistant"
@@ -326,6 +328,7 @@ export function Assistant() {
               >
                 Voice input
               </button>
+              <AiSpark use="speech" />
               <Show when={messages().length}>
                 <button
                   type="button"

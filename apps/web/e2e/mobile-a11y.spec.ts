@@ -25,6 +25,7 @@ const VIEWPORTS = [
 const TARGET_EXCEPTIONS: Record<string, string> = {
   "skip-link": "off-screen until focused; becomes 44px+ when shown",
   "se-range": "native range input: the thumb is the target; the input box is 44px high but the thumb is browser-sized",
+  "ai-spark": "inline AI mark: 24px target (WCAG 2.5.8 AA) next to text; 44px on coarse pointers via @media (pointer: coarse)",
 };
 
 // Each test seeds its own guest workspace (the session cookie is per browser context).

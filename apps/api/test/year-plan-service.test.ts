@@ -9,7 +9,7 @@ import { ASSUMPTIONS, buildScenario, data, emptyInputs, priceScore, runYearPlanE
 import { applyYearPlan, ensureYearPlan, generateYearPlan, INPUTS_CHANGED_BEFORE_START, readYearPlan, rescoreYearPlan, yearPlanContext, type YearPlanDeps } from '../src/services/year-plan/service';
 import { stageTimeline } from '../src/services/today/stage-timeline';
 import { addDays } from '../src/services/year-plan/dates';
-import { gateSelection, PLAN_LABELS, selectionCandidates } from '../src/services/year-plan/select';
+import { gateSelection, greenManureEvidenced, PLAN_LABELS, selectionCandidates, startsWithGreenManure } from '../src/services/year-plan/select';
 import type { TextModelProvider } from '../src/agent/provider';
 import { farmBody, login, setupHarness, type Client, type Harness } from './helpers';
 
@@ -105,8 +105,11 @@ describe('year-plan review service', () => {
     const meta = fakeMeta('valid');
     const review = await generate(liveDeps(meta.provider), auth, f.id);
     expect(review.status).toBe('ready');
-    expect(review.options).toHaveLength(3);
-    for (const o of review.options) {
+    // Round 2: Meta's three plus, when one fits, the code-added Green manure first plan.
+    expect(review.options.length).toBeGreaterThanOrEqual(3);
+    expect(review.options.length).toBeLessThanOrEqual(4);
+    if (review.options[3]) expect(review.options[3]).toMatchObject({ origin: 'deterministic' });
+    for (const o of review.options.slice(0, 3)) {
       YearPlanOption.parse(o);
       expect(o.origin).toBe('model');
       expect((PLAN_LABELS as readonly string[]).includes(o.label)).toBe(true);
@@ -298,10 +301,85 @@ describe('current crop harvest window and label evidence through the service (20
     expect(review.options.length).toBeGreaterThan(0);
     for (const o of review.options) {
       if (o.label === 'Best overall' || o.label === 'Alternative') continue;
-      for (const s of o.slots.filter((x) => !x.fixed)) {
+      for (const s of o.slots.filter((x) => !x.fixed && x.kind !== 'green_manure')) {
         expect(s.price?.status, `${o.label} / ${s.cropId} price`).toBe('available');
         expect(s.yieldKgPerHa, `${o.label} / ${s.cropId} yield`).not.toBeNull();
       }
     }
+  });
+});
+
+describe('round 2: green manure first as the fourth plan through the service (2026-11-01)', () => {
+  afterEach(() => data.invalidate());
+  it('a Hassan field with supplemental irrigation gets a fourth Green manure first plan: revenue 0, seed-only cost flagged, successor bonus; rescore accepts kind; apply saves it without a product', async () => {
+    data.invalidate();
+    const { f, auth } = await farm();
+    await patchFarm(h.pool, auth.ownerId, f.id, { facts: { irrigation_category: { value: 'supplemental', basis: 'farmer_reported', confirmed: true } } });
+    const d = liveDeps(fakeMeta('valid').provider);
+    const review = await generate(d, auth, f.id);
+    expect(YearPlanReview.safeParse(review).success).toBe(true);
+    expect(review.options).toHaveLength(4);
+    const fourth = review.options[3]!;
+    expect(fourth.origin).toBe('deterministic');
+    expect(['Green manure first', 'Alternative']).toContain(fourth.label);
+    expect(review.options.filter((o) => o.label === 'Green manure first').length).toBeLessThanOrEqual(1);
+    expect(greenManureEvidenced(fourth)).toBe(true);
+    expect(new Set(review.options.map((o) => o.optionId)).size).toBe(4);
+    const gm = fourth.slots.find((s) => !s.fixed)!;
+    expect(gm).toMatchObject({ kind: 'green_manure', price: null, yieldKgPerHa: null, revenueEstimate: { central: 0, likely: { low: 0, high: 0 }, possible: { low: 0, high: 0 } } });
+    expect(gm.cropId.startsWith('gm-')).toBe(true);
+    expect(gm.productId).toBe(gm.cropId);
+    // Seed-only cost from green-manure.json: dhaincha 50 x 52, sunn hemp 30 x 77, cowpea 25 x 97 (TNAU 2023 certified prices).
+    expect([2600, 2310, 2425]).toContain(gm.cost!.a2flPerHa);
+    expect(gm.profitEstimate!.central).toBe(-Math.round(gm.cost!.a2flPerHa! / 100) * 100);
+    expect(gm.basis.map((b) => b.sourceId)).toContain('year-plan-assumption:greenManureFieldOpsCostPerHa');
+    expect(gm.reasonCodes).toContain('green_manure');
+    expect(gm.nitrogenCreditKgPerHa).not.toBeNull();
+    expect(gm.durationDays.low).toBeGreaterThanOrEqual(45);
+    const next = fourth.slots[fourth.slots.indexOf(gm) + 1]!;
+    expect(next.reasonCodes).toContain('green_manure_successor');
+    expect(next.basis.map((b) => b.sourceId)).toContain('year-plan-assumption:greenManureSuccessorBonus');
+    expect(fourth.warnings.join(' ')).toContain('cost is the seed only');
+    expect(fourth.gaps).toBeDefined();
+    expect(fourth.fieldAreaHa === null || (fourth.fieldAreaHa ?? 0) > 0).toBe(true);
+    // Rescore with the green manure slot marked as such.
+    const slots = fourth.slots.filter((s) => !s.fixed).map((s) => ({ slotId: s.slotId, cropId: s.cropId, productId: s.productId, sowing: s.sowing, harvestLatest: s.harvest.latest, ...(s.kind === 'green_manure' ? { kind: 'green_manure' as const } : {}), ...(s.establishmentMethod ? { establishmentMethod: s.establishmentMethod } : {}) }));
+    const edited = await rescoreYearPlan(d, auth.ownerId, f.id, { reviewId: review.reviewId!, optionId: fourth.optionId, slots });
+    expect(startsWithGreenManure(edited)).toBe(true);
+    expect(edited.slots.find((s) => !s.fixed)!.revenueEstimate!.central).toBe(0);
+    const before = await getWorkspace(h.pool, auth.ownerId, f.id);
+    const applied = await applyYearPlan(d, auth.ownerId, f.id, { reviewId: review.reviewId!, optionId: fourth.optionId, expectedWorkspaceVersion: before.version });
+    const saved = applied.workspace.rotationPlans.find((p) => p.cropId === gm.cropId)!;
+    expect(saved).toBeDefined();
+    expect(saved.productId).toBeUndefined();
+    expect(saved.notes).toContain('Green manure');
+  });
+});
+
+describe('regression 2026-11-01: occupied Hassan maize field (real data files)', () => {
+  afterEach(() => data.invalidate());
+  it('maize sown 2026-09-20 with supplemental irrigation gets candidates and at least three plans; saved seasons that fill the year leave only the growing crop with a plain limitation', async () => {
+    data.invalidate();
+    const { f, auth } = await farm();
+    await patchFarm(h.pool, auth.ownerId, f.id, { facts: { irrigation_category: { value: 'supplemental', basis: 'farmer_reported', confirmed: true } } });
+    const cycle = { id: randomUUID(), cropId: 'maize', sowingDate: '2026-09-20', stage: 'growing' };
+    await putWorkspace(h.pool, auth.ownerId, f.id, { expectedVersion: 0, boundary: null, previousHarvest: { status: 'none' }, cycles: [cycle], rotationPlans: [] } as never);
+    const d = liveDeps(fakeMeta('valid').provider);
+    const review = await generate(d, auth, f.id);
+    expect(review.scenario).toMatchObject({ kind: 'occupied', horizon: { from: '2026-09-20', to: '2027-09-20' } });
+    expect(review.candidatesConsidered).toBeGreaterThan(0);
+    expect(review.options.length).toBeGreaterThanOrEqual(3);
+    for (const o of review.options) expect(o.slots.length).toBeGreaterThan(1);
+    // The live farm had applied a v3 plan's groundnut and sunflower seasons (29 Jan to 29 May, 29 May to 11 Sep 2027).
+    const ws = await getWorkspace(h.pool, auth.ownerId, f.id);
+    await putWorkspace(h.pool, auth.ownerId, f.id, { expectedVersion: ws.version, boundary: null, previousHarvest: { status: 'none' }, cycles: ws.cycles, rotationPlans: [
+      { id: 'saved-gn', year: 2027, season: 'Rabi', cropId: 'groundnut', cropName: 'Groundnut', plannedSowingDate: '2027-01-29', plannedHarvestDate: '2027-05-19' },
+      { id: 'saved-sf', year: 2027, season: 'Kharif', cropId: 'sunflower', cropName: 'Sunflower', plannedSowingDate: '2027-05-29', plannedHarvestDate: '2027-09-01' },
+    ] } as never);
+    const full = await generate(d, auth, f.id);
+    expect(full.candidatesConsidered).toBe(0);
+    expect(full.options).toHaveLength(1);
+    expect(full.options[0]!.slots).toHaveLength(1);
+    expect(full.limitations.join(' ')).toContain('Saved seasons on this field (groundnut 29 Jan to 29 May, sunflower 29 May to 11 Sep) fill the months after the growing crop');
   });
 });

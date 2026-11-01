@@ -1,21 +1,28 @@
 import { For, Show, createEffect, createSignal, on } from "solid-js";
 import type { PriceTrend, ScoreComponents, YearPlanOption, YearPlanReview, YearPlanSlot } from "@harvest/contracts";
+import { AiSparkInline } from "../ui/AiSpark";
 import { Chip } from "../ui/Chip";
 import { PriceTrendChart } from "../ui/PriceTrendChart";
 import { ScoreRing } from "../ui/ScoreRing";
 import { Sheet } from "../ui/Sheet";
-import { formatInr, formatInrRange, formatKgRange, formatPerKgRange, longDate, longSpan, parseIso } from "./format";
+import { EstimateBlocks } from "./Estimates";
+import { formatInr, formatInrRange, formatKgRange, formatPerKgRange, longDate, longSpan, parseIso, shortSpan } from "./format";
 import {
+  CALENDAR_TEXT_MAX,
+  calendarWarnings,
   costBasisText,
   displayLabel,
   editedFrom,
+  greenManureName,
+  isGreenManure,
   isLegume,
+  nitrogenCreditText,
   priceBasisText,
+  profitText,
   yieldBasisText,
   type CropChoice,
   type DraftSlot,
 } from "./model";
-import { profitText } from "./PlanCalendar";
 import { SlotEditor } from "./SlotEditor";
 
 export type TrendState =
@@ -39,9 +46,10 @@ export function initialSlot(option: YearPlanOption, slotId: string | null): Year
 }
 
 /**
- * Detail sheet for one option: reasons, the chosen crop's yield, price at harvest (with the 36-month trend), cost and
- * profit as ranges with one basis line each, the score build-up with its fixed weights, what could change the result,
- * and the sources. Edit swaps the body for the inline editor; Use this plan opens the confirmation.
+ * Detail sheet for one option: the plan's profit (central, likely, possible; per hectare and for the field), reasons
+ * with their AI mark, where the field rests, the chosen crop's yield, price at harvest (with the 36-month trend), cost
+ * and profit with one basis line each, the score build-up with its fixed weights, what could change the result, and the
+ * sources. Edit swaps the body for the inline editor; Use this plan opens the confirmation.
  */
 export function OptionSheet(props: {
   review: YearPlanReview;
@@ -62,6 +70,8 @@ export function OptionSheet(props: {
 }) {
   const slot = () => initialSlot(props.option, props.slotId);
   const profit = () => profitText(props.option);
+  const warnings = () => calendarWarnings(props.option.warnings);
+  const longWarnings = () => props.option.warnings.filter((w) => w.length > CALENDAR_TEXT_MAX);
   return (
     <Sheet
       title={props.editing ? `Edit ${displayLabel(props.option).toLowerCase()}` : displayLabel(props.option)}
@@ -74,16 +84,16 @@ export function OptionSheet(props: {
             <ScoreRing score={props.option.score} size={44} />
             <div>
               <strong>{profit().value}</strong>
-              <span>{profit().caption} over the 12 months</span>
+              <span>{profit().caption}</span>
             </div>
           </div>
-          <Show when={editedFrom(props.option) || props.applied || props.option.warnings.length}>
+          <Show when={editedFrom(props.option) || props.applied || warnings().short.length}>
             <div class="yp-sheet-chips">
               <Show when={editedFrom(props.option)}>{(from) => <Chip tone="info">Edited from {from()}</Chip>}</Show>
               <Show when={props.applied}>
                 <Chip tone="done">In saved seasons</Chip>
               </Show>
-              <For each={props.option.warnings}>{(w) => <Chip tone="watch">{w}</Chip>}</For>
+              <For each={warnings().short}>{(w) => <Chip tone="watch">{w}</Chip>}</For>
             </div>
           </Show>
         </Show>
@@ -115,11 +125,52 @@ export function OptionSheet(props: {
           />
         }
       >
+        <Show when={props.option.totalProfitEstimate}>
+          {(estimate) => (
+            <section class="yp-sheet-section" aria-labelledby="yp-total">
+              <h3 id="yp-total">Profit for the whole plan</h3>
+              <EstimateBlocks perHa={estimate()} forField={props.option.totalProfitForField} areaHa={props.option.fieldAreaHa} />
+            </section>
+          )}
+        </Show>
+        <Show when={longWarnings().length}>
+          <section class="yp-sheet-section" aria-labelledby="yp-notes">
+            <h3 id="yp-notes">Notes on this plan</h3>
+            <ul class="yp-notes">
+              <For each={longWarnings()}>{(w) => <li>{w}</li>}</For>
+            </ul>
+          </section>
+        </Show>
         <Show when={props.option.reasons.length}>
           <section class="yp-sheet-section" aria-labelledby="yp-why">
-            <h3 id="yp-why">Why this plan</h3>
+            <div class="yp-sheet-section-head">
+              <h3 id="yp-why">Why this plan</h3>
+              <Show when={props.option.origin === "model"}>
+                <AiSparkInline use="year_plan_select" label="Reasons by AI" />
+              </Show>
+              <Show when={props.option.origin === "deterministic"}>
+                <Chip tone="typical">Calculated</Chip>
+              </Show>
+            </div>
             <ul class="yp-reasons">
               <For each={props.option.reasons}>{(reason) => <li>{reason.text}</li>}</For>
+            </ul>
+          </section>
+        </Show>
+        <Show when={props.option.gaps?.length}>
+          <section class="yp-sheet-section" aria-labelledby="yp-gaps">
+            <h3 id="yp-gaps">Where the field rests</h3>
+            <ul class="yp-gap-list">
+              <For each={props.option.gaps}>
+                {(gap) => (
+                  <li>
+                    <strong>
+                      {shortSpan(gap.from, gap.to)} · {gap.days} days
+                    </strong>
+                    <span>{gap.reason}</span>
+                  </li>
+                )}
+              </For>
             </ul>
           </section>
         </Show>
@@ -137,12 +188,15 @@ export function OptionSheet(props: {
                   <Show when={s.fixed}>
                     <small>growing now</small>
                   </Show>
+                  <Show when={isGreenManure(s)}>
+                    <small>green manure</small>
+                  </Show>
                 </button>
               )}
             </For>
           </div>
         </Show>
-        <SlotDetail slot={slot()} trend={props.trend(slot())} />
+        <SlotDetail slot={slot()} areaHa={props.option.fieldAreaHa} trend={props.trend(slot())} />
         <section class="yp-sheet-section" aria-labelledby="yp-score">
           <h3 id="yp-score">How the score is built</h3>
           <ul class="yp-bars">
@@ -172,8 +226,10 @@ export function OptionSheet(props: {
   );
 }
 
-function SlotDetail(props: { slot: YearPlanSlot; trend: TrendState | undefined }) {
+/** One crop of the open option: dates, the note, yield, price, cost, profit bands, risks and sources. */
+export function SlotDetail(props: { slot: YearPlanSlot; areaHa: number | null | undefined; trend: TrendState | undefined }) {
   const s = () => props.slot;
+  const manure = () => isGreenManure(s());
   const price = () => s().price;
   const harvestMonth = () => parseIso(s().harvest.latest).m;
   const trendReady = () => (props.trend?.status === "ready" ? props.trend.trend : undefined);
@@ -190,80 +246,116 @@ function SlotDetail(props: { slot: YearPlanSlot; trend: TrendState | undefined }
         <Show when={s().fixed}>
           <Chip tone="growing">Growing now</Chip>
         </Show>
-        <Show when={!s().fixed && isLegume(s().cropId)}>
+        <Show when={manure()}>
+          <Chip tone="legume">Green manure</Chip>
+        </Show>
+        <Show when={!s().fixed && !manure() && isLegume(s().cropId)}>
           <Chip tone="legume">Legume</Chip>
         </Show>
       </div>
       <p class="yp-slot-dates">
-        {s().fixed ? "Growing since" : "Sow"} {longDate(s().sowing)} · harvest {longSpan(s().harvest.earliest, s().harvest.latest)}
+        {s().fixed ? "Growing since" : "Sow"} {longDate(s().sowing)} ·{" "}
+        {manure() ? `ploughed in by ${longDate(s().harvest.latest)}` : `harvest ${longSpan(s().harvest.earliest, s().harvest.latest)}`}
       </p>
       <Show when={s().transitionNote}>
         <p class="yp-slot-note">{s().transitionNote}</p>
       </Show>
       <dl class="yp-estimates">
-        <div>
-          <dt>Yield</dt>
-          <dd>
-            <Show when={s().yieldKgPerHa} fallback={<strong>Yield not sourced</strong>}>
-              {(y) => <strong>{formatKgRange(y())} per ha</strong>}
-            </Show>
-            <span class="yp-basis">{yieldBasisText(s())}</span>
-          </dd>
-        </div>
-        <div>
-          <dt>Price at harvest</dt>
-          <dd>
-            <Show
-              when={price()?.status === "available" && price()?.range ? price() : undefined}
-              fallback={
-                <>
-                  <strong>No price series yet</strong>
-                  <span class="yp-basis">Too few recent mandi quotes to give a range</span>
-                </>
-              }
-            >
-              {(p) => (
-                <>
-                  <strong>{formatPerKgRange(p().range!)}</strong>
-                  <span class="yp-basis">{priceBasisText(p())}</span>
-                  <Show when={props.trend?.status === "loading"}>
-                    <span class="yp-basis" role="status">
-                      Loading the 36-month price trend…
-                    </span>
-                  </Show>
-                  <Show when={trendError()}>{(message) => <span class="yp-basis">{message()}</span>}</Show>
-                  <Show when={trendReady()}>
-                    {(trend) => (
-                      <PriceTrendChart
-                        trend={trend()}
-                        productLabel={`${s().cropName} (${s().productName.toLowerCase()})`}
-                        highlightMonth={harvestMonth()}
-                      />
-                    )}
-                  </Show>
-                </>
-              )}
-            </Show>
-          </dd>
-        </div>
+        <Show
+          when={!manure()}
+          fallback={
+            <div>
+              <dt>Green manure</dt>
+              <dd>
+                <strong>{nitrogenCreditText(s().nitrogenCreditKgPerHa) ?? "Adds nitrogen"} for the next crop</strong>
+                <span class="yp-basis">
+                  Not harvested or sold: {greenManureName(s().cropName)} grows about {Math.round(s().durationDays.low)} to{" "}
+                  {Math.round(s().durationDays.high)} days, then is ploughed in.
+                </span>
+              </dd>
+            </div>
+          }
+        >
+          <div>
+            <dt>Yield</dt>
+            <dd>
+              <Show when={s().yieldKgPerHa} fallback={<strong>Yield not sourced</strong>}>
+                {(y) => <strong>{formatKgRange(y())} per ha</strong>}
+              </Show>
+              <span class="yp-basis">{yieldBasisText(s())}</span>
+            </dd>
+          </div>
+          <div>
+            <dt>Price at harvest</dt>
+            <dd>
+              <Show
+                when={price()?.status === "available" && price()?.range ? price() : undefined}
+                fallback={
+                  <>
+                    <strong>No price series yet</strong>
+                    <span class="yp-basis">Too few recent mandi quotes to give a range</span>
+                  </>
+                }
+              >
+                {(p) => (
+                  <>
+                    <strong>{formatPerKgRange(p().range!)}</strong>
+                    <span class="yp-basis">{priceBasisText(p())}</span>
+                    <Show when={props.trend?.status === "loading"}>
+                      <span class="yp-basis" role="status">
+                        Loading the 36-month price trend…
+                      </span>
+                    </Show>
+                    <Show when={trendError()}>{(message) => <span class="yp-basis">{message()}</span>}</Show>
+                    <Show when={trendReady()}>
+                      {(trend) => (
+                        <PriceTrendChart
+                          trend={trend()}
+                          productLabel={`${s().cropName} (${s().productName.toLowerCase()})`}
+                          highlightMonth={harvestMonth()}
+                        />
+                      )}
+                    </Show>
+                  </>
+                )}
+              </Show>
+            </dd>
+          </div>
+        </Show>
         <div>
           <dt>Cost</dt>
           <dd>
             <Show when={s().cost?.a2flPerHa != null} fallback={<strong>Cost not sourced</strong>}>
               <strong>{formatInr(s().cost!.a2flPerHa!)} per ha</strong>
             </Show>
-            <span class="yp-basis">{costBasisText(s().cost)}</span>
+            <span class="yp-basis">{manure() ? "Seed, sowing and ploughing in" : costBasisText(s().cost)}</span>
           </dd>
         </div>
         <div>
           <dt>Profit</dt>
           <dd>
-            <Show when={s().profitPerHa} fallback={<strong>Not calculated</strong>}>
-              {(p) => <strong>{formatInrRange(p())} per ha</strong>}
+            <Show
+              when={s().profitEstimate}
+              fallback={
+                <>
+                  <Show when={s().profitPerHa} fallback={<strong>Not calculated</strong>}>
+                    {(p) => <strong>{formatInrRange(p())} per ha</strong>}
+                  </Show>
+                  <span class="yp-basis">
+                    {s().profitPerHa ? "Yield times price, minus the A2+FL cost" : "Needs both a price range and a sourced cost"}
+                  </span>
+                </>
+              }
+            >
+              {(estimate) => (
+                <>
+                  <EstimateBlocks perHa={estimate()} forField={s().profitForField} areaHa={props.areaHa} />
+                  <span class="yp-basis">
+                    {manure() ? "No income; the cost is set against the nitrogen the next crop gets" : "Yield times price, minus the A2+FL cost"}
+                  </span>
+                </>
+              )}
             </Show>
-            <span class="yp-basis">
-              {s().profitPerHa ? "Yield times price, minus the A2+FL cost" : "Needs both a price range and a sourced cost"}
-            </span>
           </dd>
         </div>
       </dl>

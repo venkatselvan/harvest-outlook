@@ -2,6 +2,7 @@ import type {
   ApplyYearPlanResult,
   BasisRef,
   FarmWorkspace,
+  NumberEstimate,
   PriceTrend,
   ScoreComponents,
   YearPlanOption,
@@ -565,6 +566,213 @@ export function applyResult(review: YearPlanReview, optionId: string, base: Farm
     review: { ...review, appliedOptionIds: [...new Set([...review.appliedOptionIds, optionId])] },
   };
 }
+
+// --- Round 2: four options, estimates with likely and possible bands, gaps, one green manure -------------------------
+//
+// SYNTHETIC like everything above. The old per-hectare ranges are taken as the "likely" band (p25 to p75); the central
+// value is its middle and the "possible" band (p10 to p90) widens it by 60% of its width on each side. The server
+// derives these from a seeded simulation; here they are plain arithmetic so the layout meets realistic magnitudes.
+// Option totals add the slot estimates band by band, which is not how a simulation combines quantiles; it only keeps
+// the ordering possible.low <= likely.low <= central <= likely.high <= possible.high.
+
+export const FIXTURE_FIELD_AREA_HA = 0.16;
+const r100 = (n: number) => Math.round(n / 100) * 100;
+
+function estimateOf(range: { low: number; high: number }): NumberEstimate {
+  const width = range.high - range.low;
+  return {
+    central: r100((range.low + range.high) / 2),
+    likely: { low: r100(range.low), high: r100(range.high) },
+    possible: { low: r100(range.low - 0.6 * width), high: r100(range.high + 0.6 * width) },
+  };
+}
+const scaleEstimate = (e: NumberEstimate, factor: number): NumberEstimate => ({
+  central: r100(e.central * factor),
+  likely: { low: r100(e.likely.low * factor), high: r100(e.likely.high * factor) },
+  possible: { low: r100(e.possible.low * factor), high: r100(e.possible.high * factor) },
+});
+const sumEstimates = (list: NumberEstimate[]): NumberEstimate => ({
+  central: list.reduce((t, e) => t + e.central, 0),
+  likely: { low: list.reduce((t, e) => t + e.likely.low, 0), high: list.reduce((t, e) => t + e.likely.high, 0) },
+  possible: { low: list.reduce((t, e) => t + e.possible.low, 0), high: list.reduce((t, e) => t + e.possible.high, 0) },
+});
+
+/** The slot with revenue and profit estimates, their likely bands copied into the per-hectare ranges. */
+function withEstimates(s: YearPlanSlot, areaHa = FIXTURE_FIELD_AREA_HA): YearPlanSlot {
+  const revenue = s.revenuePerHa ? estimateOf(s.revenuePerHa) : null;
+  const profit = s.profitPerHa ? estimateOf(s.profitPerHa) : null;
+  return {
+    ...s,
+    revenuePerHa: revenue ? revenue.likely : null,
+    profitPerHa: profit ? profit.likely : null,
+    revenueEstimate: revenue,
+    profitEstimate: profit,
+    profitForField: profit ? scaleEstimate(profit, areaHa) : null,
+  };
+}
+
+type OptionV2Spec = Omit<
+  YearPlanOption,
+  "totalRevenuePerHa" | "totalProfitPerHa" | "totalRevenueEstimate" | "totalProfitEstimate" | "totalProfitForField" | "fieldAreaHa" | "warnings" | "editable"
+> &
+  Partial<Pick<YearPlanOption, "warnings" | "editable">>;
+
+function optionV2(spec: OptionV2Spec, areaHa: number | null = FIXTURE_FIELD_AREA_HA): YearPlanOption {
+  const revenue = spec.slots.every((s) => s.revenueEstimate) ? sumEstimates(spec.slots.map((s) => s.revenueEstimate!)) : null;
+  const profit = spec.slots.every((s) => s.profitEstimate) ? sumEstimates(spec.slots.map((s) => s.profitEstimate!)) : null;
+  return {
+    ...spec,
+    totalRevenuePerHa: revenue ? revenue.likely : null,
+    totalProfitPerHa: profit ? profit.likely : null,
+    totalRevenueEstimate: revenue,
+    totalProfitEstimate: profit,
+    totalProfitForField: profit && areaHa != null ? scaleEstimate(profit, areaHa) : null,
+    fieldAreaHa: areaHa,
+    warnings: spec.warnings ?? [],
+    editable: spec.editable ?? true,
+  };
+}
+
+/** The crop already growing: two short lines for the calendar, the long sentence in the uncertainties. */
+const paddyWithNotes = (nextCropFrom: string): YearPlanSlot =>
+  withEstimates({
+    ...paddyGrowing,
+    transitionNote: `Harvest expected 10 Nov to 18 Nov (estimated from the sowing date)\nNext crop from ${nextCropFrom}`,
+    uncertainties: [
+      ...paddyGrowing.uncertainties,
+      "Paddy: harvest date not recorded; estimated from the recorded sowing date and the crop's stage model (2026-11-10 to 2026-11-18), and the field is held until 2026-11-28.",
+    ],
+  });
+
+const greenGramAfterGap = withEstimates({
+  ...greenGramSummer,
+  slotId: "a-green-gram",
+  sowing: "2027-05-20",
+  harvest: { earliest: "2027-07-25", latest: "2027-08-02" },
+  occupancy: { from: "2027-05-20", to: "2027-08-12" },
+});
+const maizeAfterGap = withEstimates({
+  ...maizeSummer,
+  sowing: "2027-04-05",
+  harvest: { earliest: "2027-07-20", latest: "2027-08-02" },
+  occupancy: { from: "2027-04-05", to: "2027-08-12" },
+});
+
+/** Cowpea grown as a green manure and ploughed in: no product, no price, revenue 0, cost an assumption. */
+const cowpeaManure: YearPlanSlot = {
+  slotId: "g-cowpea-gm",
+  cropId: "gm-cowpea",
+  productId: "gm-cowpea",
+  cropName: "Cowpea (green manure)",
+  productName: "Green manure",
+  establishmentMethod: "direct_sowing",
+  kind: "green_manure",
+  nitrogenCreditKgPerHa: { low: 60, high: 80 },
+  fixed: false,
+  sowing: "2027-01-08",
+  harvest: { earliest: "2027-02-22", latest: "2027-03-08" },
+  occupancy: { from: "2027-01-08", to: "2027-03-18" },
+  durationDays: { low: 45, high: 60 },
+  yieldKgPerHa: null,
+  yieldBasis: null,
+  price: null,
+  cost: { a2flPerHa: 5200, c2PerHa: null, authority: "other", year: null, region: "Karnataka" },
+  revenuePerHa: { low: 0, high: 0 },
+  profitPerHa: { low: -5200, high: -5200 },
+  revenueEstimate: { central: 0, likely: { low: 0, high: 0 }, possible: { low: 0, high: 0 } },
+  profitEstimate: { central: -5200, likely: { low: -5200, high: -5200 }, possible: { low: -5200, high: -5200 } },
+  profitForField: scaleEstimate({ central: -5200, likely: { low: -5200, high: -5200 }, possible: { low: -5200, high: -5200 } }, FIXTURE_FIELD_AREA_HA),
+  score: 62,
+  components: { price: 0, yield: 0, soilRotation: 0.95, water: 0.7, confidence: 0.5 },
+  confidence: "medium",
+  transitionNote: "Grown and ploughed in; leaves nitrogen for the next crop",
+  reasonCodes: ["green_manure"],
+  uncertainties: [
+    "Seed, sowing and ploughing-in cost is an assumption, not a sourced figure.",
+    "Needs a shower or one irrigation to establish.",
+  ],
+  basis: [ref("duration", "Days to ploughing in from the package of practices", null), ref("sowing_window", "UAS Bengaluru package of practices", "Karnataka")],
+};
+const maizeAfterManure = withEstimates({
+  ...maizeSummer,
+  slotId: "g-maize",
+  sowing: "2027-03-25",
+  harvest: { earliest: "2027-07-10", latest: "2027-07-22" },
+  occupancy: { from: "2027-03-25", to: "2027-08-01" },
+  transitionNote: "Heavy feeder after a green manure",
+});
+
+export const bestOverallV2 = optionV2({
+  ...bestOverall,
+  slots: [paddyWithNotes("1 Dec"), withEstimates(maizeRabi), greenGramAfterGap],
+  idleMonths: 1.6,
+  gaps: [
+    {
+      from: "2027-04-19",
+      to: "2027-05-19",
+      days: 31,
+      reason: "No sourced sowing window for a pool crop between 19 Apr and 19 May on this field; the next windows open 20 May (kharif).",
+    },
+  ],
+});
+export const soilEnrichmentV2 = optionV2({
+  ...soilEnrichment,
+  slots: [paddyWithNotes("28 Nov"), withEstimates(blackGramRabi), maizeAfterGap],
+  idleMonths: 1.9,
+  gaps: [
+    {
+      from: "2027-03-05",
+      to: "2027-04-04",
+      days: 31,
+      reason: "Summer sowing here needs irrigation; the field is recorded as rainfed.",
+    },
+  ],
+  // The long sentence the engine used to put here; a calendar row must not draw it (the sheet lists it in full).
+  warnings: [
+    "Paddy: harvest date not recorded; estimated from the recorded sowing date and the crop's stage model (2026-11-10 to 2026-11-18), and the field is held until 2026-11-28.",
+  ],
+});
+export const lowestWaterV2 = optionV2({
+  ...lowestWater,
+  slots: [paddyWithNotes("25 Nov"), withEstimates(chickpeaRabi)],
+  idleMonths: 5.4,
+  gaps: [],
+});
+export const greenManureFirst = optionV2({
+  optionId: "opt-green-manure-first",
+  label: "Green manure first",
+  origin: "deterministic",
+  score: 66,
+  components: { price: 0.5, yield: 0.62, soilRotation: 0.95, water: 0.7, confidence: 0.7 },
+  slots: [paddyWithNotes("8 Jan"), cowpeaManure, maizeAfterManure],
+  idleMonths: 2.1,
+  reasons: [
+    { code: "green_manure", text: "A cowpea green manure leaves nitrogen in the soil before the maize." },
+    { code: "heavy_feeder_after_legume", text: "Maize after a green manure can use the nitrogen it leaves." },
+    { code: "district_window", text: "Every sowing date sits inside the Hassan district sowing windows." },
+  ],
+  gaps: [
+    {
+      from: "2026-11-29",
+      to: "2027-01-07",
+      days: 40,
+      reason: "Black gram could be sown from 25 Nov but scored lower than this plan; edit the plan to add it.",
+    },
+  ],
+});
+
+/**
+ * Round 2 review: four rows (three Meta-selected, the fourth calculated by code), field profit for 0.16 ha with likely
+ * and possible bands, idle gaps with their reasons, a green manure slot, short fixed-crop lines.
+ */
+export const fourOptionReview: YearPlanReview = {
+  ...occupiedReview,
+  contextHash: "fixture-occupied-round2",
+  scenario: { ...occupiedReview.scenario, fieldAreaHa: FIXTURE_FIELD_AREA_HA },
+  options: [bestOverallV2, soilEnrichmentV2, lowestWaterV2, greenManureFirst],
+  candidatesConsidered: 236,
+  summary: "Four crop sequences after the paddy now growing, built from sourced windows, yields, costs and mandi prices.",
+};
 
 // --- Price trend -----------------------------------------------------------------------------------------------------
 

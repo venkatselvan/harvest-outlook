@@ -916,6 +916,85 @@
   font-weight: 600;
   color: var(--text);
 }
-.today-steps .stage-guidance-panel {
-  margin-top: 10px;
+
+/* Next action card (ROUND2_SPEC 2.1): the one step to do next, bold, above the later steps. */
+.today-next {
+  display: grid;
+  gap: 4px;
+  margin: 0 0 10px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid var(--accent-ui);
+  background: var(--accent-soft);
+}
+.today-next:focus {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+.today-next.overdue {
+  border-color: var(--danger, #9b2c2c);
+}
+.today-next-kicker {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 8px;
+  margin: 0;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+.today-next-title {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 750;
+  line-height: 1.2;
+  letter-spacing: -0.3px;
+  color: var(--text);
+}
+.today-next.completed .today-next-title {
+  color: var(--text-secondary);
+}
+.today-next-when {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 8px;
+  margin: 0;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text);
+}
+.today-next-when.overdue {
+  color: var(--danger, #9b2c2c);
+}
+.today-next-action {
+  margin: 2px 0 0;
+  font-size: 14px;
+  line-height: 1.45;
+  color: var(--text);
+}
+.today-next .today-step-done {
+  justify-self: start;
+  margin-top: 6px;
+}
+/* Harvest outlook in words under the price card value (ROUND2_SPEC 2.2). */
+.today-outlook-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  margin: 4px 0 0;
+  font-size: 14px;
+  line-height: 1.4;
+  color: var(--text);
+}
+.today-outlook-note.pending {
+  color: var(--text-secondary);
+  font-style: italic;
+}
+.today-alerts .today-section-status .ai-spark-host {
+  display: inline-flex;
+  align-items: center;
 }

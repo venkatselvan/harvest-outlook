@@ -32,10 +32,16 @@ import {
   stageAt,
   stageTicks,
   weatherAt,
+  windowLabel,
+  nextActionWhen,
+  pickNextStep,
 } from "./model";
 import { describeTodayError, sceneImageUrl } from "./todayApi";
 import { TodayEmpty } from "./TodayEmpty";
-import { TodayCards } from "./TodayCards";
+import { OutlookLine, TodayCards } from "./TodayCards";
+import { UpcomingSteps } from "./UpcomingSteps";
+import { AlertsList } from "./AlertsList";
+import type { UpcomingStep } from "@harvest/contracts";
 import { TodayHero, stageOverlay } from "./TodayHero";
 import { newsReviewText, sortAlerts } from "./AlertsList";
 import { careTaskStep } from "./TodayView";
@@ -295,9 +301,10 @@ describe("rendered states", () => {
 describe("alerts, steps and errors", () => {
   it("orders alerts by severity and words the news review status", () => {
     expect(sortAlerts(fixture.alerts).map((alert) => alert.severity)).toEqual(["warning", "watch", "info"]);
-    expect(newsReviewText(fixture.newsReview, FIXTURE_TODAY)).toBe("News checked today");
-    expect(newsReviewText({ status: "paused", reason: "cap", lastReviewedAt: null }, FIXTURE_TODAY)).toBe("News check paused");
-    expect(newsReviewText(null, FIXTURE_TODAY)).toBe("News check not set up");
+    expect(newsReviewText(fixture.newsReview, FIXTURE_TODAY)).toBe("News and official warnings checked today via Meta search");
+    expect(newsReviewText({ status: "active", reason: null, lastReviewedAt: "2026-10-30T03:00:00Z" }, FIXTURE_TODAY)).toBe("News and official warnings checked 30 Oct via Meta search");
+    expect(newsReviewText({ status: "paused", reason: "cap", lastReviewedAt: null }, FIXTURE_TODAY)).toBe("News and warnings search paused");
+    expect(newsReviewText(null, FIXTURE_TODAY)).toBe("News and warnings search not set up");
     expect(fixture.upcoming.find((step) => step.kind === "alert_step")?.alertId).toBe(FIXTURE_ALERT_IDS.weather);
   });
   it("maps a care-schedule task to a step for the degraded view", () => {
@@ -309,5 +316,82 @@ describe("alerts, steps and errors", () => {
     expect(describeTodayError(new ApiError("network_error", "Could not reach the server", 0)).kind).toBe("network");
     expect(describeTodayError(new ApiError("invalid_envelope", "bad", 200)).kind).toBe("invalid");
     expect(describeTodayError(new Error("boom")).kind).toBe("server");
+  });
+});
+
+describe("Today v2: next action, dated steps, outlook line, warnings header", () => {
+  const step = (o: Partial<UpcomingStep> & Pick<UpcomingStep, "id" | "kind" | "status" | "dueFrom">): UpcomingStep => ({
+    title: o.id, detail: null, dueTo: o.dueFrom, careTask: null, alertId: null, ...o,
+  });
+  it("every window reads as dates, never Expected without a date", () => {
+    expect(windowLabel("2026-11-03", "2026-11-09")).toBe("3 to 9 Nov");
+    expect(windowLabel("2026-10-28", "2026-11-03")).toBe("28 Oct to 3 Nov");
+    expect(windowLabel("2026-12-28", "2027-01-03")).toBe("28 Dec 2026 to 3 Jan 2027");
+    expect(windowLabel("2026-11-09", "2026-11-09")).toBe("9 Nov");
+  });
+  it("words the next action's window: between, on, due today, overdue since, done", () => {
+    expect(nextActionWhen(step({ id: "a", kind: "care_task", status: "upcoming", dueFrom: "2026-11-03", dueTo: "2026-11-09" }), FIXTURE_TODAY)).toBe("Do between 3 and 9 Nov");
+    expect(nextActionWhen(step({ id: "a", kind: "care_task", status: "upcoming", dueFrom: "2026-11-09" }), FIXTURE_TODAY)).toBe("Do on 9 Nov");
+    expect(nextActionWhen(step({ id: "a", kind: "care_task", status: "due", dueFrom: "2026-10-30", dueTo: FIXTURE_TODAY }), FIXTURE_TODAY)).toBe("Due today");
+    expect(nextActionWhen(step({ id: "a", kind: "care_task", status: "due", dueFrom: "2026-10-31", dueTo: "2026-11-02" }), FIXTURE_TODAY)).toBe("Do between 31 Oct and 2 Nov");
+    expect(nextActionWhen(step({ id: "a", kind: "care_task", status: "overdue", dueFrom: "2026-10-25", dueTo: "2026-10-28" }), FIXTURE_TODAY)).toBe("Overdue since 28 Oct");
+    expect(nextActionWhen(step({ id: "a", kind: "care_task", status: "completed", dueFrom: "2026-10-25" }), FIXTURE_TODAY)).toBe("Done");
+  });
+  it("the client rule matches the server: care and alert steps first, then overdue, due, upcoming", () => {
+    const check = step({ id: "check", kind: "stage_check", status: "overdue", dueFrom: "2026-10-20", dueTo: "2026-10-25" });
+    const care = step({ id: "care", kind: "care_task", status: "upcoming", dueFrom: "2026-11-05" });
+    const alert = step({ id: "alert", kind: "alert_step", status: "due", dueFrom: "2026-11-01", dueTo: "2026-11-03" });
+    expect(pickNextStep([check, care])?.id).toBe("care");
+    expect(pickNextStep([check, care, alert])?.id).toBe("alert");
+    expect(pickNextStep([check])?.id).toBe("check");
+    expect(pickNextStep([{ ...care, status: "completed" }])).toBeNull();
+  });
+  it("renders the bold next action with its window, action and Done, and the list from the second step", () => {
+    const html = renderToString(() => (
+      <UpcomingSteps steps={fixture.upcoming} nextAction={fixture.nextAction} today={FIXTURE_TODAY} busyId="" onDone={() => undefined} error="" />
+    ));
+    const t = text(html);
+    expect(html).toContain('data-testid="today-next-action"');
+    expect(t).toMatch(/Next action Check field moisture Do between 31 Oct and 2 Nov Inspect the field before deciding on irrigation\./);
+    expect(html).toContain('aria-label="Mark done: Check field moisture"');
+    // The list starts with the second step and every line has a window.
+    expect(t.indexOf("Clear field drains before 4 Nov")).toBeGreaterThan(t.indexOf("Check field moisture"));
+    expect(t).toContain("1 to 3 Nov");
+    expect(t).toContain("5 to 10 Nov");
+    expect(t).toContain("9 Nov");
+    expect(t).not.toContain("Expected");
+    expect((html.match(/data-step-id="care:task-moisture"/g) ?? []).length).toBe(1);
+    expect((html.match(/<li /g) ?? []).length).toBe(3);
+  });
+  it("a stage check or guidance step has no Done button, even as the next action", () => {
+    const guidance = step({ id: "ref:1", kind: "care_task", status: "due", dueFrom: "2026-11-01", dueTo: "2026-11-04", title: "Check stand and thin doubles", detail: "Guidance from Tamil Nadu sources (no local schedule for Hassan). Thin doubles." });
+    const check = step({ id: "check:1", kind: "stage_check", status: "upcoming", dueFrom: "2026-11-20", dueTo: "2026-12-30", title: "Check: Protect flowering moisture" });
+    const html = renderToString(() => <UpcomingSteps steps={[guidance, check]} nextAction={guidance} today={FIXTURE_TODAY} busyId="" onDone={() => undefined} error="" />);
+    expect(text(html)).toContain("Guidance from Tamil Nadu sources (no local schedule for Hassan)");
+    expect(text(html)).toContain("20 Nov to 30 Dec");
+    expect(html).not.toContain("Mark done");
+  });
+  it("outlook line: the sentence with the AI mark, Writing the outlook while pending, nothing when unavailable", () => {
+    const ready = renderToString(() => <OutlookLine note={fixture.outlookNote ?? null} />);
+    expect(text(ready)).toContain("Maize grain in Karnataka has usually fetched ₹19 to ₹24 per kg around harvest");
+    expect(ready).toContain("AI used: Harvest price outlook in words");
+    const pending = renderToString(() => <OutlookLine note={{ status: "pending", text: null, facts: [], origin: null, generatedAt: null, modelInvocation: null }} />);
+    expect(text(pending)).toContain("Writing the outlook…");
+    const code = renderToString(() => <OutlookLine note={{ ...fixture.outlookNote!, origin: "deterministic", text: "Prices for maize grain around the harvest weeks have ranged ₹19 to ₹24 per kg over the last 3 years in Karnataka." }} />);
+    expect(text(code)).toContain("over the last 3 years in Karnataka");
+    expect(code).not.toContain("AI used");
+    expect(text(renderToString(() => <OutlookLine note={{ status: "unavailable", text: null, facts: [], origin: null, generatedAt: null, modelInvocation: null }} />))).toBe("");
+    expect(text(renderToString(() => <OutlookLine note={null} />))).toBe("");
+    // On the card, under the range.
+    const card = text(renderToString(() => <TodayCards view={fixture} date={FIXTURE_TODAY} price={null} weather={null} onDetails={() => undefined} />));
+    expect(card.indexOf("Maize grain in Karnataka")).toBeGreaterThan(card.indexOf("₹19–24 /kg"));
+  });
+  it("alerts header names the Meta search with the AI mark; the IMD line is not on the main surface", () => {
+    const html = renderToString(() => (
+      <AlertsList alerts={fixture.alerts} newsReview={fixture.newsReview} today={FIXTURE_TODAY} stepAlertIds={new Set()} onDismiss={() => undefined} onSuggested={() => undefined} error="" />
+    ));
+    expect(text(html)).toContain("News and official warnings checked today via Meta search");
+    expect(html).toContain("AI used: Daily news check");
+    expect(text(html)).not.toContain("IMD");
   });
 });

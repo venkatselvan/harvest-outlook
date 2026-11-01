@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto';
 import type { BasisRef } from '@harvest/contracts';
-import { agronomyCrop, agronomySources, durationFor, legumeCredit, methodsFor, poolEntries, rotationFacts, windowsFor, type DurationClass } from './data';
+import { agronomyCrop, agronomySources, durationFor, greenManureEntries, legumeCredit, methodsFor, poolEntries, rotationFacts, windowsFor, type DurationClass } from './data';
 import { addDays, clippedDays, daysBetween } from './dates';
 import { ASSUMPTIONS, assumptionBasis, PRUNED_RULES, sequenceScore, soilRotationScore, type RotationScoreResult } from './scoring';
 import type { Candidate, DateRange, EngineContext, HarvestRange, PlacedWindow, Season, Sequence, SlotPlan } from './types';
@@ -20,6 +20,7 @@ export interface PlanParts {
   durationDays: { low: number; high: number };
   duration: Pick<DurationClass, 'sources' | 'notes' | 'regionMatch'> | null;
   hit: WindowHit | null;
+  kind?: SlotPlan['kind'];
 }
 
 function windowBasis(ctx: EngineContext, w: PlacedWindow): BasisRef {
@@ -49,7 +50,7 @@ export function makeSlotPlan(ctx: EngineContext, p: PlanParts): SlotPlan {
   } else uncertainties.push('No sourced duration; the harvest date was entered by the farmer.');
   basis.push(assumptionBasis('landPrepGapDays'));
   return {
-    key: p.key, cropId: p.cropId, productId: p.productId, method: p.method === 'any' ? null : p.method, season: p.season, fixed: false,
+    key: p.key, kind: p.kind ?? 'crop', cropId: p.cropId, productId: p.productId, method: p.method === 'any' ? null : p.method, season: p.season, fixed: false,
     sowing: p.sowing, harvest: p.harvest, occupancy: { from: p.sowing, to: addDays(p.harvest.latest, gap) }, durationDays: p.durationDays,
     durationSourced: p.duration !== null, window: w, windowFit: windowFitOf(w),
     flags: {
@@ -121,6 +122,31 @@ export function enumerateCandidates(ctx: EngineContext): CandidateSet {
     }
     if (byId.size === before) skipped.push({ cropId, productId: null, reason: 'No sowing date fits the free months of the field within the horizon.' });
   }
+  // Round 2: green manure candidates (green-manure.json via the pool's greenManure list), same window and irrigation rules.
+  for (const g of greenManureEntries()) {
+    const cropId = g.cropId;
+    if (ctx.excludedCropIds.includes(cropId)) { skipped.push({ cropId, productId: cropId, reason: 'Excluded by the farmer.' }); continue; }
+    const cls = durationFor(cropId, null, ctx.stateId)[0];
+    if (!cls) { skipped.push({ cropId, productId: cropId, reason: 'No sourced days to incorporation.' }); continue; }
+    const placed = placeWindows(windowsFor(cropId, where), { from: ctx.earliestSowing, to: ctx.horizon.to });
+    if (!placed.length) { skipped.push({ cropId, productId: cropId, reason: 'No sourced green manure window for this district or state in the plan horizon.' }); continue; }
+    const before = byId.size;
+    for (const w of placed) {
+      const compat = irrigationCompat(w.condition, ctx.irrigation);
+      if (!compat.ok) continue;
+      for (const sowing of weeklyDates(w.from, w.to)) {
+        if (sowing < ctx.earliestSowing || sowing >= ctx.horizon.to) continue;
+        const harvest = { earliest: addDays(sowing, cls.min), latest: addDays(sowing, cls.max) };
+        if (harvest.latest >= ctx.horizon.to) continue;
+        const plan = makeSlotPlan(ctx, { key: `${cropId}|${cropId}|green_manure|d0|${sowing}`, kind: 'green_manure', cropId, productId: cropId, method: null, sowing, harvest, season: w.season, durationDays: { low: cls.min, high: cls.max }, duration: cls, hit: { window: w, conditional: compat.conditional, note: compat.note } });
+        if (ctx.occupied.some((o) => o.from < plan.occupancy.to && plan.occupancy.from < o.to)) continue;
+        const cand: Candidate = { ...plan, candidateId: plan.key, durationClass: 0 };
+        const prev = byId.get(cand.candidateId);
+        if (!prev || cand.windowFit > prev.windowFit || (cand.windowFit === prev.windowFit && prev.flags.conditional && !cand.flags.conditional)) byId.set(cand.candidateId, cand);
+      }
+    }
+    if (byId.size === before) skipped.push({ cropId, productId: cropId, reason: placed.every((w) => !irrigationCompat(w.condition, ctx.irrigation).ok) ? 'Green manure windows need irrigation the field does not have.' : 'No green manure sowing date fits the free months of the field within the horizon.' });
+  }
   const candidates = [...byId.values()].sort((a, b) => a.sowing.localeCompare(b.sowing) || a.candidateId.localeCompare(b.candidateId));
   return { candidates, skipped, notes: [...new Set(notes)] };
 }
@@ -148,6 +174,14 @@ export function coveredDays(intervals: readonly DateRange[], horizon: DateRange)
   }
   if (cur) total += daysBetween(cur.from, cur.to);
   return total;
+}
+
+/** Idle days after the last interval that touches the horizon, up to the horizon end (counted at half weight). */
+export function trailingIdleDays(intervals: readonly DateRange[], horizon: DateRange): number {
+  let last: string | null = null;
+  for (const i of intervals) if (i.from < horizon.to && i.to > horizon.from && (last === null || i.to > last)) last = i.to;
+  if (last === null || last >= horizon.to) return 0;
+  return daysBetween(last > horizon.from ? last : horizon.from, horizon.to);
 }
 
 /**
@@ -216,6 +250,7 @@ export function enumerateSequences(ctx: EngineContext, candidates: readonly Cand
       slots: slots.map((s) => ({ weightDays: clippedDays(s.occupancy.from, s.occupancy.to, ctx.horizon.from, ctx.horizon.to), slotScore: value(s) })),
       horizonDays, rotationFit: transitions.reduce((a, b) => a + b, 0) / transitions.length,
       idleDays: horizonDays - coveredDays([...fixed, ...slots.map((s) => s.occupancy)], ctx.horizon),
+      trailingIdleDays: trailingIdleDays([...fixed, ...slots.map((s) => s.occupancy)], ctx.horizon),
     }).value;
   };
   let frontier: Partial[] = [{ slots: [], value: 0, id: '', signature: '' }];
@@ -224,8 +259,10 @@ export function enumerateSequences(ctx: EngineContext, candidates: readonly Cand
     const next: Partial[] = [];
     for (const p of frontier) {
       const last = p.slots.at(-1);
+      const gmLead = last?.kind === 'green_manure' ? addDays(last.occupancy.to, ASSUMPTIONS.greenManureMaxLeadDays.value) : null;
       for (let i = firstAtOrAfter(last ? last.occupancy.to : ctx.earliestSowing); i < sorted.length; i++) {
         const c = sorted[i]!;
+        if (gmLead !== null && c.sowing > gmLead) break;
         const prevCrop = predecessorOf(ctx, p.slots, c.sowing);
         if (prevCrop !== null && PRUNED_RULES.has(rot(prevCrop, c.cropId).rule)) continue;
         const slots = [...p.slots, c];
@@ -233,7 +270,8 @@ export function enumerateSequences(ctx: EngineContext, candidates: readonly Cand
       }
     }
     frontier = beam(next, maxSequences, perSignature);
-    done.push(...frontier);
+    // A green manure feeds the next crop: a sequence that ends with one is expanded but never offered as a plan.
+    done.push(...frontier.filter((p) => p.slots.at(-1)?.kind !== 'green_manure'));
   }
   return beam(done, maxSequences, perSignature).map((p) => ({ sequenceId: `seq-${shortHash(p.id)}`, slots: p.slots }));
 }

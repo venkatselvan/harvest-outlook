@@ -380,16 +380,20 @@ test("Done is optimistic, rolls back on error, reuses its idempotency key and pe
   const api = await mock(page, { failFirstCare: true });
   await openToday(page);
   const steps = page.getByRole("region", { name: "Upcoming steps" });
-  await expect(steps.getByRole("listitem")).toHaveCount(4);
-  const moisture = steps.locator('[data-step-id="care:task-moisture"]');
-  await expect(moisture.locator(".today-chip")).toHaveText("Due");
+  // The next action is a bold card above the list; the list starts with the second step.
+  await expect(steps.getByRole("listitem")).toHaveCount(3);
+  const moisture = steps.getByTestId("today-next-action");
+  await expect(moisture).toHaveAttribute("data-step-id", "care:task-moisture");
+  await expect(moisture).toContainText("Do between 31 Oct and 2 Nov");
+  await expect(moisture.locator(".today-chip")).toHaveCount(0);
   await moisture.getByRole("button", { name: "Mark done: Check field moisture" }).click();
   await expect.poll(() => api.state.careBodies.length).toBe(1);
   await expect(moisture.locator(".today-chip")).toHaveText("Done");
   await expect(moisture.getByRole("button", { name: /Mark done/ })).toHaveCount(0);
   await api.failHeldCare();
   await expect(steps.getByRole("alert")).toContainText('Could not record "Check field moisture". Simulated failure');
-  await expect(moisture.locator(".today-chip")).toHaveText("Due");
+  await expect(moisture.locator(".today-chip")).toHaveCount(0);
+  await expect(moisture).toContainText("Do between 31 Oct and 2 Nov");
   await moisture.getByRole("button", { name: "Mark done: Check field moisture" }).click();
   await expect.poll(() => api.state.careBodies.length).toBe(2);
   expect(api.state.careBodies[1]).toEqual(api.state.careBodies[0]);
@@ -402,9 +406,10 @@ test("Done is optimistic, rolls back on error, reuses its idempotency key and pe
   const reloaded = page.getByRole("region", { name: "Upcoming steps" }).locator('[data-step-id="care:task-moisture"]');
   await expect(reloaded.locator(".today-chip")).toHaveText("Done");
   await expect(reloaded.getByRole("button", { name: /Mark done/ })).toHaveCount(0);
-  // Stage transitions have a date and no Done button.
+  // Stage transitions show their date (never "Expected" without one) and have no Done button.
   const stageStep = page.locator('[data-step-id="stage:tasselling"]');
-  await expect(stageStep).toContainText("Expected 9 Nov");
+  await expect(stageStep).toContainText("9 Nov");
+  await expect(stageStep).not.toContainText("Expected");
   await expect(stageStep.getByRole("button", { name: /Mark done/ })).toHaveCount(0);
 });
 
@@ -412,8 +417,9 @@ test("alerts link to dated sources, and dismissing one removes it for good", asy
   const api = await mock(page);
   await openToday(page);
   const alerts = page.getByRole("region", { name: "Alerts" });
-  await expect(alerts).toContainText("News checked today");
-  await expect(alerts).toContainText("IMD warnings not connected");
+  await expect(alerts).toContainText("News and official warnings checked today via Meta search");
+  await expect(alerts.getByRole("button", { name: "AI used: Daily news check" })).toBeVisible();
+  await expect(alerts).not.toContainText("IMD");
   await expect(alerts.getByRole("listitem")).toHaveCount(3);
   await expect(alerts.getByRole("listitem").first()).toContainText("Warning");
   const rain = alerts.locator(`[data-alert-id="${FIXTURE_ALERT_IDS.weather}"]`);
@@ -427,6 +433,43 @@ test("alerts link to dated sources, and dismissing one removes it for good", asy
   await expect.poll(() => api.state.dismissPaths).toEqual([`/api/v1/farms/${A}/alerts/${FIXTURE_ALERT_IDS.price}/dismiss`]);
   await page.reload();
   await expect(page.getByRole("region", { name: "Alerts" }).getByRole("listitem")).toHaveCount(2);
+});
+
+test("the next action card shows the window and action; every later step shows its window", async ({ page }) => {
+  await mock(page);
+  await openToday(page);
+  const steps = page.getByRole("region", { name: "Upcoming steps" });
+  const card = steps.getByTestId("today-next-action");
+  await expect(card.getByRole("heading", { name: "Check field moisture" })).toBeVisible();
+  await expect(card).toContainText("Next action");
+  await expect(card).toContainText("Do between 31 Oct and 2 Nov");
+  await expect(card).toContainText("Inspect the field before deciding on irrigation.");
+  await expect(card.getByRole("button", { name: "Mark done: Check field moisture" })).toBeVisible();
+  const lines = steps.getByRole("listitem");
+  await expect(lines.first()).toContainText("Clear field drains before 4 Nov");
+  await expect(lines.first()).toContainText("1 to 3 Nov");
+  await expect(lines.nth(1)).toContainText("5 to 10 Nov");
+  await expect(steps).not.toContainText("Expected");
+});
+
+test("the outlook line sits under the price value: writing while pending, the sentence with the AI mark when ready", async ({ page }) => {
+  await mock(page);
+  let note: TodayView["outlookNote"] = { status: "pending", text: null, facts: [], origin: null, generatedAt: null, modelInvocation: null };
+  await page.route("**/api/v1/farms/*/today", (route) => route.fulfill({ json: env(todaySchema.parse({ ...todayFixture(A), outlookNote: note })) }));
+  await openToday(page);
+  const card = page.locator('[data-card="price"]');
+  await expect(card.getByTestId("today-outlook-note")).toHaveText(/Writing the outlook…/);
+  note = todayFixture(A).outlookNote!;
+  await page.reload();
+  const line = page.locator('[data-card="price"]').getByTestId("today-outlook-note");
+  await expect(line).toContainText("Maize grain in Karnataka has usually fetched ₹19 to ₹24 per kg around harvest");
+  await line.getByRole("button", { name: "AI used: Harvest price outlook in words" }).click();
+  await expect(page.getByRole("dialog")).toContainText("Harvest price outlook in words");
+  await page.keyboard.press("Escape");
+  note = { status: "unavailable", text: null, facts: [], origin: null, generatedAt: null, modelInvocation: null };
+  await page.reload();
+  await expect(page.locator('[data-card="price"]')).toContainText("₹19–24");
+  await expect(page.locator('[data-card="price"]').getByTestId("today-outlook-note")).toHaveCount(0);
 });
 
 test("switching farms clears the view before the next farm loads", async ({ page }) => {
@@ -448,7 +491,7 @@ test("switching farms clears the view before the next farm loads", async ({ page
   await expect(card(page, "harvest")).toHaveCount(0);
   const alerts = page.getByRole("region", { name: "Alerts" });
   await expect(alerts.getByRole("listitem")).toHaveCount(1);
-  await expect(alerts).toContainText("News check paused");
+  await expect(alerts).toContainText("News and warnings search paused");
   await expect(page.getByText("Leaf-feeding pest window")).toHaveCount(0);
   await expect(slider(page)).toHaveCount(0);
 });

@@ -42,5 +42,19 @@
   "Nitrogen fixers: groundnut, soybean, chickpea, green-gram, black-gram, pigeon-pea (six). Heavy feeders: maize, sunflower, cotton, potato, tomato, turmeric. This is enough contrast to demonstrate fixer-after-heavy-feeder sequences in both states.",
   "Pool crops without a cost source show revenue ranges and a 'cost not sourced' confidence penalty until the cost research lands.",
   "Legume nitrogen credits are the generic FAO figure until crop-specific values are found; the soil-rotation component treats them as low-confidence."
- ]
+ ],
+  "greenManure": [
+    {
+      "cropId": "gm-dhaincha",
+      "why": "Green manure (ROUND2_SPEC 1.2 item 4): TNAU seed rate, days to incorporation, 60-day N and 2023 seed price; CRIDA Hassan p26 names dhaincha green manuring for lowland paddy-fallow. Irrigated windows only; data in green-manure.json."
+    },
+    {
+      "cropId": "gm-sunn-hemp",
+      "why": "Green manure: TNAU seed rate, days to incorporation, 60-day N and 2023 seed price; CRIDA Hassan p26 names sunhemp. Irrigated windows only; data in green-manure.json."
+    },
+    {
+      "cropId": "gm-cowpea",
+      "why": "Green manure: TNAU 60-day N and seed price; Hassan rainfed May 3rd-week contingency window (CRIDA) and Tamil Nadu pattam windows, all provisional; data in green-manure.json."
+    }
+  ]
 }

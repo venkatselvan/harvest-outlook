@@ -1,0 +1,1332 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "reviewId": {
+      "anyOf": [
+        {
+          "type": "string",
+          "format": "uuid",
+          "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "jobId": {
+      "anyOf": [
+        {
+          "type": "string",
+          "format": "uuid",
+          "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "contextHash": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "running",
+        "ready",
+        "unavailable",
+        "error"
+      ]
+    },
+    "stale": {
+      "type": "boolean"
+    },
+    "request": {
+      "type": "object",
+      "properties": {
+        "mode": {
+          "type": "string",
+          "enum": [
+            "next",
+            "season",
+            "date"
+          ]
+        },
+        "season": {
+          "anyOf": [
+            {
+              "type": "string",
+              "enum": [
+                "kharif",
+                "rabi",
+                "summer"
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "sowing": {
+          "anyOf": [
+            {
+              "type": "string",
+              "format": "date",
+              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "mode",
+        "season",
+        "sowing"
+      ],
+      "additionalProperties": false
+    },
+    "resolvedSowing": {
+      "anyOf": [
+        {
+          "type": "string",
+          "format": "date",
+          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "previousCropId": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "currentCycleId": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "fieldAreaHa": {
+      "type": [
+        "number",
+        "null"
+      ]
+    },
+    "generatedAt": {
+      "anyOf": [
+        {
+          "type": "string",
+          "format": "date-time",
+          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "modelInvocation": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "provider": {
+              "type": "string",
+              "const": "meta"
+            },
+            "requestedModel": {
+              "type": "string"
+            },
+            "model": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "purpose": {
+              "type": "string"
+            },
+            "status": {
+              "type": "string",
+              "enum": [
+                "running",
+                "succeeded",
+                "failed"
+              ]
+            },
+            "startedAt": {
+              "type": "string",
+              "format": "date-time",
+              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+            },
+            "finishedAt": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date-time",
+                  "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "processing": {
+              "type": "string",
+              "const": "standard"
+            },
+            "requestedStorage": {
+              "type": "boolean",
+              "const": false
+            },
+            "responseDeleted": {
+              "type": [
+                "boolean",
+                "null"
+              ]
+            }
+          },
+          "required": [
+            "id",
+            "provider",
+            "requestedModel",
+            "model",
+            "purpose",
+            "status",
+            "startedAt",
+            "finishedAt",
+            "processing",
+            "requestedStorage",
+            "responseDeleted"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "picks": {
+      "maxItems": 3,
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "cropId": {
+            "type": "string",
+            "maxLength": 120
+          },
+          "productId": {
+            "type": "string",
+            "maxLength": 200
+          },
+          "rank": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 3
+          },
+          "headline": {
+            "type": "string",
+            "maxLength": 120
+          },
+          "reasons": {
+            "maxItems": 3,
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "code": {
+                  "type": "string",
+                  "maxLength": 60
+                },
+                "text": {
+                  "type": "string",
+                  "maxLength": 160
+                }
+              },
+              "required": [
+                "code",
+                "text"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "cropId",
+          "productId",
+          "rank",
+          "headline",
+          "reasons"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "pickOrigin": {
+      "anyOf": [
+        {
+          "type": "string",
+          "enum": [
+            "model",
+            "deterministic"
+          ]
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "candidates": {
+      "maxItems": 30,
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "cropId": {
+            "type": "string",
+            "maxLength": 120
+          },
+          "productId": {
+            "type": "string",
+            "maxLength": 200
+          },
+          "cropName": {
+            "type": "string",
+            "maxLength": 120
+          },
+          "productName": {
+            "type": "string",
+            "maxLength": 120
+          },
+          "establishmentMethod": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 80
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "rank": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "maximum": 9007199254740991
+          },
+          "score": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 100
+          },
+          "components": {
+            "type": "object",
+            "properties": {
+              "price": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1
+              },
+              "yield": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1
+              },
+              "soilRotation": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1
+              },
+              "water": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1
+              },
+              "confidence": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1
+              }
+            },
+            "required": [
+              "price",
+              "yield",
+              "soilRotation",
+              "water",
+              "confidence"
+            ],
+            "additionalProperties": false
+          },
+          "sowing": {
+            "type": "string",
+            "format": "date",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+          },
+          "harvest": {
+            "type": "object",
+            "properties": {
+              "earliest": {
+                "type": "string",
+                "format": "date",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+              },
+              "latest": {
+                "type": "string",
+                "format": "date",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+              }
+            },
+            "required": [
+              "earliest",
+              "latest"
+            ],
+            "additionalProperties": false
+          },
+          "durationDays": {
+            "type": "object",
+            "properties": {
+              "low": {
+                "type": "number"
+              },
+              "high": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "low",
+              "high"
+            ],
+            "additionalProperties": false
+          },
+          "window": {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "scope": {
+                    "type": "string",
+                    "enum": [
+                      "district",
+                      "state"
+                    ]
+                  },
+                  "season": {
+                    "type": "string",
+                    "enum": [
+                      "kharif",
+                      "rabi",
+                      "summer"
+                    ]
+                  },
+                  "fit": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "shiftedDays": {
+                    "type": "integer",
+                    "minimum": -9007199254740991,
+                    "maximum": 9007199254740991
+                  }
+                },
+                "required": [
+                  "scope",
+                  "season",
+                  "fit",
+                  "shiftedDays"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "yieldKgPerHa": {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "low": {
+                    "type": "number"
+                  },
+                  "high": {
+                    "type": "number"
+                  }
+                },
+                "required": [
+                  "low",
+                  "high"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "yieldBasis": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "district",
+                  "state",
+                  "reference",
+                  "farmer"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "price": {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "available",
+                      "insufficient"
+                    ]
+                  },
+                  "unit": {
+                    "type": "string",
+                    "const": "INR/kg"
+                  },
+                  "p50": {
+                    "type": [
+                      "number",
+                      "null"
+                    ]
+                  },
+                  "range": {
+                    "anyOf": [
+                      {
+                        "type": "object",
+                        "properties": {
+                          "low": {
+                            "type": "number"
+                          },
+                          "high": {
+                            "type": "number"
+                          }
+                        },
+                        "required": [
+                          "low",
+                          "high"
+                        ],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "harvestWeek": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "maxLength": 10
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "yearsUsed": {
+                    "type": "array",
+                    "items": {
+                      "type": "integer",
+                      "minimum": -9007199254740991,
+                      "maximum": 9007199254740991
+                    }
+                  },
+                  "observations": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 9007199254740991
+                  },
+                  "scope": {
+                    "type": "object",
+                    "properties": {
+                      "level": {
+                        "type": "string",
+                        "enum": [
+                          "market",
+                          "district",
+                          "state",
+                          "national"
+                        ]
+                      },
+                      "stateName": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      },
+                      "districtName": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      },
+                      "marketCount": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 9007199254740991
+                      }
+                    },
+                    "required": [
+                      "level",
+                      "stateName",
+                      "districtName",
+                      "marketCount"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "reason": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "maxLength": 80
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  }
+                },
+                "required": [
+                  "status",
+                  "unit",
+                  "p50",
+                  "range",
+                  "harvestWeek",
+                  "yearsUsed",
+                  "observations",
+                  "scope",
+                  "reason"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "marketNow": {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "p50": {
+                    "type": "number"
+                  },
+                  "date": {
+                    "type": "string",
+                    "format": "date",
+                    "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+                  },
+                  "markets": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 9007199254740991
+                  },
+                  "scopeLabel": {
+                    "type": "string",
+                    "maxLength": 160
+                  }
+                },
+                "required": [
+                  "p50",
+                  "date",
+                  "markets",
+                  "scopeLabel"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "cost": {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "a2flPerHa": {
+                    "type": [
+                      "number",
+                      "null"
+                    ]
+                  },
+                  "c2PerHa": {
+                    "type": [
+                      "number",
+                      "null"
+                    ]
+                  },
+                  "authority": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "enum": [
+                          "cacp",
+                          "des",
+                          "sau",
+                          "other"
+                        ]
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "year": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "maxLength": 20
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "region": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "maxLength": 40
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  }
+                },
+                "required": [
+                  "a2flPerHa",
+                  "c2PerHa",
+                  "authority",
+                  "year",
+                  "region"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "profitPerHa": {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "central": {
+                    "type": "number"
+                  },
+                  "likely": {
+                    "type": "object",
+                    "properties": {
+                      "low": {
+                        "type": "number"
+                      },
+                      "high": {
+                        "type": "number"
+                      }
+                    },
+                    "required": [
+                      "low",
+                      "high"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "possible": {
+                    "type": "object",
+                    "properties": {
+                      "low": {
+                        "type": "number"
+                      },
+                      "high": {
+                        "type": "number"
+                      }
+                    },
+                    "required": [
+                      "low",
+                      "high"
+                    ],
+                    "additionalProperties": false
+                  }
+                },
+                "required": [
+                  "central",
+                  "likely",
+                  "possible"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "profitForField": {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "central": {
+                    "type": "number"
+                  },
+                  "likely": {
+                    "type": "object",
+                    "properties": {
+                      "low": {
+                        "type": "number"
+                      },
+                      "high": {
+                        "type": "number"
+                      }
+                    },
+                    "required": [
+                      "low",
+                      "high"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "possible": {
+                    "type": "object",
+                    "properties": {
+                      "low": {
+                        "type": "number"
+                      },
+                      "high": {
+                        "type": "number"
+                      }
+                    },
+                    "required": [
+                      "low",
+                      "high"
+                    ],
+                    "additionalProperties": false
+                  }
+                },
+                "required": [
+                  "central",
+                  "likely",
+                  "possible"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "soil": {
+            "type": "object",
+            "properties": {
+              "status": {
+                "type": "string",
+                "enum": [
+                  "no_report",
+                  "compared"
+                ]
+              },
+              "checks": {
+                "maxItems": 12,
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "parameter": {
+                      "type": "string",
+                      "maxLength": 60
+                    },
+                    "label": {
+                      "type": "string",
+                      "maxLength": 80
+                    },
+                    "value": {
+                      "type": [
+                        "number",
+                        "null"
+                      ]
+                    },
+                    "unit": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "maxLength": 30
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "rating": {
+                      "type": "string",
+                      "enum": [
+                        "very_low",
+                        "low",
+                        "medium",
+                        "high",
+                        "very_high",
+                        "strongly_acidic",
+                        "acidic",
+                        "neutral",
+                        "alkaline",
+                        "strongly_alkaline",
+                        "normal",
+                        "critical",
+                        "injurious",
+                        "deficient",
+                        "sufficient",
+                        "unrated"
+                      ]
+                    },
+                    "need": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "enum": [
+                            "low",
+                            "medium",
+                            "high"
+                          ]
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "verdict": {
+                      "type": "string",
+                      "enum": [
+                        "ok",
+                        "watch",
+                        "short",
+                        "unknown"
+                      ]
+                    },
+                    "note": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "maxLength": 600
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "assumption": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "maxLength": 300
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "markerId": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "maxLength": 100
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "sampleId": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "format": "uuid",
+                          "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "collectionDate": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "format": "date",
+                          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "ratingSource": {
+                      "anyOf": [
+                        {
+                          "type": "object",
+                          "properties": {
+                            "id": {
+                              "type": "string",
+                              "maxLength": 80
+                            },
+                            "title": {
+                              "type": "string",
+                              "maxLength": 200
+                            },
+                            "url": {
+                              "anyOf": [
+                                {
+                                  "type": "string",
+                                  "format": "uri"
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            }
+                          },
+                          "required": [
+                            "id",
+                            "title",
+                            "url"
+                          ],
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    }
+                  },
+                  "required": [
+                    "parameter",
+                    "label",
+                    "value",
+                    "unit",
+                    "rating",
+                    "need",
+                    "verdict",
+                    "note",
+                    "assumption",
+                    "markerId",
+                    "sampleId",
+                    "collectionDate",
+                    "ratingSource"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            },
+            "required": [
+              "status",
+              "checks"
+            ],
+            "additionalProperties": false
+          },
+          "water": {
+            "type": "object",
+            "properties": {
+              "fit": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1
+              },
+              "needMm": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "rainMm": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "verdict": {
+                "type": "string",
+                "maxLength": 160
+              }
+            },
+            "required": [
+              "fit",
+              "needMm",
+              "rainMm",
+              "verdict"
+            ],
+            "additionalProperties": false
+          },
+          "rotation": {
+            "type": "object",
+            "properties": {
+              "previousCropId": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "rule": {
+                "type": "string",
+                "maxLength": 60
+              },
+              "note": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "maxLength": 600
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            },
+            "required": [
+              "previousCropId",
+              "rule",
+              "note"
+            ],
+            "additionalProperties": false
+          },
+          "confidence": {
+            "type": "string",
+            "enum": [
+              "high",
+              "medium",
+              "low"
+            ]
+          },
+          "reasonCodes": {
+            "maxItems": 10,
+            "type": "array",
+            "items": {
+              "type": "string",
+              "maxLength": 60
+            }
+          },
+          "uncertainties": {
+            "maxItems": 10,
+            "type": "array",
+            "items": {
+              "type": "string",
+              "maxLength": 600
+            }
+          },
+          "basis": {
+            "maxItems": 20,
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "kind": {
+                  "type": "string",
+                  "enum": [
+                    "price_history",
+                    "yield_reference",
+                    "cost_reference",
+                    "sowing_window",
+                    "duration",
+                    "rotation",
+                    "water",
+                    "soil",
+                    "ndvi",
+                    "climatology",
+                    "model"
+                  ]
+                },
+                "label": {
+                  "type": "string",
+                  "maxLength": 200
+                },
+                "sourceId": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "maxLength": 200
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "url": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "format": "uri"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "scope": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "maxLength": 120
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "note": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "maxLength": 1000
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              },
+              "required": [
+                "kind",
+                "label",
+                "sourceId",
+                "url",
+                "scope",
+                "note"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "cropId",
+          "productId",
+          "cropName",
+          "productName",
+          "establishmentMethod",
+          "rank",
+          "score",
+          "components",
+          "sowing",
+          "harvest",
+          "durationDays",
+          "window",
+          "yieldKgPerHa",
+          "yieldBasis",
+          "price",
+          "marketNow",
+          "cost",
+          "profitPerHa",
+          "profitForField",
+          "soil",
+          "water",
+          "rotation",
+          "confidence",
+          "reasonCodes",
+          "uncertainties",
+          "basis"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "weights": {
+      "type": "object",
+      "properties": {
+        "price": {
+          "type": "number",
+          "const": 40
+        },
+        "yield": {
+          "type": "number",
+          "const": 30
+        },
+        "soilRotation": {
+          "type": "number",
+          "const": 15
+        },
+        "water": {
+          "type": "number",
+          "const": 10
+        },
+        "confidence": {
+          "type": "number",
+          "const": 5
+        }
+      },
+      "required": [
+        "price",
+        "yield",
+        "soilRotation",
+        "water",
+        "confidence"
+      ],
+      "additionalProperties": false
+    },
+    "soilReportStatus": {
+      "type": "string",
+      "enum": [
+        "none",
+        "unconfirmed",
+        "confirmed"
+      ]
+    },
+    "summary": {
+      "type": "string",
+      "maxLength": 600
+    },
+    "limitations": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "maxLength": 600
+      }
+    }
+  },
+  "required": [
+    "reviewId",
+    "jobId",
+    "contextHash",
+    "status",
+    "stale",
+    "request",
+    "resolvedSowing",
+    "previousCropId",
+    "currentCycleId",
+    "fieldAreaHa",
+    "generatedAt",
+    "modelInvocation",
+    "picks",
+    "pickOrigin",
+    "candidates",
+    "weights",
+    "soilReportStatus",
+    "summary",
+    "limitations"
+  ],
+  "additionalProperties": false,
+  "$id": "https://harvest-outlook.local/schema/1.0/CropFitReview.json",
+  "x-schemaVersion": "1.0"
+}

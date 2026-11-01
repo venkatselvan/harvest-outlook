@@ -42,8 +42,9 @@ type Phase =
   | { kind: "failed"; failure: YearPlanFailure };
 
 /**
- * Year plan tab (UI_BRIEF 3.2): three scored 12-month crop sequences on a month calendar, a detail sheet per option,
- * inline edit with code re-scoring, and apply into the saved seasons, which stay listed below by the existing Planner.
+ * Year plan tab (UI_BRIEF 3.2, round 2): up to four scored 12-month crop sequences on a month calendar (three picked by
+ * Meta, a fourth "Green manure first" built by code), a detail sheet per option, inline edit with code re-scoring, and
+ * apply into the saved seasons, which stay listed below by the existing Planner.
  *
  * Degrades without the backend: a 404 on GET and on the follow-up POST shows "not available on this server yet", a
  * network failure shows a retry card, a payload that fails the zod contract shows an error card; the saved seasons

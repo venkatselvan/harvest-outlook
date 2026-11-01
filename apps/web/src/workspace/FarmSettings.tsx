@@ -27,6 +27,7 @@ import { useWorkspace, dateLabel } from "./state";
 import { PageHeading } from "./FarmPage";
 import { Icon } from "./icons";
 import { Evara } from "./Evara";
+import { AiSpark, AiSparkInline } from "./ui/AiSpark";
 import { SoilMarkerCards, SoilReferenceCards } from "./SoilMarkerCards";
 import {
   loadSoilMarkers,
@@ -373,7 +374,8 @@ export function FarmSettings() {
               </div>
               <p class="section-description">
                 Extraction is a draft. Only the values you review and confirm
-                become farm measurements.
+                become farm measurements.{" "}
+                <AiSparkInline use="soil_extraction" label="Read by AI" />
               </p>
               <Show when={reports.error}>
                 <p class="inline-error" role="status">
@@ -439,7 +441,8 @@ export function FarmSettings() {
               <h2>Add a soil report.</h2>
               <p>
                 Evara reads the document and proposes structured values. Review
-                each result against its source page before confirming.
+                each result against its source page before confirming.{" "}
+                <AiSpark use="soil_extraction" />
               </p>
               <div
                 class={`soil-file-drop ${dragged() ? "dragged" : ""}`}

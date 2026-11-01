@@ -1,0 +1,398 @@
+/* Farm tab crop fit (ROUND2_SPEC.md 4.2). Mobile first (390 px); theme tokens only (apps/web/src/theme.css). */
+.cf-view {
+  display: grid;
+  gap: 14px;
+  padding: 16px 14px 32px;
+  max-width: 960px;
+  margin: 0 auto;
+  color: var(--text);
+}
+.cf-head h2 {
+  margin: 2px 0 4px;
+  font-size: 22px;
+  line-height: 1.2;
+}
+.cf-muted {
+  color: var(--muted);
+  font-size: 13px;
+}
+.cf-controls {
+  display: grid;
+  gap: 10px;
+}
+.cf-segmented {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  padding: 3px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface-soft);
+}
+.cf-segment {
+  min-height: 40px;
+  padding: 6px 4px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-secondary);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.cf-segment[aria-pressed="true"] {
+  background: var(--surface);
+  color: var(--accent);
+  box-shadow: 0 1px 3px var(--shadow-color);
+}
+.cf-season-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.cf-season {
+  min-height: 36px;
+  padding: 6px 14px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--text-secondary);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.cf-season[aria-pressed="true"] {
+  border-color: var(--accent-border);
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+.cf-segment:focus-visible,
+.cf-season:focus-visible,
+.cf-link:focus-visible,
+.cf-card-open:focus-visible,
+.cf-list-row:focus-visible,
+.cf-date input:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+.cf-date {
+  display: grid;
+  gap: 4px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+.cf-date input {
+  min-height: 40px;
+  max-width: 220px;
+  padding: 6px 10px;
+  border: 1px solid var(--border-strong);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+}
+.cf-date-error {
+  margin: 0;
+  color: var(--danger);
+  font-size: 13px;
+}
+.cf-resolved {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+}
+.cf-link {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--accent);
+  font: inherit;
+  font-weight: 600;
+  text-decoration: underline;
+  cursor: pointer;
+}
+.cf-link:disabled {
+  color: var(--muted);
+  cursor: default;
+}
+.cf-section-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.cf-section-head h3 {
+  margin: 0;
+  font-size: 17px;
+}
+.cf-picks-status {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+.cf-cards {
+  display: grid;
+  gap: 12px;
+}
+.cf-card {
+  position: relative;
+  display: grid;
+  gap: 10px;
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+}
+.cf-card:hover {
+  border-color: var(--border-strong);
+}
+.cf-card-skeleton {
+  min-height: 210px;
+  background: var(--surface-soft);
+  animation: cf-pulse 1.4s ease-in-out infinite;
+}
+@keyframes cf-pulse {
+  50% {
+    opacity: 0.55;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .cf-card-skeleton {
+    animation: none;
+  }
+}
+.cf-card-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+.cf-card-titles {
+  min-width: 0;
+}
+.cf-card-rank {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.cf-card h3 {
+  margin: 2px 0;
+  font-size: 19px;
+  line-height: 1.25;
+}
+.cf-card-open {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+/* The name button's click area covers the whole card (accessible card pattern). */
+.cf-card-open::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 12px;
+}
+.cf-card-headline {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+.cf-reasons {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding-left: 18px;
+  font-size: 14px;
+  line-height: 1.4;
+}
+.cf-rows {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+}
+.cf-rows > div {
+  display: grid;
+  grid-template-columns: 96px 1fr;
+  gap: 8px;
+  font-size: 14px;
+}
+.cf-rows dt {
+  color: var(--muted);
+  font-weight: 600;
+}
+.cf-rows dd {
+  margin: 0;
+  min-width: 0;
+}
+.cf-sub {
+  display: block;
+  color: var(--muted);
+  font-size: 13px;
+}
+.cf-soil-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.cf-more {
+  align-self: center;
+  color: var(--muted);
+  font-size: 12px;
+}
+.cf-card-dates {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+.cf-see-all {
+  justify-self: start;
+  min-height: 40px;
+}
+.cf-list {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.cf-list-row {
+  display: grid;
+  grid-template-columns: 28px 1fr auto;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.cf-list-row:hover {
+  background: var(--surface-hover);
+}
+.cf-list-rank {
+  color: var(--muted);
+  font-weight: 700;
+}
+.cf-list-main {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+.cf-list-name {
+  font-weight: 700;
+}
+.cf-list-meta {
+  color: var(--muted);
+  font-size: 13px;
+}
+.cf-list-score {
+  min-width: 36px;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-weight: 700;
+  text-align: center;
+}
+.cf-empty {
+  display: grid;
+  gap: 8px;
+  justify-items: start;
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+}
+.cf-empty h4 {
+  margin: 0;
+  font-size: 16px;
+}
+.cf-empty p {
+  margin: 0;
+  color: var(--text-secondary);
+}
+.cf-detail {
+  display: grid;
+  gap: 14px;
+}
+.cf-detail p {
+  margin: 0;
+}
+.cf-detail-section {
+  display: grid;
+  gap: 6px;
+}
+.cf-detail-section h3 {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  font-size: 15px;
+}
+.cf-score-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.cf-components,
+.cf-estimates,
+.cf-soil-table {
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.cf-components th,
+.cf-components td,
+.cf-estimates th,
+.cf-estimates td,
+.cf-soil-table th,
+.cf-soil-table td {
+  padding: 4px 8px 4px 0;
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+  vertical-align: top;
+}
+.cf-table-wrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+.cf-soil-table {
+  min-width: 560px;
+}
+.cf-soil-table a,
+.cf-notes a {
+  color: var(--accent);
+}
+.cf-notes {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding-left: 18px;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+@media (min-width: 760px) {
+  .cf-view {
+    padding: 20px 20px 40px;
+  }
+  .cf-cards {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  .cf-segmented {
+    max-width: 440px;
+  }
+}

@@ -26,6 +26,7 @@ export const ConfirmSoilReport=z.object({expectedVersion:z.number().int(),sample
 export const FarmSoilMarkers=z.object({farmId:z.uuid(),samples:z.array(z.object({id:z.uuid(),reportId:z.uuid(),sourceSampleId:z.string(),sampleLabel:optionalText,laboratory:optionalText,collectionDate:z.iso.date().nullable(),receivedDate:z.iso.date().nullable().optional(),reportDate:z.iso.date().nullable(),depth:SoilSampleDraft.shape.depth,confirmedAt:z.iso.datetime(),markers:z.array(SoilMarker)}).strict()),limitations:z.array(z.string())}).strict();
 export type SoilParameter=z.infer<typeof SoilParameter>;
 export type SoilMarkerDraft=z.infer<typeof SoilMarkerDraft>;
+export type SoilMarker=z.infer<typeof SoilMarker>;
 export type SoilSampleDraft=z.infer<typeof SoilSampleDraft>;
 export type SoilReportExtraction=z.infer<typeof SoilReportExtraction>;
 export type SoilReport=z.infer<typeof SoilReport>;

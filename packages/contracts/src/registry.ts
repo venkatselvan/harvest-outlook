@@ -15,6 +15,9 @@ import {CommodityCatalogue,PricedCommodity,ResearchedCropProfile} from './commod
 import { WaterBalanceInput, WaterBalanceResult } from './water';
 import {FarmCommandCenter,PlantCrop,PlantCropResult,CompleteCareTask,CompleteCareTaskResult,FocusedCrop,CareTask,SoilCropFit,PriorYearMarket} from './command-center';
 import { TodayView } from './today';
+import { MarketTimeline } from './market';
+import { CropFitReview } from './crop-fit';
+import { SoilReview } from './soil-review';
 import { FarmAlert, FarmAlerts } from './alerts';
 import { NdviSeries, NeighbourhoodSeasonality } from './ndvi';
 import { PriceSeries, HarvestPriceOutlook, PriceTrend } from './price-outlook';
@@ -26,7 +29,7 @@ import { FutureLookAsset } from './future-look';
  * Keys become file names under packages/contracts/schema/.
  */
 export const PUBLIC_CONTRACTS: Record<string, z.ZodType> = {
-  TodayView,FarmAlert,FarmAlerts,NdviSeries,NeighbourhoodSeasonality,PriceSeries,HarvestPriceOutlook,PriceTrend,StageTimeline,YearPlanReview,YearPlanOption,RescoreYearPlan,ApplyYearPlan,ApplyYearPlanResult,FutureLookAsset,
+  TodayView,FarmAlert,FarmAlerts,NdviSeries,NeighbourhoodSeasonality,PriceSeries,HarvestPriceOutlook,PriceTrend,StageTimeline,YearPlanReview,YearPlanOption,RescoreYearPlan,ApplyYearPlan,ApplyYearPlanResult,FutureLookAsset,MarketTimeline,CropFitReview,SoilReview,
   FarmCommandCenter,PlantCrop,PlantCropResult,CompleteCareTask,CompleteCareTaskResult,FocusedCrop,CareTask,SoilCropFit,PriorYearMarket,
   SoilReportedReference,SoilParameter,SoilMarkerDraft,SoilSampleDraft,SoilReportExtraction,SoilCanonicalValue,SoilMarker,SoilReport,ReviewSoilReport,ConfirmSoilReport,FarmSoilMarkers,CommodityCatalogue,PricedCommodity,ResearchedCropProfile,
   CurrentMandiQuotes,

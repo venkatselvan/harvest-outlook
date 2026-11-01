@@ -25,7 +25,7 @@ import { enumerateCandidates, shortHash, type CandidateSet } from './candidates'
 import { distinctOptions, editInputKeys, rescoreOption, runInputKeys, runYearPlanEngine, type ScoringNorm } from './assemble';
 import { emptyInputs, monthlyRainFromDaily, slotPriceKey, type Inputs, type PriceInputKey } from './inputs';
 import type { EngineContext } from './types';
-import { deterministicSelection, labelAdjustedNote, selectionCandidates, selectWithMeta, type LabelAdjustment } from './select';
+import { appendGreenManureOption, deterministicSelection, labelAdjustedNote, selectionCandidates, selectWithMeta, type LabelAdjustment } from './select';
 
 /**
  * Persisted year-plan review (Stream A packet 2): context hash -> job farm.year-plan -> prefetch inputs -> deterministic
@@ -35,7 +35,8 @@ import { deterministicSelection, labelAdjustedNote, selectionCandidates, selectW
  * input_context.edits["<base>:edit"]; ApplyYearPlan carries no slots, so apply resolves a ":edit" optionId from that store.
  * Rescoring "<base>:edit" again replaces the stored edit of the same base option.
  */
-export const ENGINE_VERSION = 'year-plan-v3-2026-11-01';
+/** Part of the context hash: reviews stored under an older version are stale and rebuilt on the next ensure. */
+export const ENGINE_VERSION = 'year-plan-v4-2026-11-01';
 export const JOB_TYPE = 'farm.year-plan';
 export const EDIT_SUFFIX = ':edit';
 /**
@@ -117,7 +118,7 @@ export async function yearPlanContext(deps: Pick<YearPlanDeps, 'pool' | 'config'
     farm: { location: farm.location, area: farm.areaHectares, facts: Object.fromEntries(Object.entries(farm.facts).map(([k, f]) => [k, { value: f.value, unit: f.unit, basis: f.basis, confirmed: f.confirmed }])) },
     workspace: { version: workspace.version, boundary: workspace.boundary, previousHarvest: workspace.previousHarvest, cycles: workspace.cycles, rotationPlans: workspace.rotationPlans },
     soilPh: soilPh ?? null,
-    files: { pool: fileHash(data.DATA_FILES.pool), agronomy: fileHash(data.DATA_FILES.agronomy), yieldCost: fileHash(data.DATA_FILES.yieldCost) },
+    files: { pool: fileHash(data.DATA_FILES.pool), agronomy: fileHash(data.DATA_FILES.agronomy), yieldCost: fileHash(data.DATA_FILES.yieldCost), greenManure: fileHash(data.DATA_FILES.greenManure) },
     mode: deps.config.RUNTIME_MODE, model: deps.config.META_TEXT_MODEL, keyAvailable: !!deps.config.MODEL_API_KEY, day: asOf,
   };
   return { hash: payloadHash(material), asOf, farmId, farmVersion: farm.version, workspaceVersion: workspace.version, ctx, set, farm, soilPh, soilSummary };
@@ -259,7 +260,15 @@ export async function generateYearPlan(deps: YearPlanDeps, reviewId: string, own
   const c = await yearPlanContext(deps, ownerId, row.farm_id, todayIst(now));
   const result: YearPlanReview = { ...blank(c), reviewId: row.id, jobId: row.job_id, contextHash: row.context_hash, status: 'error', appliedOptionIds: row.result.appliedOptionIds ?? [] };
   const stored: StoredContext = { ...row.input_context };
+  // Round 2: green-manure-first sequences from the engine run; finish() appends the fourth plan once (ROUND2_SPEC 1.2 item 5).
+  let greenManureFirst: YearPlanOption[] | null = null;
   const finish = async () => {
+    if (greenManureFirst && result.options.length && result.status !== 'error') {
+      const fourth = appendGreenManureOption(result.options, greenManureFirst);
+      result.options = fourth.options;
+      if (fourth.limitation) result.limitations.push(fourth.limitation);
+      greenManureFirst = null;
+    }
     result.generatedAt = new Date().toISOString();
     await deps.pool.query('UPDATE farm_year_plans r SET status=$3,result=$4::jsonb,input_context=$5::jsonb,finished_at=now() FROM farms f WHERE r.id=$1 AND r.owner_id=$2 AND f.id=r.farm_id AND f.owner_id=$2 AND f.deleted_at IS NULL AND r.archived_at IS NULL',
       [reviewId, ownerId, result.status, JSON.stringify(YearPlanReview.parse(result)), JSON.stringify(stored)]);
@@ -282,7 +291,8 @@ export async function generateYearPlan(deps: YearPlanDeps, reviewId: string, own
     inputs.priceOutlooks = fetched.map;
     annualMeansOf(fetched.map, inputs.annualMeans);
     const looked = new Set(keys.map((k) => k.key));
-    const set: CandidateSet = keys.length < allKeys.length ? { ...c.set, candidates: c.set.candidates.filter((x) => looked.has(slotPriceKey(x))) } : c.set;
+    // Green manure candidates need no price lookup and are always kept.
+    const set: CandidateSet = keys.length < allKeys.length ? { ...c.set, candidates: c.set.candidates.filter((x) => x.kind === 'green_manure' || looked.has(slotPriceKey(x))) } : c.set;
     if (keys.length < allKeys.length) limitations.push(`Price lookups are capped at ${cap} per plan: ${keys.length} of ${allKeys.length} crop and harvest-week combinations were looked up, spread evenly across crops; sowing dates whose harvest week was not looked up were left out.`);
     if (fetched.failed) limitations.push(`${fetched.failed} harvest-week price lookups failed and score no price.`);
     const point = c.farm.location.lat !== null && c.farm.location.lon !== null ? { lat: c.farm.location.lat, lon: c.farm.location.lon } : null;
@@ -306,6 +316,7 @@ export async function generateYearPlan(deps: YearPlanDeps, reviewId: string, own
     }
     // ---- engine
     const run = runYearPlanEngine(c.ctx, inputs, { candidateSet: set });
+    greenManureFirst = run.greenManureFirst;
     const seasons = new Map<string, string>(set.candidates.map((x) => [`slot-${shortHash(x.candidateId)}`, x.season]));
     const slotSeasons: Record<string, string> = {};
     for (const o of run.shortlist) for (const s of o.slots) { const season = seasons.get(s.slotId); if (season) slotSeasons[s.slotId] = season; }
@@ -454,14 +465,22 @@ export async function applyYearPlan(deps: YearPlanDeps, ownerId: string, farmId:
   }
   const entries = additions.map((s) => {
     const season = row.input_context.slotSeasons?.[s.slotId] ?? data.seasonOfMonth(monthOf(s.sowing));
-    const notes = [
+    const notes = s.kind === 'green_manure' ? [
+      `Year plan "${option.label}" (${option.origin}) from review ${row.id}.`,
+      `Green manure: sow ${s.sowing}, plough in by ${s.harvest.latest} (${s.durationDays.low}-${s.durationDays.high} days).`,
+      s.nitrogenCreditKgPerHa ? `Nitrogen in the biomass about ${s.nitrogenCreditKgPerHa.low}${s.nitrogenCreditKgPerHa.high !== s.nitrogenCreditKgPerHa.low ? `-${s.nitrogenCreditKgPerHa.high}` : ''} kg/ha (provisional source).` : 'Nitrogen not sourced.',
+      s.cost?.a2flPerHa ? `Seed cost ${s.cost.a2flPerHa} INR/ha (seed only).` : 'Cost not sourced.',
+      'Dates and ranges are calculated references, not predictions.',
+    ].join(' ') : [
       `Year plan "${option.label}" (${option.origin}) from review ${row.id}.`,
       s.yieldKgPerHa ? `Yield ${s.yieldKgPerHa.low}-${s.yieldKgPerHa.high} kg/ha (${s.yieldBasis ?? 'basis unknown'}).` : 'Yield not sourced.',
       s.price?.range ? `Harvest-week wholesale price ${s.price.range.low}-${s.price.range.high} INR/kg (${s.price.scope.level}).` : 'No harvest-week price range.',
       s.cost?.a2flPerHa ? `Cost A2+FL ${s.cost.a2flPerHa} INR/ha (${s.cost.authority ?? 'source'} ${s.cost.year ?? ''}).` : 'Cost not sourced.',
       'Dates and ranges are calculated references, not predictions.',
     ].join(' ');
-    return { id: key(s.slotId), year: Number(s.sowing.slice(0, 4)), season: capitalise(season), cropId: s.cropId, cropName: s.cropName, productId: s.productId, productName: s.productName, plannedSowingDate: s.sowing, plannedHarvestDate: s.harvest.latest, notes: notes.slice(0, 2000) };
+    // A green manure has no catalogue product: the season is saved with its crop id only (the product check is skipped).
+    const product = s.kind === 'green_manure' ? {} : { productId: s.productId, productName: s.productName };
+    return { id: key(s.slotId), year: Number(s.sowing.slice(0, 4)), season: capitalise(season), cropId: s.cropId, cropName: s.cropName, ...product, plannedSowingDate: s.sowing, plannedHarvestDate: s.harvest.latest, notes: notes.slice(0, 2000) };
   });
   let after = c;
   const saved = await putWorkspace(deps.pool, ownerId, farmId, { boundary: workspace.boundary, previousHarvest: workspace.previousHarvest, cycles: workspace.cycles, rotationPlans: [...workspace.rotationPlans, ...entries], expectedVersion: workspace.version }, {

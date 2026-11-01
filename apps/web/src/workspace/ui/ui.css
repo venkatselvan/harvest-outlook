@@ -244,3 +244,206 @@
     animation: none;
   }
 }
+
+/* AI spark: the mark that flags every use of a model, its explainer sheet and the full list (AiSpark.tsx). */
+.ai-spark-host {
+  display: inline-flex;
+  flex-shrink: 0;
+  vertical-align: middle;
+}
+.ai-spark {
+  /* Visual size is --ai-size. The target grows to --ai-target (24 px, 44 px on touch screens) with padding that a
+     negative margin cancels, so the mark does not change line height. */
+  --ai-target: 24px;
+  --ai-pad: max(0px, calc((var(--ai-target) - var(--ai-size, 16px)) / 2));
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  min-width: var(--ai-target);
+  min-height: var(--ai-target);
+  padding: var(--ai-pad);
+  margin: calc(-1 * var(--ai-pad));
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--accent);
+  font: inherit;
+  line-height: 1;
+  cursor: pointer;
+}
+.ai-spark:hover {
+  background: var(--accent-soft);
+}
+.ai-spark:focus-visible,
+.ai-header-button:focus-visible,
+.ai-detail:focus-visible,
+.ai-list:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 1px;
+}
+.ai-spark-icon {
+  display: block;
+  flex-shrink: 0;
+}
+.ai-spark-labelled {
+  min-height: 28px;
+  padding: 3px 10px 3px 7px;
+  margin: 0;
+  border: 1px solid var(--accent-border);
+  border-radius: 999px;
+  background: var(--accent-soft);
+  font-size: 12px;
+  font-weight: 700;
+}
+.ai-spark-labelled:hover {
+  background: var(--surface-hover);
+}
+.ai-spark-label {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  text-align: left;
+}
+.ai-header-button {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--accent);
+  cursor: pointer;
+}
+.ai-header-button:hover {
+  background: var(--accent-soft);
+}
+@media (max-width: 767px) {
+  .ai-header-button {
+    width: 44px;
+    height: 44px;
+  }
+}
+@media (pointer: coarse) {
+  .ai-spark {
+    --ai-target: 44px;
+  }
+  .ai-spark-labelled {
+    min-height: 44px;
+    margin: -8px 0;
+  }
+}
+.ai-sheet h2 {
+  overflow-wrap: anywhere;
+}
+.ai-detail-status {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 14px;
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+.ai-block {
+  margin-bottom: 14px;
+  padding-left: 12px;
+  border-left: 3px solid var(--accent-border);
+}
+.ai-block:last-child {
+  margin-bottom: 0;
+}
+.ai-block h3 {
+  margin: 0 0 4px;
+  color: var(--accent);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+.ai-block p {
+  margin: 0;
+  color: var(--text);
+  font-size: 15px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+.ai-foot {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  min-width: 0;
+}
+.ai-notes {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+  color: var(--text-secondary);
+  font-size: 12px;
+  line-height: 1.45;
+}
+.ai-notes p {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.ai-back {
+  margin-bottom: 8px;
+  padding-left: 0;
+  text-align: left;
+}
+.ai-intro {
+  margin: 0 0 6px;
+  color: var(--text-secondary);
+  font-size: 13px;
+  line-height: 1.45;
+}
+.ai-list {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.ai-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 11px 0;
+  border-bottom: 1px solid var(--border);
+}
+.ai-row:last-child {
+  border-bottom: 0;
+}
+.ai-row-icon {
+  margin-top: 2px;
+  color: var(--accent);
+}
+.ai-row-main {
+  flex: 1;
+  min-width: 0;
+}
+.ai-row-title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px 8px;
+  font-size: 14px;
+}
+.ai-row-title strong {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.ai-row-meta {
+  margin-top: 2px;
+  color: var(--text-secondary);
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+.ai-row-line {
+  margin-top: 3px;
+  color: var(--text);
+  font-size: 13px;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}

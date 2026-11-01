@@ -15,7 +15,7 @@ export const ASSUMPTIONS = {
   irrigationAllowanceMm: { value: { none: 0, protective: 150, assured: 600 }, text: 'Irrigation water available per crop season by category: none 0, protective 150 mm, assured 600 mm (spec 5.1); farmer-editable later.' },
   irrigationCategoryMap: { value: { rainfed: 'none', supplemental: 'protective', irrigated: 'assured' }, text: 'Repo irrigation categories map to allowance classes: rainfed -> none, supplemental -> protective, irrigated -> assured. An unrecorded category gets no allowance and no rainfed cap.' },
   unknownHarvestBufferDays: { value: 15, text: 'Another active cycle or a saved season without a recorded harvest date is assumed to run to sowing + the longest sourced duration + 15 days (conservative), then the land preparation gap. The current crop uses this rule only when its stage timeline has no harvest window (see timelineHarvestBufferDays).' },
-  timelineHarvestBufferDays: { value: 7, text: 'Changed 2026-11-01: the current crop without a recorded harvest date is held until the latest harvest date of the crop\'s stage timeline (the same window the Today view shows, computed from the recorded sowing or establishment date) + 7 days + the land preparation gap, instead of the longest sourced duration + 15 days. The fixed slot shows the same harvest window as Today. When the stage timeline has no harvest window the older rule (unknownHarvestBufferDays) applies.' },
+  timelineHarvestBufferDays: { value: 0, text: 'Changed 2026-11-01 (round 2, ROUND2_SPEC 1.2 item 1: 7 -> 0 days): the current crop without a recorded harvest date is held until the latest harvest date of the crop\'s stage timeline (the same window the Today view shows, computed from the recorded sowing or establishment date; that date is already the latest) + the land preparation gap, with no extra buffer. The fixed slot shows the same harvest window as Today. When the stage timeline has no harvest window the older rule (unknownHarvestBufferDays) applies.' },
   unknownDurationDays: { value: 180, text: 'A current cycle or saved season with neither a recorded harvest date nor a sourced duration is assumed to occupy the field for 180 days (plus the buffer and gap). Recording the harvest date replaces this.' },
   durationClassMergeDays: { value: 15, text: 'Cultivar duration rows of one method whose ranges overlap or lie within 15 days are merged into one duration class; farther apart they stay separate (for example short and long pigeon pea).' },
   sowingStepDays: { value: 7, text: 'Sowing dates are stepped weekly from the start of each sourced window (spec 4.1).' },
@@ -41,7 +41,13 @@ export const ASSUMPTIONS = {
   confidenceSourcedCost: { value: ['cacp', 'des', 'sau'], text: 'The confidence flag "CACP or SAU cost present" counts CACP, DES cost-of-cultivation (published in the CACP report annex) and SAU rows; other surveys do not count.' },
   confidenceBands: { value: { high: 0.8, medium: 0.5 }, text: 'Confidence label: High >= 0.8, Medium >= 0.5, else Low (spec 5.1).' },
   reasonThresholds: { value: { timingStrong: 1.1, timingWeak: 0.9, marginHigh: 0.75, waterGood: 0.8, waterPoor: 0.5 }, text: 'Reason-code thresholds (display only, they do not change scores).' },
-  idlePenalty: { value: { perMonth: 0.02, freeMonths: 2 }, text: 'Idle penalty 0.02 per idle month beyond the first two; idle months are fractional (idle days / 30.4375) (spec 5.2).' },
+  idlePenalty: { value: { perMonth: 0.04, freeMonths: 0.5, trailingWeight: 0.5 }, text: 'Round 2 (2026-11-01, ROUND2_SPEC 1.2 item 2; was 0.02 per month beyond two free months): idle penalty 0.04 per idle month beyond the first half month. Idle time between the field release and the first slot and between consecutive slots counts in full; idle time after the last slot up to the horizon end counts at half weight. Idle months are fractional (idle days / 30.4375). A six-week gap now lowers the score.' },
+  gapReportDays: { value: 21, text: 'Round 2 (2026-11-01, ROUND2_SPEC 1.2 item 3): every idle stretch of 21 days or more between the field release (or the previous occupancy end) and the next slot is listed in YearPlanOption.gaps with a code-written reason naming dates from the placed sowing windows.' },
+  singleYearYieldSigma: { value: 0.15, text: 'Round 2 (2026-11-01, ROUND2_SPEC 1.2 item 6): the profit simulation models yield as a lognormal with sigma = ln(p75/p25)/1.349; when the yield range has no spread (a single published year, or a farmer value without a regional range) sigma 0.15 is assumed. Not sourced; flagged on the slot.' },
+  greenManureFieldOpsCostPerHa: { value: null, text: 'Round 2 (2026-11-01, ROUND2_SPEC 1.2 item 4): cost of broadcasting and ploughing in a green manure crop per hectare when the source gives only the seed cost. Not yet set: no sourced per-hectare operation cost has been encoded, so a green manure slot carries the sourced seed cost only and is flagged.' },
+  greenManureScoring: { value: { applicableConfidenceFlags: 4 }, text: 'Round 2 (2026-11-01): a green manure slot has no product, so its price and yield parts score 0 and its revenue is 0; its value comes through the next crop (rotation), the idle time it fills and its water fit (as for crops; neutral 0.5 when the water need is not sourced). Its data confidence is the share of four flags that apply to it: sourced days to incorporation, a district window, a sourced nitrogen figure, and a full cost (seed and field operations).' },
+  greenManureMaxLeadDays: { value: 30, text: 'Round 2 (2026-11-01): when building sequences, the crop after a green manure must be sown within 30 days of the green manure release (incorporation plus the land preparation gap); a green manure is never the last slot of a suggested sequence. Engine assumption, not sourced: the nitrogen ploughed in is meant for the next crop. Farmer edits outside it get a warning.' },
+  greenManureSuccessorBonus: { value: 0.15, text: 'Round 2 (2026-11-01, ROUND2_SPEC 1.2 item 4): the crop sown after a green manure slot gets +0.15 on its soil and rotation fit (clipped to 1), on top of the legume-class rotation benefit with the green manure nitrogen credit. Orchestrator-set, not sourced.' },
   daysPerMonth: { value: 30.4375, text: 'Average month length used for margin per month of occupancy and idle months.' },
   harvestInsideHorizon: { value: true, text: 'A suggested slot must be sown on or after the first free day and harvested before the 12-month horizon ends; its land preparation gap may run past it.' },
   missingCostRevenueFactor: { value: 0.7, text: 'When the cost of cultivation is not sourced, the margin part scores the gross revenue rate (price p50 x yield p50 x (1 - loss) per month of occupancy, no cost deducted) relative to the largest gross revenue rate among the candidates, multiplied by 0.7 so an unsourced cost never outranks a sourced margin; the reason cost_not_sourced is shown and profit stays empty.' },
@@ -62,8 +68,10 @@ export const WEIGHTS = { price: 0.4, yield: 0.3, soilRotation: 0.15, water: 0.1,
 /** Fixed server list; Meta may only cite these codes. Texts carry no numbers (code renders numbers elsewhere). */
 export const REASON_TEXT = {
   current_crop: 'This is the crop already growing in the field.',
+  green_manure: 'A green manure crop is grown and ploughed in to feed the soil; it is not sold.',
   legume_after_heavy_feeder: 'A legume follows a heavy feeder and returns nitrogen to the soil.',
   heavy_feeder_after_legume: 'A heavy feeder follows a legume and uses the nitrogen it left.',
+  green_manure_successor: 'The crop follows a green manure ploughed in before sowing.',
   cited_succession: 'A published source recommends this crop after the previous one.',
   lighter_after_heavy_feeder: 'A lighter feeder follows a heavy feeder.',
   family_break: 'The crop family changes from the previous crop.',
@@ -100,7 +108,7 @@ export const REASON_TEXT = {
 export type ReasonCode = keyof typeof REASON_TEXT;
 export const REASON_CODES = Object.keys(REASON_TEXT) as ReasonCode[];
 /** Positive codes, in the order they explain a plan. */
-export const POSITIVE_CODES: readonly ReasonCode[] = ['legume_after_heavy_feeder', 'heavy_feeder_after_legume', 'cited_succession', 'price_timing_strong', 'margin_rate_high', 'district_window', 'water_fit_good', 'lighter_after_heavy_feeder', 'family_break', 'ndvi_season_match'];
+export const POSITIVE_CODES: readonly ReasonCode[] = ['legume_after_heavy_feeder', 'heavy_feeder_after_legume', 'green_manure_successor', 'cited_succession', 'price_timing_strong', 'margin_rate_high', 'district_window', 'water_fit_good', 'lighter_after_heavy_feeder', 'family_break', 'ndvi_season_match'];
 const PRIORITY = new Map<ReasonCode, number>(REASON_CODES.map((c, i) => [c, i]));
 
 export const clip = (x: number, lo: number, hi: number): number => Math.min(hi, Math.max(lo, x));
@@ -196,9 +204,11 @@ export interface RotationFacts {
   successors: CropLink[];
   predecessors: CropLink[];
   phRange: { min: number; max: number; source: string | null } | null;
+  /** Round 2: a green manure crop (grown and ploughed in); the next crop gets ASSUMPTIONS.greenManureSuccessorBonus. */
+  greenManure?: boolean | undefined;
 }
 export type RotationRule = 'avoid_after' | 'same_family' | 'legume_after_heavy_feeder' | 'heavy_feeder_after_legume' | 'cited_succession' | 'lighter_after_heavy_feeder' | 'same_role' | 'family_break' | 'no_rule' | 'unknown_previous';
-export interface RotationScoreResult { raw: number; value: number; rule: RotationRule; reasonCodes: ReasonCode[]; sources: string[]; sameFamily: boolean; phMismatch: boolean }
+export interface RotationScoreResult { raw: number; value: number; rule: RotationRule; reasonCodes: ReasonCode[]; sources: string[]; sameFamily: boolean; phMismatch: boolean; greenManureBonus: boolean }
 /** Transitions dropped during enumeration (spec 4.4); kept and scored -1 for farmer edits. */
 export const PRUNED_RULES: ReadonlySet<RotationRule> = new Set(['avoid_after', 'same_family']);
 
@@ -242,10 +252,13 @@ export function soilRotationScore(prev: RotationFacts | null, next: RotationFact
   if (r.rule === 'family_break' || r.rule === 'cited_succession' || r.rule === 'lighter_after_heavy_feeder') {
     if (prev && prev.family !== null && next.family !== null && prev.family !== next.family && !codes.includes('family_break')) codes.push('family_break');
   }
+  // Round 2: a crop sown after a green manure gets +0.15 (clipped to 1) on top of the rule above, unless the order is avoided or pruned.
+  const greenManureBonus = !!prev?.greenManure && !next.greenManure && !PRUNED_RULES.has(r.rule);
+  if (greenManureBonus) { value = Math.min(1, value + ASSUMPTIONS.greenManureSuccessorBonus.value); codes.push('green_manure_successor'); }
   const ph = next.phRange;
   const phMismatch = soilPh !== undefined && ph !== null && (soilPh < ph.min || soilPh > ph.max);
   if (phMismatch) { value *= ASSUMPTIONS.phMismatchMultiplier.value; codes.push('soil_ph_mismatch'); }
-  return { raw: r.raw, value, rule: r.rule, reasonCodes: codes, sources: r.sources, sameFamily: !!prev && prev.family !== null && prev.family === next.family, phMismatch };
+  return { raw: r.raw, value, rule: r.rule, reasonCodes: codes, sources: r.sources, sameFamily: !!prev && prev.family !== null && prev.family === next.family, phMismatch, greenManureBonus };
 }
 
 // ------------------------------------------------------------------ water and climate (10)
@@ -312,17 +325,30 @@ export function slotDisplayScore(c: ScoreComponents): number {
   return slotScore(c) + WEIGHTS.soilRotation * c.soilRotation;
 }
 
-export interface SequenceTerms { slots: readonly { weightDays: number; slotScore: number }[]; horizonDays: number; rotationFit: number; idleDays: number }
-export interface SequenceScoreResult { value: number; score: number; base: number; idleMonths: number; idlePenalty: number }
+export interface SequenceTerms {
+  slots: readonly { weightDays: number; slotScore: number }[];
+  horizonDays: number;
+  rotationFit: number;
+  idleDays: number;
+  /** Part of idleDays after the last occupied interval up to the horizon end (counted at ASSUMPTIONS.idlePenalty.trailingWeight). */
+  trailingIdleDays?: number | undefined;
+}
+export interface SequenceScoreResult { value: number; score: number; base: number; idleMonths: number; weightedIdleMonths: number; idlePenalty: number }
 
-/** score = sum (occupancyDays / horizonDays) x slotScore + 0.15 x rotationFit - 0.02 per idle month beyond two; reported 0..100. */
+/**
+ * score = sum (occupancyDays / horizonDays) x slotScore + 0.15 x rotationFit - 0.04 per weighted idle month beyond half a
+ * month (trailing idle at half weight); reported 0..100. idleMonths is the unweighted idle time shown to the farmer.
+ */
 export function sequenceScore(t: SequenceTerms): SequenceScoreResult {
   const base = t.horizonDays > 0 ? t.slots.reduce((s, x) => s + (x.weightDays / t.horizonDays) * x.slotScore, 0) : 0;
-  const idleMonths = Math.max(0, t.idleDays) / ASSUMPTIONS.daysPerMonth.value;
-  const { perMonth, freeMonths } = ASSUMPTIONS.idlePenalty.value;
-  const idlePenalty = perMonth * Math.max(0, idleMonths - freeMonths);
+  const idle = Math.max(0, t.idleDays);
+  const { perMonth, freeMonths, trailingWeight } = ASSUMPTIONS.idlePenalty.value;
+  const trailing = clip(t.trailingIdleDays ?? 0, 0, idle);
+  const idleMonths = idle / ASSUMPTIONS.daysPerMonth.value;
+  const weightedIdleMonths = (idle - trailing * (1 - trailingWeight)) / ASSUMPTIONS.daysPerMonth.value;
+  const idlePenalty = perMonth * Math.max(0, weightedIdleMonths - freeMonths);
   const value = base + WEIGHTS.soilRotation * t.rotationFit - idlePenalty;
-  return { value, score: Math.round(clip(value, 0, 1) * 10000) / 100, base, idleMonths, idlePenalty };
+  return { value, score: Math.round(clip(value, 0, 1) * 10000) / 100, base, idleMonths, weightedIdleMonths, idlePenalty };
 }
 
 /** Reason codes for one slot from its collected codes, flags and components, ordered by the fixed priority, at most 8. */

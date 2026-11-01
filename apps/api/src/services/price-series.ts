@@ -420,6 +420,12 @@ interface SeasonalResult {
  * measured against the median of the near-bucket weeks of the other years.
  */
 function seasonalReference(rows: PriceRow[], yearsConsidered: number[], targetBucket: number, weekWindow: number): SeasonalResult {
+  return seasonalAt(prepareSeasonal(rows, yearsConsidered, weekWindow), targetBucket);
+}
+
+/** The target-independent half of seasonalReference: weekly medians and the leave-one-year-out residuals. */
+interface PreparedSeasonal { weekly: Weekly[]; residuals: number[]; weekWindow: number }
+function prepareSeasonal(rows: PriceRow[], yearsConsidered: number[], weekWindow: number): PreparedSeasonal {
   const byWeek = new Map<string, { year: number; week: number; values: number[]; marketKeys: Set<string>; rows: number }>();
   for (const d of marketDays(rows)) {
     const w = isoWeek(d.date);
@@ -431,14 +437,21 @@ function seasonalReference(rows: PriceRow[], yearsConsidered: number[], targetBu
   }
   const weekly: Weekly[] = [...byWeek.values()].map((e) => ({ year: e.year, week: e.week, bucket: weekBucket(e.week), median: median(e.values), marketKeys: e.marketKeys, rows: e.rows }));
   const near = (a: number, b: number) => weekDistance(a, b) <= weekWindow;
-  const pool = weekly.filter((w) => near(w.bucket, targetBucket));
-  const yearsUsed = [...new Set(pool.map((w) => w.year))].sort((a, b) => a - b);
-  const perYear = yearsUsed.map((y) => { const v = pool.filter((w) => w.year === y).map((w) => w.median); return { year: y, weeks: v.length, median: r2(median(v)) }; });
   const residuals: number[] = [];
   for (const w of weekly) {
     const others = weekly.filter((o) => o.year !== w.year && near(o.bucket, w.bucket)).map((o) => o.median);
     if (others.length) residuals.push(Math.log(w.median) - Math.log(median(others)));
   }
+  return { weekly, residuals, weekWindow };
+}
+
+/** The target-dependent half: pool the weeks near `targetBucket`, take the median and scale it by residual quantiles. */
+function seasonalAt(prep: PreparedSeasonal, targetBucket: number): SeasonalResult {
+  const { weekly, residuals, weekWindow } = prep;
+  const near = (a: number, b: number) => weekDistance(a, b) <= weekWindow;
+  const pool = weekly.filter((w) => near(w.bucket, targetBucket));
+  const yearsUsed = [...new Set(pool.map((w) => w.year))].sort((a, b) => a - b);
+  const perYear = yearsUsed.map((y) => { const v = pool.filter((w) => w.year === y).map((w) => w.median); return { year: y, weeks: v.length, median: r2(median(v)) }; });
   const annual = weekly.filter((w) => yearsUsed.includes(w.year)).map((w) => w.median);
   const base = {
     yearsUsed, perYear, annualWeeks: annual.length, weeksUsed: pool.length, observations: pool.reduce((a, w) => a + w.rows, 0),
@@ -514,6 +527,114 @@ export async function harvestPriceOutlook(pool: Pool, mode: Mode, args: HarvestP
     p10: p ? r2(p.p10) : null, p25: p ? r2(p.p25) : null, p50: p ? r2(p.p50) : null, p75: p ? r2(p.p75) : null, p90: p ? r2(p.p90) : null,
     annualMean: res.annualMean === null ? null : r2(res.annualMean), annualWeeks: res.annualWeeks,
     weeksUsed: res.weeksUsed, observations: res.observations, marketsUsed: res.marketsUsed, residualCount: res.residualCount,
+  };
+}
+
+// ------------------------------------------------------------------ seasonal reference for every ISO week (one pass)
+export interface SeasonalReferenceByWeekArgs {
+  productId: string;
+  stateName: string;
+  districtName?: string | null | undefined;
+  /** Reference date; the years used are the `years` complete ISO years before it. Also the replay cutoff. */
+  asOf: string;
+  weekWindow?: number | undefined;
+  years?: number | undefined;
+}
+/** One ISO week bucket (1..52, 53 pooled with 52); the fields mean exactly what they mean in HarvestPriceOutlook. */
+export interface SeasonalWeekReference {
+  week: number;
+  status: "available" | "insufficient";
+  missingReason: PriceMissingReasonCode | null;
+  scope: PriceScope;
+  yearsUsed: number[];
+  perYear: { year: number; weeks: number; median: number }[];
+  p10: number | null; p25: number | null; p50: number | null; p75: number | null; p90: number | null;
+  annualMean: number | null;
+  annualWeeks: number;
+  weeksUsed: number;
+  observations: number;
+  marketsUsed: number;
+  residualCount: number;
+}
+export interface SeasonalReferenceByWeek {
+  productId: string;
+  method: typeof PRICE_OUTLOOK_METHOD;
+  asOf: string;
+  weekWindow: number;
+  yearsRequested: number;
+  yearsConsidered: number[];
+  unit: "INR/kg";
+  priceBasis: "wholesale_mandi_modal";
+  basisLabel: string;
+  limitations: string[];
+  /** weeks[i] is ISO week bucket i + 1, with harvestPriceOutlook's district-to-state fallback decided per week. */
+  weeks: SeasonalWeekReference[];
+  /** weeks[i] for the state pool alone: what harvestPriceOutlook returns when no district is requested. */
+  stateWeeks: SeasonalWeekReference[];
+}
+
+/**
+ * harvestPriceOutlook for all 52 ISO week buckets in one pass: the rows are read once, and the weekly medians and the
+ * leave-one-year-out residuals (which do not depend on the target week) are computed once per scope; only the +/-
+ * weekWindow pooling and the median are repeated per week. Same years, same pooling, same residual intervals, same
+ * district-to-state fallback and the same missing-reason codes, so weeks[w - 1] equals harvestPriceOutlook for any
+ * harvest date in ISO week w (53 shares 52); the test suite checks this field by field.
+ */
+export async function seasonalReferenceByWeek(pool: Pool, mode: Mode, args: SeasonalReferenceByWeekArgs): Promise<SeasonalReferenceByWeek> {
+  const weekWindow = checkInt("weekWindow", args.weekWindow ?? 2, 0, 8);
+  const years = checkInt("years", args.years ?? 3, 1, 10);
+  const asOf = checkDate("asOf", args.asOf);
+  const y0 = isoWeek(asOf).year;
+  const yearsConsidered = Array.from({ length: years }, (_, i) => y0 - years + i);
+  const from = isoWeekMonday(yearsConsidered[0]!, 1);
+  const to = addDays(isoWeekMonday(y0, 1), -1);
+  const cutoff = cutoffFor(mode, args.asOf);
+  const product = await resolveProduct(pool, args.productId);
+  const rows = product ? await loadRows(pool, mode, product.id, from, to, cutoff) : [];
+  const req: ScopeRequest = { stateName: resolveStateName(args.stateName), districtName: args.districtName?.trim() || null, marketIds: [] };
+  const cands = candidates(rows, req).filter((c) => c.level === "district" || c.level === "state");
+  const state = cands.find((c) => c.level === "state")!;
+  const district = cands.find((c) => c.level === "district");
+  const statePrep = prepareSeasonal(state.rows, yearsConsidered, weekWindow);
+  const districtPrep = district ? prepareSeasonal(district.rows, yearsConsidered, weekWindow) : null;
+  const stateHasRows = state.rows.some((r) => r.valid);
+  const districtHasRows = district ? district.rows.some((r) => r.valid) : false;
+  // Same reason refinement as harvestPriceOutlook; the query runs at most once.
+  let noStateRowsReason: PriceMissingReasonCode | null = null;
+  if (!stateHasRows) noStateRowsReason = product && (await productHasRows(pool, mode, product.id, cutoff)) ? "market_not_in_history" : "price_history_not_ingested";
+
+  const toWeek = (week: number, res: SeasonalResult, scope: PriceScope): SeasonalWeekReference => {
+    const p = res.p;
+    return {
+      week, status: res.ok ? "available" : "insufficient", missingReason: res.ok ? null : !stateHasRows ? noStateRowsReason : res.reason, scope,
+      yearsUsed: res.yearsUsed, perYear: res.perYear,
+      p10: p ? r2(p.p10) : null, p25: p ? r2(p.p25) : null, p50: p ? r2(p.p50) : null, p75: p ? r2(p.p75) : null, p90: p ? r2(p.p90) : null,
+      annualMean: res.annualMean === null ? null : r2(res.annualMean), annualWeeks: res.annualWeeks,
+      weeksUsed: res.weeksUsed, observations: res.observations, marketsUsed: res.marketsUsed, residualCount: res.residualCount,
+    };
+  };
+  const weeks: SeasonalWeekReference[] = [];
+  const stateWeeks: SeasonalWeekReference[] = [];
+  for (let week = 1; week <= WEEKS_PER_YEAR; week++) {
+    const s = seasonalAt(statePrep, week);
+    stateWeeks.push(toWeek(week, s, scopeOf(state, state, null)));
+    if (!district || !districtPrep) { weeks.push(toWeek(week, s, scopeOf(state, state, null))); continue; }
+    const d = seasonalAt(districtPrep, week);
+    if (d.ok) weeks.push(toWeek(week, d, scopeOf(district, district, null)));
+    else weeks.push(toWeek(week, s, scopeOf(state, district, fallbackNote(district, state, districtHasRows ? REASON_TEXT[d.reason!] : "no quotes in the years considered"))));
+  }
+  const residualNote = districtPrep ? `${districtPrep.residuals.length} in the district pool, ${statePrep.residuals.length} in the state pool` : `${statePrep.residuals.length} residuals`;
+  const limitations = [
+    WHOLESALE_NOTE,
+    `Historical seasonal reference, not a forecast: for each ISO week, the median of weekly median prices in that week ±${weekWindow} of ${yearsConsidered.join(", ")}. The evaluated release baseline (D42) is per market with the exact ISO week; this variant pools the scope's markets and widens the window.`,
+    `The p25-p75 and p10-p90 ranges come from leave-one-year-out log residuals over every week of the years used (${residualNote}). They describe past year-to-year dispersion and are not separately calibrated for this pooled variant.`,
+    RENAME_NOTE,
+  ];
+  if (mode === "replay") limitations.push(`Replay: only rows with a recorded available_at at or before ${cutoff!.toISOString()} are read.`);
+  if (mode === "synthetic") limitations.push("Synthetic mode: generated fixtures, not market observations.");
+  return {
+    productId: product?.slug ?? args.productId, method: PRICE_OUTLOOK_METHOD, asOf, weekWindow, yearsRequested: years, yearsConsidered,
+    ...BASIS, limitations, weeks, stateWeeks,
   };
 }
 

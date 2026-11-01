@@ -367,8 +367,21 @@ export function todayFixture(farmId = FIXTURE_FARM_ID): TodayView {
     newsReview: { status: "active", reason: null, lastReviewedAt: "2026-11-01T03:10:00Z" },
     imdStatus: "not_connected",
     upcoming: upcoming(),
+    nextAction: upcoming()[0]!,
+    outlookNote: {
+      status: "ready",
+      text: "Maize grain in Karnataka has usually fetched ₹19 to ₹24 per kg around harvest, close to the yearly average.",
+      facts: [
+        "Likely price in the harvest weeks: ₹19 to ₹24 per kg (middle half of past years), typical ₹21 per kg",
+        "Harvest weeks usually run close to the yearly average price",
+        "Years used: 2023, 2024, 2025 (3 years)",
+      ],
+      origin: "model",
+      generatedAt: "2026-11-01T04:20:00Z",
+      modelInvocation: null,
+    },
     monitoring,
-    limitations: ["Test fixture: every value on this view is synthetic."],
+    limitations: ["Test fixture: every value on this view is synthetic.", "Direct IMD feed not connected (needs a key); official warnings are searched daily."],
   };
 }
 
@@ -393,6 +406,8 @@ export function todayEmptyFixture(farmId = FIXTURE_FARM_ID): TodayView {
     newsReview: { status: "paused", reason: "daily_cap", lastReviewedAt: null },
     imdStatus: "not_connected",
     upcoming: [],
+    nextAction: null,
+    outlookNote: null,
     monitoring,
     limitations: ["Test fixture: every value on this view is synthetic."],
   };

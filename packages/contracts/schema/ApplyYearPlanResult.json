@@ -620,7 +620,7 @@
           "additionalProperties": false
         },
         "options": {
-          "maxItems": 3,
+          "maxItems": 4,
           "type": "array",
           "items": {
             "type": "object",
@@ -716,6 +716,36 @@
                         {
                           "type": "string",
                           "maxLength": 80
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "kind": {
+                      "type": "string",
+                      "enum": [
+                        "crop",
+                        "green_manure"
+                      ]
+                    },
+                    "nitrogenCreditKgPerHa": {
+                      "anyOf": [
+                        {
+                          "type": "object",
+                          "properties": {
+                            "low": {
+                              "type": "number"
+                            },
+                            "high": {
+                              "type": "number"
+                            }
+                          },
+                          "required": [
+                            "low",
+                            "high"
+                          ],
+                          "additionalProperties": false
                         },
                         {
                           "type": "null"
@@ -1078,6 +1108,165 @@
                         }
                       ]
                     },
+                    "revenueEstimate": {
+                      "anyOf": [
+                        {
+                          "type": "object",
+                          "properties": {
+                            "central": {
+                              "type": "number"
+                            },
+                            "likely": {
+                              "type": "object",
+                              "properties": {
+                                "low": {
+                                  "type": "number"
+                                },
+                                "high": {
+                                  "type": "number"
+                                }
+                              },
+                              "required": [
+                                "low",
+                                "high"
+                              ],
+                              "additionalProperties": false
+                            },
+                            "possible": {
+                              "type": "object",
+                              "properties": {
+                                "low": {
+                                  "type": "number"
+                                },
+                                "high": {
+                                  "type": "number"
+                                }
+                              },
+                              "required": [
+                                "low",
+                                "high"
+                              ],
+                              "additionalProperties": false
+                            }
+                          },
+                          "required": [
+                            "central",
+                            "likely",
+                            "possible"
+                          ],
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "profitEstimate": {
+                      "anyOf": [
+                        {
+                          "type": "object",
+                          "properties": {
+                            "central": {
+                              "type": "number"
+                            },
+                            "likely": {
+                              "type": "object",
+                              "properties": {
+                                "low": {
+                                  "type": "number"
+                                },
+                                "high": {
+                                  "type": "number"
+                                }
+                              },
+                              "required": [
+                                "low",
+                                "high"
+                              ],
+                              "additionalProperties": false
+                            },
+                            "possible": {
+                              "type": "object",
+                              "properties": {
+                                "low": {
+                                  "type": "number"
+                                },
+                                "high": {
+                                  "type": "number"
+                                }
+                              },
+                              "required": [
+                                "low",
+                                "high"
+                              ],
+                              "additionalProperties": false
+                            }
+                          },
+                          "required": [
+                            "central",
+                            "likely",
+                            "possible"
+                          ],
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "profitForField": {
+                      "anyOf": [
+                        {
+                          "type": "object",
+                          "properties": {
+                            "central": {
+                              "type": "number"
+                            },
+                            "likely": {
+                              "type": "object",
+                              "properties": {
+                                "low": {
+                                  "type": "number"
+                                },
+                                "high": {
+                                  "type": "number"
+                                }
+                              },
+                              "required": [
+                                "low",
+                                "high"
+                              ],
+                              "additionalProperties": false
+                            },
+                            "possible": {
+                              "type": "object",
+                              "properties": {
+                                "low": {
+                                  "type": "number"
+                                },
+                                "high": {
+                                  "type": "number"
+                                }
+                              },
+                              "required": [
+                                "low",
+                                "high"
+                              ],
+                              "additionalProperties": false
+                            }
+                          },
+                          "required": [
+                            "central",
+                            "likely",
+                            "possible"
+                          ],
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
                     "score": {
                       "type": "number",
                       "minimum": 0,
@@ -1340,6 +1529,206 @@
                     "type": "null"
                   }
                 ]
+              },
+              "totalRevenueEstimate": {
+                "anyOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "central": {
+                        "type": "number"
+                      },
+                      "likely": {
+                        "type": "object",
+                        "properties": {
+                          "low": {
+                            "type": "number"
+                          },
+                          "high": {
+                            "type": "number"
+                          }
+                        },
+                        "required": [
+                          "low",
+                          "high"
+                        ],
+                        "additionalProperties": false
+                      },
+                      "possible": {
+                        "type": "object",
+                        "properties": {
+                          "low": {
+                            "type": "number"
+                          },
+                          "high": {
+                            "type": "number"
+                          }
+                        },
+                        "required": [
+                          "low",
+                          "high"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "required": [
+                      "central",
+                      "likely",
+                      "possible"
+                    ],
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "totalProfitEstimate": {
+                "anyOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "central": {
+                        "type": "number"
+                      },
+                      "likely": {
+                        "type": "object",
+                        "properties": {
+                          "low": {
+                            "type": "number"
+                          },
+                          "high": {
+                            "type": "number"
+                          }
+                        },
+                        "required": [
+                          "low",
+                          "high"
+                        ],
+                        "additionalProperties": false
+                      },
+                      "possible": {
+                        "type": "object",
+                        "properties": {
+                          "low": {
+                            "type": "number"
+                          },
+                          "high": {
+                            "type": "number"
+                          }
+                        },
+                        "required": [
+                          "low",
+                          "high"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "required": [
+                      "central",
+                      "likely",
+                      "possible"
+                    ],
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "totalProfitForField": {
+                "anyOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "central": {
+                        "type": "number"
+                      },
+                      "likely": {
+                        "type": "object",
+                        "properties": {
+                          "low": {
+                            "type": "number"
+                          },
+                          "high": {
+                            "type": "number"
+                          }
+                        },
+                        "required": [
+                          "low",
+                          "high"
+                        ],
+                        "additionalProperties": false
+                      },
+                      "possible": {
+                        "type": "object",
+                        "properties": {
+                          "low": {
+                            "type": "number"
+                          },
+                          "high": {
+                            "type": "number"
+                          }
+                        },
+                        "required": [
+                          "low",
+                          "high"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "required": [
+                      "central",
+                      "likely",
+                      "possible"
+                    ],
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "fieldAreaHa": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "gaps": {
+                "maxItems": 6,
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "from": {
+                      "type": "string",
+                      "format": "date",
+                      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+                    },
+                    "to": {
+                      "type": "string",
+                      "format": "date",
+                      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+                    },
+                    "days": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    "reason": {
+                      "type": "string",
+                      "maxLength": 300
+                    }
+                  },
+                  "required": [
+                    "from",
+                    "to",
+                    "days",
+                    "reason"
+                  ],
+                  "additionalProperties": false
+                }
               },
               "warnings": {
                 "maxItems": 10,

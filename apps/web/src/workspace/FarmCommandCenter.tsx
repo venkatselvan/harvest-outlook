@@ -28,11 +28,12 @@ import { plantCropChoices, plantGroups, ROLE_LABEL, type PlantChoice } from "./c
 import { Chip } from "./ui/Chip";
 import { FarmWorkspace, HistoryDialog } from "./FarmPage";
 import { CompareWorkspace } from "./Compare";
-import { Outlook } from "./Outlook";
 import { JournalWorkspace } from "./Journal";
 import { FarmSettings } from "./FarmSettings";
 import { MarketContextPanel } from "./MarketContextPanel";
-import { MarketTrends } from "./MarketTrends";
+import MarketView from "./market/MarketView";
+import CropFitView from "./farm/CropFitView";
+import SoilReviewPanel from "./farm/SoilReviewPanel";
 import { Icon } from "./icons";
 import { Evara } from "./Evara";
 import { TodayView } from "./today/TodayView";
@@ -469,270 +470,42 @@ export function FarmCommandCenter() {
       </Show>
       <Show when={tab() === "soil" && section() === "fit"}>
         <div class="farm-tab-scroll soil-fit-workspace">
-          <div class="context-view-heading">
-            <div>
-              <p class="eyebrow">YOUR FIELD · SOURCE-BASED CHECKS</p>
-              <h2>Match the crop to what you know.</h2>
-              <p>
-                Measurements, local growing windows and evidence gaps stay
-                visible.
-              </p>
-            </div>
-            <div>
-              <button
-                class="btn secondary compact"
-                onClick={() => showTool("soil")}
-              >
-                <Icon name="journal" size={16} /> Soil reports
-              </button>
-              <button class="btn compact" onClick={() => showTool("compare")}>
-                <Icon name="compare" size={16} /> Compare crops
-              </button>
-            </div>
+          <div class="crop-fit-toolbar">
+            <button class="btn secondary compact" onClick={() => showTool("soil")}>
+              <Icon name="journal" size={16} /> Soil reports
+            </button>
+            <button class="btn compact" onClick={() => showTool("compare")}>
+              <Icon name="compare" size={16} /> Compare crops
+            </button>
           </div>
-          <div class="focused-crop-heading">
-            <h2>Focused crop collection</h2>
-            <span>
-              {data()?.focusedCrops.length ?? "—"} crops · sourced requirements
-            </span>
-          </div>
-          <div class="focused-crop-grid">
-            <For each={data()?.focusedCrops ?? []}>
-              {(item) => {
-                const fit = () =>
-                  data()?.soil.fit.find((fit) => fit.cropId === item.cropId);
-                return (
-                  <article class="focused-crop-card">
-                    <div class="focused-crop-card-top">
-                      <span class="focused-crop-icon">
-                        <Icon name="leaf" size={23} />
-                      </span>
-                      <span class="tiny-pill">
-                        {words(item.productionType)}
-                      </span>
-                    </div>
-                    <h3>{item.displayName}</h3>
-                    <p class="crop-botanical">{item.botanicalName}</p>
-                    <Show when={item.soilEffects?.length}>
-                      <div class="crop-soil-effects">
-                        <span class="eyebrow">
-                          SOIL INTERACTIONS · QUALITATIVE
-                        </span>
-                        <For each={item.soilEffects}>
-                          {(effect) => (
-                            <div>
-                              <h4>{words(effect.topic)}</h4>
-                              <p>{effect.text}</p>
-                              <details>
-                                <summary>Conditions & source</summary>
-                                <For each={effect.conditions}>
-                                  {(line) => <p>{line}</p>}
-                                </For>
-                                <SourceLinks
-                                  refs={effect.sourceRefs}
-                                  data={data()}
-                                />
-                              </details>
-                            </div>
-                          )}
-                        </For>
-                        <p class="effect-caveat">
-                          Conditional source descriptions, not measured changes
-                          in your field.
-                        </p>
-                      </div>
-                    </Show>
-                    <Show when={item.sequenceConstraints?.length}>
-                      <details class="crop-sequence-constraints">
-                        <summary>Before the next crop</summary>
-                        <For each={item.sequenceConstraints}>
-                          {(constraint) => (
-                            <div>
-                              <p>{constraint.text}</p>
-                              <For each={constraint.conditions}>
-                                {(line) => <p>{line}</p>}
-                              </For>
-                              <SourceLinks
-                                refs={constraint.sourceRefs}
-                                data={data()}
-                              />
-                            </div>
-                          )}
-                        </For>
-                      </details>
-                    </Show>
-                    <span
-                      class={`crop-fit-status ${fit()?.status ?? "unknown"}`}
-                    >
-                      {fitLabel(fit()?.status ?? "")}
-                    </span>
-                    <p>
-                      {fit()?.summary ??
-                        "No compatible field assessment is available yet."}
-                    </p>
-                    <Show when={fit()?.requirements.length}>
-                      <details>
-                        <summary>Published requirements</summary>
-                        <For each={fit()?.requirements}>
-                          {(requirement) => (
-                            <div class="crop-source-requirement">
-                              <strong>{words(requirement.parameter)}</strong>
-                              <p>
-                                {typeof requirement.value === "string" ||
-                                typeof requirement.value === "number"
-                                  ? String(requirement.value)
-                                  : JSON.stringify(requirement.value)}{" "}
-                                {requirement.unit}
-                              </p>
-                              <For each={requirement.conditions}>
-                                {(line) => <p>{line}</p>}
-                              </For>
-                              <SourceLinks
-                                refs={requirement.sourceRefs}
-                                data={data()}
-                              />
-                            </div>
-                          )}
-                        </For>
-                      </details>
-                    </Show>
-                    <button
-                      class="text-button"
-                      onClick={() => openPlant(item.cropId)}
-                    >
-                      Plant {item.displayName}
-                      <Icon name="plus" size={14} />
-                    </button>
-                  </article>
-                );
-              }}
-            </For>
-          </div>
-          <Show when={!data() && resource.loading}>
-            <p class="command-loading" role="status">
-              Loading supported crops and field evidence…
-            </p>
-          </Show>
+          <Show when={s.farm()?.id}>{(id) => <CropFitView farmId={id()} />}</Show>
         </div>
       </Show>
       <Show when={tab() === "soil" && section() === "records"}>
         <div class="farm-tab-scroll embedded-tool">
-          <FarmSettings />
+          <Show when={s.farm()?.id}>{(id) => <SoilReviewPanel farmId={id()} />}</Show>
+          <div id="soil-report-values">
+            <FarmSettings />
+          </div>
         </div>
       </Show>
       <Show when={tab() === "year"}>
         <YearPlanView />
       </Show>
       <Show when={tab() === "harvest"}>
-        <div class="farm-tab-scroll embedded-tool">
-          <MarketTrends
-            cycles={cycles().map((entry) => entry.cycle)}
-            savedSeasons={workspace()?.rotationPlans ?? []}
-          />
-          <section class="harvest-context-panel">
-            <div class="context-view-heading">
-              <div>
-                <p class="eyebrow">HARVEST CONTEXT</p>
-                <h2>Dates and markets, with their limits.</h2>
-                <p>
-                  Historical prices are context, not a future sale-price
-                  forecast.
-                </p>
-              </div>
-            </div>
-            <Show when={data()?.priorYearMarkets.length}>
-              <div class="prior-market-grid">
-                <For each={data()?.priorYearMarkets}>
-                  {(item) => (
-                    <article class="command-panel">
-                      <span class="tiny-pill">Same period · previous year</span>
-                      <h3>
-                        {s
-                          .crops()
-                          ?.flatMap((c) =>
-                            c.products.map((p) => ({
-                              id: p.productId,
-                              name: `${c.name} · ${p.name}`,
-                            })),
-                          )
-                          .find((p) => p.id === item.productId)?.name ??
-                          words(item.productId)}
-                      </h3>
-                      <p>
-                        {dateLabel(item.period.from)} –{" "}
-                        {dateLabel(item.period.to)}
-                      </p>
-                      <Show
-                        when={item.observations[0]}
-                        fallback={
-                          <p>
-                            No dated comparison quote is available for this
-                            period.
-                          </p>
-                        }
-                      >
-                        {(quote) => (
-                          <>
-                            <strong class="prior-market-value">
-                              ₹
-                              {quote().modalInrPerKg != null
-                                ? Number(quote().modalInrPerKg).toLocaleString(
-                                    "en-IN",
-                                  )
-                                : "—"}
-                              <small>/kg</small>
-                            </strong>
-                            <p>
-                              {quote().marketName} · {quote().district},{" "}
-                              {quote().state}
-                            </p>
-                            <p>
-                              {dateLabel(quote().date)} · {words(item.scope)}{" "}
-                              coverage
-                            </p>
-                            <p>
-                              Reported modal: {quote().modal ?? "Unknown"}{" "}
-                              INR/quintal ·{" "}
-                              {quote().unitBasis === "provider_declared"
-                                ? "provider-declared unit"
-                                : "Agmarknet unit convention"}
-                            </p>
-                            <a
-                              class="text-link"
-                              href={quote().source}
-                              target="_blank"
-                              rel="noreferrer"
-                            >
-                              Market source ↗
-                            </a>
-                          </>
-                        )}
-                      </Show>
-                      <details>
-                        <summary>Coverage & limitations</summary>
-                        <p>
-                          {item.coverageDays} observed days. This is not a
-                          complete seasonal price history.
-                        </p>
-                        <For each={item.limitations}>
-                          {(line) => <p>{line}</p>}
-                        </For>
-                      </details>
-                    </article>
-                  )}
-                </For>
-              </div>
-            </Show>
-          </section>
-          <MarketContextPanel
-            cropIds={[
-              ...new Set([
-                ...(workspace()?.cycles.map((c) => c.cropId) ?? []),
-                ...(workspace()?.rotationPlans.map((p) => p.cropId) ?? []),
-              ]),
-            ]}
-          />
-          <Outlook />
+        <div class="farm-tab-scroll embedded-tool market-tab">
+          <Show when={s.farm()?.id}>{(id) => <MarketView farmId={id()} />}</Show>
+          <details class="market-context-details">
+            <summary>Wider market context (FAO monthly bulletin)</summary>
+            <MarketContextPanel
+              cropIds={[
+                ...new Set([
+                  ...(workspace()?.cycles.map((c) => c.cropId) ?? []),
+                  ...(workspace()?.rotationPlans.map((p) => p.cropId) ?? []),
+                ]),
+              ]}
+            />
+          </details>
         </div>
       </Show>
       <Show when={tab() === "soil" && section() === "activity"}>

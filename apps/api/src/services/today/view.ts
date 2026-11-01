@@ -27,7 +27,28 @@
  *   else the state pool); observed weekly medians from sowing to today use the same scope; future weeks get the
  *   historical seasonal reference for that week's Monday, at most MAX_OUTLOOK_CALLS distinct ISO-week outlooks;
  * - weather covers the slider window (at most 400 days, kept around today), else today-7 to today+sliderWindowDays;
- * - upcoming care tasks: due within the next 14 days, overdue within the last 14 days, completed only when completed today.
+ * - upcoming care tasks: due within the next 14 days, overdue within the last 14 days, completed only when completed today;
+ * - upcoming steps v2 (ROUND2_SPEC.md 2.1), all windowed and filtered by the same 14-day horizon and lookback:
+ *   - stage checks: observed-stage guidance dated from the stage timeline. The guidance `stage` text (else its title) is
+ *     matched to a timeline stage by case-insensitive substring in either direction (stage name or id), then by
+ *     STAGE_KEYWORDS (orchestrator table 2026-11-01: grain fill|milk|dough|maturity|ripening|harvest -> late season;
+ *     panicle|booting|heading|flowering|silking|tasselling|pod -> mid-season; tiller|vegetative|branching -> development;
+ *     germination|emergence|seedling|establishment|transplant -> initial). The first keyword class that fits the guidance
+ *     decides; a stage matches a class by its name or id (for example ginger "Maturation" for late season). A check
+ *     phrased "at <stage>" gets the first AT_STAGE_DAYS (14) days of the matched stage, other matched checks the whole
+ *     stage. Only when nothing matches: the remaining cycle (today or the cycle start, whichever is later, to the
+ *     harvest window end) with detail "Any time this season". A future window is 'upcoming'. Stage checks are
+ *     calendar estimates and cannot be marked done (the completion endpoint accepts only scheduled care task ids);
+ *   - other-region references: only when the field's region has no matched care schedule for the crop (no care task),
+ *     the referenceGuidance actions are dated from their own startDay/endDay (and repeat) on the recorded establishment
+ *     (else sowing) date, as care_task steps whose detail starts "Guidance from <state> sources (no local schedule for
+ *     <district>)" and ends with the source name and locator (UpcomingStep has no sourceRefs field). They carry
+ *     careTask null because completeCareTask only accepts ids of careSchedule().careTasks, which never include them;
+ *   - order: overdue, due, upcoming (by dueFrom), completed; `nextAction` is the first open step, preferring care tasks
+ *     and alert steps over stage checks and stage transitions as a whole tier (so an always-due "any time this season"
+ *     check never outranks a concrete care task);
+ * - outlook note (ROUND2_SPEC.md 2.2): facts from the harvest-week reference and the 24-month trend in the same scope;
+ *   the stored note is returned when its facts hash matches, else the job is queued (see outlook-note.ts).
  */
 import type {Config} from '../../config';
 import type {Pool} from '../../db/pool';
@@ -37,14 +58,17 @@ import type {ProviderConfig} from '../../providers/config';
 import type {Sentinel2Fetch} from '../../providers/sentinel2';
 import type {WeatherSource} from '../../plans/sources';
 import {isoWeek} from '../../plans/adapters/market-outlook';
-import type {CareTask, FarmAlert, FarmWorkspace, HealthReading, NdviReading, NdviSeries, PricePoint, SceneRef, StageTimeline, TodayView, UpcomingStep, WeatherPoint} from '@harvest/contracts';
+import type {CareTask, FarmAlert, FarmWorkspace, HealthReading, NdviReading, NdviSeries, OutlookNote, PricePoint, SceneRef, StageTimeline, TodayView, UpcomingStep, WeatherPoint} from '@harvest/contracts';
 import {ApiError, notFound} from '../errors';
 import {getFarm} from '../farms';
 import {boundaryMetrics, getWorkspace} from '../workspace';
 import {careSchedule} from '../command-center';
 import {focusedResearch, type FocusedResearch} from '../focused-crops';
 import {readMonitorSettings} from '../monitor-schedule';
-import {harvestPriceOutlook, priceSeries, resolveStateName, type HarvestPriceOutlook} from '../price-series';
+import {harvestPriceOutlook, priceSeries, priceTrend, resolveStateName, type HarvestPriceOutlook, type PriceTrend} from '../price-series';
+import {stateNameFor} from '../../plans/adapters/market-outlook';
+import type {FocusedCareCrop} from '../focused-crops';
+import {OUTLOOK_TREND_MONTHS, ensureOutlookNote, outlookFacts} from './outlook-note';
 import {listAlerts} from './alerts';
 import {listReadyFutureLooks} from './future-look';
 import {ndviSeries} from './ndvi';
@@ -78,6 +102,8 @@ export interface TodayProviders {
   ndviSeries: typeof ndviSeries;
   priceSeries: typeof priceSeries;
   harvestPriceOutlook: typeof harvestPriceOutlook;
+  /** Monthly trend for the outlook note's year-on-year fact (stored data only). */
+  priceTrend: typeof priceTrend;
   /** Default: the stored-data source built inside weatherTrack (bounded live ingest only when autoIngest). */
   weatherSource: WeatherSource | undefined;
   readyFutureLooks: typeof listReadyFutureLooks;
@@ -179,7 +205,7 @@ function makeGuard() {
 
 // ------------------------------------------------------------------ small readers
 
-function currentCycle(workspace: FarmWorkspace): Cycle | null {
+export function currentCycle(workspace: FarmWorkspace): Cycle | null {
   const anchorOf = (c: Cycle) => c.establishmentDate ?? c.sowingDate;
   return [...workspace.cycles].filter((c) => c.stage !== 'harvested').sort((a, b) => anchorOf(b).localeCompare(anchorOf(a)))[0] ?? null;
 }
@@ -197,7 +223,7 @@ function nameFrom(names: unknown): string | null {
   return null;
 }
 
-async function productIdentity(pool: Pool, cycle: Cycle): Promise<TodayView['product']> {
+export async function productIdentity(pool: Pool, cycle: Pick<Cycle, 'productId' | 'cropId' | 'cropName'>): Promise<TodayView['product']> {
   if (!cycle.productId) return null;
   const row = (await pool.query<{slug: string; name: string; crop_slug: string; names: unknown}>(
     `SELECT p.slug, p.name, c.slug AS crop_slug, c.names FROM crop_products p JOIN crop_identities c ON c.id = p.crop_id
@@ -205,6 +231,9 @@ async function productIdentity(pool: Pool, cycle: Cycle): Promise<TodayView['pro
   if (!row) return null;
   return {productId: row.slug, productName: row.name, cropName: nameFrom(row.names) ?? cycle.cropName ?? row.crop_slug.replace(/[-_]+/g, ' ')};
 }
+
+/** Midpoint of the harvest window: the date the headline harvest price (and the outlook note) is computed for. */
+export const harvestMidpoint = (harvest: NonNullable<StageTimeline['harvest']>) => addDays(harvest.earliest, Math.floor(dayDiff(harvest.earliest, harvest.latest) / 2));
 
 const sceneImagePath = (farmId: string, itemId: string, kind: 'visual' | 'ndvi') => `/api/v1/farms/${farmId}/ndvi/${itemId}/image?kind=${kind}`;
 
@@ -267,7 +296,7 @@ export function healthFrom(series: NdviSeries | null): HealthReading | null {
 interface PriceInputs {
   mode: Config['RUNTIME_MODE'];
   pool: Pool;
-  providers: Pick<TodayProviders, 'priceSeries' | 'harvestPriceOutlook'>;
+  providers: Pick<TodayProviders, 'priceSeries' | 'harvestPriceOutlook' | 'priceTrend'>;
   productId: string | null;
   productName: string;
   stateCode: string | null;
@@ -277,7 +306,13 @@ interface PriceInputs {
   harvest: StageTimeline['harvest'];
   sliderEnd: string | null;
 }
-interface PriceSection { track: PricePoint[]; harvestPrice: NonNullable<TodayView['harvestPrice']>; limitations: string[] }
+interface PriceSection {
+  track: PricePoint[]; harvestPrice: NonNullable<TodayView['harvestPrice']>; limitations: string[];
+  /** The harvest-midpoint reference behind harvestPrice (null without a product, state or harvest window). */
+  headline: HarvestPriceOutlook | null;
+  /** 24-month trend in the headline's scope, for the outlook note; null when unavailable or unreadable. */
+  trend: PriceTrend | null;
+}
 
 const NO_SERIES: ReadonlySet<string> = new Set(['price_history_not_ingested', 'market_not_in_history']);
 const REASON_TEXT: Record<string, string> = {
@@ -302,9 +337,9 @@ const insufficient = (reason: string, scopeLabel: string): PriceSection['harvest
 
 async function priceSection(i: PriceInputs): Promise<PriceSection> {
   const limitations: string[] = [];
-  if (!i.productId) return {track: [], harvestPrice: insufficient('no_product_recorded', 'No product is recorded for this crop cycle, so no mandi price series applies'), limitations};
+  if (!i.productId) return {track: [], harvestPrice: insufficient('no_product_recorded', 'No product is recorded for this crop cycle, so no mandi price series applies'), limitations, headline: null, trend: null};
   const stateName = resolveStateName(i.stateCode);
-  if (!stateName) return {track: [], harvestPrice: insufficient('farm_state_unknown', 'The farm state is not recorded, so no state mandi price series applies'), limitations};
+  if (!stateName) return {track: [], harvestPrice: insufficient('farm_state_unknown', 'The farm state is not recorded, so no state mandi price series applies'), limitations, headline: null, trend: null};
 
   const productId = i.productId;
   // Seasonal-reference outlooks, cached per ISO week bucket and requested district (same asOf => same numbers).
@@ -323,10 +358,9 @@ async function priceSection(i: PriceInputs): Promise<PriceSection> {
   let headline: HarvestPriceOutlook | null = null;
   let harvestPrice: PriceSection['harvestPrice'];
   if (i.harvest) {
-    const mid = addDays(i.harvest.earliest, Math.floor(dayDiff(i.harvest.earliest, i.harvest.latest) / 2));
-    headline = await outlook(mid, i.districtName);
+    headline = await outlook(harvestMidpoint(i.harvest), i.districtName);
     if (headline.status === 'insufficient' && NO_SERIES.has(headline.missingReason ?? '')) {
-      return {track: [], harvestPrice: insufficient(headline.missingReason!, scopeLabelOf(headline, i.productName)), limitations: [`${i.productName} has no official mandi price series for ${stateName} in the stored data; no price track is shown.`]};
+      return {track: [], harvestPrice: insufficient(headline.missingReason!, scopeLabelOf(headline, i.productName)), limitations: [`${i.productName} has no official mandi price series for ${stateName} in the stored data; no price track is shown.`], headline, trend: null};
     }
     harvestPrice = {
       p50: headline.p50, range: headline.p25 !== null && headline.p75 !== null ? {low: headline.p25, high: headline.p75} : null,
@@ -341,6 +375,10 @@ async function priceSection(i: PriceInputs): Promise<PriceSection> {
   // so the whole track comes from one market pool where the data allow.
   const district = headline?.scope.level === 'district' ? i.districtName : null;
   const points: PricePoint[] = [];
+  // The outlook note's year-on-year fact: same scope as the headline, stored data only; a failure only drops that fact.
+  const trendTask: Promise<PriceTrend | null> = headline?.status === 'available'
+    ? i.providers.priceTrend(i.pool, i.mode, {productId, stateName, districtName: district, months: OUTLOOK_TREND_MONTHS, asOf: i.today}).catch(() => null)
+    : Promise.resolve(null);
 
   if (i.sowing <= i.today) {
     const series = await i.providers.priceSeries(i.pool, i.mode, {productId, stateName, districtName: district, from: i.sowing, to: i.today, bucket: 'week', asOf: i.today});
@@ -384,7 +422,7 @@ async function priceSection(i: PriceInputs): Promise<PriceSection> {
     if (omitted) limitations.push(`${omitted} later week${omitted > 1 ? 's are' : ' is'} not priced: at most ${MAX_OUTLOOK_CALLS} weekly references are computed per view.`);
   }
   points.sort((a, b) => a.date.localeCompare(b.date) || a.kind.localeCompare(b.kind));
-  return {track: points.slice(-MAX_TRACK_POINTS), harvestPrice, limitations};
+  return {track: points.slice(-MAX_TRACK_POINTS), harvestPrice, limitations, headline, trend: await trendTask};
 }
 
 // ------------------------------------------------------------------ weather track
@@ -427,6 +465,151 @@ const alertSteps = (alerts: FarmAlert[], today: string): UpcomingStep[] => alert
   status: a.validFrom > today ? 'upcoming' : 'due', careTask: null, alertId: a.id,
 }));
 
+// ------------------------------------------------------------------ upcoming steps v2 (ROUND2_SPEC.md 2.1)
+
+type CareItem = FocusedCareCrop['care'][number];
+type TimelineStage = StageTimeline['stages'][number];
+type CareSchedule = ReturnType<typeof careSchedule>;
+type SourceList = readonly {id: string; publisher: string}[];
+export interface StepLocation { stateId: string | null; districtId: string | null; districtName: string | null }
+
+const normStage = (s: string) => s.toLowerCase().replace(/[_-]+/g, ' ').replace(/[^a-z0-9 ]+/g, ' ').replace(/\s+/g, ' ').trim();
+
+/** Window of a check phrased "at <stage>": the first 14 days of the matched stage (orchestrator decision 2026-11-01). */
+export const AT_STAGE_DAYS = 14;
+/** Keyword classes, tried in this order; the first class whose `guidance` pattern fits decides (see the header). */
+export const STAGE_KEYWORDS: readonly {label: string; guidance: RegExp; stages: readonly RegExp[]}[] = [
+  {label: 'late season', guidance: /grain fill|milk|dough|matur|ripen|harvest/, stages: [/late season|matur|ripen|harvest/]},
+  {label: 'mid-season', guidance: /panicle|boot|heading|flower|silk|tassel|\bpod/, stages: [/mid season|flower|reproductive/]},
+  {label: 'development', guidance: /tiller|vegetative|branch/, stages: [/develop|vegetative|tiller|branch/]},
+  {label: 'initial', guidance: /germinat|emergence|seedling|establish|transplant/, stages: [/initial|establish|seedling|sprout|germinat|emergence/]},
+];
+
+/** The timeline stage a stage-guidance text refers to: substring in either direction, then the keyword table. */
+export function matchStage(text: string | null | undefined, timeline: Pick<StageTimeline, 'stages'>): {stage: TimelineStage; rule: 'substring' | 'keyword'} | null {
+  const g = normStage(text ?? '');
+  if (!g) return null;
+  for (const st of timeline.stages) {
+    for (const cand of [normStage(st.name), normStage(st.id)]) if (cand && (cand.includes(g) || g.includes(cand))) return {stage: st, rule: 'substring'};
+  }
+  const k = STAGE_KEYWORDS.find((x) => x.guidance.test(g));
+  if (!k) return null;
+  for (const target of k.stages) {
+    const st = timeline.stages.find((x) => target.test(`${normStage(x.name)} ${normStage(x.id)}`));
+    if (st) return {stage: st, rule: 'keyword'};
+  }
+  return null;
+}
+
+const statusOf = (from: string, to: string, today: string): UpcomingStep['status'] => (to < today ? 'overdue' : from > today ? 'upcoming' : 'due');
+const geoMatched = (ids: readonly string[], loc: StepLocation) => ids.some((id) => id === 'IN' || (!!loc.stateId && id === loc.stateId) || (!!loc.districtId && id === loc.districtId));
+/** "Tamil Nadu" for IN-TN (also for district ids such as IN-KA-hassan -> Karnataka); "India" for IN. */
+export function geographyNames(ids: readonly string[]): string {
+  const names = [...new Set(ids.map((id) => {
+    if (id.toUpperCase() === 'IN') return 'India';
+    const code = /^IN-([A-Za-z]{2})/.exec(id)?.[1];
+    return (code && stateNameFor(`IN-${code}`)) ?? id;
+  }))];
+  return names.length > 1 ? `${names.slice(0, -1).join(', ')} and ${names.at(-1)}` : names[0] ?? 'other-region';
+}
+/** "Guidance from Tamil Nadu sources (no local schedule for Hassan)." for guidance outside the field's region, else null. */
+export function regionPrefix(ids: readonly string[], loc: StepLocation): string | null {
+  if (geoMatched(ids, loc)) return null;
+  if (!loc.stateId) return `Guidance from ${geographyNames(ids)} sources (the field location is not matched to a local schedule).`;
+  return `Guidance from ${geographyNames(ids)} sources (no local schedule for ${loc.districtName ?? 'this district'}).`;
+}
+function sourceText(refs: CareItem['sourceRefs'], sources: SourceList): string | null {
+  const parts = [...new Set(refs.map((r) => `${sources.find((x) => x.id === r.sourceId)?.publisher ?? r.sourceId} (${r.locator})`))];
+  return parts.length ? `Source: ${parts.join('; ')}.` : null;
+}
+const sentence = (s: string) => (/[.!?]$/.test(s.trim()) ? s.trim() : `${s.trim()}.`);
+const joinDetail = (parts: (string | null | undefined)[]) => cap(parts.filter((x): x is string => !!x && !!x.trim()).map(sentence).join(' '), 1000);
+
+/** Observed-stage guidance for this cycle (same filter as the command center's stageGuidance). */
+function stageGuidanceItems(crop: FocusedCareCrop | undefined, cycle: Cycle): CareItem[] {
+  return (crop?.care ?? []).filter((a) => a.anchor === 'observed_stage'
+    && (!a.productIds?.length || (!!cycle.productId && a.productIds.includes(cycle.productId)))
+    && (!a.establishmentMethods?.length || (!!cycle.establishmentMethod && a.establishmentMethods.includes(cycle.establishmentMethod))));
+}
+
+/** Stage checks dated from the stage timeline; `undated` counts guidance that has no timeline to be dated from. */
+export function stageCheckSteps(args: {crop: FocusedCareCrop | undefined; cycle: Cycle; timeline: StageTimeline | null; today: string; location: StepLocation; sources?: SourceList | undefined}): {steps: UpcomingStep[]; undated: number; itemIds: string[]} {
+  const items = stageGuidanceItems(args.crop, args.cycle);
+  const tl = args.timeline;
+  if (!tl || !tl.stages.length) return {steps: [], undated: items.length, itemIds: []};
+  const start = tl.stages[0]!.from;
+  const end = tl.harvest?.latest ?? tl.stages.reduce((m, st) => maxDate(m, st.to), tl.stages[0]!.to);
+  const steps: UpcomingStep[] = [];
+  const itemIds: string[] = [];
+  for (const item of items) {
+    const m = matchStage(item.stage ?? item.title, tl);
+    // A check phrased "at <stage>" belongs to the start of that stage: its first 14 days (AT_STAGE_DAYS), not the whole stage.
+    const atStage = !!m && /\bat\s+\S/i.test(item.title);
+    const from = m ? m.stage.from : maxDate(args.today, start);
+    const to = m ? (atStage ? minDate(addDays(m.stage.from, AT_STAGE_DAYS - 1), m.stage.to) : m.stage.to) : end;
+    if (to < from) continue; // the cycle is over: nothing left to window
+    const when = m ? `Dated from the calendar estimate of ${atStage ? 'the start of ' : ''}the ${m.stage.name} stage; check the actual crop stage first` : 'Any time this season';
+    steps.push({
+      id: cap(`check:${args.cycle.id.slice(0, 60)}:${item.id.slice(0, 80)}`, 160), kind: 'stage_check', title: cap(`Check: ${item.title}`, 160),
+      detail: joinDetail([regionPrefix(item.geographyIds, args.location), when, item.action, ...item.conditions, sourceText(item.sourceRefs, args.sources ?? [])]),
+      dueFrom: from, dueTo: to, status: statusOf(from, to, args.today), careTask: null, alertId: null,
+    });
+    itemIds.push(item.id);
+  }
+  return {steps, undated: 0, itemIds};
+}
+
+/**
+ * Other-region care references dated on the recorded establishment (else sowing) date, only when the field's region has
+ * no matched care schedule for the crop. Observed-stage references are stage checks instead. Never completable here.
+ */
+export function referenceCareSteps(args: {schedule: CareSchedule | null; crop: FocusedCareCrop | undefined; cycle: Cycle; today: string; location: StepLocation; sources?: SourceList | undefined}): UpcomingStep[] {
+  const refs = args.schedule?.referenceGuidance ?? [];
+  if (!args.schedule || args.schedule.careTasks.length || !refs.length || !args.crop) return [];
+  const anchorDate = args.cycle.establishmentDate ?? args.cycle.sowingDate;
+  const steps: UpcomingStep[] = [];
+  for (const ref of refs) {
+    const item = args.crop.care.find((c) => c.id === ref.actionId);
+    if (!item || item.anchor === 'observed_stage' || item.endDay < item.startDay) continue;
+    // Recurrence stays within the source's end window, as in careSchedule.
+    const stepDays = item.repeatEveryDays;
+    const occurrences = stepDays ? Math.min(60, Math.floor((item.endDay - item.startDay) / stepDays) + 1) : 1;
+    for (let n = 0; n < occurrences; n++) {
+      const startDay = item.startDay + (stepDays ? n * stepDays : 0);
+      const endDay = stepDays ? Math.min(item.endDay, startDay + stepDays - 1) : item.endDay;
+      const dueFrom = addDays(anchorDate, startDay), dueTo = addDays(anchorDate, endDay);
+      steps.push({
+        id: cap(`ref:${args.cycle.id.slice(0, 60)}:${item.id.slice(0, 80)}:${startDay}`, 160), kind: 'care_task', title: cap(item.title, 160),
+        detail: joinDetail([regionPrefix(item.geographyIds, args.location) ?? `Guidance from ${geographyNames(item.geographyIds)} sources`, item.action, ...item.conditions, sourceText(item.sourceRefs, args.sources ?? [])]),
+        dueFrom, dueTo, status: statusOf(dueFrom, dueTo, args.today), careTask: null, alertId: null,
+      });
+    }
+  }
+  return steps;
+}
+
+/** Same window rule as care tasks: overdue within the lookback, due, or starting within the horizon. */
+function horizonFilter(steps: UpcomingStep[], today: string): {kept: UpcomingStep[]; older: number; later: number} {
+  const horizon = addDays(today, UPCOMING_HORIZON_DAYS), lookback = addDays(today, -OVERDUE_LOOKBACK_DAYS);
+  let older = 0, later = 0;
+  const kept = steps.filter((st) => {
+    if (st.status === 'overdue' && st.dueTo < lookback) { older++; return false; }
+    if (st.status !== 'completed' && st.dueFrom > horizon) { later++; return false; }
+    return true;
+  });
+  return {kept, older, later};
+}
+
+const STATUS_RANK: Record<UpcomingStep['status'], number> = {overdue: 0, due: 1, upcoming: 2, completed: 3};
+const preferredTier = (st: UpcomingStep) => (st.kind === 'care_task' || st.kind === 'alert_step' ? 0 : 1);
+const byStatusThenDate = (a: UpcomingStep, b: UpcomingStep) => STATUS_RANK[a.status] - STATUS_RANK[b.status] || a.dueFrom.localeCompare(b.dueFrom) || preferredTier(a) - preferredTier(b) || a.dueTo.localeCompare(b.dueTo) || a.id.localeCompare(b.id);
+/** List order: overdue, due, upcoming by dueFrom, completed (care tasks and alert steps first on ties). */
+export const orderSteps = (steps: readonly UpcomingStep[]): UpcomingStep[] => [...steps].sort(byStatusThenDate);
+/** The step to do next: the first open care task or alert step in list order, else the first open stage check or transition. */
+export function pickNextAction(steps: readonly UpcomingStep[]): UpcomingStep | null {
+  return [...steps].filter((st) => st.status !== 'completed').sort((a, b) => preferredTier(a) - preferredTier(b) || byStatusThenDate(a, b))[0] ?? null;
+}
+
 // ------------------------------------------------------------------ the view
 
 export async function todayView(deps: TodayViewDeps, ownerId: string, farmId: string, opts: TodayViewOptions = {}): Promise<TodayView> {
@@ -443,7 +626,7 @@ export async function todayView(deps: TodayViewDeps, ownerId: string, farmId: st
   const workspace = await getWorkspace(deps.pool, ownerId, farmId);
   const o = deps.providers ?? {};
   const p: TodayProviders = {
-    ndviSeries: o.ndviSeries ?? ndviSeries, priceSeries: o.priceSeries ?? priceSeries, harvestPriceOutlook: o.harvestPriceOutlook ?? harvestPriceOutlook,
+    ndviSeries: o.ndviSeries ?? ndviSeries, priceSeries: o.priceSeries ?? priceSeries, harvestPriceOutlook: o.harvestPriceOutlook ?? harvestPriceOutlook, priceTrend: o.priceTrend ?? priceTrend,
     weatherSource: o.weatherSource, readyFutureLooks: o.readyFutureLooks ?? listReadyFutureLooks, focusedResearch: o.focusedResearch ?? focusedResearch,
   };
   const {guard, failures} = makeGuard();
@@ -500,7 +683,8 @@ export async function todayView(deps: TodayViewDeps, ownerId: string, farmId: st
       p.focusedResearch(),
       deps.pool.query<Completion>('SELECT cycle_id,action_key,completed_on::text completed_on,journal_entry_id FROM farm_cycle_actions WHERE owner_id=$1 AND farm_id=$2 AND cycle_id=$3 AND mode=$4', [ownerId, farmId, cycle.id, mode]),
     ]);
-    return careSchedule(cycle, research.crops.find((c) => c.cropId === cycle.cropId), today, completed.rows, {stateId: farm.location.stateCode, districtId: farm.location.districtId});
+    const crop = research.crops.find((c) => c.cropId === cycle.cropId);
+    return {schedule: careSchedule(cycle, crop, today, completed.rows, {stateId: farm.location.stateCode, districtId: farm.location.districtId}), crop, sources: research.sources};
   }, null) : Promise.resolve(null);
   const monitorTask = guard('Monitoring status', () => readMonitorSettings(deps.pool, ownerId, farmId, mode), null);
   const [ndvi, looks, price, weather, alerts, care, monitor] = await Promise.all([ndviTask, looksTask, priceTask, weatherTask, alertsTask, careTask, monitorTask]);
@@ -519,23 +703,53 @@ export async function todayView(deps: TodayViewDeps, ownerId: string, farmId: st
   if (ndvi && ndvi.status === 'available' && !health) satelliteNotes.push('No clear satellite reading of the field exists in this window, so no vegetation health is shown.');
 
   // ---- upcoming steps
-  const care14 = care ? careSteps(care.careTasks, today) : {steps: [], olderOverdue: 0};
-  const careNotes = care ? [...care.limitations] : [];
+  const schedule = care?.schedule ?? null;
+  const care14 = schedule ? careSteps(schedule.careTasks, today) : {steps: [], olderOverdue: 0};
+  const location: StepLocation = {stateId: farm.location.stateCode, districtId: farm.location.districtId, districtName: farm.location.districtName};
+  const checks = cycle ? stageCheckSteps({crop: care?.crop, cycle, timeline, today, location, sources: care?.sources}) : {steps: [], undated: 0, itemIds: []};
+  const references = cycle ? referenceCareSteps({schedule, crop: care?.crop, cycle, today, location, sources: care?.sources}) : [];
+  const extra = horizonFilter([...references, ...checks.steps], today);
+  // careSchedule says observed-stage actions get no calendar date; the ones dated here as stage checks drop that line.
+  const checkedTitles = new Set((care?.crop?.care ?? []).filter((c) => checks.itemIds.includes(c.id)).map((c) => `${c.title}: requires an observed stage; no calendar date was inferred.`));
+  const careNotes = schedule ? schedule.limitations.filter((l) => !checkedTitles.has(l)) : [];
   if (care14.olderOverdue) careNotes.push(`${care14.olderOverdue} care action${care14.olderOverdue > 1 ? 's' : ''} overdue by more than ${OVERDUE_LOOKBACK_DAYS} days ${care14.olderOverdue > 1 ? 'are' : 'is'} not listed under upcoming steps.`);
-  if (care?.referenceGuidance?.length) careNotes.push(`${care.referenceGuidance.length} care action${care.referenceGuidance.length > 1 ? 's come' : ' comes'} from sources for other regions and ${care.referenceGuidance.length > 1 ? 'are' : 'is'} not dated for this field.`);
+  const refCount = schedule?.referenceGuidance?.length ?? 0;
+  if (refCount && !references.length) careNotes.push(`${refCount} care action${refCount > 1 ? 's come' : ' comes'} from sources for other regions and ${refCount > 1 ? 'are' : 'is'} not dated for this field, because this region has its own care schedule for the crop.`);
+  if (references.length) careNotes.push(`No care schedule for ${location.districtName ?? 'this district'} is sourced for this crop, so steps marked "Guidance from ... sources" are dated from another region's published timing on the recorded ${cycle?.establishmentDate ? 'establishment' : 'sowing'} date. Confirm they apply locally. They cannot be marked done here: the completion endpoint accepts only care actions scheduled for this field's region.`);
+  if (checks.steps.length) careNotes.push('Stage checks are dated from the calendar estimate of the matching crop stage, or span the rest of the season when no stage matches. Check the actual crop stage before acting; stage checks cannot be marked done here.');
+  if (checks.undated) careNotes.push(`${checks.undated} stage check${checks.undated > 1 ? 's are' : ' is'} not listed because this crop has no stage timeline to date ${checks.undated > 1 ? 'them' : 'it'} from.`);
+  if (extra.older) careNotes.push(`${extra.older} dated guidance step${extra.older > 1 ? 's' : ''} that ended more than ${OVERDUE_LOOKBACK_DAYS} days ago ${extra.older > 1 ? 'are' : 'is'} not listed.`);
+  if (extra.later) careNotes.push(`${extra.later} later guidance step${extra.later > 1 ? 's appear' : ' appears'} when ${extra.later > 1 ? 'their' : 'its'} window is within ${UPCOMING_HORIZON_DAYS} days.`);
   const transition = cycle ? stageStep(cycle, timeline, today) : null;
-  const ordered = [...alertSteps(alerts?.alerts ?? [], today), ...(transition ? [transition] : []), ...care14.steps]
-    .sort((a, b) => a.dueFrom.localeCompare(b.dueFrom) || a.kind.localeCompare(b.kind) || a.id.localeCompare(b.id));
-  let upcoming = ordered.slice(0, MAX_UPCOMING);
-  if (transition && ordered.length > MAX_UPCOMING && !upcoming.includes(transition)) upcoming = [...ordered.filter((s) => s !== transition).slice(0, MAX_UPCOMING - 1), transition].sort((a, b) => a.dueFrom.localeCompare(b.dueFrom));
+  const ordered = orderSteps([...alertSteps(alerts?.alerts ?? [], today), ...(transition ? [transition] : []), ...care14.steps, ...extra.kept]);
+  const nextAction = pickNextAction(ordered);
+  // Truncation keeps the next action and the stage transition in the list.
+  const pinned = new Set([nextAction, transition].filter((x): x is UpcomingStep => !!x));
+  const upcoming = ordered.length <= MAX_UPCOMING ? ordered
+    : orderSteps([...ordered.filter((st) => !pinned.has(st)).slice(0, MAX_UPCOMING - pinned.size), ...pinned]);
   if (ordered.length > MAX_UPCOMING) careNotes.push(`${ordered.length - MAX_UPCOMING} further steps are not listed (at most ${MAX_UPCOMING}).`);
+
+  // ---- harvest outlook in words (stored note, else queued; code sentence inline in synthetic and replay)
+  let outlookNote: OutlookNote | null = null;
+  const noteNotes: string[] = [];
+  const facts = cycle && harvest && price?.headline && cycle.productId
+    ? outlookFacts({productId: cycle.productId, productName: product?.productName ?? cycle.productName ?? cycle.productId ?? cycle.cropId, harvest, outlook: price.headline, trend: price.trend})
+    : null;
+  if (facts) {
+    outlookNote = await guard('The harvest outlook note', () => ensureOutlookNote({pool: deps.pool, config: deps.config, now}, {
+      ownerId, farmId, facts, productName: product?.productName ?? cycle?.productName ?? facts.productId, districtName: farm.location.districtName, stateName: resolveStateName(farm.location.stateCode),
+    }), null);
+    if (outlookNote?.origin === 'model' || outlookNote?.status === 'pending') noteNotes.push('The harvest outlook sentence is written by Meta muse-spark from the code facts listed with it; every number in it must appear in those facts, otherwise a code-written sentence is shown.');
+  } else if (price?.headline?.status === 'available') {
+    outlookNote = {status: 'unavailable', text: null, facts: [], origin: null, generatedAt: null, modelInvocation: null};
+  }
 
   // ---- limitations, failures first, deduplicated
   const weatherNotes = [...weather.limitations];
   if (weatherWindow.clipped) weatherNotes.push(`The crop cycle is longer than ${MAX_TRACK_POINTS} days; weather covers ${weatherWindow.from} to ${weatherWindow.to}.`);
   const limitations = [...new Set([
     ...failures(), ...timelineNotes, ...satelliteNotes, ...(ndvi?.limitations ?? []), ...(price?.limitations ?? []), ...weatherNotes,
-    ...(alerts?.limitations ?? []), ...careNotes,
+    ...(alerts?.limitations ?? []), ...careNotes, ...noteNotes,
   ].map((s) => cap(s, 1000)))];
 
   return {
@@ -543,7 +757,7 @@ export async function todayView(deps: TodayViewDeps, ownerId: string, farmId: st
     priceTrack: price?.track ?? [], harvestPrice: price?.harvestPrice ?? null,
     weatherTrack: weather.days.slice(0, MAX_TRACK_POINTS).map(toWeatherPoint),
     alerts: alerts?.alerts ?? [], newsReview: alerts?.newsReview ?? null, imdStatus: 'not_connected',
-    upcoming,
+    upcoming, nextAction, outlookNote,
     // When the monitor row cannot be read, the documented default (on) is reported and the failure is a limitation.
     monitoring: monitor ? {enabled: monitor.enabled, lastCheckedAt: monitor.lastCheckedAt, nextCheckAt: monitor.nextCheckAt} : {enabled: true, lastCheckedAt: null, nextCheckAt: null},
     limitations,

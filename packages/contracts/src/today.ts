@@ -4,6 +4,7 @@ import {NdviSeries} from './ndvi';
 import {CareTask} from './command-center';
 import {CropCycle} from './workspace';
 import {StageTimeline, NumberRange, BasisRef} from './year-plan';
+import {ModelInvocation} from './common';
 
 /**
  * Today view contract (Stream B). One stage slider drives the illustration and the satellite view;
@@ -54,7 +55,8 @@ export const WeatherPoint = z.object({
 
 export const UpcomingStep = z.object({
  id: z.string().max(160),
- kind: z.enum(['care_task', 'stage_transition', 'alert_step']),
+ /** Round 2: 'stage_check' = sourced stage guidance dated from the stage timeline (ROUND2_SPEC.md 2.1). */
+ kind: z.enum(['care_task', 'stage_transition', 'alert_step', 'stage_check']),
  title: z.string().max(160),
  detail: text.nullable(),
  dueFrom: isoDate,
@@ -62,6 +64,16 @@ export const UpcomingStep = z.object({
  status: z.enum(['upcoming', 'due', 'overdue', 'completed']),
  careTask: CareTask.nullable(),
  alertId: z.uuid().nullable(),
+}).strict();
+
+export const OutlookNote = z.object({
+ status: z.enum(['ready', 'pending', 'unavailable']),
+ text: z.string().max(300).nullable(),
+ /** Code facts the sentence was written from; every digit in text appears in one of them. */
+ facts: z.array(z.string().max(200)).max(8),
+ origin: z.enum(['model', 'deterministic']).nullable(),
+ generatedAt: z.iso.datetime().nullable(),
+ modelInvocation: ModelInvocation.nullable(),
 }).strict();
 
 export const TodayView = z.object({
@@ -83,6 +95,10 @@ export const TodayView = z.object({
  newsReview: FarmNewsReviewStatus.nullable(),
  imdStatus: z.literal('not_connected'),
  upcoming: z.array(UpcomingStep).max(30),
+ /** Round 2: the one step to do next (overdue, then due, then upcoming), shown bold above the list. */
+ nextAction: UpcomingStep.nullable().optional(),
+ /** Round 2: harvest price outlook in words, written by Meta from code facts (ROUND2_SPEC.md 2.2). */
+ outlookNote: OutlookNote.nullable().optional(),
  monitoring: z.object({enabled: z.boolean(), lastCheckedAt: z.iso.datetime().nullable(), nextCheckAt: z.iso.datetime().nullable()}).strict(),
  limitations: z.array(text),
 }).strict();
@@ -92,4 +108,5 @@ export type HealthReading = z.infer<typeof HealthReading>;
 export type PricePoint = z.infer<typeof PricePoint>;
 export type WeatherPoint = z.infer<typeof WeatherPoint>;
 export type UpcomingStep = z.infer<typeof UpcomingStep>;
+export type OutlookNote = z.infer<typeof OutlookNote>;
 export type TodayView = z.infer<typeof TodayView>;

@@ -126,33 +126,70 @@
   border-bottom: 0;
 }
 .yp-row-head,
-.yp-row-chips {
+.yp-row-chips,
+.yp-row-notes,
+.yp-gap-note {
   position: sticky;
   left: 0;
   width: 100cqw;
   padding: 0 12px;
 }
+/* The head is a div with a stretched button over it, so the AI spark (itself a button) is not nested in a button. */
 .yp-row-head {
   display: flex;
   align-items: center;
   gap: 10px;
-  min-height: 44px;
-  border: 0;
-  background: none;
+  min-height: 48px;
   color: var(--text);
-  text-align: left;
 }
 .yp-row-head:hover {
   background: var(--surface-soft);
 }
-.yp-row-title {
+.yp-row-open {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+.yp-row-open:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: -2px;
+}
+.yp-row-ring {
+  display: inline-flex;
+  flex-shrink: 0;
+}
+.yp-row-text {
   display: grid;
   flex: 1;
+  gap: 1px;
+  min-width: 0;
+}
+.yp-row-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px 8px;
+  min-width: 0;
+}
+.yp-row-title {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 6px;
   min-width: 0;
 }
 .yp-row-title strong {
   font-family: "Manrope", sans-serif;
   font-size: 15px;
+}
+/* Above the stretched button so the spark stays clickable. */
+.yp-row-mark {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
 }
 .yp-row-title small,
 .yp-row-profit small {
@@ -161,12 +198,23 @@
 }
 .yp-row-profit {
   display: grid;
-  justify-items: end;
-  text-align: right;
+  min-width: 0;
 }
 .yp-row-profit strong {
   font-size: 14px;
-  white-space: nowrap;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+.yp-row-notes {
+  display: grid;
+  gap: 1px;
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 11px;
+  line-height: 1.35;
+}
+.yp-row-notes span {
+  display: block;
 }
 .yp-track {
   position: relative;
@@ -223,6 +271,69 @@
 .yp-strip.is-fixed {
   border-style: dashed;
   background: repeating-linear-gradient(135deg, var(--surface-soft) 0 6px, var(--surface-hover) 6px 12px);
+}
+.yp-strip.is-green-manure {
+  border-style: dashed;
+  border-color: var(--accent-border);
+  background-color: var(--accent-soft);
+  /* Crossed leaf-vein lines on a pale green ground. */
+  background-image:
+    repeating-linear-gradient(58deg, color-mix(in srgb, var(--accent) 20%, transparent) 0 1.5px, transparent 1.5px 9px),
+    repeating-linear-gradient(-58deg, color-mix(in srgb, var(--accent) 20%, transparent) 0 1.5px, transparent 1.5px 9px);
+}
+.yp-strip.is-green-manure:hover {
+  background-color: var(--surface-hover);
+}
+.yp-gap {
+  position: absolute;
+  top: 12px;
+  bottom: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 6px;
+  padding: 0 2px;
+  border: 1px dotted var(--border-strong);
+  border-radius: 6px;
+  background: repeating-linear-gradient(45deg, transparent 0 5px, color-mix(in srgb, var(--border-strong) 45%, transparent) 5px 6px);
+  color: var(--text-secondary);
+  text-align: center;
+  overflow: clip;
+  cursor: pointer;
+}
+.yp-gap:hover,
+.yp-gap.is-open {
+  border-style: solid;
+  background-color: var(--surface-soft);
+}
+.yp-gap:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 1px;
+}
+.yp-gap-label {
+  font-size: 10px;
+  font-weight: 650;
+  line-height: 1.1;
+  overflow: hidden;
+  padding: 0 2px;
+  border-radius: 3px;
+  background: color-mix(in srgb, var(--surface) 78%, transparent);
+}
+.yp-gap-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin: 2px 0 4px;
+  font-size: 12px;
+  line-height: 1.4;
+}
+.yp-gap-note p {
+  flex: 1;
+  margin: 0;
+  padding: 8px 10px;
+  border: 1px solid var(--border-strong);
+  border-radius: 8px;
+  background: var(--surface-soft);
 }
 .yp-strip-harvest {
   position: absolute;
@@ -285,6 +396,18 @@
 .yp-swatch.is-legume {
   border-color: var(--accent-border);
   background: var(--accent-soft);
+}
+.yp-swatch.is-green-manure {
+  border-style: dashed;
+  border-color: var(--accent-border);
+  background-color: var(--accent-soft);
+  background-image:
+    repeating-linear-gradient(58deg, color-mix(in srgb, var(--accent) 24%, transparent) 0 1px, transparent 1px 5px),
+    repeating-linear-gradient(-58deg, color-mix(in srgb, var(--accent) 24%, transparent) 0 1px, transparent 1px 5px);
+}
+.yp-swatch.is-rest {
+  border-style: dotted;
+  background: repeating-linear-gradient(45deg, transparent 0 3px, color-mix(in srgb, var(--border-strong) 55%, transparent) 3px 4px);
 }
 .yp-swatch.is-harvest {
   background: color-mix(in srgb, var(--accent) 16%, var(--surface));
@@ -355,6 +478,41 @@
   margin-bottom: 6px;
   font-size: 15px;
 }
+.yp-sheet-section-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 10px;
+  margin-bottom: 6px;
+}
+.yp-sheet-section-head h3 {
+  margin: 0;
+}
+.yp-notes,
+.yp-gap-list {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 13px;
+}
+.yp-notes li {
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface-soft);
+}
+.yp-gap-list li {
+  display: grid;
+  gap: 2px;
+  padding: 8px 10px;
+  border: 1px dotted var(--border-strong);
+  border-radius: 8px;
+}
+.yp-gap-list span {
+  color: var(--text-secondary);
+}
 .yp-reasons {
   display: grid;
   gap: 6px;
@@ -408,6 +566,9 @@
   color: var(--text-secondary);
   font-size: 13px;
 }
+.yp-slot-note {
+  white-space: pre-line;
+}
 .yp-estimates {
   display: grid;
   margin: 10px 0;
@@ -432,6 +593,49 @@
 .yp-basis {
   color: var(--text-secondary);
   font-size: 12px;
+}
+/* Estimate bands: central, likely (p25 to p75) and possible (p10 to p90), per hectare and for the field. */
+.yp-bands {
+  display: grid;
+  gap: 8px;
+  margin: 4px 0 2px;
+}
+.yp-band {
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface-soft);
+}
+.yp-band-title {
+  margin: 0 0 4px;
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 650;
+}
+.yp-band-rows {
+  display: grid;
+  gap: 3px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.yp-band-rows li {
+  display: grid;
+  grid-template-columns: 62px minmax(0, 1fr);
+  gap: 8px;
+  align-items: baseline;
+}
+.yp-band-key {
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 600;
+}
+.yp-band-val {
+  font-size: 14px;
+  overflow-wrap: anywhere;
+}
+strong.yp-band-val {
+  font-size: 16px;
 }
 .yp-bars {
   display: grid;
@@ -553,6 +757,11 @@
   color: var(--text);
   font-size: 14px;
 }
+.yp-edit-add {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 18px;
+}
 .yp-editor-buttons {
   display: flex;
   gap: 10px;
@@ -589,6 +798,9 @@
 @media (min-width: 900px) {
   .yp-title {
     font-size: 22px;
+  }
+  .yp-bands {
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   }
   .yp-edit-fields {
     grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));

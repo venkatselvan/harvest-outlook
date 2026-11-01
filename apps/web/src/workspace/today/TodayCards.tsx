@@ -1,6 +1,7 @@
 import { Show, type JSX } from "solid-js";
 import type { HealthReading, NdviSeries, PricePoint, TodayView, WeatherPoint } from "@harvest/contracts";
 import { Icon } from "../icons";
+import { AiSpark } from "../ui/AiSpark";
 import {
   formatDay,
   formatInr,
@@ -137,6 +138,27 @@ function HarvestCard(props: { view: TodayView; onDetails: (kind: CardKind) => vo
   );
 }
 
+/**
+ * The harvest outlook in words (ROUND2_SPEC 2.2): the sentence when ready, "Writing the outlook…" while the job runs,
+ * nothing when unavailable. The AI mark appears only for a model-written (or pending) sentence; the code-written
+ * fallback carries no mark.
+ */
+export function OutlookLine(props: { note: TodayView["outlookNote"] }) {
+  const note = () => (props.note && props.note.status !== "unavailable" && (props.note.status === "pending" || props.note.text) ? props.note : null);
+  return (
+    <Show when={note()}>
+      {(n) => (
+        <p class={`today-outlook-note ${n().status}`} data-testid="today-outlook-note" aria-live="polite">
+          <span>{n().status === "pending" ? "Writing the outlook…" : n().text}</span>
+          <Show when={n().status === "pending" || n().origin === "model"}>
+            <AiSpark use="harvest_outlook_note" size={14} />
+          </Show>
+        </p>
+      )}
+    </Show>
+  );
+}
+
 function PriceCard(props: { view: TodayView; date: string; price: PricePoint | null; onDetails: (kind: CardKind) => void }) {
   const harvest = () => props.view.harvestPrice;
   const trend = () => priceTrend(props.view.priceTrack, props.view.today);
@@ -165,6 +187,9 @@ function PriceCard(props: { view: TodayView; date: string; price: PricePoint | n
             unit=" /kg"
           />
         )}
+      </Show>
+      <Show when={range()}>
+        <OutlookLine note={props.view.outlookNote ?? null} />
       </Show>
       <Show when={atDate()}>
         {(point) => (

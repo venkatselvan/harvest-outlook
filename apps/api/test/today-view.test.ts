@@ -1,9 +1,10 @@
 import {afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi} from 'vitest';
 import type {FastifyInstance} from 'fastify';
-import {StageTimeline, TodayView} from '@harvest/contracts';
+import {StageTimeline, TodayView, type FarmWorkspace, type UpcomingStep} from '@harvest/contracts';
 import {setupHarness, login, testConfig, ORIGIN, type Harness, type Client} from './helpers';
 import {fakePlanetary, type FakeScene} from './fixtures/sentinel2/fake-provider';
-import {MAX_OUTLOOK_CALLS, boundedWindow, todayView, type TodayProviders, type TodayViewDeps} from '../src/services/today/view';
+import {AT_STAGE_DAYS, MAX_OUTLOOK_CALLS, boundedWindow, matchStage, orderSteps, pickNextAction, referenceCareSteps, regionPrefix, stageCheckSteps, todayView, type StepLocation, type TodayProviders, type TodayViewDeps} from '../src/services/today/view';
+import {careSchedule} from '../src/services/command-center';
 import {stageAt, stageTimeline} from '../src/services/today/stage-timeline';
 import {persistAlerts, type AlertDraft} from '../src/services/today/alerts';
 import {focusedResearch, type FocusedResearch} from '../src/services/focused-crops';
@@ -252,7 +253,15 @@ describe('todayView: Hassan farm with a maize cycle (live, injected providers)',
     expect(care[0]!.careTask).toMatchObject({actionId: 't-due', cycleId: 'cycle-maize', evidenceState: 'source_schedule'});
     expect(view.upcoming.find((s) => s.kind === 'stage_transition')).toMatchObject({dueFrom: next.from, dueTo: next.from, status: 'upcoming', title: `${next.name} expected to start`});
     expect(view.upcoming.find((s) => s.kind === 'alert_step')).toMatchObject({alertId: view.alerts[0]!.id, dueFrom: '2026-10-28', status: 'due', detail: 'Scout the whorls for fresh feeding marks.'});
-    expect(view.upcoming.map((s) => s.dueFrom)).toEqual([...view.upcoming.map((s) => s.dueFrom)].sort());
+    const rank = {overdue: 0, due: 1, upcoming: 2, completed: 3} as const;
+    expect(view.upcoming.map((s) => rank[s.status])).toEqual([...view.upcoming.map((s) => rank[s.status])].sort());
+    // Next action: care tasks and alert steps first, then due before upcoming, then the earlier start (the alert step).
+    expect(view.nextAction).toMatchObject({kind: 'alert_step', status: 'due', dueFrom: '2026-10-28'});
+    expect(view.upcoming[0]).toEqual(view.nextAction);
+    // Outlook note: live mode queues the job for these facts; the facts carry the card's range.
+    expect(view.outlookNote).toMatchObject({status: 'pending', text: null, origin: null});
+    expect(view.outlookNote!.facts[1]).toBe(`Likely price in the harvest weeks: ₹${refP50(mid) - 4} to ₹${refP50(mid) + 5} per kg (middle half of past years), typical ₹${refP50(mid)} per kg`);
+    expect(view.outlookNote!.facts).toContain('Harvest weeks usually run close to the yearly average price');
     expect(view.limitations.join(' ')).toMatch(/1 care action overdue by more than 14 days is not listed/);
     expect(view.monitoring.enabled).toBe(true);
     expect(view.monitoring.nextCheckAt).not.toBeNull();
@@ -408,5 +417,172 @@ describe('GET /api/v1/farms/:id/today', () => {
     expect(foreign.statusCode).toBe(404);
     expect(foreign.body).not.toContain('cycle-maize');
     expect((await get(owner, 'not-a-uuid')).statusCode).toBe(400);
+  });
+});
+
+// ------------------------------------------------------------------ upcoming steps v2 (ROUND2_SPEC.md 2.1)
+
+type Cycle = FarmWorkspace['cycles'][number];
+type CareItem = FocusedResearch['crops'][number]['care'][number];
+const HASSAN_LOC: StepLocation = {stateId: 'IN-KA', districtId: 'IN-KA-hassan', districtName: 'Hassan'};
+const stageItem = (id: string, title: string, stage: string | null, geographyIds = ['IN-KA']): CareItem => ({
+  id, title, action: `${title} (synthetic test guidance).`, anchor: 'observed_stage', startDay: 0, endDay: 0, repeatEveryDays: null, stage, conditions: [],
+  sourceRefs: [{sourceId: 'synthetic-test', locator: 'n/a'}], establishmentMethods: ['direct_sowing'], geographyIds,
+});
+const step = (o: Partial<UpcomingStep> & Pick<UpcomingStep, 'id' | 'kind' | 'status' | 'dueFrom'>): UpcomingStep => ({title: o.id, detail: null, dueTo: o.dueFrom, careTask: null, alertId: null, ...o});
+
+describe('upcoming steps v2: stage matching (substring, keyword, fallback)', () => {
+  const maize = () => expectedTimeline(); // initial, development, mid_season, late_season (FAO split)
+  const ginger = () => stageTimeline({cropId: 'ginger', productId: null, establishmentMethod: 'rhizome_planting', anchorDate: '2026-05-01', stateId: 'IN-KA', districtId: 'IN-KA-hassan'});
+
+  it('substring in either direction against the stage name or id', () => {
+    expect(maize().stages.map((s) => s.id)).toEqual(['initial', 'development', 'mid_season', 'late_season']); // fixture sanity
+    expect(matchStage('mid_season', maize())).toMatchObject({stage: {id: 'mid_season'}, rule: 'substring'});
+    expect(matchStage('Crop development', maize())).toMatchObject({stage: {id: 'development'}, rule: 'substring'});
+    expect(matchStage('late season grain fill', maize())).toMatchObject({stage: {id: 'late_season'}, rule: 'substring'}); // stage text inside the guidance
+    expect(matchStage('rhizome_initiation', ginger())).toMatchObject({stage: {id: 'rhizome_initiation'}, rule: 'substring'});
+  });
+
+  it('keyword table: flowering -> mid-season, maturity -> late season, tillering or establishment -> development (else initial)', () => {
+    expect(matchStage('flowering', maize())).toMatchObject({stage: {id: 'mid_season'}, rule: 'keyword'});
+    expect(matchStage('heading', maize())).toMatchObject({stage: {id: 'mid_season'}, rule: 'keyword'});
+    expect(matchStage('grain_maturity', maize())).toMatchObject({stage: {id: 'late_season'}, rule: 'keyword'});
+    expect(matchStage('active_tillering', maize())).toMatchObject({stage: {id: 'development'}, rule: 'keyword'});
+    // Ginger in Hassan uses the sourced catalogue stages: maturity -> "Maturation", establishment -> the vegetative stage.
+    expect(matchStage('rhizome_maturity', ginger())).toMatchObject({stage: {id: 'maturation'}, rule: 'keyword'});
+    expect(matchStage('established', ginger())).toMatchObject({stage: {id: 'sprouting_vegetative'}, rule: 'keyword'});
+    // Seedling, emergence, transplant -> initial.
+    expect(matchStage('seedling vigour', {stages: [{id: 'initial', name: 'Initial', from: '2026-01-01', to: '2026-01-20', basis: 'estimate'}]})).toMatchObject({stage: {id: 'initial'}, rule: 'keyword'});
+  });
+
+  it('orchestrator keyword table: reproductive stages to mid-season, vegetative to development, emergence to initial, grain fill to late', () => {
+    for (const stage of ['panicle_initiation', 'booting', 'heading', 'flowering', 'silking', 'tasselling', 'pod formation']) expect(matchStage(stage, maize()), stage).toMatchObject({stage: {id: 'mid_season'}, rule: 'keyword'});
+    for (const stage of ['tillering', 'vegetative growth', 'branching']) expect(matchStage(stage, maize()), stage).toMatchObject({stage: {id: 'development'}, rule: 'keyword'});
+    for (const stage of ['germination', 'emergence', 'seedling', 'establishment', 'after transplant']) expect(matchStage(stage, maize()), stage).toMatchObject({stage: {id: 'initial'}, rule: 'keyword'});
+    for (const stage of ['grain fill', 'milk stage', 'dough', 'maturity', 'ripening', 'harvest readiness']) expect(matchStage(stage, maize()), stage).toMatchObject({stage: {id: 'late_season'}, rule: 'keyword'});
+  });
+
+  it('no match: null (the caller windows it to the rest of the season)', () => {
+    expect(matchStage('height_1m', maize())).toBeNull();
+    expect(matchStage('first_leaf_ready', maize())).toBeNull();
+    expect(matchStage('flowering', {stages: [{id: 'growing', name: 'Growing', from: '2026-01-01', to: '2026-03-01', basis: 'estimate'}, {id: 'maturing', name: 'Maturing', from: '2026-03-01', to: '2026-04-01', basis: 'estimate'}]})).toBeNull();
+    expect(matchStage('', maize())).toBeNull();
+    expect(matchStage(null, maize())).toBeNull();
+  });
+});
+
+describe('upcoming steps v2: stage checks and other-region references', () => {
+  const cycle = maizeCycle as Cycle;
+
+  it('stage checks: matched stage window, rest-of-season fallback, other-region prefix, never completable', async () => {
+    const real = await focusedResearch();
+    const crop = {...real.crops.find((c) => c.cropId === 'maize')!, care: [
+      stageItem('c-flower', 'Water check at flowering', 'flowering'),
+      stageItem('c-height', 'Train branches at observed height', 'height_1m'),
+      stageItem('c-mature', 'Check grain maturity', 'grain_maturity', ['IN-GA']),
+      stageItem('c-panicle', 'Review nutrients at panicle initiation', 'panicle_initiation'),
+    ]};
+    const tl = expectedTimeline();
+    const mid = tl.stages.find((s) => s.id === 'mid_season')!, late = tl.stages.find((s) => s.id === 'late_season')!;
+    const {steps, undated} = stageCheckSteps({crop, cycle, timeline: tl, today: TODAY, location: HASSAN_LOC, sources: real.sources});
+    expect(undated).toBe(0);
+    expect(steps.map((s) => [s.kind, s.title, s.dueFrom, s.dueTo])).toEqual([
+      // "at <stage>": the first 14 days of the matched stage.
+      ['stage_check', 'Check: Water check at flowering', mid.from, plus(mid.from, AT_STAGE_DAYS - 1) < mid.to ? plus(mid.from, AT_STAGE_DAYS - 1) : mid.to],
+      ['stage_check', 'Check: Train branches at observed height', TODAY, tl.harvest!.latest],
+      ['stage_check', 'Check: Check grain maturity', late.from, late.to], // not phrased "at": the whole stage
+      ['stage_check', 'Check: Review nutrients at panicle initiation', mid.from, plus(mid.from, AT_STAGE_DAYS - 1) < mid.to ? plus(mid.from, AT_STAGE_DAYS - 1) : mid.to],
+    ]);
+    expect(dayDiff(steps[0]!.dueFrom, steps[0]!.dueTo)).toBe(AT_STAGE_DAYS - 1); // fixture sanity: the stage is longer than 14 days
+    expect(steps[3]!.status).toBe(mid.from > TODAY ? 'upcoming' : 'due');
+    expect(steps[0]!.detail).toMatch(/^Dated from the calendar estimate of the start of the Mid-season stage; check the actual crop stage first\. Water check at flowering/);
+    expect(steps[1]!.detail).toMatch(/^Any time this season\. Train branches/);
+    expect(steps[2]!.detail).toMatch(/^Guidance from Goa sources \(no local schedule for Hassan\)\. Dated from the calendar estimate of the Late season stage/);
+    expect(steps.every((s) => s.careTask === null && s.alertId === null)).toBe(true);
+    expect(steps[0]!.status).toBe(mid.from <= TODAY && TODAY <= mid.to ? 'due' : mid.from > TODAY ? 'upcoming' : 'overdue');
+    // Without a timeline nothing can be dated.
+    expect(stageCheckSteps({crop, cycle, timeline: null, today: TODAY, location: HASSAN_LOC})).toEqual({steps: [], undated: 4, itemIds: []});
+    // A matched check whose window starts later is upcoming and never the next action over a due care task.
+    const due = step({id: 'care-due', kind: 'care_task', status: 'due', dueFrom: '2026-10-31', dueTo: '2026-11-06'});
+    expect(pickNextAction([steps[3]!, due])?.id).toBe('care-due');
+  });
+
+  it('references from Tamil Nadu are dated on the sowing date with the prefix and the source, only without a local schedule', async () => {
+    const real = await focusedResearch();
+    const crop = real.crops.find((c) => c.cropId === 'maize')!;
+    expect(new Set(crop.care.flatMap((c) => c.geographyIds))).toEqual(new Set(['IN-TN'])); // fixture sanity: no Karnataka maize schedule
+    const sown = {...cycle, sowingDate: '2026-10-20', establishmentDate: '2026-10-20'};
+    const schedule = careSchedule(sown, crop, TODAY, [], {stateId: 'IN-KA', districtId: 'IN-KA-hassan'});
+    expect(schedule.careTasks).toEqual([]);
+    const steps = referenceCareSteps({schedule, crop, cycle: sown, today: TODAY, location: HASSAN_LOC, sources: real.sources});
+    expect(steps.map((s) => [s.title, s.dueFrom, s.dueTo, s.status])).toEqual([
+      ['Check stand and thin doubles', '2026-11-01', '2026-11-04', 'due'],
+      ['First manual weed check', '2026-11-06', '2026-11-07', 'upcoming'],
+      ['Weed and restore ridges', '2026-11-19', '2026-11-19', 'upcoming'],
+      ['Protect flowering moisture', '2026-12-04', '2026-12-24', 'upcoming'],
+    ]);
+    for (const s of steps) {
+      expect(s.kind).toBe('care_task');
+      expect(s.careTask).toBeNull();
+      expect(s.detail!.startsWith('Guidance from Tamil Nadu sources (no local schedule for Hassan).')).toBe(true);
+      expect(s.detail).toMatch(/Source: Tamil Nadu Agricultural University \(/);
+    }
+    expect(steps[0]!.detail).toContain('Source: Tamil Nadu Agricultural University (Thinning and gap filling).');
+    // A matched local schedule keeps the references undated.
+    const local = {...crop, care: crop.care.map((c) => ({...c, geographyIds: ['IN-KA']}))};
+    const localSchedule = careSchedule(sown, local, TODAY, [], {stateId: 'IN-KA', districtId: 'IN-KA-hassan'});
+    expect(localSchedule.careTasks.length).toBeGreaterThan(0);
+    expect(referenceCareSteps({schedule: localSchedule, crop: local, cycle: sown, today: TODAY, location: HASSAN_LOC})).toEqual([]);
+    expect(regionPrefix(['IN-TN', 'IN-KA-mysuru'], {stateId: 'IN-GA', districtId: null, districtName: null})).toBe('Guidance from Tamil Nadu and Karnataka sources (no local schedule for this district).');
+    expect(regionPrefix(['IN'], HASSAN_LOC)).toBeNull();
+  });
+});
+
+describe('upcoming steps v2: next action and order', () => {
+  it('care tasks and alert steps come first as a tier; then overdue, due, upcoming; then the earlier start', () => {
+    const overdueCheck = step({id: 'check-overdue', kind: 'stage_check', status: 'overdue', dueFrom: '2026-10-20', dueTo: '2026-10-25'});
+    const dueAnyTime = step({id: 'check-season', kind: 'stage_check', status: 'due', dueFrom: TODAY, dueTo: '2027-01-30'});
+    const transition = step({id: 'transition', kind: 'stage_transition', status: 'upcoming', dueFrom: '2026-11-03'});
+    const careLater = step({id: 'care-later', kind: 'care_task', status: 'upcoming', dueFrom: '2026-11-09', dueTo: '2026-11-12'});
+    const careSoon = step({id: 'care-soon', kind: 'care_task', status: 'upcoming', dueFrom: '2026-11-05', dueTo: '2026-11-06'});
+    const alertDue = step({id: 'alert-due', kind: 'alert_step', status: 'due', dueFrom: '2026-10-30', dueTo: '2026-11-10'});
+    const careOverdue = step({id: 'care-overdue', kind: 'care_task', status: 'overdue', dueFrom: '2026-10-25', dueTo: '2026-10-28'});
+    const careDone = step({id: 'care-done', kind: 'care_task', status: 'completed', dueFrom: '2026-10-01'});
+
+    expect(pickNextAction([overdueCheck, dueAnyTime, transition, careLater, careSoon])?.id).toBe('care-soon'); // tier beats status
+    expect(pickNextAction([careLater, careSoon, alertDue])?.id).toBe('alert-due'); // due beats upcoming
+    expect(pickNextAction([careLater, alertDue, careOverdue])?.id).toBe('care-overdue'); // overdue beats due
+    expect(pickNextAction([overdueCheck, dueAnyTime, transition])?.id).toBe('check-overdue'); // no care or alert step
+    expect(pickNextAction([careDone])).toBeNull();
+    expect(pickNextAction([])).toBeNull();
+
+    expect(orderSteps([careDone, careLater, transition, dueAnyTime, alertDue, overdueCheck, careOverdue, careSoon]).map((s) => s.id)).toEqual([
+      'check-overdue', 'care-overdue', 'alert-due', 'check-season', 'transition', 'care-soon', 'care-later', 'care-done',
+    ]);
+  });
+});
+
+describe('todayView: Hassan maize with Tamil Nadu guidance only (real focused research)', () => {
+  it('lists dated reference steps with the prefix, a next action with a window, and says they cannot be marked done', async () => {
+    const real = await focusedResearch();
+    const farm = await createFarm(owner, 'Hassan maize, TN guidance');
+    const cycle = {...maizeCycle, id: 'cycle-maize-tn', sowingDate: '2026-10-20', establishmentDate: '2026-10-20'};
+    const put = await owner.call('PUT', `/api/v1/farms/${farm}/workspace`, {payload: {expectedVersion: 0, boundary: HA, previousHarvest: {status: 'unknown'}, cycles: [cycle], rotationPlans: []}});
+    expect(put.statusCode, put.body).toBe(200);
+    const view = TodayView.parse(await todayView(liveDeps({scenes: [], providers: {focusedResearch: async () => real}}), ownerId, farm));
+    const refs = view.upcoming.filter((s) => s.id.startsWith('ref:'));
+    expect(refs.map((s) => [s.title, s.dueFrom, s.dueTo])).toEqual([
+      ['Check stand and thin doubles', '2026-11-01', '2026-11-04'],
+      ['First manual weed check', '2026-11-06', '2026-11-07'],
+    ]); // 'Weed and restore ridges' (19 Nov) and the flowering window start beyond 14 days
+    expect(refs.every((s) => s.kind === 'care_task' && s.careTask === null && s.detail!.startsWith('Guidance from Tamil Nadu sources (no local schedule for Hassan).'))).toBe(true);
+    expect(view.nextAction).toMatchObject({title: 'Check stand and thin doubles', dueFrom: '2026-11-01', dueTo: '2026-11-04', status: 'due', careTask: null});
+    expect(view.upcoming.every((s) => /^\d{4}-\d{2}-\d{2}$/.test(s.dueFrom) && /^\d{4}-\d{2}-\d{2}$/.test(s.dueTo))).toBe(true);
+    const notes = view.limitations.join(' ');
+    expect(notes).toMatch(/No care schedule for Hassan is sourced for this crop/);
+    expect(notes).toMatch(/cannot be marked done here: the completion endpoint accepts only care actions scheduled for this field's region/);
+    expect(notes).toMatch(/2 later guidance steps appear when their window is within 14 days/);
+    expect(notes).not.toMatch(/not dated for this field/);
+    expect(view.outlookNote?.status).toBe('pending');
   });
 });

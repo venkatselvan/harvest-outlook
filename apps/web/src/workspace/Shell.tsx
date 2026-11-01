@@ -1,5 +1,6 @@
 import { Logo } from "./Logo";
 import { ModelActivity } from "./ModelActivity";
+import { AiUsesButton } from "./ui/AiSpark";
 import { installModalFocus } from "./modalFocus";
 import {
   For,
@@ -245,6 +246,7 @@ function Shell(props: ParentProps) {
               })}
             </span>
             <ModelActivity />
+            <AiUsesButton />
             <MoreMenu links={nav.slice(1)} />
           </div>
         </header>

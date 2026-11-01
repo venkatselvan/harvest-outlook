@@ -23,7 +23,6 @@ import { AlertsList } from "./AlertsList";
 import { UpcomingSteps, stepDomId } from "./UpcomingSteps";
 import { TodayEmpty } from "./TodayEmpty";
 import { TodaySheet, type SheetKind } from "./TodaySheet";
-import { CareGuidance } from "./CareGuidance";
 import "./today.css";
 
 type LoadState =
@@ -190,11 +189,6 @@ export function TodayView(props: TodayViewProps) {
     return source.map((step) => (done.has(step.id) && step.status !== "completed" ? { ...step, status: "completed" as const } : step));
   });
   const alerts = () => (view()?.alerts ?? []).filter((alert) => !dismissed().has(alert.id));
-  /** Command-center entry for the crop the Today view shows (undated guidance lives there). */
-  const guidanceEntry = () => {
-    const cycleId = view()?.cycle?.id;
-    return cycleId ? props.cycles().find((entry) => entry.cycle.id === cycleId) : undefined;
-  };
   const stepAlertIds = () => new Set(steps().flatMap((step) => (step.alertId ? [step.alertId] : [])));
 
   async function markDone(step: UpcomingStep) {
@@ -266,9 +260,15 @@ export function TodayView(props: TodayViewProps) {
         error={alertError()}
       />
       <Show when={current.cycle}>
-        <UpcomingSteps steps={steps()} busyId={busyStep()} onDone={(step) => void markDone(step)} error={stepError()} sources={props.data()?.sources}>
-          <CareGuidance entry={guidanceEntry()} sources={props.data()?.sources} />
-        </UpcomingSteps>
+        <UpcomingSteps
+          steps={steps()}
+          nextAction={current.nextAction ?? null}
+          today={current.today}
+          busyId={busyStep()}
+          onDone={(step) => void markDone(step)}
+          error={stepError()}
+          sources={props.data()?.sources}
+        />
       </Show>
     </div>
   );
@@ -324,9 +324,8 @@ export function TodayView(props: TodayViewProps) {
                   error={stepError()}
                   sources={props.data()?.sources}
                   note={props.data() ? "From your crop care schedule" : "Care schedule not loaded"}
-                >
-                  <CareGuidance entry={props.active()} sources={props.data()?.sources} />
-                </UpcomingSteps>
+                  today={browserToday()}
+                />
               </div>
             </Show>
           </div>

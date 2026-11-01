@@ -4,7 +4,7 @@ import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { FarmAlerts, type FarmWorkspace } from '@harvest/contracts';
 import { setupHarness, login, farmBody, type Harness, type Client } from './helpers';
 import {
-  addDays, alertFingerprint, gateGroundedAlerts, groundedReview, istDate, listAlerts, loadPriceMoves, persistAlerts, priceMoveFromQuotes,
+  ALERT_LIMITATIONS, INSTRUCTIONS, addDays, alertFingerprint, gateGroundedAlerts, groundedReview, istDate, listAlerts, loadPriceMoves, persistAlerts, priceMoveFromQuotes,
   structuredAlerts, type AlertDraft, type GroundedTransport, type PriceMove,
 } from '../src/services/today/alerts';
 import { monitoringSnapshot, type MonitoringSnapshot } from '../src/services/monitoring';
@@ -173,6 +173,15 @@ describe('Meta request shape for built-in tool limits', () => {
     expect(client.buildBody({ ...params, webSearch: { searchContextSize: 'low' }, maxToolCalls: 3 })).toMatchObject({ max_tool_calls: 3, tools: [{ type: 'web_search', search_context_size: 'low' }] });
     expect(client.buildBody({ ...params, webSearch: { searchContextSize: 'low' } })).not.toHaveProperty('max_tool_calls');
     for (const bad of [0, -1, 1.5, Number.NaN]) expect(() => client.buildBody({ ...params, maxToolCalls: bad })).toThrow(/maxToolCalls/);
+  });
+});
+
+describe('grounded review prompt and limitations (ROUND2_SPEC.md 2.3)', () => {
+  it('the weather bullet asks for IMD district warnings, nowcasts and bulletins; the IMD limitation names the daily search', () => {
+    expect(INSTRUCTIONS).toContain('- weather: IMD district warnings, nowcasts and bulletins (mausam.imd.gov.in, state disaster management authorities), cyclone, flood, heavy-rain or heat bulletins for the district or state;');
+    expect(INSTRUCTIONS).toContain('Give the real end date of a weather warning');
+    expect(ALERT_LIMITATIONS).toContain('Direct IMD feed not connected (needs a key); official warnings are searched daily.');
+    expect(ALERT_LIMITATIONS.join(' ')).not.toMatch(/IMD district warnings are not connected/);
   });
 });
 
@@ -422,7 +431,7 @@ describe('farm.monitor worker: alerts, daily guard and cap', () => {
     const fetchImpl = vi.fn();
     const transport: GroundedTransport = { createResponse: vi.fn(), deleteResponse: vi.fn() };
     const handler = createMonitorHandler({ config: h.config, pool: h.pool, budget: Budget.fromConfig(h.pool, h.config), fetchImpl: fetchImpl as unknown as typeof fetch, metaTransport: transport });
-    expect(await handler(await job(ownerId, id), { ...ctx, pool: h.pool })).toMatchObject({ status: 'checked', metaStatus: 'live_mode_required', climatology: 'not_live' });
+    expect(await handler(await job(ownerId, id), { ...ctx, pool: h.pool })).toMatchObject({ status: 'checked', metaStatus: 'live_mode_required', climatology: 'not_live', outlookNote: 'live_mode_required' });
     expect(fetchImpl).not.toHaveBeenCalled();
     expect(transport.createResponse).not.toHaveBeenCalled();
     expect((await listAlerts(h.pool, ownerId, id, 'synthetic', new Date().toISOString())).newsReview).toMatchObject({ status: 'unavailable', reason: 'live_mode_required' });

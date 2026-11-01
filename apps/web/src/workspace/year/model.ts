@@ -8,7 +8,7 @@ import type {
   YearPlanSlot,
 } from "@harvest/contracts";
 import type { CropSummary } from "../../features/comparison/types";
-import { monthYear, partOfMonth } from "./format";
+import { formatAreaHa, formatInrBand, formatInrRange, monthYear, partOfMonth } from "./format";
 
 /** Pure view-model logic for the Year plan: no Solid, no fetch. */
 
@@ -18,11 +18,44 @@ import { POOL_CROPS, ROLE_LABEL, ROLE_ORDER, isLegume, type RoleGroup, type Rota
 export { POOL_CROPS, ROLE_LABEL, ROLE_ORDER, isLegume };
 export type { RoleGroup, RotationRole };
 
+/** Editor groups: the pool's rotation roles, plus green manure (grown and ploughed in; no product, no price). */
+export type ChoiceRole = RoleGroup | "green_manure";
+export const GROUP_ORDER: readonly ChoiceRole[] = [
+  "nitrogen_fixer",
+  "light_feeder",
+  "moderate_feeder",
+  "heavy_feeder",
+  "green_manure",
+  "other",
+];
+export const GROUP_LABEL: Record<ChoiceRole, string> = { ...ROLE_LABEL, green_manure: "Green manure" };
+
 export interface CropChoice {
   cropId: string;
   name: string;
-  role: RoleGroup;
+  role: ChoiceRole;
   products: { productId: string; name: string }[];
+}
+
+/**
+ * Green manure ids the server's research file defines (data/research/rotation/green-manure.json). Offered in the editor
+ * only when the review carries no green manure slot to read the ids from.
+ */
+export const FALLBACK_GREEN_MANURE: readonly { cropId: string; name: string }[] = [
+  { cropId: "gm-dhaincha", name: "Dhaincha" },
+  { cropId: "gm-sunn-hemp", name: "Sunn hemp" },
+  { cropId: "gm-cowpea", name: "Cowpea (green manure)" },
+];
+
+export const isGreenManure = (slot: Pick<YearPlanSlot, "kind">) => slot.kind === "green_manure";
+/** "Cowpea (green manure)" -> "Cowpea": the strip already says "Green manure". */
+export const greenManureName = (name: string) => name.replace(/\s*\(green manure\)\s*$/i, "").trim() || name;
+/** {60, 80} -> "+N 60 to 80 kg/ha"; null when the server gave no credit. */
+export function nitrogenCreditText(range: { low: number; high: number } | null | undefined): string | null {
+  if (!range) return null;
+  const low = Math.round(Math.min(range.low, range.high));
+  const high = Math.round(Math.max(range.low, range.high));
+  return low === high ? `+N ${low} kg/ha` : `+N ${low} to ${high} kg/ha`;
 }
 
 /**
@@ -36,8 +69,13 @@ export function cropChoices(
   catalogue: readonly CropSummary[] | undefined,
 ): CropChoice[] {
   const seen = new Map<string, { name: string; products: Map<string, string> }>();
+  const manures = new Map<string, string>();
   for (const option of review?.options ?? [])
     for (const slot of option.slots) {
+      if (isGreenManure(slot)) {
+        manures.set(slot.cropId, slot.cropName);
+        continue;
+      }
       const entry = seen.get(slot.cropId) ?? { name: slot.cropName, products: new Map<string, string>() };
       entry.products.set(slot.productId, slot.productName);
       seen.set(slot.cropId, entry);
@@ -68,8 +106,12 @@ export function cropChoices(
         role: "other",
         products: [...entry.products].map(([productId, name]) => ({ productId, name })),
       });
+  // Green manure: the ids the review already uses, else the three the server's research file defines.
+  const manureList = manures.size ? [...manures].map(([cropId, name]) => ({ cropId, name })) : FALLBACK_GREEN_MANURE;
+  for (const m of manureList)
+    choices.push({ cropId: m.cropId, name: m.name, role: "green_manure", products: [{ productId: m.cropId, name: m.name }] });
   return choices.sort(
-    (a, b) => ROLE_ORDER.indexOf(a.role) - ROLE_ORDER.indexOf(b.role) || a.name.localeCompare(b.name),
+    (a, b) => GROUP_ORDER.indexOf(a.role) - GROUP_ORDER.indexOf(b.role) || a.name.localeCompare(b.name),
   );
 }
 
@@ -195,6 +237,8 @@ export interface DraftSlot {
   cropId: string;
   productId: string;
   establishmentMethod?: string;
+  /** 'green_manure' rows send kind and productId = cropId; absent means an ordinary crop. */
+  kind?: "crop" | "green_manure";
   sowing: string;
   /** The crop the slot had before editing; a changed crop drops the slot id. */
   originalCropId?: string;
@@ -208,6 +252,7 @@ export function draftFromOption(option: YearPlanOption): DraftSlot[] {
     cropId: s.cropId,
     productId: s.productId,
     ...(s.establishmentMethod ? { establishmentMethod: s.establishmentMethod } : {}),
+    ...(isGreenManure(s) ? { kind: "green_manure" as const } : {}),
     sowing: s.sowing,
     originalCropId: s.cropId,
   }));
@@ -237,8 +282,10 @@ export function rescoreBody(reviewId: string, optionId: string, drafts: readonly
       .map((d) => ({
         ...(d.slotId && d.cropId === d.originalCropId ? { slotId: d.slotId } : {}),
         cropId: d.cropId,
-        productId: d.productId,
+        // A green manure has no product: the server expects the crop id there.
+        productId: d.kind === "green_manure" ? d.cropId : d.productId,
         ...(d.establishmentMethod && d.cropId === d.originalCropId ? { establishmentMethod: d.establishmentMethod } : {}),
+        ...(d.kind === "green_manure" ? { kind: "green_manure" as const } : {}),
         sowing: d.sowing,
       })),
   };
@@ -252,4 +299,66 @@ export function rescoreBody(reviewId: string, optionId: string, drafts: readonly
 export function mergeServerReview(local: YearPlanReview | undefined, server: YearPlanReview): YearPlanReview {
   const same = !!local && local.reviewId !== null && server.reviewId === local.reviewId;
   return same ? { ...server, options: local!.options } : server;
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
+// Calendar surface: headline profit, short warnings, the fixed crop's two lines
+
+export interface ProfitHeadline {
+  value: string;
+  caption: string;
+  /** Which figure was used: the field total, the per-hectare estimate, the older per-hectare range, or none. */
+  source: "field" | "per_ha" | "range" | "none";
+}
+
+/**
+ * Headline profit for a calendar row and the sheet summary, first match wins:
+ * 1. field total, likely band, "for your 0.16 ha"
+ * 2. per-hectare estimate, likely band, with the hint to draw the boundary
+ * 3. the older per-hectare range (reviews built before round 2)
+ * 4. not available
+ */
+export function profitText(
+  option: Partial<Pick<YearPlanOption, "totalProfitForField" | "totalProfitEstimate" | "totalProfitPerHa" | "fieldAreaHa">>,
+): ProfitHeadline {
+  if (option.totalProfitForField) {
+    const area = option.fieldAreaHa;
+    return {
+      value: formatInrBand(option.totalProfitForField.likely),
+      caption: area != null && area > 0 ? `for your ${formatAreaHa(area)} ha` : "for your field",
+      source: "field",
+    };
+  }
+  if (option.totalProfitEstimate)
+    return {
+      value: formatInrBand(option.totalProfitEstimate.likely),
+      caption: "per hectare · draw the boundary for your field total",
+      source: "per_ha",
+    };
+  if (option.totalProfitPerHa)
+    return { value: formatInrRange(option.totalProfitPerHa), caption: "profit per ha", source: "range" };
+  return { value: "Profit not available", caption: "needs a price and a cost for every crop", source: "none" };
+}
+
+/** No sentence longer than this is drawn on the calendar itself; longer text lives in the detail sheet. */
+export const CALENDAR_TEXT_MAX = 90;
+
+/** Warnings that fit on the calendar as chips; the rest are counted and shown in full in the sheet. */
+export function calendarWarnings(warnings: readonly string[]): { short: string[]; hidden: number } {
+  const short = warnings.filter((w) => w.length <= CALENDAR_TEXT_MAX);
+  return { short, hidden: warnings.length - short.length };
+}
+
+/**
+ * The crop already growing gets up to two short lines under its strip ("Harvest expected 13 Feb to 15 Mar (estimated
+ * from the sowing date)", "Next crop from 25 Mar"). The server writes them into `transitionNote` separated by a line
+ * break; a note that is one long sentence is not drawn here (the sheet shows it whole).
+ */
+export function noteLines(note: string | null | undefined): string[] {
+  if (!note) return [];
+  return note
+    .split(/\n+|\.\s+(?=[A-Z])/)
+    .map((line) => line.trim().replace(/\.$/, ""))
+    .filter((line) => line.length > 0 && line.length <= CALENDAR_TEXT_MAX)
+    .slice(0, 2);
 }
