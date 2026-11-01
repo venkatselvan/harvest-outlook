@@ -5,10 +5,12 @@ import { expect, test, type Page } from "@playwright/test";
 /*
  * Journal journey at 360 px against the real API in SYNTHETIC mode (started by playwright.config.ts: support/start-real-api.ts + Vite).
  * The "AI" answer is the journal_waterlogging fixture, so nothing here shows a real model reading a real photo.
- * JOURNAL_PATH defaults to the real /journal route.
+ * The detailed journal (photos, analysis, proposals, revisions) lives at /journal/detail since the 2026-11-01 redesign; /journal now opens the
+ * Activity tab of the farm command centre, which links here ("Photos & detailed journal"). The farm form lives at /farm/details; /farm shows
+ * the map-first welcome and setup. JOURNAL_PATH overrides the default.
  */
 test.use({ viewport: { width: 360, height: 740 }, hasTouch: false });
-const JOURNAL_PATH = process.env.JOURNAL_PATH ?? "/journal";
+const JOURNAL_PATH = process.env.JOURNAL_PATH ?? "/journal/detail";
 const ginger = JSON.parse(readFileSync(resolve(process.cwd(), "../../data/fixtures/synthetic/plan-ginger-basic.json"), "utf8"));
 
 async function makeJpeg(page: Page, w: number, h: number): Promise<Buffer> {
@@ -37,7 +39,7 @@ async function makeJpeg(page: Page, w: number, h: number): Promise<Buffer> {
 }
 
 async function createFarmAndPlan(page: Page) {
-  await page.goto("/farm");
+  await page.goto("/farm/details");
   await expect(page.getByRole("heading", { name: "My farm" })).toBeVisible();
   await page.getByLabel("District name").fill("Wayanad");
   await page.getByLabel("State or union territory").selectOption("IN-KL");

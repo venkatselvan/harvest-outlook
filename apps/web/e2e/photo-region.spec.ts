@@ -30,7 +30,7 @@ async function makeJpeg(page: Page, w: number, h: number): Promise<Buffer> {
 }
 
 async function createFarm(page: Page, district = "Wayanad") {
-  await page.goto("/farm");
+  await page.goto("/farm/details"); // the simple farm form moved here in the 2026-11-01 redesign
   await expect(page.getByRole("heading", { name: "My farm" })).toBeVisible();
   await page.getByLabel("District name").fill(district);
   await page.getByLabel("State or union territory").selectOption("IN-KL");
@@ -178,7 +178,7 @@ test("a mocked SAM proposal is shown dashed with its label, and accepting saves 
     r.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ requestId: "m", mode: "synthetic", asOf: "x", warnings: [], error: null, data: { id: "j", type: "vision.segment", state: "succeeded", result: { status: "ok", polygon, segmentationScore: 0.81, proposals: [{ polygon }] } } }) }),
   );
   await page.getByRole("button", { name: "Suggest region with AI" }).click();
-  await expect(page.getByTestId("ai-proposal")).toContainText("AI suggestion — illustrative outline, confirm or correct");
+  await expect(page.getByTestId("ai-proposal")).toContainText("AI suggested outline — confirm or correct");
   await expect(page.locator(".pr-proposal")).toBeVisible();
   expect(await page.locator(".pr-proposal").evaluate((e) => getComputedStyle(e).strokeDasharray)).not.toBe("none");
   await page.getByRole("button", { name: "Accept and save this outline" }).click();
