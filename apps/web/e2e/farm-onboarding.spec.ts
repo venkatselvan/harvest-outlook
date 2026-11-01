@@ -35,6 +35,7 @@ const farm = (id: string, demo = false) => ({
   facts: demo
     ? {
         demo_prefilled: { value: true },
+        demo_track_record: { value: true },
         demo_source: {
           value:
             "Real teaching-campus location; only the field outline is prefilled.",
@@ -93,6 +94,84 @@ async function fixture(
   let demoCalls = 0;
   const demoWorkspace = () => ({
     ...workspace(B),
+    previousHarvest: {
+      status: "known",
+      cropId: "finger-millet",
+      cropName: "Finger millet",
+      harvestDate: "2023-12-10",
+    },
+    cycles: [
+      {
+        id: "demo2y:ginger-2024",
+        cropId: "ginger",
+        cropName: "Ginger",
+        productId: "ginger-fresh",
+        sowingDate: "2024-05-20",
+        establishmentDate: "2024-05-20",
+        establishmentMethod: "rhizome_planting",
+        stage: "harvested",
+        harvestDate: "2025-01-18",
+      },
+      {
+        id: "demo2y:maize-2025",
+        cropId: "maize",
+        cropName: "Maize",
+        productId: "maize-grain",
+        sowingDate: "2025-06-08",
+        establishmentDate: "2025-06-08",
+        establishmentMethod: "direct_sowing",
+        stage: "harvested",
+        harvestDate: "2025-10-04",
+      },
+      {
+        id: "demo2y:ginger-2026",
+        cropId: "ginger",
+        cropName: "Ginger",
+        productId: "ginger-fresh",
+        sowingDate: "2026-05-16",
+        establishmentDate: "2026-05-16",
+        establishmentMethod: "rhizome_planting",
+        stage: "growing",
+      },
+    ],
+    rotationPlans: [
+      {
+        id: "demo2y:plan-2027-maize",
+        year: 2027,
+        season: "Kharif",
+        cropId: "maize",
+        cropName: "Maize",
+        productId: "maize-grain",
+        plannedSowingDate: "2027-06-05",
+        plannedHarvestDate: "2027-09-30",
+        kind: "crop",
+        establishmentMethod: "direct_sowing",
+      },
+      {
+        id: "demo2y:plan-2027-green-gram",
+        year: 2027,
+        season: "Rabi",
+        cropId: "green-gram",
+        cropName: "Green gram",
+        productId: "green-gram-whole",
+        plannedSowingDate: "2027-10-15",
+        plannedHarvestDate: "2027-12-30",
+        kind: "crop",
+        establishmentMethod: "direct_sowing",
+      },
+      {
+        id: "demo2y:plan-2028-ginger",
+        year: 2028,
+        season: "Kharif",
+        cropId: "ginger",
+        cropName: "Ginger",
+        productId: "ginger-fresh",
+        plannedSowingDate: "2028-05-15",
+        plannedHarvestDate: "2029-01-15",
+        kind: "crop",
+        establishmentMethod: "rhizome_planting",
+      },
+    ],
     version: demoCalls >= 2 ? 2 : 1,
     boundary:
       demoCalls >= 2
@@ -147,8 +226,15 @@ async function fixture(
           workspace: demoWorkspace(),
           demo: {
             prefilledBoundary: true,
-            label: "Demo teaching farm",
+            label:
+              "Demo farm with two years of sample records near the public ARS Arsikere research-site reference",
             source: "Public campus location; prefilled field boundary",
+            records: {
+              cycles: 3,
+              seasons: 3,
+              journalEntries: 41,
+              careActions: 5,
+            },
           },
         }),
       });
@@ -206,9 +292,7 @@ async function fixture(
                   : path === "/api/v1/crops"
                     ? { crops: [] }
                     : path === "/api/v1/districts"
-                      ? new URL(route.request().url()).searchParams.has(
-                          "state",
-                        )
+                      ? new URL(route.request().url()).searchParams.has("state")
                         ? {
                             districts: [
                               {
@@ -445,10 +529,25 @@ test("returning users can load the labelled demo repeatedly without replacing th
     .getByRole("button", { name: "Try demo farm", exact: true })
     .click();
   await expect(page.getByLabel("Selected farm")).toHaveValue(B);
+  await expect(
+    page.getByText("Demo farm ready: two years of records loaded."),
+  ).toBeVisible();
   await expect(page.locator(".demo-banner")).toContainText(
+    "Demo farm · two years of sample records",
+  );
+  await expect(page.locator(".demo-banner")).toContainText(
+    "Harvests, journal entries, sales and saved seasons were loaded as sample records",
+  );
+  await expect(page.locator(".demo-banner")).not.toContainText(
     "prefilled boundary",
   );
   await expect(page.locator(".harvest-history-card")).toContainText(
+    "Finger millet",
+  );
+  await expect(page.locator(".harvest-history-card")).toContainText(
+    "Harvested",
+  );
+  await expect(page.locator(".harvest-history-card")).not.toContainText(
     "Your land has a story.",
   );
   await expect(page.getByLabel("Selected farm").locator("option")).toHaveCount(
@@ -466,10 +565,10 @@ test("returning users can load the labelled demo repeatedly without replacing th
     "Demo teaching farm",
   );
   await expect(page.locator(".harvest-history-card")).toContainText(
-    "Your land has a story.",
+    "Finger millet",
   );
   await expect(page.locator(".land-story")).toContainText(
-    "Good farming looks beyond the next harvest.",
+    "3 seasons in your rotation",
   );
   await page
     .getByRole("button", { name: "Edit farm boundary", exact: true })

@@ -393,7 +393,7 @@ export function FarmCommandCenter() {
                 ? `${s.farm()!.areaHectares!.toFixed(2)} ha`
                 : "Area unknown"}
               <Show when={s.farm()?.facts.demo_prefilled?.value === true}>
-                <span class="command-demo">Demo boundary</span>
+                <span class="command-demo">Demo farm</span>
               </Show>
             </p>
           </div>

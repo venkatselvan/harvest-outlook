@@ -154,9 +154,8 @@ export function PlanPage() {
             </dl>
             <Show when={isDemoPlan()}>
               <p class="se-help demo-plan-note" role="note">
-                {planFarm()?.name} has a prefilled demo boundary. Plan dates and
-                crop inputs are recorded separately; confirm them against your
-                field records.
+                {planFarm()?.name} is a demo farm with sample records. Confirm
+                dates and inputs against your own field records.
               </p>
             </Show>
             <div class="field">

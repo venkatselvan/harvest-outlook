@@ -166,7 +166,7 @@ for (const demoPlan of [true, false])
     await expect(summary).not.toContainText("Illustrative");
     if (demoPlan) {
       await expect(summary.getByRole("note")).toContainText(
-        "prefilled demo boundary",
+        "is a demo farm with sample records. Confirm dates and inputs against your own field records.",
       );
     } else {
       await expect(summary.getByRole("note")).toHaveCount(0);

@@ -95,14 +95,18 @@ describe('year-plan routes (registered)', () => {
     const demo = (await a.call('POST', '/api/v1/farms/demo', { payload: {} })).json().data;
     const id = demo.farm.id as string;
     expect((await a.call('POST', `/api/v1/farms/${id}/year-plan`, { payload: {} })).statusCode).toBe(200);
+    const before = (await h.pool.query('SELECT id, job_id FROM farm_year_plans WHERE farm_id=$1', [id])).rows as { id: string; job_id: string | null }[];
+    expect(before.length).toBeGreaterThan(0);
     await h.pool.query("UPDATE farm_facts SET value='3'::jsonb WHERE farm_id=$1 AND fact_key='demo_seed_version' AND superseded_by IS NULL", [id]);
     const legacy = { boundary: demo.workspace.boundary, previousHarvest: { status: 'known', cropId: 'maize', cropName: 'Maize (illustrative previous crop)', harvestDate: '2026-04-20' }, cycles: [], rotationPlans: [] };
     await h.pool.query('UPDATE farm_workspaces SET version=version+1,state=$2::jsonb WHERE farm_id=$1', [id, JSON.stringify(legacy)]);
     expect((await a.call('POST', '/api/v1/farms/demo', { payload: {} })).statusCode).toBe(200);
-    const rows = (await h.pool.query('SELECT archived_at FROM farm_year_plans WHERE farm_id=$1', [id])).rows;
-    expect(rows.length).toBeGreaterThan(0);
+    // The plans built before the refresh are archived and their jobs cancelled; the demo load then starts a fresh plan.
+    const rows = (await h.pool.query('SELECT archived_at FROM farm_year_plans WHERE id = ANY($1::uuid[])', [before.map((r) => r.id)])).rows;
+    expect(rows.length).toBe(before.length);
     expect(rows.every((r) => r.archived_at !== null)).toBe(true);
-    const job = (await h.pool.query("SELECT cancel_requested FROM jobs WHERE type='farm.year-plan' AND payload->>'farmId'=$1", [id])).rows;
+    const job = (await h.pool.query("SELECT cancel_requested FROM jobs WHERE id = ANY($1::uuid[])", [before.flatMap((r) => r.job_id ? [r.job_id] : [])])).rows;
     expect(job.every((r) => r.cancel_requested === true)).toBe(true);
+    expect(Number((await h.pool.query('SELECT count(*) FROM farm_year_plans WHERE farm_id=$1 AND archived_at IS NULL', [id])).rows[0].count)).toBe(1);
   });
 });

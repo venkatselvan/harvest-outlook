@@ -208,7 +208,7 @@ function Shell(props: ParentProps) {
                     s.farm()?.facts.demo_illustrative?.value === true
                   }
                 >
-                  <span class="demo-mini-badge">DEMO BOUNDARY</span>
+                  <span class="demo-mini-badge">DEMO FARM</span>
                 </Show>
                 <select
                   aria-label="Selected farm"

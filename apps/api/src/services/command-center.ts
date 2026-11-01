@@ -71,7 +71,7 @@ export function measuredSoilFit(markers:FarmSoilMarkers,crop:FocusedCareCrop):So
  return{cropId:crop.cropId,status:!markers.samples.length?'needs_soil_report':!checks.length?'insufficient_compatible_measurements':outside?'outside_published_ph_range':'within_published_ph_range',summary:!markers.samples.length?'Confirm a soil report from this field before assessing measured soil fit.':!checks.length?'No compatible, unambiguous confirmed measurement can be compared with a numeric source requirement.':outside?'At least one confirmed sample is outside a published pH range. This is a pH check, not an overall suitability verdict.':'Confirmed sample pH lies within the cited range. Water, drainage, cultivar and other soil requirements remain unresolved.',checks,requirements:crop.soilEnvironment,limitations:['Public reference reports and unconfirmed extractions are excluded.','Different samples, dates and methods are not averaged. Published pH ranges may use unspecified methods; compare with local laboratory advice.','Nutrient sufficiency, amendment quantities, yield and profit cannot be derived from this pH check. No universal nutrient thresholds are applied.']};
 }
 async function actionReplay(deps:CommandDeps,ownerId:string,farmId:string,key:string){return(await deps.pool.query('SELECT a.*,a.completed_on::text completed_on FROM farm_cycle_actions a JOIN farms f ON f.id=a.farm_id WHERE a.owner_id=$1 AND a.farm_id=$2 AND a.client_entry_id=$3 AND a.mode=$4 AND f.deleted_at IS NULL',[ownerId,farmId,key,deps.config.RUNTIME_MODE])).rows[0]}
-async function journalAction(c:PoolClient,deps:CommandDeps,ownerId:string,farmId:string,cycleId:string,key:string,clientId:string,date:string,text:string,hash:string,snapshot:unknown){
+async function journalAction(c:PoolClient,deps:Pick<CommandDeps,'config'>,ownerId:string,farmId:string,cycleId:string,key:string,clientId:string,date:string,text:string,hash:string,snapshot:unknown){
  const existing=(await c.query('SELECT id FROM journal_entries WHERE owner_id=$1 AND client_entry_id=$2',[ownerId,clientId])).rows[0];
  if(existing)throw new ApiError(409,'idempotency_conflict','This client entry identifier already belongs to a different journal event');
  const entryId=randomUUID();
@@ -109,7 +109,13 @@ export async function plantCrop(deps:CommandDeps,ownerId:string,farmId:string,bo
 }
 export async function completeCareTask(deps:CommandDeps,ownerId:string,farmId:string,cycleId:string,taskId:string,body:CompleteCareTask){
  const now=today((deps.now??(()=>new Date()))());if(body.completedOn>now)throw new ApiError(400,'validation_error','Completion cannot be in the future');const research=await focusedResearch();
- return withTransaction(deps.pool,async c=>{
+ return withTransaction(deps.pool,c=>completeCareTaskIn(c,deps,ownerId,farmId,cycleId,taskId,body,now,research));
+}
+/**
+ * The completion path inside a caller's transaction (the demo seed completes care through it). `now` is the IST date the
+ * schedule is evaluated at; the caller has already refused a completion after it.
+ */
+export async function completeCareTaskIn(c:PoolClient,deps:Pick<CommandDeps,'config'>,ownerId:string,farmId:string,cycleId:string,taskId:string,body:CompleteCareTask,now:string,research:FocusedResearch){
   const farm=(await c.query('SELECT id,state_code,district_code FROM farms WHERE id=$1 AND owner_id=$2 AND deleted_at IS NULL FOR UPDATE',[farmId,ownerId])).rows[0];if(!farm)throw notFound('Farm');
   await c.query('SELECT pg_advisory_xact_lock(hashtext($1))',[`${ownerId}:${body.clientEntryId}`]);
   const stateRow=(await c.query('SELECT state FROM farm_workspaces WHERE farm_id=$1',[farmId])).rows[0];const state=FarmWorkspaceState.parse(stateRow?.state),cycle=state.cycles.find(c=>c.id===cycleId);if(!cycle)throw notFound('Crop cycle');
@@ -121,7 +127,6 @@ export async function completeCareTask(deps:CommandDeps,ownerId:string,farmId:st
   const task=careSchedule(cycle,research.crops.find(c=>c.cropId===cycle.cropId),now,[],{stateId:farm.state_code,districtId:farm.district_code}).careTasks.find(t=>t.id===taskId);if(!task)throw notFound('Care action');
   const journalEntryId=await journalAction(c,deps,ownerId,farmId,cycleId,task.id,body.clientEntryId,body.completedOn,`${task.title}: completed on ${body.completedOn}.${body.note?' '+body.note:''}`,hash,{task});
   return{journalEntryId,completedOn:body.completedOn,alreadyCompleted:false};
- });
 }
 export async function farmCommandCenter(deps:CommandDeps,ownerId:string,farmId:string):Promise<FarmCommandCenter>{
  const farm=await getFarm(deps.pool,ownerId,farmId);if(!farm)throw notFound('Farm');

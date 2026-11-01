@@ -490,7 +490,17 @@ export function FarmWorkspace(
         await apiRequest<{
           farm: GeoFarm;
           workspace: Workspace;
-          demo: { prefilledBoundary?: boolean; label: string; source: string };
+          demo: {
+            prefilledBoundary?: boolean;
+            label: string;
+            source: string;
+            records?: {
+              cycles: number;
+              seasons: number;
+              journalEntries: number;
+              careActions: number;
+            };
+          };
         }>(
           "/api/v1/farms/demo",
           jsonInit("POST", {}, { "idempotency-key": demoKey }),
@@ -517,9 +527,7 @@ export function FarmWorkspace(
       setDraft(null);
       setEditing(false);
       setCenter(undefined);
-      s.setNotice(
-        "Demo boundary ready. Evara will check live sources for this location.",
-      );
+      s.setNotice("Demo farm ready: two years of records loaded.");
       props.onReady?.();
     } catch (e) {
       if (epoch === s.sessionEpoch()) setError((e as Error).message);
@@ -633,12 +641,13 @@ export function FarmWorkspace(
           <div class="demo-banner">
             <Icon name="leaf" size={19} />
             <div>
-              <strong>Demo field · prefilled boundary</strong>
+              <strong>Demo farm · two years of sample records</strong>
               <p>
-                Only the field outline is prefilled. Weather forecasts, dated
-                market quotes, and crop recommendations come from available
-                sources for this location. No harvest history or crop plans are
-                prefilled.
+                Harvests, journal entries, sales and saved seasons were loaded
+                as sample records so you can see the app with a track record;
+                the field outline sits around a public research-site reference.
+                Weather, prices and recommendations come from live sources for
+                this location.
               </p>
             </div>
             <A href="/planner" class="text-link">

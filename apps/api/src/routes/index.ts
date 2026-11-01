@@ -86,7 +86,7 @@ export async function registerRoutes(app: FastifyInstance, deps: RouteDeps): Pro
   await app.register(yearPlanRoutes,{config,pool,budget:deps.budget,...(deps.weatherFetch?{fetchImpl:deps.weatherFetch as unknown as typeof fetch}:{})});
   await app.register(boundaryContextRoutes,{config,pool,...(deps.weatherFetch?{fetchImpl:deps.weatherFetch as unknown as typeof fetch}:{})});
   await app.register(aiActivityRoutes,{config,pool});
-  await app.register(demoFarmRoutes,{config,pool});
+  await app.register(demoFarmRoutes,{config,pool,yearPlan:{config,pool,budget:deps.budget,...(deps.weatherFetch?{fetchImpl:deps.weatherFetch as unknown as typeof fetch}:{})}});
   await app.register(mediaRoutes, { config, pool, storage: deps.storage });
   await app.register(jobRoutes, { config, pool });
   // Stream B: Today view (UI_BRIEF section 4) and the wholesale price reads. The weather seam only reaches the plugins that call Open-Meteo;

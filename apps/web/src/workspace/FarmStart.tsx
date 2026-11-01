@@ -74,9 +74,8 @@ export function FarmStart(props: {
           <span class="eyebrow">A GUIDED FIRST LOOK</span>
           <h3>{props.busy ? "Preparing your demo…" : "Load a demo farm"}</h3>
           <p>
-            Start at a real location with a prefilled field outline. Evara
-            checks local sources for weather, market quotes, and crop
-            recommendations.
+            Start on a farm that has used the app for two years: past harvests,
+            a journal, the crop in the field now and saved plans.
           </p>
           <strong>
             {props.busy ? "Loading…" : "Explore the demo"}
@@ -86,7 +85,7 @@ export function FarmStart(props: {
       </div>
       <p class="farm-start-note">
         <Icon name="check" size={14} />
-        Only the demo field outline is prefilled. Your farms stay separate.
+        The demo farm's records are samples. Your farms stay separate.
       </p>
       {props.error ? (
         <p class="inline-error" role="alert">

@@ -116,8 +116,8 @@ describe("POST /api/v1/assistant/turns (synthetic mode)", () => {
     const demo = (await client.call("POST", "/api/v1/farms/demo", { payload: {} })).json().data;
     expect((await post(client, body({ farmId: demo.farm.id }))).statusCode).toBe(200);
     const context = JSON.parse(seen[0]!.match(/<request_context>(.*?)<\/request_context>/s)![1]!);
-    expect(context.selectedFarmProvenance).toMatchObject({ kind: "prefilled_boundary_demo", publicReference: { source: "https://uasmandya.edu.in/ars-arasikere" }, prefilledComponents: ["map boundary", "public location reference"] });
-    expect(context.selectedFarmProvenance.limitations).toContain("not prefilled");expect(JSON.stringify(context)).not.toMatch(/illustrative/i);
+    expect(context.selectedFarmProvenance).toMatchObject({ kind: "prefilled_boundary_demo", publicReference: { source: "https://uasmandya.edu.in/ars-arasikere" }, prefilledComponents: ["map boundary", "public location reference", "crop history", "journal entries and sales", "current crop", "saved seasons"] });
+    expect(context.selectedFarmProvenance.limitations).toContain("sample records");expect(JSON.stringify(context)).not.toMatch(/illustrative/i);
     expect(JSON.stringify(context)).not.toContain('"coordinates"');
     seen.length = 0;
     const ordinary = (await client.call("POST", "/api/v1/farms", { payload: farmBody() })).json().data;
