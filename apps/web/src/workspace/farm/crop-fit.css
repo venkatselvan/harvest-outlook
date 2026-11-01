@@ -396,3 +396,116 @@
     max-width: 440px;
   }
 }
+
+/* Round 3: year-plan chips, wait line, intercrops, the reusable picker (ROUND3_SPEC.md 3.1, 5, 8.3). Mobile first. */
+.cf-explain {
+  margin: 0;
+}
+.cf-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 4px;
+}
+.cf-chips:empty {
+  display: none;
+}
+.cf-wait {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+.cf-companion p {
+  margin: 4px 0;
+}
+.cf-picker {
+  display: grid;
+  gap: 14px;
+  color: var(--text);
+}
+.cf-picker-head h3 {
+  margin: 0 0 2px;
+  font-size: 18px;
+  line-height: 1.25;
+}
+.cf-picker-section {
+  display: grid;
+  gap: 8px;
+}
+.cf-pick-list {
+  display: grid;
+  gap: 10px;
+}
+.cf-pick-row {
+  display: grid;
+  gap: 6px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+}
+.cf-pick-row.cf-selected {
+  border-color: var(--accent-border);
+  background: var(--accent-soft);
+}
+.cf-pick-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+.cf-pick-titles h4 {
+  margin: 0;
+  font-size: 16px;
+  line-height: 1.25;
+}
+.cf-pick-rank {
+  margin: 2px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+.cf-pick-line {
+  display: grid;
+  gap: 2px;
+  margin: 0;
+  font-size: 14px;
+}
+.cf-pick-label {
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+.cf-pick-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+.cf-pick-actions .btn.compact {
+  min-height: 44px;
+  min-width: 132px;
+}
+.cf-picker-note {
+  margin: 0;
+}
+.cf-picker-footer {
+  display: flex;
+  justify-content: flex-start;
+}
+.cf-picker-footer .btn.compact,
+.cf-empty .btn.compact {
+  min-height: 44px;
+}
+@media (min-width: 760px) {
+  .cf-pick-list {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* Crop library default view: chips under the crop name (CropFitCrops.tsx). */
+.farm-crop-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 4px;
+}
+.farm-crop-chips:empty {
+  display: none;
+}

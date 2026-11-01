@@ -1,10 +1,22 @@
 import type { BasisRef, FarmWorkspaceState, StageTimeline, YearPlanScenario } from '@harvest/contracts';
-import { agronomyCrop, agronomySources, durationFor, poolEntry, seasonOfMonth, windowsFor } from './data';
+import { agronomyCrop, agronomySources, cropDisplayName, durationFor, IC_PREFIX, intercropSystem, poolEntry, seasonOfMonth, windowsFor } from './data';
 import { addDays, addYears, daysBetween, isCalendarDate, monthOf, overlaps } from './dates';
 import type { StageTimelineInput } from '../today/stage-timeline';
 import { placeWindows } from './windows';
 import { ASSUMPTIONS, assumptionBasis, irrigationClass } from './scoring';
-import type { EngineContext, FixedSlot, HarvestRange, OccupiedInterval } from './types';
+import type { DateRange, EngineContext, FixedSlot, HarvestRange, OccupiedInterval } from './types';
+
+/** Round 3 (ROUND3_SPEC 1): later horizons 1..3 after the current one. */
+export const MAX_YEAR_INDEX = 3;
+const MONTH_ABBR = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'] as const;
+/** "Oct 2026" from an ISO date. */
+export const monthYear = (d: string): string => `${MONTH_ABBR[Number(d.slice(5, 7)) - 1]} ${d.slice(0, 4)}`;
+/** `from` is not the start of the current or a later horizon; `allowed` lists the valid dates (current first). */
+export class HorizonError extends Error {
+  constructor(readonly allowed: string[]) { super(`from must be one of ${allowed.join(', ')}`); this.name = 'HorizonError'; }
+}
+/** The previous horizon's first plan, used as the predecessor when nothing recorded or saved ends in that horizon. */
+export interface AssumedPredecessorInput { cropId: string; cropName?: string | undefined; occupancy: DateRange; optionLabel: string | null; horizonFrom: string; reviewId: string; signature: string }
 
 /** Minimal farm view (FarmOut-compatible). Facts follow farm_facts: only farmer-reported, lab or confirmed values count. */
 export interface ScenarioFarm {
@@ -28,6 +40,10 @@ export interface BuildScenarioArgs {
    * service always passes the real `stageTimeline`.
    */
   timeline?: TimelineFn | undefined;
+  /** Round 3: start of a later horizon (from_1..from_3); null, absent or the current start = the current horizon. */
+  horizonFrom?: string | null | undefined;
+  /** Round 3: resolved by the service from the previous horizon's ready review (future horizons only). */
+  assumedPredecessor?: AssumedPredecessorInput | null | undefined;
 }
 
 function factValue(farm: ScenarioFarm, key: string): unknown {
@@ -152,7 +168,16 @@ export function buildScenario(args: BuildScenarioArgs): EngineContext {
   for (const p of workspace.rotationPlans) {
     if (!p.plannedSowingDate) { warnings.push(`Saved season ${p.season} ${p.year} (${p.cropId}) has no planned sowing date and cannot be placed on the calendar.`); continue; }
     const o = occupancyFor(p.cropId, p.productId ?? null, null, p.plannedSowingDate, p.plannedHarvestDate ?? null, stateId);
-    occupied.push({ id: p.id, cropId: p.cropId, source: 'rotation_plan', from: p.plannedSowingDate, to: o.to, basis: o.basis === 'recorded' ? 'planned' : o.basis, note: o.notes[0] ?? null });
+    // An intercrop season with a sourced system nitrogen credit is a legume predecessor for rotation (token ic:<systemId>).
+    const rotId = p.kind === 'intercrop' && p.companion?.systemId && intercropSystem(p.companion.systemId)?.nitrogenCredit?.sourced ? `${IC_PREFIX}${p.companion.systemId}` : p.cropId;
+    occupied.push({ id: p.id, cropId: rotId, source: 'rotation_plan', from: p.plannedSowingDate, to: o.to, basis: o.basis === 'recorded' ? 'planned' : o.basis, note: o.notes[0] ?? null });
+  }
+  const futures = Array.from({ length: MAX_YEAR_INDEX }, (_, i) => addYears(horizon.to, i));
+  const horizonStarts = { current: { ...horizon }, futures };
+  if (args.horizonFrom && args.horizonFrom !== horizon.from) {
+    const k = futures.indexOf(args.horizonFrom);
+    if (k < 0) throw new HorizonError([horizon.from, ...futures]);
+    return futureScenario(args, { yearIndex: k + 1, horizonStarts, current, fixedSlot, occupied, stateId, districtId, irrigation, irrigationText, excludedCropIds, warnings });
   }
   const inHorizon = occupied.filter((o) => overlaps(o.from, o.to, horizon.from, horizon.to)).sort((a, b) => a.from.localeCompare(b.from) || a.id.localeCompare(b.id));
 
@@ -165,7 +190,7 @@ export function buildScenario(args: BuildScenarioArgs): EngineContext {
 
   const starts = [asOf, horizon.from, ...(fixedSlot ? [fixedSlot.occupancy.to] : [])].sort();
   const scenario: YearPlanScenario = {
-    kind: current ? 'occupied' : 'fresh', horizon, currentCycleId: current?.id ?? null, previousCropId,
+    kind: current ? 'occupied' : 'fresh', horizon, yearIndex: 0, currentCycleId: current?.id ?? null, previousCropId,
     fieldAreaHa: farm.areaHectares, irrigationCategory: irrigationText, stateId, districtId,
     soilSummary: args.soilSummary ?? null, neighbourhoodActiveMonths: args.neighbourhoodActiveMonths ?? null,
   };
@@ -174,5 +199,65 @@ export function buildScenario(args: BuildScenarioArgs): EngineContext {
   return {
     scenario, horizon, asOf, stateId, districtId, irrigation, fixedSlot, occupied: inHorizon, previousCropId,
     transitionFromCropId: current ? current.cropId : previousCropId, excludedCropIds, earliestSowing: starts.at(-1)!, warnings, names: args.names,
+    yearIndex: 0, horizonStarts, assumed: null,
+  };
+}
+
+interface FutureParts {
+  yearIndex: number; horizonStarts: { current: DateRange; futures: string[] }; current: FarmWorkspaceState['cycles'][number] | null; fixedSlot: FixedSlot | null;
+  occupied: OccupiedInterval[]; stateId: string | null; districtId: string | null; irrigation: EngineContext['irrigation']; irrigationText: string | null; excludedCropIds: string[]; warnings: string[];
+}
+
+/**
+ * Round 3 (ROUND3_SPEC 1.1 item 2): a later 12-month horizon. No fixed slot; occupied = cycles (the current one with the
+ * release the current plan uses) and saved seasons overlapping the horizon; earliestSowing = max(horizon start, today,
+ * release of anything that started before it). Previous crop: the latest-ending recorded or saved crop that ends inside the
+ * previous horizon (the current cycle counts only when it runs into this horizon, since the current plan follows it);
+ * otherwise the last slot of the previous horizon's first plan (assumed, occupied with basis 'planned'); otherwise none.
+ */
+function futureScenario(args: BuildScenarioArgs, p: FutureParts): EngineContext {
+  const { workspace, farm, asOf } = args;
+  const from = p.horizonStarts.futures[p.yearIndex - 1]!;
+  const horizon = { from, to: addYears(from, 1) };
+  const prevFrom = p.yearIndex === 1 ? p.horizonStarts.current.from : p.horizonStarts.futures[p.yearIndex - 2]!;
+  const all: OccupiedInterval[] = [
+    ...(p.current && p.fixedSlot ? [{ id: p.current.id, cropId: p.current.cropId, source: 'cycle' as const, from: p.fixedSlot.occupancy.from, to: p.fixedSlot.occupancy.to, basis: p.fixedSlot.harvestBasis, note: null }] : []),
+    ...p.occupied,
+  ];
+  let earliest = horizon.from > asOf ? horizon.from : asOf;
+  for (const o of all) if (o.from < horizon.from && o.to > earliest) earliest = o.to;
+  type Ended = { cropId: string; end: string; basis: 'current_cycle' | 'saved_season' | 'previous_harvest' };
+  const ended: Ended[] = [
+    ...workspace.cycles.filter((c) => c.stage === 'harvested' && c.harvestDate).map((c): Ended => ({ cropId: c.cropId, end: c.harvestDate!, basis: 'previous_harvest' })),
+    ...(workspace.previousHarvest.status === 'known' ? [{ cropId: workspace.previousHarvest.cropId, end: workspace.previousHarvest.harvestDate, basis: 'previous_harvest' as const }] : []),
+    ...all.filter((o) => !(p.current && o.id === p.current.id && o.to <= horizon.from)).map((o): Ended => ({ cropId: o.cropId, end: o.to, basis: o.source === 'cycle' ? 'current_cycle' : 'saved_season' })),
+  ].filter((e) => e.end > prevFrom && e.end <= earliest).sort((a, b) => b.end.localeCompare(a.end) || a.cropId.localeCompare(b.cropId));
+  const occupied = all.filter((o) => overlaps(o.from, o.to, horizon.from, horizon.to));
+  const nameOf = (id: string) => (args.names?.crop?.[id] ?? cropDisplayName(id)).slice(0, 120);
+  let previousCropId: string | null = ended[0]?.cropId ?? null;
+  let assumedPredecessor: YearPlanScenario['assumedPredecessor'] = ended[0] ? { cropId: ended[0].cropId.slice(0, 120), cropName: nameOf(ended[0].cropId), basis: ended[0].basis, optionLabel: null, horizonFrom: null } : null;
+  let assumed: EngineContext['assumed'] = null;
+  const a = args.assumedPredecessor;
+  if (!ended.length && a) {
+    previousCropId = a.cropId;
+    assumedPredecessor = { cropId: a.cropId.slice(0, 120), cropName: (a.cropName ?? nameOf(a.cropId)).slice(0, 120), basis: 'year_plan_option', optionLabel: a.optionLabel ? a.optionLabel.slice(0, 60) : null, horizonFrom: a.horizonFrom };
+    assumed = { reviewId: a.reviewId, signature: a.signature };
+    if (overlaps(a.occupancy.from, a.occupancy.to, horizon.from, horizon.to)) occupied.push({ id: `assumed:${a.reviewId}`, cropId: a.cropId, source: 'rotation_plan', from: a.occupancy.from, to: a.occupancy.to, basis: 'planned', note: `Assumed from the ${a.optionLabel ?? 'first'} plan of the previous year (not saved).` });
+    if (a.occupancy.from < horizon.from && a.occupancy.to > earliest) earliest = a.occupancy.to;
+  } else if (!ended.length) {
+    p.warnings.push(`Nothing is recorded or saved for ${monthYear(prevFrom)} to ${monthYear(horizon.from)} and that year has no finished plan: generate the plan for that year first so this one can follow it. The rotation part is neutral.`);
+  }
+  occupied.sort((x, y) => x.from.localeCompare(y.from) || x.id.localeCompare(y.id));
+  const scenario: YearPlanScenario = {
+    kind: 'future', horizon, yearIndex: p.yearIndex, currentCycleId: null, previousCropId, assumedPredecessor,
+    fieldAreaHa: farm.areaHectares, irrigationCategory: p.irrigationText, stateId: p.stateId, districtId: p.districtId,
+    soilSummary: args.soilSummary ?? null, neighbourhoodActiveMonths: args.neighbourhoodActiveMonths ?? null,
+  };
+  if (!p.stateId) p.warnings.push('The farm has no state; no sourced windows, yields or costs can be matched.');
+  if (!p.districtId) p.warnings.push('The farm has no resolved district; district windows and yields cannot be used.');
+  return {
+    scenario, horizon, asOf, stateId: p.stateId, districtId: p.districtId, irrigation: p.irrigation, fixedSlot: null, occupied, previousCropId,
+    transitionFromCropId: previousCropId, excludedCropIds: p.excludedCropIds, earliestSowing: earliest, warnings: p.warnings, names: args.names,
+    yearIndex: p.yearIndex, horizonStarts: p.horizonStarts, assumed,
   };
 }

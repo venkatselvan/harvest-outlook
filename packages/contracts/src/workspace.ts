@@ -65,6 +65,19 @@ export const RotationPlan = z.object({
   productName: z.string().trim().min(1).max(120).optional(),
   plannedSowingDate: z.iso.date().optional(), plannedHarvestDate: z.iso.date().optional(),
   notes: z.string().trim().max(2000).optional(),
+  /** Round 3: establishment method the plan assumed (year-plan apply writes it); the season preview dates care steps from it. */
+  establishmentMethod: z.string().trim().min(1).max(80).optional(),
+  /** Round 3: a green manure or an intercrop season (ROUND3_SPEC.md section 8); absent = a sole crop. */
+  kind: z.enum(['crop', 'green_manure', 'intercrop']).optional(),
+  /** Round 3: the companion crop of an intercrop season; cropId/productId above are the main crop's. */
+  companion: z.object({
+    systemId: z.string().trim().min(1).max(120).optional(),
+    cropId: z.string().trim().min(1).max(120),
+    cropName: z.string().trim().min(1).max(120).optional(),
+    productId: z.string().trim().min(1).max(200).optional(),
+    productName: z.string().trim().min(1).max(120).optional(),
+    rowRatio: z.string().trim().min(1).max(20),
+  }).strict().optional(),
 }).strict().superRefine((r, ctx) => {
   if(r.productName&&!r.productId)ctx.addIssue({code:'custom',message:'productName requires productId',path:['productId']});
   if (r.plannedSowingDate && Number(r.plannedSowingDate.slice(0, 4)) !== r.year) ctx.addIssue({ code: 'custom', message: 'year must match the planned sowing year', path: ['year'] });

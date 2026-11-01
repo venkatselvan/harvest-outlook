@@ -7,22 +7,28 @@ import { requireAuth } from '../security/session';
 import { envelope } from '../envelope';
 import { envelopeSchema, uuidParam } from './schemas/common';
 import { ensureCropFit, type CropFitDeps } from '../services/crop-fit/service';
+import { AFTER_PATTERN } from '../services/crop-fit/rank';
 import { ApiError } from '../services/errors';
 
 /**
  * Query of GET/POST /api/v1/farms/:id/crop-fit. `season` is required with mode=season; `sowing` (YYYY-MM-DD, today or
- * later, at most 400 days ahead) applies to mode=date and defaults to today. Parameters that do not apply to the mode are
- * ignored, so the cached review depends only on the effective request. No mode: `next` when a crop is growing, else `date`.
+ * later, at most SOWING_LIMIT_DAYS ahead: through the end of the last later year-plan horizon, plan year 3, which on a
+ * fresh field ends about today + 1,461 days) applies to mode=date and defaults to today;
+ * `after` (a crop id, round 3) applies to mode=date and replaces the field's own previous crop (the swap sheet passes the
+ * crop before the edited slot). Parameters that do not apply to the mode are ignored, so the cached review depends only
+ * on the effective request. No mode: `next` when a crop is growing, else `date`.
  */
+export const SOWING_LIMIT_DAYS = 1461;
 export const CropFitQuery = z.object({
   mode: CropFitMode.optional(),
   season: CropSeason.optional(),
   sowing: z.iso.date().optional(),
+  after: z.string().max(120).regex(AFTER_PATTERN, 'after must be a crop id').optional(),
 }).strict().superRefine((q, ctx) => {
   if (q.mode === 'season' && !q.season) ctx.addIssue({ code: 'custom', path: ['season'], message: 'season is required when mode is season' });
 });
 
-const DESCRIPTION = 'Crop fit v2 (ROUND2_SPEC 4.1): every pool crop scored by code for one sowing date, compared with the confirmed soil markers, and three picks (Meta, or calculated when Meta is unavailable). GET returns the ready review for the current inputs or starts one (status pending) and enqueues farm.crop-fit once; poll GET while pending or running.';
+const DESCRIPTION = 'Crop fit v3 (ROUND3_SPEC 5): next and season use the year plan candidates, dates, normaliser and slot scores (next ranks by score less the wait penalty); date scores every pool crop for one sowing date (optional after = previous crop), compared with the confirmed soil markers, and three picks (Meta, or calculated when Meta is unavailable). GET returns the ready review for the current inputs or starts one (status pending) and enqueues farm.crop-fit once; poll GET while pending or running.';
 
 /** Owner-private; not registered here (routes/index.ts owns registration). */
 export async function cropFitRoutes(app: FastifyInstance, deps: CropFitDeps) {
@@ -32,8 +38,8 @@ export async function cropFitRoutes(app: FastifyInstance, deps: CropFitDeps) {
   const checkSowing = (sowing: string | undefined, mode: string | undefined) => {
     if (!sowing || (mode !== undefined && mode !== 'date')) return;
     const t = today();
-    const limit = new Date(Date.parse(`${t}T00:00:00Z`) + 400 * 86_400_000).toISOString().slice(0, 10);
-    if (sowing < t || sowing > limit) throw new ApiError(400, 'validation_error', 'sowing must be today or later and at most 400 days ahead');
+    const limit = new Date(Date.parse(`${t}T00:00:00Z`) + SOWING_LIMIT_DAYS * 86_400_000).toISOString().slice(0, 10);
+    if (sowing < t || sowing > limit) throw new ApiError(400, 'validation_error', `sowing must be today or later and at most ${SOWING_LIMIT_DAYS} days ahead`);
   };
   r.get('/api/v1/farms/:id/crop-fit', { schema: { tags: ['farms'], description: DESCRIPTION, params: uuidParam, querystring: CropFitQuery, response: { 200: envelopeSchema(CropFitReview) } } }, async (req, reply) => {
     reply.header('cache-control', 'private, no-store');

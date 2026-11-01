@@ -1,0 +1,790 @@
+{
+  "generatedAt": "2026-11-01",
+  "purpose": "Sourced intercropping (row intercrop) systems for rotation pool crops in Hassan, Karnataka and Coimbatore, Tamil Nadu, with yield shares or land equivalent ratios for the year-plan engine (ROUND3_SPEC section 8.1).",
+  "status": "research_candidate_unreviewed",
+  "conventions": {
+    "yieldShare": "fraction of the sole-crop regional yield at the stated row ratio (partial LER). Derived only from printed figures; the arithmetic is in basis. Where a source prints the total LER and the main-crop yields but grew no sole companion, companion share = printed LER minus the main-crop share, stated as such.",
+    "ler": "land equivalent ratio as printed; min/max span the printed treatments of that system (establishment method, nitrogen source or year)",
+    "regions": "crop-agronomy.json region ids. IN-KA-hassan only for Hassan sources; IN-TN-coimbatore only for Coimbatore sources; other Karnataka or Tamil Nadu districts are IN-KA or IN-TN with the district named in notes",
+    "season": "kharif, rabi or summer; null when the source does not name the season (the engine should treat null as the main crop's own season)",
+    "condition": "rainfed, irrigated or any; any also covers sources that do not state the water regime (see notes)",
+    "rowRatio": "main:companion rows as printed; null when the source names the combination without a ratio",
+    "companionHarvest": "before_main, after_main or with_main; null when neither the source nor its printed durations settle it",
+    "reviewStatus": "sourced when yield shares or LER come from the cited source for that system; provisional when the source prints only the combination or row ratio (yieldShare and ler null)"
+  },
+  "systems": [
+    {
+      "id": "ka-hassan-ragi-blackgram-4-1",
+      "name": "Finger millet + black gram",
+      "mainCropId": "finger-millet",
+      "mainProductId": "finger-millet-grain",
+      "companionCropId": "black-gram",
+      "companionProductId": "black-gram-whole",
+      "rowRatio": "4:1",
+      "arrangement": "row",
+      "regions": [
+        "IN-KA-hassan"
+      ],
+      "season": "kharif",
+      "condition": "any",
+      "sowingWindow": null,
+      "companionHarvest": "before_main",
+      "yieldShare": {
+        "main": {
+          "min": 0.85,
+          "max": 0.91
+        },
+        "companion": {
+          "min": 0.16,
+          "max": 0.2
+        },
+        "basis": "Table 2 grain yields (kg/ha), 4:1 row proportion. Transplanted finger millet: 2870/3146 = 0.912 and black gram 213/1066 = 0.200 (sum 1.11, equal to the printed LER). Direct-sown: 2466/2886 = 0.854 and 166/1053 = 0.158 (sum 1.01, equal to the printed LER). The PDF text layer misaligns Table 2, so the columns were reassigned. The sums reproduce the Table 1 LERs, which confirms the assignment.",
+        "source": "MJAS-2020-GIRISHA"
+      },
+      "ler": {
+        "min": 1.01,
+        "max": 1.11,
+        "source": "MJAS-2020-GIRISHA"
+      },
+      "seedRateShare": null,
+      "nitrogenCreditKgPerHa": null,
+      "notes": [
+        "Single-site trial at Agriculture College, Karekere, Hassan (UAS Bangalore), kharif 2012-13 per abstract; sowing 21 July 2013, transplanting 13 August 2013. GPU 28 finger millet, T-9 black gram.",
+        "LER 1.11 transplanted, 1.01 direct-sown; 1:1, 2:1 and 3:1 ratios gave LER below 1.0 (0.82-0.98).",
+        "The extracted text does not state rainfed or irrigated, so condition is any (unverified). Transplanting implies at least water at establishment.",
+        "companionHarvest before_main is from crop durations (short-duration black gram vs GPU 28). The paper's extracted text does not print durations.",
+        "The black gram sole yield in this trial is low (about 1.05-1.07 t/ha). Companion shares are relative to that sole yield."
+      ],
+      "reviewStatus": "sourced",
+      "sources": [
+        "MJAS-2020-GIRISHA"
+      ]
+    },
+    {
+      "id": "tn-cbe-cotton-blackgram",
+      "name": "Cotton + black gram",
+      "mainCropId": "cotton",
+      "mainProductId": "cotton-kapas",
+      "companionCropId": "black-gram",
+      "companionProductId": "black-gram-whole",
+      "rowRatio": null,
+      "arrangement": "row",
+      "regions": [
+        "IN-TN-coimbatore"
+      ],
+      "season": "kharif",
+      "condition": "any",
+      "sowingWindow": null,
+      "companionHarvest": "before_main",
+      "yieldShare": {
+        "main": {
+          "min": 0.93,
+          "max": 0.93
+        },
+        "companion": {
+          "min": 0.26,
+          "max": 0.56
+        },
+        "basis": "Main: intercropped seed cotton 1900 / sole cotton 2040 kg/ha (Table 4, pooled mean over N sources) = 0.931. No sole black gram was grown, so companion = printed LER (Table 5, 1.19-1.49 across N sources) minus 0.931 = 0.26-0.56. This is approximate, because the main share varies with the N source.",
+        "source": "MAJ-2009-JAYAKUMAR"
+      },
+      "ler": {
+        "min": 1.19,
+        "max": 1.49,
+        "source": "MAJ-2009-JAYAKUMAR"
+      },
+      "seedRateShare": null,
+      "nitrogenCreditKgPerHa": null,
+      "notes": [
+        "TNAU Coimbatore field trial, winter season (August-January) 2002-03 and 2003-04, cotton MCU 12 at 75 x 30 cm. The intercrop was sown between the cotton rows; the number of intercrop rows per inter-row is not printed, so rowRatio is null.",
+        "The source calls the season winter (August sowing). It is mapped to kharif by sowing month; the orchestrator may prefer rabi.",
+        "The water regime is not stated in the extracted text, so condition is any (unverified).",
+        "Pooled intercrop black gram yield is 447 kg/ha. The column was assigned by checking that the seed cotton equivalent arithmetic gives the same price ratio (about 0.87) for black gram and green gram.",
+        "Cotton + black gram had the highest LER among the intercrops tested, on par with cotton + green gram, and the highest net return (B:C 3.34 with 25% N through poultry manure)."
+      ],
+      "reviewStatus": "sourced",
+      "sources": [
+        "MAJ-2009-JAYAKUMAR"
+      ]
+    },
+    {
+      "id": "tn-cbe-cotton-greengram",
+      "name": "Cotton + green gram",
+      "mainCropId": "cotton",
+      "mainProductId": "cotton-kapas",
+      "companionCropId": "green-gram",
+      "companionProductId": "green-gram-whole",
+      "rowRatio": null,
+      "arrangement": "row",
+      "regions": [
+        "IN-TN-coimbatore"
+      ],
+      "season": "kharif",
+      "condition": "any",
+      "sowingWindow": null,
+      "companionHarvest": "before_main",
+      "yieldShare": {
+        "main": {
+          "min": 0.83,
+          "max": 0.83
+        },
+        "companion": {
+          "min": 0.31,
+          "max": 0.59
+        },
+        "basis": "Main: 1687 / 2040 kg/ha seed cotton (Table 4 pooled) = 0.827. Companion = printed LER (Table 5, 1.14-1.42 across N sources) minus 0.827 = 0.31-0.59. No sole green gram was grown.",
+        "source": "MAJ-2009-JAYAKUMAR"
+      },
+      "ler": {
+        "min": 1.14,
+        "max": 1.42,
+        "source": "MAJ-2009-JAYAKUMAR"
+      },
+      "seedRateShare": null,
+      "nitrogenCreditKgPerHa": null,
+      "notes": [
+        "Same trial as tn-cbe-cotton-blackgram; the intercrop was sown between the cotton rows and the ratio is not printed.",
+        "Pooled intercrop green gram yield is 396 kg/ha (column assignment as for black gram).",
+        "Season mapping and the unstated water regime are as in tn-cbe-cotton-blackgram."
+      ],
+      "reviewStatus": "sourced",
+      "sources": [
+        "MAJ-2009-JAYAKUMAR"
+      ]
+    },
+    {
+      "id": "tn-cbe-cotton-onion",
+      "name": "Cotton + onion",
+      "mainCropId": "cotton",
+      "mainProductId": "cotton-kapas",
+      "companionCropId": "onion",
+      "companionProductId": "onion-bulb",
+      "rowRatio": null,
+      "arrangement": "row",
+      "regions": [
+        "IN-TN-coimbatore"
+      ],
+      "season": "kharif",
+      "condition": "any",
+      "sowingWindow": null,
+      "companionHarvest": "before_main",
+      "yieldShare": {
+        "main": {
+          "min": 0.87,
+          "max": 0.87
+        },
+        "companion": {
+          "min": 0.18,
+          "max": 0.4
+        },
+        "basis": "Main: 1783 / 2040 kg/ha seed cotton (Table 4 pooled) = 0.874. Companion = printed LER (Table 5, 1.05-1.27 across N sources) minus 0.874 = 0.18-0.40. No sole onion was grown.",
+        "source": "MAJ-2009-JAYAKUMAR"
+      },
+      "ler": {
+        "min": 1.05,
+        "max": 1.27,
+        "source": "MAJ-2009-JAYAKUMAR"
+      },
+      "seedRateShare": null,
+      "nitrogenCreditKgPerHa": null,
+      "notes": [
+        "Same trial as tn-cbe-cotton-blackgram. The pooled intercrop onion yield is 3724 kg/ha. This system gave the highest seed cotton equivalent yield (2435 kg/ha) but the lowest LER of the cotton intercrops.",
+        "The onion type (small onion or bellary) is not stated in the extracted text.",
+        "Season mapping and the unstated water regime are as in tn-cbe-cotton-blackgram."
+      ],
+      "reviewStatus": "sourced",
+      "sources": [
+        "MAJ-2009-JAYAKUMAR"
+      ]
+    },
+    {
+      "id": "tn-salem-cotton-blackgram-1-3-rainfed",
+      "name": "Cotton + black gram (rainfed Vertisol)",
+      "mainCropId": "cotton",
+      "mainProductId": "cotton-kapas",
+      "companionCropId": "black-gram",
+      "companionProductId": "black-gram-whole",
+      "rowRatio": "1:3",
+      "arrangement": "row",
+      "regions": [
+        "IN-TN"
+      ],
+      "season": "kharif",
+      "condition": "rainfed",
+      "sowingWindow": null,
+      "companionHarvest": "before_main",
+      "yieldShare": null,
+      "ler": null,
+      "seedRateShare": null,
+      "nitrogenCreditKgPerHa": null,
+      "notes": [
+        "Farmer's field at Thittacheri, Thalaivasal block, Salem district, Tamil Nadu; kharif 2018-19; rainfed Vertisol, with supplemental-irrigation strips that did not change LER significantly. Bt cotton RCH BGII 659 and black gram VBN 6.",
+        "Printed durations: cotton 150 days, black gram 65 days.",
+        "Caution: the LER is unusually high, and sole cotton is 2084 kg/ha in Table 1 but 2362 kg/ha (cotton equivalent) in Table 2. Treat the companion share as an upper-end single-season value, and prefer tn-cbe-cotton-blackgram for Coimbatore.",
+        "Orchestrator review 2026-11-01: downgraded to provisional because the paper's two tables disagree on the sole cotton yield; the printed figures were main share {\"min\": 0.97, \"max\": 0.97}, companion share {\"min\": 0.92, \"max\": 0.92}, LER {\"min\": 1.89, \"max\": 1.89, \"source\": \"JPP-2019-SUGANTHI\"}. The engine uses the fallback shares for this system (flagged)."
+      ],
+      "reviewStatus": "provisional",
+      "sources": [
+        "JPP-2019-SUGANTHI"
+      ]
+    },
+    {
+      "id": "tn-ragi-blackgram-2-1-sri",
+      "name": "Finger millet (SRI) + black gram",
+      "mainCropId": "finger-millet",
+      "mainProductId": "finger-millet-grain",
+      "companionCropId": "black-gram",
+      "companionProductId": "black-gram-whole",
+      "rowRatio": "2:1",
+      "arrangement": "row",
+      "regions": [
+        "IN-TN"
+      ],
+      "season": null,
+      "condition": "irrigated",
+      "sowingWindow": null,
+      "companionHarvest": null,
+      "yieldShare": null,
+      "ler": {
+        "min": 1.12,
+        "max": 1.12,
+        "source": "MJAS-2020-ABINAYA"
+      },
+      "seedRateShare": null,
+      "nitrogenCreditKgPerHa": null,
+      "notes": [
+        "Annamalai University, Chidambaram, Cuddalore district, Tamil Nadu. Finger millet was transplanted under SRI principles with irrigation; sole finger millet grain yield was 4320 kg/ha.",
+        "The LER of 1.12 is printed in the abstract. The intercrop yield rows in Table 2 cannot be attributed reliably from the text layer, so yieldShare is null; the engine should use fallback shares with this LER.",
+        "The season is not captured in the extracted text."
+      ],
+      "reviewStatus": "sourced",
+      "sources": [
+        "MJAS-2020-ABINAYA"
+      ]
+    },
+    {
+      "id": "ka-hassan-potato-redgram-6-1",
+      "name": "Potato + pigeon pea",
+      "mainCropId": "potato",
+      "mainProductId": "potato-fresh",
+      "companionCropId": "pigeon-pea",
+      "companionProductId": "pigeon-pea-whole",
+      "rowRatio": "6:1",
+      "arrangement": "row",
+      "regions": [
+        "IN-KA-hassan"
+      ],
+      "season": "kharif",
+      "condition": "rainfed",
+      "sowingWindow": null,
+      "companionHarvest": "after_main",
+      "yieldShare": null,
+      "ler": null,
+      "seedRateShare": null,
+      "nitrogenCreditKgPerHa": null,
+      "notes": [
+        "CRIDA Hassan plan, Table 2.1.1 (rainfed), Zone-7 deep red soils in plains: normal system 'Potato with Redgram/castor as intercrop 6:1', with Kufri Jyothi potato.",
+        "Terminal drought advice (p24): only the redgram or castor intercrop remains after potato, and no second crop should be planned in redgram/castor. That is why companionHarvest is after_main.",
+        "The plan prints no yields; it is a 2011 contingency plan."
+      ],
+      "reviewStatus": "provisional",
+      "sources": [
+        "CRIDA-HAS"
+      ]
+    },
+    {
+      "id": "ka-hassan-ragi-redgram-8-1",
+      "name": "Finger millet + pigeon pea",
+      "mainCropId": "finger-millet",
+      "mainProductId": "finger-millet-grain",
+      "companionCropId": "pigeon-pea",
+      "companionProductId": "pigeon-pea-whole",
+      "rowRatio": "8:1",
+      "arrangement": "row",
+      "regions": [
+        "IN-KA-hassan"
+      ],
+      "season": "kharif",
+      "condition": "rainfed",
+      "sowingWindow": null,
+      "companionHarvest": "after_main",
+      "yieldShare": null,
+      "ler": null,
+      "seedRateShare": null,
+      "nitrogenCreditKgPerHa": null,
+      "notes": [
+        "CRIDA Hassan plan: 'Ragi with pulses as intercrop 8:1' for Zone-6 shallow to medium deep soils (p24). 'Ragi + Redgram' is named as the normal system in Table 2.1.1 (pp13-14, 18-19). The 8:1 ratio is printed for pulses in general, not for redgram alone.",
+        "UAS Bangalore technologies list finger millet + pigeonpea at 8:2 (transplanted pigeonpea raised pigeonpea yield 58% and finger millet 70% over drill-sown; p48) and 10:2 seed-drill sowing (p60). Those percentages compare against a drill-sown intercrop, not a sole crop, so they are not yield shares.",
+        "No Karnataka or Tamil Nadu finger millet + pigeon pea LER was found in this pass."
+      ],
+      "reviewStatus": "provisional",
+      "sources": [
+        "CRIDA-HAS",
+        "UASB-TECH"
+      ]
+    },
+    {
+      "id": "ka-hassan-groundnut-redgram",
+      "name": "Groundnut + pigeon pea",
+      "mainCropId": "groundnut",
+      "mainProductId": "groundnut-pod",
+      "companionCropId": "pigeon-pea",
+      "companionProductId": "pigeon-pea-whole",
+      "rowRatio": null,
+      "arrangement": "row",
+      "regions": [
+        "IN-KA-hassan"
+      ],
+      "season": "kharif",
+      "condition": "rainfed",
+      "sowingWindow": null,
+      "companionHarvest": "after_main",
+      "yieldShare": null,
+      "ler": null,
+      "seedRateShare": null,
+      "nitrogenCreditKgPerHa": null,
+      "notes": [
+        "CRIDA Hassan plan, Table 2.1.1: 'Groundnut + Redgram' is named as a normal or contingency system (pp13-14, 16, 18) without a row ratio. TNAU prints 6:1 or 4:1 for Tamil Nadu (see tn-groundnut-redgram-6-1 and tn-groundnut-redgram-4-1).",
+        "The plan also suggests a second crop of groundnut (GPBD-4) 'with pulse intercrop 12:1' after mid-season drought (p23). The pulse is not named, so no system was encoded.",
+        "UAS Bangalore lists groundnut : redgram : groundnut : cowpea at 4:2:4:1, with cowpea as a red hairy caterpillar trap crop (p49); there are no yield shares."
+      ],
+      "reviewStatus": "provisional",
+      "sources": [
+        "CRIDA-HAS",
+        "UASB-TECH"
+      ]
+    },
+    {
+      "id": "tn-groundnut-redgram-6-1",
+      "name": "Groundnut + long-duration pigeon pea",
+      "mainCropId": "groundnut",
+      "mainProductId": "groundnut-pod",
+      "companionCropId": "pigeon-pea",
+      "companionProductId": "pigeon-pea-whole",
+      "rowRatio": "6:1",
+      "arrangement": "row",
+      "regions": [
+        "IN-TN"
+      ],
+      "season": null,
+      "condition": "rainfed",
+      "sowingWindow": null,
+      "companionHarvest": "after_main",
+      "yieldShare": null,
+      "ler": null,
+      "seedRateShare": null,
+      "nitrogenCreditKgPerHa": null,
+      "notes": [
+        "TNAU redgram crop production page, section 10 Inter-cropping: one row of long-duration redgram for every six rows of groundnut, recommended for rainfed crops. The season is not named.",
+        "The same page prints a redgram seed rate of 3 kg/ha for a mixed crop against 8 kg/ha for a sole crop for the first variety group. The table layout is ambiguous, so seedRateShare is left null.",
+        "TNAU statewide recommendation, applied to Coimbatore only through IN-TN."
+      ],
+      "reviewStatus": "provisional",
+      "sources": [
+        "TNAU-REDGRAM-CP"
+      ]
+    },
+    {
+      "id": "tn-groundnut-redgram-4-1",
+      "name": "Groundnut + short or medium-duration pigeon pea",
+      "mainCropId": "groundnut",
+      "mainProductId": "groundnut-pod",
+      "companionCropId": "pigeon-pea",
+      "companionProductId": "pigeon-pea-whole",
+      "rowRatio": "4:1",
+      "arrangement": "row",
+      "regions": [
+        "IN-TN"
+      ],
+      "season": null,
+      "condition": "any",
+      "sowingWindow": null,
+      "companionHarvest": "after_main",
+      "yieldShare": null,
+      "ler": null,
+      "seedRateShare": null,
+      "nitrogenCreditKgPerHa": null,
+      "notes": [
+        "TNAU redgram page, section 10: one row of short or medium-duration redgram for every four rows of groundnut, recommended for rainfed and irrigated crops. Condition any reflects that wording."
+      ],
+      "reviewStatus": "provisional",
+      "sources": [
+        "TNAU-REDGRAM-CP"
+      ]
+    },
+    {
+      "id": "tn-ragi-redgram-4-1",
+      "name": "Finger millet + pigeon pea",
+      "mainCropId": "finger-millet",
+      "mainProductId": "finger-millet-grain",
+      "companionCropId": "pigeon-pea",
+      "companionProductId": "pigeon-pea-whole",
+      "rowRatio": "4:1",
+      "arrangement": "row",
+      "regions": [
+        "IN-TN"
+      ],
+      "season": null,
+      "condition": "rainfed",
+      "sowingWindow": null,
+      "companionHarvest": "after_main",
+      "yieldShare": null,
+      "ler": null,
+      "seedRateShare": null,
+      "nitrogenCreditKgPerHa": null,
+      "notes": [
+        "TNAU ragi crop production page, Intercropping: finger millet with pigeon pea at 4:1 is recommended for rainfed situations. No season or yields are printed.",
+        "companionHarvest after_main assumes a pigeon pea of longer duration than ragi; the page does not state it."
+      ],
+      "reviewStatus": "provisional",
+      "sources": [
+        "TNAU-RAGI"
+      ]
+    },
+    {
+      "id": "tn-cbe-groundnut-blackgram-4-1",
+      "name": "Groundnut + black gram (late NE monsoon contingency)",
+      "mainCropId": "groundnut",
+      "mainProductId": "groundnut-pod",
+      "companionCropId": "black-gram",
+      "companionProductId": "black-gram-whole",
+      "rowRatio": "4:1",
+      "arrangement": "row",
+      "regions": [
+        "IN-TN-coimbatore"
+      ],
+      "season": "rabi",
+      "condition": "rainfed",
+      "sowingWindow": null,
+      "companionHarvest": null,
+      "yieldShare": null,
+      "ler": null,
+      "seedRateShare": null,
+      "nitrogenCreditKgPerHa": null,
+      "notes": [
+        "CRIDA Coimbatore plan, early-season drought for the NE monsoon (rabi), delay by 4 weeks (2nd week of November), red and black soils: groundnut intercropped with sesame (4:1), black gram (4:1) or cowpea (6:1); pp13-14.",
+        "This is a 2011 contingency measure, not the normal Coimbatore system, and the plan prints no yields. The cowpea option is not encoded because cowpea is not a pool crop."
+      ],
+      "reviewStatus": "provisional",
+      "sources": [
+        "CRIDA-CBE"
+      ]
+    },
+    {
+      "id": "tn-cbe-groundnut-sesame-4-1",
+      "name": "Groundnut + sesame (late NE monsoon contingency)",
+      "mainCropId": "groundnut",
+      "mainProductId": "groundnut-pod",
+      "companionCropId": "sesame",
+      "companionProductId": "sesame-seed",
+      "rowRatio": "4:1",
+      "arrangement": "row",
+      "regions": [
+        "IN-TN-coimbatore"
+      ],
+      "season": "rabi",
+      "condition": "rainfed",
+      "sowingWindow": null,
+      "companionHarvest": null,
+      "yieldShare": null,
+      "ler": null,
+      "seedRateShare": null,
+      "nitrogenCreditKgPerHa": null,
+      "notes": [
+        "Same CRIDA Coimbatore contingency row as tn-cbe-groundnut-blackgram-4-1 (pp13-14). There are no yields."
+      ],
+      "reviewStatus": "provisional",
+      "sources": [
+        "CRIDA-CBE"
+      ]
+    },
+    {
+      "id": "ka-hassan-ragi-soybean-6-2",
+      "name": "Long-duration finger millet + soybean (drought contingency)",
+      "mainCropId": "finger-millet",
+      "mainProductId": "finger-millet-grain",
+      "companionCropId": "soybean",
+      "companionProductId": "soybean-seed",
+      "rowRatio": "6:2",
+      "arrangement": "row",
+      "regions": [
+        "IN-KA-hassan"
+      ],
+      "season": "kharif",
+      "condition": "rainfed",
+      "sowingWindow": null,
+      "companionHarvest": null,
+      "yieldShare": null,
+      "ler": null,
+      "seedRateShare": null,
+      "nitrogenCreditKgPerHa": null,
+      "notes": [
+        "CRIDA Hassan plan p23 (mid-season drought, Zone-7 deep red soils in plains): 'Go for long duration Ragi + Soyabean in the ratio of 6:2'. This is a contingency measure; no yields are printed."
+      ],
+      "reviewStatus": "provisional",
+      "sources": [
+        "CRIDA-HAS"
+      ]
+    },
+    {
+      "id": "ka-hassan-maize-soybean-2-1",
+      "name": "Maize + soybean (drought contingency)",
+      "mainCropId": "maize",
+      "mainProductId": "maize-grain",
+      "companionCropId": "soybean",
+      "companionProductId": "soybean-seed",
+      "rowRatio": "2:1",
+      "arrangement": "row",
+      "regions": [
+        "IN-KA-hassan"
+      ],
+      "season": "kharif",
+      "condition": "rainfed",
+      "sowingWindow": null,
+      "companionHarvest": null,
+      "yieldShare": null,
+      "ler": null,
+      "seedRateShare": null,
+      "nitrogenCreditKgPerHa": null,
+      "notes": [
+        "CRIDA Hassan plan p23: 'Maize + Soyabean in row ratio of 2:1' listed with the ragi + soybean alternative under mid-season drought (Zone-7 and Zone-4 rows). This is a contingency measure; no yields are printed.",
+        "The plan's normal system also names 'Maize+Redgram-Soybean' (pp11, 13, 16), but without a ratio."
+      ],
+      "reviewStatus": "provisional",
+      "sources": [
+        "CRIDA-HAS"
+      ]
+    },
+    {
+      "id": "ka-bhadra-maize-greengram-1-1",
+      "name": "Maize + green gram",
+      "mainCropId": "maize",
+      "mainProductId": "maize-grain",
+      "companionCropId": "green-gram",
+      "companionProductId": "green-gram-whole",
+      "rowRatio": "1:1",
+      "arrangement": "row",
+      "regions": [
+        "IN-KA"
+      ],
+      "season": "kharif",
+      "condition": "irrigated",
+      "sowingWindow": null,
+      "companionHarvest": null,
+      "yieldShare": null,
+      "ler": null,
+      "seedRateShare": null,
+      "nitrogenCreditKgPerHa": null,
+      "notes": [
+        "UAS Bangalore technologies (2006 entry, p49), Bhadra Command area (Shivamogga and Davanagere command; irrigated), kharif/summer: maize with 1:1 green gram gave maize 56 q/ha and green gram 2.4 q/ha. No sole yields are printed, so no shares can be derived.",
+        "A related 2024 entry (p47) puts 2 rows of green gram or black gram in 45/75 cm paired-row maize, with an 18% higher maize equivalent yield. That is an equivalent-yield gain, not a yield share."
+      ],
+      "reviewStatus": "provisional",
+      "sources": [
+        "UASB-TECH"
+      ]
+    },
+    {
+      "id": "ka-bhadra-maize-blackgram-2-2",
+      "name": "Maize + black gram",
+      "mainCropId": "maize",
+      "mainProductId": "maize-grain",
+      "companionCropId": "black-gram",
+      "companionProductId": "black-gram-whole",
+      "rowRatio": "2:2",
+      "arrangement": "row",
+      "regions": [
+        "IN-KA"
+      ],
+      "season": "kharif",
+      "condition": "irrigated",
+      "sowingWindow": null,
+      "companionHarvest": null,
+      "yieldShare": null,
+      "ler": null,
+      "seedRateShare": null,
+      "nitrogenCreditKgPerHa": null,
+      "notes": [
+        "UAS Bangalore technologies (2006 entry, p49), Bhadra Command area, kharif/summer: maize with 2:2 black gram gave black gram 4.5 q/ha (B:C 3.06), and the maize yield is reported as 56 q/ha on average. No sole yields are printed."
+      ],
+      "reviewStatus": "provisional",
+      "sources": [
+        "UASB-TECH"
+      ]
+    },
+    {
+      "id": "ka-cotton-groundnut-1-2",
+      "name": "Cotton + groundnut",
+      "mainCropId": "cotton",
+      "mainProductId": "cotton-kapas",
+      "companionCropId": "groundnut",
+      "companionProductId": "groundnut-pod",
+      "rowRatio": "1:2",
+      "arrangement": "row",
+      "regions": [
+        "IN-KA"
+      ],
+      "season": null,
+      "condition": "any",
+      "sowingWindow": null,
+      "companionHarvest": null,
+      "yieldShare": null,
+      "ler": null,
+      "seedRateShare": null,
+      "nitrogenCreditKgPerHa": null,
+      "notes": [
+        "UAS Bangalore technologies (2024 entry, p46): cotton + groundnut (1:2) 'recorded seed cotton yield of about 14.8 q/ha' against sole cotton at 1206 kg/ha. Read literally, the cotton share is 1480/1206 = 1.23. A share above 1 is implausible, and the figure may be a seed cotton equivalent yield, so no share is encoded.",
+        "The groundnut yield is not printed. The zone, season and water regime are not stated in the extracted entry."
+      ],
+      "reviewStatus": "provisional",
+      "sources": [
+        "UASB-TECH"
+      ]
+    }
+  ],
+  "fallback": {
+    "yieldShare": null,
+    "ler": {
+      "min": 1.16,
+      "max": 1.22
+    },
+    "source": "YU-2016-THESIS",
+    "basis": "1.16 is the median LER of 552 cereal/legume intercrop records (mean 1.17, SD 0.24; the cereal/legume chapter of the thesis, published as Yu et al. 2016, Field Crops Research 198:269-279). 1.22 (+/- 0.02) is the mean LER over all annual intercrops in the thesis meta-analysis (Yu et al. 2015, Field Crops Research 184:133-144).",
+    "note": "Used when a system has no sourced LER; flagged. The mean cereal and legume partial LERs were not captured in this pass (the HAL copy of Yu et al. 2016 was blocked), so fallback yieldShare is null. This is an orchestrator decision; see INTERCROPPING_SOURCES.md.",
+    "engineRule": "Orchestrator decision 2026-11-01 (ROUND3_SPEC.md 8.2): a provisional system, or a sourced system without yield shares, uses ASSUMPTIONS.intercropFallbackShares in the year-plan engine: main 0.83 to 0.93 (the main-crop share range of the sourced systems in this file: Hassan ragi + black gram and the Coimbatore cotton trials) and companion = fallback LER (1.16 to 1.22, YU-2016-THESIS) minus the main share, 0.23 to 0.39. A sourced LER without shares splits that LER the same way. Every such slot carries the reason intercrop_shares_assumed."
+  },
+  "sources": {
+    "CRIDA-HAS": {
+      "id": "CRIDA-HAS",
+      "url": "https://www.icar-crida.res.in/CP-2012/statewiseplans/Karnataka%20(Pdf)/GKVK,%20Bangalore/KA28-Hassan%20%2004.10.2011.pdf",
+      "title": "Agriculture Contingency Plan for District: Hassan (2011-10-04)",
+      "publisher": "ICAR-CRIDA / UAS Bangalore (GKVK)",
+      "retrievedAt": "2026-11-01",
+      "locator": "Table 2.1.1 rainfed drought: p10 and p23 (potato + redgram 6:1; ragi + soybean 6:2; maize + soybean 2:1), pp13-14, 16, 18-19 (ragi + redgram, groundnut + redgram), p24 (ragi with pulses 8:1). Read from repo copy data/raw/crida/KA28-Hassan-2011-10-04.pdf, text layer.",
+      "excerpt": "(Potato with Redgram/ castor as intercrop 6:1) ... Ragi with pulses as intercrop 8:1"
+    },
+    "CRIDA-CBE": {
+      "id": "CRIDA-CBE",
+      "url": "https://www.icar-crida.res.in/CP-2012/statewiseplans/Tamilnadu%20(pdf)/TNAU,%20Coimbattore/TN18-%20COIMBATORE%2031.03.2011.pdf",
+      "title": "Agriculture Contingency Plan for District: Coimbatore (2011-03-31)",
+      "publisher": "ICAR-CRIDA / TNAU",
+      "retrievedAt": "2026-11-01",
+      "locator": "pp13-14, early-season drought (NE monsoon), delay by 4 weeks, red and black soils",
+      "excerpt": "Groundnut ... intercropped with Sesame(4:1), Blackgram(CO 5, VBN 1,2,3, VBN(BG) 4) (4:1) or Cowpea(...) (6:1)"
+    },
+    "TNAU-RAGI": {
+      "id": "TNAU-RAGI",
+      "url": "https://agritech.tnau.ac.in/agriculture/millets_ragi.html",
+      "title": "Ragi crop production",
+      "publisher": "TNAU Agritech Portal",
+      "retrievedAt": "2026-11-01",
+      "locator": "Intercropping paragraph (after Manuring and fertilization)",
+      "excerpt": "Finger millet based inter cropping system with pigeon pea at 4:1 ratio is recommended for rainfed situation to obtain high grain yield"
+    },
+    "TNAU-REDGRAM-CP": {
+      "id": "TNAU-REDGRAM-CP",
+      "url": "https://agritech.tnau.ac.in/agriculture/pulses_redgram.html",
+      "title": "Crop Production :: Pulses :: Redgram",
+      "publisher": "TNAU Agritech Portal",
+      "retrievedAt": "2026-11-01",
+      "locator": "Section 10. Inter-cropping; seed rate table (sole vs mixed crop)",
+      "excerpt": "Raising one row of long duration redgram varieties as inter crop for every six rows of groundnut (6:1) is recommended for rainfed crops."
+    },
+    "UASB-TECH": {
+      "id": "UASB-TECH",
+      "url": "https://www.uasbangalore.edu.in/wp-content/uploads/2026/08/technologies-developed-2000-2025.pdf",
+      "title": "Agro-Technologies Developed by UASB (2000-2025)",
+      "publisher": "University of Agricultural Sciences, Bangalore",
+      "retrievedAt": "2026-11-01",
+      "locator": "Section 2.7 Intercropping, PDF pp46-49; seed drill entries p60",
+      "excerpt": "Intercropping of maize with 1:1 row proportion of greengram and 2:2 row proportion of blackgram recorded higher average maize yield (56 q/ha), greengram yield (2.4 q/ha)"
+    },
+    "MJAS-2020-GIRISHA": {
+      "id": "MJAS-2020-GIRISHA",
+      "url": "https://mail.uasbangalore.edu.in/images/2020-4th-Issue/12.pdf",
+      "title": "Studies on Evaluation of Competitive Indices, Yield and Economics of Finger Millet + Black Gram in Inter Cropping System (Girisha, Bhairappanavar and Koler), Mysore J. Agric. Sci. 54(4): 97-106 (2020)",
+      "publisher": "University of Agricultural Sciences, Bangalore (The Mysore Journal of Agricultural Sciences)",
+      "retrievedAt": "2026-11-01",
+      "locator": "Abstract; Table 1 (LER); Table 2 (grain yields)",
+      "excerpt": "higher LER (1.11), RCC (4.12), ATER (1.04) ... were recorded in transplanted finger millet + blackgram (4:1) inter cropping system"
+    },
+    "MAJ-2009-JAYAKUMAR": {
+      "id": "MAJ-2009-JAYAKUMAR",
+      "url": "https://masujournal.org/store_file/archive/96-7-12-356-361.pdf",
+      "title": "Intercropping and Sources of Nitrogen on Biological Efficiency in Cotton (Jayakumar, Ponnuswamy and Amanullah), Madras Agric. J. 96(7-12): 356-361 (2009), doi:10.29321/MAJ.10.100507",
+      "publisher": "Madras Agricultural Students' Union (Madras Agricultural Journal), TNAU Coimbatore",
+      "retrievedAt": "2026-11-01",
+      "locator": "Table 4 (cotton and intercrop yields, pooled); Table 5 (LER by system and N source); Land Equivalent Ratio paragraph",
+      "excerpt": "Cotton+blackgram recorded significantly higher LER during both the years, which was on par with cotton + greengram."
+    },
+    "JPP-2019-SUGANTHI": {
+      "id": "JPP-2019-SUGANTHI",
+      "url": "https://www.phytojournal.com/archives/2019/vol8issue6/PartC/8-5-424-770.pdf",
+      "title": "Influence of supplemental irrigation on yield and indices in cotton based intercropping system (Suganthi and Raja), Journal of Pharmacognosy and Phytochemistry 8(6): 181-184 (2019)",
+      "publisher": "AkiNik Publications (Journal of Pharmacognosy and Phytochemistry)",
+      "retrievedAt": "2026-11-01",
+      "locator": "Materials and methods (site); Table 1 (seed cotton and intercrop yields); Table 2 (LER)",
+      "excerpt": "LER recorded a significantly higher value (1.98) in cotton + clusterbean (1:3) and was on par with cotton + blackgram (1:3)"
+    },
+    "MJAS-2020-ABINAYA": {
+      "id": "MJAS-2020-ABINAYA",
+      "url": "https://mail.uasbangalore.edu.in/images/2020-3rd-Issue/7.pdf",
+      "title": "Studies on Intercropping in Finger Millet (Eleusine coracana L.) under SRI Principles (Abinaya, Natarajan, Ganapathy and Arivazhagan), Mysore J. Agric. Sci. 54(3): 73-79 (2020)",
+      "publisher": "University of Agricultural Sciences, Bangalore (The Mysore Journal of Agricultural Sciences)",
+      "retrievedAt": "2026-11-01",
+      "locator": "Abstract; Table 2 (sole finger millet yield)",
+      "excerpt": "benefit cost ratio (3.93) were significantly recorded in finger millet + blackgram at 2:1. LER (1.12)"
+    },
+    "YU-2016-THESIS": {
+      "id": "YU-2016-THESIS",
+      "url": "https://edepot.wur.nl/378297",
+      "title": "Crop yields in intercropping: meta-analysis and virtual plant modelling (Yang Yu, PhD thesis, 2016); chapters published as Yu et al. 2015, Field Crops Research 184:133-144 and Yu et al. 2016, Field Crops Research 198:269-279",
+      "publisher": "Wageningen University",
+      "retrievedAt": "2026-11-01",
+      "locator": "Summary (PDF p20); cereal/legume chapter results (PDF p94)",
+      "excerpt": "The median LER was 1.16 (Fig. 2b), the mean 1.17 and the standard deviation 0.24"
+    }
+  },
+  "failedSources": [
+    {
+      "url": "https://agritech.tnau.ac.in/agriculture/millets_sorghum.html",
+      "reason": "TLS certificate expired / verification failed (curl and WebFetch); sorghum + redgram/cowpea ratio not captured"
+    },
+    {
+      "url": "https://agritech.tnau.ac.in/agriculture/oilseeds_groundnut.html",
+      "reason": "TLS certificate verification failed (curl)"
+    },
+    {
+      "url": "https://agritech.tnau.ac.in/agriculture/pulses_greengram.html",
+      "reason": "TLS certificate verification failed (curl)"
+    },
+    {
+      "url": "https://agritech.tnau.ac.in/agriculture/agri_cropproduction_fibre_irrigatedcotton.html",
+      "reason": "TLS certificate verification failed (curl)"
+    },
+    {
+      "url": "https://agritech.tnau.ac.in/agriculture/agri_cropproduction_fibre_rainfedcotton.html",
+      "reason": "TLS certificate verification failed (curl); URL pattern unverified"
+    },
+    {
+      "url": "https://agritech.tnau.ac.in/horticulture/horti_vegetables_chilli_season_seed.html",
+      "reason": "TLS certificate verification failed (curl); chilli + onion not captured"
+    },
+    {
+      "url": "https://agritech.tnau.ac.in/horticulture/horti_vegetables_chilli.html",
+      "reason": "HTTP 404"
+    },
+    {
+      "url": "https://agritech.tnau.ac.in/agriculture/pulses_blackgram.html",
+      "reason": "curl TLS failure; WebFetch succeeded but the page has no intercropping sentences (mixed-crop seed rate 10 kg/ha vs 20 kg/ha pure only)"
+    },
+    {
+      "url": "https://hal.science/hal-01532678",
+      "reason": "Bot-protection access denied; /document returned HTML, not the Yu et al. 2016 PDF. Cereal and legume mean partial LERs not captured"
+    },
+    {
+      "url": "https://thebioscan.com/journals/Suppl/101Sup09%20UDHAYA%20NANDHINI%20DHANDAYUTHAPANI.pdf",
+      "reason": "HTTP 404"
+    }
+  ]
+}

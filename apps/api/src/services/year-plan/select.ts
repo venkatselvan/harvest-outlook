@@ -19,8 +19,12 @@ import { REASON_CODES, REASON_TEXT, type ReasonCode } from './scoring';
  * sentences and replaces only that label with the best label code allows for the plan (LABEL_ORDER), else
  * 'Alternative', and reports each replacement as a LabelAdjustment.
  */
-export const PLAN_LABELS = ['Best overall', 'Soil enrichment', 'Lowest water', 'Best price timing', 'Steady income', 'Low risk', 'Green manure first'] as const;
+export const PLAN_LABELS = ['Best overall', 'Soil enrichment', 'Lowest water', 'Best price timing', 'Steady income', 'Low risk', 'Green manure first', 'Best profit'] as const;
 export const GREEN_MANURE_LABEL = 'Green manure first' satisfies PlanLabel;
+/** Round 3 (ROUND3_SPEC 6). */
+export const BEST_PROFIT_LABEL = 'Best profit' satisfies PlanLabel;
+/** Options in a review: the three chosen, then Best profit, then Green manure first. */
+export const MAX_OPTIONS = 5;
 export type PlanLabel = (typeof PLAN_LABELS)[number];
 const EVIDENCE = ' Only for a plan whose every suggested crop has a harvest-week price range and a regional yield (price available, yield not null).';
 export const LABEL_RULES: Record<PlanLabel, string> = {
@@ -31,6 +35,7 @@ export const LABEL_RULES: Record<PlanLabel, string> = {
   'Steady income': 'The low end of the likely plan profit (middle half of the simulated outcomes) is above zero for the field, or per hectare when the field area is unknown (every slot has price, yield and cost).' + EVIDENCE,
   'Low risk': 'High data confidence (0.8 or more) and no window, water, overlap, assumed-harvest or missing-data warning codes on any suggested crop.' + EVIDENCE,
   'Green manure first': 'The first suggested slot is a green manure crop (grown and ploughed in, no product) and at least one later suggested crop follows it; every later suggested crop has a harvest-week price range and a regional yield. Code adds the best such plan as a fourth plan when none of the three chosen plans starts with green manure.',
+  'Best profit': 'Highest central plan profit (median of the simulated outcomes) for the field, or per hectare when the field area is unknown, among the shortlisted plans (within 1 percent); every suggested crop has a harvest-week price range, a regional yield and a sourced cost of cultivation. Code adds the best such plan after the three chosen plans when none of them is that plan.',
 };
 const RISK_CODES: readonly ReasonCode[] = ['outside_window', 'provisional_window', 'conditional_irrigation', 'occupancy_conflict', 'harvest_assumed', 'water_fit_poor', 'rainfed_unsuitable', 'low_data_confidence', 'price_insufficient', 'yield_not_sourced', 'avoid_after_violation', 'same_family_repeat'];
 const isCode = (c: string): c is ReasonCode => (REASON_CODES as readonly string[]).includes(c);
@@ -50,7 +55,34 @@ export function steadyIncome(o: YearPlanOption): boolean {
   const e = o.totalProfitForField ?? o.totalProfitEstimate;
   return e ? e.likely.low > 0 : !!o.totalProfitPerHa && o.totalProfitPerHa.low > 0;
 }
-const signature = (o: YearPlanOption) => o.slots.filter((s) => !s.fixed).map((s) => `${s.cropId}/${s.productId}`).join('>');
+const signature = (o: YearPlanOption) => o.slots.filter((s) => !s.fixed).map((s) => `${s.cropId}/${s.productId}${s.companion ? `+${s.companion.systemId}` : ''}`).join('>');
+
+/** Central plan profit for the field, or per hectare when the area is unknown; null when any slot lacks a profit. */
+export const profitValue = (o: YearPlanOption): number | null => (o.totalProfitForField ?? o.totalProfitEstimate)?.central ?? null;
+/** LABEL_RULES['Best profit'] evidence: price, regional yield and a sourced cost for every suggested crop, and a plan profit. */
+export function profitEvidenced(o: YearPlanOption): boolean {
+  const crops = o.slots.filter((s) => !s.fixed && s.kind !== 'green_manure');
+  return crops.length > 0 && hasPriceAndYield(o) && crops.every((s) => s.cost !== null) && profitValue(o) !== null;
+}
+/** The evidenced plan with the highest central profit (ties: higher score, then option id); null when none is evidenced. */
+export function bestProfitOption(pool: readonly YearPlanOption[]): YearPlanOption | null {
+  return [...pool].filter(profitEvidenced).sort((a, b) => profitValue(b)! - profitValue(a)! || b.score - a.score || a.optionId.localeCompare(b.optionId))[0] ?? null;
+}
+
+/**
+ * Best profit (ROUND3_SPEC 6 item 2), applied after the three chosen plans: when a chosen plan has the best-profit sequence's
+ * crop signature it gets secondaryLabels ['Best profit'] (unless that is its label); otherwise code appends the best-profit
+ * sequence labelled 'Best profit' (origin deterministic). No evidenced sequence in the shortlist: a limitation line.
+ */
+export function appendBestProfitOption(chosen: readonly YearPlanOption[], pool: readonly YearPlanOption[]): { options: YearPlanOption[]; limitation: string | null } {
+  const best = bestProfitOption(pool);
+  if (!best) return { options: [...chosen], limitation: 'No shortlisted plan has a harvest-week price range, a regional yield and a sourced cost of cultivation for every suggested crop, so no Best profit plan is shown.' };
+  if (chosen.some((o) => o.label === BEST_PROFIT_LABEL)) return { options: [...chosen], limitation: null };
+  const sig = signature(best);
+  const idx = chosen.findIndex((o) => o.optionId === best.optionId || signature(o) === sig);
+  if (idx >= 0) return { options: chosen.map((o, i) => (i === idx ? { ...o, secondaryLabels: [...new Set([...(o.secondaryLabels ?? []), BEST_PROFIT_LABEL])].slice(0, 3) } : o)), limitation: null };
+  return { options: [...chosen, { ...best, label: BEST_PROFIT_LABEL, origin: 'deterministic' as const }].slice(0, MAX_OPTIONS), limitation: null };
+}
 
 /**
  * Fourth plan (ROUND2_SPEC 1.2 item 5): after the three chosen plans, code appends the best-scoring sequence that meets
@@ -69,7 +101,7 @@ export function appendGreenManureOption(chosen: readonly YearPlanOption[], green
       : 'No crop sequence that starts with a green manure crop fits this field with a price range and a regional yield for every later crop, so no Green manure first plan is shown.' };
   }
   const label = chosen.some((o) => o.label === GREEN_MANURE_LABEL) ? 'Alternative' : GREEN_MANURE_LABEL;
-  return { options: [...chosen, { ...pick, label, origin: 'deterministic' as const }].slice(0, 4), limitation: null };
+  return { options: [...chosen, { ...pick, label, origin: 'deterministic' as const }].slice(0, MAX_OPTIONS), limitation: null };
 }
 
 export interface SelectionCandidate { option: YearPlanOption; codes: ReasonCode[]; allowedLabels: PlanLabel[] }
@@ -79,6 +111,8 @@ export function selectionCandidates(shortlist: readonly YearPlanOption[]): Selec
   if (!shortlist.length) return [];
   const top = (pick: (o: YearPlanOption) => number) => Math.max(...shortlist.map(pick));
   const maxScore = top((o) => o.score), maxSoil = top((o) => o.components.soilRotation), maxWater = top((o) => o.components.water), maxPrice = top((o) => o.components.price);
+  const profits = shortlist.filter(profitEvidenced).map((o) => profitValue(o)!);
+  const maxProfit = profits.length ? Math.max(...profits) : null;
   return shortlist.map((option) => {
     const suggested = option.slots.filter((s) => !s.fixed);
     const slotCodes = new Set(suggested.flatMap((s) => s.reasonCodes));
@@ -92,6 +126,7 @@ export function selectionCandidates(shortlist: readonly YearPlanOption[]): Selec
     if (evidenced && steadyIncome(option)) allowed.push('Steady income');
     if (evidenced && suggested.length && option.components.confidence >= 0.8 && !RISK_CODES.some((c) => slotCodes.has(c))) allowed.push('Low risk');
     if (greenManureEvidenced(option)) allowed.push('Green manure first');
+    if (maxProfit !== null && profitEvidenced(option) && profitValue(option)! >= maxProfit - 0.01 * Math.abs(maxProfit)) allowed.push('Best profit');
     return { option, codes, allowedLabels: allowed };
   });
 }
@@ -202,13 +237,17 @@ export function selectionInput(args: { scenario: YearPlanScenario; candidates: r
   const codebook: Record<string, string> = {};
   for (const c of args.candidates) for (const code of c.codes) codebook[code] = REASON_TEXT[code];
   return JSON.stringify({
-    field: { scenario: s.kind, horizon: `${s.horizon.from} to ${s.horizon.to}`, state: s.stateId, district: s.districtId, irrigation: s.irrigationCategory ?? 'not recorded', previousCrop: s.previousCropId ?? 'not recorded', soil: s.soilSummary ?? 'not recorded' },
+    field: {
+      scenario: s.kind, horizon: `${s.horizon.from} to ${s.horizon.to}`, state: s.stateId, district: s.districtId, irrigation: s.irrigationCategory ?? 'not recorded', previousCrop: s.previousCropId ?? 'not recorded', soil: s.soilSummary ?? 'not recorded',
+      // Round 3 (ROUND3_SPEC 1.1 item 5): a later horizon states its year and where the previous crop comes from.
+      ...(s.yearIndex ? { planYear: `year ${s.yearIndex + 1} of ${4}, a later 12-month horizon`, previousCropBasis: s.assumedPredecessor ? (s.assumedPredecessor.basis === 'year_plan_option' ? `assumed from the ${s.assumedPredecessor.optionLabel ?? 'first'} plan of the previous year (not saved)` : `recorded (${s.assumedPredecessor.basis.replace(/_/g, ' ')})`) : 'unknown' } : {}),
+    },
     labelRules: LABEL_RULES,
     reasonCodebook: codebook,
     candidates: args.candidates.map(({ option: o, codes, allowedLabels }) => ({
       candidateId: o.optionId, allowedLabels, reasonCodes: codes, score: o.score, components: o.components, idleMonths: o.idleMonths,
       totalProfit: range(o.totalProfitPerHa, 'INR/ha'),
-      slots: o.slots.map((x) => ({ crop: x.cropName, product: x.productName, greenManure: x.kind === 'green_manure', growingNow: x.fixed, sowing: x.sowing, harvest: `${x.harvest.earliest} to ${x.harvest.latest}`, yield: range(x.yieldKgPerHa, 'kg/ha'), price: x.price?.range ? `${x.price.range.low} to ${x.price.range.high} INR/kg wholesale` : 'no price range', profit: range(x.profitPerHa, 'INR/ha'), transition: x.transitionNote })),
+      slots: o.slots.map((x) => ({ crop: x.cropName, product: x.productName, greenManure: x.kind === 'green_manure', ...(x.companion ? { intercropWith: `${x.companion.cropName} (rows ${x.companion.rowRatio})` } : {}), growingNow: x.fixed, sowing: x.sowing, harvest: `${x.harvest.earliest} to ${x.harvest.latest}`, yield: range(x.yieldKgPerHa, 'kg/ha'), price: x.price?.range ? `${x.price.range.low} to ${x.price.range.high} INR/kg wholesale` : 'no price range', profit: range(x.profitPerHa, 'INR/ha'), transition: x.transitionNote })),
       warnings: o.warnings.slice(0, 3),
     })),
   });

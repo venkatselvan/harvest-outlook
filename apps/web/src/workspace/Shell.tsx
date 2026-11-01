@@ -103,7 +103,7 @@ function Shell(props: ParentProps) {
   const nav = [
     { href: "/farm", icon: "map", label: "Farm workspace" },
     { href: "/farm/setup", icon: "plus", label: "Add a farm" },
-    { href: "/catalogue", icon: "leaf", label: "Crop library" },
+    { href: "/catalogue", icon: "leaf", label: "Crops for your farm" },
     { href: "/farm/manage", icon: "settings", label: "Manage farms" },
   ];
   const selectedNav = (href: string) =>

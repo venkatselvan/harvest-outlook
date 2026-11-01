@@ -174,3 +174,48 @@ export function sumEstimates(slots: readonly SlotDraws[], areaHa: number | null)
     draws: { revenue, profit },
   };
 }
+
+/** One revenue term of a multi-product slot (an intercrop's main crop and companion), per hectare of the field. */
+export interface ProfitTerm { yieldKgPerHa: Quantiles3 | null; pricePerKg: Quantiles3 | null; keep?: number | undefined }
+export interface MultiProfitArgs { seed: string; terms: readonly ProfitTerm[]; costPerHa: number | null; areaHa: number | null; draws?: number | undefined }
+
+/**
+ * Round 3 (ROUND3_SPEC 8.2): revenue and profit of a slot with several products. Each term has its own independent
+ * lognormal yield and lognormal price (sigma from its p25-p75, the single-year yield sigma when the yield has no spread),
+ * drawn from separately seeded stratified normals; term revenues are summed draw by draw and the cost is deducted once.
+ * Null revenue when any term lacks a yield or a price. One term gives the same medians as estimateProfit.
+ */
+export function estimateProfitMulti(args: MultiProfitArgs): ProfitEstimate {
+  const n = args.draws ?? ESTIMATE_DRAWS;
+  const area = fieldArea(args.areaHa);
+  const cost = args.costPerHa !== null && Number.isFinite(args.costPerHa) ? args.costPerHa : null;
+  let revenue: Float64Array | null = null;
+  let median: number | null = null;
+  let sigma: ProfitEstimate['sigma'] = null;
+  let yieldSigmaAssumed = false;
+  const ok = args.terms.length > 0 && args.terms.every((t) => t.yieldKgPerHa && t.pricePerKg && t.yieldKgPerHa.p50 > 0 && t.pricePerKg.p50 > 0);
+  if (ok) {
+    revenue = new Float64Array(n);
+    median = 0;
+    args.terms.forEach((t, i) => {
+      const sy0 = sigmaFromRange(t.yieldKgPerHa!);
+      if (sy0 === null) yieldSigmaAssumed = true;
+      const sy = sy0 ?? ASSUMPTIONS.singleYearYieldSigma.value;
+      const sp = sigmaFromRange(t.pricePerKg!) ?? 0;
+      const m = t.yieldKgPerHa!.p50 * t.pricePerKg!.p50 * (t.keep ?? 1);
+      median! += m;
+      if (i === 0) sigma = { yield: sy, price: sp, revenue: Math.sqrt(sy * sy + sp * sp) };
+      const zy = stratifiedNormals(`${args.seed}#y${i}`, n);
+      const zp = stratifiedNormals(`${args.seed}#p${i}`, n);
+      for (let j = 0; j < n; j++) revenue![j]! += m * Math.exp(sy * zy[j]! + sp * zp[j]!);
+    });
+  }
+  const profit = revenue && cost !== null ? revenue.map((r) => r - cost) : null;
+  return {
+    revenuePerHa: revenue ? summarise(revenue) : null,
+    profitPerHa: profit ? summarise(profit) : null,
+    revenueForField: revenue && area ? summarise(revenue, area) : null,
+    profitForField: profit && area ? summarise(profit, area) : null,
+    draws: { revenue, profit }, median, sigma, yieldSigmaAssumed,
+  };
+}

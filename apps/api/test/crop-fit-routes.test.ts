@@ -3,7 +3,7 @@ import type { FastifyInstance } from 'fastify';
 import { CropFitReview, type HarvestPriceOutlook } from '@harvest/contracts';
 import { loadCatalogueIntoDb } from '../src/catalogue/load';
 import { Budget } from '../src/services/budget';
-import { cropFitRoutes } from '../src/routes/crop-fit';
+import { cropFitRoutes, SOWING_LIMIT_DAYS } from '../src/routes/crop-fit';
 import { generateCropFit, type CropFitDeps } from '../src/services/crop-fit/service';
 import { CROP_FIT_JOB_TYPE, createCropFitHandler } from '../src/worker/handlers/crop-fit';
 import { farmBody, login, ORIGIN, setupHarness, type Client, type Harness } from './helpers';
@@ -48,7 +48,8 @@ describe('crop-fit routes', () => {
     for (const method of ['GET', 'POST'] as const) expect((await app.inject({ method, url, headers: { origin: ORIGIN } })).statusCode).toBe(401);
     expect((await b.call('GET', url)).statusCode).toBe(404);
     expect((await b.call('POST', url, { payload: {} })).statusCode).toBe(404);
-    for (const q of ['?mode=weekly', '?mode=season', '?mode=season&season=winter', '?mode=date&sowing=2027-02-30', '?mode=date&sowing=2026-10-01', '?mode=date&sowing=2028-12-01', '?extra=1'])
+    const plus = (n: number) => new Date(Date.parse(`${today}T00:00:00Z`) + n * 86_400_000).toISOString().slice(0, 10);
+    for (const q of ['?mode=weekly', '?mode=season', '?mode=season&season=winter', '?mode=date&sowing=2027-02-30', '?mode=date&sowing=2026-10-01', `?mode=date&sowing=${plus(1462)}`, '?mode=date&after=Pigeon%20Pea', `?mode=date&after=${'a'.repeat(121)}`, '?extra=1'])
       expect((await a.call('GET', `${url}${q}`)).statusCode, q).toBe(400);
     expect((await a.call('POST', `${url}?mode=date&sowing=2027-05-17`, { payload: { force: true } })).statusCode).toBe(400);
     expect(await jobs(f.id)).toBe(0);
@@ -81,6 +82,53 @@ describe('crop-fit routes', () => {
     await generateCropFit(deps, season.reviewId!, await ownerOf(f.id));
     const kharif = CropFitReview.parse((await a.call('GET', `/api/v1/farms/${f.id}/crop-fit?mode=season&season=kharif&sowing=2027-01-01`)).json().data);
     expect(kharif).toMatchObject({ status: 'ready', reviewId: season.reviewId }); // sowing ignored outside date mode
+  });
+
+  it('round 3: after applies to mode=date (own request key), sowing may be up to 1,461 days ahead (the end of plan year 3)', async () => {
+    const f = await farm();
+    const plus = (n: number) => new Date(Date.parse(`${today}T00:00:00Z`) + n * 86_400_000).toISOString().slice(0, 10);
+    const far = CropFitReview.parse((await a.call('GET', `/api/v1/farms/${f.id}/crop-fit?mode=date&sowing=${plus(1461)}`)).json().data);
+    expect(far).toMatchObject({ status: 'pending', request: { mode: 'date', sowing: plus(1461) } });
+    expect(SOWING_LIMIT_DAYS).toBe(1461);
+    expect((await a.call('GET', `/api/v1/farms/${f.id}/crop-fit?mode=date&sowing=${plus(1462)}`)).statusCode).toBe(400);
+    const url = `/api/v1/farms/${f.id}/crop-fit?mode=date&sowing=2027-05-17`;
+    const plain = CropFitReview.parse((await a.call('GET', url)).json().data);
+    const after = CropFitReview.parse((await a.call('GET', `${url}&after=pigeon-pea`)).json().data);
+    expect(after.reviewId).not.toBe(plain.reviewId);
+    expect(after).toMatchObject({ request: { mode: 'date', sowing: '2027-05-17', after: 'pigeon-pea' }, previousCropId: 'pigeon-pea' });
+    // Outside date mode `after` is ignored: the same review as without it.
+    const season = CropFitReview.parse((await a.call('GET', `/api/v1/farms/${f.id}/crop-fit?mode=season&season=kharif`)).json().data);
+    const seasonAfter = CropFitReview.parse((await a.call('GET', `/api/v1/farms/${f.id}/crop-fit?mode=season&season=kharif&after=pigeon-pea`)).json().data);
+    expect(seasonAfter.reviewId).toBe(season.reviewId);
+    expect(seasonAfter.request).toEqual({ mode: 'season', season: 'kharif', sowing: null });
+  });
+
+  it('review L4: after accepts the intercrop rotation token ic:<systemId> and scores it as the system\'s main crop', async () => {
+    const f = await farm();
+    const base = `/api/v1/farms/${f.id}/crop-fit?mode=date&sowing=2027-05-17`;
+    const token = 'ic:ka-hassan-ragi-redgram-8-1'; // finger millet + pigeon pea (intercropping.json)
+    for (const bad of ['ic:', 'ic:Ragi', 'xx:ragi', 'ic:ic:ragi']) expect((await a.call('GET', `${base}&after=${encodeURIComponent(bad)}`)).statusCode, bad).toBe(400);
+    const ic = CropFitReview.parse((await a.call('GET', `${base}&after=${encodeURIComponent(token)}`)).json().data);
+    expect(ic).toMatchObject({ status: 'pending', request: { mode: 'date', sowing: '2027-05-17', after: token }, previousCropId: token });
+    const main = CropFitReview.parse((await a.call('GET', `${base}&after=finger-millet`)).json().data);
+    expect(main.reviewId).not.toBe(ic.reviewId);
+    const owner = await ownerOf(f.id);
+    await generateCropFit(deps, ic.reviewId!, owner);
+    await generateCropFit(deps, main.reviewId!, owner);
+    const icReady = CropFitReview.parse((await a.call('GET', `${base}&after=${encodeURIComponent(token)}`)).json().data);
+    const mainReady = CropFitReview.parse((await a.call('GET', `${base}&after=finger-millet`)).json().data);
+    expect(icReady.status).toBe('ready');
+    expect(icReady.limitations.some((l) => l.startsWith('Scored after finger millet + pigeon pea'))).toBe(true);
+    // No sourced nitrogen credit on this system, so the rotation reads exactly as after its main crop (year-plan rotationFacts).
+    const key = (c: CropFitReview['candidates'][number]) => `${c.cropId}|${c.productId}|${c.companion?.systemId ?? ''}|${c.sowing}`;
+    const mainRules = new Map(mainReady.candidates.map((c) => [key(c), c.rotation.rule]));
+    expect(icReady.candidates.length).toBeGreaterThan(0);
+    expect(icReady.candidates.length).toBe(mainReady.candidates.length);
+    for (const c of icReady.candidates) {
+      expect(c.rotation.previousCropId).toBe(token);
+      expect(c.rotation.rule, key(c)).toBe(mainRules.get(key(c)));
+    }
+    expect(icReady.candidates.some((c) => c.rotation.rule === 'same_family' || c.rotation.rule === 'avoid_after')).toBe(true); // cereals after a millet
   });
 
   it('no mode on a fresh field defaults to date with today', async () => {

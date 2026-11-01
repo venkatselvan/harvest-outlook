@@ -1,4 +1,4 @@
-import type { CropFitCandidate, CropFitReview, SoilCheck } from "@harvest/contracts";
+import type { CropFitCandidate, CropFitReview, IntercropCompanion, SoilCheck } from "@harvest/contracts";
 
 /**
  * SYNTHETIC test fixtures for the crop fit view (unit tests only; never shown as data). Shapes follow the
@@ -83,3 +83,35 @@ export const runningReview: CropFitReview = { ...unavailableModelReview, status:
 export const seasonReview: CropFitReview = { ...base, request: { mode: "season", season: "kharif", sowing: null }, resolvedSowing: "2027-04-01" };
 export const dateFreshReview: CropFitReview = { ...base, request: { mode: "date", season: null, sowing: "2027-05-17" }, resolvedSowing: "2027-05-17", previousCropId: null, currentCycleId: null, fieldAreaHa: null, candidates: CANDIDATES.map((c) => ({ ...c, profitForField: null, soil: { status: "no_report" as const, checks: [] } })), soilReportStatus: "none" };
 export const emptyReview: CropFitReview = { ...base, status: "unavailable", picks: [], pickOrigin: null, candidates: [], modelInvocation: null, request: { mode: "date", season: null, sowing: "2026-11-03" }, resolvedSowing: "2026-11-03", summary: "No pool crop has a sourced sowing window within 21 days of 3 Nov 2026 on this field.", limitations: ["Not ranked (maize, paddy): No sourced sowing window within 21 days of 3 Nov 2026."] };
+
+// ---------------------------------------------------------------- round 3: plan-aware review, wait line, intercrop
+const COMPANION: IntercropCompanion = {
+  systemId: "finger-millet-pigeon-pea-8-1", cropId: "pigeon-pea", productId: "pigeon-pea-whole", cropName: "Pigeon pea", productName: "Whole", rowRatio: "8:1", arrangement: "row",
+  yieldShare: { main: { low: 0.85, high: 0.95 }, companion: { low: 0.2, high: 0.3 } }, shareBasis: "sourced", yieldKgPerHa: { low: 500, high: 700 }, yieldBasis: "state",
+  price: { status: "available", unit: "INR/kg", p50: 68, range: { low: 60, high: 78 }, harvestWeek: "2027-W52", yearsUsed: [2023, 2024, 2025], observations: 90, scope: { level: "state", stateName: "Karnataka", districtName: null, marketCount: 3 }, reason: null },
+  nitrogenCreditKgPerHa: { low: 15, high: 30 }, source: { id: "synthetic-intercrop", title: "Synthetic intercrop source (test)", url: "https://example.org/intercrop", locator: "Table 2" },
+};
+export const intercropCompanion = COMPANION;
+/** Array order differs from the ranking on purpose: rank and rankScore decide, not the array and not the raw score. */
+const sorghumPlan = fixtureCandidate({ cropId: "sorghum", productId: "sorghum-grain", cropName: "Sorghum", productName: "Grain", rank: 3, score: 72, rankScore: 66, waitDays: 21, waitPenalty: 0, sowing: "2027-04-06", yearPlanLabels: [], grownBefore: null, yieldForFieldKg: { low: 520, high: 760 } });
+const pigeonPeaPlan = fixtureCandidate({ cropId: "pigeon-pea", productId: "pigeon-pea-whole", cropName: "Pigeon pea", productName: "Whole", rank: 1, score: 70, rankScore: 68, waitDays: 49, waitPenalty: 2.3, sowing: "2027-05-16", yearPlanLabels: ["Best overall"], grownBefore: { cycles: 1, lastSowing: "2025-06-10", lastHarvest: "2025-12-20" }, yieldForFieldKg: { low: 70, high: 110 }, profitForField: { central: 5200, likely: { low: 3100, high: 7600 }, possible: { low: 1500, high: 9800 } } });
+const intercropPlan = fixtureCandidate({ cropId: "finger-millet", productId: "finger-millet-grain", cropName: "Finger millet", productName: "Grain", rank: 2, score: 69, rankScore: 67, waitDays: 56, waitPenalty: 1.6, sowing: "2027-05-23", kind: "intercrop", companion: COMPANION, yearPlanLabels: ["Soil enrichment", "Best profit"], grownBefore: { cycles: 3, lastSowing: "2024-07-02", lastHarvest: null }, yieldForFieldKg: { low: 300, high: 420 } });
+const maizePlan = fixtureCandidate({ cropId: "maize", productId: "maize-grain", cropName: "Maize", productName: "Grain", rank: 4, score: 64, rankScore: 61, waitDays: 91, waitPenalty: 3.4, sowing: "2027-06-20", yearPlanLabels: [], grownBefore: null, soil: { status: "no_report", checks: [] }, profitForField: null });
+export const PLAN_CANDIDATES = [sorghumPlan, maizePlan, intercropPlan, pigeonPeaPlan];
+/** Date mode with a previous-crop override, as the swap picker requests it; cross-referenced with a year plan. */
+export const planReview: CropFitReview = {
+  ...base, request: { mode: "date", season: null, sowing: "2027-05-16", after: "paddy" }, resolvedSowing: "2027-05-16", previousCropId: "paddy", currentCycleId: null,
+  yearPlanReviewId: "00000000-0000-4000-8000-0000000000e1", candidates: PLAN_CANDIDATES,
+  picks: [
+    { cropId: "pigeon-pea", productId: "pigeon-pea-whole", rank: 1, headline: "Fits the May window and fixes nitrogen", reasons: [{ code: "legume_after_heavy_feeder", text: "A legume after paddy returns nitrogen." }, { code: "district_window", text: "Sowing falls in the district window." }] },
+    { cropId: "finger-millet", productId: "finger-millet-grain", rank: 2, headline: "Millet with a legume companion", reasons: [{ code: "intercrop_sourced", text: "Both crops are priced and the row ratio is sourced." }] },
+    { cropId: "sorghum", productId: "sorghum-grain", rank: 3, headline: "Low water need, earlier sowing", reasons: [] },
+  ],
+  summary: "Same candidates, dates and scoring as the year plan; the plan's labels pick three different plans, not the three highest scores.", limitations: [],
+};
+/** The same review while Meta is still choosing the picks (running) and a pending shell. */
+export const planRunningReview: CropFitReview = { ...planReview, status: "running", picks: [], pickOrigin: null, modelInvocation: null };
+export const planPendingReview: CropFitReview = { ...planReview, status: "pending", picks: [], pickOrigin: null, candidates: [], modelInvocation: null, generatedAt: null, yearPlanReviewId: null };
+export const planErrorReview: CropFitReview = { ...planPendingReview, status: "error", summary: "The scoring job failed." };
+/** An intercrop whose yield shares are fallback assumptions. */
+export const assumedShareCandidate: CropFitCandidate = { ...intercropPlan, companion: { ...COMPANION, shareBasis: "assumed", source: null } };

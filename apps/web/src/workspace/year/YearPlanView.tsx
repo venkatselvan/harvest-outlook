@@ -5,12 +5,16 @@ import { newEntryId } from "../../features/photo-region/http";
 import { Planner } from "../Planner";
 import { today, useWorkspace } from "../state";
 import { ApplyConfirm } from "./ApplyConfirm";
+import { addYearsIso } from "./format";
+import { HorizonPager } from "./HorizonPager";
 import { OptionSheet, initialSlot, type TrendState } from "./OptionSheet";
 import { PlanCalendar, PlanCalendarSkeleton } from "./PlanCalendar";
 import { ScenarioLine } from "./ScenarioLine";
 import {
   cropChoices,
   draftProblems,
+  horizonQuery,
+  horizonStep,
   isActive,
   isApplied,
   mergeServerReview,
@@ -21,6 +25,7 @@ import {
   scenarioText,
   slotsToApply,
   type DraftSlot,
+  type HorizonNavigation,
 } from "./model";
 import {
   apply,
@@ -42,9 +47,11 @@ type Phase =
   | { kind: "failed"; failure: YearPlanFailure };
 
 /**
- * Year plan tab (UI_BRIEF 3.2, round 2): up to four scored 12-month crop sequences on a month calendar (three picked by
- * Meta, a fourth "Green manure first" built by code), a detail sheet per option, inline edit with code re-scoring, and
- * apply into the saved seasons, which stay listed below by the existing Planner.
+ * Year plan tab (UI_BRIEF 3.2, rounds 2 and 3): up to five scored 12-month crop sequences on a month calendar (three
+ * picked by Meta, then "Best profit" and "Green manure first" built by code), a detail sheet per option, inline edit and
+ * crop swaps with code re-scoring, and apply into the saved seasons, which stay listed below by the existing Planner.
+ * A pager above the calendar steps through the horizons the server offers (`navigation`); every request, the
+ * background re-read included, names the horizon on screen.
  *
  * Degrades without the backend: a 404 on GET and on the follow-up POST shows "not available on this server yet", a
  * network failure shows a retry card, a payload that fails the zod contract shows an error card; the saved seasons
@@ -57,7 +64,10 @@ export function YearPlanView() {
   const [review, setReview] = createSignal<YearPlanReview>();
   const [refreshing, setRefreshing] = createSignal(false);
   const [refreshError, setRefreshError] = createSignal("");
-  const [open, setOpen] = createSignal<{ optionId: string; slotId: string | null } | null>(null);
+  const [open, setOpen] = createSignal<{
+    optionId: string;
+    slotId: string | null;
+  } | null>(null);
   const [editing, setEditing] = createSignal(false);
   const [rescoreBusy, setRescoreBusy] = createSignal(false);
   const [rescoreError, setRescoreError] = createSignal("");
@@ -65,6 +75,12 @@ export function YearPlanView() {
   const [applyBusy, setApplyBusy] = createSignal(false);
   const [applyError, setApplyError] = createSignal("");
   const [applyAdded, setApplyAdded] = createSignal<number | null>(null);
+  /** Horizon on screen: undefined is the current horizon, else one of the server's `navigation` dates. */
+  const [viewFrom, setViewFrom] = createSignal<string | undefined>(undefined);
+  /** True from a pager step until the server's first answer for that horizon. */
+  const [navigating, setNavigating] = createSignal(false);
+  /** The navigation the pager shows while the target horizon has not answered with its own. */
+  const [pendingNav, setPendingNav] = createSignal<HorizonNavigation | null>(null);
   const [trends, setTrends] = createSignal<Record<string, TrendState>>({});
   const todayIso = today();
   /** Bumped on farm or session change; every async result checks it. */
@@ -92,6 +108,9 @@ export function YearPlanView() {
       setApplyBusy(false);
       setApplyError("");
       setApplyAdded(null);
+      setViewFrom(undefined);
+      setNavigating(false);
+      setPendingNav(null);
       setTrends({});
     });
   }
@@ -100,7 +119,7 @@ export function YearPlanView() {
    * Read the review; generate once when nothing exists yet (or when the GET route is missing, in case the server only
    * answers POST); poll while pending. `force` regenerates (Refresh, Retry).
    */
-  async function load(id: string, force: boolean) {
+  async function load(id: string, force: boolean, from: string | undefined) {
     controller?.abort();
     const ctrl = new AbortController();
     controller = ctrl;
@@ -111,9 +130,11 @@ export function YearPlanView() {
       batch(() => {
         setReview(next);
         setPhase({ kind: "ready" });
+        setNavigating(false);
+        if (next.navigation) setPendingNav(null);
       });
     };
-    const opts = { signal: ctrl.signal, onUpdate: show };
+    const opts = { signal: ctrl.signal, onUpdate: show, from };
     try {
       if (force) {
         show(await ensureYearPlan(id, { ...opts, force: true }));
@@ -139,12 +160,23 @@ export function YearPlanView() {
     } catch (error) {
       if (!ok()) return;
       const failure = classifyYearPlanError(error);
-      if (review() && failure.kind !== "missing_endpoint") setRefreshError(failure.message);
+      const shown = review();
+      // A failed step leaves the horizon that is still on screen as the one later requests name.
+      if (shown?.navigation)
+        batch(() => {
+          setViewFrom(horizonQuery(shown.navigation!));
+          setPendingNav(null);
+        });
+      if (shown && failure.kind !== "missing_endpoint") setRefreshError(failure.message);
       else setPhase({ kind: "failed", failure });
     } finally {
       if (controller === ctrl) {
         controller = undefined;
-        if (live(gen, id)) setRefreshing(false);
+        if (live(gen, id))
+          batch(() => {
+            setRefreshing(false);
+            setNavigating(false);
+          });
       }
     }
   }
@@ -166,7 +198,7 @@ export function YearPlanView() {
       if (!id) return setPhase({ kind: "idle" });
       if (!state) return setPhase({ kind: "needs_location" });
       setPhase({ kind: "loading" });
-      void load(id, false);
+      void load(id, false, undefined);
     }),
   );
   onCleanup(() => {
@@ -184,7 +216,7 @@ export function YearPlanView() {
         if (version == null || previous == null || version === previous) return;
         if (!id || !current || controller || isActive(current)) return;
         const gen = generation;
-        void loadYearPlan(id)
+        void loadYearPlan(id, { from: viewFrom() })
           .then((next) => {
             if (live(gen, id) && !controller) setReview(mergeServerReview(review(), next));
           })
@@ -201,14 +233,39 @@ export function YearPlanView() {
     if (!id || refreshing()) return;
     setRefreshing(true);
     setRefreshError("");
-    void load(id, true);
+    void load(id, true, viewFrom());
   }
   function retry() {
     const id = farmId();
     if (!id) return;
     setPhase({ kind: "loading" });
-    void load(id, true);
+    void load(id, true, viewFrom());
   }
+
+  /** Pager and "Open year N": show the horizon before or after this one, generating it when it has no plan yet. */
+  function step(direction: "previous" | "next") {
+    const id = farmId();
+    const nav = navigation();
+    const target = nav ? horizonStep(nav, direction) : null;
+    if (!id || !target || navigating()) return;
+    batch(() => {
+      setOpen(null);
+      setEditing(false);
+      setRescoreError("");
+      setConfirming(null);
+      setApplyError("");
+      setApplyAdded(null);
+      setRefreshError("");
+      setRefreshing(false);
+      setViewFrom(target.from);
+      setPendingNav(target.navigation);
+      setNavigating(true);
+    });
+    void load(id, false, target.from);
+  }
+  /** What the pager shows: the target while a step is on its way, else the review's own navigation (hidden when the server sends none). */
+  const navigation = (): HorizonNavigation | undefined =>
+    (navigating() ? pendingNav() : null) ?? review()?.navigation ?? pendingNav() ?? undefined;
 
   const options = () => review()?.options ?? [];
   const openOption = () => {
@@ -268,7 +325,8 @@ export function YearPlanView() {
     const option = openOption();
     const id = farmId();
     if (!current || !option || !id) return;
-    if (!current.reviewId) return setRescoreError("This plan is not saved on the server yet. Refresh, then edit again.");
+    if (!current.reviewId)
+      return setRescoreError("This plan is not saved on the server yet. Refresh, then edit again.");
     const problems = draftProblems(drafts, current.scenario.horizon);
     if (problems.length) return setRescoreError(problems.join(" "));
     const gen = generation;
@@ -280,16 +338,24 @@ export function YearPlanView() {
       const next = await rescore(id, rescoreBody(current.reviewId, option.optionId, drafts));
       if (!live(gen, id) || review()?.reviewId !== current.reviewId) return;
       const previousSlot = open()?.slotId ?? null;
+      // Stay on the same crop: its slot id when it survived, else the slot in the same position (a swapped crop gets a new id).
+      const sameId = next.slots.find((x) => x.slotId === previousSlot)?.slotId;
+      const samePosition = next.slots[option.slots.findIndex((x) => x.slotId === previousSlot)]?.slotId;
       batch(() => {
         setReview(replaceOption(review()!, option.optionId, next));
-        setOpen({ optionId: next.optionId, slotId: next.slots.some((x) => x.slotId === previousSlot) ? previousSlot : null });
+        setOpen({
+          optionId: next.optionId,
+          slotId: sameId ?? samePosition ?? null,
+        });
         setEditing(false);
       });
     } catch (error) {
       if (!live(gen, id)) return;
       const failure = classifyYearPlanError(error);
       setRescoreError(
-        failure.kind === "missing_endpoint" ? "Re-scoring is not available on this server yet. Your plan is unchanged." : failure.message,
+        failure.kind === "missing_endpoint"
+          ? "Re-scoring is not available on this server yet. Your plan is unchanged."
+          : failure.message,
       );
     } finally {
       if (live(gen, id)) setRescoreBusy(false);
@@ -335,7 +401,9 @@ export function YearPlanView() {
       const failure = classifyYearPlanError(error);
       if (failure.kind === "conflict") void s.refreshWorkspace();
       setApplyError(
-        failure.kind === "missing_endpoint" ? "Saving a year plan is not available on this server yet. Nothing was added." : failure.message,
+        failure.kind === "missing_endpoint"
+          ? "Saving a year plan is not available on this server yet. Nothing was added."
+          : failure.message,
       );
     } finally {
       if (live(gen, id)) setApplyBusy(false);
@@ -349,7 +417,10 @@ export function YearPlanView() {
           body: "This server does not offer crop sequence plans yet. Your saved seasons below still work.",
         }
       : failure.kind === "offline"
-        ? { title: "Could not reach the server", body: "Check the connection, then try again. Your saved seasons are kept." }
+        ? {
+            title: "Could not reach the server",
+            body: "Check the connection, then try again. Your saved seasons are kept.",
+          }
         : { title: "The year plan could not be shown", body: failure.message };
 
   return (
@@ -394,8 +465,29 @@ export function YearPlanView() {
           <Match when={phase().kind === "ready" && review()}>
             {(r) => (
               <>
+                <Show when={navigation()}>
+                  {(nav) => (
+                    <HorizonPager
+                      navigation={nav()}
+                      to={
+                        r().scenario.horizon.from === nav().from ? r().scenario.horizon.to : addYearsIso(nav().from, 1)
+                      }
+                      busy={navigating()}
+                      onStep={step}
+                    />
+                  )}
+                </Show>
                 <ScenarioLine
                   text={scenarioText(r().scenario, r().options, todayIso, s.cropName)}
+                  action={
+                    r().scenario.kind === "future" && r().navigation?.previousFrom
+                      ? {
+                          label: `Open year ${r().navigation!.yearIndex}`,
+                          onClick: () => step("previous"),
+                          disabled: navigating(),
+                        }
+                      : undefined
+                  }
                   pending={isActive(r())}
                   model={planningModel(r())}
                   stale={r().stale}
@@ -432,7 +524,9 @@ export function YearPlanView() {
                   </Match>
                   <Match when={true}>
                     <div class="yp-card">
-                      <h3>{r().status === "error" ? "The plan could not be built right now" : "No crop sequence fits yet"}</h3>
+                      <h3>
+                        {r().status === "error" ? "The plan could not be built right now" : "No crop sequence fits yet"}
+                      </h3>
                       <p>
                         {r().status === "error"
                           ? "Something went wrong while building plans. Your saved seasons are unchanged."
@@ -458,6 +552,7 @@ export function YearPlanView() {
       <Show when={openOption()} keyed>
         {(option) => (
           <OptionSheet
+            farmId={farmId() ?? ""}
             review={review()!}
             option={option}
             slotId={open()?.slotId ?? null}

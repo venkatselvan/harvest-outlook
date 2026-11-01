@@ -4,7 +4,8 @@ import { Chip } from "../ui/Chip";
 /**
  * One line that says what the plan covers ("Sep 2026 to Sep 2027 · Paddy growing until mid-Nov"), plus the status
  * chips: Planning (with the resolved model name when the server reports one), out of date with Refresh, and the
- * model-unavailable notice when only code-built plans are shown.
+ * model-unavailable notice when only code-built plans are shown. A later horizon adds an action beside the line that
+ * opens the year before ("Open year 1").
  */
 export function ScenarioLine(props: {
   text: string;
@@ -15,10 +16,23 @@ export function ScenarioLine(props: {
   modelUnavailable: boolean;
   refreshing: boolean;
   onRefresh: () => void;
+  action?: { label: string; onClick: () => void; disabled?: boolean } | undefined;
 }) {
   return (
     <div class="yp-scenario">
-      <p class="yp-scenario-line">{props.text}</p>
+      <p class="yp-scenario-line">
+        {props.text}
+        <Show when={props.action}>
+          {(action) => (
+            <>
+              {" "}
+              <button type="button" class="yp-link-button yp-scenario-action" disabled={action().disabled} onClick={() => action().onClick()}>
+                {action().label}
+              </button>
+            </>
+          )}
+        </Show>
+      </p>
       <Show when={props.pending || props.stale || props.modelUnavailable}>
         <div class="yp-scenario-status" role="status" aria-live="polite">
           <Show when={props.pending}>

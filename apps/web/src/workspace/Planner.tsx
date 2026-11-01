@@ -8,10 +8,20 @@ import {
 } from "solid-js";
 import { A, useNavigate } from "@solidjs/router";
 import { Icon } from "./icons";
-import { useWorkspace, today, dateLabel, type Rotation } from "./state";
+import { useWorkspace, today, dateLabel, type Rotation as WorkspaceRotation } from "./state";
 import { HistoryDialog, PageHeading } from "./FarmPage";
 import { createPlan } from "../lib/plan-api";
 import { newEntryId } from "../features/photo-region/http";
+import { SeasonPreviewSheet } from "./season/SeasonPreviewSheet";
+import {
+  addedSeasons,
+  defaultYear,
+  groupByYear,
+  kindLabel,
+  seasonTitle,
+  yearHints,
+} from "./season/seasonPreviewModel";
+import "./season/season-preview.css";
 const MONTHS = [
   "Jan",
   "Feb",
@@ -26,10 +36,38 @@ const MONTHS = [
   "Nov",
   "Dec",
 ];
+/**
+ * The workspace state's Rotation predates round 3; the server's RotationPlan also carries `kind` and `companion`
+ * (ROUND3_SPEC.md section 9), which pass through the state unchanged, so the Planner reads them with this widened type.
+ */
+type Rotation = WorkspaceRotation & {
+  kind?: "crop" | "green_manure" | "intercrop";
+  companion?: { systemId?: string; cropId: string; cropName?: string; productId?: string; productName?: string; rowRatio: string };
+};
 export function Planner() {
   const s = useWorkspace();
   const navigate = useNavigate();
-  const [year, setYear] = createSignal(new Date().getFullYear());
+  const plans = (): Rotation[] => s.workspace()?.rotationPlans ?? [];
+  // ROUND3_SPEC 2.1: open on the year of the earliest saved season sown on or after today (else this year) until the
+  // farmer picks a year; the pick is kept per farm.
+  const [picked, setPicked] = createSignal<{
+    farmId: string | undefined;
+    year: number;
+  } | null>(null);
+  const year = () => {
+    const p = picked();
+    return p && p.farmId === s.farm()?.id ? p.year : defaultYear(plans(), today());
+  };
+  const setYear = (y: number) => setPicked({ farmId: s.farm()?.id, year: y });
+  const [preview, setPreview] = createSignal<Rotation | null>(null);
+  const grouped = createMemo(() => groupByYear(plans()));
+  const hints = createMemo(() => yearHints(plans(), year()));
+  const title = (p: Rotation) => seasonTitle(p, s.cropName);
+  const openEditor = (p: Rotation) => {
+    editorFarmId = s.farm()?.id;
+    setEditing(p);
+    setError("");
+  };
   const [history, setHistory] = createSignal(false);
   const [editing, setEditing] = createSignal<Partial<Rotation> | null>(null);
   const [error, setError] = createSignal("");
@@ -40,12 +78,11 @@ export function Planner() {
   } | null>(null);
   const rows = createMemo(
     () =>
-      s
-        .workspace()
-        ?.rotationPlans.filter((p) => p.year === year())
+      plans()
+        .filter((p) => p.year === year())
         .sort((a, b) =>
           (a.plannedSowingDate ?? "").localeCompare(b.plannedSowingDate ?? ""),
-        ) ?? [],
+        ),
   );
   let editorFarmId: string | undefined;
   createEffect(
@@ -54,7 +91,32 @@ export function Planner() {
       () => {
         setEditing(null);
         setProductSelection(null);
+        setPreview(null);
         setError("");
+      },
+    ),
+  );
+  // ROUND3_SPEC 2.3: seasons added from elsewhere (a year-plan apply) move the board to the first added season's year
+  // and the notice names it. The Planner's own saves set the year themselves.
+  let seen: { farmId: string | undefined; ids: Set<string> } | null = null;
+  let ownSave: string | null = null;
+  createEffect(
+    on(
+      () => [s.farm()?.id, s.workspace()?.rotationPlans] as const,
+      ([farmId, list]) => {
+        if (!list) return;
+        if (seen && seen.farmId === farmId) {
+          const added = addedSeasons(seen.ids, list).filter((p) => p.id !== ownSave);
+          const first = added[0];
+          if (first) {
+            setYear(first.year);
+            s.setNotice(
+              `${added.length === 1 ? "Saved" : `Saved ${added.length} seasons, first`} ${title(first)}${first.plannedSowingDate ? `, sown ${dateLabel(first.plannedSowingDate)}` : ""}. Showing ${first.year}.`,
+            );
+          }
+        }
+        ownSave = null;
+        seen = { farmId, ids: new Set(list.map((p) => p.id)) };
       },
     ),
   );
@@ -96,6 +158,7 @@ export function Planner() {
         year: Number(p.plannedSowingDate.slice(0, 4)),
         cropName: s.cropName(p.cropId),
       } as Rotation;
+      ownSave = next.id;
       await s.saveWorkspace({
         rotationPlans: [
           ...(s.workspace()?.rotationPlans ?? []).filter((r) => r.id !== p.id),
@@ -258,6 +321,19 @@ export function Planner() {
               </button>
             </div>
           </div>
+          <Show when={hints().length}>
+            <div class="planner-hints">
+              <For each={hints()}>
+                {(hint) => (
+                  <button type="button" onClick={() => setYear(hint.year)}>
+                    {hint.later
+                      ? `${hint.count} more in ${hint.year} ›`
+                      : `‹ ${hint.count} in ${hint.year}`}
+                  </button>
+                )}
+              </For>
+            </div>
+          </Show>
           <div class="rotation-table">
             <div class="rotation-months">
               <div>SEASON / CROP</div>
@@ -308,8 +384,10 @@ export function Planner() {
                       >
                         <span class={`crop-dot tone-${i() % 4}`} />
                         <span>
-                          <strong>{p.cropName ?? s.cropName(p.cropId)}</strong>
-                          <small>{p.season} · Planned</small>
+                          <strong>{title(p)}</strong>
+                          <small>
+                            {p.season} · {kindLabel(p)}
+                          </small>
                         </span>
                       </button>
                       <div class="rotation-track">
@@ -317,19 +395,21 @@ export function Planner() {
                           <For each={MONTHS}>{() => <span />}</For>
                         </div>
                         <button
-                          class={`rotation-bar tone-${i() % 4}`}
+                          class={`rotation-bar tone-${p.kind === "green_manure" ? 2 : i() % 4} kind-${p.kind ?? "crop"}`}
                           style={{
                             left: `${(start() / 12) * 100}%`,
                             width: `${(Math.max(1, end() - start()) / 12) * 100}%`,
                           }}
-                          onClick={() => {
-                            editorFarmId = s.farm()?.id;
-                            setEditing(p);
-                            setError("");
-                          }}
+                          aria-label={`Preview season: ${title(p)}`}
+                          title="Preview season"
+                          disabled={!p.plannedSowingDate}
+                          onClick={() => setPreview(p)}
                         >
                           <Icon name="leaf" size={14} />
-                          <span>{p.cropName ?? s.cropName(p.cropId)}</span>
+                          <span>
+                            {title(p)}
+                            {p.kind === "green_manure" ? " · Green manure" : ""}
+                          </span>
                         </button>
                       </div>
                     </div>
@@ -363,10 +443,10 @@ export function Planner() {
           <section class="season-list">
             <div class="section-heading">
               <h2>Season plans</h2>
-              <span class="subtle-caption">{rows().length} PLANNED</span>
+              <span class="subtle-caption">{plans().length} PLANNED</span>
             </div>
             <Show
-              when={rows().length}
+              when={plans().length}
               fallback={
                 <div class="small-empty">
                   <Icon name="calendar" />
@@ -377,58 +457,70 @@ export function Planner() {
                 </div>
               }
             >
-              <For each={rows()}>
-                {(p) => (
-                  <article class="season-row">
-                    <span class="season-row-icon">
-                      <Icon name="leaf" size={22} />
-                    </span>
-                    <div>
-                      <h3>{p.cropName ?? s.cropName(p.cropId)}</h3>
-                      <p>
-                        {p.season}
-                        {p.productName ? ` · ${p.productName}` : ""} · Sow{" "}
-                        {p.plannedSowingDate
-                          ? dateLabel(p.plannedSowingDate)
-                          : "date not set"}
-                        {p.plannedHarvestDate
-                          ? ` → ${dateLabel(p.plannedHarvestDate)}`
-                          : ""}
-                      </p>
-                    </div>
-                    <Show
-                      when={
-                        p.cropId === "ginger" || p.cropId === "synthetic-ginger"
-                      }
-                      fallback={
-                        <div class="season-model-status">
-                          <button
-                            class="text-link"
-                            onClick={() => {
-                              editorFarmId = s.farm()?.id;
-                              setEditing(p);
-                              setError("");
-                            }}
-                          >
-                            Edit season
-                            <Icon name="arrow" size={17} />
-                          </button>
-                          <small>Detailed stage model unavailable</small>
-                        </div>
-                      }
-                    >
-                      <button
-                        class="text-link"
-                        disabled={!!busy()}
-                        onClick={() => void explore(p)}
-                      >
-                        {busy() === p.id
-                          ? "Building timeline…"
-                          : "View growth model"}
-                        <Icon name="arrow" size={17} />
-                      </button>
-                    </Show>
-                  </article>
+              <For each={grouped()}>
+                {(group) => (
+                  <div class="season-year-group">
+                    <h3 class="season-year">{group.year}</h3>
+                    <For each={group.plans}>
+                      {(p) => (
+                        <article class="season-row">
+                          <span class="season-row-icon">
+                            <Icon name="leaf" size={22} />
+                          </span>
+                          <div>
+                            <h3>{title(p)}</h3>
+                            <p>
+                              {p.season}
+                              {p.kind === "green_manure"
+                                ? " · Green manure"
+                                : p.kind === "intercrop"
+                                  ? " · Intercrop"
+                                  : ""}
+                              {p.productName ? ` · ${p.productName}` : ""} · Sow{" "}
+                              {p.plannedSowingDate
+                                ? dateLabel(p.plannedSowingDate)
+                                : "date not set"}
+                              {p.plannedHarvestDate
+                                ? ` → ${dateLabel(p.plannedHarvestDate)}`
+                                : ""}
+                            </p>
+                          </div>
+                          <div class="season-model-status">
+                            <div class="season-row-actions">
+                              <button
+                                class="text-link"
+                                disabled={!p.plannedSowingDate}
+                                aria-label={`Preview season: ${title(p)}`}
+                                onClick={() => setPreview(p)}
+                              >
+                                Preview
+                                <Icon name="arrow" size={17} />
+                              </button>
+                              <button class="text-link" onClick={() => openEditor(p)}>
+                                Edit season
+                              </button>
+                              <Show
+                                when={
+                                  p.cropId === "ginger" ||
+                                  p.cropId === "synthetic-ginger"
+                                }
+                              >
+                                <button
+                                  class="text-link"
+                                  disabled={!!busy()}
+                                  onClick={() => void explore(p)}
+                                >
+                                  {busy() === p.id
+                                    ? "Building timeline…"
+                                    : "View growth model"}
+                                </button>
+                              </Show>
+                            </div>
+                          </div>
+                        </article>
+                      )}
+                    </For>
+                  </div>
                 )}
               </For>
             </Show>
@@ -531,6 +623,16 @@ export function Planner() {
       </Show>
       <Show when={history()}>
         <HistoryDialog onClose={() => setHistory(false)} />
+      </Show>
+      <Show when={s.farm() && preview()} keyed>
+        {(p) => (
+          <SeasonPreviewSheet
+            farmId={s.farm()!.id}
+            request={{ planId: p.id }}
+            title={title(p)}
+            onClose={() => setPreview(null)}
+          />
+        )}
       </Show>
       <Show when={editing()}>
         <div class="modal-backdrop">

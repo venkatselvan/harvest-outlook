@@ -1,4 +1,4 @@
-import type { CropFitCandidate, CropFitPick, CropFitReview, CropSeason, NumberEstimate, SoilCheck } from "@harvest/contracts";
+import type { CropFitCandidate, CropFitPick, CropFitReview, CropSeason, IntercropCompanion, NumberEstimate, PriceEstimate, SoilCheck } from "@harvest/contracts";
 import type { ChipTone } from "../ui/Chip";
 
 /**
@@ -12,6 +12,8 @@ export interface ControlsState {
   season: CropSeason;
   /** YYYY-MM-DD, used when mode is "date". */
   sowing: string;
+  /** Round 3: previous-crop override for mode "date" (the swap picker); null = the field's own history. */
+  after: string | null;
 }
 export const SEASONS: readonly { id: CropSeason; label: string }[] = [
   { id: "kharif", label: "Kharif" },
@@ -25,8 +27,11 @@ export const MODES: readonly { id: FitMode; label: string }[] = [
 ];
 /** Prefix of the server limitation written when Meta could not pick (services/crop-fit/service.ts MODEL_UNAVAILABLE). */
 export const MODEL_UNAVAILABLE_PREFIX = "Model unavailable";
-/** Latest sowing date the server accepts (routes/crop-fit.ts). */
-export const MAX_DAYS_AHEAD = 400;
+/**
+ * Latest sowing date the server accepts (routes/crop-fit.ts SOWING_LIMIT_DAYS): through the end of plan year 3, the last
+ * later horizon, which on a fresh field ends about today + 1,461 days (ROUND3_SPEC.md 3.1).
+ */
+export const MAX_DAYS_AHEAD = 1461;
 
 const DAY = 86_400_000;
 export const localToday = (now = new Date()): string =>
@@ -39,25 +44,28 @@ export function seasonForMonth(iso: string): CropSeason {
   const m = Number(iso.slice(5, 7));
   return m >= 2 && m <= 4 ? "summer" : m >= 5 && m <= 8 ? "kharif" : "rabi";
 }
-export const defaultControls = (todayIso: string): ControlsState => ({ mode: "date", season: seasonForMonth(todayIso), sowing: todayIso });
+export const defaultControls = (todayIso: string): ControlsState => ({ mode: "date", season: seasonForMonth(todayIso), sowing: todayIso, after: null });
 /** Controls that match the review the server resolved (the first GET sends no mode; the server picks the default). */
 export function controlsFromReview(review: Pick<CropFitReview, "request">, current: ControlsState): ControlsState {
   const r = review.request;
-  return { mode: r.mode, season: r.season ?? current.season, sowing: r.sowing ?? current.sowing };
+  return { mode: r.mode, season: r.season ?? current.season, sowing: r.sowing ?? current.sowing, after: r.after ?? null };
 }
 /** Query string for a request; parameters that do not apply to the mode are left out. */
 export function queryFor(c: ControlsState | null): string {
   if (!c) return "";
   const q = new URLSearchParams({ mode: c.mode });
   if (c.mode === "season") q.set("season", c.season);
-  if (c.mode === "date") q.set("sowing", c.sowing);
+  if (c.mode === "date") {
+    q.set("sowing", c.sowing);
+    if (c.after) q.set("after", c.after);
+  }
   return `?${q.toString()}`;
 }
 /** Problems with the picked date, or null when it can be sent. */
 export function sowingProblem(sowing: string, todayIso: string): string | null {
   if (!isIsoDate(sowing)) return "Enter a sowing date.";
   if (sowing < todayIso) return "Pick today or a later date.";
-  if (sowing > addDaysIso(todayIso, MAX_DAYS_AHEAD)) return "Pick a date within about a year.";
+  if (sowing > addDaysIso(todayIso, MAX_DAYS_AHEAD)) return "Pick a date within about four years.";
   return null;
 }
 
@@ -105,17 +113,24 @@ export function resolvedLine(r: Pick<CropFitReview, "request" | "resolvedSowing"
 }
 
 // ------------------------------------------------------------------ candidates and picks
-export const candidateKey = (c: Pick<CropFitCandidate, "cropId" | "productId">) => `${c.cropId}|${c.productId}`;
+/** Crop, product and (for an intercrop) the system id, so a sole crop and its intercrop are different rows. Picks carry no system id. */
+export const candidateKey = (c: Pick<CropFitCandidate, "cropId" | "productId"> & { companion?: Pick<IntercropCompanion, "systemId"> | null | undefined }) => `${c.cropId}|${c.productId}|${c.companion?.systemId ?? ""}`;
+const pickKey = (c: Pick<CropFitCandidate, "cropId" | "productId">) => `${c.cropId}|${c.productId}`;
+export const isIntercrop = (c: Pick<CropFitCandidate, "kind" | "companion">): boolean => c.kind === "intercrop" && !!c.companion;
+/** Candidates in ranking order: rankScore (score minus the wait penalty) first, then the server rank. */
+export const rankedCandidates = (r: Pick<CropFitReview, "candidates">): CropFitCandidate[] =>
+  [...r.candidates].sort((a, b) => (b.rankScore ?? b.score) - (a.rankScore ?? a.score) || a.rank - b.rank);
 /** Display name, with the product when the crop has several marketed forms ("Chilli (dry)"). */
 export function displayName(c: Pick<CropFitCandidate, "cropName" | "productName">): string {
   return /\b(dry|green|fresh)\b/i.test(c.productName) && c.productName.toLowerCase() !== c.cropName.toLowerCase() ? `${c.cropName} (${c.productName.toLowerCase()})` : c.cropName;
 }
 export interface PickCard { pick: CropFitPick; candidate: CropFitCandidate }
-/** Picks joined to their candidates in pick order; a pick whose candidate is missing is dropped. */
+/** Picks joined to their candidates in pick order; a pick whose candidate is missing is dropped. A pick names a crop and product only, so when that crop is ranked both alone and as an intercrop it joins the higher-ranked one. */
 export function pickCards(r: Pick<CropFitReview, "picks" | "candidates">): PickCard[] {
-  const by = new Map(r.candidates.map((c) => [candidateKey(c), c]));
+  const by = new Map<string, CropFitCandidate>();
+  for (const c of rankedCandidates(r)) if (!by.has(pickKey(c))) by.set(pickKey(c), c);
   return [...r.picks].sort((a, b) => a.rank - b.rank).flatMap((pick) => {
-    const candidate = by.get(candidateKey(pick));
+    const candidate = by.get(pickKey(pick));
     return candidate ? [{ pick, candidate }] : [];
   });
 }
@@ -123,7 +138,7 @@ export function pickCards(r: Pick<CropFitReview, "picks" | "candidates">): PickC
 export function priceNowText(c: CropFitCandidate): string {
   return c.marketNow ? `${formatPerKg(c.marketNow.p50)} on ${formatDate(c.marketNow.date, false)}` : "No recent mandi quotes";
 }
-export function priceHarvestText(c: CropFitCandidate): string {
+export function priceHarvestText(c: { price: PriceEstimate | null }): string {
   const p = c.price;
   if (!p || p.status !== "available" || !p.range) return "No harvest-week price range";
   return p.range.low === p.range.high ? `${formatPerKg(p.range.low)} at harvest` : `₹${Math.round(p.range.low * 10) / 10} to ₹${Math.round(p.range.high * 10) / 10}/kg at harvest`;
@@ -185,3 +200,88 @@ export const COMPONENT_LABELS: readonly { key: keyof CropFitCandidate["component
 export const harvestText = (c: CropFitCandidate) => `Harvest ${formatRangeDates(c.harvest.earliest, c.harvest.latest)}`;
 export const sowingText = (c: CropFitCandidate) =>
   `Sow ${formatDate(c.sowing)}${c.window && c.window.shiftedDays !== 0 ? ` (moved ${Math.abs(c.window.shiftedDays)} day${Math.abs(c.window.shiftedDays) === 1 ? "" : "s"} into the sowing window)` : ""}`;
+
+// ------------------------------------------------------------------ round 3: plan labels, wait, intercrops, history
+/** The one explanatory line under the crop fit heading (ROUND3_SPEC.md 3.1). */
+export const SAME_AS_PLAN_LINE = "Same candidates, dates and scoring as the year plan";
+/** "Finger millet + pigeon pea (8:1)" for an intercrop, else the plain display name. */
+export function candidateTitle(c: Pick<CropFitCandidate, "cropName" | "productName" | "kind" | "companion">): string {
+  return isIntercrop(c) ? `${displayName(c)} + ${c.companion!.cropName.toLowerCase()}${ratioStated(c.companion!.rowRatio) ? ` (${c.companion!.rowRatio})` : ""}` : displayName(c);
+}
+/** Chip text for how the intercrop yield shares were set. */
+export const shareBasisText = (comp: Pick<IntercropCompanion, "shareBasis">): string => (comp.shareBasis === "sourced" ? "Sourced shares" : "Assumed shares");
+/** "In your year plan: Best overall" (several labels are joined); null when no plan option starts with this crop. */
+export const yearPlanText = (c: Pick<CropFitCandidate, "yearPlanLabels">): string | null => (c.yearPlanLabels?.length ? `In your year plan: ${c.yearPlanLabels.join(", ")}` : null);
+/** "Grown here before: 2025" from the recorded cycles; null when the crop was never recorded on this farm. */
+export function grownBeforeText(c: Pick<CropFitCandidate, "grownBefore">): string | null {
+  const g = c.grownBefore;
+  if (!g || g.cycles === 0) return null;
+  const year = (g.lastHarvest ?? g.lastSowing)?.slice(0, 4);
+  return `Grown here before${year ? `: ${year}` : ""}${g.cycles > 1 ? ` (${g.cycles} seasons)` : ""}`;
+}
+/** "Field idle 7 weeks before sowing, −2 points" (next), "... before sowing" (season, no penalty), or null when there is no wait. */
+export function waitLine(c: Pick<CropFitCandidate, "waitDays" | "waitPenalty">): string | null {
+  const days = c.waitDays ?? 0;
+  if (days <= 0) return null;
+  const idle = days >= 14 ? `${Math.round(days / 7)} weeks` : `${days} day${days === 1 ? "" : "s"}`;
+  const p = c.waitPenalty;
+  if (p === null || p === undefined) return `Field idle ${idle} before sowing`;
+  if (p <= 0) return `Field idle ${idle} before sowing, no penalty`;
+  const rounded = Math.round(p);
+  return `Field idle ${idle} before sowing, ${rounded === 0 ? "less than 1 point" : `−${rounded} point${rounded === 1 ? "" : "s"}`}`;
+}
+/** Expected harvest from the whole field, when the area is known. */
+export function yieldFieldText(c: Pick<CropFitCandidate, "yieldForFieldKg">): string | null {
+  const r = c.yieldForFieldKg;
+  if (!r) return null;
+  return r.low === r.high ? `About ${formatKg(r.low)} from your field` : `About ${group.format(Math.round(r.low))} to ${group.format(Math.round(r.high))} kg from your field`;
+}
+export function companionYieldText(comp: Pick<IntercropCompanion, "yieldKgPerHa" | "yieldBasis">): string {
+  if (!comp.yieldKgPerHa) return "No regional yield for the companion";
+  const r = comp.yieldKgPerHa;
+  const range = r.low === r.high ? formatKg(r.low) : `${group.format(Math.round(r.low))} to ${group.format(Math.round(r.high))} kg`;
+  return `${range}/ha as a sole crop${comp.yieldBasis ? ` · ${BASIS_TEXT[comp.yieldBasis] ?? comp.yieldBasis}` : ""}`;
+}
+const ARRANGEMENT: Record<string, string> = { row: "alternate rows", paired_row: "paired rows", strip: "strips", mixed: "mixed sowing" };
+export const arrangementText = (comp: Pick<IntercropCompanion, "arrangement">): string | null => (comp.arrangement ? ARRANGEMENT[comp.arrangement] ?? comp.arrangement : null);
+
+// ------------------------------------------------------------------ round 3: the reusable picker
+/** The crop in the slot being edited (the picker's `current` prop). */
+export interface CurrentCrop { cropId: string; productId: string; systemId?: string | null }
+/** Picker request: date mode with the swap's previous-crop override (ROUND3_SPEC.md 3.1). */
+export const pickerControls = (sowing: string, after: string | null): ControlsState => ({ mode: "date", season: seasonForMonth(sowing), sowing, after });
+/** Same crop, product and (for an intercrop) system as the current slot. */
+export const isCurrentCandidate = (c: Pick<CropFitCandidate, "cropId" | "productId" | "companion">, current: CurrentCrop | null): boolean =>
+  !!current && c.cropId === current.cropId && c.productId === current.productId && (c.companion?.systemId ?? null) === (current.systemId ?? null);
+export interface PickerSections {
+  /** The current crop's candidate when it is ranked for this date. */
+  current: CropFitCandidate | null;
+  /** Meta's (or the calculated) picks joined to candidates, minus the current crop, which is shown first. */
+  picks: PickCard[];
+  /** Every ranked crop except the current one, in ranking order; picks stay in place and carry a chip. */
+  rest: CropFitCandidate[];
+}
+export function pickerSections(r: Pick<CropFitReview, "picks" | "candidates">, current: CurrentCrop | null): PickerSections {
+  const ranked = rankedCandidates(r);
+  return {
+    current: ranked.find((c) => isCurrentCandidate(c, current)) ?? null,
+    picks: pickCards(r).filter((card) => !isCurrentCandidate(card.candidate, current)),
+    rest: ranked.filter((c) => !isCurrentCandidate(c, current)),
+  };
+}
+/** The row button: the current crop's row keeps it (no change), every other row picks it. */
+export const rowAction = (c: Pick<CropFitCandidate, "cropId" | "productId" | "companion">, current: CurrentCrop | null): "keep" | "use" => (isCurrentCandidate(c, current) ? "keep" : "use");
+
+/** A row ratio the research stated; "not stated" (the engine's placeholder) is left out of labels. */
+export const ratioStated = (ratio: string | null | undefined) => !!ratio && !/^not stated$/i.test(ratio.trim());
+
+/**
+ * Round 3: a rotation order the year plan never proposes (it prunes same-family repeats without a cited succession and
+ * cited avoid-after orders) is still ranked here, so the farmer sees it with a warning chip instead of silently.
+ */
+export function rotationWarningText(c: Pick<CropFitCandidate, "reasonCodes" | "rotation">): string | null {
+  const prev = c.rotation.previousCropId ? c.rotation.previousCropId.replace(/-/g, " ") : "the crop before";
+  if (c.reasonCodes.includes("avoid_after_violation")) return `A source advises against this order after ${prev}; the year plan avoids it`;
+  if (c.reasonCodes.includes("same_family_repeat")) return `Same crop family as ${prev}; the year plan avoids this order`;
+  return null;
+}

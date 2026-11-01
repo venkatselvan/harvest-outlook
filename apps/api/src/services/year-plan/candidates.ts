@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto';
 import type { BasisRef } from '@harvest/contracts';
-import { agronomyCrop, agronomySources, durationFor, greenManureEntries, legumeCredit, methodsFor, poolEntries, rotationFacts, windowsFor, type DurationClass } from './data';
+import { agronomyCrop, agronomySources, durationFor, greenManureEntries, IC_PREFIX, intercropStatus, intercropSystems, legumeCredit, methodsFor, poolEntries, rotationFacts, windowsFor, type DurationClass, type IntercropSystem } from './data';
 import { addDays, clippedDays, daysBetween } from './dates';
 import { ASSUMPTIONS, assumptionBasis, PRUNED_RULES, sequenceScore, soilRotationScore, type RotationScoreResult } from './scoring';
 import type { Candidate, DateRange, EngineContext, HarvestRange, PlacedWindow, Season, Sequence, SlotPlan } from './types';
@@ -60,6 +60,45 @@ export function makeSlotPlan(ctx: EngineContext, p: PlanParts): SlotPlan {
     uncertainties: [...new Set(uncertainties)], basis,
   };
 }
+
+/** Round 3: harvest of an intercrop companion (ASSUMPTIONS.intercropCompanionHarvest); the main crop harvest when it is not later. */
+function companionTiming(ctx: EngineContext, s: IntercropSystem, sowing: string, main: HarvestRange): { harvest: HarvestRange; days: { low: number; high: number } | null; note: string | null } {
+  if (!s.companionAfterMain && !s.companionBeforeMain) return { harvest: { ...main }, days: null, note: null };
+  const classes = durationFor(s.companionCropId, null, ctx.stateId, s.companionProductId);
+  if (s.companionBeforeMain) {
+    // Harvested first: its own (shortest) duration sets its price week, never later than the main harvest.
+    const c0 = [...classes].sort((a, b) => a.max - b.max || a.min - b.min)[0];
+    if (!c0) return { harvest: { ...main }, days: null, note: null };
+    const e = addDays(sowing, c0.min), l = addDays(sowing, c0.max);
+    return { harvest: { earliest: e < main.earliest ? e : main.earliest, latest: l < main.latest ? l : main.latest }, days: null, note: null };
+  }
+  if (!classes.length) return { harvest: { ...main }, days: null, note: 'The companion has no sourced duration; its harvest is taken as the main crop harvest.' };
+  const cls = [...classes].sort((a, b) => a.max - b.max || a.min - b.min)[0]!;
+  const e = addDays(sowing, cls.min), l = addDays(sowing, cls.max);
+  return { harvest: { earliest: e > main.earliest ? e : main.earliest, latest: l > main.latest ? l : main.latest }, days: { low: cls.min, high: cls.max }, note: `The companion is harvested after the main crop (${cls.min}-${cls.max} days, its shortest sourced duration class); the field is held until then.` };
+}
+
+/**
+ * Round 3 (ROUND3_SPEC 8.2): an intercrop slot. The main crop gives the window, method, duration, harvest and price week; the
+ * system gives the companion, row ratio and shares. Kind 'intercrop'; key prefix 'intercrop:' for generated candidates.
+ */
+export function makeIntercropSlotPlan(ctx: EngineContext, p: PlanParts & { system: IntercropSystem }): SlotPlan {
+  const s = p.system;
+  const plan = makeSlotPlan(ctx, { ...p, kind: 'intercrop' });
+  const comp = companionTiming(ctx, s, p.sowing, p.harvest);
+  if (comp.harvest.latest > plan.harvest.latest) plan.occupancy = { from: plan.sowing, to: addDays(comp.harvest.latest, ASSUMPTIONS.landPrepGapDays.value) };
+  plan.intercrop = { systemId: s.id, system: s, companionHarvest: comp.harvest, companionDurationDays: comp.days };
+  const lines = [`Intercrop ${s.name} at ${s.rowRatio}: yield shares ${s.shareBasis === 'sourced' ? 'from the system source' : 'are assumed (research fallback or provisional figures)'}.`];
+  if (comp.note) lines.push(comp.note);
+  plan.uncertainties = [...new Set([...plan.uncertainties, ...lines])];
+  if (s.source) plan.basis.push({ kind: 'yield_reference', label: `Intercrop shares: ${s.source.title ?? s.source.id}`.slice(0, 200), sourceId: s.source.id, url: s.source.url, scope: null, note: `${s.rowRatio}; main ${s.yieldShare.main.min}-${s.yieldShare.main.max}, companion ${s.yieldShare.companion.min}-${s.yieldShare.companion.max} of the sole-crop yield (${s.shareBasis})${s.source.locator ? `; ${s.source.locator}` : ''}`.slice(0, 1000) });
+  plan.basis.push(assumptionBasis('intercropShareScaling'));
+  if (comp.days) plan.basis.push(assumptionBasis('intercropCompanionHarvest'));
+  return plan;
+}
+
+/** Crop id used for rotation after this slot: an intercrop with a sourced system nitrogen credit becomes 'ic:<systemId>'. */
+export const rotationId = (s: Pick<SlotPlan, 'cropId' | 'intercrop'>): string => (s.intercrop?.system.nitrogenCredit?.sourced ? `${IC_PREFIX}${s.intercrop.systemId}` : s.cropId);
 
 export interface CandidateSet {
   candidates: Candidate[];
@@ -122,6 +161,38 @@ export function enumerateCandidates(ctx: EngineContext): CandidateSet {
     }
     if (byId.size === before) skipped.push({ cropId, productId: null, reason: 'No sowing date fits the free months of the field within the horizon.' });
   }
+  // Round 3: intercrop candidates on the main crop's usable windows (the system's season when stated), with the system's
+  // irrigation condition and the main crop's durations (ROUND3_SPEC 8.2).
+  for (const s of intercropSystems(where)) {
+    if (ctx.excludedCropIds.includes(s.mainCropId) || ctx.excludedCropIds.includes(s.companionCropId)) { skipped.push({ cropId: s.mainCropId, productId: s.mainProductId, reason: `Intercrop ${s.id}: a crop is excluded by the farmer.` }); continue; }
+    // Orchestrator decision 2026-11-01: windows compatible with the system's condition ('any' on either side matches), the
+    // system's season when set; the field's irrigation is checked against the system's condition, or the window's for 'any'.
+    const sc = s.condition && s.condition.toLowerCase() !== 'any' ? s.condition.toLowerCase() : null;
+    const placed = placeWindows(windowsFor(s.mainCropId, where), { from: ctx.earliestSowing, to: ctx.horizon.to })
+      .filter((w) => (!s.season || w.season === s.season) && (!sc || w.condition.toLowerCase() === 'any' || w.condition.toLowerCase().startsWith(sc)));
+    const before = byId.size;
+    for (const method of methodsFor(s.mainCropId)) {
+      durationFor(s.mainCropId, method, ctx.stateId, s.mainProductId).forEach((cls, ci) => {
+        for (const w of placed) {
+          const compat = irrigationCompat(sc ?? w.condition, ctx.irrigation);
+          if (!compat.ok) continue;
+          for (const sowing of weeklyDates(w.from, w.to)) {
+            if (sowing < ctx.earliestSowing || sowing >= ctx.horizon.to) continue;
+            const harvest = { earliest: addDays(sowing, cls.min), latest: addDays(sowing, cls.max) };
+            if (harvest.latest >= ctx.horizon.to) continue;
+            const plan = makeIntercropSlotPlan(ctx, { key: `intercrop:${s.id}|${s.mainProductId}|${method}|d${ci}|${sowing}`, cropId: s.mainCropId, productId: s.mainProductId, method, sowing, harvest, season: w.season, durationDays: { low: cls.min, high: cls.max }, duration: cls, hit: { window: w, conditional: compat.conditional, note: compat.note }, system: s });
+            if (plan.intercrop!.companionHarvest.latest >= ctx.horizon.to) continue;
+            if (ctx.occupied.some((o) => o.from < plan.occupancy.to && plan.occupancy.from < o.to)) continue;
+            const cand: Candidate = { ...plan, candidateId: plan.key, durationClass: ci };
+            const prev = byId.get(cand.candidateId);
+            if (!prev || cand.windowFit > prev.windowFit || (cand.windowFit === prev.windowFit && prev.flags.conditional && !cand.flags.conditional)) byId.set(cand.candidateId, cand);
+          }
+        }
+      });
+    }
+    if (byId.size === before) skipped.push({ cropId: s.mainCropId, productId: s.mainProductId, reason: `Intercrop ${s.id}: no sowing date in the main crop's windows fits the free months of the field within the horizon.` });
+  }
+  if (intercropStatus() !== 'loaded') notes.push('No intercropping research is available yet, so no intercrop plans are offered.');
   // Round 2: green manure candidates (green-manure.json via the pool's greenManure list), same window and irrigation rules.
   for (const g of greenManureEntries()) {
     const cropId = g.cropId;
@@ -192,7 +263,7 @@ export function predecessorOf(ctx: EngineContext, earlier: readonly SlotPlan[], 
   const prior = [
     ...(ctx.transitionFromCropId ? [{ cropId: ctx.transitionFromCropId, end: ctx.fixedSlot?.occupancy.to ?? '' }] : []),
     ...ctx.occupied.map((o) => ({ cropId: o.cropId, end: o.to })),
-    ...earlier.filter((s) => !s.fixed).map((s) => ({ cropId: s.cropId, end: s.occupancy.to })),
+    ...earlier.filter((s) => !s.fixed).map((s) => ({ cropId: rotationId(s), end: s.occupancy.to })),
   ];
   let best: { cropId: string; end: string } | null = null;
   for (const p of prior) if (p.end <= sowing && (!best || p.end >= best.end)) best = p;
@@ -266,7 +337,7 @@ export function enumerateSequences(ctx: EngineContext, candidates: readonly Cand
         const prevCrop = predecessorOf(ctx, p.slots, c.sowing);
         if (prevCrop !== null && PRUNED_RULES.has(rot(prevCrop, c.cropId).rule)) continue;
         const slots = [...p.slots, c];
-        next.push({ slots, value: score(slots), id: slots.map((s) => s.candidateId).join('>'), signature: slots.map((s) => `${s.cropId}/${s.productId}/${s.method ?? 'any'}`).join('>') });
+        next.push({ slots, value: score(slots), id: slots.map((s) => s.candidateId).join('>'), signature: slots.map((s) => `${s.cropId}/${s.productId}/${s.method ?? 'any'}${s.intercrop ? `+${s.intercrop.systemId}` : ''}`).join('>') });
       }
     }
     frontier = beam(next, maxSequences, perSignature);

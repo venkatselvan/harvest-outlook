@@ -3,18 +3,65 @@ import type { CropFitCandidate } from "@harvest/contracts";
 import { Chip } from "../ui/Chip";
 import { ScoreRing } from "../ui/ScoreRing";
 import {
+  candidateTitle,
   cardChecks,
-  displayName,
+  grownBeforeText,
   harvestText,
+  isIntercrop,
   priceHarvestText,
   priceNowText,
   profitText,
+  shareBasisText,
   soilChipText,
+  rotationWarningText,
   sowingText,
   verdictTone,
+  waitLine,
+  yearPlanText,
+  yieldFieldText,
   yieldText,
   type PickCard,
 } from "./cropFitModel";
+
+/**
+ * Round 3 chips shared by the cards, the ranked list, the sheet and the picker: which year-plan option starts with this
+ * crop, whether the farm grew it before, and for an intercrop the yield-share basis. Renders nothing when none apply.
+ */
+export function CandidateChips(props: { candidate: CropFitCandidate }) {
+  const plan = () => yearPlanText(props.candidate);
+  const grown = () => grownBeforeText(props.candidate);
+  const rotation = () => rotationWarningText(props.candidate);
+  return (
+    <Show when={plan() || grown() || rotation() || isIntercrop(props.candidate)}>
+      <span class="cf-chips">
+        <Show when={rotation()}>{(t) => <Chip tone="watch">{t()}</Chip>}</Show>
+        <Show when={isIntercrop(props.candidate)}>
+          <Chip tone="legume">Intercrop</Chip>
+          <Chip tone={props.candidate.companion!.shareBasis === "sourced" ? "done" : "watch"}>{shareBasisText(props.candidate.companion!)}</Chip>
+        </Show>
+        <Show when={plan()}>{(t) => <Chip tone="info">{t()}</Chip>}</Show>
+        <Show when={grown()}>{(t) => <Chip tone="observed">{t()}</Chip>}</Show>
+      </span>
+    </Show>
+  );
+}
+
+/** Harvest-week price of the main crop, and for an intercrop the companion's price on its own line. */
+export function PriceLines(props: { candidate: CropFitCandidate; withNow?: boolean }) {
+  const comp = () => (isIntercrop(props.candidate) ? props.candidate.companion : null);
+  return (
+    <>
+      <Show when={props.withNow !== false}>
+        <span>Now {priceNowText(props.candidate)}</span>
+      </Show>
+      <span class="cf-sub">
+        {comp() ? `${props.candidate.cropName}: ` : ""}
+        {priceHarvestText(props.candidate)}
+      </span>
+      <Show when={comp()}>{(k) => <span class="cf-sub">{`${k().cropName}: ${priceHarvestText(k())}`}</span>}</Show>
+    </>
+  );
+}
 
 /** Soil match chips ("N low · needs high") in the verdict colour; a fallback chip when no report is confirmed. */
 export function SoilChips(props: { candidate: CropFitCandidate; max?: number }) {
@@ -45,10 +92,11 @@ export function CropFitCard(props: { card: PickCard; fieldAreaHa: number | null;
           <p class="cf-card-rank">Pick {props.card.pick.rank}</p>
           <h3>
             <button type="button" class="cf-card-open" onClick={() => props.onOpen()}>
-              {displayName(c())}
+              {candidateTitle(c())}
             </button>
           </h3>
           <p class="cf-card-headline">{props.card.pick.headline}</p>
+          <CandidateChips candidate={c()} />
         </div>
         <ScoreRing score={c().score} size={48} label={`Fit score ${Math.round(c().score)} out of 100`} />
       </div>
@@ -61,13 +109,15 @@ export function CropFitCard(props: { card: PickCard; fieldAreaHa: number | null;
         <div>
           <dt>Price</dt>
           <dd>
-            Now {priceNowText(c())}
-            <span class="cf-sub">{priceHarvestText(c())}</span>
+            <PriceLines candidate={c()} />
           </dd>
         </div>
         <div>
           <dt>Yield</dt>
-          <dd>{yieldText(c())}</dd>
+          <dd>
+            {yieldText(c())}
+            <Show when={yieldFieldText(c())}>{(t) => <span class="cf-sub">{t()}</span>}</Show>
+          </dd>
         </div>
         <div>
           <dt>{props.fieldAreaHa && c().profitForField ? "Profit for your field" : "Profit"}</dt>
@@ -88,6 +138,7 @@ export function CropFitCard(props: { card: PickCard; fieldAreaHa: number | null;
       <p class="cf-card-dates">
         {sowingText(c())} · {harvestText(c())}
       </p>
+      <Show when={waitLine(c())}>{(t) => <p class="cf-wait">{t()}</p>}</Show>
     </article>
   );
 }

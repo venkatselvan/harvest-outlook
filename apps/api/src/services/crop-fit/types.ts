@@ -7,7 +7,7 @@ import type { SlotPlan } from '../year-plan/types';
  * Crop fit v2 (ROUND2_SPEC.md section 4). Internal shapes shared by the pure ranking (rank.ts), the soil comparison
  * (soil-compare.ts), the Meta picks (select.ts) and the persisted review (service.ts).
  */
-export const CROP_FIT_ENGINE_VERSION = 'crop-fit-v2-2026-11-01';
+export const CROP_FIT_ENGINE_VERSION = 'crop-fit-v3.1-2026-11-01';
 export const CROP_FIT_JOB_TYPE = 'farm.crop-fit';
 /** Largest distance from the requested sowing date to the nearest day of a sourced window (ROUND2_SPEC 4.1). */
 export const MAX_SHIFT_DAYS = 21;
@@ -26,6 +26,8 @@ export interface ResolvedMode {
   previousCropId: string | null;
   season: CropSeason | null;
   notes: string[];
+  /** Round 3: `after` of a date request; replaces the field's own previous crop for every candidate. */
+  previousOverride?: string | null | undefined;
 }
 
 /** One crop/product placed and evaluated with the year-plan slot scoring; the best method and duration class is kept. */
@@ -37,6 +39,12 @@ export interface RankedCandidate {
   shiftedDays: number;
   /** 0..100, the year-plan per-slot display score (all five weights). */
   score: number;
+  /** Round 3 (ROUND3_SPEC 5): idle days before this sowing (from the field release, the season floor or the requested date). */
+  waitDays: number | null;
+  /** Score points deducted for the wait (next mode only; 0 elsewhere). */
+  waitPenalty: number;
+  /** score - waitPenalty, the ranking key (0..100). */
+  rankScore: number;
   components: { price: number; yield: number; soilRotation: number; water: number; confidence: number };
   reasonCodes: string[];
   uncertainties: string[];

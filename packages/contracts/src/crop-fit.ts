@@ -1,6 +1,6 @@
 import {z} from 'zod';
 import {ModelInvocation} from './common';
-import {BasisRef, CostEstimate, HarvestWindow, NumberEstimate, NumberRange, PriceEstimate, ScoreComponents, ScoreWeights, YearPlanReason} from './year-plan';
+import {BasisRef, CostEstimate, HarvestWindow, IntercropCompanion, NumberEstimate, NumberRange, PriceEstimate, ScoreComponents, ScoreWeights, YearPlanReason} from './year-plan';
 
 /**
  * Crop fit v2 (ROUND2_SPEC.md section 4): every pool crop scored for one sowing date on this field with the year-plan
@@ -39,8 +39,21 @@ export const CropFitCandidate = z.object({
  cropName: z.string().max(120),
  productName: z.string().max(120),
  establishmentMethod: z.string().max(80).nullable(),
+ /** Round 3: an intercrop candidate is the main crop (these fields) plus `companion`. Absent = 'crop'. */
+ kind: z.enum(['crop', 'intercrop']).optional(),
+ companion: IntercropCompanion.nullable().optional(),
  rank: z.number().int().positive(),
+ /** The year-plan per-slot display score for this crop at this sowing date (identical to the plan's slot score). */
  score: z.number().min(0).max(100),
+ /** Round 3 (ROUND3_SPEC.md section 5): score minus the wait penalty for the idle time before sowing; the ranking key. */
+ rankScore: z.number().min(0).max(100).optional(),
+ /** Idle days between the field release (or the requested date) and this sowing date, and the penalty in score points. */
+ waitDays: z.number().int().nonnegative().nullable().optional(),
+ waitPenalty: z.number().min(0).max(100).nullable().optional(),
+ /** Labels of the current year plan's options whose first suggested slot is this crop and product. */
+ yearPlanLabels: z.array(z.string().max(60)).max(5).optional(),
+ /** The farm's own history with this crop (recorded cycles), for the swap sheet. */
+ grownBefore: z.object({cycles: z.number().int().nonnegative(), lastSowing: isoDate.nullable(), lastHarvest: isoDate.nullable()}).strict().nullable().optional(),
  components: ScoreComponents,
  sowing: isoDate,
  harvest: HarvestWindow,
@@ -48,6 +61,8 @@ export const CropFitCandidate = z.object({
  window: z.object({scope: z.enum(['district', 'state']), season: CropSeason, fit: z.number().min(0).max(1), shiftedDays: z.number().int()}).strict().nullable(),
  yieldKgPerHa: NumberRange.nullable(),
  yieldBasis: z.enum(['district', 'state', 'reference', 'farmer']).nullable(),
+ /** Round 3: yieldKgPerHa times the field area; null when the area is unknown. */
+ yieldForFieldKg: NumberRange.nullable().optional(),
  price: PriceEstimate.nullable(),
  /** Latest state or district mandi p50 over the last 14 trading days, INR/kg. */
  marketNow: z.object({p50: z.number(), date: isoDate, markets: z.number().int().nonnegative(), scopeLabel: z.string().max(160)}).strict().nullable(),
@@ -66,6 +81,8 @@ export const CropFitCandidate = z.object({
 export const CropFitPick = z.object({
  cropId: z.string().max(120),
  productId: z.string().max(200),
+ /** Round 3: the intercrop system of the picked candidate, so a crop ranked both alone and as an intercrop is matched exactly; null for a sole crop. */
+ systemId: z.string().max(120).nullable().optional(),
  rank: z.number().int().min(1).max(3),
  /** At most 12 words, no digits; written by Meta or by code (pickOrigin). */
  headline: z.string().max(120),
@@ -76,6 +93,8 @@ export const CropFitRequest = z.object({
  mode: CropFitMode,
  season: CropSeason.nullable(),
  sowing: isoDate.nullable(),
+ /** Round 3: previous-crop override for mode=date (the swap sheet passes the crop before the edited slot); null = the field's own history. */
+ after: z.string().max(120).nullable().optional(),
 }).strict();
 
 export const CropFitReview = z.object({
@@ -94,7 +113,9 @@ export const CropFitReview = z.object({
  modelInvocation: ModelInvocation.nullable(),
  picks: z.array(CropFitPick).max(3),
  pickOrigin: z.enum(['model', 'deterministic']).nullable(),
- candidates: z.array(CropFitCandidate).max(30),
+ candidates: z.array(CropFitCandidate).max(40),
+ /** Round 3: the ready year plan review the candidates were cross-referenced with (yearPlanLabels), when one exists. */
+ yearPlanReviewId: z.uuid().nullable().optional(),
  weights: ScoreWeights,
  soilReportStatus: z.enum(['none', 'unconfirmed', 'confirmed']),
  summary: text,

@@ -38,8 +38,13 @@
             "type": "string",
             "enum": [
               "crop",
-              "green_manure"
+              "green_manure",
+              "intercrop"
             ]
+          },
+          "systemId": {
+            "type": "string",
+            "maxLength": 120
           },
           "sowing": {
             "type": "string",

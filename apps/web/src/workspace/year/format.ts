@@ -33,6 +33,18 @@ export const monthYear = (iso: string) => {
   const p = parseIso(iso);
   return `${monthName(p.m)} ${p.y}`;
 };
+/** "2026-12-31" + 1 -> "2027-01-01". Calendar arithmetic in UTC, no time zone shift. */
+export function addDaysIso(iso: string, days: number): string {
+  const p = parseIso(iso);
+  const d = new Date(Date.UTC(p.y, p.m - 1, p.d + days));
+  return d.toISOString().slice(0, 10);
+}
+/** "2026-10-01" + 1 -> "2027-10-01". A 29 February moves to 1 March in a non-leap year. */
+export function addYearsIso(iso: string, years: number): string {
+  const p = parseIso(iso);
+  const d = new Date(Date.UTC(p.y + years, p.m - 1, p.d));
+  return d.toISOString().slice(0, 10);
+}
 /** "2026-11-18" -> "mid-Nov" (1-10 early, 11-20 mid, 21+ late). */
 export const partOfMonth = (iso: string) => {
   const p = parseIso(iso);

@@ -183,7 +183,8 @@
           "type": "string",
           "enum": [
             "occupied",
-            "fresh"
+            "fresh",
+            "future"
           ]
         },
         "horizon": {
@@ -206,6 +207,11 @@
           ],
           "additionalProperties": false
         },
+        "yearIndex": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 3
+        },
         "currentCycleId": {
           "type": [
             "string",
@@ -216,6 +222,66 @@
           "type": [
             "string",
             "null"
+          ]
+        },
+        "assumedPredecessor": {
+          "anyOf": [
+            {
+              "type": "object",
+              "properties": {
+                "cropId": {
+                  "type": "string",
+                  "maxLength": 120
+                },
+                "cropName": {
+                  "type": "string",
+                  "maxLength": 120
+                },
+                "basis": {
+                  "type": "string",
+                  "enum": [
+                    "current_cycle",
+                    "saved_season",
+                    "previous_harvest",
+                    "year_plan_option"
+                  ]
+                },
+                "optionLabel": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "maxLength": 60
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "horizonFrom": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "format": "date",
+                      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              },
+              "required": [
+                "cropId",
+                "cropName",
+                "basis",
+                "optionLabel",
+                "horizonFrom"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "null"
+            }
           ]
         },
         "fieldAreaHa": {
@@ -322,7 +388,7 @@
       "additionalProperties": false
     },
     "options": {
-      "maxItems": 4,
+      "maxItems": 5,
       "type": "array",
       "items": {
         "type": "object",
@@ -334,6 +400,14 @@
           "label": {
             "type": "string",
             "maxLength": 60
+          },
+          "secondaryLabels": {
+            "maxItems": 3,
+            "type": "array",
+            "items": {
+              "type": "string",
+              "maxLength": 60
+            }
           },
           "origin": {
             "type": "string",
@@ -428,7 +502,380 @@
                   "type": "string",
                   "enum": [
                     "crop",
-                    "green_manure"
+                    "green_manure",
+                    "intercrop"
+                  ]
+                },
+                "companion": {
+                  "anyOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "systemId": {
+                          "type": "string",
+                          "maxLength": 120
+                        },
+                        "cropId": {
+                          "type": "string",
+                          "maxLength": 120
+                        },
+                        "productId": {
+                          "type": "string",
+                          "maxLength": 200
+                        },
+                        "cropName": {
+                          "type": "string",
+                          "maxLength": 120
+                        },
+                        "productName": {
+                          "type": "string",
+                          "maxLength": 120
+                        },
+                        "rowRatio": {
+                          "type": "string",
+                          "maxLength": 20
+                        },
+                        "arrangement": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "enum": [
+                                "row",
+                                "paired_row",
+                                "strip",
+                                "mixed"
+                              ]
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "yieldShare": {
+                          "type": "object",
+                          "properties": {
+                            "main": {
+                              "type": "object",
+                              "properties": {
+                                "low": {
+                                  "type": "number"
+                                },
+                                "high": {
+                                  "type": "number"
+                                }
+                              },
+                              "required": [
+                                "low",
+                                "high"
+                              ],
+                              "additionalProperties": false
+                            },
+                            "companion": {
+                              "type": "object",
+                              "properties": {
+                                "low": {
+                                  "type": "number"
+                                },
+                                "high": {
+                                  "type": "number"
+                                }
+                              },
+                              "required": [
+                                "low",
+                                "high"
+                              ],
+                              "additionalProperties": false
+                            }
+                          },
+                          "required": [
+                            "main",
+                            "companion"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "shareBasis": {
+                          "type": "string",
+                          "enum": [
+                            "sourced",
+                            "assumed"
+                          ]
+                        },
+                        "yieldKgPerHa": {
+                          "anyOf": [
+                            {
+                              "type": "object",
+                              "properties": {
+                                "low": {
+                                  "type": "number"
+                                },
+                                "high": {
+                                  "type": "number"
+                                }
+                              },
+                              "required": [
+                                "low",
+                                "high"
+                              ],
+                              "additionalProperties": false
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "yieldBasis": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "enum": [
+                                "district",
+                                "state",
+                                "reference",
+                                "farmer"
+                              ]
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "price": {
+                          "anyOf": [
+                            {
+                              "type": "object",
+                              "properties": {
+                                "status": {
+                                  "type": "string",
+                                  "enum": [
+                                    "available",
+                                    "insufficient"
+                                  ]
+                                },
+                                "unit": {
+                                  "type": "string",
+                                  "const": "INR/kg"
+                                },
+                                "p50": {
+                                  "type": [
+                                    "number",
+                                    "null"
+                                  ]
+                                },
+                                "range": {
+                                  "anyOf": [
+                                    {
+                                      "type": "object",
+                                      "properties": {
+                                        "low": {
+                                          "type": "number"
+                                        },
+                                        "high": {
+                                          "type": "number"
+                                        }
+                                      },
+                                      "required": [
+                                        "low",
+                                        "high"
+                                      ],
+                                      "additionalProperties": false
+                                    },
+                                    {
+                                      "type": "null"
+                                    }
+                                  ]
+                                },
+                                "harvestWeek": {
+                                  "anyOf": [
+                                    {
+                                      "type": "string",
+                                      "maxLength": 10
+                                    },
+                                    {
+                                      "type": "null"
+                                    }
+                                  ]
+                                },
+                                "yearsUsed": {
+                                  "type": "array",
+                                  "items": {
+                                    "type": "integer",
+                                    "minimum": -9007199254740991,
+                                    "maximum": 9007199254740991
+                                  }
+                                },
+                                "observations": {
+                                  "type": "integer",
+                                  "minimum": 0,
+                                  "maximum": 9007199254740991
+                                },
+                                "scope": {
+                                  "type": "object",
+                                  "properties": {
+                                    "level": {
+                                      "type": "string",
+                                      "enum": [
+                                        "market",
+                                        "district",
+                                        "state",
+                                        "national"
+                                      ]
+                                    },
+                                    "stateName": {
+                                      "type": [
+                                        "string",
+                                        "null"
+                                      ]
+                                    },
+                                    "districtName": {
+                                      "type": [
+                                        "string",
+                                        "null"
+                                      ]
+                                    },
+                                    "marketCount": {
+                                      "type": "integer",
+                                      "minimum": 0,
+                                      "maximum": 9007199254740991
+                                    }
+                                  },
+                                  "required": [
+                                    "level",
+                                    "stateName",
+                                    "districtName",
+                                    "marketCount"
+                                  ],
+                                  "additionalProperties": false
+                                },
+                                "reason": {
+                                  "anyOf": [
+                                    {
+                                      "type": "string",
+                                      "maxLength": 80
+                                    },
+                                    {
+                                      "type": "null"
+                                    }
+                                  ]
+                                }
+                              },
+                              "required": [
+                                "status",
+                                "unit",
+                                "p50",
+                                "range",
+                                "harvestWeek",
+                                "yearsUsed",
+                                "observations",
+                                "scope",
+                                "reason"
+                              ],
+                              "additionalProperties": false
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "nitrogenCreditKgPerHa": {
+                          "anyOf": [
+                            {
+                              "type": "object",
+                              "properties": {
+                                "low": {
+                                  "type": "number"
+                                },
+                                "high": {
+                                  "type": "number"
+                                }
+                              },
+                              "required": [
+                                "low",
+                                "high"
+                              ],
+                              "additionalProperties": false
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "costPerHa": {
+                          "type": [
+                            "number",
+                            "null"
+                          ]
+                        },
+                        "source": {
+                          "anyOf": [
+                            {
+                              "type": "object",
+                              "properties": {
+                                "id": {
+                                  "type": "string",
+                                  "maxLength": 80
+                                },
+                                "title": {
+                                  "type": "string",
+                                  "maxLength": 200
+                                },
+                                "url": {
+                                  "anyOf": [
+                                    {
+                                      "type": "string",
+                                      "format": "uri"
+                                    },
+                                    {
+                                      "type": "null"
+                                    }
+                                  ]
+                                },
+                                "locator": {
+                                  "anyOf": [
+                                    {
+                                      "type": "string",
+                                      "maxLength": 200
+                                    },
+                                    {
+                                      "type": "null"
+                                    }
+                                  ]
+                                }
+                              },
+                              "required": [
+                                "id",
+                                "title",
+                                "url",
+                                "locator"
+                              ],
+                              "additionalProperties": false
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        }
+                      },
+                      "required": [
+                        "systemId",
+                        "cropId",
+                        "productId",
+                        "cropName",
+                        "productName",
+                        "rowRatio",
+                        "arrangement",
+                        "yieldShare",
+                        "shareBasis",
+                        "yieldKgPerHa",
+                        "yieldBasis",
+                        "price",
+                        "nitrogenCreditKgPerHa",
+                        "source"
+                      ],
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "null"
+                    }
                   ]
                 },
                 "nitrogenCreditKgPerHa": {
@@ -551,6 +998,29 @@
                         "reference",
                         "farmer"
                       ]
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "yieldForFieldKg": {
+                  "anyOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "low": {
+                          "type": "number"
+                        },
+                        "high": {
+                          "type": "number"
+                        }
+                      },
+                      "required": [
+                        "low",
+                        "high"
+                      ],
+                      "additionalProperties": false
                     },
                     {
                       "type": "null"
@@ -1164,6 +1634,11 @@
             "minimum": 0,
             "maximum": 12
           },
+          "idlePenaltyPoints": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 100
+          },
           "reasons": {
             "maxItems": 3,
             "type": "array",
@@ -1460,6 +1935,58 @@
         ],
         "additionalProperties": false
       }
+    },
+    "navigation": {
+      "type": "object",
+      "properties": {
+        "from": {
+          "type": "string",
+          "format": "date",
+          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+        },
+        "previousFrom": {
+          "anyOf": [
+            {
+              "type": "string",
+              "format": "date",
+              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "nextFrom": {
+          "anyOf": [
+            {
+              "type": "string",
+              "format": "date",
+              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "yearIndex": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 3
+        },
+        "maxYearIndex": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 3
+        }
+      },
+      "required": [
+        "from",
+        "previousFrom",
+        "nextFrom",
+        "yearIndex",
+        "maxYearIndex"
+      ],
+      "additionalProperties": false
     },
     "candidatesConsidered": {
       "type": "integer",

@@ -1,4 +1,5 @@
 import type { BasisRef, YearPlanScenario } from '@harvest/contracts';
+import type { IntercropSystem } from './data';
 
 /** Season labels used by the agronomy research (crop-agronomy.json methods.seasonLabel). */
 export type Season = 'kharif' | 'rabi' | 'summer';
@@ -41,7 +42,12 @@ export interface SlotFlags {
 export interface SlotPlan {
   key: string;
   /** Round 2: 'green_manure' slots are grown and ploughed in (no product, no price, revenue 0). Absent = 'crop'. */
-  kind?: 'crop' | 'green_manure' | undefined;
+  kind?: 'crop' | 'green_manure' | 'intercrop' | undefined;
+  /**
+   * Round 3 (ROUND3_SPEC 8.2): an intercrop slot; cropId/productId/method/harvest are the main crop's, the companion's
+   * harvest may run later (ASSUMPTIONS.intercropCompanionHarvest) and the occupancy then covers it.
+   */
+  intercrop?: IntercropPlan | undefined;
   cropId: string;
   productId: string;
   /** Establishment method of the duration rows used; null when the source says 'any' or the method is unknown. */
@@ -58,6 +64,14 @@ export interface SlotPlan {
   flags: SlotFlags;
   uncertainties: string[];
   basis: BasisRef[];
+}
+
+export interface IntercropPlan {
+  systemId: string;
+  system: IntercropSystem;
+  companionHarvest: HarvestRange;
+  /** Sourced duration class of the companion used for its harvest; null when it is harvested with the main crop. */
+  companionDurationDays: { low: number; high: number } | null;
 }
 
 export interface Candidate extends SlotPlan {
@@ -101,6 +115,12 @@ export interface EngineContext {
   earliestSowing: string;
   warnings: string[];
   names?: { crop?: Record<string, string> | undefined; product?: Record<string, string> | undefined } | undefined;
+  /** Round 3 (ROUND3_SPEC 1): 0 for the current horizon, 1..3 for later 12-month horizons. */
+  yearIndex?: number | undefined;
+  /** Start of the current horizon and of the three later ones (from_k = current.to + (k - 1) years). */
+  horizonStarts?: { current: DateRange; futures: string[] } | undefined;
+  /** A future horizon that follows the previous horizon's unsaved first plan: that review and its crop signature (hashed). */
+  assumed?: { reviewId: string; signature: string } | null | undefined;
 }
 
 /** A suggested crop sequence (fixed slot excluded; it is taken from the context). */

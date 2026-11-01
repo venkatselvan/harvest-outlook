@@ -1529,6 +1529,59 @@
                   "notes": {
                     "type": "string",
                     "maxLength": 2000
+                  },
+                  "establishmentMethod": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 80
+                  },
+                  "kind": {
+                    "type": "string",
+                    "enum": [
+                      "crop",
+                      "green_manure",
+                      "intercrop"
+                    ]
+                  },
+                  "companion": {
+                    "type": "object",
+                    "properties": {
+                      "systemId": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 120
+                      },
+                      "cropId": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 120
+                      },
+                      "cropName": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 120
+                      },
+                      "productId": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 200
+                      },
+                      "productName": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 120
+                      },
+                      "rowRatio": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 20
+                      }
+                    },
+                    "required": [
+                      "cropId",
+                      "rowRatio"
+                    ],
+                    "additionalProperties": false
                   }
                 },
                 "required": [

@@ -26,8 +26,9 @@ async function productsFor(deps:QuoteDeps,ownerId:string,farmId:string,requested
  if(requested?.length){const rows=await deps.pool.query<{id:string;slug:string}>('SELECT id,slug FROM crop_products WHERE slug=ANY($1::text[]) OR id::text=ANY($1::text[])',[requested.slice(0,8)]);return {basis:'requested_products' as const,products:[...new Set(requested.map(id=>rows.rows.find(p=>p.slug===id||p.id===id)?.slug??id))].filter(id=>rows.rows.some(p=>p.slug===id)).slice(0,8)}}
  const workspace=await getWorkspace(deps.pool,ownerId,farmId);const tracked=await workspaceMarketProducts(deps.pool,workspace);
  if(tracked.length)return{basis:'tracked_products' as const,products:tracked.slice(0,8)};
- // Watchlist when nothing is tracked: the crops the latest ready or partial year plan proposes (every slot of every option).
- const plan=(await deps.pool.query<{result:{options?:{slots?:{productId?:string}[]}[]}}>("SELECT result FROM farm_year_plans WHERE farm_id=$1 AND owner_id=$2 AND mode=$3 AND archived_at IS NULL AND status IN ('ready','partial') ORDER BY created_at DESC LIMIT 1",[farmId,ownerId,deps.config.RUNTIME_MODE])).rows[0];
+ // Watchlist when nothing is tracked: the crops the latest ready or partial year plan of the current horizon proposes (every
+ // slot of every option). Later plan years (horizon_from set, ROUND3_SPEC 1) are left out: their crops are a year or more away.
+ const plan=(await deps.pool.query<{result:{options?:{slots?:{productId?:string}[]}[]}}>("SELECT result FROM farm_year_plans WHERE farm_id=$1 AND owner_id=$2 AND mode=$3 AND archived_at IS NULL AND horizon_from IS NULL AND status IN ('ready','partial') ORDER BY created_at DESC LIMIT 1",[farmId,ownerId,deps.config.RUNTIME_MODE])).rows[0];
  const planned=(plan?.result.options??[]).flatMap(o=>o.slots??[]).map(s=>s.productId).filter((id):id is string=>typeof id==='string'&&id.length>0);
  const products=[...new Set(planned)].slice(0,8);return{basis:products.length?'recommendation_watchlist' as const:'none' as const,products};
 }

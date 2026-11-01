@@ -69,6 +69,32 @@ export const StageTimeline = z.object({
  basis: BasisRef,
 }).strict();
 
+/**
+ * Round 3 (ROUND3_SPEC.md section 6): the companion crop of an intercrop slot. Yield shares are fractions of the
+ * sole-crop regional yield (sourced per system, or the flagged research fallback); the slot's main crop keeps its own
+ * yield, price and cost fields and the combined revenue goes into the slot estimates.
+ */
+export const IntercropCompanion = z.object({
+ systemId: z.string().max(120),
+ cropId: z.string().max(120),
+ productId: z.string().max(200),
+ cropName: z.string().max(120),
+ productName: z.string().max(120),
+ /** Main rows to companion rows, e.g. "4:1". */
+ rowRatio: z.string().max(20),
+ arrangement: z.enum(['row', 'paired_row', 'strip', 'mixed']).nullable(),
+ yieldShare: z.object({main: NumberRange, companion: NumberRange}).strict(),
+ shareBasis: z.enum(['sourced', 'assumed']),
+ /** Sole-crop regional yield of the companion, kg/ha, before the share. */
+ yieldKgPerHa: NumberRange.nullable(),
+ yieldBasis: z.enum(['district', 'state', 'reference', 'farmer']).nullable(),
+ price: PriceEstimate.nullable(),
+ nitrogenCreditKgPerHa: NumberRange.nullable(),
+ /** The companion's cost share deducted in the slot economics, INR/ha (sole-crop A2+FL times the seed-rate or row share); null when not sourced. */
+ costPerHa: z.number().nullable().optional(),
+ source: z.object({id: z.string().max(80), title: z.string().max(200), url: z.url().nullable(), locator: z.string().max(200).nullable()}).strict().nullable(),
+}).strict();
+
 export const YearPlanSlot = z.object({
  slotId: z.string().max(120),
  cropId: z.string().max(120),
@@ -76,8 +102,12 @@ export const YearPlanSlot = z.object({
  cropName: z.string().max(120),
  productName: z.string().max(120),
  establishmentMethod: z.string().max(80).nullable(),
- /** Round 2: 'green_manure' slots are grown and ploughed in (no product, no price, revenue 0). Absent = 'crop'. */
- kind: z.enum(['crop', 'green_manure']).optional(),
+ /**
+  * Round 2: 'green_manure' slots are grown and ploughed in (no product, no price, revenue 0). Round 3: 'intercrop' slots
+  * carry a main crop (these fields) and a companion (`companion`). Absent = 'crop'.
+  */
+ kind: z.enum(['crop', 'green_manure', 'intercrop']).optional(),
+ companion: IntercropCompanion.nullable().optional(),
  /** Nitrogen a legume or green manure leaves for the next crop, kg/ha (sourced range), for display. */
  nitrogenCreditKgPerHa: NumberRange.nullable().optional(),
  /** True for the farmer's current growing cycle (occupied-field scenario); never editable. */
@@ -88,6 +118,8 @@ export const YearPlanSlot = z.object({
  durationDays: NumberRange,
  yieldKgPerHa: NumberRange.nullable(),
  yieldBasis: z.enum(['district', 'state', 'reference', 'farmer']).nullable(),
+ /** Round 3: yieldKgPerHa times the field area (main crop share-adjusted for an intercrop); null when the area is unknown. */
+ yieldForFieldKg: NumberRange.nullable().optional(),
  price: PriceEstimate.nullable(),
  cost: CostEstimate.nullable(),
  /** Round 2: revenuePerHa and profitPerHa carry the likely band (p25 to p75); the estimates below add central and possible. */
@@ -111,11 +143,15 @@ export const YearPlanReason = z.object({code: z.string().max(60), text: z.string
 export const YearPlanOption = z.object({
  optionId: z.string().max(120),
  label: z.string().max(60),
+ /** Round 3: further labels code established for this plan (for example "Best profit" on a plan Meta labelled otherwise). */
+ secondaryLabels: z.array(z.string().max(60)).max(3).optional(),
  origin: z.enum(['model', 'deterministic', 'farmer_edit']),
  score: z.number().min(0).max(100),
  components: ScoreComponents,
  slots: z.array(YearPlanSlot).min(1).max(6),
  idleMonths: z.number().min(0).max(12),
+ /** Round 3: the idle penalty deducted from the score, in score points (0..100), so the UI can show it beside the component bars. */
+ idlePenaltyPoints: z.number().min(0).max(100).optional(),
  reasons: z.array(YearPlanReason).max(3),
  totalRevenuePerHa: NumberRange.nullable(),
  totalProfitPerHa: NumberRange.nullable(),
@@ -131,10 +167,21 @@ export const YearPlanOption = z.object({
 }).strict();
 
 export const YearPlanScenario = z.object({
- kind: z.enum(['occupied', 'fresh']),
+ /** Round 3: 'future' is a later 12-month horizon (ROUND3_SPEC.md section 1) that starts after the current one. */
+ kind: z.enum(['occupied', 'fresh', 'future']),
  horizon: DateWindow,
+ /** 0 for the current horizon, 1..3 for later ones (12 months each). */
+ yearIndex: z.number().int().min(0).max(3).optional(),
  currentCycleId: z.string().nullable(),
  previousCropId: z.string().nullable(),
+ /** Round 3: where the previous crop of a future horizon comes from, so the UI can say "follows the Best overall plan for Oct 2026 to Oct 2027 (not saved yet)". */
+ assumedPredecessor: z.object({
+  cropId: z.string().max(120),
+  cropName: z.string().max(120),
+  basis: z.enum(['current_cycle', 'saved_season', 'previous_harvest', 'year_plan_option']),
+  optionLabel: z.string().max(60).nullable(),
+  horizonFrom: isoDate.nullable(),
+ }).strict().nullable().optional(),
  fieldAreaHa: z.number().nullable(),
  irrigationCategory: z.string().max(80).nullable(),
  stateId: z.string().nullable(),
@@ -155,8 +202,10 @@ export const YearPlanReview = z.object({
  modelInvocation: ModelInvocation.nullable(),
  scenario: YearPlanScenario,
  weights: ScoreWeights,
- /** Round 2: up to four options (the fourth is 'Green manure first' when such a sequence exists). */
- options: z.array(YearPlanOption).max(4),
+ /** Round 2: up to four options (the fourth is 'Green manure first'). Round 3: up to five ('Best profit' is added when no chosen plan holds it). */
+ options: z.array(YearPlanOption).max(5),
+ /** Round 3: horizon paging (ROUND3_SPEC.md section 1); absent on servers that only serve the current horizon. */
+ navigation: z.object({from: isoDate, previousFrom: isoDate.nullable(), nextFrom: isoDate.nullable(), yearIndex: z.number().int().min(0).max(3), maxYearIndex: z.number().int().min(0).max(3)}).strict().optional(),
  candidatesConsidered: z.number().int().nonnegative(),
  summary: text,
  limitations: z.array(text),
@@ -172,12 +221,16 @@ export const RescoreYearPlan = z.object({
   cropId: z.string().max(120),
   productId: z.string().max(200),
   establishmentMethod: z.string().max(80).optional(),
-  /** Round 2: a farmer may insert a green manure slot (cropId from green-manure.json, productId = cropId). */
-  kind: z.enum(['crop', 'green_manure']).optional(),
+  /** Round 2: a farmer may insert a green manure slot (cropId from green-manure.json, productId = cropId). Round 3: an intercrop slot names its system (intercropping.json id); cropId/productId are the main crop's. */
+  kind: z.enum(['crop', 'green_manure', 'intercrop']).optional(),
+  systemId: z.string().max(120).optional(),
   sowing: isoDate,
   harvestLatest: isoDate.optional(),
  }).strict()).min(1).max(6),
 }).strict();
+
+/** Round 3: GET /year-plan?from= and POST body `from` select a later 12-month horizon (ROUND3_SPEC.md section 1). */
+export const YearPlanHorizonQuery = z.object({from: isoDate.optional()}).strict();
 
 export const ApplyYearPlan = z.object({
  reviewId: z.uuid(),
@@ -195,6 +248,8 @@ export type ScoreComponents = z.infer<typeof ScoreComponents>;
 export type PriceEstimate = z.infer<typeof PriceEstimate>;
 export type CostEstimate = z.infer<typeof CostEstimate>;
 export type StageTimeline = z.infer<typeof StageTimeline>;
+export type IntercropCompanion = z.infer<typeof IntercropCompanion>;
+export type YearPlanHorizonQuery = z.infer<typeof YearPlanHorizonQuery>;
 export type YearPlanSlot = z.infer<typeof YearPlanSlot>;
 export type YearPlanOption = z.infer<typeof YearPlanOption>;
 export type YearPlanScenario = z.infer<typeof YearPlanScenario>;

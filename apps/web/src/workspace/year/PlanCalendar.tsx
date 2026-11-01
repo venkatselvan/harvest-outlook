@@ -9,7 +9,9 @@ import {
   displayLabel,
   editedFrom,
   greenManureName,
+  intercropName,
   isGreenManure,
+  isIntercrop,
   isLegume,
   nitrogenCreditText,
   noteLines,
@@ -28,6 +30,8 @@ export function stripLabel(slot: YearPlanSlot): string {
     return `Green manure, ${greenManureName(slot.cropName)}, ${second}. Sow ${longDate(slot.sowing)}, ploughed in by ${longDate(slot.harvest.latest)}. Open details`;
   }
   const price = slot.price?.status === "available" ? "" : ", no price series yet";
+  if (isIntercrop(slot))
+    return `${intercropName(slot)}, ${shortSpan(slot.sowing, slot.harvest.latest)}. Intercrop. Sow ${longDate(slot.sowing)}, harvest by ${longDate(slot.harvest.latest)}${price}. Open details`;
   if (slot.fixed)
     return `${slot.cropName}, growing now. Harvest ${longSpan(slot.harvest.earliest, slot.harvest.latest)}${price}. Open details`;
   return `${slot.cropName}, ${shortSpan(slot.sowing, slot.harvest.latest)}. Sow ${longDate(slot.sowing)}, harvest by ${longDate(slot.harvest.latest)}${price}. Open details`;
@@ -52,9 +56,11 @@ export function trackItems(option: Pick<YearPlanOption, "slots" | "gaps">): Trac
 const gapKey = (optionId: string, gap: YearPlanGap) => `${optionId}|${gap.from}|${gap.to}`;
 
 /**
- * 12-month calendar with one row per option (up to four). Each row has a head (score ring, label with its AI mark or
+ * 12-month calendar with one row per option (up to five). The month columns start at the horizon's first month, so a
+ * later year reads the same way. Each row has a head (score ring, label with its AI mark or
  * "Calculated" chip, profit headline) and a track with one strip per crop from sowing to the latest harvest. The crop
- * already growing is hatched and labelled "Growing now"; a green manure is dashed with a leaf pattern; an idle stretch of
+ * already growing is hatched and labelled "Growing now"; a green manure is dashed with a leaf pattern; an intercrop is
+ * banded and reads "Main + companion · row ratio"; an idle stretch of
  * 21 days or more is a light "Field rests" strip whose reason opens on tap or focus.
  *
  * The head is a div with a stretched button over it (not a button around everything) because the AI spark is itself a
@@ -82,6 +88,7 @@ export function PlanCalendar(props: {
       () => [props.horizonFrom, props.todayIso, props.options.length > 0] as const,
       () => {
         const column = todayColumn();
+        if (scroller && column == null) scroller.scrollLeft = 0; // a later horizon has no current month
         if (!scroller || column == null) return;
         requestAnimationFrame(() => {
           if (!scroller || scroller.scrollWidth <= scroller.clientWidth + 1) return;
@@ -126,6 +133,9 @@ export function PlanCalendar(props: {
                           <strong>{displayLabel(option)}</strong>
                           <Show when={editedFrom(option)}>{(from) => <small>from {from()}</small>}</Show>
                         </span>
+                        <For each={option.secondaryLabels ?? []}>
+                          {(label) => <span class="yp-row-secondary">{label}</span>}
+                        </For>
                         <Show when={option.origin === "model"}>
                           <span class="yp-row-mark">
                             <AiSpark use="year_plan_select" />
@@ -143,7 +153,7 @@ export function PlanCalendar(props: {
                     <button
                       type="button"
                       class="yp-row-open"
-                      aria-label={`${displayLabel(option)}, score ${ringValue(option.score)} out of 100, ${profit().value}, ${profit().caption}. Open details`}
+                      aria-label={`${displayLabel(option)}${(option.secondaryLabels ?? []).map((l) => `, also ${l}`).join("")}, score ${ringValue(option.score)} out of 100, ${profit().value}, ${profit().caption}. Open details`}
                       onClick={() => props.onOpen(option.optionId, null)}
                     />
                   </div>
@@ -203,6 +213,7 @@ export function PlanCalendar(props: {
                                 "is-fixed": slot.fixed,
                                 "is-legume": !slot.fixed && !manure && isLegume(slot.cropId),
                                 "is-green-manure": manure,
+                                "is-intercrop": isIntercrop(slot),
                                 "is-clipped-start": place().clippedStart,
                                 "is-clipped-end": place().clippedEnd,
                               }}
@@ -218,7 +229,7 @@ export function PlanCalendar(props: {
                                   when={manure}
                                   fallback={
                                     <>
-                                      <span class="yp-strip-name">{slot.cropName}</span>{" "}
+                                      <span class="yp-strip-name">{intercropName(slot)}</span>{" "}
                                       <span class="yp-strip-dates">
                                         {slot.fixed ? "Growing now" : shortSpan(slot.sowing, slot.harvest.latest)}
                                       </span>
@@ -288,6 +299,9 @@ export function PlanCalendar(props: {
         </span>
         <span>
           <i class="yp-swatch is-green-manure" /> Green manure
+        </span>
+        <span>
+          <i class="yp-swatch is-intercrop" /> Intercrop
         </span>
         <span>
           <i class="yp-swatch is-rest" /> Field rests

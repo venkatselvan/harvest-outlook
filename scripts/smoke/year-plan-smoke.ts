@@ -6,6 +6,9 @@
  *     afterwards. Records sanitized results only (no key, no owner data beyond ids of the temporary rows).
  * Round 2 (engine year-plan-v4-2026-11-01): prints the plan labels (up to four, the fourth 'Green manure first' added by
  * code), the field profit likely band (per ha when the area is unknown) and the idle gaps with their reasons.
+ * Round 3 (engine year-plan-v5-2026-11-01): runs the current horizon and the next one (`from` = navigation.nextFrom) on the
+ * Coimbatore farm (four or five selection calls in total, expected under $0.10), and prints secondary labels (Best profit),
+ * intercrop slots with their companion, the assumed predecessor of the later year and the field yields.
  * Run: pnpm --filter @harvest/api exec tsx ../../scripts/smoke/year-plan-smoke.ts
  */
 import '../../apps/api/src/env';
@@ -26,28 +29,28 @@ if (config.RUNTIME_MODE !== 'live') throw new Error('smoke_requires_live_mode');
 const key = config.MODEL_API_KEY;
 if (!key) { console.log('MODEL_API_KEY not set; skipping year-plan smoke'); process.exit(0); }
 const pool = createPool(config.DATABASE_URL);
-const OUT = resolve(import.meta.dirname, '../../evals/results/live-smoke/year-plan-v4-2026-11-01.json');
+const OUT = resolve(import.meta.dirname, '../../evals/results/live-smoke/year-plan-v5-2026-11-01.json');
 const deps: YearPlanDeps = {pool, config, budget: Budget.fromConfig(pool, config)};
 
-async function runOne(label: string, ownerId: string, sessionId: string, farmId: string) {
+async function runOne(label: string, ownerId: string, sessionId: string, farmId: string, from?: string) {
   const t0 = Date.now();
-  const first = await ensureYearPlan(deps, {ownerId, sessionId}, farmId);
+  const first = await ensureYearPlan(deps, {ownerId, sessionId}, farmId, {from});
   const gen = await generateYearPlan(deps, first.reviewId!, ownerId);
-  const review = await readYearPlan(deps, ownerId, farmId);
+  const review = await readYearPlan(deps, ownerId, farmId, {from});
   const row = (await pool.query('SELECT input_context, job_id FROM farm_year_plans WHERE id=$1', [first.reviewId])).rows[0];
   if (row?.job_id) await pool.query("DELETE FROM jobs WHERE id=$1 AND state='queued'", [row.job_id]);
   const meta = row?.input_context?.meta ?? null;
   return {
-    label, ms: Date.now() - t0, generate: gen, status: review.status, stale: review.stale, summary: review.summary, scenario: review.scenario,
+    label, ms: Date.now() - t0, generate: gen, status: review.status, stale: review.stale, summary: review.summary, scenario: review.scenario, navigation: review.navigation ?? null,
     candidatesConsidered: review.candidatesConsidered, priceKeys: row?.input_context?.inputs?.priceKeys ?? null,
     climatology: row?.input_context?.inputs?.climatologyRainByMonth ? 'available' : 'unavailable', ndviActiveMonths: row?.input_context?.inputs?.neighbourhoodActiveMonths ?? null,
     meta: meta && {failure: meta.failure, dispatched: meta.dispatched, model: meta.model, usage: meta.usage, costUsd: meta.costUsd},
     modelInvocation: review.modelInvocation && {requestedModel: review.modelInvocation.requestedModel, model: review.modelInvocation.model, status: review.modelInvocation.status, responseDeleted: review.modelInvocation.responseDeleted},
     options: review.options.map((o) => ({
-      optionId: o.optionId, label: o.label, origin: o.origin, score: o.score, components: o.components, idleMonths: o.idleMonths,
+      optionId: o.optionId, label: o.label, secondaryLabels: o.secondaryLabels ?? [], origin: o.origin, score: o.score, components: o.components, idleMonths: o.idleMonths,
       reasons: o.reasons, totalProfitPerHa: o.totalProfitPerHa, totalProfitEstimate: o.totalProfitEstimate ?? null, totalProfitForField: o.totalProfitForField ?? null, fieldAreaHa: o.fieldAreaHa ?? null,
       gaps: o.gaps ?? [], warnings: o.warnings.slice(0, 4),
-      slots: o.slots.map((s) => ({crop: s.cropName, product: s.productId, kind: s.kind ?? 'crop', fixed: s.fixed, sowing: s.sowing, transitionNote: s.transitionNote, nitrogenCreditKgPerHa: s.nitrogenCreditKgPerHa ?? null, profitEstimate: s.profitEstimate ?? null, cost: s.cost?.a2flPerHa ?? null, harvest: s.harvest, score: s.score, components: s.components, yieldKgPerHa: s.yieldKgPerHa, yieldBasis: s.yieldBasis, price: s.price && {status: s.price.status, range: s.price.range, scope: `${s.price.scope.level}: ${[s.price.scope.districtName, s.price.scope.stateName].filter(Boolean).join(', ')}`, reason: s.price.reason}, profitPerHa: s.profitPerHa, reasonCodes: s.reasonCodes})),
+      slots: o.slots.map((s) => ({crop: s.cropName, product: s.productId, kind: s.kind ?? 'crop', companion: s.companion ? {crop: s.companion.cropName, rowRatio: s.companion.rowRatio, shareBasis: s.companion.shareBasis, yieldKgPerHa: s.companion.yieldKgPerHa, price: s.companion.price?.range ?? null} : null, yieldForFieldKg: s.yieldForFieldKg ?? null, fixed: s.fixed, sowing: s.sowing, transitionNote: s.transitionNote, nitrogenCreditKgPerHa: s.nitrogenCreditKgPerHa ?? null, profitEstimate: s.profitEstimate ?? null, cost: s.cost?.a2flPerHa ?? null, harvest: s.harvest, score: s.score, components: s.components, yieldKgPerHa: s.yieldKgPerHa, yieldBasis: s.yieldBasis, price: s.price && {status: s.price.status, range: s.price.range, scope: `${s.price.scope.level}: ${[s.price.scope.districtName, s.price.scope.stateName].filter(Boolean).join(', ')}`, reason: s.price.reason}, profitPerHa: s.profitPerHa, reasonCodes: s.reasonCodes})),
     })),
     limitations: review.limitations,
   };
@@ -72,6 +75,8 @@ try {
   tempFarm = (await createFarm(pool, tempOwner, {name: `Temporary year-plan QA ${randomUUID()}`, location: {stateId: 'IN-TN', districtId: 'IN-TN-coimbatore', precision: 'precise', lat: 11.0168, lon: 76.9558}})).id;
   await putWorkspace(pool, tempOwner, tempFarm, {expectedVersion: 0, boundary: null, previousHarvest: {status: 'unknown'}, cycles: [{id: 'smoke-paddy', cropId: 'paddy', cropName: 'Paddy', productId: 'paddy-grain', sowingDate: '2026-09-01', stage: 'growing'}], rotationPlans: []});
   report.coimbatore = await runOne('Temporary Coimbatore farm (occupied, paddy sown 2026-09-01)', tempOwner, s.id, tempFarm);
+  const next = (report.coimbatore as {navigation?: {nextFrom?: string | null} | null}).navigation?.nextFrom;
+  if (next) report.coimbatoreYear2 = await runOne(`Temporary Coimbatore farm, next plan year from ${next}`, tempOwner, s.id, tempFarm, next);
 } catch (e) {
   report.failed = true;
   report.reason = String((e as Error).message).slice(0, 300);
@@ -81,7 +86,7 @@ try {
   if (tempFarm && tempOwner) await pool.query('DELETE FROM farms WHERE id=$1 AND owner_id=$2', [tempFarm, tempOwner]);
   if (tempOwner) await pool.query('DELETE FROM owners WHERE id=$1', [tempOwner]);
   const left = tempOwner ? (await pool.query('SELECT 1 FROM owners WHERE id=$1', [tempOwner])).rowCount : 0;
-  const costs = [(report.hassan as {meta?: {costUsd?: number}} | undefined)?.meta?.costUsd ?? 0, (report.coimbatore as {meta?: {costUsd?: number}} | undefined)?.meta?.costUsd ?? 0];
+  const costs = [(report.hassan as {meta?: {costUsd?: number}} | undefined)?.meta?.costUsd ?? 0, (report.coimbatore as {meta?: {costUsd?: number}} | undefined)?.meta?.costUsd ?? 0, (report.coimbatoreYear2 as {meta?: {costUsd?: number}} | undefined)?.meta?.costUsd ?? 0];
   report.totalCostUsdEstimate = Math.round(costs.reduce((x, y) => x + y, 0) * 1e6) / 1e6;
   report.cleanup = {tempOwnerLeft: left, demoFarmApplied: false, kept: 'the Hassan demo review row (product cache); usage ledger rows as the spend record'};
   report.completedAt = new Date().toISOString();
@@ -90,7 +95,7 @@ try {
   const brief = (r: any) => r && {status: r.status, ms: r.ms, meta: r.meta, invocation: r.modelInvocation, priceKeys: r.priceKeys, climatology: r.climatology, options: r.options.map((o: any) => ({label: o.label, origin: o.origin, score: o.score, components: o.components, seq: o.slots.map((x: any) => `${x.crop}${x.fixed ? '(growing)' : ''}${x.kind === 'green_manure' ? '(green manure)' : ''} ${x.sowing}`).join(' > '),
     profitLikely: o.totalProfitForField ? `Rs ${o.totalProfitForField.likely.low} to ${o.totalProfitForField.likely.high} for ${o.fieldAreaHa} ha` : o.totalProfitEstimate ? `Rs ${o.totalProfitEstimate.likely.low} to ${o.totalProfitEstimate.likely.high} per ha` : 'not computable',
     gaps: o.gaps.map((g: any) => `${g.from}..${g.to} (${g.days} d): ${g.reason}`), fixedNote: o.slots.find((x: any) => x.fixed)?.transitionNote ?? null, price: o.slots.map((x: any) => x.price?.status === 'available' ? x.price.scope : x.price?.reason ?? 'none').join(' | '), reasons: o.reasons.map((x: any) => x.text)}))};
-  console.log(JSON.stringify({failed: report.failed ?? false, reason: report.reason, hassan: brief(report.hassan), coimbatore: brief(report.coimbatore), totalCostUsdEstimate: report.totalCostUsdEstimate, cleanup: report.cleanup}, null, 2));
+  console.log(JSON.stringify({failed: report.failed ?? false, reason: report.reason, hassan: brief(report.hassan), coimbatore: brief(report.coimbatore), coimbatoreYear2: brief(report.coimbatoreYear2), totalCostUsdEstimate: report.totalCostUsdEstimate, cleanup: report.cleanup}, null, 2));
   await app.close();
   await pool.end();
 }

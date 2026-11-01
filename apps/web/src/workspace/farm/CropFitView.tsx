@@ -2,15 +2,16 @@ import { For, Match, Show, Switch, batch, createEffect, createSignal, on, onClea
 import type { CropFitReview } from "@harvest/contracts";
 import { AiSparkInline } from "../ui/AiSpark";
 import { Chip } from "../ui/Chip";
-import { CropFitCard } from "./CropFitCard";
+import { CandidateChips, CropFitCard } from "./CropFitCard";
 import { CropFitControls } from "./CropFitControls";
 import { CropFitSheet } from "./CropFitSheet";
 import { classifyCropFitError, loadCropFit, pollCropFit, refreshCropFit, type CropFitFailure } from "./cropFitApi";
 import {
+  SAME_AS_PLAN_LINE,
   candidateKey,
+  candidateTitle,
   controlsFromReview,
   defaultControls,
-  displayName,
   formatInrRange,
   harvestText,
   isActive,
@@ -18,9 +19,11 @@ import {
   pickCards,
   pickingModel,
   picksChip,
+  rankedCandidates,
   resolvedLine,
   soilLine,
   sowingText,
+  waitLine,
   type ControlsState,
 } from "./cropFitModel";
 import "./crop-fit.css";
@@ -66,8 +69,10 @@ function SkeletonCards() {
 export function CropFitResults(props: { review: CropFitReview; showAll: boolean; onToggleAll: () => void; onOpen: (key: string) => void; onRetry: () => void; retrying: boolean }) {
   const cards = () => pickCards(props.review);
   const r = () => props.review;
+  const ranked = () => rankedCandidates(r());
   return (
     <>
+      <p class="cf-muted cf-explain">{SAME_AS_PLAN_LINE}.</p>
       <div class="cf-section-head">
         <h3 id="cf-picks-heading">Top picks</h3>
         <PicksStatus review={r()} />
@@ -111,16 +116,18 @@ export function CropFitResults(props: { review: CropFitReview; showAll: boolean;
         </button>
         <Show when={props.showAll}>
           <ol id="cf-all-list" class="cf-list">
-            <For each={r().candidates}>
+            <For each={ranked()}>
               {(c) => (
                 <li>
                   <button type="button" class="cf-list-row" onClick={() => props.onOpen(candidateKey(c))}>
                     <span class="cf-list-rank">{c.rank}</span>
                     <span class="cf-list-main">
-                      <span class="cf-list-name">{displayName(c)}</span>
+                      <span class="cf-list-name">{candidateTitle(c)}</span>
+                      <CandidateChips candidate={c} />
                       <span class="cf-list-meta">
                         {sowingText(c)} · {harvestText(c)}
                       </span>
+                      <Show when={waitLine(c)}>{(t) => <span class="cf-list-meta cf-wait">{t()}</span>}</Show>
                       <span class="cf-list-meta">
                         {c.profitForField && r().fieldAreaHa ? `${formatInrRange(c.profitForField.likely)} for your field` : c.profitPerHa ? `${formatInrRange(c.profitPerHa.likely)} per ha` : "Profit not shown"} · {soilLine(c)}
                       </span>
@@ -230,8 +237,9 @@ export default function CropFitView(props: { farmId: string }) {
     return key && r ? r.candidates.find((c) => candidateKey(c) === key) : undefined;
   };
   const openPick = () => {
-    const key = open();
-    return key ? review()?.picks.find((p) => candidateKey(p) === key) : undefined;
+    const r = review();
+    const candidate = openCandidate();
+    return r && candidate ? pickCards(r).find((card) => card.candidate === candidate)?.pick : undefined;
   };
   const failure = () => {
     const p = phase();

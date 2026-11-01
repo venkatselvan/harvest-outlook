@@ -3,16 +3,23 @@ import { expect, test, type Page } from "@playwright/test";
 import type { YearPlanReview } from "@harvest/contracts";
 import {
   FIXTURE_FARM_ID,
+  FIXTURE_FUTURE_REVIEW_ID,
   applyResult,
   emptyReview,
+  fiveOptionReview,
   fourOptionReview,
+  futureReview,
+  navigableReview,
   occupiedReview,
   pendingReview,
   priceTrendFixture,
   rescoredBestOverall,
+  secondaryLabelReview,
   unavailableReview,
   workspaceBefore,
 } from "../src/workspace/year/fixtures";
+// The crop picker's server answer (read-only import of the crop fit fixtures; synthetic like everything here).
+import { planReview as cropFitPlanReview } from "../src/workspace/farm/cropFitFixtures";
 
 // Every API route is intercepted with synthetic fixtures; nothing reaches a provider or alters stored farms.
 const env = (data: unknown) => ({ requestId: "year-plan", mode: "synthetic", asOf: "2026-11-01T00:00:00Z", data, warnings: [], error: null });
@@ -28,11 +35,22 @@ const crops = [
   { cropId: "ginger", name: "Ginger", products: [product("ginger-fresh", "Fresh"), product("ginger-dry", "Dry")] },
 ];
 
-async function mock(page: Page, opts: { script?: YearPlanReview[]; missing?: boolean } = {}) {
+async function mock(page: Page, opts: { script?: YearPlanReview[]; missing?: boolean; horizons?: Record<string, YearPlanReview> } = {}) {
   let script = [...(opts.script ?? [fourOptionReview])];
   let last = script[0]!;
+  const home = script[0]!;
   let workspace = structuredClone(workspaceBefore);
-  const calls = { gets: 0, posts: 0, postBodies: [] as unknown[], rescores: [] as any[], applies: [] as any[], trends: [] as string[] };
+  const calls = {
+    gets: 0,
+    posts: 0,
+    postBodies: [] as unknown[],
+    rescores: [] as any[],
+    applies: [] as any[],
+    trends: [] as string[],
+    fromGets: [] as string[],
+    fromPosts: [] as string[],
+    cropFit: [] as URLSearchParams[],
+  };
   const nextReview = () => {
     last = script.length ? script.shift()! : last;
     return last;
@@ -61,9 +79,20 @@ async function mock(page: Page, opts: { script?: YearPlanReview[]; missing?: boo
       return route.fulfill({ json: env(result) });
     }
     if (path.endsWith("/year-plan")) {
+      const from = method === "POST" ? (route.request().postDataJSON()?.from ?? null) : url.searchParams.get("from");
       if (method === "POST") calls.posts++;
       else calls.gets++;
+      if (from) (method === "POST" ? calls.fromPosts : calls.fromGets).push(from);
+      const horizon = from ? opts.horizons?.[from] : opts.horizons ? home : undefined;
+      if (horizon) {
+        last = horizon;
+        return route.fulfill({ json: env(horizon) });
+      }
       return route.fulfill({ json: env(nextReview()) });
+    }
+    if (path.endsWith("/crop-fit")) {
+      calls.cropFit.push(url.searchParams);
+      return route.fulfill({ json: env(cropFitPlanReview) });
     }
     if (path === "/api/v1/price-trend") {
       calls.trends.push(url.search);
@@ -123,6 +152,8 @@ test("four options render with score rings and the profit for the field in full 
   }
   await expect(page.getByRole("button", { name: /^Paddy, growing now/ })).toHaveCount(4);
   await expect(page.getByRole("heading", { name: "Saved seasons" })).toBeVisible();
+  // The server sent no navigation, so there is no pager and no swap affordance outside a sheet.
+  await expect(page.locator(".yp-pager")).toHaveCount(0);
 });
 
 test("three rows carry the AI spark, the calculated fourth carries a chip, and the spark does not open the sheet", async ({ page }) => {
@@ -404,6 +435,177 @@ test("without the backend the view explains itself and saved seasons still rende
   expect(calls.postBodies).toEqual([{}]); // the first ask is a plain ensure
   await page.getByRole("button", { name: "Try again" }).click();
   await expect.poll(() => calls.postBodies).toEqual([{}, { force: true }]); // Try again replaces a finished plan at once
+});
+
+test("five options: the fourth is Best profit with an intercrop strip, a legend entry and the companion block", async ({ page }) => {
+  await mock(page, { script: [fiveOptionReview] });
+  await page.goto("/planner");
+  const rows = page.locator(".yp-cal-row");
+  await expect(rows).toHaveCount(5);
+  await expect(rows.nth(3).locator(".yp-row-head")).toContainText("Best profit");
+  await expect(rows.nth(3).locator(".yp-row-line")).toContainText("Calculated");
+  await expect(page.locator(".yp-legend")).toContainText("Intercrop");
+  const strip = rows.nth(3).getByRole("button", { name: /^Finger millet \+ pigeon pea · 8:1, 23 May to 5 Oct\. Intercrop\./ });
+  await expect(strip).toHaveClass(/is-intercrop/);
+  await expect(strip).toContainText("Finger millet + pigeon pea · 8:1");
+  await strip.click();
+  const sheet = page.getByRole("dialog", { name: "Best profit" });
+  await expect(sheet.getByRole("heading", { name: "Finger millet + pigeon pea · 8:1" })).toBeVisible();
+  const companion = sheet.locator(".yp-companion");
+  await expect(companion).toContainText("Pigeon pea · Whole");
+  await expect(companion).toContainText("500 to 700 kg per ha as a sole crop");
+  await expect(companion).toContainText("₹60 to ₹78 per kg");
+  await expect(companion).toContainText("main 85 to 95 percent, companion 20 to 30 percent");
+  await expect(companion).toContainText("Sourced shares");
+  // Field yield under the per-hectare yield (1,800 to 2,200 kg per ha on 0.16 ha).
+  await expect(sheet.locator(".yp-field-yield")).toHaveText("Expected 290 to 350 kg for your 0.16 ha");
+});
+
+test("a plan that also holds the best profit sequence shows it as a chip after its label", async ({ page }) => {
+  await mock(page, { script: [secondaryLabelReview] });
+  await page.goto("/planner");
+  const rows = page.locator(".yp-cal-row");
+  await expect(rows).toHaveCount(4);
+  await expect(rows.first().locator(".yp-row-secondary")).toHaveText("Best profit");
+  await expect(rows.nth(1).locator(".yp-row-secondary")).toHaveCount(0);
+  await expect(rows.first().getByRole("button", { name: /^Best overall, also Best profit, score 78/ })).toBeVisible();
+});
+
+test("the pager steps to year 2, which follows the year-1 plan, and back; Use this plan works on year 2", async ({ page }) => {
+  const calls = await mock(page, { script: [navigableReview], horizons: { "2027-09-01": futureReview } });
+  await page.goto("/planner");
+  const pager = page.locator(".yp-pager");
+  await expect(pager).toContainText("Sep 2026 to Sep 2027");
+  await expect(pager).toContainText("Year 1 of 4");
+  await expect(pager.getByRole("button", { name: /^Previous year/ })).toBeDisabled();
+  expect(calls.fromGets).toEqual([]); // the current horizon is requested without from
+  await pager.getByRole("button", { name: "Next year, Sep 2027 to Sep 2028" }).click();
+  await expect(pager).toContainText("Sep 2027 to Sep 2028");
+  await expect(pager).toContainText("Year 2 of 4");
+  expect(calls.fromGets).toEqual(["2027-09-01"]);
+  await expect(page.locator(".yp-cal-row")).toHaveCount(2);
+  await expect(page.locator(".yp-scenario-line")).toContainText(
+    "Follows the Best overall plan for Sep 2026 to Sep 2027 (not saved yet; save a plan to fix the order)",
+  );
+  await expect(page.locator(".yp-cal-months span").first()).toContainText("Sep");
+  await expect(page.locator(".yp-cal-months span").first()).toContainText("2027");
+  await expect(page.locator(".yp-today")).toHaveCount(0);
+  // Use this plan on the later horizon applies that horizon's review.
+  await page.locator(".yp-cal-row").first().locator(".yp-row-head").click();
+  await page.getByRole("dialog", { name: "Best overall" }).getByRole("button", { name: "Use this plan" }).click();
+  const confirm = page.getByRole("dialog", { name: "Add these seasons?" });
+  await confirm.getByRole("button", { name: "Add 2 seasons" }).click();
+  await expect.poll(() => calls.applies.length).toBe(1);
+  expect(calls.applies[0]).toMatchObject({ reviewId: FIXTURE_FUTURE_REVIEW_ID, optionId: "opt-y2-best-overall", slotIds: ["y2-finger-millet", "y2-chickpea"] });
+  await page.getByRole("button", { name: "Done" }).click();
+  // The quiet re-read after the saved seasons changed names the horizon on screen, not the current one.
+  await expect.poll(() => calls.fromGets).toEqual(["2027-09-01", "2027-09-01"]);
+  await expect(pager).toContainText("Year 2 of 4");
+  await expect(page.locator(".yp-cal-row")).toHaveCount(2);
+  // Open year 1 goes back without a from.
+  await page.getByRole("button", { name: "Open year 1" }).click();
+  await expect(pager).toContainText("Year 1 of 4");
+  await expect(page.locator(".yp-cal-row")).toHaveCount(5);
+  expect(calls.fromGets).toEqual(["2027-09-01", "2027-09-01"]);
+});
+
+test("a later horizon without a plan is generated with from in the POST body", async ({ page }) => {
+  const calls = await mock(page, { script: [navigableReview], horizons: { "2027-09-01": emptyReview } });
+  await page.goto("/planner");
+  await page.locator(".yp-pager").getByRole("button", { name: /^Next year/ }).click();
+  await expect.poll(() => calls.fromPosts).toEqual(["2027-09-01"]);
+  expect(calls.fromGets).toEqual(["2027-09-01"]);
+  expect(calls.postBodies).toContainEqual({ from: "2027-09-01" });
+});
+
+test("swap a crop: the sheet is scored for the slot's date after the crop before it, and the pick is re-scored by code", async ({ page }) => {
+  const calls = await mock(page, { script: [fiveOptionReview] });
+  await page.goto("/planner");
+  await page.getByRole("button", { name: /^Maize, 1 Dec to 8 Apr\. Sow 1 Dec 2026/ }).first().click();
+  const sheet = page.getByRole("dialog", { name: "Best overall" });
+  // The growing crop has no swap button; the planned maize has one.
+  await sheet.getByRole("button", { name: /^Paddy/ }).click();
+  await expect(sheet.getByRole("button", { name: /^Swap crop/ })).toHaveCount(0);
+  await sheet.getByRole("button", { name: "Maize", exact: true }).click();
+  await sheet.getByRole("button", { name: "Swap crop, Maize" }).click();
+  const swap = page.getByRole("dialog", { name: "Swap Maize" });
+  await expect(swap).toBeVisible();
+  await expect(swap.getByRole("heading", { name: "Crops for sowing on 1 Dec 2026" })).toBeVisible();
+  await expect(swap).toContainText("re-scored by code, not by AI");
+  await expect(swap.getByRole("button", { name: /Suggestions picked by AI/ })).toBeVisible();
+  await expect.poll(() => calls.cropFit.length).toBeGreaterThan(0);
+  expect(Object.fromEntries(calls.cropFit[0]!)).toMatchObject({ mode: "date", sowing: "2026-12-01", after: "paddy" });
+  await swap.getByRole("button", { name: /^Use this crop: Pigeon pea/ }).first().click();
+  await expect.poll(() => calls.rescores.length).toBe(1);
+  const body = calls.rescores[0];
+  expect(body.optionId).toBe("opt-best-overall");
+  const picked = body.slots.find((x: { cropId: string }) => x.cropId === "pigeon-pea");
+  expect(picked).toMatchObject({ productId: "pigeon-pea-whole", sowing: "2027-05-16" });
+  expect(picked).not.toHaveProperty("slotId");
+  expect(body.slots.some((x: { cropId: string }) => x.cropId === "maize")).toBe(false);
+  await expect(page.locator(".yp-cal-row").first().locator(".yp-row-head")).toContainText("Your version");
+  await expect(page.getByRole("dialog", { name: "Swap Maize" })).toHaveCount(0);
+});
+
+test("the editor swaps a row and suggests the next crop; an intercrop pick is sent with its system id", async ({ page }) => {
+  const calls = await mock(page, { script: [fiveOptionReview] });
+  await page.goto("/planner");
+  await page.locator(".yp-cal-row").first().locator(".yp-row-head").click();
+  const sheet = page.getByRole("dialog", { name: "Best overall" });
+  await sheet.getByRole("button", { name: "Edit", exact: true }).click();
+  // The green gram row is the second free row: its swap button is scored after the maize.
+  await sheet.getByRole("button", { name: "Swap crop 3, Green gram" }).click();
+  await expect.poll(() => calls.cropFit.length).toBeGreaterThan(0);
+  expect(Object.fromEntries(calls.cropFit[0]!)).toMatchObject({ mode: "date", sowing: "2027-05-20", after: "maize" });
+  await page.getByRole("dialog", { name: "Swap Green gram" }).getByRole("button", { name: /Close crop picker/ }).click();
+  await expect(page.getByRole("dialog", { name: "Swap Green gram" })).toHaveCount(0);
+  // Suggest next crop: the day after the last occupancy (12 Aug 2027), after green gram.
+  await sheet.getByRole("button", { name: "Suggest next crop" }).click();
+  const suggest = page.getByRole("dialog", { name: "Suggest the next crop" });
+  await expect(suggest.getByRole("heading", { name: "Crops for sowing on 13 Aug 2027" })).toBeVisible();
+  expect(Object.fromEntries(calls.cropFit.at(-1)!)).toMatchObject({ mode: "date", sowing: "2027-08-13", after: "green-gram" });
+  await suggest.getByRole("button", { name: /^Use this crop: Finger millet/ }).first().click();
+  await expect.poll(() => calls.rescores.length).toBe(1);
+  const slots = calls.rescores[0].slots as { cropId: string; kind?: string; systemId?: string; sowing: string; slotId?: string }[];
+  expect(slots.map((x) => x.cropId)).toEqual(["paddy", "maize", "green-gram", "finger-millet"]);
+  expect(slots.at(-1)).toMatchObject({ kind: "intercrop", systemId: "finger-millet-pigeon-pea-8-1", productId: "finger-millet-grain" });
+  expect(slots.at(-1)).not.toHaveProperty("slotId");
+  expect(slots.slice(0, 3).every((x) => !x.kind)).toBe(true);
+  expect(slots[1]!.slotId).toBe("a-maize");
+});
+
+test("axe finds no serious or critical violation on the pager, five rows, an intercrop sheet and the swap sheet", async ({ page }) => {
+  await mock(page, { script: [navigableReview] });
+  await page.goto("/planner");
+  await expect(page.locator(".yp-cal-row")).toHaveCount(5);
+  const tags = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"];
+  const blocking = async (scope: string) => {
+    const result = await new AxeBuilder({ page }).include(scope).withTags(tags).analyze();
+    return result.violations
+      .filter((v) => v.impact === "serious" || v.impact === "critical")
+      .map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(" ")).join(" | ")}`);
+  };
+  // Sheets slide in; axe reads colours mid-animation otherwise. Endless animations (pulses) are left out.
+  const settle = () =>
+    page.evaluate(() =>
+      Promise.all(
+        document
+          .getAnimations()
+          .filter((a) => a.effect?.getComputedTiming().iterations !== Infinity)
+          .map((a) => a.finished.catch(() => undefined)),
+      ),
+    );
+  expect(await blocking(".yp-panel")).toEqual([]);
+  await page.locator(".yp-cal-row").nth(3).getByRole("button", { name: /^Finger millet/ }).click();
+  const sheet = page.getByRole("dialog", { name: "Best profit" });
+  await expect(sheet.locator(".yp-companion")).toBeVisible();
+  await settle();
+  expect(await blocking('[role="dialog"]')).toEqual([]);
+  await sheet.getByRole("button", { name: "Swap crop, Finger millet" }).click();
+  const swap = page.getByRole("dialog", { name: "Swap Finger millet" });
+  await expect(swap.getByRole("button", { name: /^Use this crop/ }).first()).toBeVisible();
+  await settle();
+  expect(await blocking('[role="dialog"]')).toEqual([]);
 });
 
 for (const theme of ["light", "dark"] as const) {

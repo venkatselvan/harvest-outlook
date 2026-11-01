@@ -26,3 +26,4 @@ export * from './future-look';
 export * from './market';
 export * from './crop-fit';
 export * from './soil-review';
+export * from './season-preview';

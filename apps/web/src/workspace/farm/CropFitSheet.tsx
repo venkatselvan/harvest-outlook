@@ -8,18 +8,26 @@ import {
   BAND_NOTE,
   COMPONENT_LABELS,
   VERDICT_TEXT,
+  arrangementText,
+  candidateTitle,
+  companionYieldText,
   displayName,
   estimateLines,
   formatArea,
   formatDate,
   formatInr,
   harvestText,
+  isIntercrop,
   priceHarvestText,
   ratingText,
+  shareBasisText,
   sowingText,
   verdictTone,
+  waitLine,
+  yieldFieldText,
   yieldText,
 } from "./cropFitModel";
+import { CandidateChips } from "./CropFitCard";
 
 /**
  * Detail of one crop (ROUND2_SPEC.md 4.2): score parts, profit (central, likely, possible; per hectare and for the
@@ -31,9 +39,11 @@ export function CandidateDetail(props: { candidate: CropFitCandidate; review: Pi
   const win = () => c().window;
   return (
     <div class="cf-detail">
+      <CandidateChips candidate={c()} />
       <p class="cf-detail-dates">
         {sowingText(c())} · {harvestText(c())} · {c().durationDays.low === c().durationDays.high ? c().durationDays.low : `${c().durationDays.low} to ${c().durationDays.high}`} days
       </p>
+      <Show when={waitLine(c())}>{(t) => <p class="cf-wait">{t()}</p>}</Show>
       <Show when={win()}>
         {(w) => (
           <p class="cf-muted">
@@ -75,7 +85,10 @@ export function CandidateDetail(props: { candidate: CropFitCandidate; review: Pi
             </tbody>
           </table>
         </div>
-        <p class="cf-muted">Confidence {c().confidence}. Scored with the year-plan slot scoring.</p>
+        <p class="cf-muted">
+          Confidence {c().confidence}. Scored with the year-plan slot scoring.
+          <Show when={c().rankScore !== undefined && c().waitPenalty}>{` Ranked on ${Math.round(c().rankScore!)} (score minus the wait penalty).`}</Show>
+        </p>
       </section>
 
       <section class="cf-detail-section">
@@ -128,7 +141,47 @@ export function CandidateDetail(props: { candidate: CropFitCandidate; review: Pi
           <Show when={c().price?.yearsUsed.length}> (harvest weeks of {c().price!.yearsUsed.join(", ")})</Show>
         </p>
         <p>Yield {yieldText(c())}</p>
+        <Show when={yieldFieldText(c())}>{(t) => <p>{t()}</p>}</Show>
       </section>
+
+      <Show when={isIntercrop(c()) && c().companion}>
+        {(k) => (
+          <section class="cf-detail-section cf-companion" aria-label="Companion crop">
+            <h3>Companion crop</h3>
+            <p>
+              <strong>{displayName(k())}</strong> in rows {k().rowRatio} with {c().cropName.toLowerCase()}
+              <Show when={arrangementText(k())}>{(a) => `, as ${a()}`}</Show>
+            </p>
+            <p>
+              <Chip tone={k().shareBasis === "sourced" ? "done" : "watch"}>{shareBasisText(k())}</Chip>{" "}
+              <span class="cf-muted">{k().shareBasis === "sourced" ? "Each crop's share of its sole-crop yield comes from the cited source." : "No source gave the yield shares for this pair; code used its stated fallback shares."}</span>
+            </p>
+            <p>
+              {c().cropName}: {priceHarvestText(c())}
+            </p>
+            <p>
+              {k().cropName}: {priceHarvestText(k())}
+            </p>
+            <p>{k().cropName} yield {companionYieldText(k())}</p>
+            <Show when={k().nitrogenCreditKgPerHa}>
+              {(n) => <p>Nitrogen left for the next crop: {n().low === n().high ? n().low : `${n().low} to ${n().high}`} kg/ha</p>}
+            </Show>
+            <Show when={k().source}>
+              {(src) => (
+                <p class="cf-muted">
+                  Source:{" "}
+                  <Show when={src().url} fallback={src().title}>
+                    <a href={src().url!} target="_blank" rel="noreferrer">
+                      {src().title}
+                    </a>
+                  </Show>
+                  <Show when={src().locator}>{` · ${src().locator}`}</Show>
+                </p>
+              )}
+            </Show>
+          </section>
+        )}
+      </Show>
 
       <section class="cf-detail-section">
         <h3>Soil comparison</h3>
@@ -231,7 +284,7 @@ export function CandidateDetail(props: { candidate: CropFitCandidate; review: Pi
 
 export function CropFitSheet(props: { candidate: CropFitCandidate; review: CropFitReview; pick?: CropFitPick | undefined; onClose: () => void }) {
   return (
-    <Sheet title={displayName(props.candidate)} subtitle={<span>Rank {props.candidate.rank} of {props.review.candidates.length}</span>} onClose={props.onClose} class="cf-sheet">
+    <Sheet title={candidateTitle(props.candidate)} subtitle={<span>Rank {props.candidate.rank} of {props.review.candidates.length}</span>} onClose={props.onClose} class="cf-sheet">
       <CandidateDetail candidate={props.candidate} review={props.review} pick={props.pick} />
     </Sheet>
   );

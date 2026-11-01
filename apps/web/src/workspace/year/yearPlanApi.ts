@@ -49,20 +49,29 @@ const withSignal = (init: RequestInit | undefined, signal?: AbortSignal): Reques
 
 const planPath = (farmId: string, suffix = "") => `/api/v1/farms/${encodeURIComponent(farmId)}/year-plan${suffix}`;
 
-/** GET the farm's current review (may be pending, stale, or an empty shell when nothing was generated yet). */
-export async function loadYearPlan(farmId: string, opts: RequestOptions = {}): Promise<YearPlanReview> {
-  const env = await apiRequest<unknown>(planPath(farmId), withSignal(undefined, opts.signal), opts.fetchImpl);
+export interface HorizonOptions extends RequestOptions {
+  /**
+   * A later 12-month horizon (round 3): one of the server's `navigation` dates (year index 1 to 3). Omitted for the
+   * current horizon; the server answers 400 for any other date.
+   */
+  from?: string | null | undefined;
+}
+
+/** GET the farm's review for one horizon (may be pending, stale, or an empty shell when nothing was generated yet). */
+export async function loadYearPlan(farmId: string, opts: HorizonOptions = {}): Promise<YearPlanReview> {
+  const path = opts.from ? planPath(farmId, `?from=${encodeURIComponent(opts.from)}`) : planPath(farmId);
+  const env = await apiRequest<unknown>(path, withSignal(undefined, opts.signal), opts.fetchImpl);
   return parse<YearPlanReview>(reviewSchema, env.data, "year plan");
 }
 
-export interface GenerateOptions extends RequestOptions {
+export interface GenerateOptions extends HorizonOptions {
   /** Refresh / Try again: replace a finished plan now instead of waiting out the server's provider-error cooldown. */
   force?: boolean;
 }
 
-/** POST: ask the server to (re)generate the review. Returns immediately with a pending or finished review. */
+/** POST: ask the server to (re)generate the review of one horizon. Returns immediately with a pending or finished review. */
 export async function generateYearPlan(farmId: string, opts: GenerateOptions = {}): Promise<YearPlanReview> {
-  const body = opts.force === true ? { force: true } : {};
+  const body = { ...(opts.force === true ? { force: true } : {}), ...(opts.from ? { from: opts.from } : {}) };
   const env = await apiRequest<unknown>(planPath(farmId), withSignal(jsonInit("POST", body), opts.signal), opts.fetchImpl);
   return parse<YearPlanReview>(reviewSchema, env.data, "year plan");
 }

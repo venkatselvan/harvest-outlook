@@ -933,13 +933,13 @@ test("390 px: the More menu holds add a farm, crop library and manage farms", as
   expect(box.height).toBeGreaterThanOrEqual(44);
   await more.click();
   await expect(more).toHaveAttribute("aria-expanded", "true");
-  for (const name of ["Add a farm", "Crop library", "Manage farms"])
+  for (const name of ["Add a farm", "Crops for your farm", "Manage farms"])
     await expect(page.getByRole("link", { name, exact: true })).toBeVisible();
   await page.keyboard.press("Escape");
   await expect(more).toHaveAttribute("aria-expanded", "false");
   await expect(more).toBeFocused();
   await more.click();
-  await page.getByRole("link", { name: "Crop library", exact: true }).click();
+  await page.getByRole("link", { name: "Crops for your farm", exact: true }).click();
   await expect(page).toHaveURL(/\/catalogue$/);
   await expect(more).toHaveAttribute("aria-expanded", "false");
   // Off the farm tabs no tab is current, and the bar is still there to go back.
@@ -969,7 +969,7 @@ test("1280 px keeps the icon rail and the top tab row, with no bottom bar", asyn
   for (const name of [
     "Farm workspace",
     "Add a farm",
-    "Crop library",
+    "Crops for your farm",
     "Manage farms",
   ])
     await expect(

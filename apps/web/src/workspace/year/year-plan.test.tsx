@@ -1,5 +1,6 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { renderToString } from "solid-js/web";
+import type { CropFitCandidate } from "@harvest/contracts";
 import {
   ApplyYearPlanResult,
   PriceTrend,
@@ -9,15 +10,32 @@ import {
   YearPlanSlot,
 } from "@harvest/contracts";
 import pool from "../../../../../data/research/rotation/crop-pool.json";
+import { PLAN_CANDIDATES, fixtureCandidate } from "../farm/cropFitFixtures";
+
+// The real picker polls the server; here it only records the props the swap sheet gives it.
+const pickerProps = vi.hoisted(() => [] as Record<string, unknown>[]);
+vi.mock("../farm/CropFitPicker", () => ({
+  CropFitPicker: (props: Record<string, unknown>) => {
+    pickerProps.push(props);
+    return <p class="picker-stub">picker</p>;
+  },
+}));
 import {
   FIXTURE_FARM_ID,
   FIXTURE_FIELD_AREA_HA,
+  FIXTURE_FUTURE_REVIEW_ID,
   applyResult,
   bestOverallV2,
+  bestProfitIntercrop,
   emptyReview,
+  fiveOptionReview,
   fourOptionReview,
   freshReview,
+  futureReview,
   greenManureFirst,
+  navigableReview,
+  pigeonPeaCompanion,
+  secondaryLabelReview,
   lowestWaterV2,
   maizeTrend,
   occupiedReview,
@@ -54,9 +72,21 @@ import {
   rescoreBody,
   scenarioText,
   draftFromOption,
+  appendPick,
+  applyPick,
+  horizonStep,
+  intercropName,
+  nextCropContext,
+  pickChangesDraft,
+  pickerCurrent,
+  predecessorText,
+  swapContext,
 } from "./model";
-import { ensureYearPlan, generateYearPlan, pollYearPlan } from "./yearPlanApi";
+import { ensureYearPlan, generateYearPlan, loadYearPlan, pollYearPlan } from "./yearPlanApi";
 import { PlanCalendar, gapLabel, stripLabel, trackItems } from "./PlanCalendar";
+import { HorizonPager } from "./HorizonPager";
+import { ScenarioLine } from "./ScenarioLine";
+import { SwapPicker } from "./SwapSheet";
 import { SlotDetail } from "./OptionSheet";
 import { BAND_EXPLANATION } from "./Estimates";
 import { SlotEditor } from "./SlotEditor";
@@ -505,6 +535,8 @@ describe("editing with a green manure", () => {
   const editorHtml = (review: YearPlanReview, optionIndex: number) =>
     renderToString(() => (
       <SlotEditor
+        farmId={FIXTURE_FARM_ID}
+        previousCropId={review.scenario.previousCropId}
         option={review.options[optionIndex]!}
         horizon={review.scenario.horizon}
         choices={cropChoices(review, undefined)}
@@ -615,5 +647,343 @@ describe("detail sheet: profit as central, likely and possible", () => {
     expect(html).toContain("harvest date not recorded");
     expect(paddy.transitionNote).toContain("\n");
     expect(paddy.transitionNote!.split("\n").every((l) => l.length <= CALENDAR_TEXT_MAX)).toBe(true);
+  });
+});
+
+// ---------------------------------------------------------------------------------------------------------------------
+// Round 3: horizons, five options, intercrops, field yield, swap and suggest-next
+
+const nameOf = (id: string) => ({ paddy: "Paddy", maize: "Maize", "green-gram": "Green gram" })[id] ?? id;
+const candidate = (over: Partial<CropFitCandidate> & Pick<CropFitCandidate, "cropId" | "productId" | "cropName" | "productName">) =>
+  fixtureCandidate(over);
+const intercropCandidate = PLAN_CANDIDATES.find((c) => c.kind === "intercrop")!;
+
+describe("round 3 fixtures keep the contract", () => {
+  it("validate against the shared contracts", () => {
+    for (const review of [fiveOptionReview, secondaryLabelReview, navigableReview, futureReview]) expect(() => YearPlanReview.parse(review)).not.toThrow();
+    expect(fiveOptionReview.options).toHaveLength(5);
+    expect(futureReview.scenario).toMatchObject({ kind: "future", yearIndex: 1, horizon: { from: "2027-09-01", to: "2028-09-01" } });
+    expect(futureReview.options.every((o) => o.slots.every((s) => !s.fixed))).toBe(true);
+  });
+});
+
+describe("horizon requests", () => {
+  const envelope = (data: unknown) =>
+    new Response(JSON.stringify({ requestId: "t", mode: "synthetic", asOf: "2026-11-01T00:00:00Z", data, warnings: [], error: null }), {
+      status: 200,
+      headers: { "content-type": "application/json" },
+    });
+  it("GET names the horizon with ?from= and sends no query for the current one", async () => {
+    const urls: string[] = [];
+    const fetchImpl = (async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url === "/api/v1/session") return envelope({ authenticated: true, csrfToken: "test" });
+      urls.push(url);
+      return envelope(futureReview);
+    }) as typeof fetch;
+    await loadYearPlan(FIXTURE_FARM_ID, { fetchImpl });
+    await loadYearPlan(FIXTURE_FARM_ID, { fetchImpl, from: "2027-09-01" });
+    expect(urls).toEqual([`/api/v1/farms/${FIXTURE_FARM_ID}/year-plan`, `/api/v1/farms/${FIXTURE_FARM_ID}/year-plan?from=2027-09-01`]);
+  });
+  it("POST carries from in the body next to force, and polling keeps asking for the same horizon", async () => {
+    const calls: string[] = [];
+    const bodies: unknown[] = [];
+    const fetchImpl = (async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      if (url === "/api/v1/session") return envelope({ authenticated: true, csrfToken: "test" });
+      calls.push(`${init?.method ?? "GET"} ${url}`);
+      if (init?.method === "POST") bodies.push(JSON.parse(String(init.body)));
+      return envelope(calls.length === 1 ? pendingReview : futureReview);
+    }) as typeof fetch;
+    await ensureYearPlan(FIXTURE_FARM_ID, { fetchImpl, from: "2027-09-01", force: true, intervalMs: 1 });
+    expect(bodies).toEqual([{ force: true, from: "2027-09-01" }]);
+    expect(calls.filter((c) => c.startsWith("GET"))).toEqual([`GET /api/v1/farms/${FIXTURE_FARM_ID}/year-plan?from=2027-09-01`]);
+    await generateYearPlan(FIXTURE_FARM_ID, { fetchImpl });
+    expect(bodies.at(-1)).toEqual({});
+  });
+});
+
+describe("horizon pager", () => {
+  const pagerHtml = (navigation: NonNullable<YearPlanReview["navigation"]>, busy = false) =>
+    renderToString(() => <HorizonPager navigation={navigation} to="2027-09-01" busy={busy} onStep={() => {}} />);
+  it("shows the span and 'Year 1 of 4' and disables the previous button on the current horizon", () => {
+    const html = pagerHtml(navigableReview.navigation!);
+    const nodes = textNodes(html);
+    expect(nodes).toContain("Sep 2026 to Sep 2027");
+    expect(nodes).toContain("Year 1 of 4");
+    expect(html).toMatch(/<button[^>]*disabled[^>]*aria-label="Previous year \(none\)"|<button[^>]*aria-label="Previous year \(none\)"[^>]*disabled/);
+    expect(html).toContain('aria-label="Next year, Sep 2027 to Sep 2028"');
+    expect(html).not.toMatch(/aria-label="Next year[^"]*"[^>]*disabled|disabled[^>]*aria-label="Next year/);
+  });
+  it("disables both buttons while an answer is on its way, and the last year has no next", () => {
+    const busy = pagerHtml(futureReview.navigation!, true);
+    expect(busy.match(/disabled/g)!.length).toBeGreaterThanOrEqual(2);
+    expect(textNodes(busy)).toContain("Loading…");
+    const last = pagerHtml({ from: "2029-09-01", previousFrom: "2028-09-01", nextFrom: null, yearIndex: 3, maxYearIndex: 3 });
+    expect(textNodes(last)).toContain("Year 4 of 4");
+    expect(last).toContain('aria-label="Next year (none)"');
+  });
+  it("steps one horizon: the current horizon is requested without from, later ones by their date", () => {
+    const nav = navigableReview.navigation!;
+    const next = horizonStep(nav, "next")!;
+    expect(next.from).toBe("2027-09-01");
+    expect(next.navigation).toEqual({ from: "2027-09-01", previousFrom: "2026-09-01", nextFrom: "2028-09-01", yearIndex: 1, maxYearIndex: 3 });
+    const back = horizonStep(next.navigation, "previous")!;
+    expect(back.from).toBeUndefined();
+    expect(back.navigation).toMatchObject({ from: "2026-09-01", previousFrom: null, yearIndex: 0 });
+    expect(horizonStep(nav, "previous")).toBeNull();
+    expect(horizonStep({ ...nav, from: "2029-09-01", previousFrom: "2028-09-01", nextFrom: null, yearIndex: 3 }, "next")).toBeNull();
+    expect(horizonStep({ ...nav, from: "2028-09-01", previousFrom: "2027-09-01", nextFrom: "2029-09-01", yearIndex: 2 }, "next")!.navigation.nextFrom).toBeNull();
+  });
+});
+
+describe("a later horizon", () => {
+  it("starts the month columns at the horizon, with no today marker", () => {
+    const html = calendarHtml(futureReview);
+    const months = html.slice(html.indexOf("yp-cal-months"), html.indexOf("yp-cal-row"));
+    expect(textNodes(months.slice(months.indexOf(">") + 1)).slice(0, 4)).toEqual(["Sep", "2027", "Oct", "Nov"]);
+    expect(html).not.toContain("yp-today");
+    expect(html).not.toMatch(/class="yp-strip[^"]*is-fixed/);
+  });
+  it("says what it follows and offers the year before", () => {
+    const text = scenarioText(futureReview.scenario, futureReview.options, "2026-11-01", nameOf);
+    expect(text).toBe(
+      "Sep 2027 to Sep 2028 · Follows the Best overall plan for Sep 2026 to Sep 2027 (not saved yet; save a plan to fix the order) · after green gram",
+    );
+    const html = renderToString(() => (
+      <ScenarioLine text={text} pending={false} model={null} stale={false} modelUnavailable={false} refreshing={false} onRefresh={() => {}} action={{ label: "Open year 1", onClick: () => {} }} />
+    ));
+    expect(textNodes(html)).toContain("Open year 1");
+  });
+  it("words each predecessor basis, and a missing predecessor", () => {
+    const base = futureReview.scenario;
+    const pre = (assumedPredecessor: NonNullable<typeof base.assumedPredecessor> | null) => predecessorText({ ...base, assumedPredecessor }, nameOf);
+    expect(pre({ cropId: "maize", cropName: "Maize", basis: "saved_season", optionLabel: null, horizonFrom: null })).toBe("Follows your saved season of maize");
+    expect(pre({ cropId: "maize", cropName: "Maize", basis: "current_cycle", optionLabel: null, horizonFrom: null })).toBe("Follows the maize growing now");
+    expect(pre(null)).toBe("Follows green gram");
+    expect(predecessorText({ ...base, assumedPredecessor: null, previousCropId: null }, nameOf)).toMatch(/not known yet/);
+  });
+  it("hides nothing for a review without navigation: the current-horizon fixtures carry none", () => {
+    expect(fourOptionReview.navigation).toBeUndefined();
+    expect(scenarioText(fourOptionReview.scenario, fourOptionReview.options, "2026-11-01", nameOf)).toBe("Sep 2026 to Sep 2027 · Paddy growing until mid-Nov");
+  });
+});
+
+describe("five options and secondary labels", () => {
+  it("draws five rows in order, the fourth being Best profit", () => {
+    const html = calendarHtml(fiveOptionReview);
+    expect(html.match(/class="yp-cal-row"/g)).toHaveLength(5);
+    expect([...html.matchAll(/data-option-id="([^"]+)"/g)].map((m) => m[1])).toEqual([
+      "opt-best-overall",
+      "opt-soil-enrichment",
+      "opt-lowest-water",
+      "opt-best-profit",
+      "opt-green-manure-first",
+    ]);
+    expect(textNodes(html)).toContain("Best profit");
+  });
+  it("shows a secondary label as a small chip after the label, and reads it in the open button's name", () => {
+    const html = calendarHtml(secondaryLabelReview);
+    expect(html.match(/class="yp-row-secondary"/g)).toHaveLength(1);
+    const first = html.slice(html.indexOf("yp-cal-row"), html.indexOf("yp-track"));
+    expect(first.indexOf("Best overall")).toBeLessThan(first.indexOf("yp-row-secondary"));
+    expect(first).toContain("Best overall, also Best profit, score");
+    expect(calendarHtml(fiveOptionReview)).not.toContain("yp-row-secondary");
+  });
+});
+
+describe("intercrops", () => {
+  const slot = bestProfitIntercrop.slots[1]!;
+  it("draws 'Finger millet + pigeon pea · 8:1' on the strip with an Intercrop legend entry", () => {
+    const html = calendarHtml(fiveOptionReview);
+    expect(intercropName(slot)).toBe("Finger millet + pigeon pea · 8:1");
+    expect(textNodes(html)).toContain("Finger millet + pigeon pea · 8:1");
+    expect(html).toMatch(/class="yp-strip[^"]*is-intercrop/);
+    expect(html.slice(html.indexOf("yp-legend"))).toContain("Intercrop");
+    expect(stripLabel(slot)).toMatch(/^Finger millet \+ pigeon pea · 8:1, 23 May to 5 Oct\. Intercrop\. Sow 23 May 2027/);
+  });
+  it("shows the companion block: yield, price, shares and their basis", () => {
+    const nodes = textNodes(renderToString(() => <SlotDetail slot={slot} areaHa={FIXTURE_FIELD_AREA_HA} trend={undefined} />));
+    expect(nodes).toContain("Finger millet + pigeon pea · 8:1");
+    expect(nodes).toContain("Companion crop");
+    expect(nodes).toContain("Pigeon pea · Whole");
+    const text = nodes.join(" ");
+    expect(text).toContain("500 to 700 kg per ha as a sole crop");
+    expect(text).toContain("₹60 to ₹78 per kg");
+    expect(text).toContain("main 85 to 95 percent, companion 20 to 30 percent");
+    expect(nodes).toContain("Sourced shares");
+    expect(text).toContain("+N 15 to 30 kg/ha");
+    const assumed = nodes.length && textNodes(renderToString(() => <SlotDetail slot={{ ...slot, companion: { ...pigeonPeaCompanion, shareBasis: "assumed", source: null } }} areaHa={null} trend={undefined} />));
+    expect(assumed).toContain("Assumed shares");
+  });
+  it("keeps a swapped intercrop in the draft and sends kind and systemId in the rescore body", () => {
+    const drafts = draftFromOption(bestProfitIntercrop);
+    expect(drafts[1]).toMatchObject({ kind: "intercrop", systemId: "finger-millet-pigeon-pea-8-1", companionLabel: "pigeon pea · 8:1" });
+    const body = rescoreBody(fiveOptionReview.reviewId!, "opt-best-profit", drafts);
+    expect(() => RescoreYearPlan.parse(body)).not.toThrow();
+    expect(body.slots[1]).toEqual({
+      slotId: "i-finger-millet",
+      cropId: "finger-millet",
+      productId: "finger-millet-grain",
+      establishmentMethod: "direct_sowing",
+      kind: "intercrop",
+      systemId: "finger-millet-pigeon-pea-8-1",
+      sowing: "2027-05-23",
+    });
+    expect(body.slots[0]).not.toHaveProperty("kind");
+  });
+});
+
+describe("field yield", () => {
+  it("says 'Expected 580 to 700 kg for your 0.16 ha' under the per-hectare yield", () => {
+    const maize = fiveOptionReview.options[0]!.slots[1]!;
+    expect(maize.yieldForFieldKg).toEqual({ low: 576, high: 704 });
+    const nodes = textNodes(renderToString(() => <SlotDetail slot={maize} areaHa={0.16} trend={undefined} />));
+    expect(nodes).toContain("Expected 580 to 700 kg for your 0.16 ha");
+  });
+  it("says 'your field' without an area and draws nothing without a field yield", () => {
+    const maize = fiveOptionReview.options[0]!.slots[1]!;
+    expect(textNodes(renderToString(() => <SlotDetail slot={maize} areaHa={null} trend={undefined} />))).toContain("Expected 580 to 700 kg for your field");
+    const plain = bestOverallV2.slots[1]!;
+    expect(plain.yieldForFieldKg).toBeUndefined();
+    expect(renderToString(() => <SlotDetail slot={plain} areaHa={0.16} trend={undefined} />)).not.toContain("Expected");
+  });
+});
+
+describe("swap sheet context", () => {
+  const horizon = fiveOptionReview.scenario.horizon;
+  const drafts = draftFromOption(fiveOptionReview.options[0]!);
+  it("uses the slot's sowing and the crop before it: the fixed crop, then the previous row", () => {
+    expect(swapContext(drafts, "a-maize", null, horizon)).toEqual({ sowing: "2026-12-01", after: "paddy" });
+    expect(swapContext(drafts, "a-green-gram", null, horizon)).toEqual({ sowing: "2027-05-20", after: "maize" });
+  });
+  it("falls back to the scenario's previous crop for the first free row, and to none when that is unknown", () => {
+    const first = draftFromOption(freshReview.options[0]!).filter((d) => !d.fixed);
+    expect(swapContext(first, first[0]!.key, "maize", freshReview.scenario.horizon)).toMatchObject({ after: "maize" });
+    expect(swapContext(first, first[0]!.key, null, freshReview.scenario.horizon)).toEqual({ sowing: first[0]!.sowing, after: null });
+    expect(swapContext(drafts, "missing", null, horizon)).toBeNull();
+  });
+  it("uses the edited order: a row moved before another is scored after the earlier row's crop", () => {
+    const moved = drafts.map((d) => (d.key === "a-green-gram" ? { ...d, sowing: "2026-12-05", cropId: "green-gram" } : d));
+    expect(swapContext(moved, "a-maize", null, horizon)).toMatchObject({ after: "paddy" });
+    expect(swapContext(moved, "a-green-gram", null, horizon)).toMatchObject({ sowing: "2026-12-05", after: "maize" });
+    // A cleared date falls back to the horizon start instead of an invalid request.
+    const cleared = drafts.map((d) => (d.key === "a-maize" ? { ...d, sowing: "" } : d));
+    expect(swapContext(cleared, "a-maize", null, horizon)?.sowing).toBe(horizon.from);
+  });
+  it("renders the picker with sowing, after and current, one line about the code re-score, and no Meta call", () => {
+    pickerProps.length = 0;
+    const context = swapContext(drafts, "a-green-gram", null, horizon)!;
+    const current = pickerCurrent(drafts.find((d) => d.key === "a-green-gram")!);
+    const html = renderToString(() => <SwapPicker farmId={FIXTURE_FARM_ID} context={context} current={current} onPick={() => {}} onClose={() => {}} />);
+    expect(pickerProps).toHaveLength(1);
+    expect(pickerProps[0]).toMatchObject({
+      farmId: FIXTURE_FARM_ID,
+      sowing: "2027-05-20",
+      after: "maize",
+      current: { cropId: "green-gram", productId: "green-gram-whole", systemId: null },
+    });
+    expect(textNodes(html).join(" ")).toContain("re-scored by code, not by AI");
+  });
+  it("passes no current crop for a green manure or a blank row, and the system id for an intercrop", () => {
+    expect(pickerCurrent(draftFromOption(greenManureFirst).find((d) => d.kind === "green_manure")!)).toBeNull();
+    expect(pickerCurrent({ key: "n", fixed: false, cropId: "", productId: "", sowing: "2027-01-01" })).toBeNull();
+    expect(pickerCurrent(draftFromOption(bestProfitIntercrop)[1]!)).toEqual({ cropId: "finger-millet", productId: "finger-millet-grain", systemId: "finger-millet-pigeon-pea-8-1" });
+  });
+});
+
+describe("picking a crop updates the draft and the rescore body", () => {
+  const drafts = draftFromOption(fiveOptionReview.options[0]!);
+  const sunflower = candidate({ cropId: "sunflower", productId: "sunflower-seed", cropName: "Sunflower", productName: "Seed", establishmentMethod: "direct_sowing", sowing: "2027-01-20" });
+  it("replaces crop, product and sowing, drops the slot id, and keeps the other rows as they were", () => {
+    const next = applyPick(drafts, "a-maize", sunflower);
+    expect(next.find((d) => d.key === "a-maize")).toMatchObject({ cropId: "sunflower", productId: "sunflower-seed", kind: "crop", sowing: "2027-01-20", slotId: undefined });
+    expect(next.filter((d) => d.key !== "a-maize")).toEqual(drafts.filter((d) => d.key !== "a-maize"));
+    const body = rescoreBody(fiveOptionReview.reviewId!, "opt-best-overall", next);
+    expect(() => RescoreYearPlan.parse(body)).not.toThrow();
+    expect(body.slots.map((s) => [s.cropId, s.sowing, s.slotId ?? null])).toEqual([
+      ["paddy", "2026-09-01", "paddy-current"],
+      ["sunflower", "2027-01-20", null],
+      ["green-gram", "2027-05-20", "a-green-gram"],
+    ]);
+    // The picked candidate's establishment method goes with the new crop (a hand-picked crop would not send one).
+    expect(body.slots[1]).toMatchObject({ establishmentMethod: "direct_sowing" });
+    expect(body.slots[1]).not.toHaveProperty("kind");
+  });
+  it("turns an intercrop pick into kind 'intercrop' with the system id, and a later sole-crop pick back into a crop", () => {
+    const next = applyPick(drafts, "a-maize", intercropCandidate);
+    expect(next.find((d) => d.key === "a-maize")).toMatchObject({ cropId: "finger-millet", kind: "intercrop", systemId: "finger-millet-pigeon-pea-8-1", sowing: intercropCandidate.sowing });
+    const body = rescoreBody(fiveOptionReview.reviewId!, "opt-best-overall", next);
+    expect(() => RescoreYearPlan.parse(body)).not.toThrow();
+    // The intercrop's sowing (23 May) falls after the green gram's (20 May), so rows are matched by crop, not position.
+    const sent = body.slots.find((x) => x.cropId === "finger-millet")!;
+    expect(sent).toMatchObject({ kind: "intercrop", systemId: "finger-millet-pigeon-pea-8-1", productId: "finger-millet-grain", sowing: intercropCandidate.sowing });
+    expect(sent).not.toHaveProperty("slotId");
+    const back = applyPick(next, "a-maize", sunflower);
+    expect(back.find((d) => d.key === "a-maize")).toMatchObject({ kind: "crop", systemId: undefined, companionLabel: undefined });
+    expect(rescoreBody(fiveOptionReview.reviewId!, "opt-best-overall", back).slots.find((x) => x.cropId === "sunflower")).not.toHaveProperty("systemId");
+  });
+  it("swaps a sole crop for the same crop as an intercrop as a new slot (the system differs)", () => {
+    const millet = candidate({ cropId: "finger-millet", productId: "finger-millet-grain", cropName: "Finger millet", productName: "Grain", sowing: "2027-05-23" });
+    const base = draftFromOption({ ...bestProfitIntercrop, slots: [bestProfitIntercrop.slots[0]!, { ...bestProfitIntercrop.slots[1]!, kind: "crop", companion: null }] });
+    expect(pickChangesDraft(base[1]!, intercropCandidate)).toBe(true);
+    expect(pickChangesDraft(base[1]!, millet)).toBe(false);
+    const swapped = applyPick(base, "i-finger-millet", intercropCandidate);
+    expect(swapped[1]).toMatchObject({ kind: "intercrop", slotId: undefined });
+  });
+  it("sees picking what is already there as no change unless the sowing differs", () => {
+    const maize = drafts.find((d) => d.key === "a-maize")!;
+    const same = candidate({ cropId: "maize", productId: "maize-grain", cropName: "Maize", productName: "Grain", sowing: maize.sowing });
+    expect(pickChangesDraft(maize, same)).toBe(false);
+    expect(pickChangesDraft(maize, { ...same, sowing: "2026-12-15" })).toBe(true);
+    // The same crop on another date keeps its slot id (only the date moved).
+    expect(applyPick(drafts, "a-maize", { ...same, sowing: "2026-12-15" }).find((d) => d.key === "a-maize")).toMatchObject({ slotId: "a-maize", sowing: "2026-12-15" });
+  });
+});
+
+describe("suggest next crop", () => {
+  const horizon = fiveOptionReview.scenario.horizon;
+  const drafts = draftFromOption(fiveOptionReview.options[0]!);
+  it("starts the day after the last row's occupancy ends and scores after the last crop", () => {
+    expect(nextCropContext(drafts, horizon, null)).toEqual({
+      ok: true,
+      context: { sowing: "2027-08-13", after: "green-gram" },
+    });
+  });
+  it("starts at the horizon with the scenario's previous crop when the draft is empty", () => {
+    expect(nextCropContext([], horizon, "maize")).toEqual({ ok: true, context: { sowing: horizon.from, after: "maize" } });
+  });
+  it("is blocked, with a reason, when the free day is not known, the last row is blank, or the year is full", () => {
+    const edited = drafts.map((d) => (d.key === "a-green-gram" ? { ...d, endsOn: undefined } : d));
+    expect(nextCropContext(edited, horizon, null)).toMatchObject({ ok: false, reason: expect.stringContaining("Re-score") });
+    const blank = [...drafts, { key: "added-1", fixed: false, cropId: "", productId: "", sowing: "2027-08-20" }];
+    expect(nextCropContext(blank, horizon, null)).toMatchObject({ ok: false, reason: expect.stringContaining("Choose a crop") });
+    const full = drafts.map((d) => (d.key === "a-green-gram" ? { ...d, endsOn: horizon.to } : d));
+    expect(nextCropContext(full, horizon, null)).toMatchObject({ ok: false, reason: expect.stringContaining("end of the 12 months") });
+  });
+  it("appends the picked crop as a new row and sends it in sowing order with the others", () => {
+    const pick = candidate({ cropId: "sorghum", productId: "sorghum-grain", cropName: "Sorghum", productName: "Grain", sowing: "2027-08-13", harvest: { earliest: "2027-08-24", latest: "2027-08-28" } });
+    const next = appendPick(drafts, "added-1", pick);
+    expect(next).toHaveLength(drafts.length + 1);
+    expect(next.at(-1)).toMatchObject({ key: "added-1", fixed: false, cropId: "sorghum", productId: "sorghum-grain", kind: "crop", sowing: "2027-08-13", endsOn: "2027-08-28" });
+    const body = rescoreBody(fiveOptionReview.reviewId!, "opt-best-overall", next);
+    expect(() => RescoreYearPlan.parse(body)).not.toThrow();
+    expect(body.slots.map((s) => s.cropId)).toEqual(["paddy", "maize", "green-gram", "sorghum"]);
+    expect(body.slots.at(-1)).not.toHaveProperty("slotId");
+    // The next suggestion continues after the appended crop's harvest, so a second suggestion needs no re-score first.
+    expect(nextCropContext(next, horizon, null)).toMatchObject({ ok: true, context: { sowing: "2027-08-29", after: "sorghum" } });
+  });
+});
+
+describe("editing keeps working on a later horizon", () => {
+  it("builds the body for a year-2 option and keeps its horizon limits in the draft check", () => {
+    const option = futureReview.options[0]!;
+    const body = rescoreBody(FIXTURE_FUTURE_REVIEW_ID, option.optionId, draftFromOption(option));
+    expect(() => RescoreYearPlan.parse(body)).not.toThrow();
+    expect(body.slots.map((s) => [s.cropId, s.kind ?? "crop"])).toEqual([
+      ["finger-millet", "intercrop"],
+      ["chickpea", "crop"],
+    ]);
+    expect(body.slots.every((s) => s.sowing >= futureReview.scenario.horizon.from && s.sowing <= futureReview.scenario.horizon.to)).toBe(true);
   });
 });

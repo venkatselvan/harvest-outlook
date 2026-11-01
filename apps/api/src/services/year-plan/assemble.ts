@@ -1,14 +1,14 @@
-import type { BasisRef, HarvestPriceOutlook, PriceEstimate, RescoreYearPlan, ScoreComponents, YearPlanGap, YearPlanOption, YearPlanSlot } from '@harvest/contracts';
-import { estimateProfit, sumEstimates, type ProfitEstimate } from '../estimate';
+import type { BasisRef, HarvestPriceOutlook, IntercropCompanion, PriceEstimate, RescoreYearPlan, ScoreComponents, YearPlanGap, YearPlanOption, YearPlanSlot } from '@harvest/contracts';
+import { estimateProfit, estimateProfitMulti, sumEstimates, type ProfitEstimate, type Quantiles3 } from '../estimate';
 import * as data from './data';
-import { coveredDays, enumerateCandidates, enumerateSequences, makeSlotPlan, predecessorOf, shortHash, trailingIdleDays, transitionScorer, type CandidateSet } from './candidates';
+import { coveredDays, enumerateCandidates, enumerateSequences, makeIntercropSlotPlan, makeSlotPlan, predecessorOf, rotationId, shortHash, trailingIdleDays, transitionScorer, type CandidateSet } from './candidates';
 import { addDays, clippedDays, daysBetween, isCalendarDate, isoWeek, monthOf, overlaps } from './dates';
-import { collectInputKeys, priceHarvestDate, slotPriceKey, type Inputs, type PriceInputKey } from './inputs';
+import { collectInputKeys, priceHarvestDate, pricedSlots, priceKey, slotPriceKey, type Inputs, type PriceInputKey } from './inputs';
 import {
   ASSUMPTIONS, assumptionBasis, clip, confidenceScore, irrigationClass, marginRate, revenueRate, POSITIVE_CODES, priceScore, REASON_TEXT, reasonCodes, sequenceScore, slotDisplayScore, slotScore,
-  soilRotationScore, waterFit, yieldScore, type ConfidenceFlags, type PriceScoreResult, type PriceSlotFacts, type ReasonCode, type RotationScoreResult, type WaterFitResult, type YieldScoreResult,
+  soilRotationScore, soilYieldFactor, waterFit, yieldScore, type ConfidenceFlags, type PriceScoreResult, type PriceSlotFacts, type ReasonCode, type RotationScoreResult, type WaterFitResult, type YieldScoreResult,
 } from './scoring';
-import type { Candidate, EngineContext, IrrigationClass, PlacedWindow, Sequence, SlotPlan } from './types';
+import type { Candidate, EngineContext, HarvestRange, IrrigationClass, PlacedWindow, Sequence, SlotPlan } from './types';
 import { irrigationCompat, placeWindows, windowForDate } from './windows';
 
 /** Normalisation shared by every option of one review; persist it with the review so farmer edits rescore on the same scale. */
@@ -42,6 +42,14 @@ export interface EvaluatedSlot {
   estimate: ProfitEstimate;
   uncertainties: string[];
   basis: BasisRef[];
+  /** Round 3: the companion of an intercrop slot (sole-crop yield range, its outlook, cost and the system shares). */
+  companion?: CompanionEval | undefined;
+}
+export interface CompanionEval {
+  systemId: string; cropId: string; productId: string; yieldRef: data.YieldRef | null; yieldRange: { low: number; high: number } | null; yieldBasis: YearPlanSlot['yieldBasis'];
+  outlook: HarvestPriceOutlook | null; priceKey: string; harvest: HarvestRange; cost: data.CostRef | null; yieldIndex: number; revenueShare: number | null; combinedCostPerHa: number | null; costAssumed: boolean;
+  /** The companion's A2+FL scaled by its seed-rate (else row) share, INR/ha; null when its cost is not sourced. */
+  costPerHa: number | null;
 }
 
 const round4 = (x: number) => Math.round(x * 10000) / 10000;
@@ -69,6 +77,15 @@ export function marginNormaliser(ctx: EngineContext, slots: Iterable<SlotPlan>, 
   let maxRev: number | null = null;
   for (const plan of slots) {
     const f = slotFacts(ctx, inputs, plan);
+    if (plan.kind === 'intercrop' && plan.intercrop) {
+      const t = intercropTotals(plan, f, companionFacts(ctx, inputs, plan));
+      const months = f.facts.occupancyDays / ASSUMPTIONS.daysPerMonth.value;
+      const r = t.revenue !== null && t.cost !== null && months > 0 ? (t.revenue - t.cost) / months : null;
+      const g = t.revenue !== null && months > 0 ? t.revenue / months : null;
+      if (r !== null && r > 0 && (max === null || r > max)) max = r;
+      if (g !== null && g > 0 && (maxRev === null || g > maxRev)) maxRev = g;
+      continue;
+    }
     const p50 = f.outlook?.status === 'available' ? f.outlook.p50 : null;
     const r = marginRate(f.facts, p50);
     if (r !== null && r > 0 && (max === null || r > max)) max = r;
@@ -83,7 +100,7 @@ function evaluationBasis(ctx: EngineContext, inputs: Inputs, plan: SlotPlan, f: 
   if (f.yieldRef) {
     for (const id of f.yieldRef.sourceIds) {
       const s = data.yieldCostSource(id);
-      out.push({ kind: 'yield_reference', label: `Yield: ${s?.title ?? id}`.slice(0, 200), sourceId: id, url: s?.url ?? null, scope: f.yieldRef.region, note: `${f.yieldRef.season} ${f.yieldRef.years.join(', ')}; P25-P75 of the years used; reference ${f.yieldRef.referenceKgPerHa} kg/ha (best state year)`.slice(0, 1000) });
+      out.push({ kind: 'yield_reference', label: `Yield: ${s?.title ?? id}`.slice(0, 200), sourceId: id, url: s?.url ?? null, scope: f.yieldRef.region, note: `${f.yieldRef.season} ${f.yieldRef.years.join(', ')}; P25-P75 of the years used; reference ${f.yieldRef.referenceKgPerHa} kg/ha (${f.yieldRef.referenceBasis === 'state_median' ? 'state median of recent years' : 'best state year; no state median'})`.slice(0, 1000) });
     }
     if (f.yieldRef.conversion) {
       const s = data.yieldCostSource(f.yieldRef.conversion.sourceId);
@@ -145,7 +162,7 @@ function evaluateGreenManure(ctx: EngineContext, inputs: Inputs, plan: SlotPlan)
   const bands = ASSUMPTIONS.confidenceBands.value;
   const confidence = { value, label: (value >= bands.high ? 'high' : value >= bands.medium ? 'medium' : 'low') as 'high' | 'medium' | 'low' };
   const price: PriceScoreResult = { value: 0, marginPart: 0, timingPart: 0, marginRate: null, revenueRate: null, timingRatio: null, reasonCodes: [] };
-  const yieldS: YieldScoreResult = { value: 0, ratio: null, localKgPerHa: null, reasonCodes: [] };
+  const yieldS: YieldScoreResult = { value: 0, ratio: null, localKgPerHa: null, soilFactor: 1, reasonCodes: [] };
   const estimate = estimateProfit({ seed: plan.key, yieldKgPerHa: null, pricePerKg: null, costPerHa: cost?.deductionPerHa ?? null, areaHa: ctx.scenario.fieldAreaHa, noRevenue: true });
   const components = { price: 0, yield: 0, water: water.value, confidence: value };
   const uncertainties = [...plan.uncertainties, 'Green manure: grown and ploughed in; it has no product and earns nothing. Its value is the nitrogen and organic matter left for the next crop.'];
@@ -173,9 +190,24 @@ function evaluateGreenManure(ctx: EngineContext, inputs: Inputs, plan: SlotPlan)
 /** Sequence-independent evaluation of one slot (spec 5.1); deterministic for identical inputs. */
 export function evaluateSlot(ctx: EngineContext, inputs: Inputs, plan: SlotPlan, norm: ScoringNorm): EvaluatedSlot {
   if (plan.kind === 'green_manure') return evaluateGreenManure(ctx, inputs, plan);
+  if (plan.kind === 'intercrop' && plan.intercrop) return evaluateIntercrop(ctx, inputs, plan, norm);
+  return evaluateCrop(ctx, inputs, plan, norm);
+}
+
+/** ASSUMPTIONS.soilYieldFactors from the confirmed soil comparison at the crop's regional yield p50 (factor 1 without a report). */
+function soilFactorFor(inputs: Inputs, cropId: string, yieldP50: number | null) {
+  return soilYieldFactor(inputs.soilChecks?.(cropId, yieldP50) ?? null);
+}
+function soilBasis(name: string, s: ReturnType<typeof soilYieldFactor>): BasisRef {
+  return { kind: 'soil', label: `Soil limits the ${name.toLowerCase()} yield part`.slice(0, 200), sourceId: null, url: null, scope: null, note: `Confirmed soil test against the crop uptake: ${s.limiting.map((c) => `${c.label} ${c.verdict}`).join(', ')}; yield part x ${s.value.toFixed(2)}${s.raw < s.value ? ' (floor)' : ''}.`.slice(0, 1000) };
+}
+
+function evaluateCrop(ctx: EngineContext, inputs: Inputs, plan: SlotPlan, norm: ScoringNorm): EvaluatedSlot {
   const f = slotFacts(ctx, inputs, plan);
   const water = waterFit({ sowing: plan.sowing, harvestLatest: plan.harvest.latest, waterNeedMm: data.waterNeedMm(plan.cropId) }, inputs.climatologyRainByMonth, irrigationOf(ctx, inputs), data.rainfedSuitable(plan.cropId), inputs.neighbourhoodActiveMonths, inputs.neighbourhoodObservedMonths);
-  const yieldS = yieldScore({ yieldOverrideKgPerHa: f.override }, f.yieldRef, plan.windowFit, water.value);
+  // Yield v2 (ROUND3_SPEC 4): no water fit inside the yield part; the soil factor from the confirmed soil checks instead.
+  const soil = soilFactorFor(inputs, plan.cropId, f.override ?? f.yieldRef?.p50 ?? null);
+  const yieldS = yieldScore({ yieldOverrideKgPerHa: f.override }, f.yieldRef, plan.windowFit, soil.value);
   const price = priceScore(f.facts, f.outlook, inputs.annualMeans.get(plan.productId) ?? null, norm.maxMarginRate, norm.maxRevenueRate ?? null);
   const flags: ConfidenceFlags = {
     priceVerified: f.outlook?.status === 'available' && f.outlook.yearsUsed.length >= 2,
@@ -213,9 +245,129 @@ export function evaluateSlot(ctx: EngineContext, inputs: Inputs, plan: SlotPlan,
     uncertainties.push(`The yield has no year-to-year range; the profit simulation assumes a yield spread (sigma ${ASSUMPTIONS.singleYearYieldSigma.value}).`);
     basis.push(assumptionBasis('singleYearYieldSigma'));
   }
+  if (soil.value < 1) {
+    uncertainties.push(`Confirmed soil test: ${soil.limiting.map((c) => `${c.label} ${c.verdict}`).join(', ')}; the yield part is multiplied by ${soil.value.toFixed(2)} (engine assumption).`);
+    basis.push(soilBasis(cropName(ctx, plan.cropId), soil), assumptionBasis('soilYieldFactors'));
+  }
+  if (f.override === null && f.yieldRef?.referenceBasis === 'state_best_year') basis.push(assumptionBasis('referenceYield'));
   return {
     plan, yieldRef: f.yieldRef, yieldRange, yieldBasis: f.override !== null ? 'farmer' : f.yieldRef?.basis ?? null, cost: f.cost, loss: f.loss, priceKey: f.key, outlook: o,
     price, yield: yieldS, water, confidence, confidenceFlags: flags, slotScore: slotScore(components), codes: [...codes], revenue, profit, estimate, uncertainties, basis,
+  };
+}
+
+// ------------------------------------------------------------------ intercrop (round 3, ROUND3_SPEC 8.2)
+
+interface CompanionFacts { yieldRef: data.YieldRef | null; override: number | null; cost: data.CostRef | null; loss: { pct: number; sourceId: string | null } | null; key: string; outlook: HarvestPriceOutlook | null; harvest: HarvestRange }
+function companionFacts(ctx: EngineContext, inputs: Inputs, plan: SlotPlan): CompanionFacts {
+  const ic = plan.intercrop!;
+  const s = ic.system;
+  const key = priceKey(s.companionProductId, priceHarvestDate(ic.companionHarvest));
+  return {
+    yieldRef: data.yieldFor(s.companionCropId, s.companionProductId, { ...where(ctx), season: plan.season, asOf: ctx.asOf }), override: inputs.yieldOverrides?.get(s.companionProductId) ?? null,
+    cost: data.costFor(s.companionCropId, where(ctx)), loss: data.postHarvestLoss(s.companionCropId), key, outlook: inputs.priceOutlooks.get(key) ?? null, harvest: ic.companionHarvest,
+  };
+}
+const shareMid = (r: { min: number; max: number }) => (r.min + r.max) / 2;
+/** Expected revenue per ha of both products at the share midpoints, and the combined cost (ASSUMPTIONS.intercropCompanionCostRowShare). */
+function intercropTotals(plan: SlotPlan, f: SlotFacts, c: CompanionFacts) {
+  const s = plan.intercrop!.system;
+  const mainP = f.outlook?.status === 'available' ? f.outlook.p50 : null;
+  const compP = c.outlook?.status === 'available' ? c.outlook.p50 : null;
+  const compY = c.override ?? c.yieldRef?.p50 ?? null;
+  const mainRevenue = mainP !== null && f.facts.yieldP50 !== null ? mainP * f.facts.yieldP50 * shareMid(s.yieldShare.main) * (1 - (f.loss?.pct ?? 0) / 100) : null;
+  const compRevenue = compP !== null && compY !== null ? compP * compY * shareMid(s.yieldShare.companion) * (1 - (c.loss?.pct ?? 0) / 100) : null;
+  // Review L3 (2026-11-01): a seed-rate share without its own source is still the factor but counts as assumed.
+  const seedShare = s.seedRateShare?.companion ?? null;
+  const factor = seedShare ?? s.companionRowShare;
+  const cost = f.cost && c.cost && factor !== null ? f.cost.deductionPerHa + c.cost.deductionPerHa * factor : null;
+  return {
+    mainRevenue, compRevenue, revenue: mainRevenue === null ? null : mainRevenue + (compRevenue ?? 0), cost, factor,
+    costAssumed: !(seedShare !== null && s.seedRateShare?.sourced === true), seedShareUnsourced: seedShare !== null && s.seedRateShare?.sourced !== true,
+    rowShareAssumed: seedShare === null && s.companionRowShareAssumed,
+  };
+}
+const rangeOf = (ref: data.YieldRef | null, override: number | null) => (override !== null
+  ? (ref ? { low: Math.round(ref.low * (override / ref.p50)), high: Math.round(ref.high * (override / ref.p50)) } : { low: override, high: override })
+  : ref ? { low: ref.low, high: ref.high } : null);
+const shareQuantiles = (r: { low: number; high: number } | null, p50: number | null, share: { min: number; max: number }): Quantiles3 | null =>
+  (r && p50 !== null ? { p25: r.low * share.min, p50: p50 * shareMid(share), p75: r.high * share.max } : null);
+const priceQuantiles = (o: HarvestPriceOutlook | null): Quantiles3 | null => (o && o.status === 'available' && o.p25 !== null && o.p75 !== null && o.p50 !== null ? { p25: o.p25, p50: o.p50, p75: o.p75 } : null);
+
+/**
+ * Intercrop slot: the main crop evaluated as a crop (window, water, confidence flags, timing), then revenue = both
+ * products (share-scaled yields x price x keep), cost = main A2+FL + companion A2+FL x seed-rate share (else row share,
+ * flagged), margin part from the combined figures, yield part = revenue-share-weighted mean of both yield indices, and
+ * estimateProfitMulti for the ranges. Companion figures follow the same season and state rules as the main crop.
+ */
+function evaluateIntercrop(ctx: EngineContext, inputs: Inputs, plan: SlotPlan, norm: ScoringNorm): EvaluatedSlot {
+  const base = evaluateCrop(ctx, inputs, plan, norm);
+  const s = plan.intercrop!.system;
+  const f = slotFacts(ctx, inputs, plan);
+  const c = companionFacts(ctx, inputs, plan);
+  const t = intercropTotals(plan, f, c);
+  const months = f.facts.occupancyDays / ASSUMPTIONS.daysPerMonth.value;
+  const rate = t.revenue !== null && t.cost !== null && months > 0 ? (t.revenue - t.cost) / months : null;
+  const revRate = t.revenue !== null && months > 0 ? t.revenue / months : null;
+  const mainPriced = !base.price.reasonCodes.includes('price_insufficient');
+  const marginPart = !mainPriced ? 0 : t.cost === null
+    ? (revRate === null || revRate <= 0 || !norm.maxRevenueRate ? 0 : ASSUMPTIONS.missingCostRevenueFactor.value * Math.min(1, revRate / norm.maxRevenueRate))
+    : (rate === null || rate <= 0 || !norm.maxMarginRate ? 0 : Math.min(1, rate / norm.maxMarginRate));
+  const { margin, timing } = ASSUMPTIONS.priceParts.value;
+  const priceCodes: ReasonCode[] = base.price.reasonCodes.filter((x) => x !== 'margin_rate_high' && x !== 'cost_not_sourced');
+  if (mainPriced && t.cost === null) priceCodes.push('cost_not_sourced');
+  if (marginPart >= ASSUMPTIONS.reasonThresholds.value.marginHigh) priceCodes.push('margin_rate_high');
+  const price: PriceScoreResult = { ...base.price, marginPart, marginRate: rate, revenueRate: revRate, value: mainPriced ? (margin * marginPart + timing * base.price.timingPart) / (margin + timing) : 0, reasonCodes: priceCodes };
+  const compSoil = soilFactorFor(inputs, s.companionCropId, c.override ?? c.yieldRef?.p50 ?? null);
+  const compYield = yieldScore({ yieldOverrideKgPerHa: c.override }, c.yieldRef, plan.windowFit, compSoil.value);
+  const wM = t.mainRevenue, wC = t.compRevenue;
+  const revenueShare = wM !== null && wC !== null && wM + wC > 0 ? wC / (wM + wC) : null;
+  const yieldValue = revenueShare === null ? base.yield.value : (1 - revenueShare) * base.yield.value + revenueShare * compYield.value;
+  const yieldS: YieldScoreResult = { ...base.yield, value: yieldValue, reasonCodes: [...new Set([...base.yield.reasonCodes, ...compYield.reasonCodes])] };
+  const compRange = rangeOf(c.yieldRef, c.override);
+  const keepM = 1 - (f.loss?.pct ?? 0) / 100, keepC = 1 - (c.loss?.pct ?? 0) / 100;
+  const estimate = estimateProfitMulti({
+    seed: plan.key, costPerHa: t.cost, areaHa: ctx.scenario.fieldAreaHa,
+    terms: [
+      { yieldKgPerHa: shareQuantiles(base.yieldRange, f.override ?? f.yieldRef?.p50 ?? null, s.yieldShare.main), pricePerKg: priceQuantiles(f.outlook), keep: keepM },
+      { yieldKgPerHa: shareQuantiles(compRange, c.override ?? c.yieldRef?.p50 ?? null, s.yieldShare.companion), pricePerKg: priceQuantiles(c.outlook), keep: keepC },
+    ],
+  });
+  const codes = new Set<ReasonCode>([...base.codes.filter((x) => !['cost_not_sourced', 'cost_c2_only', 'margin_rate_high', 'price_timing_strong', 'price_timing_weak', 'price_timing_unknown', 'price_insufficient'].includes(x)), ...price.reasonCodes, ...yieldS.reasonCodes, 'intercrop']);
+  if (t.cost === null) codes.add('cost_not_sourced');
+  else if (f.cost?.deductionBasis === 'c2' || c.cost?.deductionBasis === 'c2') codes.add('cost_c2_only');
+  if (s.shareBasis === 'assumed') codes.add('intercrop_shares_assumed');
+  if (t.cost !== null && t.costAssumed) codes.add('intercrop_cost_assumed');
+  const comp = data.cropDisplayName(s.companionCropId);
+  const uncertainties = [...base.uncertainties];
+  if (!c.yieldRef && c.override === null) uncertainties.push(`Companion: ${data.yieldGapReason(s.companionCropId, s.companionProductId, ctx.stateId)}`);
+  if (!c.outlook) uncertainties.push(`${comp}: the harvest-week price was not loaded; its revenue is not counted in the price part and no range is shown.`);
+  else if (c.outlook.status !== 'available') uncertainties.push(`${comp}: no harvest-week price range (${c.outlook.missingReason ?? 'insufficient history'}); its revenue is not counted.`);
+  if (t.cost !== null) uncertainties.push(`Cost: main ${f.cost!.deductionPerHa} + companion ${c.cost!.deductionPerHa} x ${Math.round(t.factor! * 1000) / 1000} (${t.costAssumed ? (t.seedShareUnsourced ? 'seed-rate share without its own source, assumed' : t.rowShareAssumed ? 'default row share, assumed' : 'row share, assumed') : 'sourced seed-rate share'}) = ${Math.round(t.cost)} INR/ha.`);
+  else if (f.cost && !c.cost) uncertainties.push(`${data.costGapReason(s.companionCropId, ctx.stateId)} The intercrop cost and profit are not shown.`);
+  if (s.shareBasis === 'assumed') uncertainties.push(`Intercrop yield shares are assumed: ${s.shareNote ?? 'research fallback'}.`);
+  if (s.nitrogenCredit && !s.nitrogenCredit.sourced) uncertainties.push(`The system's nitrogen credit of ${s.nitrogenCredit.min}${s.nitrogenCredit.max !== s.nitrogenCredit.min ? `-${s.nitrogenCredit.max}` : ''} kg/ha has no source of its own; the next crop gets no legume credit from it.`);
+  // Review L7 (2026-11-01): a state-wide system whose notes name a command area or district (e.g. Bhadra command, IN-KA).
+  if (s.localityNote && !(ctx.districtId && s.regions.includes(ctx.districtId))) uncertainties.push(`System reported for ${s.localityNote} in the state, not this district.`);
+  const basis = [...base.basis.filter((b) => b.sourceId !== 'estimate:lognormal-yield-price-v1')];
+  for (const id of c.yieldRef?.sourceIds.slice(0, 1) ?? []) { const src = data.yieldCostSource(id); basis.push({ kind: 'yield_reference', label: `Companion yield: ${src?.title ?? id}`.slice(0, 200), sourceId: id, url: src?.url ?? null, scope: c.yieldRef!.region, note: `${c.yieldRef!.season} ${c.yieldRef!.years.join(', ')}; sole-crop yield before the share`.slice(0, 1000) }); }
+  if (c.cost) { const src = data.yieldCostSource(c.cost.sourceId); basis.push({ kind: 'cost_reference', label: `Companion cost: ${src?.title ?? c.cost.sourceId ?? 'source'}`.slice(0, 200), sourceId: c.cost.sourceId, url: src?.url ?? null, scope: c.cost.estimate.region, note: `${c.cost.deductionBasis === 'a2fl' ? 'A2+FL' : 'C2-type total'} ${c.cost.deductionPerHa} INR/ha` }); }
+  if (c.outlook) basis.push({ kind: 'price_history', label: `Companion price: ${c.outlook.basisLabel}`.slice(0, 200), sourceId: `price-outlook:${c.key}`, url: null, scope: `${c.outlook.scope.level}: ${[c.outlook.scope.districtName, c.outlook.scope.stateName].filter(Boolean).join(', ')}`.slice(0, 120), note: `ISO week ${c.outlook.harvestWeek.week}; years ${c.outlook.yearsUsed.join(', ') || 'none'}` });
+  if (t.cost !== null && t.costAssumed && !t.seedShareUnsourced) basis.push(assumptionBasis('intercropCompanionCostRowShare'));
+  if (t.cost !== null && t.rowShareAssumed) basis.push(assumptionBasis('intercropDefaultCompanionRowShare'));
+  if (s.shareBasis === 'assumed') basis.push(assumptionBasis('intercropFallbackShares'));
+  if (estimate.revenuePerHa) basis.push(ESTIMATE_BASIS);
+  if (estimate.yieldSigmaAssumed && !base.estimate.yieldSigmaAssumed) basis.push(assumptionBasis('singleYearYieldSigma'));
+  const components = { price: price.value, yield: yieldS.value, water: base.water.value, confidence: base.confidence.value };
+  return {
+    ...base, price, yield: yieldS, slotScore: slotScore(components), codes: [...codes], estimate,
+    revenue: estimate.revenuePerHa ? { ...estimate.revenuePerHa.likely } : null, profit: estimate.profitPerHa ? { ...estimate.profitPerHa.likely } : null,
+    uncertainties: [...new Set(uncertainties)], basis,
+    companion: {
+      systemId: s.id, cropId: s.companionCropId, productId: s.companionProductId, yieldRef: c.yieldRef, yieldRange: compRange, yieldBasis: c.override !== null ? 'farmer' : c.yieldRef?.basis ?? null,
+      outlook: c.outlook, priceKey: c.key, harvest: c.harvest, cost: c.cost, yieldIndex: compYield.value, revenueShare, combinedCostPerHa: t.cost, costAssumed: t.costAssumed,
+      costPerHa: c.cost && t.factor !== null ? Math.round(c.cost.deductionPerHa * t.factor) : null,
+    },
   };
 }
 
@@ -243,9 +395,11 @@ function transitionNote(ctx: EngineContext, prev: string | null, next: string, t
 }
 
 function priceEstimate(ev: EvaluatedSlot): PriceEstimate | null {
-  const o = ev.outlook;
+  return priceEstimateOf(ev.outlook, ev.plan.harvest);
+}
+function priceEstimateOf(o: HarvestPriceOutlook | null, harvest: HarvestRange): PriceEstimate | null {
   if (!o) return null;
-  const w = isoWeek(priceHarvestDate(ev.plan.harvest));
+  const w = isoWeek(priceHarvestDate(harvest));
   return {
     status: o.status, unit: 'INR/kg', p50: o.status === 'available' ? o.p50 : null, range: o.status === 'available' && o.p25 !== null && o.p75 !== null ? { low: o.p25, high: o.p75 } : null,
     harvestWeek: `${w.year}-W${String(w.week).padStart(2, '0')}`, yearsUsed: o.yearsUsed, observations: o.observations,
@@ -256,6 +410,26 @@ function priceEstimate(ev: EvaluatedSlot): PriceEstimate | null {
 function dedupeBasis(xs: BasisRef[]): BasisRef[] {
   const seen = new Set<string>();
   return xs.filter((b) => { const k = `${b.kind}|${b.sourceId}|${b.note}`; if (seen.has(k)) return false; seen.add(k); return true; }).slice(0, 20);
+}
+
+/**
+ * Round 3: the contract companion block of an intercrop slot (YearPlanSlot.companion and CropFitCandidate.companion); null
+ * for any other slot. Shared with crop fit so both show the same figures.
+ */
+export function slotCompanion(ctx: EngineContext, plan: SlotPlan, ev: EvaluatedSlot): IntercropCompanion | null {
+  const ic = plan.intercrop;
+  if (!ic || !ev.companion) return null;
+  const s = ic.system;
+  return {
+    systemId: ic.systemId.slice(0, 120), cropId: ev.companion.cropId.slice(0, 120), productId: ev.companion.productId.slice(0, 200),
+    cropName: cropName(ctx, ev.companion.cropId).slice(0, 120), productName: productName(ctx, ev.companion.cropId, ev.companion.productId).slice(0, 120),
+    rowRatio: s.rowRatio.slice(0, 20), arrangement: s.arrangement,
+    yieldShare: { main: { low: s.yieldShare.main.min, high: s.yieldShare.main.max }, companion: { low: s.yieldShare.companion.min, high: s.yieldShare.companion.max } },
+    shareBasis: s.shareBasis, yieldKgPerHa: ev.companion.yieldRange, yieldBasis: ev.companion.yieldBasis, price: priceEstimateOf(ev.companion.outlook, ev.companion.harvest),
+    costPerHa: ev.companion.costPerHa,
+    nitrogenCreditKgPerHa: s.nitrogenCredit ? { low: s.nitrogenCredit.min, high: s.nitrogenCredit.max } : null,
+    source: s.source ? { id: s.source.id.slice(0, 80), title: (s.source.title ?? s.source.id).slice(0, 200), url: s.source.url, locator: s.source.locator ? s.source.locator.slice(0, 200) : null } : null,
+  };
 }
 
 /** Stable slot id of the fixed current cycle. */
@@ -366,15 +540,19 @@ function buildOption(ctx: EngineContext, inputs: Inputs, plans: SlotPlan[], eval
     if (!plan.fixed) counted.push(t.value);
     const components: ScoreComponents = { price: ev.price.value, yield: ev.yield.value, soilRotation: t.value, water: ev.water.value, confidence: ev.confidence.value };
     const codes = reasonCodes({ codes: [...ev.codes, ...t.reasonCodes, ...(meta.extraCodes?.get(plan.key) ?? [])], flags: plan.flags, windowScope: plan.window?.scope ?? null, fixed: plan.fixed }, components);
-    const credit = data.legumeCredit(plan.cropId);
+    const credit = data.legumeCredit(rotationId(plan));
+    const ic = plan.intercrop;
+    const share = ic ? ic.system.yieldShare.main : null;
+    const companion = slotCompanion(ctx, plan, ev);
     const uncertainties = plan.fixed && fixedSentence ? [fixedSentence, ...ev.uncertainties] : ev.uncertainties;
     const basis = t.greenManureBonus ? [...ev.basis, assumptionBasis('greenManureSuccessorBonus')] : ev.basis;
     return {
       slotId: meta.slotIds?.get(plan.key) ?? `slot-${shortHash(plan.key)}`, cropId: plan.cropId, productId: plan.productId,
       cropName: cropName(ctx, plan.cropId).slice(0, 120), productName: productName(ctx, plan.cropId, plan.productId).slice(0, 120),
-      establishmentMethod: plan.method ? plan.method.slice(0, 80) : null, kind: plan.kind ?? 'crop', nitrogenCreditKgPerHa: credit ? { low: credit.min, high: credit.max } : null,
+      establishmentMethod: plan.method ? plan.method.slice(0, 80) : null, kind: plan.kind ?? 'crop', ...(companion ? { companion } : {}), nitrogenCreditKgPerHa: credit ? { low: credit.min, high: credit.max } : null,
       fixed: plan.fixed, sowing: plan.sowing, harvest: { ...plan.harvest },
       occupancy: { from: plan.occupancy.from, to: plan.occupancy.to }, durationDays: { ...plan.durationDays }, yieldKgPerHa: ev.yieldRange, yieldBasis: ev.yieldBasis,
+      yieldForFieldKg: ev.yieldRange && area ? { low: Math.round(ev.yieldRange.low * (share?.min ?? 1) * area), high: Math.round(ev.yieldRange.high * (share?.max ?? 1) * area) } : null,
       price: priceEstimate(ev), cost: ev.cost?.estimate ?? null, revenuePerHa: ev.revenue, profitPerHa: ev.profit,
       revenueEstimate: ev.estimate.revenuePerHa, profitEstimate: ev.estimate.profitPerHa, profitForField: ev.estimate.profitForField,
       score: Math.round(clip(slotDisplayScore(components), 0, 1) * 10000) / 100,
@@ -410,7 +588,7 @@ function buildOption(ctx: EngineContext, inputs: Inputs, plans: SlotPlan[], eval
   const dominant = (['price', 'yield', 'soilRotation', 'water'] as const).reduce((best, k) => (components[k] > components[best] ? k : best), 'price' as 'price' | 'yield' | 'soilRotation' | 'water');
   const option: YearPlanOption = {
     optionId: `${meta.origin === 'farmer_edit' ? 'edit' : 'opt'}-${shortHash(meta.idSeed)}`, label: DOMINANT_LABEL[dominant], origin: meta.origin, score: seq.score, components,
-    slots, idleMonths: Math.round(clip(seq.idleMonths, 0, 12) * 100) / 100, reasons,
+    slots, idleMonths: Math.round(clip(seq.idleMonths, 0, 12) * 100) / 100, idlePenaltyPoints: Math.round(clip(seq.idlePenalty, 0, 1) * 10000) / 100, reasons,
     totalRevenuePerHa: totals.revenuePerHa ? { ...totals.revenuePerHa.likely } : null, totalProfitPerHa: totals.profitPerHa ? { ...totals.profitPerHa.likely } : null,
     totalRevenueEstimate: totals.revenuePerHa, totalProfitEstimate: totals.profitPerHa, totalProfitForField: totals.profitForField, fieldAreaHa: area,
     gaps: planGaps(ctx, inputs, plans),
@@ -440,7 +618,7 @@ export function scoreSequences(ctx: EngineContext, sequences: readonly Sequence[
 
 const firstCrop = (o: YearPlanOption) => o.slots.find((s) => !s.fixed)?.cropId ?? null;
 /** Crop/product order of the suggested slots; date variants of one sequence share it. */
-export const cropSignature = (o: YearPlanOption): string => o.slots.filter((s) => !s.fixed).map((s) => `${s.cropId}/${s.productId}`).join('>');
+export const cropSignature = (o: YearPlanOption): string => o.slots.filter((s) => !s.fixed).map((s) => `${s.cropId}/${s.productId}${s.companion ? `+${s.companion.systemId}` : ''}`).join('>');
 
 /** Options sorted by score with only the best date variant of each crop signature kept. */
 export function distinctOptions(options: readonly YearPlanOption[]): YearPlanOption[] {
@@ -499,6 +677,11 @@ function planEdit(ctx: EngineContext, inputs: Inputs, e: Edit, warnings: string[
   const name = cropName(ctx, e.cropId);
   if (!isCalendarDate(e.sowing)) { warnings.push(`${name}: sowing date ${e.sowing} is not a calendar date; slot left out.`); return null; }
   const gm = data.isGreenManure(e.cropId);
+  let system: data.IntercropSystem | null = null;
+  if (e.kind === 'intercrop') {
+    system = e.systemId ? data.intercropSystems(where(ctx)).find((s) => s.id === e.systemId && s.mainCropId === e.cropId) ?? null : null;
+    if (!system) warnings.push(`${name}: intercrop system ${e.systemId ?? '(none)'} is not known for this field and crop; scored as the sole main crop.`);
+  }
   if (e.kind === 'green_manure' && !gm) { warnings.push(`${name}: not a green manure crop in green-manure.json; slot left out.`); return null; }
   if (gm && e.productId !== e.cropId) warnings.push(`${name}: a green manure has no product; the product is ignored.`);
   if (!gm && !data.agronomyCrop(e.cropId)) warnings.push(`${name}: no agronomy record; no sourced window or duration.`);
@@ -521,10 +704,11 @@ function planEdit(ctx: EngineContext, inputs: Inputs, e: Edit, warnings: string[
   if (!hit) warnings.push(`${name}: sowing on ${e.sowing} is outside every sourced window for this field.`);
   else if (hit.window.provisional) warnings.push(`${name}: sowing falls in a provisional window only.`);
   const span = { low: daysBetween(e.sowing, harvest.earliest), high: daysBetween(e.sowing, harvest.latest) };
-  const plan = makeSlotPlan(ctx, {
-    key: `edit:${e.cropId}|${gm ? e.cropId : e.productId}|${method ?? 'any'}|${e.sowing}|${harvest.latest}`, kind: gm ? 'green_manure' : 'crop', cropId: e.cropId, productId: gm ? e.cropId : e.productId, method: gm ? null : method ?? cls?.method ?? null, sowing: e.sowing, harvest,
+  const parts = {
+    key: `edit:${system ? `intercrop:${system.id}|` : ''}${e.cropId}|${gm ? e.cropId : e.productId}|${method ?? 'any'}|${e.sowing}|${harvest.latest}`, kind: gm ? 'green_manure' as const : 'crop' as const, cropId: e.cropId, productId: gm ? e.cropId : e.productId, method: gm ? null : method ?? cls?.method ?? null, sowing: e.sowing, harvest,
     season: hit?.window.season ?? data.seasonOfMonth(monthOf(e.sowing)), durationDays: span, duration: cls, hit,
-  });
+  };
+  const plan = system && !gm ? makeIntercropSlotPlan(ctx, { ...parts, system }) : makeSlotPlan(ctx, parts);
   if (e.harvestLatest && cls && (span.high < cls.min || span.high > cls.max)) plan.flags.harvestAssumed = true;
   return plan;
 }
@@ -584,7 +768,7 @@ export function rescoreOption(ctx: EngineContext, inputs: Inputs, edits: readonl
 export function editInputKeys(ctx: EngineContext, inputs: Inputs, edits: readonly Edit[]): PriceInputKey[] {
   const plans: SlotPlan[] = ctx.fixedSlot ? [ctx.fixedSlot] : [];
   for (const e of edits) { const p = planEdit(ctx, inputs, e, [], []); if (p && p.kind !== 'green_manure') plans.push(p); }
-  return collectInputKeys(plans);
+  return collectInputKeys(pricedSlots(plans));
 }
 
 // ------------------------------------------------------------------ full run
@@ -597,6 +781,7 @@ export const ENGINE_LIMITATIONS: readonly string[] = [
   'Sowing windows come from 2011 district contingency plans and university season tables; provisional windows are marked.',
   'Rice-fallow relay sowing and perennial crops are not part of annual sequences.',
   'Green manure figures (days to incorporation, nitrogen, seed cost) come from state package-of-practice pages and are provisional; their cost is the seed only.',
+  'Intercrop yield shares are research figures for the stated row ratio; the companion\'s price and cost are the sole-crop figures scaled by the share.',
 ];
 
 export interface EngineRunOptions { maxSequences?: number | undefined; maxSlots?: number | undefined; keep?: number | undefined; shortlistSize?: number | undefined; candidateSet?: CandidateSet | undefined }
@@ -608,7 +793,7 @@ export interface EngineRun {
 
 /** Keys to prefetch for a run: the fixed slot and every candidate. */
 export function runInputKeys(ctx: EngineContext, set: CandidateSet): PriceInputKey[] {
-  return collectInputKeys([...(ctx.fixedSlot ? [ctx.fixedSlot] : []), ...set.candidates.filter((c) => c.kind !== 'green_manure')]);
+  return collectInputKeys(pricedSlots([...(ctx.fixedSlot ? [ctx.fixedSlot] : []), ...set.candidates]));
 }
 
 /** Candidates -> normalisation -> slot evaluation -> sequences -> scored options (top `keep` distinct crop sequences, default 12) -> shortlist. */

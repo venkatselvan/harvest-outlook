@@ -173,15 +173,15 @@ describe('data selectors', () => {
 
   it('yieldFor: rice-basis paddy rows are converted to paddy with a note; unstated district rows are not used for paddy', () => {
     const ref = data.yieldFor('paddy', 'paddy-grain', { stateId: 'IN-KA', districtId: H, season: 'kharif' })!;
-    // Last 3 state years 3300, 3150, 3000 rice x 1.4925 = 4925.25, 4701.375, 4477.5 -> P25 4589, p50 4701, P75 4813; reference best year 4925.
-    expect(ref).toMatchObject({ basis: 'state', p50: 4701, low: 4589, high: 4813, referenceKgPerHa: 4925, years: ['2023-24', '2022-23', '2021-22'] });
+    // Last 3 state years 3300, 3150, 3000 rice x 1.4925 = 4925.25, 4701.375, 4477.5 -> P25 4589, p50 4701, P75 4813; round 3: reference = state median 4701 (was the best year 4925).
+    expect(ref).toMatchObject({ basis: 'state', p50: 4701, low: 4589, high: 4813, referenceKgPerHa: 4701, referenceBasis: 'state_median', years: ['2023-24', '2022-23', '2021-22'] });
     expect(ref.conversion).toEqual({ factor: 1.4925, sourceId: 'syn-otr', locator: 'Ch V' });
     expect(ref.notes.join(' ')).toContain('converted to paddy at 1.4925');
     expect(ref.notes.join(' ')).toContain('not published in this product form');
   });
 
   it('yieldFor: district median of the last three years, single-year reference, and product-form mismatch', () => {
-    expect(data.yieldFor('groundnut', 'groundnut-pod', { stateId: 'IN-KA', districtId: H, season: 'kharif' })).toMatchObject({ basis: 'district', p50: 1100, low: 1050, high: 1150, referenceKgPerHa: 1500, years: ['2023-24', '2022-23', '2021-22'] });
+    expect(data.yieldFor('groundnut', 'groundnut-pod', { stateId: 'IN-KA', districtId: H, season: 'kharif' })).toMatchObject({ basis: 'district', p50: 1100, low: 1050, high: 1150, referenceKgPerHa: 1400, referenceBasis: 'state_median', years: ['2023-24', '2022-23', '2021-22'] });
     expect(data.yieldFor('tomato', 'tomato-fresh', { stateId: 'IN-KA', districtId: H, season: 'rabi' })).toMatchObject({ basis: 'reference', p50: 30000, low: 30000, high: 30000, seasonMatch: 'combined' });
     expect(data.yieldFor('chilli', 'chilli-green', { stateId: 'IN-KA', districtId: H, season: 'rabi' })).toBeNull();
     expect(data.yieldGapReason('chilli', 'chilli-green', 'IN-KA')).toContain('dry');
@@ -465,8 +465,8 @@ describe('slot scoring', () => {
     expect(opt!.totalRevenuePerHa).toBeNull();
   });
 
-  it('yieldScore and waterFit follow spec 5.1 (rainfed cap, NDVI only with observed months for the minus side)', () => {
-    expect(yieldScore({}, { p50: 1100, referenceKgPerHa: 1500 }, 0.8, 0.5).value).toBeCloseTo((1100 / 1500 / 1.2) * 0.8 * 0.5, 12);
+  it('yieldScore (round 3: window fit x soil factor, no water) and waterFit follow spec 5.1 (rainfed cap, NDVI only with observed months for the minus side)', () => {
+    expect(yieldScore({}, { p50: 1100, referenceKgPerHa: 1500 }, 0.8, 0.85).value).toBeCloseTo((1100 / 1500 / 1.2) * 0.8 * 0.85, 12);
     expect(yieldScore({ yieldOverrideKgPerHa: 2000 }, { p50: 1100, referenceKgPerHa: 1500 }, 1, 1).value).toBeCloseTo(1, 12);
     const ctx = buildScenario(freshArgs('maize'));
     const tomato = find(enumerateCandidates(ctx).candidates, 'tomato', '2027-06-01');
@@ -511,10 +511,11 @@ describe('sequence score, reproducibility and shortlist', () => {
     expect(slot).toMatchObject({ harvest: { earliest: '2027-08-30', latest: '2027-09-09' }, occupancy: { from: '2027-06-01', to: '2027-09-19' }, yieldKgPerHa: { low: 1050, high: 1150 }, yieldBasis: 'district' });
     // price = (25 x 1 + 15 x (60/50 - 0.5)) / 40 = 0.8875 (margin rate is the normaliser itself)
     // water = rain(Jun 100 + Jul 200 + Aug 200 + 8/30 x Sep 100 = 526.667) / need 600 = 0.877778 (rainfed, no allowance)
-    // yield = (1100 / 1500) / 1.2 x window 1 x water 0.877778 = 0.536420; confidence 5/5 = 1; rotation maize -> groundnut = 1
-    expect(slot.components).toEqual({ price: 0.8875, yield: 0.5364, soilRotation: 1, water: 0.8778, confidence: 1 });
-    // slot = 0.4 x 0.8875 + 0.3 x 0.536420 + 0.1 x 0.877778 + 0.05 x 1 = 0.653704; + 0.15 x 1 -> 80.37
-    expect(slot.score).toBe(80.37);
+    // round 3 yield v2: yield = (1100 / state median 1400) / 1.2 x window 1 x soil 1 = 0.654762 (water no longer inside); confidence 5/5 = 1;
+    // rotation maize -> groundnut = 1
+    expect(slot.components).toEqual({ price: 0.8875, yield: 0.6548, soilRotation: 1, water: 0.8778, confidence: 1 });
+    // slot = 0.4 x 0.8875 + 0.3 x 0.654762 + 0.1 x 0.877778 + 0.05 x 1 = 0.689206; + 0.15 x 1 -> 83.92
+    expect(slot.score).toBe(83.92);
     expect(slot.confidence).toBe('high');
     // Round 2: revenue is simulated (lognormal yield x price); closed form median 66000 x exp(0.2583791 x z), p25 55444, p75 78565,
     // p10 47396, p90 91907 (Python); the likely band is p25..p75 and profit subtracts A2+FL 30000. Field area 1.2 ha.
@@ -526,9 +527,9 @@ describe('sequence score, reproducibility and shortlist', () => {
     near(slot.profitForField!.central, 36000 * 1.2);
     expect(opt!.fieldAreaHa).toBe(1.2);
     expect(opt!.totalProfitEstimate).toEqual(slot.profitEstimate);
-    // sequence = 110/365 x 0.653704 + 0.15 x 1 - 0.04 x ((212 + 43 / 2) / 30.4375 - 0.5) = 0.060148 -> 6.01 (212 idle days before the
+    // sequence = 110/365 x 0.689206 + 0.15 x 1 - 0.04 x ((212 + 43 / 2) / 30.4375 - 0.5) = 0.070848 -> 7.08 (212 idle days before the
     // slot, 43 after it at half weight); idleMonths stays the unweighted 255 / 30.4375 = 8.38.
-    expect([opt!.score, opt!.idleMonths]).toEqual([6.01, 8.38]);
+    expect([opt!.score, opt!.idleMonths]).toEqual([7.08, 8.38]);
     expect(opt!.gaps).toEqual([{ from: ASOF, to: '2027-06-01', days: 212, reason: 'Chilli could be sown from 1 Nov but scored lower than this plan; edit the plan to add it.' }]);
     expect(slot.reasonCodes).toEqual(expect.arrayContaining(['legume_after_heavy_feeder', 'price_timing_strong', 'margin_rate_high', 'district_window', 'water_fit_good']));
     expect(slot.basis.length).toBeGreaterThan(3);

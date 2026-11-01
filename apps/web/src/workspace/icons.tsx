@@ -48,6 +48,7 @@ export function Icon(props: { name: string; size?: number; class?: string }) {
     moon: <path d="M20.5 13.1A8.6 8.6 0 0 1 10.9 3.5a8.7 8.7 0 1 0 9.6 9.6Z" />,
     close: <path d="m6 6 12 12M6 18 18 6" />,
     arrow: <path d="M4 12h16m-6-6 6 6-6 6" />,
+    swap: <path d="M4 8h15m-4-4 4 4-4 4M20 16H5m4-4-4 4 4 4" />,
     pin: (
       <>
         <path d="M19 10c0 5-7 11-7 11S5 15 5 10a7 7 0 0 1 14 0Z" />

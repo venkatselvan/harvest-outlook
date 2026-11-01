@@ -2,7 +2,7 @@ import { For, Show } from "solid-js";
 import type { YearPlanOption } from "@harvest/contracts";
 import { Sheet } from "../ui/Sheet";
 import { longDate, longSpan } from "./format";
-import { displayLabel, slotsToApply } from "./model";
+import { displayLabel, intercropName, isIntercrop, slotsToApply } from "./model";
 
 /**
  * Confirmation before applying an option. Lists exactly the seasons that will be appended to the saved seasons (the
@@ -74,7 +74,7 @@ export function ApplyConfirm(props: {
             {(s) => (
               <li>
                 <strong>
-                  {s.cropName} · {s.productName}
+                  {isIntercrop(s) ? intercropName(s) : `${s.cropName} · ${s.productName}`}
                 </strong>
                 <span>
                   Sow {longDate(s.sowing)} · harvest {longSpan(s.harvest.earliest, s.harvest.latest)}

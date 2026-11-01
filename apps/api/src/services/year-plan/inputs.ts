@@ -1,6 +1,7 @@
 import type { HarvestPriceOutlook } from '@harvest/contracts';
 import { isoWeek, midpoint, monthOf, weekBucket } from './dates';
 import type { HarvestRange } from './types';
+import type { SoilCheckLite } from './scoring';
 
 /**
  * Inputs the orchestration layer (packet 2) prefetches before scoring. The engine never fetches: a missing entry is
@@ -41,6 +42,11 @@ export interface Inputs {
   asOf: string;
   /** productId -> farmer yield override in kg/ha (wins over regional yields; the range is scaled by it). */
   yieldOverrides?: Map<string, number> | undefined;
+  /**
+   * Round 3 yield v2 (ROUND3_SPEC 4 item 2): the confirmed soil comparison for a crop at its regional yield p50, over the N,
+   * P2O5, K2O and pH checks (services/crop-fit/soil-compare.ts); null or absent without a confirmed soil report (factor 1).
+   */
+  soilChecks?: ((cropId: string, yieldP50: number | null) => SoilCheckLite[] | null) | null | undefined;
 }
 
 /** Representative harvest date for prices: midpoint of the earliest and latest harvest dates. */
@@ -54,6 +60,17 @@ export function priceKey(productId: string, harvestDate: string): string {
 export const slotPriceKey = (slot: { productId: string; harvest: HarvestRange }): string => priceKey(slot.productId, priceHarvestDate(slot.harvest));
 
 export interface PriceInputKey { key: string; productId: string; harvestDate: string }
+
+/** Price lookups of slots: each priced slot, and the companion of an intercrop slot at its own harvest (round 3). */
+export function pricedSlots(plans: Iterable<{ kind?: string | undefined; productId: string; harvest: HarvestRange; intercrop?: { system: { companionProductId: string }; companionHarvest: HarvestRange } | undefined }>): { productId: string; harvest: HarvestRange }[] {
+  const out: { productId: string; harvest: HarvestRange }[] = [];
+  for (const p of plans) {
+    if (p.kind === 'green_manure') continue;
+    out.push(p);
+    if (p.intercrop) out.push({ productId: p.intercrop.system.companionProductId, harvest: p.intercrop.companionHarvest });
+  }
+  return out;
+}
 
 /** Unique price lookups for a set of slots, sorted by key; harvestDate is the earliest representative date per key. */
 export function collectInputKeys(slots: Iterable<{ productId: string; harvest: HarvestRange }>): PriceInputKey[] {

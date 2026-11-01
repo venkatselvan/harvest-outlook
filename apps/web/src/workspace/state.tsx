@@ -41,6 +41,17 @@ export interface Rotation {
   plannedSowingDate?: string;
   plannedHarvestDate?: string;
   notes?: string;
+  /** Round 3 (ROUND3_SPEC.md section 8): sole crop, green manure or intercrop; the companion of an intercrop season. */
+  kind?: "crop" | "green_manure" | "intercrop";
+  establishmentMethod?: string;
+  companion?: {
+    systemId?: string;
+    cropId: string;
+    cropName?: string;
+    productId?: string;
+    productName?: string;
+    rowRatio: string;
+  };
 }
 export interface Workspace {
   farmId: string;

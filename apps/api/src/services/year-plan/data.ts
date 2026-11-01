@@ -18,6 +18,8 @@ export const DATA_FILES = {
   yieldCost: 'data/research/rotation/yield-cost.json',
   /** Round 2 (ROUND2_SPEC 1.2 item 4): green manure crops; the pool file's greenManure list says which are offered. */
   greenManure: 'data/research/rotation/green-manure.json',
+  /** Round 3 (ROUND3_SPEC 8): intercropping systems; optional (absent or empty: no intercrop candidates and one limitation line). */
+  intercropping: 'data/research/rotation/intercropping.json',
 } as const;
 
 const issues: string[] = [];
@@ -141,9 +143,9 @@ type YieldCostData = z.output<typeof YieldCostFile>;
 
 // ------------------------------------------------------------------ cache and fixtures
 /** With fixtures set, a missing greenManure fixture means no green manure data (existing fixtures stay unchanged). */
-export interface DataFixtures { pool?: unknown; agronomy?: unknown; yieldCost?: unknown; greenManure?: unknown }
+export interface DataFixtures { pool?: unknown; agronomy?: unknown; yieldCost?: unknown; greenManure?: unknown; intercropping?: unknown }
 let fixtures: DataFixtures | null = null;
-let cache: { pool?: PoolData; agronomy?: AgronomyData; yieldCost?: YieldCostData; greenManure?: GreenManureData; agronomyIndex?: Map<string, AgronomyCrop>; ycIndex?: Map<string, YieldCostCrop>; poolIndex?: Map<string, PoolEntry>; gmIndex?: Map<string, GreenManureCrop>; sourceIndex?: Map<string, z.output<typeof SourceInfo>> } = {};
+let cache: { intercropping?: IntercropData; intercropResolved?: Map<string, IntercropSystem>; pool?: PoolData; agronomy?: AgronomyData; yieldCost?: YieldCostData; greenManure?: GreenManureData; agronomyIndex?: Map<string, AgronomyCrop>; ycIndex?: Map<string, YieldCostCrop>; poolIndex?: Map<string, PoolEntry>; gmIndex?: Map<string, GreenManureCrop>; sourceIndex?: Map<string, z.output<typeof SourceInfo>> } = {};
 
 /** Clears the module cache. With `next`, later loads use those raw objects instead of the files (tests and replays). */
 export function invalidate(next?: DataFixtures | null): void {
@@ -204,7 +206,7 @@ export function yieldCostSource(id: string | null | undefined): SourceRef | null
 
 // ------------------------------------------------------------------ names
 const capitalise = (s: string) => (s ? s[0]!.toUpperCase() + s.slice(1) : s);
-export const cropDisplayName = (cropId: string): string => { const g = greenManure(cropId); return g ? `${g.name} (green manure)` : capitalise(cropId.replace(/-/g, ' ')); };
+export const cropDisplayName = (cropId: string): string => { if (cropId.startsWith(IC_PREFIX)) return intercropDisplayName(cropId.slice(IC_PREFIX.length)); const g = greenManure(cropId); return g ? `${g.name} (green manure)` : capitalise(cropId.replace(/-/g, ' ')); };
 export function productDisplayName(cropId: string, productId: string): string {
   if (isGreenManure(cropId)) return 'Ploughed in (no product)';
   const rest = productId.startsWith(`${cropId}-`) ? productId.slice(cropId.length + 1) : productId;
@@ -421,6 +423,8 @@ export interface YieldRef {
   low: number;
   high: number;
   referenceKgPerHa: number;
+  /** Round 3 yield v2: the state median of recent years, or the best state year when no median exists (flagged). */
+  referenceBasis: 'state_median' | 'state_best_year';
   basis: 'district' | 'state' | 'reference';
   /** Region id of the rows used (district or state). */
   region: string;
@@ -476,8 +480,13 @@ export function yieldFor(cropId: string, productId: string, where: Where & { sea
   if (!chosen) return null;
   const values = chosen.years.map((y) => y.value);
   const rows = chosen.years.flatMap((y) => y.rows);
-  const stateBestSet = seasonSets(state).find((s) => s.list.length)?.list ?? [];
-  const reference = Math.max(...(stateBestSet.length ? stateBestSet : rows).map((a) => a.value));
+  // Round 3 yield v2 (ASSUMPTIONS.referenceYield): the state median of the last yieldYears years of the same season set and
+  // product form; the best state year only when fewer than minYieldYears state years exist (flagged).
+  const stateSet = seasonSets(state).find((s) => s.list.length)?.list ?? [];
+  const stateYears = lastYears(stateSet, nYears);
+  const medianRef = stateYears.length >= ASSUMPTIONS.minYieldYears.value ? quantile7(stateYears.map((s) => s.value), 0.5) : null;
+  const reference = medianRef ?? Math.max(...(stateSet.length ? stateSet : rows).map((a) => a.value));
+  if (medianRef === null) notes.push('No state median of recent years for this season and form; the best state year is the yield reference.');
   const stale = rows.some((a) => a.row.stale === true);
   if (stale) notes.push(`District yields are from ${chosen.years.map((y) => y.year).sort().join(', ')} (latest published for the district; stale).`);
   if (chosen.match === 'combined') notes.push(`Season-combined yield ("${rows[0]!.row.season}") is used; no ${where.season ?? 'season'} rows.`);
@@ -490,6 +499,7 @@ export function yieldFor(cropId: string, productId: string, where: Where & { sea
     low: Math.round(quantile7(values, 0.25)),
     high: Math.round(quantile7(values, 0.75)),
     referenceKgPerHa: Math.round(reference),
+    referenceBasis: medianRef !== null ? 'state_median' : 'state_best_year',
     basis: chosen.level,
     region: rows[0]!.row.region,
     years: chosen.years.map((y) => y.year),
@@ -573,6 +583,7 @@ export function rotationRole(cropId: string): { value: RotationRole | null; sour
 }
 /** Cited residual N credit of a nitrogen-fixing crop (kg N/ha), or null. */
 export function legumeCredit(cropId: string): LegumeCredit | null {
+  if (cropId.startsWith(IC_PREFIX)) return intercropCredit(cropId.slice(IC_PREFIX.length));
   const gm = greenManure(cropId);
   if (gm) {
     const n = gm.nitrogenAddedKgPerHa;
@@ -604,6 +615,7 @@ export function phRange(cropId: string): { min: number; max: number; source: str
   return r && r.source && r.min < r.max ? { min: r.min, max: r.max, source: r.source } : null;
 }
 export function rotationFacts(cropId: string): RotationFacts {
+  if (cropId.startsWith(IC_PREFIX)) return intercropRotationFacts(cropId);
   const role = rotationRole(cropId);
   return { cropId, family: family(cropId), role: role.value, roleSource: role.source, avoidAfter: avoidAfter(cropId), successors: recommendedSuccessors(cropId), predecessors: recommendedPredecessors(cropId), phRange: phRange(cropId), greenManure: isGreenManure(cropId) };
 }
@@ -625,4 +637,145 @@ export function greenManureCost(cropId: string): CostRef | null {
     estimate: { a2flPerHa: seed + (ops ?? 0), c2PerHa: null, authority: 'sau', year: (price.year ?? '').slice(0, 20) || null, region: (price.region ?? '').slice(0, 40) || null },
     deductionPerHa: seed + (ops ?? 0), deductionBasis: 'a2fl', sourceId: price.source?.split(/\s+/)[0] ?? null, locator: price.source ?? null, notes,
   };
+}
+
+// ------------------------------------------------------------------ intercropping (round 3, ROUND3_SPEC 8)
+const ShareRange = z.object({ min: z.number().min(0).max(2), max: z.number().min(0).max(2) }).refine((r) => r.max >= r.min, 'max below min');
+const IntercropRow = z.object({
+  id: z.string().min(1).max(120), name: z.string().max(200).nullable().optional(),
+  mainCropId: z.string().min(1), mainProductId: z.string().min(1), companionCropId: z.string().min(1), companionProductId: z.string().min(1),
+  rowRatio: z.string().min(1).max(20).nullable().optional(), arrangement: z.string().nullable().optional(),
+  regions: z.array(z.string()).default([]), season: z.string().nullable().optional(), condition: z.string().nullable().optional(),
+  companionHarvest: z.string().nullable().optional(),
+  yieldShare: z.object({ main: ShareRange, companion: ShareRange, basis: z.string().nullable().optional(), source: z.string().nullable().optional() }).nullable().optional(),
+  ler: z.object({ min: z.number(), max: z.number(), source: z.string().nullable().optional() }).nullable().optional(),
+  seedRateShare: z.object({ main: z.number().nullable().optional(), companion: z.number().min(0).max(2).nullable().optional(), source: z.string().nullable().optional() }).nullable().optional(),
+  nitrogenCreditKgPerHa: z.union([z.number(), z.object({ min: z.number(), max: z.number(), source: z.string().nullable().optional() })]).nullable().optional(),
+  notes: z.array(z.string()).default([]), reviewStatus: z.string().default('provisional'), sources: z.array(z.string()).default([]),
+});
+const IntercropSource = z.object({ id: z.string().optional(), url: z.string().nullable().optional(), title: z.string().nullable().optional(), publisher: z.string().nullable().optional(), locator: z.string().nullable().optional() });
+const IntercropFile = z.object({
+  systems: tolerantArray(IntercropRow, 'intercropping.systems'),
+  fallback: z.object({ yieldShare: z.object({ main: ShareRange, companion: ShareRange }).nullable().optional(), ler: z.object({ min: z.number(), max: z.number() }).nullable().optional(), source: z.string().nullable().optional(), note: z.string().nullable().optional(), engineRule: z.string().nullable().optional() }).nullable().optional().catch(null),
+  sources: z.record(z.string(), z.unknown()).default({}).catch({}),
+});
+type IntercropData = z.output<typeof IntercropFile> & { status: 'absent' | 'empty' | 'loaded' };
+type IntercropRowT = z.output<typeof IntercropRow>;
+export const IC_PREFIX = 'ic:';
+
+/** Intercropping file (tolerant per system; a malformed system is skipped and listed in loadIssues()). Absent file: status 'absent'. */
+export function loadIntercropping(): IntercropData {
+  if (cache.intercropping) return cache.intercropping;
+  let raw: unknown = null;
+  if (fixtures) raw = fixtures.intercropping ?? null;
+  else { try { raw = readJson(DATA_FILES.intercropping); } catch { raw = null; } }
+  if (raw === null) return (cache.intercropping = { systems: [], fallback: null, sources: {}, status: 'absent' });
+  const r = IntercropFile.safeParse(raw);
+  if (!r.success) { issues.push(`intercropping.json skipped: ${r.error.issues[0]?.message ?? 'invalid'}`); return (cache.intercropping = { systems: [], fallback: null, sources: {}, status: 'empty' }); }
+  return (cache.intercropping = { ...r.data, status: r.data.systems.length ? 'loaded' : 'empty' });
+}
+export const intercropStatus = (): IntercropData['status'] => loadIntercropping().status;
+/**
+ * Fallback shares (flagged when used): ASSUMPTIONS.intercropFallbackShares (orchestrator decision 2026-11-01; the file's
+ * fallback.yieldShare is null and its fallback.engineRule states the rule), with the file's fallback LER source cited.
+ */
+export const intercropFallback = (): { yieldShare: { main: { min: number; max: number }; companion: { min: number; max: number } }; source: string | null; note: string | null } => {
+  const f = loadIntercropping().fallback;
+  const v = ASSUMPTIONS.intercropFallbackShares.value;
+  return { yieldShare: f?.yieldShare ?? { main: { ...v.main }, companion: { ...v.companion } }, source: f?.source ?? null, note: (f?.engineRule ?? ASSUMPTIONS.intercropFallbackShares.text).slice(0, 600) };
+};
+
+export interface IntercropSystem {
+  id: string; name: string; mainCropId: string; mainProductId: string; companionCropId: string; companionProductId: string;
+  /** As printed, or 'not stated' when the source gives no ratio. */
+  rowRatio: string; arrangement: 'row' | 'paired_row' | 'strip' | 'mixed' | null; regions: string[]; season: Season | null; condition: string | null;
+  /** The companion is harvested after the main crop (ASSUMPTIONS.intercropCompanionHarvest). */
+  companionAfterMain: boolean;
+  companionBeforeMain: boolean;
+  yieldShare: { main: { min: number; max: number }; companion: { min: number; max: number } };
+  /** 'sourced' only for a reviewStatus 'sourced' system with its own shares; else the system's provisional or the fallback shares. */
+  shareBasis: 'sourced' | 'assumed';
+  shareNote: string | null;
+  /**
+   * `sourced` only when the share names its own `source` (review L3, 2026-11-01): an unsourced companion seed-rate share is
+   * still used as the cost factor but is treated as assumed (reason intercrop_cost_assumed).
+   */
+  seedRateShare: { main: number | null; companion: number | null; source: string | null; sourced: boolean } | null;
+  /** Companion rows / all rows from the row ratio; ASSUMPTIONS.intercropDefaultCompanionRowShare when no ratio is printed. */
+  companionRowShare: number | null;
+  companionRowShareAssumed: boolean;
+  /** `sourced` only when the credit names its own `source`; a bare number (or an unsourced object) is assumed and gives no successor credit. */
+  nitrogenCredit: { min: number; max: number; source: string | null; sourced: boolean } | null;
+  ler: { min: number; max: number } | null;
+  /**
+   * Review L7 (2026-11-01): for a system whose regions are whole states only, the command area or district its notes name
+   * (for example "Bhadra Command area", "Salem district"); the engine then says the system was reported for that place
+   * in the state, not for this district. Null when the system is district-scoped or its notes name no such place.
+   */
+  localityNote: string | null;
+  source: SourceRef | null;
+  reviewStatus: string;
+}
+
+function intercropSourceRef(id: string | null | undefined): SourceRef | null {
+  if (!id) return null;
+  const raw = IntercropSource.safeParse(loadIntercropping().sources[id]);
+  const s = raw.success ? raw.data : {};
+  let url: string | null = s.url ?? null;
+  try { if (url) new URL(url); } catch { url = null; }
+  return { id, url, title: s.title ?? null, locator: s.locator ?? null };
+}
+
+function resolveIntercrop(r: IntercropRowT): IntercropSystem | null {
+  const fb = intercropFallback();
+  // Orchestrator decision 2026-11-01: only a 'sourced' system with its own shares is 'sourced'; a sourced LER without shares
+  // is split as main = fallback main, companion = LER - main (at least 0.1); everything else uses the fallback shares.
+  const sourced = r.reviewStatus === 'sourced' && !!r.yieldShare;
+  const lerSplit = !sourced && r.reviewStatus === 'sourced' && r.ler ? { main: { ...fb.yieldShare.main }, companion: { min: Math.max(0.1, r.ler.min - fb.yieldShare.main.max), max: Math.max(0.1, r.ler.max - fb.yieldShare.main.min) } } : null;
+  const shares = sourced ? r.yieldShare! : lerSplit ?? fb.yieldShare;
+  const own = sourced ? r.yieldShare! : null;
+  const m = /^\s*(\d+(?:\.\d+)?)\s*:\s*(\d+(?:\.\d+)?)\s*$/.exec(r.rowRatio ?? '');
+  const rowShare = m && Number(m[1]) + Number(m[2]) > 0 ? Number(m[2]) / (Number(m[1]) + Number(m[2])) : ASSUMPTIONS.intercropDefaultCompanionRowShare.value;
+  const n = r.nitrogenCreditKgPerHa;
+  // Review L3 (2026-11-01): each figure needs its own `source`. A bare number cannot name one (the system's sources[0] may be
+  // the shares' paper), so it is kept as an assumed figure: shown, flagged, and never a legume credit for the successor.
+  const credit = n == null ? null : typeof n === 'number'
+    ? { min: n, max: n, source: null, sourced: false }
+    : { min: n.min, max: n.max, source: n.source ?? null, sourced: !!n.source };
+  const stateOnly = r.regions.length > 0 && r.regions.every((x) => /^[A-Z]{2}-[A-Z]{2,3}$/.test(x));
+  const place = stateOnly ? r.notes.map((t) => /\b([A-Z][A-Za-z]+ [Cc]ommand(?: [Aa]rea)?)\b/.exec(t)?.[1] ?? /\b([A-Z][a-z]+ district)\b/.exec(t)?.[1] ?? null).find((x) => x !== null) ?? null : null;
+  const arrangement = (['row', 'paired_row', 'strip', 'mixed'] as const).find((a) => a === r.arrangement) ?? null;
+  return {
+    id: r.id, name: r.name ?? `${cropDisplayName(r.mainCropId)} + ${cropDisplayName(r.companionCropId).toLowerCase()}`,
+    mainCropId: r.mainCropId, mainProductId: r.mainProductId, companionCropId: r.companionCropId, companionProductId: r.companionProductId,
+    rowRatio: r.rowRatio ?? 'not stated', arrangement, regions: r.regions, season: asSeason(r.season), condition: r.condition ?? null,
+    companionAfterMain: (r.companionHarvest ?? '').toLowerCase() === 'after_main', companionBeforeMain: (r.companionHarvest ?? '').toLowerCase() === 'before_main',
+    yieldShare: { main: { ...shares.main }, companion: { ...shares.companion } }, shareBasis: sourced ? 'sourced' : 'assumed',
+    shareNote: sourced ? (own?.basis ?? null) : lerSplit ? `Sourced LER ${r.ler!.min} to ${r.ler!.max} split into the fallback main share and the remainder for the companion.` : fb.note,
+    seedRateShare: r.seedRateShare ? { main: r.seedRateShare.main ?? null, companion: r.seedRateShare.companion ?? null, source: r.seedRateShare.source ?? null, sourced: r.seedRateShare.companion != null && !!r.seedRateShare.source } : null,
+    companionRowShare: rowShare, companionRowShareAssumed: !m, nitrogenCredit: credit, ler: r.ler ? { min: r.ler.min, max: r.ler.max } : null, localityNote: place ? place.slice(0, 120) : null,
+    source: intercropSourceRef(sourced ? (own?.source ?? r.sources[0]) : lerSplit ? (r.ler!.source ?? r.sources[0]) : (fb.source ?? r.sources[0])), reviewStatus: r.reviewStatus,
+  };
+}
+const intercropIndex = (): Map<string, IntercropSystem> => (cache.intercropResolved ??= new Map(loadIntercropping().systems.flatMap((r) => { const s = resolveIntercrop(r); return s ? [[s.id, s] as const] : []; })));
+/** Any resolved system by id (no region filter). */
+export const intercropSystem = (id: string): IntercropSystem | null => intercropIndex().get(id) ?? null;
+/** Systems for the district or state whose main and companion crops are pool crops with agronomy records, sorted by id. */
+export function intercropSystems(where: Where): IntercropSystem[] {
+  return [...intercropIndex().values()].filter((s) => s.regions.some((r) => r === where.districtId || r === where.stateId)
+    && !!poolEntry(s.mainCropId) && !!poolEntry(s.companionCropId) && !!agronomyCrop(s.mainCropId) && !!agronomyCrop(s.companionCropId)).sort((a, b) => a.id.localeCompare(b.id));
+}
+function intercropCredit(systemId: string): LegumeCredit | null {
+  const c = intercropSystem(systemId)?.nitrogenCredit;
+  return c && c.sourced ? { min: c.min, max: c.max, specificity: 'intercrop_system', successorCrop: null, source: c.source } : null;
+}
+/** Predecessor token of an intercrop with a sourced nitrogen credit: the main crop's facts, a legume role and the system credit. */
+function intercropRotationFacts(token: string): RotationFacts {
+  const s = intercropSystem(token.slice(IC_PREFIX.length));
+  const main = rotationFacts(s?.mainCropId ?? token.slice(IC_PREFIX.length));
+  return { ...main, cropId: token, aliasOf: main.cropId, role: s?.nitrogenCredit?.sourced ? 'nitrogen_fixer' : main.role };
+}
+function intercropDisplayName(systemId: string): string {
+  const s = intercropSystem(systemId);
+  return s ? `${cropDisplayName(s.mainCropId)} + ${cropDisplayName(s.companionCropId).toLowerCase()}` : systemId;
 }

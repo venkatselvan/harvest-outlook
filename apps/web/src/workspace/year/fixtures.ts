@@ -2,6 +2,7 @@ import type {
   ApplyYearPlanResult,
   BasisRef,
   FarmWorkspace,
+  IntercropCompanion,
   NumberEstimate,
   PriceTrend,
   ScoreComponents,
@@ -857,3 +858,194 @@ export function insufficientTrendFixture(productId: string): PriceTrend {
 }
 
 export const maizeTrend = priceTrendFixture("maize-grain");
+
+// --- Round 3: five options, an intercrop, field yield, a later horizon ------------------------------------------------
+
+/** yieldForFieldKg for a slot: the per-hectare range times the field area, whole kilograms. */
+const withFieldYield = (s: YearPlanSlot, areaHa = FIXTURE_FIELD_AREA_HA): YearPlanSlot => ({
+  ...s,
+  yieldForFieldKg: s.yieldKgPerHa ? { low: Math.round(s.yieldKgPerHa.low * areaHa), high: Math.round(s.yieldKgPerHa.high * areaHa) } : null,
+});
+
+/** Finger millet and pigeon pea in 8:1 rows; shares sourced in this synthetic fixture only. */
+export const pigeonPeaCompanion: IntercropCompanion = {
+  systemId: "finger-millet-pigeon-pea-8-1",
+  cropId: "pigeon-pea",
+  productId: "pigeon-pea-whole",
+  cropName: "Pigeon pea",
+  productName: "Whole",
+  rowRatio: "8:1",
+  arrangement: "row",
+  yieldShare: { main: { low: 0.85, high: 0.95 }, companion: { low: 0.2, high: 0.3 } },
+  shareBasis: "sourced",
+  yieldKgPerHa: { low: 500, high: 700 },
+  yieldBasis: "state",
+  price: {
+    status: "available",
+    unit: "INR/kg",
+    p50: 68,
+    range: { low: 60, high: 78 },
+    harvestWeek: "2027-W52",
+    yearsUsed: [2023, 2024, 2025],
+    observations: 90,
+    scope: { level: "state", stateName: "Karnataka", districtName: null, marketCount: 3 },
+    reason: null,
+  },
+  nitrogenCreditKgPerHa: { low: 15, high: 30 },
+  source: { id: "fixture-intercrop", title: "Synthetic intercrop source (fixture)", url: null, locator: "Table 2" },
+};
+
+const fingerMilletIntercrop: YearPlanSlot = withFieldYield({
+  ...withEstimates(
+    slot({
+      slotId: "i-finger-millet",
+      cropId: "finger-millet",
+      productId: "finger-millet-grain",
+      cropName: "Finger millet",
+      productName: "Grain",
+      method: "direct_sowing",
+      sowing: "2027-05-23",
+      harvest: ["2027-09-20", "2027-10-05"],
+      occupancyTo: "2027-10-15",
+      duration: [115, 135],
+      yieldKg: [1800, 2200],
+      price: { range: [30, 34, 38], week: "2027-W40", observations: 800, markets: 20 },
+      cost: { a2fl: 32500, c2: 46200, year: "2021-22" },
+      score: 71,
+      components: { price: 0.66, yield: 0.7, soilRotation: 0.8, water: 0.6, confidence: 0.6 },
+      confidence: "medium",
+      transitionNote: "Intercrop with a legume",
+      reasonCodes: ["intercrop_sourced", "district_window"],
+      uncertainties: ["The row ratio and shares are research figures; a different layout changes both yields."],
+    }),
+  ),
+  kind: "intercrop",
+  companion: pigeonPeaCompanion,
+});
+
+/** Added by code when no chosen plan holds the best-profit sequence: finger millet + pigeon pea, then chickpea. */
+export const bestProfitIntercrop = optionV2({
+  optionId: "opt-best-profit",
+  label: "Best profit",
+  origin: "deterministic",
+  score: 70,
+  components: { price: 0.66, yield: 0.7, soilRotation: 0.78, water: 0.6, confidence: 0.6 },
+  slots: [paddyWithNotes("20 May"), fingerMilletIntercrop],
+  idleMonths: 2.6,
+  reasons: [{ code: "best_profit", text: "The highest profit for your field among the plans with a price, a yield and a cost for every crop." }],
+  gaps: [{ from: "2027-03-01", to: "2027-05-22", days: 83, reason: "No sourced sowing window for a pool crop on this field before the May kharif windows." }],
+});
+
+const withFieldYields = (o: YearPlanOption): YearPlanOption => ({ ...o, slots: o.slots.map((s) => withFieldYield(s)) });
+
+/** Round 3 review: five options (the fourth is the code-added Best profit intercrop plan), field yields on every crop. */
+export const fiveOptionReview: YearPlanReview = {
+  ...fourOptionReview,
+  contextHash: "fixture-occupied-round3",
+  options: [
+    withFieldYields(bestOverallV2),
+    withFieldYields(soilEnrichmentV2),
+    withFieldYields(lowestWaterV2),
+    withFieldYields(bestProfitIntercrop),
+    withFieldYields(greenManureFirst),
+  ],
+  candidatesConsidered: 318,
+  summary: "Five crop sequences after the paddy now growing, built from sourced windows, yields, costs and mandi prices.",
+};
+
+/** Best overall also holds the best-profit sequence, so it carries the secondary label and no extra plan is added. */
+export const secondaryLabelReview: YearPlanReview = {
+  ...fourOptionReview,
+  options: [{ ...withFieldYields(bestOverallV2), secondaryLabels: ["Best profit"] }, ...fourOptionReview.options.slice(1)],
+};
+
+const NAVIGATION_YEAR_1 = { from: "2026-09-01", previousFrom: null, nextFrom: "2027-09-01", yearIndex: 0, maxYearIndex: 3 } as const;
+/** The same current-horizon review with the server's horizon navigation ("Year 1 of 4"). */
+export const navigableReview: YearPlanReview = { ...fiveOptionReview, navigation: { ...NAVIGATION_YEAR_1 } };
+
+export const FIXTURE_FUTURE_REVIEW_ID = "88888888-8888-4888-8888-888888888888";
+const chickpeaYearTwo = withFieldYield(
+  withEstimates(
+    slot({
+      slotId: "y2-chickpea",
+      cropId: "chickpea",
+      productId: "chickpea-whole",
+      cropName: "Chickpea",
+      productName: "Whole",
+      method: "direct_sowing",
+      sowing: "2027-11-05",
+      harvest: ["2028-02-20", "2028-03-05"],
+      occupancyTo: "2028-03-15",
+      duration: [100, 115],
+      yieldKg: [800, 1100],
+      price: { range: [58, 62, 70], week: "2028-W09", observations: 410, markets: 12 },
+      cost: { a2fl: 28100, c2: 39400, year: "2021-22" },
+      score: 69,
+      components: { price: 0.64, yield: 0.66, soilRotation: 0.82, water: 0.7, confidence: 0.6 },
+      confidence: "medium",
+      transitionNote: "A legume after a cereal",
+      reasonCodes: ["legume_after_cereal"],
+      uncertainties: ["A late-season dry spell cuts chickpea yield."],
+    }),
+  ),
+);
+const yearTwoOverall = optionV2({
+  optionId: "opt-y2-best-overall",
+  label: "Best overall",
+  origin: "model",
+  score: 72,
+  components: { price: 0.66, yield: 0.7, soilRotation: 0.8, water: 0.66, confidence: 0.62 },
+  slots: [
+    withFieldYield({
+      ...fingerMilletIntercrop,
+      slotId: "y2-finger-millet",
+      sowing: "2027-09-10",
+      harvest: { earliest: "2028-01-05", latest: "2028-01-20" },
+      occupancy: { from: "2027-09-10", to: "2028-01-30" },
+    }),
+    {
+      ...chickpeaYearTwo,
+      sowing: "2028-02-10",
+      harvest: { earliest: "2028-05-20", latest: "2028-06-05" },
+      occupancy: { from: "2028-02-10", to: "2028-06-15" },
+    },
+  ],
+  idleMonths: 0.9,
+  reasons: [{ code: "legume_credit", text: "The pigeon pea companion leaves nitrogen for the chickpea." }],
+  gaps: [],
+});
+const yearTwoSoil = optionV2({
+  optionId: "opt-y2-soil",
+  label: "Soil enrichment",
+  origin: "model",
+  score: 68,
+  components: { price: 0.6, yield: 0.64, soilRotation: 0.9, water: 0.66, confidence: 0.62 },
+  slots: [withFieldYield({ ...chickpeaYearTwo, slotId: "y2s-chickpea", sowing: "2027-10-20", harvest: { earliest: "2028-02-01", latest: "2028-02-15" }, occupancy: { from: "2027-10-20", to: "2028-02-25" } })],
+  idleMonths: 6,
+  reasons: [{ code: "legume_credit", text: "A legume year builds nitrogen for the next season." }],
+  gaps: [],
+});
+
+/**
+ * Year 2 (yearIndex 1): no fixed crop, the previous crop assumed from the year-1 "Best overall" plan, which is not saved.
+ * Synthetic fixture; the sentence the UI shows comes from `assumedPredecessor`.
+ */
+export const futureReview: YearPlanReview = {
+  ...fiveOptionReview,
+  reviewId: FIXTURE_FUTURE_REVIEW_ID,
+  contextHash: "fixture-future",
+  scenario: {
+    ...fiveOptionReview.scenario,
+    kind: "future",
+    horizon: { from: "2027-09-01", to: "2028-09-01" },
+    yearIndex: 1,
+    currentCycleId: null,
+    previousCropId: "green-gram",
+    assumedPredecessor: { cropId: "green-gram", cropName: "Green gram", basis: "year_plan_option", optionLabel: "Best overall", horizonFrom: "2026-09-01" },
+  },
+  options: [yearTwoOverall, yearTwoSoil],
+  navigation: { from: "2027-09-01", previousFrom: "2026-09-01", nextFrom: "2028-09-01", yearIndex: 1, maxYearIndex: 3 },
+  candidatesConsidered: 204,
+  summary: "Follows the Best overall plan for Sep 2026 to Sep 2027 (not saved yet; save a plan to fix the order).",
+  appliedOptionIds: [],
+};

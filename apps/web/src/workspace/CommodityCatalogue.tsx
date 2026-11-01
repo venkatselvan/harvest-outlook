@@ -18,6 +18,10 @@ import type { CompareItem } from "../features/comparison/types";
 import { PageHeading } from "./FarmPage";
 import { useWorkspace, dateLabel, today } from "./state";
 import { Icon } from "./icons";
+import { loadYearPlan } from "./year/yearPlanApi";
+import { loadCropFit, pollCropFit } from "./farm/cropFitApi";
+import { farmCropRows, type LibraryRow } from "./farm/cropFitLibrary";
+import { CropsForYourFarm } from "./farm/CropFitCrops";
 const NON_CROP = new Set([
   "livestock",
   "aquaculture",
@@ -150,7 +154,7 @@ export function CommodityCataloguePage() {
       <PageHeading
         eyebrow="MARKET IDENTITIES · SOURCE-BACKED CROP REFERENCES"
         title="Know what you’re growing."
-        description="Browse the priced commodity names returned by AGMARKNET, then inspect their identity, market evidence and available crop references."
+        description="Start with the crops that suit your farm, then browse every priced commodity name returned by AGMARKNET and inspect its identity, market evidence and available crop references."
       >
         <A class="btn secondary" href="/explore">
           Compare local requirements
@@ -174,10 +178,77 @@ export function CommodityBrowser(props: {
   const [more, setMore] = createSignal<PricedCommodity[]>([]);
   const [loadingMore, setLoadingMore] = createSignal(false);
   const [moreError, setMoreError] = createSignal("");
+  /** Default view is "Crops for your farm" (ROUND3_SPEC.md 5.1); the whole catalogue sits behind a button. */
+  const [view, setView] = createSignal<"farm" | "catalogue">("farm");
+  const ws = useWorkspace();
   let disposed = false;
+  const lazy = new AbortController();
   onCleanup(() => {
     disposed = true;
+    lazy.abort();
   });
+  // The year plan and crop fit chips load lazily from the existing endpoints and never block or fail the page: a pending,
+  // stale-free-or-not review that is not ready, or any error, simply leaves those chips off.
+  const [planIds] = createResource(
+    () => ws.farm()?.id ?? false,
+    async (farmId): Promise<ReadonlySet<string> | undefined> => {
+      try {
+        const plan = await loadYearPlan(farmId, { signal: lazy.signal });
+        if (plan.status !== "ready" && plan.status !== "partial") return undefined;
+        const ids = new Set<string>();
+        for (const option of plan.options)
+          for (const slot of option.slots) {
+            if (slot.fixed) continue;
+            ids.add(slot.cropId);
+            if (slot.companion) ids.add(slot.companion.cropId);
+          }
+        return ids;
+      } catch {
+        return undefined;
+      }
+    },
+  );
+  const [fitRanks] = createResource(
+    () => ws.farm()?.id ?? false,
+    async (farmId): Promise<ReadonlyMap<string, number> | undefined> => {
+      try {
+        let review = await loadCropFit(farmId, null, { signal: lazy.signal });
+        if (review.status === "pending" || review.status === "running") review = await pollCropFit(farmId, null, review, { signal: lazy.signal, maxPolls: 20 });
+        if (review.status !== "ready") return undefined;
+        const ranks = new Map<string, number>();
+        for (const c of review.candidates) if (c.rank < (ranks.get(c.cropId) ?? Infinity)) ranks.set(c.cropId, c.rank);
+        return ranks;
+      } catch {
+        return undefined;
+      }
+    },
+  );
+  const farmRows = () => {
+    const w = ws.workspace();
+    const farmId = ws.farm()?.id;
+    const own = !!farmId && w?.farmId === farmId;
+    return farmCropRows({
+      cycles: own ? w!.cycles : undefined,
+      rotationPlans: own ? w!.rotationPlans : undefined,
+      previousHarvest: own ? w!.previousHarvest : undefined,
+      planCropIds: farmId ? planIds() : undefined,
+      fitRanks: farmId ? fitRanks() : undefined,
+      nameOf: ws.cropName,
+    });
+  };
+  const shownFarmRows = () => {
+    const q = filter().trim().toLowerCase();
+    return farmRows().filter((row) => !q || `${row.name} ${row.cropId}`.toLowerCase().includes(q));
+  };
+  const entryFor = (row: LibraryRow) => {
+    const matches = entries().filter((entry) => safePlantIdentity(entry) && entry.cropId === row.cropId);
+    return matches.find((entry) => entry.productId === row.productIds[0]) ?? matches[0];
+  };
+  const itemFor = (row: LibraryRow) => {
+    const items = props.items?.filter((item) => item.cropId === row.cropId) ?? [];
+    return items.find((item) => row.productIds.includes(item.productId)) ?? items[0];
+  };
+  const catalogueTotal = () => data()?.total ?? data()?.snapshot?.commodityCount;
   const [catalogue, { refetch: reload }] = createResource(async () => {
     const parsed = catalogueSchema.safeParse(
       (await apiRequest("/api/v1/commodities?limit=300&offset=0")).data,
@@ -246,18 +317,62 @@ export function CommodityBrowser(props: {
       aria-label="Market-wide commodity catalogue"
     >
       <div class="section-heading">
-        <h2>{props.full ? "The market-wide catalogue" : "Crop catalogue"}</h2>
+        <h2>
+          {view() === "farm"
+            ? "Crops for your farm"
+            : props.full
+              ? "The market-wide catalogue"
+              : "Crop catalogue"}
+        </h2>
         <span class="count-pill">
-          {data() ? shown().length : (props.items?.length ?? "—")}
+          {view() === "farm"
+            ? shownFarmRows().length
+            : data()
+              ? shown().length
+              : (props.items?.length ?? "—")}
         </span>
       </div>
+      <Show when={view() === "farm"}>
+        <p class="section-description">
+          The crops this app can plan for your field, the green manures, and
+          any crop recorded on your farm.
+          <Show when={!ws.farm()}> Add a farm to see what is growing and planned.</Show>
+        </p>
+      </Show>
       <input
         class="crop-search"
         aria-label="Search crops"
-        placeholder="Find a commodity or botanical name…"
+        placeholder={
+          view() === "farm"
+            ? "Find a crop for your farm…"
+            : "Find a commodity or botanical name…"
+        }
         value={filter()}
         onInput={(e) => setFilter(e.currentTarget.value)}
       />
+      <Show when={view() === "farm"}>
+        <CropsForYourFarm
+          rows={shownFarmRows()}
+          entryFor={entryFor}
+          compareItem={props.onToggle ? itemFor : undefined}
+          selected={props.selected}
+          onToggle={props.onToggle}
+          onProfile={setProfile}
+        />
+        <button
+          class="btn secondary full-width"
+          onClick={() => setView("catalogue")}
+        >
+          Browse the full catalogue
+          {catalogueTotal() !== undefined
+            ? ` (${catalogueTotal()} entries)`
+            : ""}
+        </button>
+      </Show>
+      <Show when={view() === "catalogue"}>
+        <button class="text-button" onClick={() => setView("farm")}>
+          Back to crops for your farm
+        </button>
       <Show when={data()}>
         <label class="commodity-group-label">
           Browse
@@ -450,6 +565,7 @@ export function CommodityBrowser(props: {
             <Icon name="arrow" size={13} />
           </A>
         </div>
+      </Show>
       </Show>
       <Show when={profile()}>
         {(entry) => (

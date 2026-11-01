@@ -1,0 +1,48 @@
+/* Season preview sheet (ROUND3_SPEC.md section 7). Phone width first; wider screens get the side panel from ui.css. */
+.season-preview-sheet .sp-body { display: grid; gap: 14px; padding-bottom: 12px; }
+.sp-header { display: grid; gap: 6px; }
+.sp-dates { margin: 0; font-weight: 600; color: var(--text); }
+.sp-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.sp-companion { margin: 0; color: var(--text-secondary); font-size: 0.92rem; }
+.sp-section { border-top: 1px solid var(--border); padding-top: 12px; display: grid; gap: 8px; }
+.sp-section-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.sp-section h3 { margin: 0; font-size: 1rem; }
+.sp-empty, .sp-note, .sp-loading { margin: 0; color: var(--text-secondary); font-size: 0.9rem; }
+.sp-error { display: grid; gap: 10px; justify-items: start; }
+.sp-error p { margin: 0; color: var(--danger); }
+.sp-strip { position: relative; height: 18px; border-radius: 9px; background: var(--surface-soft); overflow: hidden; }
+.sp-strip-seg { position: absolute; top: 0; bottom: 0; border-right: 2px solid var(--surface); }
+.sp-strip-today { position: absolute; top: -2px; bottom: -2px; width: 3px; margin-left: -1px; background: var(--text); border-radius: 2px; }
+.sp-strip-legend { display: flex; flex-wrap: wrap; gap: 4px 12px; margin: 0; padding: 0; list-style: none; font-size: 0.85rem; color: var(--text-secondary); }
+.sp-strip-legend i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 5px; vertical-align: -1px; }
+.season-preview-sheet .tone-0 { background: var(--accent-soft, #cfe3c4); }
+.season-preview-sheet .tone-1 { background: var(--accent, #4b7a3a); }
+.season-preview-sheet .tone-2 { background: #d9b45a; }
+.season-preview-sheet .tone-3 { background: #9b7b4f; }
+.sp-rain { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(46px, 1fr); gap: 4px; margin: 0; padding: 0; list-style: none; overflow-x: auto; }
+.sp-rain li { display: grid; grid-template-rows: 64px auto auto auto; justify-items: center; align-items: end; gap: 2px; font-size: 0.78rem; }
+.sp-rain-bar { width: 60%; min-height: 2px; align-self: end; border-radius: 4px 4px 0 0; background: var(--accent-ui, #5b8fb9); }
+.sp-rain strong { font-size: 0.8rem; }
+.sp-rain small, .sp-rain-label { color: var(--text-secondary); }
+.sp-water, .sp-price-line, .sp-now { margin: 0; font-size: 0.92rem; }
+.season-preview-sheet .ui-sparkline { width: 100%; height: 64px; }
+.sp-money { display: grid; grid-template-columns: 1fr; gap: 10px; margin: 0; }
+.sp-money div { display: grid; gap: 2px; }
+.sp-money dt { color: var(--text-secondary); font-size: 0.85rem; }
+.sp-money dd { margin: 0; font-weight: 700; font-size: 1.05rem; }
+.sp-money small { color: var(--text-secondary); }
+.sp-soil, .sp-steps, .sp-limits { margin: 0; padding: 0; list-style: none; display: grid; gap: 8px; }
+.sp-soil li { display: grid; gap: 2px; }
+.sp-soil small { color: var(--text-secondary); }
+.sp-step { display: grid; gap: 2px; padding-left: 10px; border-left: 3px solid var(--border-strong, #bbb); }
+.sp-step-harvest { border-left-color: #d9b45a; }
+.sp-step-stage { border-left-color: var(--accent, #4b7a3a); }
+.sp-step-when { font-size: 0.82rem; color: var(--text-secondary); }
+.sp-step-title small { text-transform: uppercase; letter-spacing: 0.04em; font-size: 0.7rem; color: var(--text-secondary); }
+.sp-step-detail, .sp-step-source { font-size: 0.85rem; color: var(--text-secondary); }
+.sp-limits li { font-size: 0.85rem; color: var(--text-secondary); }
+.planner-hints { display: flex; flex-wrap: wrap; gap: 6px; }
+.planner-hints button { border: 1px solid var(--border); background: var(--surface); border-radius: 999px; padding: 4px 10px; font-size: 0.82rem; cursor: pointer; }
+.season-year-group h3.season-year { margin: 12px 0 4px; font-size: 0.9rem; color: var(--text-secondary); letter-spacing: 0.04em; }
+.season-row-actions { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; }
+@media (min-width: 720px) { .sp-money { grid-template-columns: 1fr 1fr; } }

@@ -23,7 +23,13 @@ export const ASSUMPTIONS = {
   yieldYears: { value: 3, text: 'Local yield is the median of the last 3 available years at the most specific level (spec 5.1).' },
   minYieldYears: { value: 2, text: 'A level (district or state) needs at least 2 years for a median and P25-P75 range; a single published year is used only as a reference point with no spread.' },
   yieldRatioClip: { value: 1.2, text: 'Local / reference yield is clipped to 0..1.2 and rescaled to 0..1 (spec 5.1).' },
-  referenceYield: { value: 'state_best_year', text: 'Reference yield is the best state year of the same product form; package-of-practice stated yields are not yet encoded in R1/R2.' },
+  referenceYield: { value: 'state_median', text: 'Round 3 (2026-11-01, ROUND3_SPEC 4 item 1; was the best state year): the reference yield is the state median of the last 3 available years of the same season (exact season rows, else season-combined rows) and product form. The best state year is used only when the state has fewer than 2 such years (reason yield_reference_best_year). Package-of-practice stated yields are not yet encoded in R1/R2.' },
+  soilYieldFactors: { value: { ok: 1, unknown: 1, watch: 0.95, short: 0.85, floor: 0.7 }, text: 'Round 3 (2026-11-01, ROUND3_SPEC 4 item 2): the yield part is multiplied by a soil factor from the confirmed soil comparison over the N, P2O5, K2O and pH checks: ok or unknown 1.0, watch 0.95, short 0.85 per check, multiplied and clipped to at least 0.7. Orchestrator-set, not sourced; flagged soil_limits_yield with the limiting markers named. Without a confirmed soil report the factor is 1.' },
+  intercropShareScaling: { value: 'low_x_min_p50_x_mid_high_x_max', text: 'Round 3 (2026-11-01, ROUND3_SPEC 8.2): in an intercrop each crop\'s sole-crop regional yield range is scaled by its yield share range (low x share min, p50 x share midpoint, high x share max), so the share uncertainty widens the likely range. Revenue sums both products (price x yield x keep each); the companion price is its own harvest-week outlook.' },
+  intercropCompanionCostRowShare: { value: 'row_share', text: 'Round 3 (2026-11-01, ROUND3_SPEC 8.2 and orchestrator decision): an intercrop costs the main crop A2+FL plus the companion A2+FL times the sourced companion seed-rate share; without a sourced seed-rate share the companion row share from the row ratio is used instead (companion rows / all rows, for example 1/5 at 4:1), and without a row ratio intercropDefaultCompanionRowShare. Not sourced; flagged intercrop_cost_assumed.' },
+  intercropDefaultCompanionRowShare: { value: 0.25, text: 'Round 3 (2026-11-01, orchestrator decision): companion row share used for the companion cost when a system prints no row ratio. Not sourced; flagged intercrop_cost_assumed.' },
+  intercropFallbackShares: { value: { main: { min: 0.83, max: 0.93 }, companion: { min: 0.23, max: 0.39 } }, text: 'Round 3 (2026-11-01, orchestrator decision; intercropping.json fallback.engineRule): a provisional system, or a sourced system without yield shares, uses main 0.83 to 0.93 of the sole-crop yield (range of the sourced systems in the file) and companion 0.23 to 0.39 (the fallback cereal-legume LER 1.16 to 1.22 of Yu et al. minus the main share). A sourced LER without shares is split the same way: main 0.83 to 0.93, companion = LER minus main, at least 0.1. Flagged intercrop_shares_assumed.' },
+  intercropCompanionHarvest: { value: 'shortest_class_after_main', text: 'Round 3 (2026-11-01; deviation from ROUND3_SPEC 8.2, which uses the main crop durations only): when a system says the companion is harvested after the main crop, the field is held until the companion\'s latest harvest (sowing + the longest day of its shortest sourced duration class) plus the land preparation gap, so no later crop is planned over a standing companion. The main crop keeps its own harvest window and price week.' },
   marketingDeduction: { value: 0, text: 'No sourced commission or market-fee percentage for Karnataka or Tamil Nadu; none is deducted and revenue is a wholesale reference.' },
   priceParts: { value: { margin: 25, timing: 15 }, text: 'Price component = (25 x margin-rate score + 15 x harvest-timing score) / 40 (spec 5.1).' },
   harvestTimingClip: { value: [0.5, 1.5], text: 'Harvest-week p50 / annual mean is clipped to 0.5..1.5 and rescaled to 0..1 (spec 5.1).' },
@@ -104,6 +110,11 @@ export const REASON_TEXT = {
   same_role_repeat: 'Same nutrient demand as the previous crop with no cited benefit.',
   occupancy_conflict: 'The dates overlap another season on this field.',
   harvest_assumed: 'The harvest date is an assumption; record it to replace it.',
+  yield_reference_best_year: 'No recent state median exists; the best state year is the yield reference.',
+  soil_limits_yield: 'Confirmed soil test values are low for what this crop takes up, so the yield part is lowered.',
+  intercrop: 'Two crops share the field in rows; both harvests are counted.',
+  intercrop_shares_assumed: 'The yield shares are general research figures, not sourced for this system.',
+  intercrop_cost_assumed: 'The companion cost is scaled by its row share or a seed-rate share without its own source; no sourced seed rate.',
 } as const;
 export type ReasonCode = keyof typeof REASON_TEXT;
 export const REASON_CODES = Object.keys(REASON_TEXT) as ReasonCode[];
@@ -178,16 +189,38 @@ export function priceScore(slot: PriceSlotFacts, outlook: HarvestPriceOutlook | 
 
 // ------------------------------------------------------------------ yield (30)
 
-export interface YieldScoreResult { value: number; ratio: number | null; localKgPerHa: number | null; reasonCodes: ReasonCode[] }
+export interface YieldScoreResult { value: number; ratio: number | null; localKgPerHa: number | null; soilFactor: number; reasonCodes: ReasonCode[] }
 
-/** yieldIndex = clip(local / reference, 0, 1.2) / 1.2 x windowFit x waterFit; a farmer override replaces the local yield. */
-export function yieldScore(slot: { yieldOverrideKgPerHa?: number | null | undefined }, yieldRef: { p50: number; referenceKgPerHa: number } | null, windowFit: number, waterFit: number): YieldScoreResult {
+/**
+ * Yield v2 (ROUND3_SPEC 4): yieldIndex = clip(local / reference, 0, 1.2) / 1.2 x windowFit x soilYieldFactor. Water fit is
+ * no longer in here (it has its own component). The reference is the state median of recent years (best state year only
+ * as a flagged fallback); a farmer override replaces the local yield.
+ */
+export function yieldScore(slot: { yieldOverrideKgPerHa?: number | null | undefined }, yieldRef: { p50: number; referenceKgPerHa: number; referenceBasis?: 'state_median' | 'state_best_year' | undefined } | null, windowFit: number, soilFactor = 1): YieldScoreResult {
   const local = slot.yieldOverrideKgPerHa ?? yieldRef?.p50 ?? null;
   const reference = yieldRef?.referenceKgPerHa ?? null;
-  if (local === null || reference === null || !(reference > 0)) return { value: 0, ratio: null, localKgPerHa: local, reasonCodes: ['yield_not_sourced'] };
+  if (local === null || reference === null || !(reference > 0)) return { value: 0, ratio: null, localKgPerHa: local, soilFactor, reasonCodes: ['yield_not_sourced'] };
   const max = ASSUMPTIONS.yieldRatioClip.value;
   const ratio = clip(local / reference, 0, max);
-  return { value: (ratio / max) * windowFit * waterFit, ratio, localKgPerHa: local, reasonCodes: [] };
+  const codes: ReasonCode[] = [];
+  if (yieldRef?.referenceBasis === 'state_best_year') codes.push('yield_reference_best_year');
+  if (soilFactor < 1) codes.push('soil_limits_yield');
+  return { value: (ratio / max) * windowFit * soilFactor, ratio, localKgPerHa: local, soilFactor, reasonCodes: codes };
+}
+
+/** One confirmed soil comparison row (services/crop-fit/soil-compare.ts SoilCheck) reduced to what the yield factor needs. */
+export interface SoilCheckLite { key: string; label: string; verdict: 'ok' | 'watch' | 'short' | 'unknown' }
+/** ASSUMPTIONS.soilYieldFactors: product of the per-check factors over N, P2O5, K2O and pH, clipped to the floor. */
+export function soilYieldFactor(checks: readonly SoilCheckLite[] | null | undefined): { value: number; raw: number; limiting: SoilCheckLite[] } {
+  const f = ASSUMPTIONS.soilYieldFactors.value;
+  let raw = 1;
+  const limiting: SoilCheckLite[] = [];
+  for (const c of checks ?? []) {
+    const m = c.verdict === 'short' ? f.short : c.verdict === 'watch' ? f.watch : c.verdict === 'ok' ? f.ok : f.unknown;
+    if (m < 1) limiting.push(c);
+    raw *= m;
+  }
+  return { value: Math.max(f.floor, raw), raw, limiting };
 }
 
 // ------------------------------------------------------------------ soil and rotation (15)
@@ -206,6 +239,11 @@ export interface RotationFacts {
   phRange: { min: number; max: number; source: string | null } | null;
   /** Round 2: a green manure crop (grown and ploughed in); the next crop gets ASSUMPTIONS.greenManureSuccessorBonus. */
   greenManure?: boolean | undefined;
+  /**
+   * Round 3: an intercrop predecessor token ('ic:<systemId>') stands for its main crop in avoidAfter and succession checks;
+   * its own id is used only for the legume credit lookup (the system's sourced nitrogen credit).
+   */
+  aliasOf?: string | undefined;
 }
 export type RotationRule = 'avoid_after' | 'same_family' | 'legume_after_heavy_feeder' | 'heavy_feeder_after_legume' | 'cited_succession' | 'lighter_after_heavy_feeder' | 'same_role' | 'family_break' | 'no_rule' | 'unknown_previous';
 export interface RotationScoreResult { raw: number; value: number; rule: RotationRule; reasonCodes: ReasonCode[]; sources: string[]; sameFamily: boolean; phMismatch: boolean; greenManureBonus: boolean }
@@ -213,11 +251,13 @@ export interface RotationScoreResult { raw: number; value: number; rule: Rotatio
 export const PRUNED_RULES: ReadonlySet<RotationRule> = new Set(['avoid_after', 'same_family']);
 
 export function citedSuccession(prev: RotationFacts, next: RotationFacts): CropLink | null {
-  return prev.successors.find((l) => l.cropId === next.cropId) ?? next.predecessors.find((l) => l.cropId === prev.cropId) ?? null;
+  const prevId = prev.aliasOf ?? prev.cropId;
+  return prev.successors.find((l) => l.cropId === next.cropId) ?? next.predecessors.find((l) => l.cropId === prevId) ?? null;
 }
 
 function rotationRule(prev: RotationFacts, next: RotationFacts, legumeCredits: (cropId: string) => LegumeCredit | null): { raw: number; rule: RotationRule; sources: string[] } {
-  const avoid = next.avoidAfter.find((a) => (a.cropId !== null && a.cropId === prev.cropId) || (a.family !== null && a.family === prev.family));
+  const prevId = prev.aliasOf ?? prev.cropId;
+  const avoid = next.avoidAfter.find((a) => (a.cropId !== null && a.cropId === prevId) || (a.family !== null && a.family === prev.family));
   if (avoid) return { raw: -1, rule: 'avoid_after', sources: avoid.source ? [avoid.source] : [] };
   const cited = citedSuccession(prev, next);
   const sameFamily = prev.family !== null && prev.family === next.family;

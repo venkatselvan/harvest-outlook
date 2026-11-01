@@ -197,6 +197,7 @@ test("the actual inventory is independent of the old screening list, with all ma
 }) => {
   await fixture(page);
   await page.goto("/catalogue");
+  await page.getByRole("button", { name: /Browse the full catalogue/ }).click();
   await expect(page.getByLabel("Commodity group")).toHaveValue("crops");
   await expect(
     page.getByRole("button", { name: "Open Buffalo profile" }),
@@ -218,6 +219,7 @@ test("profile renders source facts, scoped fertilizer reference, raw quote units
 }) => {
   await fixture(page);
   await page.goto("/catalogue");
+  await page.getByRole("button", { name: /Browse the full catalogue/ }).click();
   await page.getByRole("button", { name: "Open Mango profile" }).click();
   const dialog = page.getByRole("dialog");
   await expect(dialog.getByText("July–December · months")).toBeVisible();
@@ -248,6 +250,7 @@ test("ambiguous species references stay separate and unselected rather than inhe
 }) => {
   await fixture(page);
   await page.goto("/catalogue");
+  await page.getByRole("button", { name: /Browse the full catalogue/ }).click();
   await page
     .getByRole("button", { name: "Open Grain amaranth profile" })
     .click();
