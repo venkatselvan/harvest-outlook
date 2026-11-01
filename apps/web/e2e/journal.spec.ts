@@ -138,3 +138,30 @@ test("a routine expense entry saves with no AI step", async ({ page }) => {
   await expect(card.getByRole("button", { name: /Analyze photo/ })).toHaveCount(0);
   await expect(page.getByTestId("proposal")).toHaveCount(0);
 });
+
+test("a sale entry records farmer-reported proceeds; the sale fields appear only for the Sale activity", async ({ page }) => {
+  await createFarmAndPlan(page);
+  await page.goto(JOURNAL_PATH);
+  await expect(page.getByLabel("Sale amount (₹)")).toHaveCount(0);
+  await page.getByLabel("What did you do or see?").selectOption("sale");
+  await expect(page.getByLabel("Sale amount (₹)")).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+  // A malformed amount is refused with a message and nothing is saved.
+  await page.getByLabel("Sale amount (₹)").fill("12.345");
+  await page.getByRole("button", { name: "Save entry" }).click();
+  await expect(page.getByRole("alert")).toContainText("Enter the sale amount in rupees");
+  await expect(page.getByTestId("journal-entry")).toHaveCount(0);
+  await page.getByLabel("Sale amount (₹)").fill("12500.5");
+  await page.getByLabel("Buyer or note (optional)").fill("Hassan mandi");
+  await page.getByLabel("Amount in rupees").fill("400");
+  await page.getByLabel("What for").fill("transport");
+  await page.getByRole("button", { name: "Save entry" }).click();
+  const card = page.getByTestId("journal-entry").first();
+  await expect(card).toContainText("Sale ₹12500.50 (Hassan mandi)");
+  await expect(card).toContainText("₹400.00 (transport)");
+  await expect(card).toContainText("Farmer-reported");
+  await expect(card.getByRole("button", { name: /Analyze photo/ })).toHaveCount(0);
+  // Changing the activity hides the fields again.
+  await page.getByLabel("What did you do or see?").selectOption("harvest");
+  await expect(page.getByLabel("Sale amount (₹)")).toHaveCount(0);
+});

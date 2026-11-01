@@ -48,7 +48,10 @@
  *     and alert steps over stage checks and stage transitions as a whole tier (so an always-due "any time this season"
  *     check never outranks a concrete care task);
  * - outlook note (ROUND2_SPEC.md 2.2): facts from the harvest-week reference and the 24-month trend in the same scope;
- *   the stored note is returned when its facts hash matches, else the job is queued (see outlook-note.ts).
+ *   the stored note is returned when its facts hash matches, else the job is queued (see outlook-note.ts);
+ * - index stage (open-source comparison 2026-11-01): the field's own NDVI curve read by code (index-stage.ts) beside the
+ *   calendar stage, only for a current cycle. It never moves the stage timeline; when it is insufficient or unavailable
+ *   one limitation names its reason.
  */
 import type {Config} from '../../config';
 import type {Pool} from '../../db/pool';
@@ -72,6 +75,7 @@ import {OUTLOOK_TREND_MONTHS, ensureOutlookNote, outlookFacts} from './outlook-n
 import {listAlerts} from './alerts';
 import {listReadyFutureLooks} from './future-look';
 import {ndviSeries} from './ndvi';
+import {STAGE_READER_ASSUMPTIONS, readIndexStage} from './index-stage';
 import {stageAt, stageTimeline, timelineSpan} from './stage-timeline';
 import {unavailableTrack, weatherTrack, type WeatherTrack} from './weather-track';
 
@@ -79,7 +83,8 @@ import {unavailableTrack, weatherTrack, type WeatherTrack} from './weather-track
 
 export const UPCOMING_HORIZON_DAYS = 14;
 export const OVERDUE_LOOKBACK_DAYS = 14;
-export const NDVI_LEAD_DAYS = 30;
+/** Shared with the index stage reader, so its window never precedes the fetched series (index-stage.ts windowLeadDays). */
+export const NDVI_LEAD_DAYS = STAGE_READER_ASSUMPTIONS.windowLeadDays.value;
 export const NDVI_MAX_SCENES = 12;
 export const NEIGHBOURHOOD_MARGIN = 0.05;
 export const MAX_OUTLOOK_CALLS = 40;
@@ -152,6 +157,9 @@ export function boundedWindow(from: string, to: string, today: string, maxDays: 
   if (end > to) { end = to; start = addDays(to, -(maxDays - 1)); }
   return {from: start, to: end, clipped: true};
 }
+
+/** Start of the NDVI window for a cycle: NDVI_LEAD_DAYS before its anchor, at most NDVI_MAX_WINDOW_DAYS back, never after today. */
+export const ndviWindowFrom = (anchor: string, today: string): string => minDate(today, maxDate(addDays(anchor, -NDVI_LEAD_DAYS), addDays(today, -(NDVI_MAX_WINDOW_DAYS - 1))));
 
 /** Acquisition date encoded in a Sentinel-2 item id (`..._20261027T052231_...`), or null. */
 function itemDate(itemId: string): string | null {
@@ -662,7 +670,7 @@ export async function todayView(deps: TodayViewDeps, ownerId: string, farmId: st
 
   // ---- independent sections in parallel
   const ndviTask = cycle && anchor ? guard('Satellite readings', () => {
-    const from = minDate(today, maxDate(addDays(anchor, -NDVI_LEAD_DAYS), addDays(today, -(NDVI_MAX_WINDOW_DAYS - 1))));
+    const from = ndviWindowFrom(anchor, today);
     return p.ndviSeries({config: deps.config, pool: deps.pool, fetchImpl: deps.sentinelFetch, now}, ownerId, farmId, {from, to: today, maxScenes: NDVI_MAX_SCENES});
   }, null) : Promise.resolve(null);
   const looksTask = cycle && mode === 'live' ? guard('Stage illustrations', () => p.readyFutureLooks({config: deps.config, pool: deps.pool, now}, ownerId, farmId, cycle.id), []) : Promise.resolve([]);
@@ -701,6 +709,12 @@ export async function todayView(deps: TodayViewDeps, ownerId: string, farmId: st
   const health = healthFrom(ndvi);
   if (health && dayDiff(health.date, today) > STALE_HEALTH_DAYS) satelliteNotes.push(`The latest clear satellite reading of the field is from ${health.date} (${dayDiff(health.date, today)} days ago).`);
   if (ndvi && ndvi.status === 'available' && !health) satelliteNotes.push('No clear satellite reading of the field exists in this window, so no vegetation health is shown.');
+  // The field's own NDVI curve beside the calendar stage: evidence only, the timeline above is not changed by it.
+  const indexStage = cycle ? readIndexStage({
+    readings: ndvi?.readings ?? [], today, timeline, cycle, smallField: ndvi?.smallField ?? false, polygonBasis: ndvi?.polygonBasis ?? null,
+    series: ndvi ? {status: ndvi.status, reason: ndvi.reason, window: ndvi.window} : {status: 'unavailable', reason: 'satellite_readings_unavailable'},
+  }) : null;
+  if (indexStage && indexStage.status !== 'available') satelliteNotes.push(`The satellite greenness curve is not read beside the stage estimate (${indexStage.reason ?? indexStage.status}).`);
 
   // ---- upcoming steps
   const schedule = care?.schedule ?? null;
@@ -757,7 +771,7 @@ export async function todayView(deps: TodayViewDeps, ownerId: string, farmId: st
     priceTrack: price?.track ?? [], harvestPrice: price?.harvestPrice ?? null,
     weatherTrack: weather.days.slice(0, MAX_TRACK_POINTS).map(toWeatherPoint),
     alerts: alerts?.alerts ?? [], newsReview: alerts?.newsReview ?? null, imdStatus: 'not_connected',
-    upcoming, nextAction, outlookNote,
+    upcoming, nextAction, outlookNote, indexStage,
     // When the monitor row cannot be read, the documented default (on) is reported and the failure is a limitation.
     monitoring: monitor ? {enabled: monitor.enabled, lastCheckedAt: monitor.lastCheckedAt, nextCheckAt: monitor.nextCheckAt} : {enabled: true, lastCheckedAt: null, nextCheckAt: null},
     limitations,

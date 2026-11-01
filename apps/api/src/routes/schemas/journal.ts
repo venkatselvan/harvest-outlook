@@ -55,6 +55,7 @@ export const entryOutSchema = z.object({
   activity: z.string().nullable(),
   quantity: z.object({ value: z.number(), unit: z.string() }).nullable(),
   expense: z.object({ amountInr: z.string(), category: z.string() }).nullable(),
+  sale: z.object({ amountInr: z.string(), note: z.string().nullable() }).nullable(),
   processingStatus: z.enum(["draft", "submitted", "processing", "ready", "failed"]),
   imageQuality: z.unknown(),
   facts: z.array(factOut),

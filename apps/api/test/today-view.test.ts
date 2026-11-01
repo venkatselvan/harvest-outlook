@@ -1,6 +1,6 @@
 import {afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi} from 'vitest';
 import type {FastifyInstance} from 'fastify';
-import {StageTimeline, TodayView, type FarmWorkspace, type UpcomingStep} from '@harvest/contracts';
+import {IndexStageReading, StageTimeline, TodayView, type FarmWorkspace, type UpcomingStep} from '@harvest/contracts';
 import {setupHarness, login, testConfig, ORIGIN, type Harness, type Client} from './helpers';
 import {fakePlanetary, type FakeScene} from './fixtures/sentinel2/fake-provider';
 import {AT_STAGE_DAYS, MAX_OUTLOOK_CALLS, boundedWindow, matchStage, orderSteps, pickNextAction, referenceCareSteps, regionPrefix, stageCheckSteps, todayView, type StepLocation, type TodayProviders, type TodayViewDeps} from '../src/services/today/view';
@@ -217,6 +217,9 @@ describe('todayView: Hassan farm with a maize cycle (live, injected providers)',
     expect(view.health!.ndviMean).toBeCloseTo(0.7, 2);
     expect(view.health!.neighbourhoodMean).toBeCloseTo(0.55, 2);
     expect(view.health!.basis.note).toMatch(/No typical NDVI range is sourced/);
+    // Index stage: three clear scenes in the reader window are too few; the reason is a limitation, the timeline is untouched.
+    expect(view.indexStage).toMatchObject({status: 'insufficient', reason: 'too_few_clear_scenes', readingsUsed: 3, asOf: '2026-10-27', phase: 'unknown'});
+    expect(view.limitations).toContain('The satellite greenness curve is not read beside the stage estimate (too_few_clear_scenes).');
 
     // Price: the harvest-midpoint outlook resolved to the district, so observed weeks use it too; then weekly references.
     const mid = plus(harvest.earliest, Math.floor(dayDiff(harvest.earliest, harvest.latest) / 2));
@@ -280,6 +283,7 @@ describe('todayView: Hassan farm with a maize cycle (live, injected providers)',
     const view = TodayView.parse(await todayView(deps, ownerId, farmId));
     expect(view.ndvi).toBeNull();
     expect(view.health).toBeNull();
+    expect(view.indexStage).toMatchObject({status: 'unavailable', reason: 'satellite_readings_unavailable', asOf: null});
     expect(view.scenes.filter((s) => s.kind === 'observed')).toEqual([]);
     expect(view.priceTrack).toEqual([]);
     expect(view.harvestPrice).toBeNull();
@@ -310,6 +314,27 @@ describe('todayView: Hassan farm with a maize cycle (live, injected providers)',
     expect(calls.outlook).toHaveLength(1); // no weekly references or observed series after the headline says there is no series
     expect(calls.series).toEqual([]);
   });
+
+  it('reads the field NDVI curve beside the calendar stage when enough clear scenes exist, without moving the timeline', async () => {
+    const curveFarm = await createFarm(owner, 'Hassan maize curve');
+    const put = await owner.call('PUT', `/api/v1/farms/${curveFarm}/workspace`, {payload: {expectedVersion: 0, boundary: HA, previousHarvest: {status: 'unknown'}, cycles: [maizeCycle], rotationPlans: []}});
+    expect(put.statusCode, put.body).toBe(200);
+    // Synthetic green-up: bare before sowing, greening through October; one cloudy scene in between.
+    const greening: [string, number][] = [['2026-08-10', 0.22], ['2026-08-25', 0.21], ['2026-09-09', 0.24], ['2026-09-19', 0.33], ['2026-09-29', 0.45], ['2026-10-09', 0.58], ['2026-10-19', 0.66], ['2026-10-29', 0.72]];
+    const scenes = [...greening.map(([d, v]) => scene(d, {ndvi: v}, {ndvi: 0.5})), scene('2026-10-14', 'cloudy', {ndvi: 0.5})];
+    const view = TodayView.parse(await todayView(liveDeps({scenes}), ownerId, curveFarm));
+    const reading = IndexStageReading.parse(view.indexStage);
+    const expected = expectedTimeline();
+    expect(view.timeline).toEqual(expected); // evidence only: the calendar estimate is unchanged
+    expect(reading).toMatchObject({status: 'available', reason: null, asOf: '2026-10-29', readingsUsed: greening.length, phase: 'rising', agreement: 'consistent'});
+    expect(reading.window).toEqual({from: view.ndvi!.window.from, to: view.today}); // never earlier than the fetched series
+    const stage = expected.stages.filter((s) => s.from <= '2026-10-29' && '2026-10-29' <= s.to).at(-1)!;
+    expect(reading.calendarStage).toEqual({id: stage.id, name: stage.name, from: stage.from, to: stage.to});
+    expect(reading.greenUpDate! > '2026-09-01' && reading.greenUpDate! <= '2026-10-29').toBe(true);
+    expect(reading.basis).toMatchObject({kind: 'ndvi', sourceId: 'index-stage-reader-v1', scope: 'drawn field boundary'});
+    expect(reading.summary).toMatch(/^Satellite greenness has been rising since the green-up on .*, so the curve and the calendar agree\.$/);
+    expect(view.limitations.join(' ')).not.toMatch(/satellite greenness curve is not read/);
+  });
 });
 
 describe('todayView: edges', () => {
@@ -317,7 +342,7 @@ describe('todayView: edges', () => {
     const ndvi = vi.fn(), outlook = vi.fn();
     const deps = liveDeps({providers: {ndviSeries: ndvi as unknown as TodayProviders['ndviSeries'], harvestPriceOutlook: outlook as unknown as TodayProviders['harvestPriceOutlook']}});
     const view = TodayView.parse(await todayView(deps, ownerId, emptyFarmId));
-    expect(view).toMatchObject({cycle: null, product: null, timeline: null, slider: null, daysToHarvest: null, ndvi: null, health: null, harvestPrice: null, scenes: [], priceTrack: []});
+    expect(view).toMatchObject({cycle: null, product: null, timeline: null, slider: null, daysToHarvest: null, ndvi: null, health: null, harvestPrice: null, scenes: [], priceTrack: [], indexStage: null});
     expect(view.weatherTrack.map((d) => d.date)).toEqual(eachDate(plus(TODAY, -7), plus(TODAY, 14)));
     expect(new Set(view.weatherTrack.map((d) => d.kind))).toEqual(new Set(['observed', 'forecast', 'typical']));
     expect(view.alerts.map((a) => a.title)).toEqual(['Pest window for the area']);
@@ -348,6 +373,7 @@ describe('todayView: edges', () => {
       expect(reached, mode).toEqual([]);
       expect(spy, mode).not.toHaveBeenCalled();
       expect(view.ndvi, mode).toMatchObject({status: 'unavailable', reason: 'live_mode_required'});
+      expect(view.indexStage, mode).toMatchObject({status: 'unavailable', reason: 'live_mode_required'});
       expect(view.scenes, mode).toEqual([]); // the ready illustration row is live-only
       expect(view.timeline, mode).toEqual(expectedTimeline());
       // No synthetic or replay price rows exist here, so the honest answer is "no series", not a number.

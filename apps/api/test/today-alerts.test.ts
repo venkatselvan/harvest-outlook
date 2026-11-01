@@ -1,12 +1,14 @@
 import { randomUUID } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
-import { FarmAlerts, type FarmWorkspace } from '@harvest/contracts';
+import { FarmAlerts, type FarmWorkspace, type IndexStageReading, type NdviReading, type NdviSeries, type StageTimeline } from '@harvest/contracts';
 import { setupHarness, login, farmBody, type Harness, type Client } from './helpers';
 import {
-  ALERT_LIMITATIONS, INSTRUCTIONS, addDays, alertFingerprint, gateGroundedAlerts, groundedReview, istDate, listAlerts, loadPriceMoves, persistAlerts, priceMoveFromQuotes,
-  structuredAlerts, type AlertDraft, type GroundedTransport, type PriceMove,
+  ALERT_LIMITATIONS, INSTRUCTIONS, SATELLITE_DROP_RULE, addDays, alertFingerprint, gateGroundedAlerts, groundedReview, istDate, listAlerts, loadPriceMoves, persistAlerts, priceMoveFromQuotes,
+  satelliteAlerts, structuredAlerts, type AlertDraft, type GroundedTransport, type PriceMove,
 } from '../src/services/today/alerts';
+import { PC_ORIGIN } from '../src/providers/sentinel2';
+import { fakePlanetary, type FakeScene } from './fixtures/sentinel2/fake-provider';
 import { monitoringSnapshot, type MonitoringSnapshot } from '../src/services/monitoring';
 import { enqueueDueMonitors, readMonitorSettings } from '../src/services/monitor-schedule';
 import { createMonitorHandler } from '../src/worker/handlers/monitoring';
@@ -133,6 +135,11 @@ describe('citation gate for grounded alerts', () => {
     expect(r.dropped.map((d) => d.reason)).toEqual(['uncited_url', 'source_date_stale', 'source_date_in_future', 'source_date_mismatch', 'type_not_allowed', 'schema_invalid', 'source_date_invalid', 'expired', 'price_prediction', 'schema_invalid']);
     expect(r.dropped[0]).toMatchObject({ type: 'market_event', sourceDomain: 'invented.example.com' });
   });
+  it('never accepts a model alert typed satellite: that type belongs to the code rule on the field series', () => {
+    const r = gate([{ ...base, type: 'satellite' }]);
+    expect(r.kept).toEqual([]);
+    expect(r.dropped).toEqual([{ reason: 'type_not_allowed', type: 'satellite', sourceDomain: 'news.example.in' }]);
+  });
   it('rejects a non-JSON envelope, collapses duplicates and caps at six alerts', () => {
     expect(gateGroundedAlerts(null, evidence, '2026-11-01').dropped).toEqual([{ reason: 'invalid_envelope', type: null, sourceDomain: null }]);
     const r = gate([base, { ...base, sourceUrl: `${base.sourceUrl}/#top` }, ...Array.from({ length: 7 }, (_, i) => ({ ...base, title: `Strike notice ${'abcdefg'[i]}` }))]);
@@ -182,6 +189,112 @@ describe('grounded review prompt and limitations (ROUND2_SPEC.md 2.3)', () => {
     expect(INSTRUCTIONS).toContain('Give the real end date of a weather warning');
     expect(ALERT_LIMITATIONS).toContain('Direct IMD feed not connected (needs a key); official warnings are searched daily.');
     expect(ALERT_LIMITATIONS.join(' ')).not.toMatch(/IMD district warnings are not connected/);
+  });
+});
+
+// ------------------------------------------------------------------------------------------------ satellite drop rule (pure)
+
+/** Synthetic NDVI readings and series; none of these values is a satellite observation. */
+const ndviStats = (mean: number | null, clearFraction = 0.95) => ({ mean, median: mean, p10: mean, p90: mean, clearPixels: 100, totalPixels: 121, clearFraction, cloudOrShadowFraction: 1 - clearFraction, b04P95: 1800, usable: mean !== null && clearFraction >= 0.6, rejection: null });
+const s2Id = (date: string) => `S2B_MSIL2A_${date.replace(/-/g, '')}T052229_R062_T43PFQ_${date.replace(/-/g, '')}T090011`;
+const ndviReading = (date: string, field: number | null, nb: number | null, clearFraction = 0.95): NdviReading => ({
+  itemId: s2Id(date), date, acquiredAt: `${date}T05:22:29Z`, tileId: '43PFQ', baseline: '05.11', offsetApplied: true, sceneCloudPct: 4,
+  usable: field !== null && clearFraction >= 0.6, field: ndviStats(field, clearFraction), neighbourhood: nb === null ? null : ndviStats(nb),
+});
+const ndviSeriesOf = (readings: NdviReading[], over: Partial<NdviSeries> = {}): NdviSeries => ({
+  farmId: randomUUID(), status: 'available', reason: null, window: { from: '2026-07-01', to: '2026-11-01' }, polygonBasis: 'boundary', polygonPixels: 121, smallField: false, imageBbox: null,
+  scenesListed: readings.length, scenesAnalysed: readings.length, scenesPending: 0, scenesFailed: 0, readings, latestUsable: [...readings].reverse().find((r) => r.usable) ?? null,
+  method: { version: 'test', sclClassesKept: [4, 5, 6, 7], minClearFraction: 0.6, minClearPixels: 8, maxSceneCloudPct: 60 }, attribution: 'synthetic', limitations: [], ...over,
+});
+/** Synthetic 120-day calendar from 2026-07-15: harvest 2026-11-02 to 2026-11-12; its last 25 % starts 2026-10-13. */
+const satTimeline = (anchor = '2026-07-15'): StageTimeline => ({
+  cropId: 'testcrop', productId: null, establishmentMethod: null, anchorDate: anchor,
+  stages: [{ id: 'vegetative', name: 'Vegetative', from: anchor, to: addDays(anchor, 60), basis: 'estimate' }, { id: 'late', name: 'Late season', from: addDays(anchor, 60), to: addDays(anchor, 120), basis: 'estimate' }],
+  harvest: { earliest: addDays(anchor, 110), latest: addDays(anchor, 120) }, basis: { kind: 'duration', label: 'synthetic', sourceId: null, url: null, scope: null, note: null },
+});
+const stageOf = (phase: IndexStageReading['phase'], noise: number | null = 0.01): IndexStageReading => ({
+  status: 'available', reason: null, index: 'ndvi', asOf: '2026-10-27', phase, greenUpDate: null, peakDate: null, peakValue: null, troughDate: null, troughValue: null, latestSmoothed: 0.5,
+  change15d: 0, noise, changeThreshold: 0.03, readingsUsed: 8, window: null, calendarStage: null, agreement: 'no_calendar', summary: 'synthetic', limitations: [],
+  basis: { kind: 'ndvi', label: 'synthetic', sourceId: null, url: null, scope: null, note: null },
+});
+// Field 0.72 -> 0.55 (down 0.17) while the neighbourhood holds (0.60 -> 0.59).
+const dropReadings = () => [ndviReading('2026-10-02', 0.7, 0.6), ndviReading('2026-10-17', 0.72, 0.6), ndviReading('2026-10-22', null, null, 0.1), ndviReading('2026-10-27', 0.55, 0.59)];
+
+describe('satellite drop rule (code only)', () => {
+  it('fires one watch alert dated on the scene, with the STAC item as source and both readings in the detail', () => {
+    const { alerts, notes } = satelliteAlerts(ndviSeriesOf(dropReadings()), stageOf('plateau'), satTimeline('2026-08-01'), ASOF);
+    expect(notes).toEqual([]);
+    expect(alerts).toHaveLength(1);
+    expect(alerts[0]).toEqual({
+      type: 'satellite', severity: 'watch', origin: 'rule', title: 'Field greenness fell since the last clear satellite image',
+      detail: 'Field NDVI fell from 0.72 on 2026-10-17 to 0.55 on 2026-10-27 (down 0.17; threshold 0.10). The 1 km neighbourhood went from 0.60 to 0.59 (down 0.01), so most of the fall is the field\'s own. Code rule on two clear Sentinel-2 scenes; not an observation of crop damage.',
+      source: { name: 'Copernicus Sentinel-2 L2A via Microsoft Planetary Computer', url: `https://planetarycomputer.microsoft.com/api/stac/v1/collections/sentinel-2-l2a/items/${s2Id('2026-10-27')}`, date: '2026-10-27' },
+      validFrom: '2026-10-27', validTo: '2026-11-06',
+      suggestedStep: 'Walk the field: check for water stress, pest or disease damage, lodging or grazing, and compare with neighbouring fields.',
+    });
+    expect(alerts[0]!.title.length).toBeLessThanOrEqual(120);
+  });
+
+  it('needs a usable neighbourhood control on both scenes; without a stage calendar the detail says ripening cannot be ruled out', () => {
+    const none = [ndviReading('2026-10-17', 0.72, null), ndviReading('2026-10-27', 0.55, null)];
+    expect(satelliteAlerts(ndviSeriesOf(none), stageOf('plateau'), null, ASOF)).toEqual({ alerts: [], notes: ['satellite_check_skipped:no_neighbourhood_control'] });
+    const oneSide = [ndviReading('2026-10-17', 0.72, 0.6), ndviReading('2026-10-27', 0.55, null)];
+    expect(satelliteAlerts(ndviSeriesOf(oneSide), stageOf('plateau'), null, ASOF).notes).toEqual(['satellite_check_skipped:no_neighbourhood_control']);
+    const { alerts } = satelliteAlerts(ndviSeriesOf(dropReadings()), stageOf('falling'), null, ASOF);
+    expect(alerts).toHaveLength(1);
+    expect(alerts[0]!.detail).toContain('No stage calendar exists for this crop, so normal ripening cannot be ruled out.');
+  });
+
+  it('does not fire when the neighbourhood shares the fall', () => {
+    const readings = [ndviReading('2026-10-17', 0.72, 0.62), ndviReading('2026-10-27', 0.55, 0.47)]; // field -0.17, area -0.15
+    expect(satelliteAlerts(ndviSeriesOf(readings), stageOf('plateau'), satTimeline('2026-08-01'), ASOF)).toEqual({ alerts: [], notes: ['satellite_check_skipped:drop_shared_with_neighbourhood'] });
+  });
+
+  it('expected senescence comes from the calendar alone: the last 25 % of the cycle or near harvest, whatever the curve phase', () => {
+    const late = (stage: IndexStageReading | null, t: StageTimeline) => satelliteAlerts(ndviSeriesOf(dropReadings()), stage, t, ASOF).notes;
+    // 2026-10-27 is 104 days into a 120-day cycle from 2026-07-15 (in its last 25 %).
+    for (const phase of ['falling', 'harvested', 'plateau', 'unknown'] as const) expect(late(stageOf(phase), satTimeline()), phase).toEqual(['satellite_check_skipped:expected_senescence']);
+    // A late-season farm with too few scenes for a curve reading is skipped too.
+    expect(late({ ...stageOf('unknown', null), status: 'insufficient', reason: 'too_few_clear_scenes' }, satTimeline())).toEqual(['satellite_check_skipped:expected_senescence']);
+    expect(late(null, satTimeline())).toEqual(['satellite_check_skipped:expected_senescence']);
+    // Within 21 days before the earliest harvest of a long cycle (not in its last 25 %): still expected.
+    const long: StageTimeline = { ...satTimeline('2026-03-01'), harvest: { earliest: '2026-11-17', latest: '2027-02-01' } };
+    expect(late(stageOf('plateau'), long)).toEqual(['satellite_check_skipped:expected_senescence']);
+    expect(late(stageOf('plateau'), { ...long, harvest: { earliest: '2026-11-18', latest: '2027-02-01' } })).toEqual([]); // 22 days before: reported
+    // Early in the cycle the same fall is reported, whatever the phase.
+    expect(satelliteAlerts(ndviSeriesOf(dropReadings()), stageOf('falling'), satTimeline('2026-09-15'), ASOF).alerts).toHaveLength(1);
+  });
+
+  it('does not fire for a small field, a noisy series, a stale or isolated scene, or a low clear fraction', () => {
+    const skipped = (series: NdviSeries, stage = stageOf('plateau'), asOf = ASOF) => satelliteAlerts(series, stage, satTimeline('2026-08-01'), asOf).notes;
+    expect(skipped(ndviSeriesOf(dropReadings(), { smallField: true }))).toEqual(['satellite_check_skipped:small_field']);
+    // A series noise of 0.09 raises the threshold to 0.18, above the 0.17 fall.
+    expect(skipped(ndviSeriesOf(dropReadings()), stageOf('plateau', 0.09))).toEqual(['satellite_check_skipped:no_drop']);
+    expect(skipped(ndviSeriesOf(dropReadings()), stageOf('plateau'), '2026-11-20T06:00:00Z')).toEqual(['satellite_check_skipped:latest_clear_scene_too_old']);
+    expect(skipped(ndviSeriesOf([ndviReading('2026-09-01', 0.8, 0.6), ndviReading('2026-10-27', 0.55, 0.59)]))).toEqual(['satellite_check_skipped:no_previous_clear_scene_within_gap']);
+    const hazy = [ndviReading('2026-10-17', 0.72, 0.6), { ...ndviReading('2026-10-27', 0.55, 0.59), field: { ...ndviStats(0.55, 0.5), usable: true } }];
+    expect(skipped(ndviSeriesOf(hazy))).toEqual(['satellite_check_skipped:low_clear_fraction']);
+    expect(skipped(ndviSeriesOf([], { status: 'unavailable', reason: 'live_mode_required' }))).toEqual(['satellite_check_skipped:live_mode_required']);
+    expect(SATELLITE_DROP_RULE.dropFloor.text).toMatch(/design threshold/);
+  });
+
+  it('boundaries: a 45-day gap fires and 46 does not; the alert is offered through 10 days after the scene, not 11', () => {
+    const gap = (days: number) => satelliteAlerts(ndviSeriesOf([ndviReading(addDays('2026-10-27', -days), 0.72, 0.6), ndviReading('2026-10-27', 0.55, 0.59)]), stageOf('plateau'), satTimeline('2026-08-01'), ASOF);
+    expect(gap(SATELLITE_DROP_RULE.maxGapDays.value).alerts).toHaveLength(1);
+    expect(gap(SATELLITE_DROP_RULE.maxGapDays.value + 1).notes).toEqual(['satellite_check_skipped:no_previous_clear_scene_within_gap']);
+    const on = (isoInstant: string) => satelliteAlerts(ndviSeriesOf(dropReadings()), stageOf('plateau'), satTimeline('2026-08-01'), isoInstant);
+    expect(on('2026-11-06T06:00:00Z').alerts[0]).toMatchObject({ validTo: '2026-11-06' }); // IST date = scene + 10
+    expect(on('2026-11-07T06:00:00Z').notes).toEqual(['satellite_check_skipped:latest_clear_scene_too_old']);
+  });
+
+  it('one alert per scene: a repeat run has the same fingerprint, a newer scene a new one', () => {
+    // Calendar from 2026-08-15: both scenes fall before its last 25 % and before the pre-harvest window.
+    const first = satelliteAlerts(ndviSeriesOf(dropReadings()), stageOf('plateau'), satTimeline('2026-08-15'), ASOF).alerts[0]!;
+    const again = satelliteAlerts(ndviSeriesOf(dropReadings()), stageOf('plateau'), satTimeline('2026-08-15'), '2026-11-02T06:00:00Z').alerts[0]!;
+    expect(alertFingerprint(again)).toBe(alertFingerprint(first));
+    const newer = satelliteAlerts(ndviSeriesOf([...dropReadings(), ndviReading('2026-11-01', 0.4, 0.58)]), stageOf('plateau'), satTimeline('2026-08-15'), ASOF).alerts[0]!;
+    expect(newer.validFrom).toBe('2026-11-01');
+    expect(alertFingerprint(newer)).not.toBe(alertFingerprint(first));
   });
 });
 
@@ -435,5 +548,70 @@ describe('farm.monitor worker: alerts, daily guard and cap', () => {
     expect(fetchImpl).not.toHaveBeenCalled();
     expect(transport.createResponse).not.toHaveBeenCalled();
     expect((await listAlerts(h.pool, ownerId, id, 'synthetic', new Date().toISOString())).newsReview).toMatchObject({ status: 'unavailable', reason: 'live_mode_required' });
+  });
+});
+
+describe('satellite drop alert: storage and the daily monitor', () => {
+  it('a repeat persist of the same scene updates in place (migration 0035 admits the satellite type)', async () => {
+    const id = await createFarm();
+    const ownerId = await ownerOf(id);
+    const draft = satelliteAlerts(ndviSeriesOf(dropReadings()), stageOf('plateau'), satTimeline('2026-08-01'), ASOF).alerts;
+    expect(draft).toHaveLength(1);
+    expect(await persistAlerts(h.pool, ownerId, id, 'synthetic', draft)).toEqual({ inserted: 1, updated: 0 });
+    expect(await persistAlerts(h.pool, ownerId, id, 'synthetic', draft)).toEqual({ inserted: 0, updated: 1 });
+    const listed = FarmAlerts.parse(await listAlerts(h.pool, ownerId, id, 'synthetic', ASOF)).alerts.filter((a) => a.type === 'satellite');
+    expect(listed).toHaveLength(1);
+    expect(listed[0]).toMatchObject({ origin: 'rule', validFrom: '2026-10-27', source: { url: `https://planetarycomputer.microsoft.com/api/stac/v1/collections/sentinel-2-l2a/items/${s2Id('2026-10-27')}` } });
+  });
+
+  const weatherBody = () => JSON.stringify(JSON.parse(readFileSync(new URL('./fixtures/openmeteo/forecast_hassan.json', import.meta.url), 'utf8')).body);
+  async function satelliteFarm(lat: number, lon: number) {
+    await h.pool.query("DELETE FROM provider_cache WHERE provider='planetary-computer-stac'");
+    const id = await createFarm(owner, { location: { districtName: 'Hassan', stateId: 'IN-KA', precision: 'approximate', lat, lon } });
+    const ownerId = await ownerOf(id);
+    await owner.call('PUT', `/api/v1/farms/${id}/workspace`, { payload: { ...maizeCycle, cycles: [{ id: 'c1', cropId: 'maize', sowingDate: recent(70), stage: 'growing' }] } });
+    await h.pool.query('UPDATE farm_monitors SET meta_enabled=false WHERE farm_id=$1', [id]); // no news review in these tests
+    return { id, ownerId };
+  }
+
+  it('the live monitor reads the field series, runs the reader and the rule, and stores one alert per scene', async () => {
+    const { id, ownerId } = await satelliteFarm(13.31, 76.41);
+    // Synthetic scenes relative to today: green-up, then a field-only fall on the latest clear scene.
+    const at = (n: number, field: FakeScene['field'], neighbourhood?: FakeScene['neighbourhood']): FakeScene => ({ id: s2Id(recent(n)), datetime: `${recent(n)}T05:22:29Z`, field, ...(neighbourhood ? { neighbourhood } : {}) });
+    const scenes = [at(52, { ndvi: 0.3 }, { ndvi: 0.5 }), at(42, { ndvi: 0.45 }, { ndvi: 0.55 }), at(32, { ndvi: 0.6 }, { ndvi: 0.58 }), at(22, { ndvi: 0.7 }, { ndvi: 0.6 }), at(12, { ndvi: 0.72 }, { ndvi: 0.6 }), at(7, 'cloudy', { ndvi: 0.6 }), at(2, { ndvi: 0.5 }, { ndvi: 0.59 })];
+    const sat = fakePlanetary(scenes);
+    const routed = vi.fn(async (url: string, init: RequestInit) => (String(url).startsWith(PC_ORIGIN) ? sat.fetchImpl(url, init as never) : new Response(weatherBody(), { status: 200 })));
+    const handler = createMonitorHandler({ config: liveConfig(), pool: h.pool, budget: Budget.fromConfig(h.pool, h.config), fetchImpl: routed as unknown as typeof fetch });
+    const run = async () => (await handler(await job(ownerId, id), { ...ctx, pool: h.pool })) as { status: string; alerts: { satellite: number; notes: string[] } };
+    const first = await run();
+    expect(first.status).toBe('checked');
+    // Bound: one STAC list (uncached) plus field and neighbourhood reads for at most 4 new scenes.
+    expect(sat.calls.length).toBeLessThanOrEqual(9);
+    expect(sat.calls.filter((c) => c.path === '/api/data/v1/item/feature.npy').length).toBe(8);
+    expect(first.alerts.notes.filter((n) => n.startsWith('satellite_'))).toEqual([]);
+    expect(first.alerts.satellite).toBe(1);
+    const callsAfterFirst = sat.calls.length;
+    const second = await run(); // the next run analyses the remaining 3 scenes; the same latest scene updates in place
+    expect(sat.calls.length - callsAfterFirst).toBe(6);
+    expect(second.alerts.satellite).toBe(1);
+    expect(second.alerts.notes.filter((n) => n.startsWith('satellite_'))).toEqual([]);
+    const listed = (await listAlerts(h.pool, ownerId, id, 'live', new Date().toISOString())).alerts.filter((a) => a.type === 'satellite');
+    expect(listed).toHaveLength(1);
+    expect(listed[0]).toMatchObject({ origin: 'rule', severity: 'watch', validFrom: recent(2), validTo: addDays(recent(2), 10), source: { url: `https://planetarycomputer.microsoft.com/api/stac/v1/collections/sentinel-2-l2a/items/${s2Id(recent(2))}`, date: recent(2) } });
+    expect(listed[0]!.detail).toContain(`Field NDVI fell from 0.72 on ${recent(12)} to 0.50 on ${recent(2)}`);
+  });
+
+  it('a provider failure in the satellite step becomes a note and the job still succeeds', async () => {
+    const { id, ownerId } = await satelliteFarm(13.41, 76.51);
+    const routed = vi.fn(async (url: string) => {
+      if (String(url).startsWith(PC_ORIGIN)) throw new Error('planetary computer down');
+      return new Response(weatherBody(), { status: 200 });
+    });
+    const handler = createMonitorHandler({ config: liveConfig(), pool: h.pool, budget: Budget.fromConfig(h.pool, h.config), fetchImpl: routed as unknown as typeof fetch });
+    const result = (await handler(await job(ownerId, id), { ...ctx, pool: h.pool })) as { status: string; alerts: { satellite: number; notes: string[] } };
+    expect(result).toMatchObject({ status: 'checked', alerts: { satellite: 0 } });
+    expect(result.alerts.notes).toContain('satellite_check_skipped:provider_unreachable');
+    expect(routed.mock.calls.some(([url]) => String(url).startsWith(PC_ORIGIN))).toBe(true);
+    expect((await listAlerts(h.pool, ownerId, id, 'live', new Date().toISOString())).alerts.filter((a) => a.type === 'satellite')).toEqual([]);
   });
 });

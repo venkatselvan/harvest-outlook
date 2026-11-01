@@ -346,7 +346,8 @@
                         "weather",
                         "price",
                         "market_event",
-                        "crop_threat"
+                        "crop_threat",
+                        "satellite"
                       ]
                     },
                     {

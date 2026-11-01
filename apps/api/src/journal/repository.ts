@@ -24,6 +24,8 @@ export interface EntryRow {
   quantity_unit: string | null;
   expense_inr: string | null;
   expense_category: string | null;
+  sale_inr: string | null;
+  sale_note: string | null;
   transcript: unknown;
   mode: "live" | "replay" | "synthetic";
   payload_hash: string | null;
@@ -35,7 +37,7 @@ export interface EntryRow {
 }
 
 const ENTRY_COLS = `id, owner_id, farm_id, plan_id, client_entry_id, status, to_char(entry_date,'YYYY-MM-DD') AS entry_date, observed_at, uploaded_at,
-  text_body, language, media_ids, activity, quantity::text AS quantity, quantity_unit, expense_inr::text AS expense_inr, expense_category, transcript, mode,
+  text_body, language, media_ids, activity, quantity::text AS quantity, quantity_unit, expense_inr::text AS expense_inr, expense_category, sale_inr::text AS sale_inr, sale_note, transcript, mode,
   payload_hash, processing_status, image_quality, version, created_at, updated_at`;
 
 export async function findEntry(db: Db, ownerId: string, id: string, forUpdate = false): Promise<EntryRow | null> {
@@ -250,6 +252,8 @@ export interface EntryOut {
   activity: string | null;
   quantity: { value: number; unit: string } | null;
   expense: { amountInr: string; category: string } | null;
+  /** Farmer-reported proceeds. Never an estimate. */
+  sale: { amountInr: string; note: string | null } | null;
   processingStatus: EntryRow["processing_status"];
   imageQuality: unknown;
   facts: FactOut[];
@@ -276,6 +280,7 @@ export function entryOut(e: EntryRow, facts: FactRow[], analysis: AnalysisRow | 
     activity: e.activity,
     quantity: e.quantity !== null && e.quantity_unit ? { value: Number(e.quantity), unit: e.quantity_unit } : null,
     expense: e.expense_inr !== null ? { amountInr: e.expense_inr, category: e.expense_category ?? "other" } : null,
+    sale: e.sale_inr !== null ? { amountInr: e.sale_inr, note: e.sale_note } : null,
     processingStatus: e.processing_status,
     imageQuality: e.image_quality ?? null,
     facts: facts.filter((f) => f.entry_id === e.id).map((f) => factOut(f, planFields)),

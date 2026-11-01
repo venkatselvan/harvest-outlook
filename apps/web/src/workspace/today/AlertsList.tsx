@@ -24,6 +24,7 @@ const typeLabel: Record<FarmAlert["type"], string> = {
   price: "Price",
   market_event: "Market news",
   crop_threat: "Crop threat",
+  satellite: "Satellite",
 };
 
 /**

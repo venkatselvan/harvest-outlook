@@ -1,5 +1,8 @@
 import type {
   FarmAlert,
+  IndexId,
+  IndexStageReading,
+  IndexSummaries,
   NdviReading,
   NdviSeries,
   PricePoint,
@@ -62,6 +65,18 @@ export const FIXTURE_ALERT_IDS = {
   threat: "5f0c6b1e-1a2b-4c3d-8e4f-000000000003",
 } as const;
 
+/** Invented multiples of the scene NDVI, so the other indices move with it. Not agronomy and not a reading. */
+const INDEX_FROM_NDVI: Record<IndexId, number> = { evi: 0.78, ndre: 0.5, gndvi: 0.86, savi: 0.72, ndmi: 0.29, lswi: 0.26, ndwi: -0.73 };
+const round2 = (value: number) => Math.round(value * 100) / 100;
+/** Synthetic index summaries for one scene, derived from its NDVI mean (the spread is a fixed +/- 0.05). */
+export function indicesFor(ndviMean: number): IndexSummaries {
+  const entry = (id: IndexId) => {
+    const mean = round2(ndviMean * INDEX_FROM_NDVI[id]);
+    return { mean, median: mean, p10: round2(mean - 0.05), p90: round2(mean + 0.05) };
+  };
+  return { evi: entry("evi"), ndre: entry("ndre"), gndvi: entry("gndvi"), savi: entry("savi"), ndmi: entry("ndmi"), lswi: entry("lswi"), ndwi: entry("ndwi") };
+}
+
 function stats(mean: number, clearFraction: number) {
   return {
     mean,
@@ -75,6 +90,7 @@ function stats(mean: number, clearFraction: number) {
     b04P95: 1840,
     usable: clearFraction >= 0.6,
     rejection: clearFraction >= 0.6 ? null : ("low_clear_fraction" as const),
+    indices: indicesFor(mean),
   };
 }
 
@@ -301,6 +317,109 @@ function upcoming(): UpcomingStep[] {
   ];
 }
 
+const CURVE_BASIS: IndexStageReading["basis"] = {
+  kind: "ndvi",
+  label: "Field NDVI curve from clear satellite images (test fixture)",
+  sourceId: null,
+  url: null,
+  scope: "field",
+  note: "Phase thresholds and the green-up level are invented for the fixture.",
+};
+/**
+ * SYNTHETIC reading of the fixture field's own NDVI curve (rising through the vegetative stage, matching the
+ * calendar). Dates and values follow the invented SCENE_NDVI series; none of it is a satellite reading.
+ */
+export function indexStageFixture(): IndexStageReading {
+  return {
+    status: "available",
+    reason: null,
+    index: "ndvi",
+    asOf: "2026-10-27",
+    phase: "rising",
+    greenUpDate: "2026-10-02",
+    peakDate: "2026-10-27",
+    peakValue: 0.62,
+    troughDate: "2026-09-12",
+    troughValue: 0.21,
+    latestSmoothed: 0.61,
+    change15d: 0.13,
+    noise: 0.02,
+    changeThreshold: 0.05,
+    readingsUsed: 7,
+    window: { from: "2026-07-17", to: FIXTURE_TODAY },
+    calendarStage: { id: "vegetative", name: "Vegetative", from: "2026-09-25", to: "2026-11-08" },
+    agreement: "consistent",
+    summary: "Satellite greenness has been rising since the green-up on 2 Oct (latest clear scene 27 Oct); the calendar puts the crop in Vegetative and expects fast canopy growth, so the curve and the calendar agree.",
+    basis: { ...CURVE_BASIS },
+    limitations: [
+      "The curve is read from clear images only, so a cloudy spell can hide a turn in it.",
+      "A green curve does not confirm a crop stage; the calendar stays the stage estimate.",
+    ],
+  };
+}
+/**
+ * Fewer than 4 clear scenes in the window (reason `too_few_clear_scenes`, as apps/api/src/services/today/index-stage.ts
+ * writes it): no phase is read, the calendar stage the latest scene falls in is still named, agreement is unknown.
+ */
+export function indexStageInsufficientFixture(): IndexStageReading {
+  return {
+    ...emptyCurve(),
+    status: "insufficient",
+    reason: "too_few_clear_scenes",
+    asOf: "2026-10-27",
+    readingsUsed: 2,
+    window: { from: "2026-07-17", to: FIXTURE_TODAY },
+    calendarStage: { id: "vegetative", name: "Vegetative", from: "2026-09-25", to: "2026-11-08" },
+    summary: "Only 2 of the 4 clear satellite scenes needed are available in this window, so no greenness phase is read yet; the calendar stage estimate stands alone.",
+    limitations: ["Cloud cover left too few clear images of this field."],
+  };
+}
+/** Enough clear scenes but they span under 30 days (reason `clear_scenes_span_too_short`): the count is not the shortfall. */
+export function indexStageSpanFixture(): IndexStageReading {
+  return {
+    ...indexStageInsufficientFixture(),
+    reason: "clear_scenes_span_too_short",
+    readingsUsed: 5,
+    summary: "The 5 clear satellite scenes span 22 days, fewer than the 30 needed, so no greenness phase is read yet; the calendar stage estimate stands alone.",
+    limitations: ["The clear images all fall in the last three weeks."],
+  };
+}
+/** No satellite readings at all (reason `no_satellite_readings`); the Today view hides the line. */
+export function indexStageUnavailableFixture(): IndexStageReading {
+  return {
+    ...emptyCurve(),
+    status: "unavailable",
+    reason: "no_satellite_readings",
+    summary: "No satellite readings of this field are available now, so the calendar stage estimate stands alone.",
+    limitations: [],
+  };
+}
+function emptyCurve(): IndexStageReading {
+  return {
+    status: "insufficient",
+    reason: null,
+    index: "ndvi",
+    asOf: null,
+    phase: "unknown",
+    greenUpDate: null,
+    peakDate: null,
+    peakValue: null,
+    troughDate: null,
+    troughValue: null,
+    latestSmoothed: null,
+    change15d: null,
+    noise: null,
+    changeThreshold: null,
+    readingsUsed: 0,
+    window: null,
+    calendarStage: null,
+    agreement: "unknown",
+    summary: "",
+    basis: { ...CURVE_BASIS },
+    limitations: [],
+  };
+}
+
 const monitoring = {
   enabled: true,
   lastCheckedAt: "2026-11-01T03:00:00Z",
@@ -368,6 +487,7 @@ export function todayFixture(farmId = FIXTURE_FARM_ID): TodayView {
     imdStatus: "not_connected",
     upcoming: upcoming(),
     nextAction: upcoming()[0]!,
+    indexStage: indexStageFixture(),
     outlookNote: {
       status: "ready",
       text: "Maize grain in Karnataka has usually fetched ₹19 to ₹24 per kg around harvest, close to the yearly average.",

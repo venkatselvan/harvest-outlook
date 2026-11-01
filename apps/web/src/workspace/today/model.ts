@@ -1,4 +1,8 @@
 import type {
+  IndexId,
+  IndexStagePhase,
+  IndexStageReading,
+  NdviStats,
   PricePoint,
   SceneRef,
   StageTimeline,
@@ -327,4 +331,195 @@ export function nextActionWhen(step: UpcomingStep, today: string): string {
   if (step.status === "due" && step.dueTo === today) return "Due today";
   if (step.dueFrom === step.dueTo) return `Do on ${formatDay(step.dueFrom, step.dueFrom.slice(0, 4) !== today.slice(0, 4))}`;
   return `Do between ${joinDays(step.dueFrom, step.dueTo, "and")}`;
+}
+
+// ---------------------------------------------------------------- spectral indices and the stage reader (open-source comparison, 2026-11-01)
+
+export interface IndexInfo {
+  /** Short farmer-facing name. */
+  label: string;
+  /** One sentence on what the index responds to. Not a diagnosis. */
+  meaning: string;
+  /** Formula in Sentinel-2 band names, copied from the contract comment in packages/contracts/src/ndvi.ts. */
+  formula: string;
+  /** Position in the health sheet; the first three are the ones on the Vegetation health card. */
+  order: number;
+}
+
+/** Formulas are the contract's, so a screen never states a different calculation than the API ran. */
+export const INDEX_INFO: Record<IndexId, IndexInfo> = {
+  ndmi: {
+    label: "Moisture index",
+    meaning: "How much water the leaves and canopy seem to hold, from near-infrared against shortwave infrared.",
+    formula: "(B8 − B11) / (B8 + B11)",
+    order: 1,
+  },
+  ndre: {
+    label: "Red-edge greenness",
+    meaning: "Leaf greenness that keeps responding on a dense canopy, where NDVI levels off.",
+    formula: "(B8 − B5) / (B8 + B5)",
+    order: 2,
+  },
+  ndwi: {
+    label: "Water index",
+    meaning: "Open water and flooded ground read above zero; land with a crop normally reads below zero.",
+    formula: "(B3 − B8) / (B3 + B8)",
+    order: 3,
+  },
+  evi: {
+    label: "Enhanced greenness",
+    meaning: "Greenness that is less affected by haze and soil background, and slower to level off than NDVI on a thick canopy.",
+    formula: "2.5 × (B8 − B4) / (B8 + 6 × B4 − 7.5 × B2 + 1)",
+    order: 4,
+  },
+  gndvi: {
+    label: "Green-band greenness",
+    meaning: "Greenness from the green band instead of the red band, often used for leaf chlorophyll.",
+    formula: "(B8 − B3) / (B8 + B3)",
+    order: 5,
+  },
+  savi: {
+    label: "Soil-adjusted greenness",
+    meaning: "Greenness with a correction for bare soil showing between plants, most useful early in the season.",
+    formula: "1.5 × (B8 − B4) / (B8 + B4 + 0.5)",
+    order: 6,
+  },
+  lswi: {
+    label: "Land surface water",
+    meaning: "Water in the canopy and wet surfaces, like the moisture index but from the narrow near-infrared band 8A.",
+    formula: "(B8A − B11) / (B8A + B11)",
+    order: 7,
+  },
+};
+/** Index ids in the order the health sheet lists them. */
+export const INDEX_ORDER: IndexId[] = (Object.keys(INDEX_INFO) as IndexId[]).sort((a, b) => INDEX_INFO[a].order - INDEX_INFO[b].order);
+export const indexCode = (id: IndexId) => id.toUpperCase();
+
+/** Two decimals with a true minus sign; "–" when there is no value. Never "-0.00". */
+export function formatIndex(value: number | null | undefined): string {
+  if (value == null || !Number.isFinite(value)) return "–";
+  const fixed = value.toFixed(2);
+  return fixed === "-0.00" ? "0.00" : fixed.replace("-", "−");
+}
+/** The same number for a screen reader: "minus 0.45". */
+export const spokenIndex = (value: number) => formatIndex(value).replace("−", "minus ");
+
+export interface IndexLineItem {
+  id: IndexId;
+  label: string;
+  /** Upper-case index name, "NDMI". */
+  code: string;
+  /** Field mean of the scene. */
+  value: number;
+}
+/** The indices shown on the Vegetation health card, in this order. */
+export const CARD_INDEX_IDS: readonly IndexId[] = ["ndmi", "ndre", "ndwi"];
+/** Up to three indices (Moisture index, Red-edge greenness, Water index) that have a field mean in `stats`; none when the scene has no index summaries. */
+export function indexLine(stats: Pick<NdviStats, "indices"> | null | undefined): IndexLineItem[] {
+  const indices = stats?.indices;
+  if (!indices) return [];
+  const items: IndexLineItem[] = [];
+  for (const id of CARD_INDEX_IDS) {
+    const mean = indices[id]?.mean;
+    if (typeof mean === "number" && Number.isFinite(mean)) items.push({ id, label: INDEX_INFO[id].label, code: indexCode(id), value: mean });
+  }
+  return items;
+}
+
+/**
+ * Reader constants the contract does not carry, mirrored from apps/api/src/services/today/index-stage.ts
+ * (STAGE_READER_ASSUMPTIONS minReadings and minSpanDays, STAGE_READER_SOURCES denseCanopyFloor). Change them there first.
+ */
+export const CURVE_MIN_READINGS = 4;
+export const CURVE_MIN_SPAN_DAYS = 30;
+/** USGS dense-canopy floor: a smoothed NDVI at or above it is a dense green canopy. */
+export const CURVE_DENSE_CANOPY_NDVI = 0.6;
+/** The latest clear image is named on the line when it is older than this many days before the view's today. */
+export const CURVE_STALE_DAYS = 10;
+/** Reasons the reader gives for an `insufficient` reading; any other reason is shown through the reading's own summary. */
+export const CURVE_TOO_FEW = "too_few_clear_scenes";
+export const CURVE_SPAN_SHORT = "clear_scenes_span_too_short";
+
+export const curvePhaseWords: Record<IndexStagePhase, string> = {
+  bare: "bare soil or very sparse cover",
+  green_up: "greening up",
+  rising: "greening",
+  plateau: "steady near its peak",
+  falling: "drying down",
+  harvested: "harvested look",
+  unknown: "unclear",
+};
+export const curveAgreementWords: Record<IndexStageReading["agreement"], string> = {
+  consistent: "in line with the calendar estimate",
+  curve_earlier: "behind the calendar",
+  curve_later: "ahead of the calendar",
+  no_calendar: "no calendar to compare",
+  unknown: "",
+};
+/**
+ * Phase in words. A plateau only says the curve is steady near its own peak (a sparse crop peaking at 0.40 is a
+ * plateau too), so "dense canopy" is added only when the smoothed value is in the USGS dense band.
+ */
+export function curvePhaseText(reading: Pick<IndexStageReading, "phase" | "latestSmoothed">): string {
+  const words = curvePhaseWords[reading.phase];
+  return reading.phase === "plateau" && reading.latestSmoothed != null && reading.latestSmoothed >= CURVE_DENSE_CANOPY_NDVI
+    ? `${words} (dense canopy)`
+    : words;
+}
+/**
+ * Why an `insufficient` reading is insufficient, in the reader's own terms: too few clear scenes (the minimum applies),
+ * a span under 30 days (the count is enough, so no minimum is quoted), or another reason (the reader's summary speaks).
+ */
+export function curveShortfall(reading: Pick<IndexStageReading, "reason" | "readingsUsed" | "summary">): {
+  kind: "too_few" | "span_short" | "other";
+  line: string;
+  /** Short status words for the sheet. */
+  status: string;
+  /** What follows the readings count in the sheet ("(at least 4 needed)"); empty for another reason. */
+  needed: string;
+} {
+  if (reading.reason === CURVE_TOO_FEW)
+    return {
+      kind: "too_few",
+      line: `Satellite curve: not enough clear images yet (${reading.readingsUsed} used, ${CURVE_MIN_READINGS} needed)`,
+      status: "Not enough clear images yet",
+      needed: ` (at least ${CURVE_MIN_READINGS} needed)`,
+    };
+  if (reading.reason === CURVE_SPAN_SHORT)
+    return {
+      kind: "span_short",
+      line: `Satellite curve: clear images span under ${CURVE_MIN_SPAN_DAYS} days so far (${reading.readingsUsed} used)`,
+      status: `Clear images span under ${CURVE_MIN_SPAN_DAYS} days so far`,
+      needed: ` (spanning under ${CURVE_MIN_SPAN_DAYS} days so far)`,
+    };
+  return {
+    kind: "other",
+    line: reading.summary.trim() || "Satellite curve: not enough satellite data yet",
+    status: "Not enough satellite data yet",
+    needed: "",
+  };
+}
+/**
+ * Short text for the hero line: phase, green-up date and how the curve compares with the calendar estimate.
+ * Null (hide the line) when there is no reading or the reader was unavailable. The words describe the field's own
+ * satellite curve beside the calendar; they never change the stage dates.
+ */
+export function curveLine(reading: IndexStageReading | null | undefined): string | null {
+  if (!reading || reading.status === "unavailable") return null;
+  if (reading.status === "insufficient") return curveShortfall(reading).line;
+  const parts: string[] = [curvePhaseText(reading)];
+  if (reading.greenUpDate && Number.isFinite(dayNumber(reading.greenUpDate))) parts.push(`green-up seen ${formatDay(reading.greenUpDate, false)}`);
+  const agreement = curveAgreementWords[reading.agreement];
+  if (agreement) parts.push(agreement);
+  return `Satellite curve: ${parts.join(", ")}`;
+}
+/**
+ * "reading of 27 Oct" when the line describes a clear image other than the one the screen is about: any slider date
+ * other than today, and today itself when the latest clear image is more than CURVE_STALE_DAYS old. Null otherwise.
+ */
+export function curveAsOfNote(reading: Pick<IndexStageReading, "asOf"> | null | undefined, date: string, today: string): string | null {
+  if (!reading?.asOf || !Number.isFinite(dayNumber(reading.asOf))) return null;
+  const age = daysBetween(reading.asOf, today);
+  const stale = Number.isFinite(age) && age > CURVE_STALE_DAYS;
+  return date !== today || stale ? `reading of ${formatDay(reading.asOf, false)}` : null;
 }

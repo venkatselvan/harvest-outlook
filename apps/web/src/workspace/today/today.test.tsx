@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { renderToString } from "solid-js/web";
 import { Route, Router } from "@solidjs/router";
-import { TodayView as todaySchema, type SceneRef, type StageTimeline } from "@harvest/contracts";
+import { FarmAlert as alertSchema, FarmAlertType, INDEX_IDS, IndexStageReading as curveSchema, TodayView as todaySchema, type FarmAlert, type NdviSeries, type SceneRef, type StageTimeline } from "@harvest/contracts";
 import { ApiError } from "../../lib/api";
 import {
   FIXTURE_ALERT_IDS,
@@ -11,16 +11,29 @@ import {
   FIXTURE_TODAY,
   LATEST_ITEM_ID,
   itemIdFor,
+  indexStageFixture,
+  indexStageInsufficientFixture,
+  indexStageSpanFixture,
+  indexStageUnavailableFixture,
+  indicesFor,
   todayEmptyFixture,
   todayFixture,
 } from "./fixtures";
 import {
   addDays,
+  CURVE_MIN_READINGS,
+  CURVE_MIN_SPAN_DAYS,
+  curveAsOfNote,
+  curveLine,
+  curvePhaseText,
   dateAtIndex,
   dayNumber,
   daysBetween,
   formatDay,
+  formatIndex,
   growthProgress,
+  INDEX_INFO,
+  indexLine,
   indexOfDate,
   nextStage,
   priceAt,
@@ -38,11 +51,12 @@ import {
 } from "./model";
 import { describeTodayError, sceneImageUrl } from "./todayApi";
 import { TodayEmpty } from "./TodayEmpty";
-import { OutlookLine, TodayCards } from "./TodayCards";
+import { HealthCard, OutlookLine, TodayCards } from "./TodayCards";
+import { CurveSheetBody, IndexTable, TodaySheetBody } from "./TodaySheet";
 import { UpcomingSteps } from "./UpcomingSteps";
 import { AlertsList } from "./AlertsList";
 import type { UpcomingStep } from "@harvest/contracts";
-import { TodayHero, stageOverlay } from "./TodayHero";
+import { CurveLine, TodayHero, stageOverlay } from "./TodayHero";
 import { newsReviewText, sortAlerts } from "./AlertsList";
 import { careTaskStep } from "./TodayView";
 
@@ -393,5 +407,316 @@ describe("Today v2: next action, dated steps, outlook line, warnings header", ()
     expect(text(html)).toContain("News and official warnings checked today via Meta search");
     expect(html).toContain("AI used: Daily news check");
     expect(text(html)).not.toContain("IMD");
+  });
+});
+
+describe("spectral indices and the stage reader", () => {
+  const latest = () => fixture.ndvi!.latestUsable!;
+  /** The fixture's NdviSeries with the latest reading's index summaries replaced. */
+  const withIndices = (indices: NdviSeries["readings"][number]["field"]["indices"]): NdviSeries => {
+    const field = { ...latest().field };
+    if (indices) field.indices = indices;
+    else delete field.indices;
+    return { ...fixture.ndvi!, latestUsable: { ...latest(), field } };
+  };
+  /** What a sighted reader sees: the screen-reader-only spans are dropped. */
+  const seen = (html: string) => text(html.replace(/<span class="today-sr"[^>]*>[\s\S]*?<\/span>/g, ""));
+  const card = (ndvi: NdviSeries | null) => renderToString(() => <HealthCard health={fixture.health} ndvi={ndvi} onDetails={() => undefined} />);
+  const hero = (indexStage: TodayHeroIndexStage, date = FIXTURE_TODAY) =>
+    renderToString(() => (
+      <TodayHero
+        mode="satellite"
+        onMode={() => undefined}
+        date={date}
+        today={FIXTURE_TODAY}
+        stage={stageAt(timeline, date)}
+        progress={growthProgress(timeline, date)}
+        cropId="maize"
+        cropName="Maize"
+        boundary={null}
+        scenes={fixture.scenes}
+        imageBbox={fixture.ndvi!.imageBbox}
+        indexStage={indexStage}
+        onCurveDetails={() => undefined}
+      />
+    ));
+  type TodayHeroIndexStage = Parameters<typeof curveLine>[0];
+
+  it("the fixtures satisfy the contract in all three reader states", () => {
+    for (const reading of [indexStageFixture(), indexStageInsufficientFixture(), indexStageSpanFixture(), indexStageUnavailableFixture()]) expect(curveSchema.safeParse(reading).success).toBe(true);
+    expect(todaySchema.parse(fixture).indexStage?.status).toBe("available");
+    expect(fixture.ndvi!.readings.every((reading) => reading.field.indices && reading.neighbourhood?.indices)).toBe(true);
+  });
+  it("has a label, a meaning and a formula for every index the contract names, in a fixed order", () => {
+    expect(Object.keys(INDEX_INFO).sort()).toEqual([...INDEX_IDS].sort());
+    for (const id of INDEX_IDS) {
+      expect(INDEX_INFO[id].label.length).toBeGreaterThan(0);
+      expect(INDEX_INFO[id].meaning).toMatch(/\.$/);
+      expect(INDEX_INFO[id].formula).toMatch(/B\d/);
+    }
+    expect(new Set(Object.values(INDEX_INFO).map((info) => info.order)).size).toBe(INDEX_IDS.length);
+    // Formulas are the contract's: the 20 m bands appear only where the contract uses them.
+    expect(INDEX_INFO.ndre.formula).toContain("B5");
+    expect(INDEX_INFO.lswi.formula).toContain("B8A");
+    expect(INDEX_INFO.ndmi.formula).toContain("B11");
+    expect(INDEX_INFO.ndwi.formula).toBe("(B3 − B8) / (B3 + B8)");
+  });
+  it("the card line takes moisture, red-edge and surface water in that order and skips what is missing", () => {
+    expect(indexLine(latest().field).map((item) => [item.id, item.label, item.value])).toEqual([
+      ["ndmi", "Moisture index", 0.18],
+      ["ndre", "Red-edge greenness", 0.31],
+      ["ndwi", "Water index", -0.45],
+    ]);
+    const all = indicesFor(0.5);
+    expect(indexLine({ indices: { ...all, ndre: null } }).map((item) => item.id)).toEqual(["ndmi", "ndwi"]);
+    expect(indexLine({ indices: { ...all, ndmi: { mean: null, median: null, p10: null, p90: null }, ndwi: null } }).map((item) => item.id)).toEqual(["ndre"]);
+    expect(indexLine({ indices: { ...all, evi: null, savi: null } })).toHaveLength(3);
+    expect(indexLine({})).toEqual([]);
+    expect(indexLine(null)).toEqual([]);
+    expect(indexLine({ indices: { ...all, ndmi: null, ndre: null, ndwi: null } })).toEqual([]);
+  });
+  it("formats indices to two decimals with a true minus and a dash for no value", () => {
+    expect(formatIndex(0.18)).toBe("0.18");
+    expect(formatIndex(-0.4526)).toBe("−0.45");
+    expect(formatIndex(-0.001)).toBe("0.00");
+    expect(formatIndex(null)).toBe("–");
+    expect(formatIndex(Number.NaN)).toBe("–");
+  });
+  it("Health card: the index line sits under the basis line, with a spoken form, and hides without index data", () => {
+    const html = card(fixture.ndvi);
+    const visible = seen(html);
+    // One line per index, name and code then value, in this order; a bare "Moisture 0.18" is never shown.
+    expect(visible).toContain("Moisture index (NDMI) 0.18 Red-edge greenness (NDRE) 0.31 Water index (NDWI) −0.45");
+    expect(visible).not.toMatch(/Moisture 0\.18|Surface water/);
+    expect(visible.indexOf("Moisture index (NDMI)")).toBeGreaterThan(visible.indexOf("Image of 27 Oct"));
+    expect(html).toContain("Moisture index, NDMI 0.18");
+    expect(html).toContain("Red-edge greenness, NDRE 0.31");
+    expect(html).toContain("Water index, NDWI minus 0.45");
+    expect((html.match(/data-index-id=/g) ?? []).length).toBe(3);
+    expect(html).toContain('data-testid="today-index-line"');
+    // The NDVI headline and verdict are unchanged.
+    expect(visible).toContain("0.62");
+    expect(visible).toContain("Near typical");
+    // No summaries (a row analysed before the indices existed), only null summaries, or no series: no line, no blank dashes.
+    expect(card(withIndices(undefined))).not.toContain("today-index-line");
+    const nulls = { evi: null, ndre: null, gndvi: null, savi: null, ndmi: null, lswi: null, ndwi: null };
+    expect(card(withIndices(nulls))).not.toContain("today-index-line");
+    expect(card(null)).not.toContain("today-index-line");
+    expect(text(card(withIndices(undefined)))).toContain("Near typical");
+  });
+  it("Health card names the image when the index scene is not the one behind the NDVI headline", () => {
+    const earlier = { ...fixture.ndvi!, latestUsable: { ...latest(), date: "2026-10-22" } };
+    expect(seen(card(earlier))).toContain("Water index (NDWI) −0.45 Indices from the image of 22 Oct");
+    expect(text(card(fixture.ndvi))).not.toContain("Indices from the image of");
+  });
+  it("Health sheet: a table of all seven indices with value, meaning and formula, the 20 m note and the attribution", () => {
+    const html = renderToString(() => <TodaySheetBody kind="health" view={fixture} date={FIXTURE_TODAY} price={null} weather={null} />);
+    const t = text(html);
+    expect(t).toContain("NDVI 0.62 on 27 Oct 2026");
+    expect(t).toContain("Basis: Satellite field mean (test fixture)");
+    for (const id of INDEX_IDS) {
+      const row = text(html.slice(html.indexOf(`data-index-id="${id}"`)).split("</div>")[0]!);
+      expect(row).toContain(INDEX_INFO[id].label);
+      expect(row).toContain(`(${id.toUpperCase()})`);
+      expect(row).toContain(INDEX_INFO[id].meaning);
+      expect(row).toContain(`Formula: ${INDEX_INFO[id].formula}`);
+      expect(row).toContain(formatIndex(indicesFor(0.62)[id]!.mean));
+    }
+    expect(t).toContain("B5, B8A and B11 are 20 m bands resampled to the 10 m grid, so these three indices rest on fewer independent pixels.");
+    expect(t).toContain("not a field inspection");
+    expect(t).toContain("Test fixture shaped like Copernicus Sentinel-2 L2A");
+    expect(t.indexOf("Basis:")).toBeLessThan(t.indexOf("Other indices from the same image"));
+    expect(t.indexOf("Other indices from the same image")).toBeLessThan(t.indexOf("Test fixture shaped like Copernicus"));
+  });
+  it("Health sheet: a null mean shows a dash and a scene without summaries says so instead of a table", () => {
+    const partial = { ...indicesFor(0.62), lswi: null, evi: { mean: null, median: null, p10: null, p90: null } };
+    const reading = withIndices(partial).latestUsable!;
+    const html = renderToString(() => <IndexTable reading={reading} />);
+    expect(text(html.slice(html.indexOf('data-index-id="lswi"')).split("</div>")[0]!)).toContain("–");
+    expect(text(html.slice(html.indexOf('data-index-id="evi"')).split("</div>")[0]!)).toContain("–");
+    const none = renderToString(() => <IndexTable reading={withIndices(undefined).latestUsable} />);
+    expect(text(none)).toContain("The other indices have not been calculated for this image yet.");
+    expect(none).not.toContain("data-index-id");
+    expect(text(renderToString(() => <IndexTable reading={null} />))).toContain("have not been calculated");
+  });
+
+  it("curveLine words each phase, the green-up date and the comparison with the calendar estimate", () => {
+    const reading = indexStageFixture();
+    expect(curveLine(reading)).toBe("Satellite curve: greening, green-up seen 2 Oct, in line with the calendar estimate");
+    const phases = { bare: "bare soil or very sparse cover", green_up: "greening up", rising: "greening", plateau: "steady near its peak", falling: "drying down", harvested: "harvested look", unknown: "unclear" } as const;
+    // latestSmoothed 0.30 is below the dense band, so a plateau makes no canopy claim.
+    for (const [phase, words] of Object.entries(phases)) expect(curveLine({ ...reading, phase: phase as keyof typeof phases, latestSmoothed: 0.3, greenUpDate: null, agreement: "unknown" })).toBe(`Satellite curve: ${words}`);
+    const agreements = { consistent: "in line with the calendar estimate", curve_earlier: "behind the calendar", curve_later: "ahead of the calendar", no_calendar: "no calendar to compare" } as const;
+    for (const [agreement, words] of Object.entries(agreements)) expect(curveLine({ ...reading, agreement: agreement as keyof typeof agreements })).toContain(`, ${words}`);
+    expect(curveLine({ ...reading, greenUpDate: null })).toBe("Satellite curve: greening, in line with the calendar estimate");
+    expect(curveLine({ ...reading, greenUpDate: "2026-02-31" })).not.toContain("green-up");
+    expect(curveLine({ ...reading, agreement: "unknown" })).toBe("Satellite curve: greening, green-up seen 2 Oct");
+    // "matches" and "stubble" overstate what a curve can show.
+    for (const phase of Object.keys(phases)) expect(curveLine({ ...reading, phase: phase as keyof typeof phases })).not.toMatch(/matches|stubble|full canopy/);
+  });
+  it("a plateau says only that the curve is steady near its peak, and adds dense canopy only from 0.60", () => {
+    const plateau = { ...indexStageFixture(), phase: "plateau" as const };
+    expect(curvePhaseText({ ...plateau, latestSmoothed: 0.4 })).toBe("steady near its peak");
+    expect(curvePhaseText({ ...plateau, latestSmoothed: 0.59 })).toBe("steady near its peak");
+    expect(curvePhaseText({ ...plateau, latestSmoothed: 0.6 })).toBe("steady near its peak (dense canopy)");
+    expect(curvePhaseText({ ...plateau, latestSmoothed: null })).toBe("steady near its peak");
+    // Other phases never claim a canopy, even at a high value.
+    expect(curvePhaseText({ phase: "rising", latestSmoothed: 0.8 })).toBe("greening");
+    expect(curveLine({ ...plateau, latestSmoothed: 0.64, greenUpDate: null, agreement: "consistent" })).toBe("Satellite curve: steady near its peak (dense canopy), in line with the calendar estimate");
+    expect(curveLine({ ...plateau, latestSmoothed: 0.4, greenUpDate: null, agreement: "consistent" })).toBe("Satellite curve: steady near its peak, in line with the calendar estimate");
+  });
+  it("curveLine: an insufficient reading follows its reason, so a long enough list of images never reads as too few", () => {
+    expect(CURVE_MIN_READINGS).toBe(4);
+    expect(CURVE_MIN_SPAN_DAYS).toBe(30);
+    expect(curveLine(indexStageInsufficientFixture())).toBe("Satellite curve: not enough clear images yet (2 used, 4 needed)");
+    expect(curveLine({ ...indexStageInsufficientFixture(), readingsUsed: 0 })).toBe("Satellite curve: not enough clear images yet (0 used, 4 needed)");
+    // Five images is above the minimum of four: the shortfall is the span, and the minimum is not quoted.
+    const span = curveLine(indexStageSpanFixture())!;
+    expect(span).toBe("Satellite curve: clear images span under 30 days so far (5 used)");
+    expect(span).not.toMatch(/not enough|needed/);
+    // Any other reason shows the reader's own summary, never the count wording.
+    const other = { ...indexStageInsufficientFixture(), reason: "something_else_later", readingsUsed: 9 };
+    expect(curveLine(other)).toBe(other.summary);
+    expect(curveLine({ ...other, reason: null })).toBe(other.summary);
+    expect(curveLine({ ...other, summary: "" })).toBe("Satellite curve: not enough satellite data yet");
+    expect(curveLine(indexStageUnavailableFixture())).toBeNull();
+    expect(curveLine(null)).toBeNull();
+    expect(curveLine(undefined)).toBeNull();
+  });
+  it("curveAsOfNote names the image on another slider date, and on today when the latest image is over 10 days old", () => {
+    const reading = indexStageFixture(); // latest clear image 27 Oct, today 1 Nov: 5 days
+    expect(curveAsOfNote(reading, FIXTURE_TODAY, FIXTURE_TODAY)).toBeNull();
+    expect(curveAsOfNote(reading, "2026-12-10", FIXTURE_TODAY)).toBe("reading of 27 Oct");
+    expect(curveAsOfNote({ asOf: "2026-10-22" }, FIXTURE_TODAY, FIXTURE_TODAY)).toBeNull(); // 10 days is not more than 10
+    expect(curveAsOfNote({ asOf: "2026-10-21" }, FIXTURE_TODAY, FIXTURE_TODAY)).toBe("reading of 21 Oct");
+    expect(curveAsOfNote({ asOf: "2026-08-02" }, FIXTURE_TODAY, FIXTURE_TODAY)).toBe("reading of 2 Aug");
+    expect(curveAsOfNote({ asOf: null }, "2026-12-10", FIXTURE_TODAY)).toBeNull();
+    expect(curveAsOfNote(null, FIXTURE_TODAY, FIXTURE_TODAY)).toBeNull();
+  });
+  it("Hero: the curve line sits under the image with an info button, and is plain evidence beside the calendar stage", () => {
+    const html = hero(indexStageFixture());
+    const t = text(html);
+    expect(t).toContain(`Vegetative · ${rangeLabel("2026-09-25", "2026-11-08")}`);
+    expect(t).toContain("Satellite curve: greening, green-up seen 2 Oct, in line with the calendar estimate");
+    expect(html).toContain('data-testid="today-curve-line"');
+    expect(html).toContain('aria-label="About the satellite curve reading"');
+    // The line is outside the stage overlay and after the image frame: it never rewrites the stage label.
+    expect(html.indexOf("today-curve")).toBeGreaterThan(html.indexOf('data-testid="today-stage"'));
+    const overlay = text(html.slice(html.indexOf('data-testid="today-stage"'), html.indexOf('data-testid="today-curve-line"')));
+    expect(overlay).toContain("Vegetative");
+    expect(overlay).not.toContain("Satellite curve");
+    // On today the line needs no date; on another slider date, or when the latest clear image is over 10 days old, it names the reading.
+    expect(t).not.toContain("reading of");
+    expect(text(hero(indexStageFixture(), "2026-12-10"))).toContain("reading of 27 Oct");
+    expect(text(hero({ ...indexStageFixture(), asOf: "2026-10-20" }))).toContain("reading of 20 Oct");
+    expect(text(hero({ ...indexStageFixture(), asOf: "2026-10-22" }))).not.toContain("reading of");
+  });
+  it("Hero: the insufficient wording shows, and the line is absent when the reading is null, absent or unavailable", () => {
+    expect(text(hero(indexStageInsufficientFixture()))).toContain("Satellite curve: not enough clear images yet (2 used, 4 needed)");
+    expect(text(hero(indexStageSpanFixture()))).toContain("Satellite curve: clear images span under 30 days so far (5 used)");
+    expect(text(hero(indexStageSpanFixture()))).not.toContain("4 needed");
+    for (const reading of [null, undefined, indexStageUnavailableFixture()]) {
+      const html = hero(reading);
+      expect(html).not.toContain("today-curve-line");
+      expect(html).not.toContain("About the satellite curve reading");
+      expect(text(html)).not.toContain("Satellite curve");
+      expect(text(html)).toContain("Vegetative");
+    }
+    expect(renderToString(() => <CurveLine reading={null} date={FIXTURE_TODAY} today={FIXTURE_TODAY} />)).toBe("");
+  });
+  it("Curve sheet: status, phase, dates, values, readings, the compared calendar stage, the evidence-only line, limitations and basis", () => {
+    const html = renderToString(() => <TodaySheetBody kind="curve" view={fixture} date={FIXTURE_TODAY} price={null} weather={null} />);
+    const t = text(html);
+    expect(t).toContain("Read from the field's own satellite images");
+    expect(t).toContain("Phase Greening");
+    expect(t).toContain("Green-up Seen 2 Oct 2026");
+    expect(t).toContain("Peak 0.62 on 27 Oct 2026");
+    expect(t).toContain(`Lowest 0.21 on ${formatDay("2026-09-12")}`);
+    expect(t).toContain("Latest smoothed NDVI 0.61");
+    expect(t).toContain("Change over 15 days +0.13");
+    expect(t).toContain(`Readings used 7 clear images, window ${rangeLabel("2026-07-17", FIXTURE_TODAY)}`);
+    expect(t).not.toContain("needed");
+    expect(t).toContain("Latest clear image 27 Oct 2026");
+    expect(t).toContain(`Calendar stage compared Vegetative · ${rangeLabel("2026-09-25", "2026-11-08")}`);
+    expect(t).toContain("Against the calendar In line with the calendar estimate");
+    expect(t).toContain("Satellite greenness has been rising since the green-up on 2 Oct (latest clear scene 27 Oct); the calendar puts the crop in Vegetative and expects fast canopy growth, so the curve and the calendar agree.");
+    const evidence = "Evidence only: the stage dates above are calendar estimates and are not changed by this reading.";
+    expect(t).toContain(evidence);
+    expect(t).toContain("The curve is read from clear images only, so a cloudy spell can hide a turn in it.");
+    expect(t).toContain("A green curve does not confirm a crop stage; the calendar stays the stage estimate.");
+    expect(t).toContain("Basis: Field NDVI curve from clear satellite images (test fixture)");
+    expect(t.indexOf("so the curve and the calendar agree")).toBeLessThan(t.indexOf(evidence));
+    expect(t.indexOf(evidence)).toBeLessThan(t.indexOf("The curve is read from clear images only"));
+    expect(t.indexOf("The curve is read from clear images only")).toBeLessThan(t.indexOf("Basis:"));
+    expect((html.match(/<li[ >]/g) ?? []).length).toBe(2);
+  });
+  it("Curve sheet: a falling curve that runs ahead of the calendar signs a negative change and keeps the evidence-only line", () => {
+    const reading = { ...indexStageFixture(), phase: "falling" as const, change15d: -0.08, agreement: "curve_later" as const, greenUpDate: null, peakDate: "2026-10-12", peakValue: 0.68 };
+    const t = text(renderToString(() => <CurveSheetBody reading={reading} />));
+    expect(t).toContain("Phase Drying down");
+    expect(t).toContain("Change over 15 days −0.08");
+    expect(t).toContain("Green-up Not seen in this window");
+    expect(t).toContain("Against the calendar Ahead of the calendar");
+    expect(t).toContain("Evidence only: the stage dates above are calendar estimates");
+  });
+  it("Curve sheet: too few images gives no phase or values, quotes the minimum and names the calendar stage it fell in", () => {
+    const html = renderToString(() => <CurveSheetBody reading={indexStageInsufficientFixture()} />);
+    const t = text(html);
+    expect(t).toContain("Status Not enough clear images yet");
+    expect(t).toContain(`Readings used 2 clear images, window ${rangeLabel("2026-07-17", FIXTURE_TODAY)} (at least 4 needed)`);
+    expect(t).toContain(`Calendar stage compared Vegetative · ${rangeLabel("2026-09-25", "2026-11-08")}`);
+    expect(html).not.toContain("<dt>Phase</dt>");
+    expect(html).not.toContain("<dt>Peak</dt>");
+    expect(html).not.toContain("<dt>Against the calendar</dt>");
+    expect(t).not.toContain("Change over 15 days");
+    expect(t).toContain("Only 2 of the 4 clear satellite scenes needed are available in this window");
+    expect(t).toContain("Evidence only");
+    expect(t).toContain("Cloud cover left too few clear images of this field.");
+  });
+  it("Curve sheet: a span under 30 days does not call five images too few, and another reason lets the summary speak", () => {
+    const span = text(renderToString(() => <CurveSheetBody reading={indexStageSpanFixture()} />));
+    expect(span).toContain("Status Clear images span under 30 days so far");
+    expect(span).toContain(`Readings used 5 clear images, window ${rangeLabel("2026-07-17", FIXTURE_TODAY)} (spanning under 30 days so far)`);
+    expect(span).not.toMatch(/not enough|at least 4|needed\)/i);
+    expect(span).toContain("The 5 clear satellite scenes span 22 days, fewer than the 30 needed");
+    const other = { ...indexStageInsufficientFixture(), reason: "something_else_later", readingsUsed: 9 };
+    const html = renderToString(() => <CurveSheetBody reading={other} />);
+    const t = text(html);
+    expect(t).toContain("Status Not enough satellite data yet");
+    expect(t).toContain(`Readings used 9 clear images, window ${rangeLabel("2026-07-17", FIXTURE_TODAY)}`);
+    expect(t).not.toMatch(/at least 4|spanning under/);
+    // The summary is the headline and is not printed a second time.
+    expect(t.split(other.summary).length - 1).toBe(1);
+    expect(html).not.toContain("today-curve-summary");
+  });
+  it("the sheet for a view without a reading falls back to a sentence instead of an empty dialog body", () => {
+    const view = { ...fixture, indexStage: null };
+    expect(text(renderToString(() => <TodaySheetBody kind="curve" view={view} date={FIXTURE_TODAY} price={null} weather={null} />))).toContain("No satellite curve reading is available for this field.");
+  });
+  it("the Satellite alert type has its own label, and no alert type renders without one", () => {
+    const base = fixture.alerts[0]!;
+    const satellite: FarmAlert = {
+      ...base,
+      id: "5f0c6b1e-1a2b-4c3d-8e4f-000000000009",
+      type: "satellite",
+      severity: "watch",
+      title: "Greenness fell between the last two clear images",
+      source: { name: "Sentinel-2 scene (test fixture)", url: "https://example.org/stac/item", date: "2026-10-27" },
+    };
+    expect(alertSchema.safeParse(satellite).success).toBe(true);
+    const render = (alert: FarmAlert) =>
+      renderToString(() => <AlertsList alerts={[alert]} newsReview={fixture.newsReview} today={FIXTURE_TODAY} stepAlertIds={new Set()} onDismiss={() => undefined} onSuggested={() => undefined} error="" />);
+    const html = render(satellite);
+    expect(html.match(/today-alert-kicker[\s\S]*?<\/p>/)![0]).toMatch(/>Satellite</);
+    expect(text(html)).toContain("Greenness fell between the last two clear images");
+    const labels = new Set<string>();
+    for (const type of FarmAlertType.options) {
+      const kicker = text(render({ ...base, type }).match(/today-alert-kicker[\s\S]*?<\/p>/)![0]);
+      expect(kicker).not.toMatch(/undefined/);
+      expect(kicker).toMatch(/Watch|Warning|Info/);
+      labels.add(kicker.replace(/^.*?(Watch|Warning|Info)\s*/, "").replace(/\s*· until.*$/, ""));
+    }
+    expect(labels.size).toBe(FarmAlertType.options.length);
+    expect([...labels]).toContain("Satellite");
   });
 });

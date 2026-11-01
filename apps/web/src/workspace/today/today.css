@@ -998,3 +998,174 @@
   display: inline-flex;
   align-items: center;
 }
+
+/* ---------------------------------------------------------------- spectral indices and the stage reader (2026-11-01) */
+/* Health card: moisture index, red-edge greenness and water index of the same image, one per line. */
+.today-index-line {
+  padding-top: 3px;
+  font-size: 11px;
+  line-height: 1.4;
+  color: var(--text-secondary);
+}
+.today-index-line ul {
+  display: grid;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.today-index-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+}
+.today-index-name {
+  min-width: 0;
+}
+.today-index-code {
+  white-space: nowrap;
+}
+.today-index-num {
+  flex: none;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+}
+.today-index-note {
+  margin: 2px 0 0;
+}
+
+/* Curve line under the hero image: the field's own satellite curve beside the calendar stage. */
+.today-curve {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  margin-top: 8px;
+  padding: 2px 2px 2px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--surface-soft);
+  color: var(--text-secondary);
+}
+.today-curve-icon {
+  flex: none;
+}
+.today-curve-text {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  padding: 5px 0;
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--text);
+  overflow-wrap: anywhere;
+}
+.today-curve-asof {
+  color: var(--text-secondary);
+}
+.today-curve-info {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 0;
+  border-radius: 12px;
+  background: none;
+  color: var(--accent);
+  cursor: pointer;
+}
+.today-curve-info:hover {
+  background: var(--accent-soft);
+}
+.today-curve-info:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: -2px;
+}
+
+/* Sheets: the index list and the curve facts are definition lists, one stacked block per entry at phone width. */
+.today-sheet-body h3 {
+  margin: 4px 0 0;
+  font-size: 14px;
+}
+.today-sheet-indices {
+  display: grid;
+  gap: 8px;
+}
+.today-index-table,
+.today-curve-facts {
+  display: grid;
+  gap: 0;
+  margin: 0;
+}
+.today-index-table dd,
+.today-curve-facts dd {
+  margin: 0;
+}
+.today-index-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  column-gap: 12px;
+  align-items: baseline;
+  padding: 8px 0;
+  border-top: 1px solid var(--border);
+}
+.today-index-row dt {
+  font-weight: 650;
+}
+.today-index-code {
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+.today-index-value {
+  font-size: 15px;
+  font-weight: 750;
+  font-variant-numeric: tabular-nums;
+}
+.today-index-meaning,
+.today-index-formula {
+  grid-column: 1 / -1;
+  font-size: 12px;
+  line-height: 1.45;
+}
+.today-index-formula {
+  color: var(--text-secondary);
+  overflow-wrap: anywhere;
+}
+.today-curve-facts > div {
+  display: grid;
+  grid-template-columns: minmax(0, 128px) minmax(0, 1fr);
+  column-gap: 12px;
+  padding: 6px 0;
+  border-top: 1px solid var(--border);
+}
+.today-curve-facts dt {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+.today-curve-facts dd {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.today-curve-evidence {
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid var(--accent-ui);
+  background: var(--accent-soft);
+  font-weight: 600;
+}
+.today-curve-limits {
+  display: grid;
+  gap: 4px;
+  padding-left: 18px;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .today-curve-info {
+    transition: background-color 0.12s ease;
+  }
+}

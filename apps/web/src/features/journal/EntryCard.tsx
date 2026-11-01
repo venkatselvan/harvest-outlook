@@ -131,6 +131,7 @@ export function EntryCard(props: {
       <dl class="facts">
         <Show when={e().quantity}><dt>Quantity</dt><dd>{e().quantity!.value} {e().quantity!.unit}</dd></Show>
         <Show when={e().expense}><dt>Expense</dt><dd>₹{e().expense!.amountInr} ({e().expense!.category})</dd></Show>
+        <Show when={e().sale}><dt>Money received</dt><dd>Sale ₹{e().sale!.amountInr}<Show when={e().sale!.note}> ({e().sale!.note})</Show></dd></Show>
       </dl>
       <p class="jr-small">{e().provenanceLabel}</p>
       <Show when={confirmed().length > 0}>

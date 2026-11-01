@@ -29,6 +29,9 @@ export interface Draft {
   quantityUnit: QuantityUnit;
   expenseInr: string;
   expenseCategory: string;
+  /** Farmer-reported sale proceeds in rupees; used only when the activity is "sale". */
+  saleInr: string;
+  saleNote: string;
   stageId: string;
   mediaIds: string[];
   updatedAt: number;
@@ -40,12 +43,15 @@ export const todayLocal = (now = new Date()): string => {
 };
 
 export function newDraft(farmId: string, clientEntryId: string, today = todayLocal()): Draft {
-  return { clientEntryId, farmId, observedOn: today, note: "", language: "en", activity: "observation", quantityValue: "", quantityUnit: "kg", expenseInr: "", expenseCategory: "other", stageId: "", mediaIds: [], updatedAt: 0 };
+  return { clientEntryId, farmId, observedOn: today, note: "", language: "en", activity: "observation", quantityValue: "", quantityUnit: "kg", expenseInr: "", expenseCategory: "other", saleInr: "", saleNote: "", stageId: "", mediaIds: [], updatedAt: 0 };
 }
 
 const MONEY = /^(0|[1-9]\d{0,9})(\.\d{1,2})?$/;
 
-export type DraftIssue = { field: "observedOn" | "quantity" | "expense" | "empty"; message: string };
+export type DraftIssue = { field: "observedOn" | "quantity" | "expense" | "sale" | "empty"; message: string };
+
+/** Sale fields apply only to a "sale" entry; for any other activity they are hidden and never sent. */
+export const hasSaleFields = (d: Pick<Draft, "activity">): boolean => d.activity === "sale";
 
 export function draftIssues(d: Draft, today = todayLocal()): DraftIssue[] {
   const out: DraftIssue[] = [];
@@ -56,8 +62,9 @@ export function draftIssues(d: Draft, today = todayLocal()): DraftIssue[] {
     if (!Number.isFinite(n) || n <= 0) out.push({ field: "quantity", message: "Quantity must be a number above zero." });
   }
   if (d.expenseInr.trim() && !MONEY.test(d.expenseInr.trim())) out.push({ field: "expense", message: "Enter the expense in rupees, for example 250 or 250.50." });
-  const hasContent = d.note.trim() || d.mediaIds.length > 0 || d.quantityValue.trim() || d.expenseInr.trim() || d.stageId || (d.activity && d.activity !== "observation");
-  if (!hasContent) out.push({ field: "empty", message: "Add a photo, a note, a quantity or an expense." });
+  if (hasSaleFields(d) && d.saleInr.trim() && !MONEY.test(d.saleInr.trim())) out.push({ field: "sale", message: "Enter the sale amount in rupees as a number that is not negative, for example 4200 or 4200.50." });
+  const hasContent = d.note.trim() || d.mediaIds.length > 0 || d.quantityValue.trim() || d.expenseInr.trim() || (hasSaleFields(d) && d.saleInr.trim()) || d.stageId || (d.activity && d.activity !== "observation");
+  if (!hasContent) out.push({ field: "empty", message: "Add a photo, a note, a quantity, an expense or a sale amount." });
   return out;
 }
 
@@ -70,6 +77,10 @@ export function draftToBody(d: Draft): Record<string, unknown> {
   if (d.activity) body.activity = d.activity;
   if (d.quantityValue.trim()) body.quantity = { value: Number(d.quantityValue), unit: d.quantityUnit };
   if (d.expenseInr.trim()) body.expense = { amountInr: d.expenseInr.trim(), category: d.expenseCategory.trim() || "other" };
+  if (hasSaleFields(d) && d.saleInr.trim() && MONEY.test(d.saleInr.trim())) {
+    const note = d.saleNote.trim().slice(0, 120);
+    body.sale = { amountInr: d.saleInr.trim(), ...(note ? { note } : {}) };
+  }
   if (d.stageId) body.stageId = d.stageId;
   return body;
 }
@@ -127,12 +138,18 @@ function isDraft(v: unknown): v is Draft {
   return !!d && typeof d.clientEntryId === "string" && typeof d.farmId === "string" && typeof d.observedOn === "string" && Array.isArray(d.mediaIds) && typeof d.note === "string";
 }
 
+/** Drafts saved before the sale fields existed lack them; they read as empty rather than undefined. */
+function withDefaults(d: Draft): Draft {
+  const x = d as Draft & { saleInr?: unknown; saleNote?: unknown };
+  return { ...d, saleInr: typeof x.saleInr === "string" ? x.saleInr : "", saleNote: typeof x.saleNote === "string" ? x.saleNote : "" };
+}
+
 /** The farm's unsent draft, or null. A damaged record is ignored rather than crashing the page. */
 export async function loadCurrentDraft(store: KeyValueStore, farmId: string): Promise<Draft | null> {
   const id = await store.get(pointerKey(farmId));
   if (typeof id !== "string") return null;
   const d = await store.get(draftKey(id));
-  return isDraft(d) && d.farmId === farmId ? d : null;
+  return isDraft(d) && d.farmId === farmId ? withDefaults(d) : null;
 }
 
 /** Called only after the server confirmed the save. */
@@ -256,4 +273,184 @@ export function economicLines(summary: Pick<ChangeSummaryLike, "economicDelta">)
   return summary.economicDelta
     .filter((d) => d.netCashReturnInrPerHa.delta !== null)
     .map((d) => `${d.scenario} (${d.priceSource}): net cash return per ha ${formatInr(d.netCashReturnInrPerHa.old)} → ${formatInr(d.netCashReturnInrPerHa.new)} (change ${formatInr(d.netCashReturnInrPerHa.delta)})`);
+}
+
+// ---------------------------------------------------------------- season totals (farmer-recorded, never an estimate)
+
+/** The parts of a crop cycle the totals need (the workspace `Cycle` fits this shape). */
+export interface SeasonCycle {
+  id: string;
+  cropId: string;
+  cropName?: string;
+  sowingDate: string;
+  establishmentDate?: string;
+  harvestDate?: string;
+  stage?: string;
+}
+/** The parts of a saved journal entry the totals need (the API `JournalEntry` fits this shape). */
+export interface SeasonEntry {
+  observedOn: string;
+  activity: string | null;
+  quantity?: { value: number; unit: string } | null;
+  expense?: { amountInr: string } | null;
+  sale?: { amountInr: string } | null;
+}
+
+export interface SeasonTotalsRow {
+  cycleId: string;
+  cropId: string;
+  cropName?: string;
+  sowingDate: string;
+  /** First day counted: the establishment date when there is one, otherwise the sowing date. */
+  from: string;
+  /** The crop's own last day: the harvest date, or today while the crop is still in the field. */
+  to: string;
+  /** Last day whose entries are attributed here. Equals `to`, except that a harvested crop also takes later entries (sales usually follow harvest); see POST_HARVEST_WINDOW_DAYS. */
+  windowTo: string;
+  /** True while the crop has no harvest date (the range runs to today). */
+  ongoing: boolean;
+  active: boolean;
+  entries: number;
+  /** Rupees, summed in whole paise from the farmer's own entries. */
+  expenseInr: number;
+  saleInr: number;
+  netInr: number;
+  /** Kilograms recorded on harvest entries (kg, quintal and t only); null when there is no convertible harvest quantity. */
+  harvestKg: number | null;
+  /** Harvest entries whose quantity is in another unit and so is not added to harvestKg. */
+  harvestUnitsSkipped: number;
+  /** Entries counted here that also fall inside another crop's dates (they go to the crop that started last). */
+  overlapping: number;
+}
+
+/**
+ * How long after a harvest date a crop still takes journal entries (sales, transport, storage costs), capped at the day before
+ * the next crop starts. 90 days is an ASSUMPTION chosen so that typical post-harvest sales are not dropped; it is not a sourced
+ * figure and not specific to any crop. Entries beyond the window are reported separately as outside every crop's dates.
+ */
+export const POST_HARVEST_WINDOW_DAYS = 90;
+
+/** ISO date plus n days (n may be negative), in UTC so daylight saving cannot shift the day. */
+function addDaysIso(date: string, n: number): string {
+  const [y, m, d] = date.split("-").map(Number) as [number, number, number];
+  return new Date(Date.UTC(y, m - 1, d + n)).toISOString().slice(0, 10);
+}
+
+interface CycleWindow<C extends SeasonCycle> {
+  c: C;
+  from: string;
+  to: string;
+  windowTo: string;
+}
+/**
+ * The dates each crop takes entries from. Still in the field: first day to today. Harvested: first day to the earlier of
+ * (day before the next crop starts) and (harvest date + POST_HARVEST_WINDOW_DAYS). "Next crop" is the earliest crop that starts
+ * after this harvest date, so an overlapping crop never shortens the window below the harvest date.
+ */
+function windowsOf<C extends SeasonCycle>(cycles: readonly C[], today: string): CycleWindow<C>[] {
+  const day = (d: string) => d.slice(0, 10);
+  const starts = cycles.map((c) => day(c.establishmentDate ?? c.sowingDate));
+  return cycles.map((c) => {
+    const from = day(c.establishmentDate ?? c.sowingDate);
+    if (!c.harvestDate) return { c, from, to: today, windowTo: today };
+    const to = day(c.harvestDate);
+    let windowTo = addDaysIso(to, POST_HARVEST_WINDOW_DAYS);
+    const nextStart = starts.filter((st) => st > to).sort()[0];
+    if (nextStart !== undefined) {
+      const dayBefore = addDaysIso(nextStart, -1);
+      if (dayBefore < windowTo) windowTo = dayBefore;
+    }
+    return { c, from, to, windowTo };
+  });
+}
+
+const PAISE = /^(\d+)(?:\.(\d{1,2}))?$/;
+/** "4200.5" to 420050n. Exact: no floating point. Anything that is not a plain non-negative amount is ignored (null). */
+export function toPaise(amount: string | null | undefined): bigint | null {
+  const m = typeof amount === "string" ? PAISE.exec(amount.trim()) : null;
+  if (!m) return null;
+  return BigInt(m[1]!) * 100n + BigInt((m[2] ?? "").padEnd(2, "0"));
+}
+const rupees = (paise: bigint): number => Number(paise) / 100;
+
+/** Kilogram multiplier of each unit that converts exactly. Other units are not converted. */
+const KG_PER_UNIT: Readonly<Record<string, bigint>> = { kg: 1n, quintal: 100n, t: 1000n };
+const QUANTITY_SCALE = 10_000; // quantities are stored with 4 decimals
+
+/** ₹4,200 · −₹1,250.50. Indian digit grouping; paise shown only when there are any. */
+export function formatRupees(n: number): string {
+  const body = Math.abs(n).toLocaleString("en-IN", { minimumFractionDigits: Number.isInteger(n) ? 0 : 2, maximumFractionDigits: 2 });
+  return `${n < 0 ? "−" : ""}₹${body}`;
+}
+export const formatKg = (kg: number): string => `${kg.toLocaleString("en-IN", { maximumFractionDigits: 4 })} kg`;
+
+/**
+ * One row per crop cycle: what the farmer wrote down while the crop was in the field and, for a harvested crop, in the
+ * window after harvest (see windowsOf), added in code. An entry belongs to the cycle whose window contains its observation date
+ * (inclusive). If several contain it, it goes to the cycle with the latest `from` (ties: the cycle listed first) and is counted in
+ * that row's `overlapping`. Sorted: crops still in the field first, then by sowing date, newest first.
+ */
+export function seasonTotals(entries: readonly SeasonEntry[], cycles: readonly SeasonCycle[], today: string): SeasonTotalsRow[] {
+  const day = (d: string) => d.slice(0, 10);
+  const active = (c: SeasonCycle) => (c.stage !== undefined ? c.stage !== "harvested" : !c.harvestDate);
+  const ordered = [...cycles].sort((a, b) => Number(active(b)) - Number(active(a)) || day(b.sowingDate).localeCompare(day(a.sowingDate)) || a.id.localeCompare(b.id));
+  const ranges = windowsOf(ordered, today);
+
+  const acc = ranges.map(() => ({ entries: 0, expense: 0n, sale: 0n, harvest: 0n, haveHarvest: false, skipped: 0, overlapping: 0 }));
+  for (const e of entries) {
+    const when = day(e.observedOn);
+    let home = -1;
+    let containing = 0;
+    ranges.forEach((r, i) => {
+      if (when < r.from || when > r.windowTo) return;
+      containing += 1;
+      if (home === -1 || r.from > ranges[home]!.from) home = i;
+    });
+    if (home === -1) continue;
+    const a = acc[home]!;
+    a.entries += 1;
+    if (containing > 1) a.overlapping += 1;
+    a.expense += toPaise(e.expense?.amountInr) ?? 0n;
+    a.sale += toPaise(e.sale?.amountInr) ?? 0n;
+    if (e.activity === "harvest" && e.quantity) {
+      const factor = KG_PER_UNIT[e.quantity.unit];
+      if (factor === undefined) a.skipped += 1;
+      else if (Number.isFinite(e.quantity.value) && e.quantity.value > 0) {
+        a.harvest += BigInt(Math.round(e.quantity.value * QUANTITY_SCALE)) * factor;
+        a.haveHarvest = true;
+      }
+    }
+  }
+
+  return ranges.map((r, i) => {
+    const a = acc[i]!;
+    return {
+      cycleId: r.c.id,
+      cropId: r.c.cropId,
+      ...(r.c.cropName !== undefined ? { cropName: r.c.cropName } : {}),
+      sowingDate: day(r.c.sowingDate),
+      from: r.from,
+      to: r.to,
+      windowTo: r.windowTo,
+      ongoing: !r.c.harvestDate,
+      active: active(r.c),
+      entries: a.entries,
+      expenseInr: rupees(a.expense),
+      saleInr: rupees(a.sale),
+      netInr: rupees(a.sale - a.expense),
+      harvestKg: a.haveHarvest ? Number(a.harvest) / QUANTITY_SCALE : null,
+      harvestUnitsSkipped: a.skipped,
+      overlapping: a.overlapping,
+    };
+  });
+}
+
+/** Entries that carry an expense or sale amount but fall inside no crop's window (for example seed bought before sowing or a sale long after the harvest). They are not in any row. */
+export function amountsOutsideCycles(entries: readonly SeasonEntry[], cycles: readonly SeasonCycle[], today: string): number {
+  const windows = windowsOf(cycles, today);
+  return entries.filter((e) => {
+    if (toPaise(e.expense?.amountInr) === null && toPaise(e.sale?.amountInr) === null) return false;
+    const when = e.observedOn.slice(0, 10);
+    return !windows.some((w) => when >= w.from && when <= w.windowTo);
+  }).length;
 }

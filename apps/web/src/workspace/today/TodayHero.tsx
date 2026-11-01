@@ -1,10 +1,10 @@
 import { createMemo, createSignal, Match, Show, Switch } from "solid-js";
-import type { NdviSeries, SceneRef } from "@harvest/contracts";
+import type { IndexStageReading, NdviSeries, SceneRef } from "@harvest/contracts";
 import { FieldGrowthScene } from "../FieldGrowthScene";
 import type { FieldBoundary } from "../fieldGeometry";
 import { Icon } from "../icons";
 import { AiSpark } from "../ui/AiSpark";
-import { formatDay, rangeLabel, sceneDate, sceneFor, type ScenePick, type StageAt } from "./model";
+import { curveAsOfNote, curveLine, formatDay, rangeLabel, sceneDate, sceneFor, type ScenePick, type StageAt } from "./model";
 import { sceneImageUrl } from "./todayApi";
 
 export type HeroMode = "illustration" | "satellite";
@@ -25,6 +25,10 @@ export interface TodayHeroProps {
   scenes: SceneRef[];
   /** Bbox of the rendered scene images, for drawing the field outline over observed images. */
   imageBbox: NdviSeries["imageBbox"] | null;
+  /** Code-only reading of the field's own NDVI curve, shown as evidence beside the calendar stage (never moves it). */
+  indexStage?: IndexStageReading | null | undefined;
+  /** Opens the curve sheet from the info button. */
+  onCurveDetails?: (() => void) | undefined;
 }
 
 /** Stage name and date range for the bottom overlay ("Tillering · 12 Nov to 3 Dec"), plus its basis caption. */
@@ -163,6 +167,41 @@ function SatelliteCaption(props: { pick: ScenePick; stage: StageAt }) {
   );
 }
 
+/**
+ * One line under the hero image: what the field's own satellite curve looks like, beside the calendar stage above.
+ * Hidden when the reader was unavailable or the view carries no reading. The text states the comparison for the latest
+ * clear image, so a slider date other than today, or a latest image more than 10 days old, names that image's date
+ * instead of implying it describes the date.
+ */
+export function CurveLine(props: { reading: IndexStageReading | null | undefined; date: string; today: string; onDetails?: (() => void) | undefined }) {
+  const line = () => curveLine(props.reading);
+  const asOfNote = () => curveAsOfNote(props.reading, props.date, props.today);
+  return (
+    <Show when={line()}>
+      {(text) => (
+        <div class="today-curve" data-testid="today-curve-line" data-curve-status={props.reading!.status}>
+          <Icon name="layers" size={15} class="today-curve-icon" />
+          <p class="today-curve-text">
+            {text()}
+            <Show when={asOfNote()}>
+              <span class="today-curve-asof"> · {asOfNote()}</span>
+            </Show>
+          </p>
+          <button
+            type="button"
+            class="today-curve-info"
+            aria-label="About the satellite curve reading"
+            aria-haspopup="dialog"
+            onClick={() => props.onDetails?.()}
+          >
+            <Icon name="info" size={16} />
+          </button>
+        </div>
+      )}
+    </Show>
+  );
+}
+
 export function TodayHero(props: TodayHeroProps) {
   const overlay = createMemo(() => stageOverlay(props.stage));
   const pick = createMemo(() => sceneFor(props.scenes, props.date, props.today, stageIdOf(props.stage)));
@@ -226,6 +265,7 @@ export function TodayHero(props: TodayHeroProps) {
           </Show>
         </div>
       </div>
+      <CurveLine reading={props.indexStage} date={props.date} today={props.today} onDetails={props.onCurveDetails} />
     </section>
   );
 }

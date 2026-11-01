@@ -66,6 +66,89 @@ describe('ndviSeries (live, injected provider)', () => {
     const rows = await h.pool.query('SELECT owner_id,usable FROM ndvi_scene_stats WHERE farm_id=$1', [farmId]);
     expect(rows.rowCount).toBe(5);
     expect(rows.rows.every((r) => r.owner_id === ownerId)).toBe(true);
+    // Every stored reading carries the seven indices next to NDVI, and the method names their version.
+    expect(third.method).toMatchObject({version: 'ndvi-s2l2a-v1', indexMethodVersion: 'indices-s2l2a-v1'});
+    expect(third.readings.every((r) => r.field.indices && (r.neighbourhood === null || r.neighbourhood.indices))).toBe(true);
+    expect(third.latestUsable!.field.indices!.gndvi!.mean).toBeCloseTo(0.6926, 4); // fake-provider defaults at NDVI 0.63
+    expect(third.readings.find((r) => r.date === '2026-09-27')!.field.indices!.evi).toEqual({mean: null, median: null, p10: null, p90: null}); // cloudy field
+    expect(third.limitations).toContain('B05, B8A and B11 are 20 m bands resampled to the 10 m grid, so a 1 ha field has about 25 independent pixels for NDRE, LSWI and NDMI.');
+  });
+
+  it('re-analyses rows stored before the indices existed, newest first within maxScenes, upserting them in place', async () => {
+    const {farmId, ownerId} = await farmWithBoundary(owner);
+    const fake = fakePlanetary(OCTOBER.slice(1)); // 2026-10-27, 10-12, 09-27, 05-25
+    await ndviSeries(live(fake.fetchImpl), ownerId, farmId);
+    // Make every stored row look like one written before 2026-11-01: NDVI stats without `indices`; one row has a rendered image.
+    await h.pool.query(`UPDATE ndvi_scene_stats SET field_stats=field_stats - 'indices', neighbourhood_stats=CASE WHEN neighbourhood_stats IS NULL THEN NULL ELSE neighbourhood_stats - 'indices' END WHERE farm_id=$1`, [farmId]);
+    await h.pool.query(`UPDATE ndvi_scene_stats SET image_keys=jsonb_build_object('visual', 'ndvi/' || farm_id || '/' || item_id || '/visual.png') WHERE farm_id=$1 AND item_id=$2`, [farmId, ID('2026-10-27')]);
+    const idsBefore = (await h.pool.query('SELECT id,item_id FROM ndvi_scene_stats WHERE farm_id=$1 ORDER BY item_id', [farmId])).rows;
+    expect(idsBefore).toHaveLength(4);
+
+    let mark = fake.calls.length;
+    const second = NdviSeries.parse(await ndviSeries(live(fake.fetchImpl), ownerId, farmId, {maxScenes: 2}));
+    expect(npyCalls(fake.calls.slice(mark))).toBe(4); // the two newest legacy scenes, field + neighbourhood
+    expect(second).toMatchObject({status: 'available', scenesListed: 4, scenesAnalysed: 2, scenesPending: 2, scenesFailed: 0});
+    expect(second.method.indexMethodVersion).toBe('indices-s2l2a-v1');
+    expect(second.limitations.some((l) => l.includes('2 older scenes'))).toBe(true);
+    const byDate = Object.fromEntries(second.readings.map((r) => [r.date, r]));
+    expect(Object.keys(byDate).sort()).toEqual(['2026-05-25', '2026-09-27', '2026-10-12', '2026-10-27']); // legacy rows stay visible
+    expect(byDate['2026-10-27']!.field.indices!.ndre!.mean).toBeCloseTo(0.492, 4);
+    expect(byDate['2026-10-27']!.neighbourhood!.indices).toBeDefined();
+    expect(byDate['2026-10-12']!.field.indices).toBeDefined();
+    expect(byDate['2026-09-27']!.field.indices).toBeUndefined();
+    expect(byDate['2026-05-25']!.field.indices).toBeUndefined();
+    expect(byDate['2026-05-25']!.field.mean).toBeCloseTo(0.38, 3); // NDVI from the legacy row is still served
+
+    const stored = (await h.pool.query(`SELECT id,item_id,field_stats ? 'indices' AS field_has,neighbourhood_stats ? 'indices' AS nb_has,image_keys FROM ndvi_scene_stats WHERE farm_id=$1 ORDER BY item_id`, [farmId])).rows;
+    expect(stored.map((r) => ({id: r.id, item_id: r.item_id}))).toEqual(idsBefore); // upserted in place, no new rows
+    const row = (date: string) => stored.find((r) => r.item_id === ID(date))!;
+    expect(row('2026-10-27')).toMatchObject({field_has: true, nb_has: true, image_keys: {visual: `ndvi/${farmId}/${ID('2026-10-27')}/visual.png`}});
+    expect(row('2026-10-12')).toMatchObject({field_has: true, nb_has: true});
+    expect(row('2026-05-25')).toMatchObject({field_has: false});
+
+    mark = fake.calls.length;
+    const third = NdviSeries.parse(await ndviSeries(live(fake.fetchImpl), ownerId, farmId, {maxScenes: 2}));
+    expect(npyCalls(fake.calls.slice(mark))).toBe(4); // the remaining two
+    expect(third).toMatchObject({scenesAnalysed: 4, scenesPending: 0});
+    expect(third.readings.every((r) => r.field.indices !== undefined)).toBe(true);
+    mark = fake.calls.length;
+    await ndviSeries(live(fake.fetchImpl), ownerId, farmId);
+    expect(fake.calls.length).toBe(mark); // complete rows are not re-read
+  });
+
+  it('keeps the stored neighbourhood when re-reading a legacy row hits a permanent neighbourhood failure', async () => {
+    const {farmId, ownerId} = await farmWithBoundary(owner);
+    const scenes = OCTOBER.slice(1, 3); // 2026-10-27 (neighbourhood NDVI 0.58), 2026-10-12
+    await ndviSeries(live(fakePlanetary(scenes).fetchImpl), ownerId, farmId);
+    await h.pool.query(`UPDATE ndvi_scene_stats SET field_stats=field_stats - 'indices', neighbourhood_stats=neighbourhood_stats - 'indices' WHERE farm_id=$1`, [farmId]);
+    const broken = fakePlanetary(scenes, {breakNeighbourhood: new Set([ID('2026-10-27')])});
+    const series = NdviSeries.parse(await ndviSeries(live(broken.fetchImpl), ownerId, farmId));
+    expect(npyCalls(broken.calls)).toBe(4); // both legacy rows re-read, field + neighbourhood
+    expect(series).toMatchObject({scenesAnalysed: 2, scenesPending: 0, scenesFailed: 0});
+    const kept = series.readings.find((r) => r.date === '2026-10-27')!;
+    expect(kept.field.indices).toBeDefined();
+    expect(kept.neighbourhood!.mean).toBeCloseTo(0.58, 3); // the earlier neighbourhood survives instead of becoming null
+    expect(kept.neighbourhood!.indices).toBeUndefined(); // and stays NDVI-only
+    expect(series.readings.find((r) => r.date === '2026-10-12')!.neighbourhood!.indices).toBeDefined();
+    const stored = (await h.pool.query('SELECT neighbourhood_stats FROM ndvi_scene_stats WHERE farm_id=$1 AND item_id=$2', [farmId, ID('2026-10-27')])).rows[0];
+    expect(stored.neighbourhood_stats.mean).toBeCloseTo(0.58, 3);
+    // Complete by its field stats, so a permanently failing neighbourhood does not cause a re-read on every request.
+    const mark = broken.calls.length;
+    await ndviSeries(live(broken.fetchImpl), ownerId, farmId);
+    expect(broken.calls.length).toBe(mark);
+    // A scene analysed for the first time with the same failure still stores no neighbourhood (nothing to keep).
+    const fresh = await farmWithBoundary(owner);
+    const first = NdviSeries.parse(await ndviSeries(live(broken.fetchImpl), fresh.ownerId, fresh.farmId));
+    expect(first.readings.find((r) => r.date === '2026-10-27')!.neighbourhood).toBeNull();
+  });
+
+  it('rejects a legacy 4-band answer to the eight-asset request and stores nothing for it', async () => {
+    const {farmId, ownerId} = await farmWithBoundary(owner);
+    const fake = fakePlanetary(OCTOBER.slice(1, 2), {legacyLayout: true});
+    const series = NdviSeries.parse(await ndviSeries(live(fake.fetchImpl), ownerId, farmId));
+    expect(series).toMatchObject({status: 'available', scenesListed: 1, scenesAnalysed: 0, scenesFailed: 1, readings: []});
+    expect(series.limitations[0]).toContain('unexpected_band_layout');
+    expect((await h.pool.query('SELECT 1 FROM ndvi_scene_stats WHERE farm_id=$1', [farmId])).rowCount).toBe(0);
   });
 
   it('does not cache a scene whose neighbourhood read failed transiently, and retries it', async () => {

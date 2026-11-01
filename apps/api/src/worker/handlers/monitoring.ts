@@ -12,11 +12,25 @@ import { PgMarketOutlookSource } from '../../plans/adapters/market-outlook';
 import { createWeatherSource } from '../../plans/adapters/weather-source';
 import { loadProviderConfig } from '../../providers/config';
 import {
-  addDays, alertReviewSpendTodayUsd, groundedReview, istDate, loadPriceMoves, persistAlerts, reviewCrops, structuredAlerts,
+  addDays, alertReviewSpendTodayUsd, groundedReview, istDate, loadPriceMoves, persistAlerts, reviewCrops, satelliteAlerts, structuredAlerts,
   type GroundedReviewResult, type GroundedTransport,
 } from '../../services/today/alerts';
+import type { StageTimeline } from '@harvest/contracts';
+import { readIndexStage } from '../../services/today/index-stage';
+import { ndviSeries } from '../../services/today/ndvi';
+import { stageTimeline } from '../../services/today/stage-timeline';
+import { currentCycle, ndviWindowFrom } from '../../services/today/view';
 import type { JobHandler } from '../main';
 import { refreshOutlookNote } from './outlook-note';
+
+/**
+ * New Sentinel-2 scenes analysed per daily check for the satellite drop rule (cached scenes are always read): at most
+ * 9 Planetary Computer requests per run, 8 band reads (field and neighbourhood per scene) plus one STAC list when the
+ * day's scene list is not cached.
+ */
+export const SATELLITE_MONITOR_MAX_SCENES = 4;
+/** Postgres SQLSTATE of a failure, for a sanitized note (never the message). */
+const pgCode = (e: unknown): string => { const c = (e as { code?: unknown } | null)?.code; return typeof c === 'string' && /^[0-9A-Z]{5}$/.test(c) ? `:${c}` : ''; };
 
 /** Small current-price refresh. Only audited commodity mappings are eligible; no inferred products. */
 export async function refreshMarket(deps: MonitoringDeps, ownerId: string, farmId: string, candidateProducts?: string[]): Promise<string | null> {
@@ -77,7 +91,7 @@ export function createMonitorHandler(deps: MonitorHandlerDeps): JobHandler {
     const today = istDate(snapshot.checkedAt);
 
     // (a) Code-only alerts from the stored forecast, state mandi series and sourced risk windows.
-    const alertSummary = { structured: 0, grounded: 0, notes: [] as string[] };
+    const alertSummary = { structured: 0, grounded: 0, satellite: 0, notes: [] as string[] };
     try {
       const moves = await loadPriceMoves(deps.pool, { mode, productIds: await workspaceMarketProducts(deps.pool, workspace), stateCode: farm?.location.stateCode ?? null, asOf: snapshot.checkedAt });
       const research = await focusedResearch().catch(() => null);
@@ -88,6 +102,31 @@ export function createMonitorHandler(deps: MonitorHandlerDeps): JobHandler {
     } catch {
       alertSummary.notes.push('structured_alerts_failed');
     }
+    // (a2) Satellite greenness drop: the current cycle's field NDVI series (cached rows plus at most
+    // SATELLITE_MONITOR_MAX_SCENES new scenes, at most 9 free Planetary Computer requests), read by the index stage reader, then
+    // the code rule. Live only; a provider, calendar or storage failure becomes a note, never a failed job.
+    if (mode === 'live') {
+      try {
+        const cycle = currentCycle(workspace);
+        if (!cycle) alertSummary.notes.push('satellite_check_skipped:no_current_cycle');
+        else {
+          const anchor = cycle.establishmentDate ?? cycle.sowingDate;
+          let timeline: StageTimeline | null = null;
+          try {
+            timeline = stageTimeline({ cropId: cycle.cropId, productId: cycle.productId ?? null, establishmentMethod: cycle.establishmentMethod ?? null, anchorDate: anchor, stateId: farm?.location.stateCode ?? null, districtId: farm?.location.districtId ?? null });
+          } catch { alertSummary.notes.push('satellite_stage_calendar_unavailable'); }
+          const at = new Date(snapshot.checkedAt);
+          const series = await ndviSeries({ config: deps.config, pool: deps.pool, fetchImpl: deps.fetchImpl, now: () => at }, ownerId, farmId, { from: ndviWindowFrom(anchor, today), to: today, maxScenes: SATELLITE_MONITOR_MAX_SCENES });
+          const stage = readIndexStage({ readings: series.readings, today, timeline, cycle, smallField: series.smallField, polygonBasis: series.polygonBasis, series });
+          const sat = satelliteAlerts(series, stage, timeline, snapshot.checkedAt);
+          const saved = await persistAlerts(deps.pool, ownerId, farmId, mode, sat.alerts);
+          alertSummary.satellite = saved.inserted + saved.updated;
+          alertSummary.notes.push(...sat.notes);
+        }
+      } catch (e) {
+        alertSummary.notes.push(`satellite_alerts_failed${pgCode(e)}`);
+      }
+    } else alertSummary.notes.push('satellite_check_skipped:live_mode_required');
 
     // (c) Queue missing archive years for this point through the existing ingest.weather_archive job (live only).
     let climatology = 'not_live';

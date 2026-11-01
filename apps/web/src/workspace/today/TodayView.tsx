@@ -354,6 +354,8 @@ export function TodayView(props: TodayViewProps) {
                 boundary={boundary()}
                 scenes={view()!.scenes}
                 imageBbox={view()!.ndvi?.imageBbox ?? null}
+                indexStage={view()!.indexStage ?? null}
+                onCurveDetails={() => setSheet("curve")}
               />
               <Show
                 when={slider()}

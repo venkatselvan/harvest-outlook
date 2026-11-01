@@ -76,6 +76,45 @@ export const OutlookNote = z.object({
  modelInvocation: ModelInvocation.nullable(),
 }).strict();
 
+/**
+ * Code-only reading of the field's own NDVI curve (open-source comparison, 2026-11-01; method in
+ * docs/research/INDEX_STAGE_READER.md). It is evidence shown next to the calendar stage estimate, never a verdict:
+ * the stage timeline is not moved by it. Thresholds are either public (USGS NDVI bands, the MODIS MCD12Q2
+ * amplitude fractions) or data-driven from the series' own noise; every remaining constant is a flagged assumption.
+ */
+export const IndexStagePhase = z.enum(['bare', 'green_up', 'rising', 'plateau', 'falling', 'harvested', 'unknown']);
+export const IndexStageReading = z.object({
+ status: z.enum(['available', 'insufficient', 'unavailable']),
+ reason: z.string().max(120).nullable(),
+ index: z.literal('ndvi'),
+ /** Date of the latest usable field reading the phase was read from; null when none. */
+ asOf: isoDate.nullable(),
+ phase: IndexStagePhase,
+ /** First date the smoothed curve rose above the green-up level of the current run (null when not seen). */
+ greenUpDate: isoDate.nullable(),
+ peakDate: isoDate.nullable(),
+ peakValue: z.number().nullable(),
+ troughDate: isoDate.nullable(),
+ troughValue: z.number().nullable(),
+ latestSmoothed: z.number().nullable(),
+ /** Smoothed change over the last 15 days (positive = greening). */
+ change15d: z.number().nullable(),
+ /** Robust noise estimate of the series (used for the change threshold). */
+ noise: z.number().nullable(),
+ /** Change threshold the phase rules used. */
+ changeThreshold: z.number().nullable(),
+ readingsUsed: z.number().int().min(0),
+ window: z.object({from: isoDate, to: isoDate}).strict().nullable(),
+ /** The calendar stage the latest reading falls in, for the side-by-side comparison. */
+ calendarStage: z.object({id: z.string(), name: z.string().max(80), from: isoDate, to: isoDate}).strict().nullable(),
+ /** How the curve compares with the calendar estimate; 'consistent' is not a confirmation. */
+ agreement: z.enum(['consistent', 'curve_earlier', 'curve_later', 'no_calendar', 'unknown']),
+ /** One code-written sentence for the UI, digits only from the fields above. */
+ summary: z.string().max(300),
+ basis: BasisRef,
+ limitations: z.array(z.string().max(400)).max(10),
+}).strict();
+
 export const TodayView = z.object({
  farmId: z.uuid(),
  asOf: z.iso.datetime(),
@@ -99,6 +138,8 @@ export const TodayView = z.object({
  nextAction: UpcomingStep.nullable().optional(),
  /** Round 2: harvest price outlook in words, written by Meta from code facts (ROUND2_SPEC.md 2.2). */
  outlookNote: OutlookNote.nullable().optional(),
+ /** Open-source comparison (2026-11-01): the field's own NDVI curve read by code, shown beside the calendar stage. */
+ indexStage: IndexStageReading.nullable().optional(),
  monitoring: z.object({enabled: z.boolean(), lastCheckedAt: z.iso.datetime().nullable(), nextCheckAt: z.iso.datetime().nullable()}).strict(),
  limitations: z.array(text),
 }).strict();
@@ -109,4 +150,6 @@ export type PricePoint = z.infer<typeof PricePoint>;
 export type WeatherPoint = z.infer<typeof WeatherPoint>;
 export type UpcomingStep = z.infer<typeof UpcomingStep>;
 export type OutlookNote = z.infer<typeof OutlookNote>;
+export type IndexStagePhase = z.infer<typeof IndexStagePhase>;
+export type IndexStageReading = z.infer<typeof IndexStageReading>;
 export type TodayView = z.infer<typeof TodayView>;

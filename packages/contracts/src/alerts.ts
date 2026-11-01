@@ -11,7 +11,8 @@ import {z} from 'zod';
  *
  * Not yet re-exported from index.ts (orchestrator-owned); import by path until it is.
  */
-export const FarmAlertType = z.enum(['weather', 'price', 'market_event', 'crop_threat']);
+/** 'satellite' (added 2026-11-01, open-source comparison): a code rule on the field's own Sentinel-2 index series; its source is the scene's STAC item. */
+export const FarmAlertType = z.enum(['weather', 'price', 'market_event', 'crop_threat', 'satellite']);
 export const FarmAlertSeverity = z.enum(['info', 'watch', 'warning']);
 export const FarmAlertOrigin = z.enum(['rule', 'grounded_review']);
 

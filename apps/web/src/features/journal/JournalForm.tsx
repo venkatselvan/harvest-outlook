@@ -16,6 +16,7 @@ import {
   clearDraft,
   draftIssues,
   draftToBody,
+  hasSaleFields,
   idempotencyKeyFor,
   loadCurrentDraft,
   newDraft,
@@ -166,6 +167,17 @@ export function JournalForm(props: { farmId: string; stages: { stageId: string; 
           <For each={QUANTITY_UNITS}>{(u) => <option value={u} selected={draft().quantityUnit === u}>{u}</option>}</For>
         </select>
       </fieldset>
+
+      <Show when={hasSaleFields(draft())}>
+        <fieldset class="jr-row" data-testid="jr-sale">
+          <legend>Sale (optional)</legend>
+          <label for="jr-sale-amt">Sale amount (₹)</label>
+          <input id="jr-sale-amt" inputmode="decimal" autocomplete="off" value={draft().saleInr} aria-invalid={showIssues() && issues().some((i) => i.field === "sale")} aria-describedby="jr-sale-help" onInput={(e) => update({ saleInr: e.currentTarget.value })} />
+          <label for="jr-sale-note">Buyer or note (optional)</label>
+          <input id="jr-sale-note" maxlength="120" autocomplete="off" value={draft().saleNote} onInput={(e) => update({ saleNote: e.currentTarget.value })} />
+          <p id="jr-sale-help" class="jr-small">The rupees you actually received. This is your own figure, saved as you enter it; it is not an estimate.</p>
+        </fieldset>
+      </Show>
 
       <fieldset class="jr-row">
         <legend>Expense (optional)</legend>

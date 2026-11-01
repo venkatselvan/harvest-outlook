@@ -1,16 +1,19 @@
-import { Show, type JSX } from "solid-js";
+import { For, Show, type JSX } from "solid-js";
 import type { HealthReading, NdviSeries, PricePoint, TodayView, WeatherPoint } from "@harvest/contracts";
 import { Icon } from "../icons";
 import { AiSpark } from "../ui/AiSpark";
 import {
   formatDay,
+  formatIndex,
   formatInr,
   formatRain,
   formatTemp,
+  indexLine,
   nextStage,
   priceTrend,
   rangeLabel,
   shortInrRange,
+  spokenIndex,
   type PriceTrend,
 } from "./model";
 
@@ -240,6 +243,40 @@ export function WeatherCard(props: { date: string; weather: WeatherPoint | null;
   );
 }
 
+/**
+ * Moisture index, red-edge greenness and water index of the same image, one per line under the NDVI basis line (name
+ * and code on the left, the value on the right). Hidden when the scene carries no index summaries (rows analysed
+ * before the indices existed). Screen readers get the spoken form ("minus 0.45"); the visible form uses the true minus.
+ */
+export function IndexLine(props: { ndvi: NdviSeries | null; healthDate: string }) {
+  const reading = () => props.ndvi?.latestUsable ?? null;
+  const items = () => indexLine(reading()?.field);
+  // The NDVI headline belongs to the health reading's image; name the image when the index scene is a different one.
+  const otherImage = () => (reading() && reading()!.date !== props.healthDate ? `Indices from the image of ${formatDay(reading()!.date, false)}` : "");
+  return (
+    <Show when={items().length}>
+      <div class="today-index-line" data-testid="today-index-line">
+        <ul>
+          <For each={items()}>
+            {(item) => (
+              <li class="today-index-item" data-index-id={item.id}>
+                <span class="today-index-name" aria-hidden="true">
+                  {item.label} <span class="today-index-code">({item.code})</span>
+                </span>{" "}
+                <span class="today-index-num" aria-hidden="true">{formatIndex(item.value)}</span>
+                <span class="today-sr">{`${item.label}, ${item.code} ${spokenIndex(item.value)}`}</span>
+              </li>
+            )}
+          </For>
+        </ul>
+        <Show when={otherImage()}>
+          <p class="today-index-note">{otherImage()}</p>
+        </Show>
+      </div>
+    </Show>
+  );
+}
+
 export function HealthCard(props: { health: HealthReading | null; ndvi: NdviSeries | null; onDetails: (kind: CardKind) => void }) {
   return (
     <Card kind="health" title="Vegetation health" onDetails={props.onDetails}>
@@ -271,6 +308,7 @@ export function HealthCard(props: { health: HealthReading | null; ndvi: NdviSeri
               <Show when={h().neighbourhoodMean != null}> · nearby fields {h().neighbourhoodMean!.toFixed(2)}</Show>
               <Show when={props.ndvi?.smallField}> · small field, compare with nearby</Show>
             </p>
+            <IndexLine ndvi={props.ndvi} healthDate={h().date} />
           </>
         )}
       </Show>

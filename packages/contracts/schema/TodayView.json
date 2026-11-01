@@ -769,6 +769,490 @@
                             "type": "null"
                           }
                         ]
+                      },
+                      "indices": {
+                        "type": "object",
+                        "properties": {
+                          "evi": {
+                            "anyOf": [
+                              {
+                                "type": "object",
+                                "properties": {
+                                  "mean": {
+                                    "anyOf": [
+                                      {
+                                        "type": "number",
+                                        "minimum": -2,
+                                        "maximum": 2
+                                      },
+                                      {
+                                        "type": "null"
+                                      }
+                                    ]
+                                  },
+                                  "median": {
+                                    "anyOf": [
+                                      {
+                                        "type": "number",
+                                        "minimum": -2,
+                                        "maximum": 2
+                                      },
+                                      {
+                                        "type": "null"
+                                      }
+                                    ]
+                                  },
+                                  "p10": {
+                                    "anyOf": [
+                                      {
+                                        "type": "number",
+                                        "minimum": -2,
+                                        "maximum": 2
+                                      },
+                                      {
+                                        "type": "null"
+                                      }
+                                    ]
+                                  },
+                                  "p90": {
+                                    "anyOf": [
+                                      {
+                                        "type": "number",
+                                        "minimum": -2,
+                                        "maximum": 2
+                                      },
+                                      {
+                                        "type": "null"
+                                      }
+                                    ]
+                                  }
+                                },
+                                "required": [
+                                  "mean",
+                                  "median",
+                                  "p10",
+                                  "p90"
+                                ],
+                                "additionalProperties": false
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
+                          "ndre": {
+                            "anyOf": [
+                              {
+                                "type": "object",
+                                "properties": {
+                                  "mean": {
+                                    "anyOf": [
+                                      {
+                                        "type": "number",
+                                        "minimum": -2,
+                                        "maximum": 2
+                                      },
+                                      {
+                                        "type": "null"
+                                      }
+                                    ]
+                                  },
+                                  "median": {
+                                    "anyOf": [
+                                      {
+                                        "type": "number",
+                                        "minimum": -2,
+                                        "maximum": 2
+                                      },
+                                      {
+                                        "type": "null"
+                                      }
+                                    ]
+                                  },
+                                  "p10": {
+                                    "anyOf": [
+                                      {
+                                        "type": "number",
+                                        "minimum": -2,
+                                        "maximum": 2
+                                      },
+                                      {
+                                        "type": "null"
+                                      }
+                                    ]
+                                  },
+                                  "p90": {
+                                    "anyOf": [
+                                      {
+                                        "type": "number",
+                                        "minimum": -2,
+                                        "maximum": 2
+                                      },
+                                      {
+                                        "type": "null"
+                                      }
+                                    ]
+                                  }
+                                },
+                                "required": [
+                                  "mean",
+                                  "median",
+                                  "p10",
+                                  "p90"
+                                ],
+                                "additionalProperties": false
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
+                          "gndvi": {
+                            "anyOf": [
+                              {
+                                "type": "object",
+                                "properties": {
+                                  "mean": {
+                                    "anyOf": [
+                                      {
+                                        "type": "number",
+                                        "minimum": -2,
+                                        "maximum": 2
+                                      },
+                                      {
+                                        "type": "null"
+                                      }
+                                    ]
+                                  },
+                                  "median": {
+                                    "anyOf": [
+                                      {
+                                        "type": "number",
+                                        "minimum": -2,
+                                        "maximum": 2
+                                      },
+                                      {
+                                        "type": "null"
+                                      }
+                                    ]
+                                  },
+                                  "p10": {
+                                    "anyOf": [
+                                      {
+                                        "type": "number",
+                                        "minimum": -2,
+                                        "maximum": 2
+                                      },
+                                      {
+                                        "type": "null"
+                                      }
+                                    ]
+                                  },
+                                  "p90": {
+                                    "anyOf": [
+                                      {
+                                        "type": "number",
+                                        "minimum": -2,
+                                        "maximum": 2
+                                      },
+                                      {
+                                        "type": "null"
+                                      }
+                                    ]
+                                  }
+                                },
+                                "required": [
+                                  "mean",
+                                  "median",
+                                  "p10",
+                                  "p90"
+                                ],
+                                "additionalProperties": false
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
+                          "savi": {
+                            "anyOf": [
+                              {
+                                "type": "object",
+                                "properties": {
+                                  "mean": {
+                                    "anyOf": [
+                                      {
+                                        "type": "number",
+                                        "minimum": -2,
+                                        "maximum": 2
+                                      },
+                                      {
+                                        "type": "null"
+                                      }
+                                    ]
+                                  },
+                                  "median": {
+                                    "anyOf": [
+                                      {
+                                        "type": "number",
+                                        "minimum": -2,
+                                        "maximum": 2
+                                      },
+                                      {
+                                        "type": "null"
+                                      }
+                                    ]
+                                  },
+                                  "p10": {
+                                    "anyOf": [
+                                      {
+                                        "type": "number",
+                                        "minimum": -2,
+                                        "maximum": 2
+                                      },
+                                      {
+                                        "type": "null"
+                                      }
+                                    ]
+                                  },
+                                  "p90": {
+                                    "anyOf": [
+                                      {
+                                        "type": "number",
+                                        "minimum": -2,
+                                        "maximum": 2
+                                      },
+                                      {
+                                        "type": "null"
+                                      }
+                                    ]
+                                  }
+                                },
+                                "required": [
+                                  "mean",
+                                  "median",
+                                  "p10",
+                                  "p90"
+                                ],
+                                "additionalProperties": false
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
+                          "ndmi": {
+                            "anyOf": [
+                              {
+                                "type": "object",
+                                "properties": {
+                                  "mean": {
+                                    "anyOf": [
+                                      {
+                                        "type": "number",
+                                        "minimum": -2,
+                                        "maximum": 2
+                                      },
+                                      {
+                                        "type": "null"
+                                      }
+                                    ]
+                                  },
+                                  "median": {
+                                    "anyOf": [
+                                      {
+                                        "type": "number",
+                                        "minimum": -2,
+                                        "maximum": 2
+                                      },
+                                      {
+                                        "type": "null"
+                                      }
+                                    ]
+                                  },
+                                  "p10": {
+                                    "anyOf": [
+                                      {
+                                        "type": "number",
+                                        "minimum": -2,
+                                        "maximum": 2
+                                      },
+                                      {
+                                        "type": "null"
+                                      }
+                                    ]
+                                  },
+                                  "p90": {
+                                    "anyOf": [
+                                      {
+                                        "type": "number",
+                                        "minimum": -2,
+                                        "maximum": 2
+                                      },
+                                      {
+                                        "type": "null"
+                                      }
+                                    ]
+                                  }
+                                },
+                                "required": [
+                                  "mean",
+                                  "median",
+                                  "p10",
+                                  "p90"
+                                ],
+                                "additionalProperties": false
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
+                          "lswi": {
+                            "anyOf": [
+                              {
+                                "type": "object",
+                                "properties": {
+                                  "mean": {
+                                    "anyOf": [
+                                      {
+                                        "type": "number",
+                                        "minimum": -2,
+                                        "maximum": 2
+                                      },
+                                      {
+                                        "type": "null"
+                                      }
+                                    ]
+                                  },
+                                  "median": {
+                                    "anyOf": [
+                                      {
+                                        "type": "number",
+                                        "minimum": -2,
+                                        "maximum": 2
+                                      },
+                                      {
+                                        "type": "null"
+                                      }
+                                    ]
+                                  },
+                                  "p10": {
+                                    "anyOf": [
+                                      {
+                                        "type": "number",
+                                        "minimum": -2,
+                                        "maximum": 2
+                                      },
+                                      {
+                                        "type": "null"
+                                      }
+                                    ]
+                                  },
+                                  "p90": {
+                                    "anyOf": [
+                                      {
+                                        "type": "number",
+                                        "minimum": -2,
+                                        "maximum": 2
+                                      },
+                                      {
+                                        "type": "null"
+                                      }
+                                    ]
+                                  }
+                                },
+                                "required": [
+                                  "mean",
+                                  "median",
+                                  "p10",
+                                  "p90"
+                                ],
+                                "additionalProperties": false
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
+                          "ndwi": {
+                            "anyOf": [
+                              {
+                                "type": "object",
+                                "properties": {
+                                  "mean": {
+                                    "anyOf": [
+                                      {
+                                        "type": "number",
+                                        "minimum": -2,
+                                        "maximum": 2
+                                      },
+                                      {
+                                        "type": "null"
+                                      }
+                                    ]
+                                  },
+                                  "median": {
+                                    "anyOf": [
+                                      {
+                                        "type": "number",
+                                        "minimum": -2,
+                                        "maximum": 2
+                                      },
+                                      {
+                                        "type": "null"
+                                      }
+                                    ]
+                                  },
+                                  "p10": {
+                                    "anyOf": [
+                                      {
+                                        "type": "number",
+                                        "minimum": -2,
+                                        "maximum": 2
+                                      },
+                                      {
+                                        "type": "null"
+                                      }
+                                    ]
+                                  },
+                                  "p90": {
+                                    "anyOf": [
+                                      {
+                                        "type": "number",
+                                        "minimum": -2,
+                                        "maximum": 2
+                                      },
+                                      {
+                                        "type": "null"
+                                      }
+                                    ]
+                                  }
+                                },
+                                "required": [
+                                  "mean",
+                                  "median",
+                                  "p10",
+                                  "p90"
+                                ],
+                                "additionalProperties": false
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          }
+                        },
+                        "required": [
+                          "evi",
+                          "ndre",
+                          "gndvi",
+                          "savi",
+                          "ndmi",
+                          "lswi",
+                          "ndwi"
+                        ],
+                        "additionalProperties": false
                       }
                     },
                     "required": [
@@ -888,6 +1372,490 @@
                                 "type": "null"
                               }
                             ]
+                          },
+                          "indices": {
+                            "type": "object",
+                            "properties": {
+                              "evi": {
+                                "anyOf": [
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "mean": {
+                                        "anyOf": [
+                                          {
+                                            "type": "number",
+                                            "minimum": -2,
+                                            "maximum": 2
+                                          },
+                                          {
+                                            "type": "null"
+                                          }
+                                        ]
+                                      },
+                                      "median": {
+                                        "anyOf": [
+                                          {
+                                            "type": "number",
+                                            "minimum": -2,
+                                            "maximum": 2
+                                          },
+                                          {
+                                            "type": "null"
+                                          }
+                                        ]
+                                      },
+                                      "p10": {
+                                        "anyOf": [
+                                          {
+                                            "type": "number",
+                                            "minimum": -2,
+                                            "maximum": 2
+                                          },
+                                          {
+                                            "type": "null"
+                                          }
+                                        ]
+                                      },
+                                      "p90": {
+                                        "anyOf": [
+                                          {
+                                            "type": "number",
+                                            "minimum": -2,
+                                            "maximum": 2
+                                          },
+                                          {
+                                            "type": "null"
+                                          }
+                                        ]
+                                      }
+                                    },
+                                    "required": [
+                                      "mean",
+                                      "median",
+                                      "p10",
+                                      "p90"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  {
+                                    "type": "null"
+                                  }
+                                ]
+                              },
+                              "ndre": {
+                                "anyOf": [
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "mean": {
+                                        "anyOf": [
+                                          {
+                                            "type": "number",
+                                            "minimum": -2,
+                                            "maximum": 2
+                                          },
+                                          {
+                                            "type": "null"
+                                          }
+                                        ]
+                                      },
+                                      "median": {
+                                        "anyOf": [
+                                          {
+                                            "type": "number",
+                                            "minimum": -2,
+                                            "maximum": 2
+                                          },
+                                          {
+                                            "type": "null"
+                                          }
+                                        ]
+                                      },
+                                      "p10": {
+                                        "anyOf": [
+                                          {
+                                            "type": "number",
+                                            "minimum": -2,
+                                            "maximum": 2
+                                          },
+                                          {
+                                            "type": "null"
+                                          }
+                                        ]
+                                      },
+                                      "p90": {
+                                        "anyOf": [
+                                          {
+                                            "type": "number",
+                                            "minimum": -2,
+                                            "maximum": 2
+                                          },
+                                          {
+                                            "type": "null"
+                                          }
+                                        ]
+                                      }
+                                    },
+                                    "required": [
+                                      "mean",
+                                      "median",
+                                      "p10",
+                                      "p90"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  {
+                                    "type": "null"
+                                  }
+                                ]
+                              },
+                              "gndvi": {
+                                "anyOf": [
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "mean": {
+                                        "anyOf": [
+                                          {
+                                            "type": "number",
+                                            "minimum": -2,
+                                            "maximum": 2
+                                          },
+                                          {
+                                            "type": "null"
+                                          }
+                                        ]
+                                      },
+                                      "median": {
+                                        "anyOf": [
+                                          {
+                                            "type": "number",
+                                            "minimum": -2,
+                                            "maximum": 2
+                                          },
+                                          {
+                                            "type": "null"
+                                          }
+                                        ]
+                                      },
+                                      "p10": {
+                                        "anyOf": [
+                                          {
+                                            "type": "number",
+                                            "minimum": -2,
+                                            "maximum": 2
+                                          },
+                                          {
+                                            "type": "null"
+                                          }
+                                        ]
+                                      },
+                                      "p90": {
+                                        "anyOf": [
+                                          {
+                                            "type": "number",
+                                            "minimum": -2,
+                                            "maximum": 2
+                                          },
+                                          {
+                                            "type": "null"
+                                          }
+                                        ]
+                                      }
+                                    },
+                                    "required": [
+                                      "mean",
+                                      "median",
+                                      "p10",
+                                      "p90"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  {
+                                    "type": "null"
+                                  }
+                                ]
+                              },
+                              "savi": {
+                                "anyOf": [
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "mean": {
+                                        "anyOf": [
+                                          {
+                                            "type": "number",
+                                            "minimum": -2,
+                                            "maximum": 2
+                                          },
+                                          {
+                                            "type": "null"
+                                          }
+                                        ]
+                                      },
+                                      "median": {
+                                        "anyOf": [
+                                          {
+                                            "type": "number",
+                                            "minimum": -2,
+                                            "maximum": 2
+                                          },
+                                          {
+                                            "type": "null"
+                                          }
+                                        ]
+                                      },
+                                      "p10": {
+                                        "anyOf": [
+                                          {
+                                            "type": "number",
+                                            "minimum": -2,
+                                            "maximum": 2
+                                          },
+                                          {
+                                            "type": "null"
+                                          }
+                                        ]
+                                      },
+                                      "p90": {
+                                        "anyOf": [
+                                          {
+                                            "type": "number",
+                                            "minimum": -2,
+                                            "maximum": 2
+                                          },
+                                          {
+                                            "type": "null"
+                                          }
+                                        ]
+                                      }
+                                    },
+                                    "required": [
+                                      "mean",
+                                      "median",
+                                      "p10",
+                                      "p90"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  {
+                                    "type": "null"
+                                  }
+                                ]
+                              },
+                              "ndmi": {
+                                "anyOf": [
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "mean": {
+                                        "anyOf": [
+                                          {
+                                            "type": "number",
+                                            "minimum": -2,
+                                            "maximum": 2
+                                          },
+                                          {
+                                            "type": "null"
+                                          }
+                                        ]
+                                      },
+                                      "median": {
+                                        "anyOf": [
+                                          {
+                                            "type": "number",
+                                            "minimum": -2,
+                                            "maximum": 2
+                                          },
+                                          {
+                                            "type": "null"
+                                          }
+                                        ]
+                                      },
+                                      "p10": {
+                                        "anyOf": [
+                                          {
+                                            "type": "number",
+                                            "minimum": -2,
+                                            "maximum": 2
+                                          },
+                                          {
+                                            "type": "null"
+                                          }
+                                        ]
+                                      },
+                                      "p90": {
+                                        "anyOf": [
+                                          {
+                                            "type": "number",
+                                            "minimum": -2,
+                                            "maximum": 2
+                                          },
+                                          {
+                                            "type": "null"
+                                          }
+                                        ]
+                                      }
+                                    },
+                                    "required": [
+                                      "mean",
+                                      "median",
+                                      "p10",
+                                      "p90"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  {
+                                    "type": "null"
+                                  }
+                                ]
+                              },
+                              "lswi": {
+                                "anyOf": [
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "mean": {
+                                        "anyOf": [
+                                          {
+                                            "type": "number",
+                                            "minimum": -2,
+                                            "maximum": 2
+                                          },
+                                          {
+                                            "type": "null"
+                                          }
+                                        ]
+                                      },
+                                      "median": {
+                                        "anyOf": [
+                                          {
+                                            "type": "number",
+                                            "minimum": -2,
+                                            "maximum": 2
+                                          },
+                                          {
+                                            "type": "null"
+                                          }
+                                        ]
+                                      },
+                                      "p10": {
+                                        "anyOf": [
+                                          {
+                                            "type": "number",
+                                            "minimum": -2,
+                                            "maximum": 2
+                                          },
+                                          {
+                                            "type": "null"
+                                          }
+                                        ]
+                                      },
+                                      "p90": {
+                                        "anyOf": [
+                                          {
+                                            "type": "number",
+                                            "minimum": -2,
+                                            "maximum": 2
+                                          },
+                                          {
+                                            "type": "null"
+                                          }
+                                        ]
+                                      }
+                                    },
+                                    "required": [
+                                      "mean",
+                                      "median",
+                                      "p10",
+                                      "p90"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  {
+                                    "type": "null"
+                                  }
+                                ]
+                              },
+                              "ndwi": {
+                                "anyOf": [
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "mean": {
+                                        "anyOf": [
+                                          {
+                                            "type": "number",
+                                            "minimum": -2,
+                                            "maximum": 2
+                                          },
+                                          {
+                                            "type": "null"
+                                          }
+                                        ]
+                                      },
+                                      "median": {
+                                        "anyOf": [
+                                          {
+                                            "type": "number",
+                                            "minimum": -2,
+                                            "maximum": 2
+                                          },
+                                          {
+                                            "type": "null"
+                                          }
+                                        ]
+                                      },
+                                      "p10": {
+                                        "anyOf": [
+                                          {
+                                            "type": "number",
+                                            "minimum": -2,
+                                            "maximum": 2
+                                          },
+                                          {
+                                            "type": "null"
+                                          }
+                                        ]
+                                      },
+                                      "p90": {
+                                        "anyOf": [
+                                          {
+                                            "type": "number",
+                                            "minimum": -2,
+                                            "maximum": 2
+                                          },
+                                          {
+                                            "type": "null"
+                                          }
+                                        ]
+                                      }
+                                    },
+                                    "required": [
+                                      "mean",
+                                      "median",
+                                      "p10",
+                                      "p90"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  {
+                                    "type": "null"
+                                  }
+                                ]
+                              }
+                            },
+                            "required": [
+                              "evi",
+                              "ndre",
+                              "gndvi",
+                              "savi",
+                              "ndmi",
+                              "lswi",
+                              "ndwi"
+                            ],
+                            "additionalProperties": false
                           }
                         },
                         "required": [
@@ -1085,6 +2053,490 @@
                               "type": "null"
                             }
                           ]
+                        },
+                        "indices": {
+                          "type": "object",
+                          "properties": {
+                            "evi": {
+                              "anyOf": [
+                                {
+                                  "type": "object",
+                                  "properties": {
+                                    "mean": {
+                                      "anyOf": [
+                                        {
+                                          "type": "number",
+                                          "minimum": -2,
+                                          "maximum": 2
+                                        },
+                                        {
+                                          "type": "null"
+                                        }
+                                      ]
+                                    },
+                                    "median": {
+                                      "anyOf": [
+                                        {
+                                          "type": "number",
+                                          "minimum": -2,
+                                          "maximum": 2
+                                        },
+                                        {
+                                          "type": "null"
+                                        }
+                                      ]
+                                    },
+                                    "p10": {
+                                      "anyOf": [
+                                        {
+                                          "type": "number",
+                                          "minimum": -2,
+                                          "maximum": 2
+                                        },
+                                        {
+                                          "type": "null"
+                                        }
+                                      ]
+                                    },
+                                    "p90": {
+                                      "anyOf": [
+                                        {
+                                          "type": "number",
+                                          "minimum": -2,
+                                          "maximum": 2
+                                        },
+                                        {
+                                          "type": "null"
+                                        }
+                                      ]
+                                    }
+                                  },
+                                  "required": [
+                                    "mean",
+                                    "median",
+                                    "p10",
+                                    "p90"
+                                  ],
+                                  "additionalProperties": false
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            "ndre": {
+                              "anyOf": [
+                                {
+                                  "type": "object",
+                                  "properties": {
+                                    "mean": {
+                                      "anyOf": [
+                                        {
+                                          "type": "number",
+                                          "minimum": -2,
+                                          "maximum": 2
+                                        },
+                                        {
+                                          "type": "null"
+                                        }
+                                      ]
+                                    },
+                                    "median": {
+                                      "anyOf": [
+                                        {
+                                          "type": "number",
+                                          "minimum": -2,
+                                          "maximum": 2
+                                        },
+                                        {
+                                          "type": "null"
+                                        }
+                                      ]
+                                    },
+                                    "p10": {
+                                      "anyOf": [
+                                        {
+                                          "type": "number",
+                                          "minimum": -2,
+                                          "maximum": 2
+                                        },
+                                        {
+                                          "type": "null"
+                                        }
+                                      ]
+                                    },
+                                    "p90": {
+                                      "anyOf": [
+                                        {
+                                          "type": "number",
+                                          "minimum": -2,
+                                          "maximum": 2
+                                        },
+                                        {
+                                          "type": "null"
+                                        }
+                                      ]
+                                    }
+                                  },
+                                  "required": [
+                                    "mean",
+                                    "median",
+                                    "p10",
+                                    "p90"
+                                  ],
+                                  "additionalProperties": false
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            "gndvi": {
+                              "anyOf": [
+                                {
+                                  "type": "object",
+                                  "properties": {
+                                    "mean": {
+                                      "anyOf": [
+                                        {
+                                          "type": "number",
+                                          "minimum": -2,
+                                          "maximum": 2
+                                        },
+                                        {
+                                          "type": "null"
+                                        }
+                                      ]
+                                    },
+                                    "median": {
+                                      "anyOf": [
+                                        {
+                                          "type": "number",
+                                          "minimum": -2,
+                                          "maximum": 2
+                                        },
+                                        {
+                                          "type": "null"
+                                        }
+                                      ]
+                                    },
+                                    "p10": {
+                                      "anyOf": [
+                                        {
+                                          "type": "number",
+                                          "minimum": -2,
+                                          "maximum": 2
+                                        },
+                                        {
+                                          "type": "null"
+                                        }
+                                      ]
+                                    },
+                                    "p90": {
+                                      "anyOf": [
+                                        {
+                                          "type": "number",
+                                          "minimum": -2,
+                                          "maximum": 2
+                                        },
+                                        {
+                                          "type": "null"
+                                        }
+                                      ]
+                                    }
+                                  },
+                                  "required": [
+                                    "mean",
+                                    "median",
+                                    "p10",
+                                    "p90"
+                                  ],
+                                  "additionalProperties": false
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            "savi": {
+                              "anyOf": [
+                                {
+                                  "type": "object",
+                                  "properties": {
+                                    "mean": {
+                                      "anyOf": [
+                                        {
+                                          "type": "number",
+                                          "minimum": -2,
+                                          "maximum": 2
+                                        },
+                                        {
+                                          "type": "null"
+                                        }
+                                      ]
+                                    },
+                                    "median": {
+                                      "anyOf": [
+                                        {
+                                          "type": "number",
+                                          "minimum": -2,
+                                          "maximum": 2
+                                        },
+                                        {
+                                          "type": "null"
+                                        }
+                                      ]
+                                    },
+                                    "p10": {
+                                      "anyOf": [
+                                        {
+                                          "type": "number",
+                                          "minimum": -2,
+                                          "maximum": 2
+                                        },
+                                        {
+                                          "type": "null"
+                                        }
+                                      ]
+                                    },
+                                    "p90": {
+                                      "anyOf": [
+                                        {
+                                          "type": "number",
+                                          "minimum": -2,
+                                          "maximum": 2
+                                        },
+                                        {
+                                          "type": "null"
+                                        }
+                                      ]
+                                    }
+                                  },
+                                  "required": [
+                                    "mean",
+                                    "median",
+                                    "p10",
+                                    "p90"
+                                  ],
+                                  "additionalProperties": false
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            "ndmi": {
+                              "anyOf": [
+                                {
+                                  "type": "object",
+                                  "properties": {
+                                    "mean": {
+                                      "anyOf": [
+                                        {
+                                          "type": "number",
+                                          "minimum": -2,
+                                          "maximum": 2
+                                        },
+                                        {
+                                          "type": "null"
+                                        }
+                                      ]
+                                    },
+                                    "median": {
+                                      "anyOf": [
+                                        {
+                                          "type": "number",
+                                          "minimum": -2,
+                                          "maximum": 2
+                                        },
+                                        {
+                                          "type": "null"
+                                        }
+                                      ]
+                                    },
+                                    "p10": {
+                                      "anyOf": [
+                                        {
+                                          "type": "number",
+                                          "minimum": -2,
+                                          "maximum": 2
+                                        },
+                                        {
+                                          "type": "null"
+                                        }
+                                      ]
+                                    },
+                                    "p90": {
+                                      "anyOf": [
+                                        {
+                                          "type": "number",
+                                          "minimum": -2,
+                                          "maximum": 2
+                                        },
+                                        {
+                                          "type": "null"
+                                        }
+                                      ]
+                                    }
+                                  },
+                                  "required": [
+                                    "mean",
+                                    "median",
+                                    "p10",
+                                    "p90"
+                                  ],
+                                  "additionalProperties": false
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            "lswi": {
+                              "anyOf": [
+                                {
+                                  "type": "object",
+                                  "properties": {
+                                    "mean": {
+                                      "anyOf": [
+                                        {
+                                          "type": "number",
+                                          "minimum": -2,
+                                          "maximum": 2
+                                        },
+                                        {
+                                          "type": "null"
+                                        }
+                                      ]
+                                    },
+                                    "median": {
+                                      "anyOf": [
+                                        {
+                                          "type": "number",
+                                          "minimum": -2,
+                                          "maximum": 2
+                                        },
+                                        {
+                                          "type": "null"
+                                        }
+                                      ]
+                                    },
+                                    "p10": {
+                                      "anyOf": [
+                                        {
+                                          "type": "number",
+                                          "minimum": -2,
+                                          "maximum": 2
+                                        },
+                                        {
+                                          "type": "null"
+                                        }
+                                      ]
+                                    },
+                                    "p90": {
+                                      "anyOf": [
+                                        {
+                                          "type": "number",
+                                          "minimum": -2,
+                                          "maximum": 2
+                                        },
+                                        {
+                                          "type": "null"
+                                        }
+                                      ]
+                                    }
+                                  },
+                                  "required": [
+                                    "mean",
+                                    "median",
+                                    "p10",
+                                    "p90"
+                                  ],
+                                  "additionalProperties": false
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            "ndwi": {
+                              "anyOf": [
+                                {
+                                  "type": "object",
+                                  "properties": {
+                                    "mean": {
+                                      "anyOf": [
+                                        {
+                                          "type": "number",
+                                          "minimum": -2,
+                                          "maximum": 2
+                                        },
+                                        {
+                                          "type": "null"
+                                        }
+                                      ]
+                                    },
+                                    "median": {
+                                      "anyOf": [
+                                        {
+                                          "type": "number",
+                                          "minimum": -2,
+                                          "maximum": 2
+                                        },
+                                        {
+                                          "type": "null"
+                                        }
+                                      ]
+                                    },
+                                    "p10": {
+                                      "anyOf": [
+                                        {
+                                          "type": "number",
+                                          "minimum": -2,
+                                          "maximum": 2
+                                        },
+                                        {
+                                          "type": "null"
+                                        }
+                                      ]
+                                    },
+                                    "p90": {
+                                      "anyOf": [
+                                        {
+                                          "type": "number",
+                                          "minimum": -2,
+                                          "maximum": 2
+                                        },
+                                        {
+                                          "type": "null"
+                                        }
+                                      ]
+                                    }
+                                  },
+                                  "required": [
+                                    "mean",
+                                    "median",
+                                    "p10",
+                                    "p90"
+                                  ],
+                                  "additionalProperties": false
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            }
+                          },
+                          "required": [
+                            "evi",
+                            "ndre",
+                            "gndvi",
+                            "savi",
+                            "ndmi",
+                            "lswi",
+                            "ndwi"
+                          ],
+                          "additionalProperties": false
                         }
                       },
                       "required": [
@@ -1204,6 +2656,490 @@
                                   "type": "null"
                                 }
                               ]
+                            },
+                            "indices": {
+                              "type": "object",
+                              "properties": {
+                                "evi": {
+                                  "anyOf": [
+                                    {
+                                      "type": "object",
+                                      "properties": {
+                                        "mean": {
+                                          "anyOf": [
+                                            {
+                                              "type": "number",
+                                              "minimum": -2,
+                                              "maximum": 2
+                                            },
+                                            {
+                                              "type": "null"
+                                            }
+                                          ]
+                                        },
+                                        "median": {
+                                          "anyOf": [
+                                            {
+                                              "type": "number",
+                                              "minimum": -2,
+                                              "maximum": 2
+                                            },
+                                            {
+                                              "type": "null"
+                                            }
+                                          ]
+                                        },
+                                        "p10": {
+                                          "anyOf": [
+                                            {
+                                              "type": "number",
+                                              "minimum": -2,
+                                              "maximum": 2
+                                            },
+                                            {
+                                              "type": "null"
+                                            }
+                                          ]
+                                        },
+                                        "p90": {
+                                          "anyOf": [
+                                            {
+                                              "type": "number",
+                                              "minimum": -2,
+                                              "maximum": 2
+                                            },
+                                            {
+                                              "type": "null"
+                                            }
+                                          ]
+                                        }
+                                      },
+                                      "required": [
+                                        "mean",
+                                        "median",
+                                        "p10",
+                                        "p90"
+                                      ],
+                                      "additionalProperties": false
+                                    },
+                                    {
+                                      "type": "null"
+                                    }
+                                  ]
+                                },
+                                "ndre": {
+                                  "anyOf": [
+                                    {
+                                      "type": "object",
+                                      "properties": {
+                                        "mean": {
+                                          "anyOf": [
+                                            {
+                                              "type": "number",
+                                              "minimum": -2,
+                                              "maximum": 2
+                                            },
+                                            {
+                                              "type": "null"
+                                            }
+                                          ]
+                                        },
+                                        "median": {
+                                          "anyOf": [
+                                            {
+                                              "type": "number",
+                                              "minimum": -2,
+                                              "maximum": 2
+                                            },
+                                            {
+                                              "type": "null"
+                                            }
+                                          ]
+                                        },
+                                        "p10": {
+                                          "anyOf": [
+                                            {
+                                              "type": "number",
+                                              "minimum": -2,
+                                              "maximum": 2
+                                            },
+                                            {
+                                              "type": "null"
+                                            }
+                                          ]
+                                        },
+                                        "p90": {
+                                          "anyOf": [
+                                            {
+                                              "type": "number",
+                                              "minimum": -2,
+                                              "maximum": 2
+                                            },
+                                            {
+                                              "type": "null"
+                                            }
+                                          ]
+                                        }
+                                      },
+                                      "required": [
+                                        "mean",
+                                        "median",
+                                        "p10",
+                                        "p90"
+                                      ],
+                                      "additionalProperties": false
+                                    },
+                                    {
+                                      "type": "null"
+                                    }
+                                  ]
+                                },
+                                "gndvi": {
+                                  "anyOf": [
+                                    {
+                                      "type": "object",
+                                      "properties": {
+                                        "mean": {
+                                          "anyOf": [
+                                            {
+                                              "type": "number",
+                                              "minimum": -2,
+                                              "maximum": 2
+                                            },
+                                            {
+                                              "type": "null"
+                                            }
+                                          ]
+                                        },
+                                        "median": {
+                                          "anyOf": [
+                                            {
+                                              "type": "number",
+                                              "minimum": -2,
+                                              "maximum": 2
+                                            },
+                                            {
+                                              "type": "null"
+                                            }
+                                          ]
+                                        },
+                                        "p10": {
+                                          "anyOf": [
+                                            {
+                                              "type": "number",
+                                              "minimum": -2,
+                                              "maximum": 2
+                                            },
+                                            {
+                                              "type": "null"
+                                            }
+                                          ]
+                                        },
+                                        "p90": {
+                                          "anyOf": [
+                                            {
+                                              "type": "number",
+                                              "minimum": -2,
+                                              "maximum": 2
+                                            },
+                                            {
+                                              "type": "null"
+                                            }
+                                          ]
+                                        }
+                                      },
+                                      "required": [
+                                        "mean",
+                                        "median",
+                                        "p10",
+                                        "p90"
+                                      ],
+                                      "additionalProperties": false
+                                    },
+                                    {
+                                      "type": "null"
+                                    }
+                                  ]
+                                },
+                                "savi": {
+                                  "anyOf": [
+                                    {
+                                      "type": "object",
+                                      "properties": {
+                                        "mean": {
+                                          "anyOf": [
+                                            {
+                                              "type": "number",
+                                              "minimum": -2,
+                                              "maximum": 2
+                                            },
+                                            {
+                                              "type": "null"
+                                            }
+                                          ]
+                                        },
+                                        "median": {
+                                          "anyOf": [
+                                            {
+                                              "type": "number",
+                                              "minimum": -2,
+                                              "maximum": 2
+                                            },
+                                            {
+                                              "type": "null"
+                                            }
+                                          ]
+                                        },
+                                        "p10": {
+                                          "anyOf": [
+                                            {
+                                              "type": "number",
+                                              "minimum": -2,
+                                              "maximum": 2
+                                            },
+                                            {
+                                              "type": "null"
+                                            }
+                                          ]
+                                        },
+                                        "p90": {
+                                          "anyOf": [
+                                            {
+                                              "type": "number",
+                                              "minimum": -2,
+                                              "maximum": 2
+                                            },
+                                            {
+                                              "type": "null"
+                                            }
+                                          ]
+                                        }
+                                      },
+                                      "required": [
+                                        "mean",
+                                        "median",
+                                        "p10",
+                                        "p90"
+                                      ],
+                                      "additionalProperties": false
+                                    },
+                                    {
+                                      "type": "null"
+                                    }
+                                  ]
+                                },
+                                "ndmi": {
+                                  "anyOf": [
+                                    {
+                                      "type": "object",
+                                      "properties": {
+                                        "mean": {
+                                          "anyOf": [
+                                            {
+                                              "type": "number",
+                                              "minimum": -2,
+                                              "maximum": 2
+                                            },
+                                            {
+                                              "type": "null"
+                                            }
+                                          ]
+                                        },
+                                        "median": {
+                                          "anyOf": [
+                                            {
+                                              "type": "number",
+                                              "minimum": -2,
+                                              "maximum": 2
+                                            },
+                                            {
+                                              "type": "null"
+                                            }
+                                          ]
+                                        },
+                                        "p10": {
+                                          "anyOf": [
+                                            {
+                                              "type": "number",
+                                              "minimum": -2,
+                                              "maximum": 2
+                                            },
+                                            {
+                                              "type": "null"
+                                            }
+                                          ]
+                                        },
+                                        "p90": {
+                                          "anyOf": [
+                                            {
+                                              "type": "number",
+                                              "minimum": -2,
+                                              "maximum": 2
+                                            },
+                                            {
+                                              "type": "null"
+                                            }
+                                          ]
+                                        }
+                                      },
+                                      "required": [
+                                        "mean",
+                                        "median",
+                                        "p10",
+                                        "p90"
+                                      ],
+                                      "additionalProperties": false
+                                    },
+                                    {
+                                      "type": "null"
+                                    }
+                                  ]
+                                },
+                                "lswi": {
+                                  "anyOf": [
+                                    {
+                                      "type": "object",
+                                      "properties": {
+                                        "mean": {
+                                          "anyOf": [
+                                            {
+                                              "type": "number",
+                                              "minimum": -2,
+                                              "maximum": 2
+                                            },
+                                            {
+                                              "type": "null"
+                                            }
+                                          ]
+                                        },
+                                        "median": {
+                                          "anyOf": [
+                                            {
+                                              "type": "number",
+                                              "minimum": -2,
+                                              "maximum": 2
+                                            },
+                                            {
+                                              "type": "null"
+                                            }
+                                          ]
+                                        },
+                                        "p10": {
+                                          "anyOf": [
+                                            {
+                                              "type": "number",
+                                              "minimum": -2,
+                                              "maximum": 2
+                                            },
+                                            {
+                                              "type": "null"
+                                            }
+                                          ]
+                                        },
+                                        "p90": {
+                                          "anyOf": [
+                                            {
+                                              "type": "number",
+                                              "minimum": -2,
+                                              "maximum": 2
+                                            },
+                                            {
+                                              "type": "null"
+                                            }
+                                          ]
+                                        }
+                                      },
+                                      "required": [
+                                        "mean",
+                                        "median",
+                                        "p10",
+                                        "p90"
+                                      ],
+                                      "additionalProperties": false
+                                    },
+                                    {
+                                      "type": "null"
+                                    }
+                                  ]
+                                },
+                                "ndwi": {
+                                  "anyOf": [
+                                    {
+                                      "type": "object",
+                                      "properties": {
+                                        "mean": {
+                                          "anyOf": [
+                                            {
+                                              "type": "number",
+                                              "minimum": -2,
+                                              "maximum": 2
+                                            },
+                                            {
+                                              "type": "null"
+                                            }
+                                          ]
+                                        },
+                                        "median": {
+                                          "anyOf": [
+                                            {
+                                              "type": "number",
+                                              "minimum": -2,
+                                              "maximum": 2
+                                            },
+                                            {
+                                              "type": "null"
+                                            }
+                                          ]
+                                        },
+                                        "p10": {
+                                          "anyOf": [
+                                            {
+                                              "type": "number",
+                                              "minimum": -2,
+                                              "maximum": 2
+                                            },
+                                            {
+                                              "type": "null"
+                                            }
+                                          ]
+                                        },
+                                        "p90": {
+                                          "anyOf": [
+                                            {
+                                              "type": "number",
+                                              "minimum": -2,
+                                              "maximum": 2
+                                            },
+                                            {
+                                              "type": "null"
+                                            }
+                                          ]
+                                        }
+                                      },
+                                      "required": [
+                                        "mean",
+                                        "median",
+                                        "p10",
+                                        "p90"
+                                      ],
+                                      "additionalProperties": false
+                                    },
+                                    {
+                                      "type": "null"
+                                    }
+                                  ]
+                                }
+                              },
+                              "required": [
+                                "evi",
+                                "ndre",
+                                "gndvi",
+                                "savi",
+                                "ndmi",
+                                "lswi",
+                                "ndwi"
+                              ],
+                              "additionalProperties": false
                             }
                           },
                           "required": [
@@ -1250,6 +3186,9 @@
               "type": "object",
               "properties": {
                 "version": {
+                  "type": "string"
+                },
+                "indexMethodVersion": {
                   "type": "string"
                 },
                 "sclClassesKept": {
@@ -1719,7 +3658,8 @@
               "weather",
               "price",
               "market_event",
-              "crop_threat"
+              "crop_threat",
+              "satellite"
             ]
           },
           "severity": {
@@ -2438,6 +4378,329 @@
             "origin",
             "generatedAt",
             "modelInvocation"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "indexStage": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "status": {
+              "type": "string",
+              "enum": [
+                "available",
+                "insufficient",
+                "unavailable"
+              ]
+            },
+            "reason": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 120
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "index": {
+              "type": "string",
+              "const": "ndvi"
+            },
+            "asOf": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date",
+                  "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "phase": {
+              "type": "string",
+              "enum": [
+                "bare",
+                "green_up",
+                "rising",
+                "plateau",
+                "falling",
+                "harvested",
+                "unknown"
+              ]
+            },
+            "greenUpDate": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date",
+                  "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "peakDate": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date",
+                  "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "peakValue": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "troughDate": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date",
+                  "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "troughValue": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "latestSmoothed": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "change15d": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "noise": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "changeThreshold": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "readingsUsed": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            "window": {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "from": {
+                      "type": "string",
+                      "format": "date",
+                      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+                    },
+                    "to": {
+                      "type": "string",
+                      "format": "date",
+                      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+                    }
+                  },
+                  "required": [
+                    "from",
+                    "to"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "calendarStage": {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "name": {
+                      "type": "string",
+                      "maxLength": 80
+                    },
+                    "from": {
+                      "type": "string",
+                      "format": "date",
+                      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+                    },
+                    "to": {
+                      "type": "string",
+                      "format": "date",
+                      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "name",
+                    "from",
+                    "to"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "agreement": {
+              "type": "string",
+              "enum": [
+                "consistent",
+                "curve_earlier",
+                "curve_later",
+                "no_calendar",
+                "unknown"
+              ]
+            },
+            "summary": {
+              "type": "string",
+              "maxLength": 300
+            },
+            "basis": {
+              "type": "object",
+              "properties": {
+                "kind": {
+                  "type": "string",
+                  "enum": [
+                    "price_history",
+                    "yield_reference",
+                    "cost_reference",
+                    "sowing_window",
+                    "duration",
+                    "rotation",
+                    "water",
+                    "soil",
+                    "ndvi",
+                    "climatology",
+                    "model"
+                  ]
+                },
+                "label": {
+                  "type": "string",
+                  "maxLength": 200
+                },
+                "sourceId": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "maxLength": 200
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "url": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "format": "uri"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "scope": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "maxLength": 120
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "note": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "maxLength": 1000
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              },
+              "required": [
+                "kind",
+                "label",
+                "sourceId",
+                "url",
+                "scope",
+                "note"
+              ],
+              "additionalProperties": false
+            },
+            "limitations": {
+              "maxItems": 10,
+              "type": "array",
+              "items": {
+                "type": "string",
+                "maxLength": 400
+              }
+            }
+          },
+          "required": [
+            "status",
+            "reason",
+            "index",
+            "asOf",
+            "phase",
+            "greenUpDate",
+            "peakDate",
+            "peakValue",
+            "troughDate",
+            "troughValue",
+            "latestSmoothed",
+            "change15d",
+            "noise",
+            "changeThreshold",
+            "readingsUsed",
+            "window",
+            "calendarStage",
+            "agreement",
+            "summary",
+            "basis",
+            "limitations"
           ],
           "additionalProperties": false
         },

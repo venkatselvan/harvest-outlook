@@ -11,6 +11,29 @@ const isoDate = z.iso.date();
 
 export const NdviRejection = z.enum(['no_pixels', 'implausible_band_values', 'insufficient_clear_pixels', 'low_clear_fraction']);
 
+/**
+ * Spectral indices beyond NDVI (open-source comparison, 2026-11-01; docs/research/OPEN_SOURCE_COMPARISON.md section 1).
+ * Each is computed in code over the same clear pixels as NDVI, from offset-corrected L2A digital numbers scaled to
+ * reflectance. Formulas (Sentinel-2 band names; L2A reflectance): EVI 2.5 (B8 - B4) / (B8 + 6 B4 - 7.5 B2 + 1);
+ * NDRE (B8 - B5) / (B8 + B5); GNDVI (B8 - B3) / (B8 + B3); SAVI 1.5 (B8 - B4) / (B8 + B4 + 0.5); NDMI (B8 - B11) / (B8 + B11);
+ * LSWI (B8A - B11) / (B8A + B11); NDWI (McFeeters) (B3 - B8) / (B3 + B8). B5, B8A and B11 are 20 m bands resampled to the 10 m grid.
+ */
+export const IndexId = z.enum(['evi', 'ndre', 'gndvi', 'savi', 'ndmi', 'lswi', 'ndwi']);
+export const INDEX_IDS = IndexId.options;
+const indexValue = z.number().min(-2).max(2);
+/** Summary of one index over the clear pixels of one scene. Null statistics mean no clear pixel survived the mask. */
+export const IndexSummary = z.object({
+  mean: indexValue.nullable(),
+  median: indexValue.nullable(),
+  p10: indexValue.nullable(),
+  p90: indexValue.nullable(),
+}).strict();
+/** One summary per index. A whole index is null when a band it needs was not returned for the scene. */
+export const IndexSummaries = z.object({
+  evi: IndexSummary.nullable(), ndre: IndexSummary.nullable(), gndvi: IndexSummary.nullable(), savi: IndexSummary.nullable(),
+  ndmi: IndexSummary.nullable(), lswi: IndexSummary.nullable(), ndwi: IndexSummary.nullable(),
+}).strict();
+
 /** Pixel statistics over the clear pixels of one scene. Null statistics mean no clear pixel survived the mask. */
 export const NdviStats = z.object({
   mean: ndvi.nullable(),
@@ -26,6 +49,8 @@ export const NdviStats = z.object({
   b04P95: z.number().min(0).nullable(),
   usable: z.boolean(),
   rejection: NdviRejection.nullable(),
+  /** Added 2026-11-01: the other spectral indices over the same clear pixels. Absent on rows analysed before the indices existed; such rows are re-analysed. */
+  indices: IndexSummaries.optional(),
 }).strict();
 
 export const NdviReading = z.object({
@@ -63,6 +88,8 @@ export const NdviSeries = z.object({
   latestUsable: NdviReading.nullable(),
   method: z.object({
     version: z.string(),
+    /** Version of the index formulas and scaling. Stored rows are re-analysed when they lack `indices`; a later formula change would need a stored marker as well. */
+    indexMethodVersion: z.string().optional(),
     sclClassesKept: z.array(z.number().int().min(0).max(11)),
     minClearFraction: fraction,
     minClearPixels: z.number().int(),
@@ -92,6 +119,9 @@ export const NeighbourhoodSeasonality = z.object({
   limitations: z.array(z.string().max(400)).max(20),
 }).strict();
 
+export type IndexId = z.infer<typeof IndexId>;
+export type IndexSummary = z.infer<typeof IndexSummary>;
+export type IndexSummaries = z.infer<typeof IndexSummaries>;
 export type NdviRejection = z.infer<typeof NdviRejection>;
 export type NdviStats = z.infer<typeof NdviStats>;
 export type NdviReading = z.infer<typeof NdviReading>;

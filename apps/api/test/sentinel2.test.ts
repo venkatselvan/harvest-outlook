@@ -1,12 +1,12 @@
 import {readFileSync} from 'node:fs';
 import {resolve} from 'node:path';
 import {describe, expect, it} from 'vitest';
-import {NdviStats} from '@harvest/contracts';
+import {INDEX_IDS, IndexSummaries, NdviStats, type IndexSummary} from '@harvest/contracts';
 import {
-  PC_ORIGIN, bandStack, baselineOffset, bboxAreaKm2, bufferBbox, listScenes, ndviStats, neighbourhoodBands, parseNpy, polygonBands, prepareRing, renderScene,
-  type Sentinel2Fetch,
+  FEATURE_ASSETS, PC_ORIGIN, bandStack, baselineOffset, bboxAreaKm2, bufferBbox, indexStats, listScenes, ndviStats, neighbourhoodBands, parseNpy, polygonBands, prepareRing, renderScene,
+  type BandArrays, type FeatureAsset, type Sentinel2Fetch,
 } from '../src/providers/sentinel2';
-import {fakePlanetary, makeNpy, sceneStack} from './fixtures/sentinel2/fake-provider';
+import {STACK_BANDS, bandIndex, fakePlanetary, makeNpy, sceneStack} from './fixtures/sentinel2/fake-provider';
 
 const fixture = (name: string) => new Uint8Array(readFileSync(resolve(import.meta.dirname, 'fixtures/sentinel2', name)));
 const HA_RING = [[76.2495, 13.2495], [76.2505, 13.2495], [76.2505, 13.2505], [76.2495, 13.2505], [76.2495, 13.2495]];
@@ -50,10 +50,24 @@ describe('npy parser', () => {
     const longer = new Uint8Array(good.length + 2); longer.set(good);
     expect(() => parseNpy(longer)).toThrow('npy_length_mismatch');
   });
-  it('accepts only a (4, H, W) uint16 stack as band input', () => {
+  it('accepts only a (9, H, W) or legacy (4, H, W) uint16 stack as band input', () => {
     expect(bandStack(parseNpy(makeNpy([3, 2, 2], new Array(12).fill(1))))).toBeNull();
+    expect(bandStack(parseNpy(makeNpy([8, 2, 2], new Array(32).fill(1))))).toBeNull();
     expect(bandStack(parseNpy(makeNpy([4, 2, 2], new Array(16).fill(1), {descr: '<f4'})))).toBeNull();
+    expect(bandStack(parseNpy(makeNpy([9, 2, 2], new Array(36).fill(1), {descr: '<f4'})))).toBeNull();
     expect(bandStack(parseNpy(makeNpy([4, 2, 2], new Array(16).fill(1))))).not.toBeNull();
+    const nine = bandStack(parseNpy(makeNpy([9, 1, 2], Array.from({length: 18}, (_, i) => i))))!;
+    // FEATURE_ASSETS order, then the mask: band j holds the values 2j, 2j + 1.
+    expect([nine.b02, nine.b03, nine.b04, nine.b05, nine.b08, nine.b8a, nine.b11, nine.scl, nine.mask].map((b) => Array.from(b!))).toEqual(Array.from({length: 9}, (_, j) => [2 * j, 2 * j + 1]));
+  });
+  it('parses the real 9-band capture (<u2, (9, 11, 11)) whose B04, B08, SCL and mask equal the 4-band capture', () => {
+    const nine = parseNpy(fixture('good-20261027-1ha-9band.npy'));
+    expect(nine.shape).toEqual([9, 11, 11]);
+    const a = bandStack(nine)!, b = bandStack(parseNpy(fixture('good-20261027-1ha.npy')))!;
+    for (const k of ['b04', 'b08', 'scl', 'mask'] as const) expect(Array.from(a[k])).toEqual(Array.from(b[k]));
+    // The 20 m bands arrive resampled onto the 10 m grid: about 25 distinct values over 121 pixels.
+    for (const k of ['b05', 'b8a', 'b11'] as const) expect(new Set(Array.from(a[k]!)).size).toBeLessThanOrEqual(25);
+    expect(new Set(Array.from(a.b04)).size).toBeGreaterThan(90);
   });
 });
 
@@ -94,9 +108,9 @@ describe('radiometry and masking', () => {
   });
   it('ignores pixels outside the polygon mask and raw zero (no data) bands', () => {
     const px = 20, d = sceneStack({ndvi: 0.5}, 1, px);
-    for (let i = 0; i < 5; i++) d[3 * px + i] = 0; // outside the polygon
-    d[px + 10] = 0; // B08 no data
-    const s = ndviStats(bandStack({dtype: 'u2', shape: [4, 1, px], data: d})!, 1000);
+    for (let i = 0; i < 5; i++) d[bandIndex('mask') * px + i] = 0; // outside the polygon
+    d[bandIndex('B08') * px + 10] = 0; // B08 no data
+    const s = ndviStats(bandStack({dtype: 'u2', shape: [STACK_BANDS, 1, px], data: d})!, 1000);
     expect(s.totalPixels).toBe(15);
     expect(s.clearPixels).toBe(14);
     expect(s.mean).toBeCloseTo(0.5, 3);
@@ -107,20 +121,143 @@ describe('radiometry and masking', () => {
     expect(real.rejection).toBe('implausible_band_values');
     expect(real.b04P95).toBeCloseTo(242.05, 0);
     // Even without the offset (which would otherwise zero every pixel) the guard still rejects it.
-    const generated = ndviStats(bandStack({dtype: 'u2', shape: [4, 10, 10], data: sceneStack('bad', 10, 10)})!, 0);
+    const generated = ndviStats(bandStack({dtype: 'u2', shape: [STACK_BANDS, 10, 10], data: sceneStack('bad', 10, 10)})!, 0);
     expect(generated.clearPixels).toBeGreaterThan(8);
     expect(generated.rejection).toBe('implausible_band_values');
   });
   it('requires a 0.6 clear fraction and at least 8 clear pixels', () => {
     const mixed = (clear: number, cloud: number) => {
       const px = clear + cloud, d = sceneStack({ndvi: 0.6}, 1, px);
-      for (let i = clear; i < px; i++) d[2 * px + i] = 9;
-      return ndviStats(bandStack({dtype: 'u2', shape: [4, 1, px], data: d})!, 1000);
+      for (let i = clear; i < px; i++) d[bandIndex('SCL') * px + i] = 9;
+      return ndviStats(bandStack({dtype: 'u2', shape: [STACK_BANDS, 1, px], data: d})!, 1000);
     };
     expect(mixed(12, 8)).toMatchObject({clearFraction: 0.6, usable: true});
     expect(mixed(11, 9)).toMatchObject({rejection: 'low_clear_fraction', usable: false});
     expect(mixed(7, 0)).toMatchObject({rejection: 'insufficient_clear_pixels', usable: false});
     expect(mixed(0, 10)).toMatchObject({mean: null, median: null, usable: false});
+  });
+});
+
+/** One pixel: reflectance per band (raw DN = round(rho x 10000) + offset; undefined = raw 0, no data), SCL (default 4) and mask. */
+type Spectral = Exclude<FeatureAsset, 'SCL'>;
+type Px = {[K in Lowercase<Spectral>]?: number | undefined} & {scl?: number; mask?: number};
+function pixels(list: Px[], offset = 1000): BandArrays {
+  const px = list.length, d = new Uint16Array(STACK_BANDS * px);
+  list.forEach((p, i) => {
+    for (const a of FEATURE_ASSETS) {
+      if (a === 'SCL') continue;
+      const rho = p[a.toLowerCase() as Lowercase<Spectral>];
+      d[bandIndex(a) * px + i] = rho === undefined ? 0 : Math.round(rho * 1e4) + offset;
+    }
+    d[bandIndex('SCL') * px + i] = p.scl ?? 4; d[bandIndex('mask') * px + i] = p.mask ?? 255;
+  });
+  return bandStack({dtype: 'u2', shape: [STACK_BANDS, 1, px], data: d})!;
+}
+const one = (v: number): IndexSummary => ({mean: v, median: v, p10: v, p90: v});
+const NONE: IndexSummary = {mean: null, median: null, p10: null, p90: null};
+const GREEN = {b02: 0.05, b03: 0.12, b04: 0.10, b05: 0.22, b08: 0.42, b8a: 0.44, b11: 0.25};
+
+describe('spectral indices', () => {
+  it('matches hand-computed values for all seven formulas on one pixel, with and without the +1000 offset', () => {
+    // EVI 2.5 x 0.32 / (0.42 + 0.6 - 0.375 + 1) = 0.8 / 1.645 = 0.48632; NDRE 0.20 / 0.64 = 0.3125; GNDVI 0.30 / 0.54 = 0.55556;
+    // SAVI 1.5 x 0.32 / 1.02 = 0.47059; NDMI 0.17 / 0.67 = 0.25373; LSWI 0.19 / 0.69 = 0.27536; NDWI -0.30 / 0.54 = -0.55556.
+    const expected = {evi: one(0.4863), ndre: one(0.3125), gndvi: one(0.5556), savi: one(0.4706), ndmi: one(0.2537), lswi: one(0.2754), ndwi: one(-0.5556)};
+    for (const offset of [1000, 0]) {
+      const bands = pixels([GREEN], offset);
+      expect(indexStats(bands, offset)).toEqual(expected);
+      const s = ndviStats(bands, offset);
+      expect(s.indices).toEqual(expected);
+      expect(s.mean).toBe(0.6154); // NDVI 0.32 / 0.52, unchanged by the indices
+      expect(NdviStats.parse(s)).toEqual(s);
+    }
+  });
+  it('uses only NDVI clear pixels: masked, cloud, shadow and other dropped SCL classes never reach an index', () => {
+    const cloudLike = {...GREEN, b03: 0.30, b05: 0.40, b11: 0.35};
+    const list: Px[] = Array.from({length: 12}, (_, cls) => ({...([4, 5, 6, 7].includes(cls) ? GREEN : cloudLike), scl: cls}));
+    list.push({...cloudLike, mask: 0}); // outside the polygon
+    list.push({...cloudLike, b04: 0.0, b08: 0.015}); // n + r = 150 DN after the offset: not clear for NDVI, so not for any index
+    const s = indexStats(pixels(list), 1000);
+    expect(s.gndvi).toEqual(one(0.5556));
+    expect(s.ndre).toEqual(one(0.3125));
+    expect(s.ndmi).toEqual(one(0.2537));
+  });
+  it('skips a pixel for an index when a raw band it needs is zero (no data), leaving the other indices', () => {
+    const s = indexStats(pixels([GREEN, {...GREEN, b11: undefined}, {...GREEN, b02: undefined}, {...GREEN, b03: 0.30}]), 1000);
+    expect(s.ndmi).toEqual(one(0.2537)); // the B11-less pixel is skipped for NDMI and LSWI ...
+    expect(s.lswi).toEqual(one(0.2754));
+    expect(s.evi).toEqual(one(0.4863)); // ... the B02-less pixel only for EVI
+    // GNDVI: three pixels at 0.30 / 0.54 and pixel 4 at (0.42 - 0.30) / 0.72; p10 interpolates 30% of the way from the lowest.
+    const g = 0.3 / 0.54, g4 = 0.12 / 0.72;
+    expect(s.gndvi).toEqual({mean: Math.round(((3 * g + g4) / 4) * 1e4) / 1e4, median: 0.5556, p10: Math.round((g4 + (g - g4) * 0.3) * 1e4) / 1e4, p90: 0.5556});
+  });
+  it('drops normalised differences at or below 200 DN (0.02 reflectance) and keeps 201 DN', () => {
+    // B04 150 + B08 100 DN = 250 DN: clear for NDVI. B08 + B11 = 150 and B8A + B11 = 150 DN: NDMI and LSWI skipped.
+    const dark = {b02: 0.003, b03: 0.01, b04: 0.015, b05: 0.0101, b08: 0.01, b8a: 0.01, b11: 0.005};
+    const s = indexStats(pixels([dark]), 1000);
+    expect(s.ndmi).toEqual(NONE);
+    expect(s.lswi).toEqual(NONE);
+    expect(s.gndvi).toEqual(NONE); // B08 + B03 = 200 DN exactly: skipped
+    expect(s.ndwi).toEqual(NONE);
+    expect(s.ndre).toEqual(one(-0.005)); // B08 + B05 = 201 DN: kept, (100 - 101) / 201
+    expect(s.savi!.mean).toBeCloseTo((1.5 * (0.01 - 0.015)) / 0.525, 4); // SAVI has no guard: denominator >= 0.5
+  });
+  it('skips EVI when its denominator is below 0.1 (zero, negative or small) and clamps the rest to [-2, 2]', () => {
+    // NIR 0.2, red 0.05: 0.2 + 0.3 + 1 = 1.5, so blue 0.2 zeroes the denominator; blue 0.1999 and 0.2001 leave +-0.00075.
+    const evi = (b: Px) => indexStats(pixels([{...GREEN, b08: 0.2, b04: 0.05, ...b}]), 1000);
+    const zero = evi({b02: 0.2});
+    expect(zero.evi).toEqual(NONE);
+    expect(zero.gndvi).not.toEqual(NONE); // only EVI loses the pixel
+    expect(evi({b02: 0.1999}).evi).toEqual(NONE); // +0.00075: was clamped to +2 before the floor
+    expect(evi({b02: 0.2001}).evi).toEqual(NONE); // -0.00075: was clamped to -2 before the floor
+    expect(evi({b02: 0.1867}).evi).toEqual(NONE); // 1.5 - 1.40025 = 0.09975, just under the floor
+    expect(evi({b02: 0.1866}).evi).toEqual(one(2)); // 0.1005 is kept: 2.5 x 0.15 / 0.1005 = 3.73, clamped to 2
+    // A high EVI with an ordinary denominator still clamps: NIR 0.5, red 0.02, blue 0.15 -> 2.5 x 0.48 / 0.495 = 2.42.
+    expect(indexStats(pixels([{...GREEN, b08: 0.5, b04: 0.02, b02: 0.15}]), 1000).evi).toEqual(one(2));
+    // And a strongly negative one: NIR 0.02, red 0.5, blue 0.5 -> 2.5 x -0.48 / 0.27 = -4.44, clamped to -2.
+    const low = indexStats(pixels([{...GREEN, b08: 0.02, b04: 0.5, b02: 0.5}]), 1000);
+    expect(low.evi).toEqual(one(-2));
+    expect(IndexSummaries.parse(low)).toEqual(low);
+  });
+  it('skips an index when a band it needs is at or below the +1000 offset (corrected 0 DN) instead of returning +-1', () => {
+    // Pixel 2: B05 raw 1000 (corrected 0). Pixel 3: B11 raw 900. Pixel 4: B04 raw 1000 (NDVI still counts it, as before).
+    const bands = pixels([GREEN, {...GREEN, b05: 0}, {...GREEN, b11: -0.01}, {...GREEN, b04: 0}]);
+    const s = indexStats(bands, 1000);
+    expect(s).toEqual({evi: one(0.4863), ndre: one(0.3125), gndvi: one(0.5556), savi: one(0.4706), ndmi: one(0.2537), lswi: one(0.2754), ndwi: one(-0.5556)});
+    const ndvi = ndviStats(bands, 1000);
+    expect(ndvi.clearPixels).toBe(4); // the NDVI rule is unchanged: raw > 0 and corrected n + r > 200 DN
+    expect(ndvi.mean).toBeCloseTo((3 * (0.32 / 0.52) + 1) / 4, 4); // pixel 4 is NDVI 1 (corrected red 0), which the index rule avoids
+    expect(ndvi.indices).toEqual(s);
+  });
+  it('gives every index null on the legacy 4-band layout (real fixture and SCL ladder), SAVI included', () => {
+    const allNull = Object.fromEntries(INDEX_IDS.map((id) => [id, null]));
+    const real = ndviStats(bandStack(parseNpy(fixture('good-20261027-1ha.npy')))!, 1000);
+    expect(real.indices).toEqual(allNull);
+    expect(real).toMatchObject({clearPixels: 121, mean: 0.6372, median: 0.646, p10: 0.5482, p90: 0.7194});
+    expect(ndviStats(sclLadder(), 1000).indices).toEqual(allNull);
+    expect(NdviStats.parse(real)).toEqual(real);
+  });
+  it('matches the independent Python reference on the real 9-band capture, with NDVI unchanged', () => {
+    const s = ndviStats(bandStack(parseNpy(fixture('good-20261027-1ha-9band.npy')))!, 1000);
+    expect(s).toMatchObject({clearPixels: 121, totalPixels: 121, mean: 0.6372, median: 0.646, p10: 0.5482, p90: 0.7194, b04P95: 1867, usable: true, rejection: null});
+    // fixtures/sentinel2/reference-indices.py output (pure Python, written separately from this code).
+    expect(s.indices).toEqual({
+      evi: {mean: 0.4098, median: 0.4139, p10: 0.3301, p90: 0.4892},
+      ndre: {mean: 0.3449, median: 0.3458, p10: 0.3089, p90: 0.3831},
+      gndvi: {mean: 0.5801, median: 0.5826, p10: 0.5415, p90: 0.6217},
+      savi: {mean: 0.3914, median: 0.3923, p10: 0.33, p90: 0.4568},
+      ndmi: {mean: 0.087, median: 0.0747, p10: 0.0116, p90: 0.1728},
+      lswi: {mean: 0.1031, median: 0.0895, p10: 0.0446, p90: 0.1746},
+      ndwi: {mean: -0.5801, median: -0.5826, p10: -0.6217, p90: -0.5415},
+    });
+    // McFeeters NDWI from B3 and B8 is the exact negative of GNDVI from the same bands.
+    expect(s.indices!.ndwi).toEqual({mean: -s.indices!.gndvi!.mean!, median: -s.indices!.gndvi!.median!, p10: -s.indices!.gndvi!.p90!, p90: -s.indices!.gndvi!.p10!});
+    expect(NdviStats.parse(s)).toEqual(s);
+  });
+  it('gives the documented synthetic defaults in the fake provider stack', () => {
+    const s = ndviStats(bandStack({dtype: 'u2', shape: [STACK_BANDS, 2, 2], data: sceneStack({ndvi: 0.63}, 2, 2)})!, 1000);
+    expect(s.indices).toEqual({evi: one(0.5111), ndre: one(0.492), gndvi: one(0.6926), savi: one(0.4909), ndmi: one(0.3338), lswi: one(0.3338), ndwi: one(-0.6926)});
+    const custom = ndviStats(bandStack({dtype: 'u2', shape: [STACK_BANDS, 1, 1], data: sceneStack({ndvi: 0.63, bands: {b8a: 0.46, b11: 0.30}}, 1, 1)})!, 1000);
+    expect(custom.indices!.lswi).toEqual(one(0.2105)); // (0.46 - 0.30) / 0.76
   });
 });
 
@@ -193,8 +330,9 @@ describe('provider requests', () => {
     expect(field.stats.mean).toBeCloseTo(0.63, 3);
     const u = new URL(calls[0]!.url);
     expect(u.origin + u.pathname).toBe(`${PC_ORIGIN}/api/data/v1/item/feature.npy`);
-    expect(u.searchParams.getAll('assets')).toEqual(['B04', 'B08', 'SCL']);
+    expect(u.searchParams.getAll('assets')).toEqual(['B02', 'B03', 'B04', 'B05', 'B08', 'B8A', 'B11', 'SCL']);
     expect(u.searchParams.get('asset_as_band')).toBe('true');
+    expect(field.stats.indices!.gndvi!.mean).toBeCloseTo(0.6926, 4);
     expect((calls[0]!.body as {geometry: {coordinates: number[][][]}}).geometry.coordinates[0]).toEqual(HA_RING);
     const old = await polygonBands({itemId: scenes[1]!.id, polygon: HA_RING, baseline: '02.14', fetchImpl});
     if (old.status !== 'ok') throw new Error(old.reason);
@@ -240,6 +378,8 @@ describe('provider requests', () => {
     expect(await renderScene({...args, fetchImpl: async () => { throw new TypeError('fetch failed'); }})).toMatchObject({status: 'unavailable', reason: 'provider_unreachable', transient: true});
     expect(await polygonBands({itemId: scenes[0]!.id, polygon: HA_RING, baseline: '05.13', fetchImpl: respond(200, {}, 'not npy')})).toMatchObject({status: 'unavailable', reason: 'invalid_provider_response'});
     expect(await polygonBands({itemId: scenes[0]!.id, polygon: HA_RING, baseline: '05.13', fetchImpl: respond(200, {}, makeNpy([3, 2, 2], new Array(12).fill(1)))})).toMatchObject({status: 'unavailable', reason: 'unexpected_band_layout'});
+    // A legacy (4, H, W) answer to the eight-asset request would put B02 where B04 belongs: rejected, not misread.
+    expect(await polygonBands({itemId: scenes[0]!.id, polygon: HA_RING, baseline: '05.13', fetchImpl: fakePlanetary(scenes, {legacyLayout: true}).fetchImpl})).toMatchObject({status: 'unavailable', reason: 'unexpected_band_layout'});
     expect(await listScenes({bbox: [76.24, 13.24, 76.26, 13.26], from: '2026-10-01', to: '2026-10-31', fetchImpl: respond(200, {}, '{"features":"nope"}')})).toMatchObject({status: 'unavailable', reason: 'invalid_provider_response'});
   });
 });

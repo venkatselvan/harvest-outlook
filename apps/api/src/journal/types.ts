@@ -71,12 +71,17 @@ export const CreateEntryBody = z
     activity: z.enum(ACTIVITIES).optional(),
     quantity: z.object({ value: z.number().positive().max(1e9), unit: z.enum(QUANTITY_UNITS) }).strict().optional(),
     expense: z.object({ amountInr: money, category: t(60) }).strict().optional(),
+    /** Farmer-reported sale proceeds in rupees. Accepted only on a 'sale' entry; an expense (for example transport) may sit beside it. */
+    sale: z.object({ amountInr: money, note: t(120).optional() }).strict().optional(),
     /** Farmer-selected stage. Stored as an original fact and as a proposed fact that needs confirmation before it can revise the plan. */
     stageId: z.string().trim().min(1).max(100).optional(),
     /** Client draft version for offline sync (T15); a stale value is refused with 409 once the entry has moved on. */
     version: z.number().int().positive().default(1),
   })
-  .strict();
+  .strict()
+  .superRefine((b, ctx) => {
+    if (b.sale && b.activity !== "sale") ctx.addIssue({ code: "custom", path: ["sale"], message: "a sale amount can only be recorded on a 'sale' entry; choose the Sale activity" });
+  });
 export type CreateEntryBody = z.infer<typeof CreateEntryBody>;
 
 export const ConfirmBody = z

@@ -205,6 +205,107 @@ describe("entries: originals are immutable, creation is idempotent", () => {
   });
 });
 
+describe("sale amounts: farmer-reported proceeds beside quantity and expense", () => {
+  const saleBody = { activity: "sale", mediaIds: [] as string[], note: "Sold fresh ginger at the Hassan mandi", quantity: { value: 3.2, unit: "quintal" }, sale: { amountInr: "12500.5", note: "Local mandi buyer" }, expense: { amountInr: "400", category: "transport" } };
+
+  it("stores the sale on create and returns it on get and on the farm timeline, with an original fact", async () => {
+    const w = await world({ plan: false });
+    const e = await createEntry(w, saleBody);
+    const created = (e as unknown as { sale: unknown }).sale;
+    expect(created).toEqual({ amountInr: "12500.50", note: "Local mandi buyer" });
+    const full = await getEntry(w, e.id);
+    expect(full.sale).toEqual({ amountInr: "12500.50", note: "Local mandi buyer" });
+    expect(full.expense).toEqual({ amountInr: "400.00", category: "transport" });
+    expect(full.quantity).toEqual({ value: 3.2, unit: "quintal" });
+    const originals = full.facts.filter((f: { kind: string }) => f.kind === "original");
+    expect(originals.map((f: { field: string }) => f.field).sort()).toEqual(["activity", "expense_inr", "quantity", "sale_inr"]);
+    const saleFact = originals.find((f: { field: string }) => f.field === "sale_inr");
+    expect(saleFact).toMatchObject({ value: "12500.5", unit: "INR", source: "farmer", status: "recorded", evidenceState: "farmer_reported" });
+    const tl = (await w.c.call("GET", `/api/v1/farms/${w.farmId}/journal`)).json().data;
+    expect(tl.entries).toHaveLength(1);
+    expect(tl.entries[0].sale).toEqual({ amountInr: "12500.50", note: "Local mandi buyer" });
+    // A sale without a note is allowed; entries without a sale report null.
+    const bare = await createEntry(w, { ...saleBody, sale: { amountInr: "0" }, expense: undefined });
+    expect((await getEntry(w, bare.id)).sale).toEqual({ amountInr: "0.00", note: null });
+    const plain = await createEntry(w, { mediaIds: [] });
+    expect((await getEntry(w, plain.id)).sale).toBeNull();
+    const saleNoAmount = await createEntry(w, { mediaIds: [], activity: "sale", note: "Sold, amount not recorded" });
+    expect((await getEntry(w, saleNoAmount.id)).sale).toBeNull();
+  });
+
+  it("refuses a sale on any other activity (or none) and malformed amounts, and saves nothing", async () => {
+    const w = await world({ plan: false });
+    for (const activity of ["harvest", "expense", "observation", "other", undefined]) {
+      const body = entryBody(w, { ...saleBody, activity });
+      const r = await w.c.call("POST", "/api/v1/journal", { payload: body });
+      expect(r.statusCode, `${String(activity)} ${r.body}`).toBe(400);
+      expect(r.json().error.code).toBe("validation_error");
+      expect(r.json().error.message).toMatch(/sale amount can only be recorded on a 'sale' entry/);
+      expect((await h.pool.query("SELECT count(*)::int AS n FROM journal_entries WHERE client_entry_id=$1", [body.clientEntryId])).rows[0].n).toBe(0);
+    }
+    for (const amountInr of ["-5", "12.345", "1e3", "", "abc", "01"]) {
+      const r = await w.c.call("POST", "/api/v1/journal", { payload: entryBody(w, { ...saleBody, sale: { amountInr } }) });
+      expect(r.statusCode, `${amountInr} ${r.body}`).toBe(400);
+    }
+    expect((await w.c.call("POST", "/api/v1/journal", { payload: entryBody(w, { ...saleBody, sale: { amountInr: "10", buyer: "x" } }) })).statusCode).toBe(400);
+    expect((await w.c.call("POST", "/api/v1/journal", { payload: entryBody(w, { ...saleBody, sale: { amountInr: "10", note: "x".repeat(121) } }) })).statusCode).toBe(400);
+  });
+
+  it("replays the same sale (200, same entry) and refuses a changed, added or removed sale with 409; an Idempotency-Key replay with other content is 422", async () => {
+    const w = await world({ plan: false });
+    const body = entryBody(w, saleBody);
+    const headers = { "idempotency-key": `key-${body.clientEntryId}` };
+    const r1 = await w.c.call("POST", "/api/v1/journal", { payload: body, headers });
+    expect(r1.statusCode).toBe(201);
+    const same = await w.c.call("POST", "/api/v1/journal", { payload: { ...body, version: 4 } });
+    expect(same.statusCode).toBe(200);
+    expect(same.json().data.entry.id).toBe(r1.json().data.entry.id);
+    expect(same.json().data.entry.sale).toEqual({ amountInr: "12500.50", note: "Local mandi buyer" });
+    for (const changed of [
+      { ...body, sale: { amountInr: "12500.6", note: "Local mandi buyer" } },
+      { ...body, sale: { amountInr: "12500.5", note: "Another buyer" } },
+      { ...body, sale: { amountInr: "12500.5" } },
+      { ...body, sale: undefined },
+    ]) {
+      const r = await w.c.call("POST", "/api/v1/journal", { payload: changed });
+      expect(r.statusCode, r.body).toBe(409);
+      expect(r.json().error.code).toBe("version_conflict");
+    }
+    expect((await w.c.call("POST", "/api/v1/journal", { payload: { ...body, sale: { amountInr: "1" } }, headers })).statusCode).toBe(422);
+    expect((await getEntry(w, r1.json().data.entry.id)).sale).toEqual({ amountInr: "12500.50", note: "Local mandi buyer" });
+    expect((await h.pool.query("SELECT count(*)::int AS n FROM journal_entries WHERE client_entry_id=$1", [body.clientEntryId])).rows[0].n).toBe(1);
+    // An entry saved without a sale cannot be given one later by replaying the same id.
+    const plain = entryBody(w, { activity: "sale", mediaIds: [] });
+    expect((await w.c.call("POST", "/api/v1/journal", { payload: plain })).statusCode).toBe(201);
+    expect((await w.c.call("POST", "/api/v1/journal", { payload: { ...plain, sale: { amountInr: "500" } } })).statusCode).toBe(409);
+  });
+
+  it("the database refuses edits to a saved sale amount or note, a negative amount, and a delete; workflow columns still change", async () => {
+    const w = await world({ plan: false });
+    const e = await createEntry(w, saleBody);
+    await expect(h.pool.query("UPDATE journal_entries SET sale_inr=99999 WHERE id=$1", [e.id])).rejects.toThrow(/cannot be modified/);
+    await expect(h.pool.query("UPDATE journal_entries SET sale_inr=NULL WHERE id=$1", [e.id])).rejects.toThrow(/cannot be modified/);
+    await expect(h.pool.query("UPDATE journal_entries SET sale_note='edited' WHERE id=$1", [e.id])).rejects.toThrow(/cannot be modified/);
+    await expect(h.pool.query("UPDATE journal_entries SET sale_note=NULL WHERE id=$1", [e.id])).rejects.toThrow(/cannot be modified/);
+    await expect(h.pool.query("UPDATE journal_entries SET expense_inr=1 WHERE id=$1", [e.id])).rejects.toThrow(/cannot be modified/);
+    await expect(h.pool.query("DELETE FROM journal_entries WHERE id=$1", [e.id])).rejects.toThrow(/immutable/);
+    await expect(h.pool.query("INSERT INTO journal_entries (owner_id, farm_id, status, entry_date, activity, sale_inr) VALUES ($1,$2,'final',$3,'sale',-1)", [w.ownerId, w.farmId, TODAY])).rejects.toThrow(/sale_inr/);
+    await h.pool.query("UPDATE journal_entries SET processing_status='ready' WHERE id=$1", [e.id]);
+    expect((await getEntry(w, e.id)).sale).toEqual({ amountInr: "12500.50", note: "Local mandi buyer" });
+  });
+
+  it("another owner gets 404 for the sale entry and its farm timeline, and cannot save a sale on someone else's farm", async () => {
+    const w = await world({ plan: false });
+    const e = await createEntry(w, saleBody);
+    const o = await login(app);
+    expect((await o.call("GET", `/api/v1/journal/${e.id}`)).statusCode).toBe(404);
+    expect((await o.call("GET", `/api/v1/farms/${w.farmId}/journal`)).statusCode).toBe(404);
+    const r = await o.call("POST", "/api/v1/journal", { payload: entryBody(w, { ...saleBody, clientEntryId: "entry-cross-owner-sale-1" }) });
+    expect(r.statusCode).toBe(404);
+    expect((await h.pool.query("SELECT count(*)::int AS n FROM journal_entries WHERE client_entry_id='entry-cross-owner-sale-1'")).rows[0].n).toBe(0);
+  });
+});
+
 describe("analysis job", () => {
   it("synthetic mode uses the fixture, stores proposals that require confirmation and never confirms them", async () => {
     const w = await world();

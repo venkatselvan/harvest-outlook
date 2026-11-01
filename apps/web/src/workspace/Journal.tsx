@@ -2,6 +2,7 @@ import {
   For,
   Show,
   createEffect,
+  createMemo,
   createResource,
   createSignal,
   on,
@@ -17,7 +18,15 @@ import {
 import { PageHeading } from "./FarmPage";
 import { Icon } from "./icons";
 import { loadTimeline, submitDraft } from "../features/journal/api";
-import { newDraft } from "../features/journal/model";
+import {
+  POST_HARVEST_WINDOW_DAYS,
+  amountsOutsideCycles,
+  formatKg,
+  formatRupees,
+  newDraft,
+  seasonTotals,
+} from "../features/journal/model";
+import "../features/journal/season-totals.css";
 import {
   apiRequest,
   jsonInit,
@@ -173,8 +182,29 @@ export function JournalWorkspace() {
     }
   }
   const cycles = () => s.workspace()?.cycles ?? [];
+  // Reading a failed resource throws; the load error is shown below instead of breaking the whole tab.
+  const journal = () => (timeline.error ? undefined : timeline());
+  // Totals are shown only once this farm's journal has loaded, so they never show another farm's or partial numbers.
+  const loadedEntries = () => {
+    const t = journal();
+    return t &&
+      (timeline.state === "ready" || timeline.state === "refreshing") &&
+      t.farmId === s.farm()?.id
+      ? t.entries
+      : null;
+  };
+  const season = createMemo(() => {
+    const entries = loadedEntries();
+    return entries ? seasonTotals(entries, cycles(), today()) : [];
+  });
+  const outsideAmounts = createMemo(() => {
+    const entries = loadedEntries();
+    return entries ? amountsOutsideCycles(entries, cycles(), today()) : 0;
+  });
+  const plural = (n: number, one: string, many: string) =>
+    `${n} ${n === 1 ? one : many}`;
   const entries = () =>
-    timeline()?.entries.filter(
+    journal()?.entries.filter(
       (e) => filter() === "all" || e.activity === filter(),
     ) ?? [];
   return (
@@ -232,7 +262,7 @@ export function JournalWorkspace() {
           <div>
             <Icon name="journal" />
             <span>
-              Journal entries<strong>{timeline()?.entries.length ?? 0}</strong>
+              Journal entries<strong>{journal()?.entries.length ?? 0}</strong>
             </span>
           </div>
           <div>
@@ -243,6 +273,92 @@ export function JournalWorkspace() {
             </span>
           </div>
         </div>
+        <Show when={season().length > 0}>
+          <section class="season-totals" aria-labelledby="season-totals-title">
+            <div class="season-totals-heading">
+              <Icon name="journal" />
+              <h2 id="season-totals-title">Season totals</h2>
+            </div>
+            <div class="season-totals-grid">
+              <For each={season()}>
+                {(r) => (
+                  <article
+                    class="season-total-card"
+                    data-testid="season-total"
+                    aria-label={`Season totals for ${r.cropName ?? s.cropName(r.cropId)}`}
+                  >
+                    <div class="season-total-top">
+                      <h3>{r.cropName ?? s.cropName(r.cropId)}</h3>
+                      <span class="season-total-pill">
+                        Farmer recorded · not an estimate
+                      </span>
+                    </div>
+                    <p class="season-total-range">
+                      sown {dateLabel(r.sowingDate)}
+                      {r.from !== r.sowingDate
+                        ? ` · counted from ${dateLabel(r.from)}`
+                        : ""}
+                      {" · "}
+                      {r.ongoing ? "to today" : `to ${dateLabel(r.to)}`}
+                      {r.windowTo !== r.to
+                        ? ` · including entries up to ${dateLabel(r.windowTo)}`
+                        : ""}
+                    </p>
+                    <p class="season-total-entries">
+                      {plural(r.entries, "entry", "entries")}
+                    </p>
+                    <p class="season-total-money">
+                      <span>Spent {formatRupees(r.expenseInr)}</span>
+                      {" · "}
+                      <span>Sold {formatRupees(r.saleInr)}</span>
+                      {" · "}
+                      <span
+                        classList={{ "season-negative": r.netInr < 0 }}
+                      >
+                        Net {formatRupees(r.netInr)}
+                      </span>
+                    </p>
+                    <p class="season-total-harvest">
+                      Harvest recorded:{" "}
+                      {r.harvestKg === null
+                        ? "none recorded"
+                        : formatKg(r.harvestKg)}
+                      <Show when={r.harvestUnitsSkipped > 0}>
+                        {" "}
+                        <small>
+                          (
+                          {plural(
+                            r.harvestUnitsSkipped,
+                            "harvest entry",
+                            "harvest entries",
+                          )}{" "}
+                          in other units not added)
+                        </small>
+                      </Show>
+                    </p>
+                    <p class="season-total-note">
+                      {`Totals add your journal expenses and sale amounts from sowing to harvest and up to ${POST_HARVEST_WINDOW_DAYS} days after; they are not the plan's profit estimate.`}
+                    </p>
+                    <Show when={r.overlapping > 0}>
+                      <p class="season-total-note">
+                        {r.overlapping === 1
+                          ? "1 entry also falls inside another crop's dates and is counted here, in the crop that started last."
+                          : `${r.overlapping} entries also fall inside another crop's dates and are counted here, in the crop that started last.`}
+                      </p>
+                    </Show>
+                  </article>
+                )}
+              </For>
+            </div>
+            <Show when={outsideAmounts() > 0}>
+              <p class="season-total-note season-total-outside" role="note">
+                {outsideAmounts() === 1
+                  ? "1 entry with a money amount falls outside every crop's dates (for example seed bought before sowing or a sale long after the harvest) and is not counted above."
+                  : `${outsideAmounts()} entries with money amounts fall outside every crop's dates (for example seed bought before sowing or a sale long after the harvest) and are not counted above.`}
+              </p>
+            </Show>
+          </section>
+        </Show>
         <section class="crop-progress-section">
           <div class="section-heading">
             <div>
@@ -406,6 +522,12 @@ export function JournalWorkspace() {
                         <time>{dateLabel(e.observedOn)}</time>
                       </div>
                       <h3>{e.note ?? "Field entry"}</h3>
+                      <Show when={e.sale}>
+                        <p class="journal-event-money">
+                          Sale ₹{e.sale!.amountInr}
+                          {e.sale!.note ? ` (${e.sale!.note})` : ""}
+                        </p>
+                      </Show>
                       <Show when={e.media.length}>
                         <div class="journal-event-photos">
                           <For each={e.media}>

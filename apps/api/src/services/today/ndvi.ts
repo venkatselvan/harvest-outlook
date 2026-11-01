@@ -7,6 +7,10 @@
  * `status:'unavailable'` (images: 409 mode_mismatch) without any network call.
  * Cost bound: at most `maxScenes` (default 12) uncached scenes are analysed per call, newest first, two requests per
  * scene (field + 1 km neighbourhood), two scenes at a time. Scene lists are cached for a day per window.
+ * Indices (2026-11-01): each read also yields EVI, NDRE, GNDVI, SAVI, NDMI, LSWI and NDWI (`NdviStats.indices`). Rows
+ * stored before that carry NDVI only; they stay visible but count as not analysed, and are re-read and upserted in place
+ * within the same `maxScenes` budget, newest first. The polygon hash is unchanged, so their image keys are kept. When the
+ * re-read's neighbourhood request fails permanently, the previously stored neighbourhood statistics are kept, not nulled.
  *
  * Integration (done 2026-11-01): `todayNdviRoutes` is registered in routes/index.ts and `deleteFarm` (services/farms.ts)
  * removes the `image_keys` objects of ndvi_scene_stats before the cascade. A worker job type for background back-fill
@@ -23,7 +27,7 @@ import {ApiError, notFound} from '../errors';
 import {sha256Hex} from '../hash';
 import {NdviStats, type NdviReading, type NdviSeries, type NeighbourhoodSeasonality} from '@harvest/contracts';
 import {
-  DEFAULT_MAX_SCENE_CLOUD_PCT, ITEM_ID_RE, MIN_CLEAR_FRACTION, MIN_CLEAR_PIXELS, NDVI_METHOD_VERSION, SCL_KEEP, SENTINEL2_ATTRIBUTION,
+  DEFAULT_MAX_SCENE_CLOUD_PCT, INDEX_METHOD_VERSION, ITEM_ID_RE, MIN_CLEAR_FRACTION, MIN_CLEAR_PIXELS, NDVI_METHOD_VERSION, SCL_KEEP, SENTINEL2_ATTRIBUTION,
   baselineOffset, bboxProblem, displayBbox, listScenes, neighbourhoodBands, polygonBands, prepareRing, renderScene, ringBbox, squareAround,
   type Bbox, type ImageKind, type LonLat, type SceneSummary, type Sentinel2Fetch,
 } from '../../providers/sentinel2';
@@ -51,13 +55,15 @@ const addDays = (day: string, n: number) => new Date(Date.parse(`${day}T00:00:00
 const dayDiff = (a: string, b: string) => Math.round((Date.parse(`${b}T00:00:00Z`) - Date.parse(`${a}T00:00:00Z`)) / 86400_000);
 const tileFromId = (id: string) => /_T(\d{2}[A-Z]{3})_/.exec(id)?.[1] ?? null;
 
-const METHOD = {version: NDVI_METHOD_VERSION, sclClassesKept: [...SCL_KEEP], minClearFraction: MIN_CLEAR_FRACTION, minClearPixels: MIN_CLEAR_PIXELS};
+const METHOD = {version: NDVI_METHOD_VERSION, indexMethodVersion: INDEX_METHOD_VERSION, sclClassesKept: [...SCL_KEEP], minClearFraction: MIN_CLEAR_FRACTION, minClearPixels: MIN_CLEAR_PIXELS};
 const BASE_LIMITATIONS = [
   'NDVI is computed in code from Sentinel-2 L2A B04 and B08 at 10 m after the +1000 offset correction (processing baseline 04.00 or later) and the SCL mask; it is not validated against field observations.',
   'SCL is an algorithmic classification and may miss thin haze; low NDVI or SCL class 5 (not vegetated) is not by itself evidence of bare soil or crop failure.',
   'The neighbourhood covers all land within about 1 km of the field (including the field, trees, water and settlements), not cropland only.',
   'Boundary vertices are rounded to 4 decimal places (about 11 m) before leaving the server; edge pixels mix the field with its surroundings.',
   'Imagery comes from the Microsoft Planetary Computer Preview service, which may change or be unavailable without notice.',
+  'B05, B8A and B11 are 20 m bands resampled to the 10 m grid, so a 1 ha field has about 25 independent pixels for NDRE, LSWI and NDMI.',
+  'EVI, NDRE, GNDVI, SAVI, NDMI, LSWI and NDWI are computed in code from the same clear pixels as NDVI and are not validated against field observations either; over a crop field NDWI (McFeeters) equals the negative of GNDVI and is meaningful mainly as an open-water flag.',
 ];
 
 // ------------------------------------------------------------------ field polygon
@@ -130,6 +136,13 @@ function toReading(row: StatsRow, scene?: SceneSummary): NdviReading | null {
   };
 }
 
+/**
+ * Analysed under the current method: the field stats carry `indices`. Rows written before the indices existed parse but are
+ * incomplete; they are shown and re-analysed like missing scenes. The neighbourhood is not part of the test: a re-read whose
+ * neighbourhood failed permanently keeps the earlier NDVI-only neighbourhood, and must not be re-read on every request.
+ */
+const isComplete = (r: NdviReading) => r.field.indices !== undefined;
+
 async function mapLimit<T, R>(items: readonly T[], limit: number, fn: (item: T) => Promise<R>): Promise<R[]> {
   const out = new Array<R>(items.length);
   let next = 0;
@@ -143,7 +156,8 @@ async function mapLimit<T, R>(items: readonly T[], limit: number, fn: (item: T) 
 
 /**
  * NDVI readings for the farm's field polygon between `from` and `to` (calendar dates, default the last 365 days).
- * Serves cached rows, analyses up to `maxScenes` missing scenes newest first, and stores them.
+ * Serves cached rows, analyses up to `maxScenes` missing or incomplete (NDVI-only) scenes newest first, and stores them.
+ * scenesAnalysed counts complete readings and scenesPending the missing or incomplete scenes left for later requests.
  */
 export async function ndviSeries(deps: NdviDeps, ownerId: string, farmId: string, opts: NdviSeriesOptions = {}): Promise<NdviSeries> {
   const now = (deps.now ?? (() => new Date()))();
@@ -181,15 +195,18 @@ export async function ndviSeries(deps: NdviDeps, ownerId: string, farmId: string
   } else {
     for (const s of listing.scenes) scenesById.set(s.id, s);
     scenesListed = listing.scenes.length;
-    const have = new Set(rows.filter((r) => toReading(r)).map((r) => r.item_id));
+    const have = new Set(rows.filter((r) => { const reading = toReading(r); return reading !== null && isComplete(reading); }).map((r) => r.item_id));
     const missing = listing.scenes.filter((s) => !have.has(s.id));
     const batch = missing.slice(0, maxScenes);
+    // Stored neighbourhood statistics that still parse, kept when a re-read's neighbourhood request fails permanently.
+    const storedNeighbourhood = new Map(rows.filter((r) => r.neighbourhood_stats !== null && NdviStats.safeParse(r.neighbourhood_stats).success).map((r) => [r.item_id, r.neighbourhood_stats]));
     const failures: string[] = [];
     await mapLimit(batch, 2, async (scene) => {
       const fieldRead = await polygonBands({itemId: scene.id, polygon: ring, baseline: scene.baseline, fetchImpl: deps.fetchImpl});
       if (fieldRead.status !== 'ok') { failures.push(fieldRead.reason); return; }
       const nbRead = await neighbourhoodBands({itemId: scene.id, polygon: ring, baseline: scene.baseline, fetchImpl: deps.fetchImpl});
       if (nbRead.status !== 'ok' && nbRead.transient) { failures.push(nbRead.reason); return; }
+      const neighbourhood = nbRead.status === 'ok' ? nbRead.stats : storedNeighbourhood.get(scene.id) ?? null;
       try {
         await deps.pool.query(
           `INSERT INTO ndvi_scene_stats(owner_id,farm_id,polygon_hash,item_id,acquired_at,baseline,scene_cloud_pct,field_stats,neighbourhood_stats,usable)
@@ -197,7 +214,7 @@ export async function ndviSeries(deps: NdviDeps, ownerId: string, farmId: string
            ON CONFLICT (farm_id,polygon_hash,item_id) DO UPDATE SET field_stats=EXCLUDED.field_stats,neighbourhood_stats=EXCLUDED.neighbourhood_stats,
              usable=EXCLUDED.usable,baseline=EXCLUDED.baseline,scene_cloud_pct=EXCLUDED.scene_cloud_pct,fetched_at=now()
            WHERE ndvi_scene_stats.owner_id=EXCLUDED.owner_id`,
-          [ownerId, farmId, hash, scene.id, scene.datetime, scene.baseline, scene.cloudPct, JSON.stringify(fieldRead.stats), nbRead.status === 'ok' ? JSON.stringify(nbRead.stats) : null, fieldRead.stats.usable]);
+          [ownerId, farmId, hash, scene.id, scene.datetime, scene.baseline, scene.cloudPct, JSON.stringify(fieldRead.stats), neighbourhood === null ? null : JSON.stringify(neighbourhood), fieldRead.stats.usable]);
       } catch (e) {
         if ((e as {code?: string}).code === '23503') throw notFound('Farm'); // farm deleted mid-request
         throw e;
@@ -221,7 +238,7 @@ export async function ndviSeries(deps: NdviDeps, ownerId: string, farmId: string
   return {
     ...located, status: 'available', reason: 'reason' in listing ? 'scene_catalogue_unavailable_cached_only' : null,
     polygonPixels, smallField, scenesListed,
-    scenesAnalysed: 'reason' in listing ? readings.length : readings.filter((r) => listedIds.has(r.itemId)).length,
+    scenesAnalysed: readings.filter((r) => isComplete(r) && ('reason' in listing || listedIds.has(r.itemId))).length,
     scenesPending, scenesFailed, readings, latestUsable: [...readings].reverse().find((r) => r.usable) ?? null,
     limitations: limitations.slice(0, 20),
   };

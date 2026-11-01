@@ -47,6 +47,8 @@ export interface JournalEntry {
   activity: string | null;
   quantity: { value: number; unit: string } | null;
   expense: { amountInr: string; category: string } | null;
+  /** Farmer-reported sale proceeds (never an estimate). Older servers omit it. */
+  sale?: { amountInr: string; note: string | null } | null;
   processingStatus: "draft" | "submitted" | "processing" | "ready" | "failed";
   imageQuality: { issues: string[] } | null;
   facts: JournalFact[];

@@ -100,8 +100,8 @@ export class JournalService {
     const id = await withTransaction(this.pool, async (c) => {
       const ins = await c.query<{ id: string }>(
         `INSERT INTO journal_entries (owner_id, farm_id, plan_id, client_entry_id, status, entry_date, observed_at, uploaded_at, text_body, language, media_ids,
-           activity, quantity, quantity_unit, expense_inr, expense_category, mode, payload_hash, processing_status)
-         VALUES ($1,$2,$3,$4,'final',$5,$6,$7,$8,$9,$10::uuid[],$11,$12,$13,$14,$15,$16,$17,'submitted')
+           activity, quantity, quantity_unit, expense_inr, expense_category, sale_inr, sale_note, mode, payload_hash, processing_status)
+         VALUES ($1,$2,$3,$4,'final',$5,$6,$7,$8,$9,$10::uuid[],$11,$12,$13,$14,$15,$16,$17,$18,$19,'submitted')
          ON CONFLICT (owner_id, client_entry_id) DO NOTHING RETURNING id`,
         [
           ownerId,
@@ -119,6 +119,8 @@ export class JournalService {
           body.quantity?.unit ?? null,
           body.expense?.amountInr ?? null,
           body.expense?.category ?? null,
+          body.sale?.amountInr ?? null,
+          body.sale?.note ?? null,
           this.mode,
           hash,
         ],
@@ -129,6 +131,7 @@ export class JournalService {
       if (body.activity) await repo.insertFact(c, { ...farmer, field: "activity", value: body.activity, unit: null, kind: "original", requiresConfirmation: false });
       if (body.quantity) await repo.insertFact(c, { ...farmer, field: "quantity", value: body.quantity.value, unit: body.quantity.unit, kind: "original", requiresConfirmation: false });
       if (body.expense) await repo.insertFact(c, { ...farmer, field: "expense_inr", value: body.expense.amountInr, unit: "INR", kind: "original", requiresConfirmation: false });
+      if (body.sale) await repo.insertFact(c, { ...farmer, field: "sale_inr", value: body.sale.amountInr, unit: "INR", kind: "original", requiresConfirmation: false });
       if (body.stageId) {
         await repo.insertFact(c, { ...farmer, field: "observed_stage", value: body.stageId, unit: null, kind: "original", requiresConfirmation: false });
         // The farmer's selection can change the plan only after an explicit confirmation, like any other plan-changing fact.

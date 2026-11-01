@@ -1,12 +1,13 @@
 import { z } from 'zod';
 import type { PoolClient } from 'pg';
-import type { FarmWorkspace, Mode } from '@harvest/contracts';
+import type { FarmWorkspace, IndexStageReading, Mode, NdviReading, NdviSeries, StageTimeline } from '@harvest/contracts';
 import { FarmAlertSeverity, FarmAlertType, type FarmAlert, type FarmAlerts, type FarmNewsReviewStatus } from '@harvest/contracts';
 import type { Config } from '../../config';
 import { withTransaction, type Pool } from '../../db/pool';
 import { scopedQuery } from '../../ingest/scope';
 import { stateNameFor } from '../../plans/adapters/market-outlook';
 import { MetaClient } from '../../providers/meta/client';
+import { MIN_CLEAR_FRACTION } from '../../providers/sentinel2';
 import { MetaError, type CreateResponseParams, type MetaResponse } from '../../providers/meta/types';
 import { toStrictJsonSchema } from '../../providers/meta/strict-schema';
 import type { Budget } from '../budget';
@@ -201,6 +202,82 @@ export function structuredAlerts(snapshot: MonitoringSnapshot, workspace: FarmWo
   return { alerts, notes };
 }
 
+// ---------------------------------------------------------------------------------------------- satellite drop
+
+/**
+ * Satellite greenness drop (open-source comparison 2026-11-01; docs/research/INDEX_STAGE_READER.md section 5). Engine
+ * assumptions, not sourced: each is flagged here with its text. The noise term is the field series' own robust noise from
+ * the index stage reader (services/today/index-stage.ts).
+ */
+export const SATELLITE_DROP_RULE = {
+  dropFloor: { value: 0.10, text: 'The field mean NDVI must fall by at least 0.10 between two clear scenes (or 2 x the series noise when larger). A design threshold, not validated against field damage.' },
+  noiseMultiple: { value: 2, text: 'Drop threshold = max(dropFloor, 2 x the robust noise of the field series), so a jittery series needs a larger fall.' },
+  neighbourhoodShare: { value: 0.5, text: 'With a usable 1 km neighbourhood on both scenes, the field must fall by at least half the threshold more than the neighbourhood, so a fall the whole area shares (haze, regional dry-down) is not reported as the field\'s own.' },
+  maxGapDays: { value: 45, text: 'The previous clear scene must be at most 45 days before the latest one.' },
+  minClearFraction: { value: MIN_CLEAR_FRACTION, text: 'Both scenes need the same field clear fraction as the series\' field usability rule (MIN_CLEAR_FRACTION in providers/sentinel2.ts).' },
+  senescenceShare: { value: 0.25, text: 'A fall in the last 25 % of the calendar cycle is treated as expected senescence or harvest and is not reported, whatever phase the curve reader sees (a harvested green crop can still read as plateau through the smoothing lag).' },
+  preHarvestDays: { value: 21, text: 'A fall from 21 days before the earliest harvest date on is treated as expected senescence or harvest and is not reported, whatever the curve phase.' },
+  validityDays: { value: 10, text: 'The alert stays valid for 10 days after the scene date.' },
+} as const;
+export const SENTINEL_SOURCE_NAME = 'Copernicus Sentinel-2 L2A via Microsoft Planetary Computer';
+export const sentinelItemUrl = (itemId: string): string => `https://planetarycomputer.microsoft.com/api/stac/v1/collections/sentinel-2-l2a/items/${encodeURIComponent(itemId)}`;
+const SATELLITE_TITLE = 'Field greenness fell since the last clear satellite image';
+
+const clearField = (r: NdviReading): boolean => r.usable && r.field.mean !== null && Number.isFinite(r.field.mean) && isDate(r.date);
+const nbMean = (r: NdviReading): number | null => (r.neighbourhood && r.neighbourhood.usable && r.neighbourhood.mean !== null && Number.isFinite(r.neighbourhood.mean) ? r.neighbourhood.mean : null);
+
+/**
+ * One 'watch' alert when the field's mean NDVI fell between the latest clear scene and the previous clear scene
+ * (within 45 days) and the 1 km neighbourhood, usable on both scenes, did not share the fall. The baseline is the
+ * previous scene only, never the latest one; the alert is dated on the scene, so `alertFingerprint` keeps one alert per
+ * scene across daily runs. Skipped (with a note) for a small field, a missing neighbourhood control, the calendar's
+ * senescence window (whatever the curve phase), a stale scene or a missing baseline. `stage` supplies only the noise.
+ */
+export function satelliteAlerts(series: NdviSeries | null, stage: IndexStageReading | null, timeline: StageTimeline | null, asOf: string): { alerts: AlertDraft[]; notes: string[] } {
+  const R = SATELLITE_DROP_RULE;
+  const skip = (why: string) => ({ alerts: [] as AlertDraft[], notes: [`satellite_check_skipped:${why}`] });
+  if (!series || series.status !== 'available') return skip(series?.reason ?? 'series_unavailable');
+  if (series.smallField) return skip('small_field');
+  const today = istDate(asOf);
+  const clear = series.readings.filter((r) => clearField(r) && r.date <= today).sort((a, b) => a.date.localeCompare(b.date) || a.itemId.localeCompare(b.itemId));
+  const r1 = clear.at(-1);
+  if (!r1) return skip('no_clear_scene');
+  if (addDays(r1.date, R.validityDays.value) < today) return skip('latest_clear_scene_too_old');
+  const r0 = [...clear].reverse().find((r) => r.date < r1.date);
+  if (!r0 || daysApart(r0.date, r1.date) > R.maxGapDays.value) return skip('no_previous_clear_scene_within_gap');
+  if (r1.field.clearFraction < R.minClearFraction.value || r0.field.clearFraction < R.minClearFraction.value) return skip('low_clear_fraction');
+
+  const d = r0.field.mean! - r1.field.mean!;
+  const threshold = Math.max(R.dropFloor.value, R.noiseMultiple.value * (stage?.noise ?? 0));
+  if (d < threshold) return skip('no_drop');
+  const nb0 = nbMean(r0), nb1 = nbMean(r1);
+  if (nb0 === null || nb1 === null) return skip('no_neighbourhood_control');
+  const n = nb0 - nb1;
+  if (d - n < R.neighbourhoodShare.value * threshold) return skip('drop_shared_with_neighbourhood');
+
+  // Expected senescence or harvest from the calendar alone (the curve phase lags a harvest and is unknown on few scenes).
+  const late = (() => {
+    if (!timeline) return false;
+    const end = timeline.harvest?.latest ?? timeline.stages.at(-1)?.to ?? null;
+    const span = end ? daysApart(timeline.anchorDate, end) : 0;
+    const inLastShare = span > 0 && daysApart(timeline.anchorDate, r1.date) / span >= 1 - R.senescenceShare.value;
+    const nearHarvest = !!timeline.harvest && r1.date >= addDays(timeline.harvest.earliest, -R.preHarvestDays.value);
+    return inLastShare || nearHarvest;
+  })();
+  if (late) return skip('expected_senescence');
+
+  const v = (x: number) => x.toFixed(2);
+  const nbText = `The 1 km neighbourhood went from ${v(nb0)} to ${v(nb1)} (${n >= 0 ? 'down' : 'up'} ${v(Math.abs(n))}), so most of the fall is the field's own.`;
+  const calendarText = timeline && timeline.stages.length ? '' : ' No stage calendar exists for this crop, so normal ripening cannot be ruled out.';
+  const detail = `Field NDVI fell from ${v(r0.field.mean!)} on ${r0.date} to ${v(r1.field.mean!)} on ${r1.date} (down ${v(d)}; threshold ${v(threshold)}). ${nbText}${calendarText} Code rule on two clear Sentinel-2 scenes; not an observation of crop damage.`;
+  return {
+    alerts: [{ type: 'satellite', severity: 'watch', origin: 'rule', title: SATELLITE_TITLE, detail: detail.slice(0, 600),
+      source: { name: SENTINEL_SOURCE_NAME, url: sentinelItemUrl(r1.itemId), date: r1.date }, validFrom: r1.date, validTo: addDays(r1.date, R.validityDays.value),
+      suggestedStep: 'Walk the field: check for water stress, pest or disease damage, lodging or grazing, and compare with neighbouring fields.' }],
+    notes: [],
+  };
+}
+
 // ---------------------------------------------------------------------------------------------- price moves
 
 export interface PriceQuote { date: string; inrPerKg: number }
@@ -276,8 +353,10 @@ export const SEARCH_CONTEXT_TOKEN_ALLOWANCE = 30_000;
 export const WEATHER_GRACE_SOURCE_DAYS = 7;
 export const WEATHER_GRACE_EXTENSION_DAYS = 2;
 
+/** The grounded review may only classify news; 'satellite' alerts come from the code rule on the field's own series. */
+export const ModelAlertType = FarmAlertType.exclude(['satellite']);
 const ModelAlert = z.object({
-  type: FarmAlertType,
+  type: ModelAlertType,
   severity: FarmAlertSeverity,
   title: z.string().min(1).max(80),
   detail: z.string().min(1).max(240),
@@ -380,7 +459,7 @@ export function gateGroundedAlerts(raw: unknown, evidence: CitationEvidence, asO
     const looseType = typeof loose.type === 'string' ? loose.type : null;
     const looseDomain = typeof loose.sourceUrl === 'string' ? domainOf(loose.sourceUrl) : null;
     const drop = (reason: string) => dropped.push({ reason, type: looseType, sourceDomain: looseDomain });
-    if (looseType !== null && !FarmAlertType.safeParse(looseType).success) { drop('type_not_allowed'); continue; }
+    if (looseType !== null && !ModelAlertType.safeParse(looseType).success) { drop('type_not_allowed'); continue; }
     const a = ModelAlert.safeParse(item);
     if (!a.success) { drop('schema_invalid'); continue; }
     const v = a.data;

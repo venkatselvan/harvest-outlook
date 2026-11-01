@@ -537,6 +537,69 @@ for (const theme of ["light", "dark"] as const)
     await page.screenshot({ path: `../../docs/reference/redesign/today-mock-${theme}.png`, fullPage: true });
   });
 
+test.describe("at 360 px", () => {
+  test.use({ viewport: { width: 360, height: 740 } });
+  test("the satellite curve line and the health index line fit the screen, and each opens its sheet", async ({ page }) => {
+    await mock(page);
+    await openToday(page);
+    const noOverflow = () => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth);
+
+    // The code-only curve reading sits under the hero image, beside (not inside) the calendar stage label.
+    const line = page.getByTestId("today-curve-line");
+    await expect(line).toBeVisible();
+    await expect(line).toContainText("Satellite curve: greening, green-up seen 2 Oct, in line with the calendar estimate");
+    await expect(line).not.toContainText("reading of");
+    await expect(stage(page)).not.toContainText("Satellite curve");
+    await expect(stage(page)).toContainText("Vegetative");
+    const lineBox = (await line.boundingBox())!;
+    expect(lineBox.x).toBeGreaterThanOrEqual(0);
+    expect(lineBox.x + lineBox.width).toBeLessThanOrEqual(360);
+    const info = line.getByRole("button", { name: "About the satellite curve reading" });
+    const infoBox = (await info.boundingBox())!;
+    expect(infoBox.width).toBeGreaterThanOrEqual(44);
+    expect(infoBox.height).toBeGreaterThanOrEqual(44);
+
+    // The health card keeps its NDVI headline and adds moisture, red-edge and surface water of the same image.
+    const indexLine = card(page, "health").getByTestId("today-index-line");
+    await indexLine.scrollIntoViewIfNeeded();
+    await expect(indexLine).toBeVisible();
+    const items = indexLine.locator("li");
+    await expect(items).toHaveCount(3);
+    await expect(items.nth(0)).toContainText(/^Moisture index \(NDMI\)\s*0\.18/);
+    await expect(items.nth(1)).toContainText(/^Red-edge greenness \(NDRE\)\s*0\.31/);
+    await expect(items.nth(2)).toContainText(/^Water index \(NDWI\)\s*−0\.45/);
+    await expect(card(page, "health")).toContainText("Near typical");
+    const cardBox = (await card(page, "health").boundingBox())!;
+    const indexBox = (await indexLine.boundingBox())!;
+    expect(indexBox.x).toBeGreaterThanOrEqual(cardBox.x);
+    expect(indexBox.x + indexBox.width).toBeLessThanOrEqual(cardBox.x + cardBox.width + 1);
+    expect(await noOverflow()).toBe(true);
+
+    // Health sheet: all seven indices and the 20 m note, without sideways scrolling inside the sheet.
+    await card(page, "health").getByRole("button", { name: /details and sources/ }).click();
+    const health = page.getByRole("dialog", { name: "Vegetation health" });
+    await expect(health.locator(".today-index-row")).toHaveCount(7);
+    await expect(health).toContainText("B5, B8A and B11 are 20 m bands resampled to the 10 m grid, so these three indices rest on fewer independent pixels.");
+    await expect(health).toContainText("(B8 − B11) / (B8 + B11)");
+    expect(await health.evaluate((el) => el.scrollWidth <= el.clientWidth)).toBe(true);
+    await page.keyboard.press("Escape");
+    await expect(health).toHaveCount(0);
+
+    // Curve sheet: the evidence-only line is always there and the calendar stage it is compared with is named.
+    await line.scrollIntoViewIfNeeded();
+    await info.click();
+    const curve = page.getByRole("dialog", { name: "Satellite curve and the calendar" });
+    await expect(curve).toContainText("Evidence only: the stage dates above are calendar estimates and are not changed by this reading.");
+    await expect(curve).toContainText("Calendar stage compared");
+    await expect(curve).toContainText("Vegetative");
+    await expect(curve).toContainText("Basis:");
+    expect(await curve.evaluate((el) => el.scrollWidth <= el.clientWidth)).toBe(true);
+    await page.keyboard.press("Escape");
+    await expect(curve).toHaveCount(0);
+    expect(await noOverflow()).toBe(true);
+  });
+});
+
 test("recording the first planting replaces the empty state with the new cycle within one refetch, without a reload", async ({ page }) => {
   await mock(page);
   const fresh = { planted: false, plantBodies: [] as { cropId: string; productId?: string; expectedWorkspaceVersion: number }[], todayCalls: 0 };
