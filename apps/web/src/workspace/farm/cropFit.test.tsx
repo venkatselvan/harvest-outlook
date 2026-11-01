@@ -295,6 +295,21 @@ describe("round 3 model", () => {
 });
 
 describe("crop fit picker (rendered)", () => {
+  it("while a pick is being saved, disables only 'Use this crop'; Keep and Cancel still close the picker", () => {
+    const buttons = (busy: boolean) =>
+      [...get(picker({ current: { cropId: "sorghum", productId: "sorghum-grain" }, busy })).matchAll(/<button([^>]*)>(.*?)<\/button>/g)].map((m) => ({
+        disabled: /\sdisabled(=|\s|>|$)/.test(m[1]!),
+        text: m[2]!.replace(/<[^>]+>/g, "").trim(),
+      }));
+    const idle = buttons(false);
+    expect(idle.filter((b) => b.text === "Use this crop").length).toBeGreaterThan(0);
+    expect(idle.some((b) => b.disabled)).toBe(false);
+    const busy = buttons(true);
+    expect(busy.filter((b) => b.text === "Use this crop").every((b) => b.disabled)).toBe(true);
+    expect(busy.filter((b) => b.text === "Keep" || b.text === "Cancel").map((b) => b.disabled)).toEqual([false, false]);
+    // The error card's retry waits too, so a pick cannot race a reload.
+    expect(get(picker({ review: undefined, failure: { kind: "server", message: "x" }, busy: true }))).toMatch(/<button[^>]*disabled[^>]*>Try again/);
+  });
   it("lists the current crop first, pre-selected with its rank and score and a Keep button, then picks, then every ranked crop", () => {
     const html = picker({ current: { cropId: "sorghum", productId: "sorghum-grain" } });
     expect(titles(html)).toEqual(["Sorghum", "Pigeon pea", "Finger millet + pigeon pea (8:1)", "Pigeon pea", "Finger millet + pigeon pea (8:1)", "Maize"]);

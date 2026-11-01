@@ -1,4 +1,5 @@
 import type { CropFitCandidate, CropFitReview, IntercropCompanion, SoilCheck } from "@harvest/contracts";
+import { addDaysIso } from "../year/format";
 
 /**
  * SYNTHETIC test fixtures for the crop fit view (unit tests only; never shown as data). Shapes follow the
@@ -23,9 +24,11 @@ export const SOIL_CHECKS: SoilCheck[] = [
 ];
 
 let rank = 0;
+/** Land preparation gap the engine adds after a harvest (ASSUMPTIONS.landPrepGapDays); synthetic occupancy ends follow it. */
+const LAND_PREP_GAP_DAYS = 10;
 export function fixtureCandidate(over: Partial<CropFitCandidate> & Pick<CropFitCandidate, "cropId" | "productId" | "cropName" | "productName">): CropFitCandidate {
   rank += 1;
-  return {
+  const candidate: CropFitCandidate = {
     establishmentMethod: "direct_sowing", rank, score: 70 - rank * 3,
     components: { price: 0.62, yield: 0.71, soilRotation: 0.65, water: 0.8, confidence: 0.6 },
     sowing: "2027-02-04", harvest: { earliest: "2027-05-15", latest: "2027-06-04" }, durationDays: { low: 100, high: 120 },
@@ -44,6 +47,11 @@ export function fixtureCandidate(over: Partial<CropFitCandidate> & Pick<CropFitC
     basis: [{ kind: "yield_reference", label: "Yield: synthetic test source", sourceId: "synthetic-yield", url: "https://example.org/yield", scope: "IN-KA-hassan", note: null }],
     ...over,
   };
+  // The engine's occupancy (sowing to the later of the main and companion harvest plus the gap) and the companion's harvest
+  // follow the candidate's own dates unless a test sets them: an intercrop without its own companion dates harvests both together.
+  const companionHarvest = over.companionHarvest !== undefined ? over.companionHarvest : candidate.companion ? candidate.harvest : null;
+  const release = companionHarvest && companionHarvest.latest > candidate.harvest.latest ? companionHarvest.latest : candidate.harvest.latest;
+  return { ...candidate, companionHarvest, occupancy: over.occupancy ?? { from: candidate.sowing, to: addDaysIso(release, LAND_PREP_GAP_DAYS) } };
 }
 
 rank = 0;
@@ -95,7 +103,7 @@ export const intercropCompanion = COMPANION;
 /** Array order differs from the ranking on purpose: rank and rankScore decide, not the array and not the raw score. */
 const sorghumPlan = fixtureCandidate({ cropId: "sorghum", productId: "sorghum-grain", cropName: "Sorghum", productName: "Grain", rank: 3, score: 72, rankScore: 66, waitDays: 21, waitPenalty: 0, sowing: "2027-04-06", yearPlanLabels: [], grownBefore: null, yieldForFieldKg: { low: 520, high: 760 } });
 const pigeonPeaPlan = fixtureCandidate({ cropId: "pigeon-pea", productId: "pigeon-pea-whole", cropName: "Pigeon pea", productName: "Whole", rank: 1, score: 70, rankScore: 68, waitDays: 49, waitPenalty: 2.3, sowing: "2027-05-16", yearPlanLabels: ["Best overall"], grownBefore: { cycles: 1, lastSowing: "2025-06-10", lastHarvest: "2025-12-20" }, yieldForFieldKg: { low: 70, high: 110 }, profitForField: { central: 5200, likely: { low: 3100, high: 7600 }, possible: { low: 1500, high: 9800 } } });
-const intercropPlan = fixtureCandidate({ cropId: "finger-millet", productId: "finger-millet-grain", cropName: "Finger millet", productName: "Grain", rank: 2, score: 69, rankScore: 67, waitDays: 56, waitPenalty: 1.6, sowing: "2027-05-23", kind: "intercrop", companion: COMPANION, yearPlanLabels: ["Soil enrichment", "Best profit"], grownBefore: { cycles: 3, lastSowing: "2024-07-02", lastHarvest: null }, yieldForFieldKg: { low: 300, high: 420 } });
+const intercropPlan = fixtureCandidate({ cropId: "finger-millet", productId: "finger-millet-grain", cropName: "Finger millet", productName: "Grain", rank: 2, score: 69, rankScore: 67, waitDays: 56, waitPenalty: 1.6, sowing: "2027-05-23", kind: "intercrop", companion: COMPANION, companionHarvest: { earliest: "2027-06-10", latest: "2027-06-25" }, yearPlanLabels: ["Soil enrichment", "Best profit"], grownBefore: { cycles: 3, lastSowing: "2024-07-02", lastHarvest: null }, yieldForFieldKg: { low: 300, high: 420 } });
 const maizePlan = fixtureCandidate({ cropId: "maize", productId: "maize-grain", cropName: "Maize", productName: "Grain", rank: 4, score: 64, rankScore: 61, waitDays: 91, waitPenalty: 3.4, sowing: "2027-06-20", yearPlanLabels: [], grownBefore: null, soil: { status: "no_report", checks: [] }, profitForField: null });
 export const PLAN_CANDIDATES = [sorghumPlan, maizePlan, intercropPlan, pigeonPeaPlan];
 /** Date mode with a previous-crop override, as the swap picker requests it; cross-referenced with a year plan. */

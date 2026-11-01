@@ -5,13 +5,16 @@ import type {
   NumberRange,
   PriceEstimate,
   RescoreYearPlan,
+  YearPlanOccupant,
   YearPlanOption,
   YearPlanReview,
   YearPlanScenario,
   YearPlanSlot,
 } from "@harvest/contracts";
 import type { CropSummary } from "../../features/comparison/types";
-import { addDaysIso, addYearsIso, formatAreaHa, formatInrBand, formatInrRange, formatKgRange, monthYear, partOfMonth } from "./format";
+import { seasonForMonth } from "../farm/cropFitModel";
+import type { Rotation } from "../state";
+import { addDaysIso, addYearsIso, formatAreaHa, formatInrBand, formatInrRange, formatKgRange, longDate, monthYear, partOfMonth, shortSpan } from "./format";
 
 /** Pure view-model logic for the Year plan: no Solid, no fetch. */
 
@@ -132,6 +135,14 @@ export function replaceOption(review: YearPlanReview, optionId: string, next: Ye
 export const isActive = (review: Pick<YearPlanReview, "status">) =>
   review.status === "pending" || review.status === "running";
 
+/**
+ * A review that answers the rebuild after a swap: a plan (ready or partial), or the server's own answer that no space is
+ * left (`noFreeWindow`, which a fully taken fresh or later year reports as `unavailable` with no options). An error or any
+ * other unavailable review is not a rebuilt plan.
+ */
+export const planRebuilt = (review: Pick<YearPlanReview, "status" | "noFreeWindow">) =>
+  review.status === "ready" || review.status === "partial" || (review.status === "unavailable" && review.noFreeWindow === true);
+
 /** Nothing generated yet for this farm: the view asks the server to build a plan once per load. */
 export const needsGeneration = (review: Pick<YearPlanReview, "status" | "reviewId" | "options">) =>
   !isActive(review) && review.reviewId === null && review.options.length === 0;
@@ -140,13 +151,77 @@ export const needsGeneration = (review: Pick<YearPlanReview, "status" | "reviewI
 export const planningModel = (review: Pick<YearPlanReview, "modelInvocation">) =>
   review.modelInvocation?.model ?? null;
 
-/** The options on screen were built by code alone (provider failed, unavailable, or not used). */
+/**
+ * The options on screen were built by code alone (provider failed, unavailable, or not used). This origin-based rule is
+ * only the fallback for plans stored before `modelSelection` existed; `selectionStatus` prefers the recorded outcome.
+ */
 export const modelUnavailable = (review: Pick<YearPlanReview, "status" | "options">) =>
   review.options.length > 0 &&
   !isActive(review) &&
   (review.status === "unavailable" ||
     review.status === "error" ||
     review.options.every((o) => o.origin === "deterministic"));
+
+export const MODEL_UNAVAILABLE_CHIP = "Model unavailable, showing calculated plans";
+
+export interface SelectionStatus {
+  chip: string;
+  tone: "watch" | "neutral";
+  /** One sentence under the chips; null when the chip says enough. */
+  line: string | null;
+}
+
+/**
+ * "Your saved seasons fill the months after the growing crop, so no new crop fits." in the words the occupants allow: a
+ * saved season is edited here (swap it, or change it in Saved seasons), a recorded crop in Farm details, and last year's
+ * assumed plan by saving or changing that plan. The sentence names only what is actually present among
+ * `scenario.occupied`, so a field held by recorded crops is never said to be held by saved seasons.
+ */
+function noSpaceLine(review: Pick<YearPlanReview, "options" | "scenario">): string {
+  const present = new Set((review.scenario.occupied ?? []).map((o) => o.source));
+  const afterGrowing = review.scenario.kind === "occupied";
+  const span = afterGrowing ? "the months after the growing crop" : "this year";
+  if (present.has("saved_season"))
+    return `Your saved seasons fill ${span}, so no new crop fits. ${review.options.length > 0 ? "Swap a saved crop to change the year." : "Edit them in Saved seasons below."}`;
+  if (present.has("recorded_cycle")) return `Your recorded crops fill ${span}, so no new crop fits.`;
+  if (present.has("assumed_plan")) return "Last year's plan fills this year, so no new crop fits. Save or change that plan to change this.";
+  // Nothing listed: the growing crop alone leaves no window (an occupied field), or no month is left.
+  return afterGrowing
+    ? "The growing crop leaves no free months for another crop, so no new crop fits."
+    : "No free months are left this year, so no new crop fits.";
+}
+
+/**
+ * The chip (and line) that says how the plans on screen were chosen. `noFreeWindow` decides first, whatever the model
+ * outcome: the server marks a fresh or later year that saved seasons fill completely as status `unavailable` with no
+ * `modelSelection` and no options, and that state still needs the chip and the line. Otherwise only the recorded
+ * outcome decides: Meta being skipped by design (fewer than three sequences fit) is not a failure and never reads
+ * "Model unavailable". Plans stored before `modelSelection` existed fall back to the origin-based rule. A pending or
+ * running review shows the "Planning…" chip instead, and a review without any plan to show has nothing to describe.
+ */
+export function selectionStatus(
+  review: Pick<YearPlanReview, "status" | "options" | "scenario" | "modelSelection" | "noFreeWindow">,
+): SelectionStatus | null {
+  if (isActive(review)) return null;
+  if (review.noFreeWindow) return { chip: "No space for another crop", tone: "neutral", line: noSpaceLine(review) };
+  const selection = review.modelSelection;
+  if (!selection) return modelUnavailable(review) ? { chip: MODEL_UNAVAILABLE_CHIP, tone: "watch", line: null } : null;
+  const shown = review.options.length;
+  switch (selection.outcome) {
+    case "model":
+      return null;
+    case "failed":
+    case "not_configured":
+    case "cancelled":
+      return shown > 0 ? { chip: MODEL_UNAVAILABLE_CHIP, tone: "watch", line: null } : null;
+    case "not_used":
+      return shown > 0 ? { chip: "Calculated plans · AI not used in this mode", tone: "neutral", line: null } : null;
+    case "not_needed":
+      if (shown === 1) return { chip: "Only one plan fits", tone: "neutral", line: null };
+      if (shown === 2) return { chip: "Only two plans fit", tone: "neutral", line: null };
+      return null;
+  }
+}
 
 export const displayLabel = (option: Pick<YearPlanOption, "origin" | "label">) =>
   option.origin === "farmer_edit" ? "Your version" : option.label;
@@ -595,4 +670,271 @@ export function idlePenaltyText(option: Pick<YearPlanOption, "idlePenaltyPoints"
   if (!(points > 0)) return null;
   const shown = points < 1 ? "less than 1 point" : `${Math.round(points)} point${Math.round(points) === 1 ? "" : "s"}`;
   return `Idle time lowers the score separately: −${shown} for ${option.idleMonths.toFixed(1).replace(/\.0$/, "")} idle months.`;
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
+// Saved seasons on the calendar (follow-up of 2026-11-01): the occupants every option shares, and swapping a saved
+// season's crop with the same picker as a suggested slot. The swap edits the saved season on the field (workspace save);
+// the year plan is then rebuilt by code.
+
+export type OccupantSource = YearPlanOccupant["source"];
+
+/** Word on the strip and the panel chip. */
+export const OCCUPANT_STRIP_LABEL: Record<OccupantSource, string> = {
+  saved_season: "Saved season",
+  recorded_cycle: "Recorded crop",
+  assumed_plan: "Assumed plan",
+};
+/** Small text under a pill in the option sheet. */
+export const OCCUPANT_PILL_LABEL: Record<OccupantSource, string> = {
+  saved_season: "saved",
+  recorded_cycle: "recorded",
+  assumed_plan: "assumed",
+};
+
+/** Crop name as drawn: an intercrop reads "Main + companion · ratio", a green manure and a sole crop their own name. */
+export const occupantName = (o: Pick<YearPlanOccupant, "kind" | "companion" | "cropName">) =>
+  o.kind === "intercrop" && o.companion ? `${o.cropName} + ${companionLabel(o.companion)}` : o.cropName;
+
+/**
+ * "harvest by 29 Aug 2027" when the farmer's own harvest date exists. Without one the only end date is where the engine
+ * stops the occupancy (the latest sourced harvest plus a buffer and the land-preparation gap), which is not a harvest
+ * date, so it reads "field busy until 8 Sep 2027".
+ */
+export const occupantEndText = (o: Pick<YearPlanOccupant, "harvestDate" | "occupancy">) =>
+  o.harvestDate ? `harvest by ${longDate(o.harvestDate)}` : `field busy until ${longDate(o.occupancy.to)}`;
+
+/** Occupants in sowing order (stable for equal dates). */
+export const sortedOccupants = (occupied: readonly YearPlanOccupant[] | undefined): YearPlanOccupant[] =>
+  [...(occupied ?? [])].sort((a, b) => a.sowing.localeCompare(b.sowing));
+
+/** A pill of the option sheet: a crop of the plan or an occupant, in date order. */
+export type SheetItem = { kind: "slot"; slot: YearPlanSlot } | { kind: "occupant"; occupant: YearPlanOccupant };
+
+/** Slots and occupants of one option merged by sowing date, so the pills read like the calendar. A slot sorts before an occupant sown the same day. */
+export function sheetItems(option: Pick<YearPlanOption, "slots">, occupied: readonly YearPlanOccupant[] | undefined): SheetItem[] {
+  const items: SheetItem[] = [
+    ...option.slots.map((slot) => ({ kind: "slot" as const, slot })),
+    ...sortedOccupants(occupied).map((occupant) => ({ kind: "occupant" as const, occupant })),
+  ];
+  const start = (i: SheetItem) => (i.kind === "slot" ? i.slot.sowing : i.occupant.sowing);
+  return items.sort((a, b) => start(a).localeCompare(start(b)) || (a.kind === b.kind ? 0 : a.kind === "slot" ? -1 : 1));
+}
+
+/**
+ * Context for swapping a saved season: its own sowing date, and the crop before it, which is the nearest earlier item
+ * by sowing among the fixed slot, the option's suggested slots and the other occupants, else the scenario's previous
+ * crop. Null when the occupant is not in the list.
+ */
+export function occupantSwapContext(
+  occupantId: string,
+  option: Pick<YearPlanOption, "slots">,
+  occupied: readonly YearPlanOccupant[] | undefined,
+  previousCropId: string | null,
+): PickerContext | null {
+  const target = (occupied ?? []).find((o) => o.id === occupantId);
+  if (!target) return null;
+  const others: { sowing: string; cropId: string }[] = [
+    ...option.slots.map((s) => ({ sowing: s.sowing, cropId: s.cropId })),
+    ...(occupied ?? []).filter((o) => o.id !== occupantId).map((o) => ({ sowing: o.sowing, cropId: o.cropId })),
+  ].filter((i) => i.sowing < target.sowing);
+  // The latest earlier sowing wins; of two sown the same day the one listed last does.
+  const before = others.reduce<{ sowing: string; cropId: string } | undefined>(
+    (best, item) => (!best || item.sowing >= best.sowing ? item : best),
+    undefined,
+  );
+  return { sowing: target.sowing, after: before?.cropId ?? previousCropId };
+}
+
+/** The picker's `current` for a saved season; null for a green manure (crop fit does not rank those) or an unknown product. */
+export function occupantPickerCurrent(
+  o: Pick<YearPlanOccupant, "kind" | "cropId" | "productId" | "companion">,
+): { cropId: string; productId: string; systemId: string | null } | null {
+  if (o.kind === "green_manure" || !o.productId) return null;
+  return { cropId: o.cropId, productId: o.productId, systemId: o.companion?.systemId ?? null };
+}
+
+/** Whether picking this candidate would change the saved season: crop, product, kind, system or sowing differ. */
+export function occupantPickChanges(
+  o: Pick<YearPlanOccupant, "kind" | "cropId" | "productId" | "companion" | "sowing">,
+  c: CropFitCandidate,
+): boolean {
+  const candidateKind = candidateIsIntercrop(c) ? "intercrop" : "crop";
+  const occupantKind = o.kind === "green_manure" ? "green_manure" : o.kind === "intercrop" && o.companion ? "intercrop" : "crop";
+  return (
+    o.cropId !== c.cropId ||
+    (o.productId ?? null) !== c.productId ||
+    occupantKind !== candidateKind ||
+    (occupantKind === "intercrop" ? (o.companion?.systemId ?? null) : null) !== (candidateIsIntercrop(c) ? c.companion!.systemId : null) ||
+    o.sowing !== c.sowing
+  );
+}
+
+/**
+ * One short line under a calendar row that names the saved seasons ("Saved season: Pigeon pea 16 May to 8 Sep"), so a
+ * narrow screen, where the calendar scrolls to the current month and the season may lie off to the right, still says
+ * what the plan works around. At most two are named; the line never runs past the calendar's 90-character limit.
+ */
+export function occupantHint(occupied: readonly YearPlanOccupant[] | undefined): string | null {
+  const list = sortedOccupants(occupied);
+  if (!list.length) return null;
+  const many = list.length > 1;
+  const lead = list.every((o) => o.source === "saved_season")
+    ? many ? "Saved seasons" : "Saved season"
+    : list.every((o) => o.source === "recorded_cycle")
+      ? many ? "Recorded crops" : "Recorded crop"
+      : list.every((o) => o.source === "assumed_plan")
+        ? "Assumed plan"
+        : "Saved and recorded";
+  for (let named = Math.min(2, list.length); named >= 1; named--) {
+    const names = list.slice(0, named).map((o) => `${occupantName(o)} ${shortSpan(o.sowing, o.occupancy.to)}`).join("; ");
+    const more = list.length > named ? ` and ${list.length - named} more` : "";
+    const text = `${lead}: ${names}${more}`;
+    if (text.length <= CALENDAR_TEXT_MAX) return text;
+  }
+  return `${lead}: ${list.length} on this field`;
+}
+
+/** The label the server's apply writes (`seasonOfMonth`, capitalised): Feb to Apr "Summer", May to Aug "Kharif", else "Rabi". */
+const SEASON_LABEL = { summer: "Summer", kharif: "Kharif", rabi: "Rabi" } as const;
+export const seasonLabelForSowing = (sowingIso: string) => SEASON_LABEL[seasonForMonth(sowingIso)];
+
+/**
+ * The planned harvest a saved season gets from a candidate: the main crop's latest harvest, or the companion's when an
+ * intercrop's companion is harvested later, because the field stays busy until then (the server's apply writes that
+ * later date as well).
+ */
+export const candidatePlannedHarvest = (c: Pick<CropFitCandidate, "harvest" | "companionHarvest">): string =>
+  c.companionHarvest && c.companionHarvest.latest > c.harvest.latest ? c.companionHarvest.latest : c.harvest.latest;
+
+/** The engine's occupancy of a candidate (sowing to release); servers that do not send it fall back to sowing to the planned harvest. */
+export const candidateOccupancy = (c: Pick<CropFitCandidate, "sowing" | "harvest" | "companionHarvest" | "occupancy">): { from: string; to: string } =>
+  c.occupancy ?? { from: c.sowing, to: candidatePlannedHarvest(c) };
+
+/** The engine's overlap rule for occupancies (half-open: a season may begin the day another is released). */
+const occupanciesOverlap = (a: { from: string; to: string }, b: { from: string; to: string }) => a.from < b.to && b.from < a.to;
+
+/** The prefix of the notes the server's apply writes: `Year plan "Best overall" (model) from review ...`. */
+const APPLY_NOTE_PREFIX = 'Year plan "';
+
+/**
+ * Notes after a swap. The apply-written notes carry the old crop's yield, price and cost, which do not belong to the new
+ * crop, so they are replaced by one line saying what changed. Notes the farmer wrote stay as they are.
+ */
+export const swappedSeasonNotes = (
+  existing: string | undefined,
+  change: { fromCropName: string; toCropName: string; todayIso: string },
+): string | undefined =>
+  existing?.startsWith(APPLY_NOTE_PREFIX)
+    ? `Crop changed from ${change.fromCropName} to ${change.toCropName} in the year plan on ${longDate(change.todayIso)}; the earlier plan's figures no longer apply. Dates are calculated references, not predictions.`
+    : existing;
+
+/**
+ * The saved season after the swap: id stays; crop, product, kind, companion, establishment method, dates, year and
+ * season label come from the picked candidate (`plannedHarvestDate` is the later of the main and companion harvest), and
+ * notes written by the year plan's apply are replaced (see `swappedSeasonNotes`). A key the candidate does not set
+ * (establishment method, companion) is removed rather than left from the old crop.
+ */
+export function replacementRotationPlan(
+  existing: Rotation,
+  c: CropFitCandidate,
+  change: { fromCropName: string; todayIso: string },
+): Rotation {
+  const { establishmentMethod: _method, companion: _companion, kind: _kind, productId: _pid, productName: _pname, cropName: _name, notes, ...kept } = existing;
+  const intercrop = candidateIsIntercrop(c);
+  const nextNotes = swappedSeasonNotes(notes, { ...change, toCropName: c.cropName });
+  return {
+    ...kept,
+    ...(nextNotes !== undefined ? { notes: nextNotes } : {}),
+    cropId: c.cropId,
+    cropName: c.cropName,
+    productId: c.productId,
+    productName: c.productName,
+    ...(c.establishmentMethod ? { establishmentMethod: c.establishmentMethod } : {}),
+    kind: intercrop ? "intercrop" : "crop",
+    ...(intercrop
+      ? {
+          companion: {
+            systemId: c.companion!.systemId,
+            cropId: c.companion!.cropId,
+            cropName: c.companion!.cropName,
+            productId: c.companion!.productId,
+            productName: c.companion!.productName,
+            rowRatio: c.companion!.rowRatio,
+          },
+        }
+      : {}),
+    plannedSowingDate: c.sowing,
+    plannedHarvestDate: candidatePlannedHarvest(c),
+    year: Number(c.sowing.slice(0, 4)),
+    season: seasonLabelForSowing(c.sowing),
+  };
+}
+
+export type SavedSeasonSwap =
+  | { kind: "unchanged" }
+  | { kind: "missing"; message: string }
+  | { kind: "refused"; message: string }
+  | { kind: "failed"; message: string }
+  | { kind: "saved"; from: string; to: string };
+
+export const SWAP_MISSING = "This saved season is no longer on the field; reload.";
+export const SWAP_CONFLICT = "Saved seasons changed elsewhere; reload and try again.";
+
+/**
+ * Why a swap cannot be saved, or null when it can: the checks the server's apply makes, run before the save so the farmer
+ * reads the reason in the swap sheet. In order: the candidate's sowing date has passed; it overlaps the growing crop;
+ * it overlaps another occupant of the plan (any source; the season being swapped is left out, it is being replaced).
+ * Overlap is the engine's rule on the candidate's occupancy (`occupancy`, else sowing to planned harvest).
+ */
+export function swapRefusal(args: {
+  occupant: Pick<YearPlanOccupant, "id">;
+  candidate: CropFitCandidate;
+  /** Today's calendar date (ISO); a candidate sown before it cannot be saved. */
+  todayIso: string;
+  /** The growing crop (the fixed slot) of the plan on screen, if any. */
+  fixedSlot: Pick<YearPlanSlot, "cropName" | "occupancy"> | null;
+  occupied: readonly YearPlanOccupant[];
+}): string | null {
+  const { occupant, candidate, todayIso, fixedSlot, occupied } = args;
+  if (candidate.sowing < todayIso) return `The sowing date ${longDate(candidate.sowing)} has passed; pick a crop that can still be sown.`;
+  const taken = candidateOccupancy(candidate);
+  if (fixedSlot && occupanciesOverlap(taken, fixedSlot.occupancy))
+    return `${candidate.cropName} would overlap the growing ${fixedSlot.cropName}, which is expected to hold the field until ${longDate(fixedSlot.occupancy.to)}.`;
+  const other = sortedOccupants(occupied).find((o) => o.id !== occupant.id && occupanciesOverlap(taken, o.occupancy));
+  if (other)
+    return `${candidate.cropName} would overlap ${other.cropName} (${shortSpan(other.occupancy.from, other.occupancy.to)}). Pick a shorter crop or change that season first.`;
+  return null;
+}
+
+/**
+ * Swap a saved season's crop: picking what is already there changes nothing; a pick the server's apply would refuse (see
+ * `swapRefusal`) is refused with its reason and nothing is saved; otherwise the matching saved season (by the occupant's
+ * own id) is replaced and the whole list goes to `save` (the workspace PUT, which carries the expected version). A 409
+ * means the saved seasons changed elsewhere. The caller rebuilds the year plan after "saved".
+ */
+export async function swapSavedSeason(args: {
+  occupant: YearPlanOccupant;
+  candidate: CropFitCandidate;
+  rotationPlans: readonly Rotation[];
+  todayIso: string;
+  fixedSlot: Pick<YearPlanSlot, "cropName" | "occupancy"> | null;
+  occupied: readonly YearPlanOccupant[];
+  save: (patch: { rotationPlans: Rotation[] }) => Promise<unknown>;
+}): Promise<SavedSeasonSwap> {
+  const { occupant, candidate, rotationPlans, todayIso, fixedSlot, occupied, save } = args;
+  if (!occupantPickChanges(occupant, candidate)) return { kind: "unchanged" };
+  if (!rotationPlans.some((r) => r.id === occupant.id)) return { kind: "missing", message: SWAP_MISSING };
+  const refusal = swapRefusal({ occupant, candidate, todayIso, fixedSlot, occupied });
+  if (refusal) return { kind: "refused", message: refusal };
+  const change = { fromCropName: occupant.cropName, todayIso };
+  const replaced = rotationPlans.map((r) => (r.id === occupant.id ? replacementRotationPlan(r, candidate, change) : r));
+  try {
+    await save({ rotationPlans: replaced });
+  } catch (error) {
+    const e = error as { status?: unknown; code?: unknown; message?: unknown };
+    if (e?.status === 409 || e?.code === "version_conflict") return { kind: "failed", message: SWAP_CONFLICT };
+    return { kind: "failed", message: typeof e?.message === "string" && e.message ? e.message : "The saved season could not be changed. Try again." };
+  }
+  return { kind: "saved", from: occupant.cropName, to: candidate.cropName };
 }

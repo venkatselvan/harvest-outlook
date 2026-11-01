@@ -1,6 +1,6 @@
 import { Match, Show, Switch, batch, createEffect, createMemo, createSignal, on, onCleanup } from "solid-js";
 import { A } from "@solidjs/router";
-import type { YearPlanReview, YearPlanSlot } from "@harvest/contracts";
+import type { CropFitCandidate, YearPlanOccupant, YearPlanReview, YearPlanSlot } from "@harvest/contracts";
 import { newEntryId } from "../../features/photo-region/http";
 import { Planner } from "../Planner";
 import { today, useWorkspace } from "../state";
@@ -10,6 +10,7 @@ import { HorizonPager } from "./HorizonPager";
 import { OptionSheet, initialSlot, type TrendState } from "./OptionSheet";
 import { PlanCalendar, PlanCalendarSkeleton } from "./PlanCalendar";
 import { ScenarioLine } from "./ScenarioLine";
+import { SwapNotice } from "./SwapNotice";
 import {
   cropChoices,
   draftProblems,
@@ -18,12 +19,14 @@ import {
   isActive,
   isApplied,
   mergeServerReview,
-  modelUnavailable,
+  planRebuilt,
   planningModel,
   replaceOption,
   rescoreBody,
   scenarioText,
+  selectionStatus,
   slotsToApply,
+  swapSavedSeason,
   type DraftSlot,
   type HorizonNavigation,
 } from "./model";
@@ -67,6 +70,8 @@ export function YearPlanView() {
   const [open, setOpen] = createSignal<{
     optionId: string;
     slotId: string | null;
+    /** A saved season of the scenario to show instead of a crop of the plan. */
+    occupantId: string | null;
   } | null>(null);
   const [editing, setEditing] = createSignal(false);
   const [rescoreBusy, setRescoreBusy] = createSignal(false);
@@ -75,6 +80,10 @@ export function YearPlanView() {
   const [applyBusy, setApplyBusy] = createSignal(false);
   const [applyError, setApplyError] = createSignal("");
   const [applyAdded, setApplyAdded] = createSignal<number | null>(null);
+  /** Swapping a saved season's crop: saving the workspace, then the code rebuild of the plan. */
+  const [swapBusy, setSwapBusy] = createSignal(false);
+  const [swapError, setSwapError] = createSignal("");
+  const [swapped, setSwapped] = createSignal<{ from: string; to: string } | null>(null);
   /** Horizon on screen: undefined is the current horizon, else one of the server's `navigation` dates. */
   const [viewFrom, setViewFrom] = createSignal<string | undefined>(undefined);
   /** True from a pager step until the server's first answer for that horizon. */
@@ -108,6 +117,9 @@ export function YearPlanView() {
       setApplyBusy(false);
       setApplyError("");
       setApplyAdded(null);
+      setSwapBusy(false);
+      setSwapError("");
+      setSwapped(null);
       setViewFrom(undefined);
       setNavigating(false);
       setPendingNav(null);
@@ -241,6 +253,20 @@ export function YearPlanView() {
     setPhase({ kind: "loading" });
     void load(id, true, viewFrom());
   }
+  /**
+   * After a swap the saved seasons have changed, so the context of the plan has changed with them: the server answers the
+   * read for the new context with an empty shell and the ordinary (not forced) request builds the new plan. The refreshing
+   * flag and the error line are the ones Refresh uses.
+   */
+  function rebuild() {
+    const id = farmId();
+    if (!id) return;
+    batch(() => {
+      setRefreshing(true);
+      setRefreshError("");
+    });
+    void load(id, false, viewFrom());
+  }
 
   /** Pager and "Open year N": show the horizon before or after this one, generating it when it has no plan yet. */
   function step(direction: "previous" | "next") {
@@ -255,6 +281,8 @@ export function YearPlanView() {
       setConfirming(null);
       setApplyError("");
       setApplyAdded(null);
+      setSwapError("");
+      setSwapped(null);
       setRefreshError("");
       setRefreshing(false);
       setViewFrom(target.from);
@@ -292,7 +320,7 @@ export function YearPlanView() {
   createEffect(() => {
     const o = openOption();
     const target = open();
-    if (!o || !target || editing()) return;
+    if (!o || !target || editing() || target.occupantId) return;
     const slot = initialSlot(o, target.slotId);
     if (slot.price?.status !== "available") return;
     const key = trendKey(slot);
@@ -346,6 +374,7 @@ export function YearPlanView() {
         setOpen({
           optionId: next.optionId,
           slotId: sameId ?? samePosition ?? null,
+          occupantId: null,
         });
         setEditing(false);
       });
@@ -359,6 +388,48 @@ export function YearPlanView() {
       );
     } finally {
       if (live(gen, id)) setRescoreBusy(false);
+    }
+  }
+
+  /**
+   * Swap a saved season's crop: the matching saved season (by id) is replaced through the workspace save, which carries
+   * the expected version, then both sheets close and the plan is rebuilt by code. A failure stays in the swap sheet.
+   */
+  async function swapOccupant(occupant: YearPlanOccupant, candidate: CropFitCandidate) {
+    const id = farmId();
+    const workspace = s.workspace();
+    const current = review();
+    if (!id || !current || swapBusy()) return;
+    if (!workspace || workspace.farmId !== id || s.workspace.loading)
+      return setSwapError("Your saved seasons are still loading. Try again in a moment.");
+    if (current.stale) return setSwapError("The plan is out of date. Close this, refresh the plan, then try again.");
+    const gen = generation;
+    batch(() => {
+      setSwapBusy(true);
+      setSwapError("");
+    });
+    try {
+      const result = await swapSavedSeason({
+        occupant,
+        candidate,
+        rotationPlans: workspace.rotationPlans,
+        // The checks the server's apply makes: the sowing date, the growing crop and the other saved seasons.
+        todayIso: today(),
+        fixedSlot: current.options.flatMap((o) => o.slots).find((x) => x.fixed) ?? null,
+        occupied: current.scenario.occupied ?? [],
+        save: (patch) => s.saveWorkspace(patch),
+      });
+      if (!live(gen, id)) return;
+      if (result.kind === "unchanged") return; // the sheet closes the picker itself for this case
+      if (result.kind !== "saved") return setSwapError(result.message);
+      batch(() => {
+        setSwapped({ from: result.from, to: result.to });
+        setOpen(null);
+        setEditing(false);
+      });
+      rebuild();
+    } finally {
+      if (live(gen, id)) setSwapBusy(false);
     }
   }
 
@@ -491,10 +562,22 @@ export function YearPlanView() {
                   pending={isActive(r())}
                   model={planningModel(r())}
                   stale={r().stale}
-                  modelUnavailable={modelUnavailable(r())}
+                  selection={selectionStatus(r())}
                   refreshing={refreshing()}
                   onRefresh={refresh}
                 />
+                <Show when={swapped()}>
+                  {(done) => (
+                    <SwapNotice
+                      from={done().from}
+                      to={done().to}
+                      rebuilding={refreshing() || isActive(r())}
+                      rebuilt={planRebuilt(r())}
+                      failed={refreshError() !== ""}
+                      onHide={() => setSwapped(null)}
+                    />
+                  )}
+                </Show>
                 <Show when={refreshError()}>
                   <p class="yp-inline-error" role="alert">
                     {refreshError()}{" "}
@@ -510,17 +593,45 @@ export function YearPlanView() {
                       todayIso={todayIso}
                       options={r().options}
                       appliedOptionIds={r().appliedOptionIds}
-                      onOpen={(optionId, slotId) =>
+                      occupied={r().scenario.occupied ?? []}
+                      onOpen={(optionId, slotId, occupantId) =>
                         batch(() => {
                           setEditing(false);
                           setRescoreError("");
-                          setOpen({ optionId, slotId });
+                          setSwapError("");
+                          setOpen({ optionId, slotId, occupantId: occupantId ?? null });
                         })
                       }
                     />
                   </Match>
                   <Match when={isActive(r())}>
                     <PlanCalendarSkeleton />
+                  </Match>
+                  <Match when={(r().scenario.occupied ?? []).length > 0}>
+                    {/* No plan fits, but saved seasons take the year: show them, read-only, instead of an empty page. */}
+                    <PlanCalendar
+                      horizonFrom={r().scenario.horizon.from}
+                      todayIso={todayIso}
+                      options={[]}
+                      appliedOptionIds={[]}
+                      occupied={r().scenario.occupied ?? []}
+                      onOpen={() => {}}
+                    />
+                    <Show when={!r().noFreeWindow}>
+                      <div class="yp-card">
+                        <h3>
+                          {r().status === "error" ? "The plan could not be built right now" : "No crop sequence fits yet"}
+                        </h3>
+                        <p>
+                          {r().status === "error"
+                            ? "Something went wrong while building plans. Your saved seasons are unchanged."
+                            : "No sourced sowing window fits this field in the next 12 months."}
+                        </p>
+                        <button type="button" class="btn compact secondary" disabled={refreshing()} onClick={refresh}>
+                          Try again
+                        </button>
+                      </div>
+                    </Show>
                   </Match>
                   <Match when={true}>
                     <div class="yp-card">
@@ -556,13 +667,19 @@ export function YearPlanView() {
             review={review()!}
             option={option}
             slotId={open()?.slotId ?? null}
+            occupantId={open()?.occupantId ?? null}
             applied={!!review() && isApplied(review()!, option.optionId)}
             editing={editing()}
             choices={choices()}
             rescoreBusy={rescoreBusy()}
             rescoreError={rescoreError()}
             trend={trendFor}
-            onSelectSlot={(slotId) => setOpen((o) => (o ? { ...o, slotId } : o))}
+            onSelectSlot={(slotId) => setOpen((o) => (o ? { ...o, slotId, occupantId: null } : o))}
+            onSelectOccupant={(occupantId) => setOpen((o) => (o ? { ...o, occupantId } : o))}
+            onSwapOccupant={(occupant, candidate) => void swapOccupant(occupant, candidate)}
+            onSwapReset={() => setSwapError("")}
+            swapBusy={swapBusy()}
+            swapError={swapError()}
             onEdit={() =>
               batch(() => {
                 setRescoreError("");
@@ -589,6 +706,7 @@ export function YearPlanView() {
               batch(() => {
                 setOpen(null);
                 setEditing(false);
+                setSwapError("");
               })
             }
           />

@@ -1,5 +1,6 @@
 import { For, Show, createEffect, createSignal, on } from "solid-js";
-import type { YearPlanGap, YearPlanOption, YearPlanSlot } from "@harvest/contracts";
+import type { YearPlanGap, YearPlanOccupant, YearPlanOption, YearPlanSlot } from "@harvest/contracts";
+import { Icon } from "../icons";
 import { AiSpark } from "../ui/AiSpark";
 import { Chip } from "../ui/Chip";
 import { ScoreRing, ringValue } from "../ui/ScoreRing";
@@ -15,7 +16,12 @@ import {
   isLegume,
   nitrogenCreditText,
   noteLines,
+  OCCUPANT_STRIP_LABEL,
+  occupantHint,
+  occupantEndText,
+  occupantName,
   profitText,
+  sortedOccupants,
 } from "./model";
 
 const COLUMNS = 12;
@@ -41,16 +47,39 @@ export function stripLabel(slot: YearPlanSlot): string {
 export const gapLabel = (gap: YearPlanGap) =>
   `Field rests ${shortSpan(gap.from, gap.to)}, ${gap.days} days. ${gap.reason}`;
 
-export type TrackItem = { kind: "slot"; slot: YearPlanSlot } | { kind: "gap"; gap: YearPlanGap };
+/**
+ * Accessible name of a saved-season strip (also recorded crops and the assumed plan). It starts with the strip's visible
+ * text (name, then "Saved season · dates") for speech control (WCAG 2.5.3). `interactive` false (the "Saved seasons"
+ * row of a review without plans) leaves out "Open details".
+ */
+export function occupantLabel(o: YearPlanOccupant, interactive = true): string {
+  const what = o.source === "saved_season" ? "saved season" : o.source === "recorded_cycle" ? "recorded crop" : "assumed plan";
+  const from = o.source === "assumed_plan" ? " Assumed from last year's plan." : "";
+  return `${occupantName(o)}, ${what}, ${shortSpan(o.sowing, o.occupancy.to)}.${from} Sow ${longDate(o.sowing)}, ${occupantEndText(o)}${interactive ? ". Open details" : ""}`;
+}
 
-/** Crops and idle gaps of one option in calendar order, so Tab follows the timeline. A crop sorts before a gap that starts the same day. */
-export function trackItems(option: Pick<YearPlanOption, "slots" | "gaps">): TrackItem[] {
+export type TrackItem =
+  | { kind: "slot"; slot: YearPlanSlot }
+  | { kind: "gap"; gap: YearPlanGap }
+  | { kind: "occupant"; occupant: YearPlanOccupant };
+
+const TRACK_RANK = { slot: 0, occupant: 1, gap: 2 } as const;
+
+/**
+ * Crops, saved seasons and idle gaps of one option in calendar order, so Tab follows the timeline. Of two items that
+ * start the same day a crop sorts first, then a saved season, then a gap.
+ */
+export function trackItems(
+  option: Pick<YearPlanOption, "slots" | "gaps">,
+  occupied: readonly YearPlanOccupant[] = [],
+): TrackItem[] {
   const items: TrackItem[] = [
     ...option.slots.map((slot) => ({ kind: "slot" as const, slot })),
+    ...sortedOccupants(occupied).map((occupant) => ({ kind: "occupant" as const, occupant })),
     ...(option.gaps ?? []).map((gap) => ({ kind: "gap" as const, gap })),
   ];
-  const start = (i: TrackItem) => (i.kind === "slot" ? i.slot.sowing : i.gap.from);
-  return items.sort((a, b) => start(a).localeCompare(start(b)) || (a.kind === b.kind ? 0 : a.kind === "slot" ? -1 : 1));
+  const start = (i: TrackItem) => (i.kind === "slot" ? i.slot.sowing : i.kind === "occupant" ? i.occupant.sowing : i.gap.from);
+  return items.sort((a, b) => start(a).localeCompare(start(b)) || TRACK_RANK[a.kind] - TRACK_RANK[b.kind]);
 }
 
 const gapKey = (optionId: string, gap: YearPlanGap) => `${optionId}|${gap.from}|${gap.to}`;
@@ -61,7 +90,9 @@ const gapKey = (optionId: string, gap: YearPlanGap) => `${optionId}|${gap.from}|
  * "Calculated" chip, profit headline) and a track with one strip per crop from sowing to the latest harvest. The crop
  * already growing is hatched and labelled "Growing now"; a green manure is dashed with a leaf pattern; an intercrop is
  * banded and reads "Main + companion · row ratio"; an idle stretch of
- * 21 days or more is a light "Field rests" strip whose reason opens on tap or focus.
+ * 21 days or more is a light "Field rests" strip whose reason opens on tap or focus. Saved seasons (and recorded crops
+ * or the assumed plan) that take months of the horizon are drawn in every row as blue-outlined "Saved season" strips
+ * with a pin; when there are no plans at all but there are saved seasons, one non-interactive "Saved seasons" row shows them.
  *
  * The head is a div with a stretched button over it (not a button around everything) because the AI spark is itself a
  * button and buttons cannot nest. Strips, gaps and the head button are all reachable by Tab; Enter or Space opens the
@@ -74,7 +105,10 @@ export function PlanCalendar(props: {
   todayIso: string;
   options: readonly YearPlanOption[];
   appliedOptionIds: readonly string[];
-  onOpen: (optionId: string, slotId: string | null) => void;
+  /** Saved seasons, recorded crops and the assumed plan taking months of the horizon (`review.scenario.occupied ?? []`). */
+  occupied: readonly YearPlanOccupant[];
+  /** A crop strip passes its slot id; a saved-season strip passes null and the occupant's id; a row head passes neither. */
+  onOpen: (optionId: string, slotId: string | null, occupantId?: string) => void;
 }) {
   let scroller: HTMLDivElement | undefined;
   const [openGap, setOpenGap] = createSignal<string | null>(null);
@@ -82,12 +116,17 @@ export function PlanCalendar(props: {
   const todayColumn = () => columnOf(props.todayIso, props.horizonFrom, COLUMNS);
   const todayLeft = () => (monthPosition(props.todayIso, props.horizonFrom) / COLUMNS) * 100;
 
+  // The "Saved seasons" row of a review without plans has nothing at the current month: start at its first season.
+  const firstSavedColumn = () => {
+    const first = sortedOccupants(props.occupied)[0];
+    return first ? Math.max(0, Math.min(COLUMNS - 1, Math.floor(monthPosition(first.sowing, props.horizonFrom)))) : null;
+  };
   // Scroll so the current month is the first visible column (only matters when the grid is wider than the screen).
   createEffect(
     on(
-      () => [props.horizonFrom, props.todayIso, props.options.length > 0] as const,
-      () => {
-        const column = todayColumn();
+      () => [props.horizonFrom, props.todayIso, props.options.length > 0, props.occupied.length] as const,
+      ([, , hasOptions]) => {
+        const column = hasOptions ? todayColumn() : (firstSavedColumn() ?? todayColumn());
         if (scroller && column == null) scroller.scrollLeft = 0; // a later horizon has no current month
         if (!scroller || column == null) return;
         requestAnimationFrame(() => {
@@ -158,14 +197,17 @@ export function PlanCalendar(props: {
                     />
                   </div>
                   <div class="yp-track">
-                    <div class="yp-track-grid" aria-hidden="true">
-                      <For each={columns()}>{(_, i) => <span classList={{ "is-current": i() === todayColumn() }} />}</For>
-                    </div>
-                    <Show when={todayColumn() != null}>
-                      <span class="yp-today" style={{ left: `${todayLeft()}%` }} aria-hidden="true" />
-                    </Show>
-                    <For each={trackItems(option)}>
+                    <TrackBackdrop columns={columns()} todayColumn={todayColumn()} todayLeft={todayLeft()} />
+                    <For each={trackItems(option, props.occupied)}>
                       {(item) => {
+                        if (item.kind === "occupant")
+                          return (
+                            <OccupantStrip
+                              occupant={item.occupant}
+                              horizonFrom={props.horizonFrom}
+                              onOpen={() => props.onOpen(option.optionId, null, item.occupant.id)}
+                            />
+                          );
                         if (item.kind === "gap") {
                           const gap = item.gap;
                           const place = () => stripPlacement(gap.from, gap.to, props.horizonFrom, COLUMNS);
@@ -253,6 +295,7 @@ export function PlanCalendar(props: {
                       <For each={growingLines()}>{(line) => <span>{line}</span>}</For>
                     </p>
                   </Show>
+                  <SavedHint text={occupantHint(props.occupied)} />
                   <Show when={openedGap()}>
                     {(gap) => (
                       <div class="yp-gap-note" role="status">
@@ -285,6 +328,27 @@ export function PlanCalendar(props: {
               );
             }}
           </For>
+          <Show when={props.options.length === 0 && props.occupied.length > 0}>
+            <div class="yp-cal-row yp-saved-row" role="group" aria-label="Saved seasons">
+              <div class="yp-row-head">
+                <span class="yp-row-text">
+                  <span class="yp-row-line">
+                    <span class="yp-row-title">
+                      <strong>Saved seasons</strong>
+                    </span>
+                    <Chip tone="info">Yours</Chip>
+                  </span>
+                </span>
+              </div>
+              <div class="yp-track">
+                <TrackBackdrop columns={columns()} todayColumn={todayColumn()} todayLeft={todayLeft()} />
+                <For each={sortedOccupants(props.occupied)}>
+                  {(occupant) => <OccupantStrip occupant={occupant} horizonFrom={props.horizonFrom} />}
+                </For>
+              </div>
+              <SavedHint text={occupantHint(props.occupied)} />
+            </div>
+          </Show>
         </div>
       </div>
       <div class="yp-legend" aria-hidden="true">
@@ -294,6 +358,14 @@ export function PlanCalendar(props: {
         <span>
           <i class="yp-swatch" /> Planned crop
         </span>
+        <span>
+          <i class="yp-swatch is-saved" /> Saved season
+        </span>
+        <Show when={props.occupied.some((o) => o.source === "assumed_plan")}>
+          <span>
+            <i class="yp-swatch is-assumed" /> Assumed
+          </span>
+        </Show>
         <span>
           <i class="yp-swatch is-legume" /> Legume
         </span>
@@ -316,6 +388,92 @@ export function PlanCalendar(props: {
         </Show>
       </div>
     </div>
+  );
+}
+
+/**
+ * The saved seasons in words, kept in view beside the scrolling calendar (sticky like the other row notes). Shown only
+ * where the calendar is narrower than its 12 columns (a container query in the stylesheet), since only there can a
+ * season be out of sight; hidden from assistive technology because each strip already carries its full name.
+ */
+function SavedHint(props: { text: string | null }) {
+  return (
+    <Show when={props.text}>
+      {(text) => (
+        <p class="yp-row-notes yp-saved-hint" aria-hidden="true">
+          <span>{text()}</span>
+        </p>
+      )}
+    </Show>
+  );
+}
+
+/** The month lines and the today marker behind a row's strips. */
+function TrackBackdrop(props: { columns: readonly unknown[]; todayColumn: number | null; todayLeft: number }) {
+  return (
+    <>
+      <div class="yp-track-grid" aria-hidden="true">
+        <For each={props.columns}>{(_, i) => <span classList={{ "is-current": i() === props.todayColumn }} />}</For>
+      </div>
+      <Show when={props.todayColumn != null}>
+        <span class="yp-today" style={{ left: `${props.todayLeft}%` }} aria-hidden="true" />
+      </Show>
+    </>
+  );
+}
+
+/**
+ * One saved season, recorded crop or assumed plan, from sowing to the day the engine holds the field until. A button
+ * that opens the option sheet on this season when `onOpen` is given; otherwise a plain labelled image (the row of a
+ * review without plans, where there is no sheet to open). Solid outline and a pin, so it cannot be taken for a crop
+ * the plan suggests; the assumed plan is lighter.
+ */
+function OccupantStrip(props: { occupant: YearPlanOccupant; horizonFrom: string; onOpen?: () => void }) {
+  const o = () => props.occupant;
+  const place = () => stripPlacement(o().sowing, o().occupancy.to, props.horizonFrom, COLUMNS);
+  const classes = () => ({
+    "is-saved": o().source !== "assumed_plan",
+    "is-assumed": o().source === "assumed_plan",
+    "is-clipped-start": place().clippedStart,
+    "is-clipped-end": place().clippedEnd,
+  });
+  const inner = () => (
+    <span class="yp-strip-text" aria-hidden="true">
+      <span class="yp-strip-name">
+        <Icon name="pin" size={11} class="yp-strip-pin" />
+        {occupantName(o())}
+      </span>
+      <span class="yp-strip-dates">
+        {OCCUPANT_STRIP_LABEL[o().source]} · {shortSpan(o().sowing, o().occupancy.to)}
+      </span>
+    </span>
+  );
+  const style = () => ({ left: `${place().left}%`, width: `${place().width}%` });
+  return (
+    <Show when={place().visible}>
+      <Show
+        when={props.onOpen}
+        fallback={
+          <div class="yp-strip" classList={classes()} style={style()} role="img" aria-label={occupantLabel(o(), false)}>
+            {inner()}
+          </div>
+        }
+      >
+        {(open) => (
+          <button
+            type="button"
+            class="yp-strip"
+            classList={classes()}
+            style={style()}
+            aria-label={occupantLabel(o())}
+            data-occupant-id={o().id}
+            onClick={() => open()()}
+          >
+            {inner()}
+          </button>
+        )}
+      </Show>
+    </Show>
   );
 }
 

@@ -42,12 +42,14 @@ export interface CropFitPickerProps {
   current: { cropId: string; productId: string; systemId?: string | null } | null;
   onPick: (candidate: CropFitCandidate) => void;
   onClose: () => void;
+  /** A pick is being saved: "Use this crop" and "Try again" are disabled; Keep and Cancel stay usable (they only close). */
+  busy?: boolean | undefined;
 }
 
 const useLabel = (c: CropFitCandidate) => `Use this crop: ${candidateTitle(c)}`;
 
 /** One crop: title, rank and score, chips, the numbers that matter for a swap, and the Keep or Use button. */
-export function PickerRow(props: { candidate: CropFitCandidate; fieldAreaHa: number | null; current: CurrentCrop | null; pick?: CropFitPick | undefined; showPickChip?: CropFitPick | undefined; onUse: () => void; onKeep: () => void }) {
+export function PickerRow(props: { candidate: CropFitCandidate; fieldAreaHa: number | null; current: CurrentCrop | null; pick?: CropFitPick | undefined; showPickChip?: CropFitPick | undefined; onUse: () => void; onKeep: () => void; busy?: boolean | undefined }) {
   const c = () => props.candidate;
   const selected = () => rowAction(c(), props.current) === "keep";
   const profit = () => profitText(c(), props.fieldAreaHa);
@@ -91,7 +93,7 @@ export function PickerRow(props: { candidate: CropFitCandidate; fieldAreaHa: num
       </p>
       <SoilChips candidate={c()} max={3} />
       <div class="cf-pick-actions">
-        <button type="button" class={`btn compact ${selected() ? "secondary" : ""}`} aria-label={selected() ? `Keep ${candidateTitle(c())}` : useLabel(c())} onClick={() => (selected() ? props.onKeep() : props.onUse())}>
+        <button type="button" class={`btn compact ${selected() ? "secondary" : ""}`} disabled={!selected() && props.busy === true} aria-label={selected() ? `Keep ${candidateTitle(c())}` : useLabel(c())} onClick={() => (selected() ? props.onKeep() : props.onUse())}>
           {selected() ? "Keep" : "Use this crop"}
         </button>
       </div>
@@ -119,6 +121,7 @@ export function CropFitPickerView(props: {
   onKeep: () => void;
   onRetry: () => void;
   onClose: () => void;
+  busy?: boolean | undefined;
 }) {
   const sections = () => (props.review ? pickerSections(props.review, props.current) : { current: null, picks: [], rest: [] });
   const cards = () => (props.review ? pickCards(props.review) : []);
@@ -158,7 +161,7 @@ export function CropFitPickerView(props: {
               </article>
             }
           >
-            {(c) => <PickerRow candidate={c()} fieldAreaHa={areaHa()} current={props.current} pick={pickFor(c())} onUse={() => props.onPick(c())} onKeep={props.onKeep} />}
+            {(c) => <PickerRow candidate={c()} fieldAreaHa={areaHa()} current={props.current} pick={pickFor(c())} onUse={() => props.onPick(c())} onKeep={props.onKeep} busy={props.busy} />}
           </Show>
         </section>
       </Show>
@@ -169,7 +172,7 @@ export function CropFitPickerView(props: {
             <div class="cf-empty" role="alert">
               <h4>{f().kind === "offline" ? "Could not reach the server" : "Crops could not be scored right now"}</h4>
               <p>{f().message}</p>
-              <button type="button" class="btn compact secondary" disabled={props.retrying} onClick={() => props.onRetry()}>
+              <button type="button" class="btn compact secondary" disabled={props.retrying || props.busy === true} onClick={() => props.onRetry()}>
                 Try again
               </button>
             </div>
@@ -199,7 +202,7 @@ export function CropFitPickerView(props: {
                   </div>
                   <div class="cf-pick-list">
                     <For each={sections().picks}>
-                      {(card) => <PickerRow candidate={card.candidate} fieldAreaHa={areaHa()} current={props.current} pick={card.pick} onUse={() => props.onPick(card.candidate)} onKeep={props.onKeep} />}
+                      {(card) => <PickerRow candidate={card.candidate} fieldAreaHa={areaHa()} current={props.current} pick={card.pick} onUse={() => props.onPick(card.candidate)} onKeep={props.onKeep} busy={props.busy} />}
                     </For>
                   </div>
                 </section>
@@ -213,7 +216,7 @@ export function CropFitPickerView(props: {
                 </div>
                 <div class="cf-pick-list">
                   <For each={sections().rest}>
-                    {(c) => <PickerRow candidate={c} fieldAreaHa={areaHa()} current={props.current} showPickChip={pickFor(c)} onUse={() => props.onPick(c)} onKeep={props.onKeep} />}
+                    {(c) => <PickerRow candidate={c} fieldAreaHa={areaHa()} current={props.current} showPickChip={pickFor(c)} onUse={() => props.onPick(c)} onKeep={props.onKeep} busy={props.busy} />}
                   </For>
                 </div>
               </section>
@@ -292,6 +295,7 @@ export function CropFitPicker(props: CropFitPickerProps) {
       onPick={props.onPick}
       onKeep={props.onClose}
       onClose={props.onClose}
+      busy={props.busy}
       onRetry={() => {
         if (retrying()) return;
         setRetrying(true);

@@ -70,6 +70,47 @@ export const StageTimeline = z.object({
 }).strict();
 
 /**
+ * Saved-season follow-up (2026-11-01, docs/research/YEAR_PLAN_SAVED_SEASONS.md): a saved season or recorded crop that
+ * takes months of this horizon. Every option shares them: the calendar draws them in each row as "Saved season" strips
+ * and the option sheet lets the farmer swap a saved season's crop with the same picker as a suggested slot (the swap
+ * edits the saved season on the field; the plan is then rebuilt by code). 'assumed_plan' is the previous year's unsaved
+ * plan a future horizon follows; it is drawn lighter and cannot be swapped.
+ */
+export const YearPlanOccupant = z.object({
+ /** The saved season's or cycle's own id (so the UI can edit it); 'assumed:<reviewId>' for an assumed plan. */
+ id: z.string().max(160),
+ source: z.enum(['saved_season', 'recorded_cycle', 'assumed_plan']),
+ /** The real crop id (an intercrop's main crop), never the engine's rotation token. */
+ cropId: z.string().max(120),
+ productId: z.string().max(200).nullable(),
+ cropName: z.string().max(120),
+ productName: z.string().max(120).nullable(),
+ kind: z.enum(['crop', 'green_manure', 'intercrop']),
+ companion: z.object({systemId: z.string().max(120).nullable(), cropId: z.string().max(120), cropName: z.string().max(120), rowRatio: z.string().max(20)}).strict().nullable(),
+ establishmentMethod: z.string().max(80).nullable(),
+ /** Planned sowing (saved season) or recorded sowing (cycle). */
+ sowing: isoDate,
+ /** The farmer's planned or recorded harvest date; null when the occupancy end comes from the crop's duration. */
+ harvestDate: isoDate.nullable(),
+ /** The months the engine treats as taken, in full (not clipped to the horizon). */
+ occupancy: DateWindow,
+ occupancyBasis: z.enum(['recorded', 'planned', 'sourced_duration', 'assumed_duration']),
+ note: text.nullable(),
+}).strict();
+
+/**
+ * How the plans on screen were chosen (same follow-up). 'model': Meta chose among the code-scored sequences.
+ * 'not_needed': fewer than three distinct sequences fit, so code showed what fits and no model call was made.
+ * 'not_configured' / 'not_used': no model key, or a runtime mode that never calls Meta. 'cancelled': the requesting
+ * session ended first. 'failed': the call was made and failed or was rejected by the checks (`detail` = failure code).
+ * Absent on plans stored before this field existed; the UI then falls back to the option origins.
+ */
+export const YearPlanSelection = z.object({
+ outcome: z.enum(['model', 'not_needed', 'not_configured', 'not_used', 'cancelled', 'failed']),
+ detail: z.string().max(200).nullable(),
+}).strict();
+
+/**
  * Round 3 (ROUND3_SPEC.md section 6): the companion crop of an intercrop slot. Yield shares are fractions of the
  * sole-crop regional yield (sourced per system, or the flagged research fallback); the slot's main crop keeps its own
  * yield, price and cost fields and the combined revenue goes into the slot estimates.
@@ -188,6 +229,8 @@ export const YearPlanScenario = z.object({
  districtId: z.string().nullable(),
  soilSummary: text.nullable(),
  neighbourhoodActiveMonths: z.array(z.number().int().min(1).max(12)).nullable(),
+ /** Saved seasons, other recorded crops and an assumed plan that take months of this horizon, in sowing order (the current growing cycle is the fixed slot, not listed here). */
+ occupied: z.array(YearPlanOccupant).max(24).optional(),
 }).strict();
 
 export const YearPlanReview = z.object({
@@ -206,6 +249,10 @@ export const YearPlanReview = z.object({
  options: z.array(YearPlanOption).max(5),
  /** Round 3: horizon paging (ROUND3_SPEC.md section 1); absent on servers that only serve the current horizon. */
  navigation: z.object({from: isoDate, previousFrom: isoDate.nullable(), nextFrom: isoDate.nullable(), yearIndex: z.number().int().min(0).max(3), maxYearIndex: z.number().int().min(0).max(3)}).strict().optional(),
+ /** How the options were chosen (see YearPlanSelection); null while pending, absent on older stored plans. */
+ modelSelection: YearPlanSelection.nullable().optional(),
+ /** True when the growing crop and the occupants leave no window in this horizon where any sourced crop fits: the options then hold the growing crop alone, or nothing (status 'unavailable'). */
+ noFreeWindow: z.boolean().optional(),
  candidatesConsidered: z.number().int().nonnegative(),
  summary: text,
  limitations: z.array(text),
@@ -249,6 +296,8 @@ export type PriceEstimate = z.infer<typeof PriceEstimate>;
 export type CostEstimate = z.infer<typeof CostEstimate>;
 export type StageTimeline = z.infer<typeof StageTimeline>;
 export type IntercropCompanion = z.infer<typeof IntercropCompanion>;
+export type YearPlanOccupant = z.infer<typeof YearPlanOccupant>;
+export type YearPlanSelection = z.infer<typeof YearPlanSelection>;
 export type YearPlanHorizonQuery = z.infer<typeof YearPlanHorizonQuery>;
 export type YearPlanSlot = z.infer<typeof YearPlanSlot>;
 export type YearPlanOption = z.infer<typeof YearPlanOption>;

@@ -1,5 +1,5 @@
 import { For, Show, createEffect, createSignal, on } from "solid-js";
-import type { PriceTrend, ScoreComponents, YearPlanOption, YearPlanReview, YearPlanSlot } from "@harvest/contracts";
+import type { PriceTrend, ScoreComponents, YearPlanOccupant, YearPlanOption, YearPlanReview, YearPlanSlot } from "@harvest/contracts";
 import type { CropFitCandidate } from "@harvest/contracts";
 import { Icon } from "../icons";
 import { AiSparkInline } from "../ui/AiSpark";
@@ -33,10 +33,19 @@ import {
   isIntercrop,
   isLegume,
   nitrogenCreditText,
+  OCCUPANT_PILL_LABEL,
+  OCCUPANT_STRIP_LABEL,
+  occupantEndText,
+  occupantName,
+  occupantPickChanges,
+  occupantPickerCurrent,
+  occupantSwapContext,
   pickChangesDraft,
   pickerCurrent,
   priceBasisText,
   profitText,
+  ratioStated,
+  sheetItems,
   shareBasisText,
   shareText,
   swapContext,
@@ -75,6 +84,8 @@ export function OptionSheet(props: {
   review: YearPlanReview;
   option: YearPlanOption;
   slotId: string | null;
+  /** A saved season to show instead of a crop of the plan (the strip that was tapped, or the pill picked). */
+  occupantId: string | null;
   applied: boolean;
   editing: boolean;
   choices: readonly CropChoice[];
@@ -82,6 +93,13 @@ export function OptionSheet(props: {
   rescoreError: string;
   trend: (slot: YearPlanSlot) => TrendState | undefined;
   onSelectSlot: (slotId: string) => void;
+  onSelectOccupant: (occupantId: string) => void;
+  /** Swap a saved season's crop for a picked candidate: the view saves the workspace, then rebuilds the plan and closes the sheet. */
+  onSwapOccupant: (occupant: YearPlanOccupant, candidate: CropFitCandidate) => void;
+  /** Cleared when the swap picker closes without a pick. */
+  onSwapReset: () => void;
+  swapBusy: boolean;
+  swapError: string;
   onEdit: () => void;
   onCancelEdit: () => void;
   onRescore: (drafts: DraftSlot[]) => void;
@@ -114,6 +132,28 @@ export function OptionSheet(props: {
     setSwapKey(null);
     if (!picker || !pickChangesDraft(picker.target, candidate)) return;
     props.onRescore(applyPick(swapDrafts(), picker.key, candidate));
+  };
+  // Saved seasons: pills and panel beside the plan's own crops; the swap edits the saved season, not this option.
+  const occupied = () => props.review.scenario.occupied ?? [];
+  const occupant = () => (props.occupantId ? occupied().find((o) => o.id === props.occupantId) : undefined);
+  const items = () => sheetItems(props.option, occupied());
+  const [occupantSwapId, setOccupantSwapId] = createSignal<string | null>(null);
+  const occupantSwap = () => {
+    const target = occupied().find((o) => o.id === occupantSwapId());
+    if (!target) return undefined;
+    const context = occupantSwapContext(target.id, props.option, occupied(), props.review.scenario.previousCropId);
+    return context ? { target, context, current: occupantPickerCurrent(target) } : undefined;
+  };
+  const closeOccupantSwap = () => {
+    setOccupantSwapId(null);
+    props.onSwapReset();
+  };
+  /** Picking what the saved season already is only closes the picker; anything else is saved by the view. */
+  const onOccupantPick = (candidate: CropFitCandidate) => {
+    const picker = occupantSwap();
+    if (!picker) return;
+    if (!occupantPickChanges(picker.target, candidate)) return closeOccupantSwap();
+    props.onSwapOccupant(picker.target, candidate);
   };
   const profit = () => profitText(props.option);
   const warnings = () => calendarWarnings(props.option.warnings);
@@ -226,25 +266,37 @@ export function OptionSheet(props: {
             </ul>
           </section>
         </Show>
-        <Show when={props.option.slots.length > 1}>
+        <Show when={items().length > 1}>
           <div class="yp-slot-tabs" role="group" aria-label="Crops in this plan">
-            <For each={props.option.slots}>
-              {(s) => (
-                <button
-                  type="button"
-                  class="yp-slot-tab"
-                  aria-pressed={s.slotId === slot().slotId}
-                  onClick={() => props.onSelectSlot(s.slotId)}
-                >
-                  {s.cropName}
-                  <Show when={s.fixed}>
-                    <small>growing now</small>
-                  </Show>
-                  <Show when={isGreenManure(s)}>
-                    <small>green manure</small>
-                  </Show>
-                </button>
-              )}
+            <For each={items()}>
+              {(item) =>
+                item.kind === "slot" ? (
+                  <button
+                    type="button"
+                    class="yp-slot-tab"
+                    aria-pressed={!occupant() && item.slot.slotId === slot().slotId}
+                    onClick={() => props.onSelectSlot(item.slot.slotId)}
+                  >
+                    {item.slot.cropName}
+                    <Show when={item.slot.fixed}>
+                      <small>growing now</small>
+                    </Show>
+                    <Show when={isGreenManure(item.slot)}>
+                      <small>green manure</small>
+                    </Show>
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    class="yp-slot-tab is-saved"
+                    aria-pressed={occupant()?.id === item.occupant.id}
+                    onClick={() => props.onSelectOccupant(item.occupant.id)}
+                  >
+                    {item.occupant.cropName}
+                    <small>{OCCUPANT_PILL_LABEL[item.occupant.source]}</small>
+                  </button>
+                )
+              }
             </For>
           </div>
         </Show>
@@ -258,13 +310,27 @@ export function OptionSheet(props: {
             {props.rescoreError}
           </p>
         </Show>
-        <SlotDetail
-          slot={slot()}
-          areaHa={props.option.fieldAreaHa}
-          trend={props.trend(slot())}
-          onSwap={props.option.editable && !slot().fixed ? () => setSwapKey(slot().slotId) : undefined}
-          swapDisabled={props.rescoreBusy}
-        />
+        <Show
+          when={occupant()}
+          fallback={
+            <SlotDetail
+              slot={slot()}
+              areaHa={props.option.fieldAreaHa}
+              trend={props.trend(slot())}
+              onSwap={props.option.editable && !slot().fixed ? () => setSwapKey(slot().slotId) : undefined}
+              swapDisabled={props.rescoreBusy}
+            />
+          }
+        >
+          {(o) => (
+            <OccupantDetail
+              occupant={o()}
+              onSwap={o().source === "saved_season" ? () => setOccupantSwapId(o().id) : undefined}
+              swapDisabled={props.rescoreBusy || props.swapBusy}
+              stale={props.review.stale}
+            />
+          )}
+        </Show>
         <section class="yp-sheet-section" aria-labelledby="yp-score">
           <h3 id="yp-score">How the score is built</h3>
           <ul class="yp-bars">
@@ -309,7 +375,101 @@ export function OptionSheet(props: {
           />
         )}
       </Show>
+      <Show when={occupantSwap()}>
+        {(picker) => (
+          <SwapSheet
+            title={`Swap ${picker().target.cropName}`}
+            farmId={props.farmId}
+            context={picker().context}
+            current={picker().current}
+            note="After you pick, the saved season on your field is changed and the year plan is rebuilt by code, not by AI."
+            busy={props.swapBusy}
+            error={props.swapError}
+            onPick={onOccupantPick}
+            onClose={closeOccupantSwap}
+          />
+        )}
+      </Show>
     </Sheet>
+  );
+}
+
+const BASIS_TEXT: Record<YearPlanOccupant["occupancyBasis"], string> = {
+  recorded: "from the recorded dates",
+  planned: "from your planned dates",
+  sourced_duration: "harvest worked out from the crop's sourced duration",
+  assumed_duration: "harvest worked out from an assumed duration",
+};
+
+const OCCUPANT_TONE = { saved_season: "info", recorded_cycle: "observed", assumed_plan: "typical" } as const;
+
+/**
+ * A saved season, recorded crop or assumed plan that the open plan works around: name, what kind it is, its dates, the
+ * kind line (intercrop or green manure), the farmer's note, and what can be done with it. Only a saved season can be
+ * swapped here; a recorded crop is changed in Farm details, the assumed plan by saving or changing last year's plan.
+ */
+export function OccupantDetail(props: {
+  occupant: YearPlanOccupant;
+  /** Opens the swap picker; given for a saved season only. */
+  onSwap?: (() => void) | undefined;
+  swapDisabled?: boolean | undefined;
+  /** The plan is out of date: the saved season may have changed since it was built, so the swap waits for a refresh. */
+  stale?: boolean | undefined;
+}) {
+  const o = () => props.occupant;
+  const kindLine = () => {
+    const c = o().companion;
+    if (o().kind === "intercrop" && c)
+      return `Intercrop · ${o().cropName} + ${c.cropName}${ratioStated(c.rowRatio) ? `, rows ${c.rowRatio}` : ""}`;
+    if (o().kind === "green_manure") return "Green manure · grown and ploughed in, not harvested or sold";
+    return null;
+  };
+  return (
+    <section class="yp-slot-detail yp-occupant-detail" aria-labelledby="yp-slot-title">
+      <div class="yp-slot-heading">
+        <h3 id="yp-slot-title">{occupantName(o())}</h3>
+        <Chip tone={OCCUPANT_TONE[o().source]}>{OCCUPANT_STRIP_LABEL[o().source]}</Chip>
+        <Show when={props.onSwap}>
+          {(swap) => (
+            <button
+              type="button"
+              class="yp-swap-button"
+              disabled={props.swapDisabled || props.stale}
+              aria-label={props.stale ? undefined : `Swap crop, ${o().cropName}`}
+              onClick={() => swap()()}
+            >
+              <Icon name="swap" size={16} />
+              <span>{props.stale ? "Refresh the plan first" : "Swap crop"}</span>
+            </button>
+          )}
+        </Show>
+      </div>
+      <p class="yp-slot-dates">
+        Sow {longDate(o().sowing)} · {occupantEndText(o())}
+      </p>
+      <div class="yp-occupant-facts">
+        <Show when={kindLine()}>{(line) => <p>{line()}</p>}</Show>
+        <Show when={o().note}>{(note) => <p>{note()}</p>}</Show>
+        <p>
+          The field counts as busy to {longDate(o().occupancy.to)} ({BASIS_TEXT[o().occupancyBasis]}).
+        </p>
+      </div>
+      <p class="yp-occupant-keeps">
+        <Show
+          when={o().source === "assumed_plan"}
+          fallback={
+            <>
+              {o().source === "saved_season"
+                ? "This season is saved on your field; the plan keeps it and works around it."
+                : "This crop is recorded on your field; the plan keeps it and works around it."}
+              <Show when={o().source === "recorded_cycle"}> Change it in Farm details.</Show>
+            </>
+          }
+        >
+          Assumed from the previous year's plan; save or change that plan to change this.
+        </Show>
+      </p>
+    </section>
   );
 }
 

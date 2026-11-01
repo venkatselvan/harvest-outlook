@@ -302,6 +302,7 @@ const calendarHtml = (review: YearPlanReview, appliedOptionIds: string[] = []) =
       todayIso="2026-11-01"
       options={review.options}
       appliedOptionIds={appliedOptionIds}
+      occupied={review.scenario.occupied ?? []}
       onOpen={() => {}}
     />
   ));
@@ -751,7 +752,7 @@ describe("a later horizon", () => {
       "Sep 2027 to Sep 2028 · Follows the Best overall plan for Sep 2026 to Sep 2027 (not saved yet; save a plan to fix the order) · after green gram",
     );
     const html = renderToString(() => (
-      <ScenarioLine text={text} pending={false} model={null} stale={false} modelUnavailable={false} refreshing={false} onRefresh={() => {}} action={{ label: "Open year 1", onClick: () => {} }} />
+      <ScenarioLine text={text} pending={false} model={null} stale={false} selection={null} refreshing={false} onRefresh={() => {}} action={{ label: "Open year 1", onClick: () => {} }} />
     ));
     expect(textNodes(html)).toContain("Open year 1");
   });

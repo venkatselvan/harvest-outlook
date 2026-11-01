@@ -1,6 +1,6 @@
 import {z} from 'zod';
 import {ModelInvocation} from './common';
-import {BasisRef, CostEstimate, HarvestWindow, IntercropCompanion, NumberEstimate, NumberRange, PriceEstimate, ScoreComponents, ScoreWeights, YearPlanReason} from './year-plan';
+import {BasisRef, CostEstimate, DateWindow, HarvestWindow, IntercropCompanion, NumberEstimate, NumberRange, PriceEstimate, ScoreComponents, ScoreWeights, YearPlanReason} from './year-plan';
 
 /**
  * Crop fit v2 (ROUND2_SPEC.md section 4): every pool crop scored for one sowing date on this field with the year-plan
@@ -58,6 +58,14 @@ export const CropFitCandidate = z.object({
  sowing: isoDate,
  harvest: HarvestWindow,
  durationDays: NumberRange,
+ /**
+  * Saved-season swap (docs/research/YEAR_PLAN_SAVED_SEASONS.md): the engine's occupancy of this candidate on the field, sowing
+  * to release (the later of the main and companion harvest plus the land-preparation gap), so a swap can be checked against
+  * the other saved seasons with the engine's own rule; and the companion's harvest window for an intercrop (null otherwise),
+  * so the saved season keeps the field until the companion is harvested, as apply does.
+  */
+ occupancy: DateWindow.optional(),
+ companionHarvest: HarvestWindow.nullable().optional(),
  window: z.object({scope: z.enum(['district', 'state']), season: CropSeason, fit: z.number().min(0).max(1), shiftedDays: z.number().int()}).strict().nullable(),
  yieldKgPerHa: NumberRange.nullable(),
  yieldBasis: z.enum(['district', 'state', 'reference', 'farmer']).nullable(),

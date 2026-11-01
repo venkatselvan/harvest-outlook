@@ -1,3 +1,4 @@
+import { Show } from "solid-js";
 import { CropFitPicker } from "../farm/CropFitPicker";
 import { AiSparkInline } from "../ui/AiSpark";
 import { Sheet } from "../ui/Sheet";
@@ -14,7 +15,15 @@ export interface SwapPickerProps {
   } | null;
   onPick: (candidate: CropFitCandidate) => void;
   onClose: () => void;
+  /** The line above the picker; the default says the plan is re-scored by code. A saved season says what it changes instead. */
+  note?: string | undefined;
+  /** True while a pick is being saved: the picker's "Use this crop" buttons are disabled and a status line says so; Keep and Cancel still close it. */
+  busy?: boolean | undefined;
+  /** Why the last pick could not be saved; shown above the picker. */
+  error?: string | undefined;
 }
+
+export const DEFAULT_SWAP_NOTE = "After you pick, the plan is re-scored by code, not by AI.";
 
 /**
  * The body of the swap and suggest-next sheets: one line saying the plan is re-scored by code (Meta only ranks and
@@ -24,15 +33,28 @@ export interface SwapPickerProps {
 export function SwapPicker(props: SwapPickerProps) {
   return (
     <div class="yp-swap">
-      <p class="yp-swap-note">After you pick, the plan is re-scored by code, not by AI.</p>
-      <CropFitPicker
-        farmId={props.farmId}
-        sowing={props.context.sowing}
-        after={props.context.after}
-        current={props.current}
-        onPick={props.onPick}
-        onClose={props.onClose}
-      />
+      <p class="yp-swap-note">{props.note ?? DEFAULT_SWAP_NOTE}</p>
+      <Show when={props.busy}>
+        <p class="yp-swap-status" role="status">
+          Saving the swap…
+        </p>
+      </Show>
+      <Show when={props.error}>
+        <p class="yp-inline-error" role="alert">
+          {props.error}
+        </p>
+      </Show>
+      <div class="yp-swap-body" aria-busy={props.busy === true}>
+        <CropFitPicker
+          farmId={props.farmId}
+          sowing={props.context.sowing}
+          after={props.context.after}
+          current={props.current}
+          onPick={props.onPick}
+          onClose={props.onClose}
+          busy={props.busy === true}
+        />
+      </div>
     </div>
   );
 }

@@ -6,6 +6,7 @@ import type {
   NumberEstimate,
   PriceTrend,
   ScoreComponents,
+  YearPlanOccupant,
   YearPlanOption,
   YearPlanReview,
   YearPlanSlot,
@@ -1048,4 +1049,110 @@ export const futureReview: YearPlanReview = {
   candidatesConsidered: 204,
   summary: "Follows the Best overall plan for Sep 2026 to Sep 2027 (not saved yet; save a plan to fix the order).",
   appliedOptionIds: [],
+};
+
+// --- Saved seasons on the calendar (2026-11-01 follow-up) -----------------------------------------------------------------
+//
+// SYNTHETIC, shaped like the live Hassan case: paddy sown 31 Oct 2026 and growing, one pigeon pea season saved from an
+// earlier plan (sown 16 May 2027, field busy to 8 Sep). The engine finds no window for another crop, so the plan holds
+// the growing paddy alone and Meta was skipped by design. These are not sourced values and not model output.
+
+export const FIXTURE_FULL_YEAR_REVIEW_ID = "99999999-9999-4999-8999-999999999999";
+export const FIXTURE_SAVED_SEASON_ID = "yearplan:2f6d8c1e:pigeon-pea:2027-05-16";
+
+/** The saved pigeon pea season as the scenario lists it. */
+export const savedSeasonOccupant: YearPlanOccupant = {
+  id: FIXTURE_SAVED_SEASON_ID,
+  source: "saved_season",
+  cropId: "pigeon-pea",
+  productId: "pigeon-pea-whole",
+  cropName: "Pigeon pea",
+  productName: "Whole",
+  kind: "crop",
+  companion: null,
+  establishmentMethod: "direct_sowing",
+  sowing: "2027-05-16",
+  harvestDate: "2027-08-29",
+  occupancy: { from: "2027-05-16", to: "2027-09-08" },
+  occupancyBasis: "planned",
+  note: null,
+};
+
+const hassanPaddy = withEstimates({
+  ...paddyGrowing,
+  sowing: "2026-10-31",
+  harvest: { earliest: "2027-02-13", latest: "2027-03-15" },
+  occupancy: { from: "2026-10-31", to: "2027-03-25" },
+  transitionNote: "Harvest expected 13 Feb to 15 Mar (estimated from the sowing date)",
+});
+
+/** The only plan left: the growing paddy, shown by code. */
+export const fullYearBestOverall = optionV2({
+  optionId: "opt-best-overall",
+  label: "Best overall",
+  origin: "deterministic",
+  score: 70,
+  components: paddyGrowing.components,
+  slots: [hassanPaddy],
+  idleMonths: 0,
+  reasons: [{ code: "growing_crop_only", text: "Only the paddy now growing fits; your saved seasons fill the rest of the year." }],
+  gaps: [],
+});
+
+/** Paddy growing, a saved pigeon pea season after it, no window for anything else: one calculated option, Meta not needed. */
+export const fullYearReview: YearPlanReview = {
+  ...occupiedReview,
+  reviewId: FIXTURE_FULL_YEAR_REVIEW_ID,
+  contextHash: "fixture-full-year",
+  status: "ready",
+  inputVersions: { farm: 3, workspace: 4 },
+  modelInvocation: null,
+  scenario: {
+    ...occupiedReview.scenario,
+    horizon: { from: "2026-10-31", to: "2027-10-31" },
+    currentCycleId: "paddy-cycle-2026",
+    fieldAreaHa: FIXTURE_FIELD_AREA_HA,
+    occupied: [savedSeasonOccupant],
+  },
+  options: [fullYearBestOverall],
+  modelSelection: { outcome: "not_needed", detail: null },
+  noFreeWindow: true,
+  candidatesConsidered: 0,
+  summary: "Only the paddy now growing fits in the next 12 months; the rest of the year is taken by your saved seasons.",
+  limitations: [
+    "Synthetic fixture: not sourced values.",
+    "Saved seasons on this field (pigeon pea 16 May to 8 Sep) fill the months after the growing crop, so no new crop fits and only the growing crop is shown; remove or move a saved season to see other plans.",
+  ],
+};
+
+/** The model call was made and failed: three calculated options and the failure code. */
+export const failedSelectionReview: YearPlanReview = {
+  ...unavailableReview,
+  status: "ready",
+  modelSelection: { outcome: "failed", detail: "provider_timeout" },
+};
+
+/** The saved pigeon pea season as stored on the field (the workspace the swap edits), version 4. */
+export const workspaceWithSavedSeason: FarmWorkspace = {
+  ...workspaceBefore,
+  version: 4,
+  updatedAt: "2026-11-01T06:00:00Z",
+  cycles: workspaceBefore.cycles.map((c) => ({ ...c, sowingDate: "2026-10-31", establishmentDate: "2026-10-31" })),
+  rotationPlans: [
+    {
+      id: FIXTURE_SAVED_SEASON_ID,
+      year: 2027,
+      season: "Kharif",
+      cropId: "pigeon-pea",
+      cropName: "Pigeon pea",
+      productId: "pigeon-pea-whole",
+      productName: "Whole",
+      plannedSowingDate: "2027-05-16",
+      plannedHarvestDate: "2027-08-29",
+      establishmentMethod: "direct_sowing",
+      kind: "crop",
+      // What the server's apply writes (yield, price and cost belong to this crop, so a swap replaces them).
+      notes: `Year plan "Best overall" (deterministic) from review ${FIXTURE_FULL_YEAR_REVIEW_ID}. Yield 70-110 kg/ha (district). Harvest-week wholesale price 60-78 INR/kg (state). Cost A2+FL 30000 INR/ha (cacp 2022-23). Dates and ranges are calculated references, not predictions.`,
+    },
+  ],
 };

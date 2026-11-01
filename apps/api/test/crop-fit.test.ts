@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
+import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { CropFitReview, type CropFitCandidate, type FarmSoilMarkers, type HarvestPriceOutlook, type SoilMarker, type StageTimeline } from '@harvest/contracts';
 import { loadCatalogueIntoDb } from '../src/catalogue/load';
 import { Budget } from '../src/services/budget';
@@ -799,5 +799,151 @@ describe('crop fit round 3 service (test DB)', () => {
       } finally { files[k] = orig; }
     }
     expect((await fitContext(d, auth.ownerId, f.id, MAY)).hash).toBe(base);
+  });
+});
+
+// ------------------------------------------------------------------ saved-season swap: occupancy and companion harvest
+/**
+ * Saved-season follow-up, review fix 1 (docs/research/YEAR_PLAN_SAVED_SEASONS.md): every candidate carries the engine's
+ * occupancy (sowing to release) and an intercrop its companion's harvest, so the web swap writes the saved season's planned
+ * harvest as applyYearPlan does (the later of the main and companion harvest) and checks the swap against other seasons.
+ */
+const GAP = ASSUMPTIONS.landPrepGapDays.value;
+const latestOf = (a: string, b: string) => (a > b ? a : b);
+const swapExtras = (areaHa: number | null) => ({ marketNow: null, facts: [], phRange: null, seed: 'swap-occupancy', areaHa, soil: { farmId: randomUUID(), samples: [], limitations: [] } });
+
+describe('crop fit: candidate occupancy and companion harvest (test DB, real research files)', () => {
+  it('date mode: every candidate carries occupancy from its sowing to its latest harvest plus the land-preparation gap, and companionHarvest null', async () => {
+    const { f, auth } = await farm();
+    const d = deps();
+    const r = await ensureCropFit(d, auth, f.id, MAY);
+    await generateCropFit(d, r.reviewId!, auth.ownerId);
+    const review = await ensureCropFit(d, auth, f.id, MAY);
+    expect(review.status).toBe('ready');
+    expect(CropFitReview.safeParse(review).success).toBe(true);
+    expect(review.candidates.length).toBeGreaterThan(0);
+    for (const c of review.candidates) {
+      expect(c.occupancy, c.cropId).toBeDefined();
+      expect(c.occupancy!.from, c.cropId).toBe(c.sowing);
+      expect(c.occupancy!.to >= c.harvest.latest, c.cropId).toBe(true);
+      // Date mode places sole crops only (placeCandidates): the release is the latest harvest plus the gap.
+      expect(c.kind).toBe('crop');
+      expect(c.occupancy!.to, c.cropId).toBe(addDays(c.harvest.latest, GAP));
+      expect(c.companionHarvest, c.cropId).toBeNull();
+    }
+    // The stored row carries the fields too (read back through the contract).
+    const stored = (await h.pool.query<{ result: { candidates: CropFitCandidate[] } }>('SELECT result FROM crop_fit_reviews WHERE id=$1', [r.reviewId])).rows[0]!.result;
+    expect(stored.candidates.every((c) => c.occupancy?.from === c.sowing && c.companionHarvest === null)).toBe(true);
+  });
+
+  it('next mode: intercrop candidates carry the companion harvest and an occupancy to the later harvest plus the gap; sole crops null', async () => {
+    const { f, auth } = await farm();
+    const d = deps();
+    const r = await ensureCropFit(d, auth, f.id, { mode: 'next' });
+    await generateCropFit(d, r.reviewId!, auth.ownerId);
+    const review = await ensureCropFit(d, auth, f.id, { mode: 'next' });
+    expect(review.status).toBe('ready');
+    expect(CropFitReview.safeParse(review).success).toBe(true);
+    let intercrops = 0;
+    for (const c of review.candidates) {
+      expect(c.occupancy!.from).toBe(c.sowing);
+      if (c.kind === 'intercrop') {
+        intercrops++;
+        expect(c.companionHarvest, c.companion?.systemId ?? c.cropId).not.toBeNull();
+        // A companion harvested first (before_main) ends earlier and never shortens the season; one harvested later extends it.
+        expect(c.occupancy!.to).toBe(addDays(latestOf(c.harvest.latest, c.companionHarvest!.latest), GAP));
+      } else {
+        expect(c.companionHarvest).toBeNull();
+        expect(c.occupancy!.to).toBe(addDays(c.harvest.latest, GAP));
+      }
+    }
+    expect(intercrops).toBeGreaterThan(0);
+  });
+});
+
+describe('crop fit: candidate occupancy for the Hassan pigeon pea intercrops (pure, real research files)', () => {
+  it('toCandidate copies the slot plan occupancy and companion harvest for every plan candidate, including the after-main pigeon pea systems', () => {
+    const ctx = fresh();
+    const set = enumerateCandidates(ctx);
+    const scored = scorePlacements(ctx, pricedInputs(ctx, runInputKeys(ctx, set)), planCandidates(ctx, resolveMode(ctx, NEXT), set).placed, { waitFrom: ctx.earliestSowing });
+    expect(scored.length).toBeGreaterThan(0);
+    const afterMain = new Set<string>();
+    for (const rc of scored) {
+      const cand = toCandidate(rc, 1, swapExtras(0.16));
+      expect(cand.occupancy).toEqual(rc.plan.occupancy);
+      if (cand.kind === 'intercrop') {
+        expect(cand.companionHarvest).toEqual(rc.plan.intercrop!.companionHarvest);
+        expect(cand.occupancy!.to).toBe(addDays(latestOf(cand.harvest.latest, cand.companionHarvest!.latest), GAP));
+        if (rc.plan.intercrop!.system.companionAfterMain) afterMain.add(rc.plan.intercrop!.systemId);
+      } else expect(cand.companionHarvest).toBeNull();
+    }
+    // ka-hassan-groundnut-redgram and ka-hassan-ragi-redgram-8-1 are offered (companionHarvest after_main in intercropping.json).
+    // Measured on the current files: the companion's shortest sourced pigeon pea class (95-105 days) ends no later than the
+    // main crop's latest harvest, so on this field their companion harvest equals the main harvest; the synthetic case below
+    // covers a companion that is harvested later.
+    expect([...afterMain].sort()).toEqual(expect.arrayContaining(['ka-hassan-groundnut-redgram', 'ka-hassan-ragi-redgram-8-1']));
+  });
+});
+
+describe('crop fit: a companion harvested after the main crop (pure, SYNTHETIC fixtures)', () => {
+  const SRC = 'SYN-SWAP';
+  const win = (season: string, from: string, to: string) => ({ region: 'IN-KA-hassan', season, from, to, condition: 'any', source: `${SRC} windows` });
+  const dur = (method: string, min: number, max: number) => ({ method, cultivar: 'Synthetic cultivar (KA)', min, max, source: `${SRC} durations` });
+  const crop = (cropId: string, productIds: string[], extra: Record<string, unknown>) => ({
+    cropId, family: 'Fabaceae', productIds, rotationRole: { value: 'nitrogen_fixer', method: 'rule_v1', sources: [SRC] }, nitrogenCreditKgPerHa: null, waterNeedMm: { min: 500, max: 700, source: `${SRC} water` },
+    rainfedSuitable: true, durationDays: [], stages: [], sowingWindows: [], recommendedPredecessors: [], recommendedSuccessors: [], avoidAfter: [], sources: [], ...extra,
+  });
+  const JUNE = win('kharif', '06-01', '06-30');
+  const fixtures = () => structuredClone({
+    agronomy: {
+      sourceCatalog: [{ id: SRC, url: 'https://example.org/synthetic-swap', title: 'Synthetic swap fixture' }],
+      crops: [
+        crop('groundnut', ['groundnut-pod'], { durationDays: [dur('direct_sowing', 90, 100)], sowingWindows: [JUNE] }),
+        crop('pigeon-pea', ['pigeon-pea-whole'], { durationDays: [dur('direct_sowing', 120, 130)], sowingWindows: [JUNE] }),
+      ],
+    },
+    pool: { pool: [['groundnut', 'groundnut-pod'], ['pigeon-pea', 'pigeon-pea-whole']].map(([cropId, productId]) => ({ cropId, productIds: [productId], why: 'synthetic' })) },
+    yieldCost: { crops: [], sources: {}, conversions: {} },
+    greenManure: { crops: [] },
+    intercropping: {
+      systems: [{
+        id: 'syn-groundnut-pigeonpea-after', name: 'Groundnut + pigeon pea', mainCropId: 'groundnut', mainProductId: 'groundnut-pod', companionCropId: 'pigeon-pea', companionProductId: 'pigeon-pea-whole',
+        rowRatio: '6:1', arrangement: 'row', regions: ['IN-KA-hassan'], season: 'kharif', condition: 'any', sowingWindow: null, companionHarvest: 'after_main',
+        yieldShare: { main: { min: 0.8, max: 0.9 }, companion: { min: 0.2, max: 0.3 }, basis: 'synthetic', source: 'SYN-IC' }, ler: null,
+        seedRateShare: { main: 1, companion: 0.2, source: 'SYN-IC' }, nitrogenCreditKgPerHa: null, notes: [], reviewStatus: 'sourced', sources: ['SYN-IC'],
+      }],
+      fallback: { yieldShare: null, ler: { min: 1.1, max: 1.2 }, source: 'SYN-FB', engineRule: 'Synthetic fallback rule.' },
+      sources: { 'SYN-IC': { url: 'https://example.org/synthetic-intercrop', title: 'Synthetic intercrop trial', locator: 'Table 1' } },
+    },
+  });
+  afterEach(() => data.invalidate());
+
+  it('companionHarvest.latest is after the main harvest, occupancy.to is that date plus the land-preparation gap (applyYearPlan\'s planned harvest); a sole crop has null', () => {
+    data.invalidate(fixtures() as never);
+    const ctx = fresh();
+    const set = enumerateCandidates(ctx);
+    const scored = scorePlacements(ctx, pricedInputs(ctx, runInputKeys(ctx, set)), planCandidates(ctx, resolveMode(ctx, NEXT), set).placed, { waitFrom: ctx.earliestSowing });
+    const inter = scored.filter((rc) => intercropSystemOf(rc.plan) === 'syn-groundnut-pigeonpea-after');
+    const sole = scored.filter((rc) => intercropSystemOf(rc.plan) === null);
+    expect(inter.length).toBeGreaterThan(0);
+    expect(sole.length).toBeGreaterThan(0);
+    for (const rc of inter) {
+      const c = toCandidate(rc, 1, swapExtras(0.16));
+      expect(c.kind).toBe('intercrop');
+      // Main groundnut 90-100 days, companion pigeon pea 120-130 days (its shortest class): harvested 30 days later.
+      expect(c.harvest).toEqual({ earliest: addDays(c.sowing, 90), latest: addDays(c.sowing, 100) });
+      expect(c.companionHarvest).toEqual({ earliest: addDays(c.sowing, 120), latest: addDays(c.sowing, 130) });
+      expect(c.companionHarvest!.latest > c.harvest.latest).toBe(true);
+      expect(c.occupancy).toEqual({ from: c.sowing, to: addDays(c.companionHarvest!.latest, GAP) });
+      // applyYearPlan's rule: held = occupancy.to - gap; the planned harvest is held when it is after the main harvest.
+      const held = addDays(c.occupancy!.to, -GAP);
+      expect(held > c.harvest.latest ? held : c.harvest.latest).toBe(c.companionHarvest!.latest);
+    }
+    for (const rc of sole) {
+      const c = toCandidate(rc, 1, swapExtras(0.16));
+      expect(c.kind).toBe('crop');
+      expect(c.companionHarvest).toBeNull();
+      expect(c.occupancy).toEqual({ from: c.sowing, to: addDays(c.harvest.latest, GAP) });
+    }
   });
 });

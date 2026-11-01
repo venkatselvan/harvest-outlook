@@ -254,6 +254,8 @@ function blank(c: YearPlanContext): YearPlanReview {
   return {
     reviewId: null, jobId: null, contextHash: c.hash, status: 'unavailable', stale: false, inputVersions: { farm: c.farmVersion, workspace: c.workspaceVersion },
     generatedAt: null, retryAfter: null, modelInvocation: null, scenario: { ...c.ctx.scenario, soilSummary: c.soilSummary }, weights: { ...WEIGHTS }, options: [], navigation: navigationOf(c.ctx),
+    // Saved-season follow-up: null until the worker records how the options were chosen.
+    modelSelection: null,
     candidatesConsidered: c.set.candidates.length, summary: c.horizonFrom ? 'No plan has been made for this year yet.' : 'No year plan has been made for this field yet.', limitations: c.ctx.warnings.filter((w) => w.startsWith('Nothing is recorded or saved')), appliedOptionIds: [],
   };
 }
@@ -264,8 +266,36 @@ async function invocation(deps: Pick<YearPlanDeps, 'pool'>, row: Pick<Row, 'id' 
   return f ? { id: f.id, provider: 'meta', requestedModel: f.requested_model, model: f.model, purpose: 'year_plan_review', status: f.status, startedAt: f.started_at.toISOString(), finishedAt: f.finished_at?.toISOString() ?? null, processing: 'standard', requestedStorage: false, responseDeleted: row.result.modelInvocation?.responseDeleted ?? null } : null;
 }
 
+/**
+ * Saved-season follow-up, review fix for `noFreeWindow`: true when the field would have at least one crop candidate (a green
+ * manure alone can never be a plan) if nothing in `ctx.occupied` took its months: saved seasons, other recorded cycles and an
+ * assumed previous-year plan. The fixed slot (growing crop) stays, so its months still count. earliestSowing is kept for the
+ * current horizon (buildScenario never derives it from occupied intervals) and recomputed for a later horizon, where
+ * futureScenario pushes it past intervals that started before the horizon: max(today, horizon start) without them. A later
+ * horizon has no fixed slot; a growing crop that runs into it is one of its occupants and is left out like the others.
+ */
+export function fitsWithoutOccupants(ctx: EngineContext): boolean {
+  const earliestSowing = (ctx.yearIndex ?? 0) > 0
+    ? [ctx.asOf, ctx.horizon.from, ...(ctx.fixedSlot ? [ctx.fixedSlot.occupancy.to] : [])].sort().at(-1)!
+    : ctx.earliestSowing;
+  return enumerateCandidates({ ...ctx, occupied: [], earliestSowing }).candidates.some((x) => x.kind !== 'green_manure');
+}
+
+/**
+ * Saved-season follow-up (docs/research/YEAR_PLAN_SAVED_SEASONS.md): a stored plan written before `scenario.occupied` existed
+ * gets the occupants of the current context, but only while the row is current (a stale row's options were placed around
+ * other occupants) and without the saved seasons this review's own apply created (they are the plan's slots, already drawn).
+ * `modelSelection` is never invented for such rows; the web falls back to the option origins.
+ */
+function withOccupants(row: Row, c: YearPlanContext): YearPlanScenario {
+  const sc = row.result.scenario;
+  if (sc.occupied || row.context_hash !== c.hash) return sc;
+  const own = `yearplan:${row.id}:`;
+  return { ...sc, occupied: (c.ctx.scenario.occupied ?? []).filter((o) => !o.id.startsWith(own)) };
+}
+
 async function view(deps: Pick<YearPlanDeps, 'pool'>, row: Row, c: YearPlanContext): Promise<YearPlanReview> {
-  const result = YearPlanReview.parse({ ...row.result, reviewId: row.id, jobId: row.job_id, contextHash: row.context_hash, status: row.status, stale: row.context_hash !== c.hash, navigation: navigationOf(c.ctx) });
+  const result = YearPlanReview.parse({ ...row.result, scenario: withOccupants(row, c), reviewId: row.id, jobId: row.job_id, contextHash: row.context_hash, status: row.status, stale: row.context_hash !== c.hash, navigation: navigationOf(c.ctx) });
   result.modelInvocation = (await invocation(deps, row)) ?? result.modelInvocation;
   if ((row.status === 'pending' || row.status === 'running') && row.job_id) {
     const job = (await deps.pool.query<{ state: string }>('SELECT state FROM jobs WHERE id=$1 AND owner_id=$2', [row.job_id, row.owner_id])).rows[0];
@@ -461,6 +491,11 @@ export async function generateYearPlan(deps: YearPlanDeps, reviewId: string, own
     }
     // ---- engine
     const run = runYearPlanEngine(c.ctx, inputs, { candidateSet: set });
+    // Saved-season follow-up: no sequence fits and the growing crop or saved seasons take the horizon (the fixed-slot-only
+    // plan, or 'unavailable' when there is no growing crop). Review fix: only when the occupants are the cause, i.e. the
+    // field would have a crop candidate without them; a farm with no state, every crop excluded or no matching window is not
+    // "full". The counterfactual is checked only when the first two conditions hold (candidates only, no sequences).
+    result.noFreeWindow = run.sequencesConsidered === 0 && c.ctx.occupied.length > 0 && fitsWithoutOccupants(c.ctx);
     greenManureFirst = run.greenManureFirst;
     bestProfitPool = run.shortlist;
     const seasons = new Map<string, string>(set.candidates.map((x) => [`slot-${shortHash(x.candidateId)}`, x.season]));
@@ -488,18 +523,20 @@ export async function generateYearPlan(deps: YearPlanDeps, reviewId: string, own
     result.summary = 'Plans picked and labelled by code from the scored crop sequences; every date, range and score is calculated.';
     if (candidates.length < 3) {
       result.status = 'ready';
+      result.modelSelection = { outcome: 'not_needed', detail: null };
       const distinct = distinctOptions(run.options).length;
       result.limitations.push(distinct > candidates.length
         ? 'Fewer than three crop sequences keep the field in use for enough of the year (at least 40 percent of the horizon, or a score within 70 percent of the best plan), so fewer plans are shown and no model selection was needed.'
         : 'Fewer than three distinct crop sequences fit this field, so no model selection was needed.');
       return finish();
     }
-    if (!live || (!deps.config.MODEL_API_KEY && !deps.provider)) { result.limitations.push(live ? 'Meta is not configured; the plans were picked and labelled by code.' : 'Meta is not used in this runtime mode; the plans were picked and labelled by code.'); return finish(); }
+    if (!live || (!deps.config.MODEL_API_KEY && !deps.provider)) { result.modelSelection = { outcome: live ? 'not_configured' : 'not_used', detail: null }; result.limitations.push(live ? 'Meta is not configured; the plans were picked and labelled by code.' : 'Meta is not used in this runtime mode; the plans were picked and labelled by code.'); return finish(); }
     const session = row.session_id ? (await deps.pool.query('SELECT id FROM sessions WHERE id=$1 AND owner_id=$2 AND revoked_at IS NULL AND expires_at>now()', [row.session_id, ownerId])).rows[0] : null;
-    if (!session || (await isCancelled())) { result.limitations.push('The requesting session expired or the request was cancelled before the model call; the plans were picked by code.'); return finish(); }
+    if (!session || (await isCancelled())) { result.modelSelection = { outcome: 'cancelled', detail: null }; result.limitations.push('The requesting session expired or the request was cancelled before the model call; the plans were picked by code.'); return finish(); }
     if ((await yearPlanContext(deps, ownerId, row.farm_id, c.asOf, c.horizonFrom, { candidates: false })).hash !== row.context_hash) { result.status = 'error'; result.stale = true; result.options = []; result.summary = `${INPUTS_CHANGED_WHILE_BUILDING} Ask for a new plan.`; return finish(); }
     const sel = await selectWithMeta(deps, { reviewId, ownerId, sessionId: row.session_id, scenario: result.scenario, candidates });
     stored.meta = { failure: sel.failure, dispatched: sel.dispatched, model: sel.model, costUsd: sel.costUsd, usage: sel.usage, labelAdjusted: sel.labelAdjusted };
+    result.modelSelection = sel.origin === 'model' ? { outcome: 'model', detail: null } : { outcome: 'failed', detail: (sel.failure ?? 'unknown').slice(0, 200) };
     if (sel.origin === 'model') {
       result.options = sel.options;
       result.status = 'ready';

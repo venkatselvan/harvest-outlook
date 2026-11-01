@@ -435,6 +435,11 @@ export function toCandidate(rc: RankedCandidate, rank: number, x: Extras): CropF
     establishmentMethod: plan.method ? plan.method.slice(0, 80) : null, kind: intercrop ? 'intercrop' : 'crop', ...(intercrop ? { companion } : {}),
     rank, score: rc.score, rankScore: rc.rankScore, waitDays: rc.waitDays, waitPenalty: rc.waitPenalty, yearPlanLabels: x.yearPlanLabels ?? [], grownBefore: x.grownBefore ?? null, components: rc.components,
     sowing: plan.sowing, harvest: { ...plan.harvest }, durationDays: { ...plan.durationDays },
+    // Saved-season swap (docs/research/YEAR_PLAN_SAVED_SEASONS.md): the engine's occupancy (sowing to the later of the main
+    // and companion harvest plus the land-preparation gap; makeIntercropSlotPlan extends it for a later companion) and the
+    // companion's harvest, so a swapped saved season holds the field until the companion is in, as applyYearPlan does.
+    occupancy: { from: plan.occupancy.from, to: plan.occupancy.to },
+    companionHarvest: intercrop && plan.intercrop?.companionHarvest ? { earliest: plan.intercrop.companionHarvest.earliest, latest: plan.intercrop.companionHarvest.latest } : null,
     window: plan.window ? { scope: plan.window.scope, season: plan.window.season, fit: plan.windowFit, shiftedDays: rc.shiftedDays } : null,
     yieldKgPerHa: ev.yieldRange, yieldBasis: ev.yieldBasis,
     // The main crop's harvest on this field; an intercrop scales the sole-crop range by the main yield share (low by the

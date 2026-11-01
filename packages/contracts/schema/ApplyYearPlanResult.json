@@ -689,6 +689,192 @@
                   "type": "null"
                 }
               ]
+            },
+            "occupied": {
+              "maxItems": 24,
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "maxLength": 160
+                  },
+                  "source": {
+                    "type": "string",
+                    "enum": [
+                      "saved_season",
+                      "recorded_cycle",
+                      "assumed_plan"
+                    ]
+                  },
+                  "cropId": {
+                    "type": "string",
+                    "maxLength": 120
+                  },
+                  "productId": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "maxLength": 200
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "cropName": {
+                    "type": "string",
+                    "maxLength": 120
+                  },
+                  "productName": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "maxLength": 120
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "kind": {
+                    "type": "string",
+                    "enum": [
+                      "crop",
+                      "green_manure",
+                      "intercrop"
+                    ]
+                  },
+                  "companion": {
+                    "anyOf": [
+                      {
+                        "type": "object",
+                        "properties": {
+                          "systemId": {
+                            "anyOf": [
+                              {
+                                "type": "string",
+                                "maxLength": 120
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
+                          "cropId": {
+                            "type": "string",
+                            "maxLength": 120
+                          },
+                          "cropName": {
+                            "type": "string",
+                            "maxLength": 120
+                          },
+                          "rowRatio": {
+                            "type": "string",
+                            "maxLength": 20
+                          }
+                        },
+                        "required": [
+                          "systemId",
+                          "cropId",
+                          "cropName",
+                          "rowRatio"
+                        ],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "establishmentMethod": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "maxLength": 80
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "sowing": {
+                    "type": "string",
+                    "format": "date",
+                    "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+                  },
+                  "harvestDate": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "format": "date",
+                        "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "occupancy": {
+                    "type": "object",
+                    "properties": {
+                      "from": {
+                        "type": "string",
+                        "format": "date",
+                        "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+                      },
+                      "to": {
+                        "type": "string",
+                        "format": "date",
+                        "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+                      }
+                    },
+                    "required": [
+                      "from",
+                      "to"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "occupancyBasis": {
+                    "type": "string",
+                    "enum": [
+                      "recorded",
+                      "planned",
+                      "sourced_duration",
+                      "assumed_duration"
+                    ]
+                  },
+                  "note": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "maxLength": 1000
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  }
+                },
+                "required": [
+                  "id",
+                  "source",
+                  "cropId",
+                  "productId",
+                  "cropName",
+                  "productName",
+                  "kind",
+                  "companion",
+                  "establishmentMethod",
+                  "sowing",
+                  "harvestDate",
+                  "occupancy",
+                  "occupancyBasis",
+                  "note"
+                ],
+                "additionalProperties": false
+              }
             }
           },
           "required": [
@@ -2338,6 +2524,48 @@
             "maxYearIndex"
           ],
           "additionalProperties": false
+        },
+        "modelSelection": {
+          "anyOf": [
+            {
+              "type": "object",
+              "properties": {
+                "outcome": {
+                  "type": "string",
+                  "enum": [
+                    "model",
+                    "not_needed",
+                    "not_configured",
+                    "not_used",
+                    "cancelled",
+                    "failed"
+                  ]
+                },
+                "detail": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "maxLength": 200
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              },
+              "required": [
+                "outcome",
+                "detail"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "noFreeWindow": {
+          "type": "boolean"
         },
         "candidatesConsidered": {
           "type": "integer",
