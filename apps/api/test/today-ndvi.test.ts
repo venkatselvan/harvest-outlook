@@ -2,7 +2,8 @@ import {afterAll, beforeAll, beforeEach, describe, expect, it} from 'vitest';
 import type {FastifyInstance} from 'fastify';
 import {NdviSeries, NeighbourhoodSeasonality} from '@harvest/contracts';
 import {buildServer} from '../src/server';
-import {ndviSeries, neighbourhoodSeasonality, sceneImage, type NdviDeps} from '../src/services/today/ndvi';
+import {fieldImageBbox, fieldScenePaths, ndviSeries, neighbourhoodSeasonality, sceneImage, sceneImageKey, type NdviDeps} from '../src/services/today/ndvi';
+import {bboxMeters, fieldBbox, fieldRenderSize, type Bbox} from '../src/providers/sentinel2';
 import {ApiError} from '../src/services/errors';
 import {setupHarness, login, farmBody, testConfig, ORIGIN, type Harness, type Client} from './helpers';
 import {fakePlanetary, type FakeScene} from './fixtures/sentinel2/fake-provider';
@@ -278,6 +279,116 @@ describe('sceneImage', () => {
   });
 });
 
+const ringOf = (lon0: number, lat0: number, lon1: number, lat1: number): [number, number][] => [[lon0, lat0], [lon1, lat0], [lon1, lat1], [lon0, lat1], [lon0, lat0]];
+const decimals = (n: number) => (String(n).split('.')[1] ?? '').length;
+const imageCall = (calls: {path: string; url: string}[]) => calls.filter((c) => c.path.includes('/item/bbox/')).at(-1)!;
+const parseImageCall = (c: {path: string}) => {
+  const m = /\/item\/bbox\/([^/]+)\/(\d+)x(\d+)\.png$/.exec(c.path)!;
+  return {bbox: m[1]!.split(',').map(Number) as unknown as Bbox, width: Number(m[2]), height: Number(m[3])};
+};
+
+describe('field window arithmetic', () => {
+  it('is a square of 1.6 times the larger field side, centred on the field, rounded outward to 4 decimals', () => {
+    const ring = ringOf(76.2495, 13.2495, 76.2505, 13.2505); // about 108 m east-west by 111 m north-south
+    const b = fieldBbox(ring);
+    for (const v of b) expect(decimals(v)).toBeLessThanOrEqual(4);
+    const [w, hgt] = bboxMeters(b);
+    const ideal = 1.6 * 111.32; // the larger side is the north-south one
+    // Outward 4-decimal rounding adds at most one grid step (about 11.2 m) per edge, never removes any.
+    expect(w).toBeGreaterThanOrEqual(ideal - 0.5); expect(w).toBeLessThanOrEqual(ideal + 23);
+    expect(hgt).toBeGreaterThanOrEqual(ideal - 0.5); expect(hgt).toBeLessThanOrEqual(ideal + 23);
+    expect(Math.abs(w - hgt)).toBeLessThan(23); // square up to the grid
+    expect((b[0] + b[2]) / 2).toBeCloseTo(76.25, 3); expect((b[1] + b[3]) / 2).toBeCloseTo(13.25, 3);
+    // 1.6 x, not the 600 m / 0.8 x display window.
+    const wide = bboxMeters(fieldBbox(ringOf(76.2, 13.2, 76.21, 13.21))); // about 1.08 km by 1.11 km
+    expect(wide[1]).toBeGreaterThan(1.6 * 1100); expect(wide[1]).toBeLessThan(1.6 * 1113 + 23);
+  });
+
+  it('never goes below 120 m across for a tiny field', () => {
+    const b = fieldBbox(ringOf(76.24995, 13.24995, 76.25005, 13.25005)); // about 11 m
+    const [w, hgt] = bboxMeters(b);
+    expect(w).toBeGreaterThanOrEqual(119.5); expect(hgt).toBeGreaterThanOrEqual(119.5);
+    expect(w).toBeLessThanOrEqual(120 + 23); expect(hgt).toBeLessThanOrEqual(120 + 23);
+  });
+
+  it('sizes the render at one pixel per 10 m, clamped 12 to 768', () => {
+    const tiny = fieldBbox(ringOf(76.24995, 13.24995, 76.25005, 13.25005));
+    const [w, hgt] = bboxMeters(tiny);
+    expect(fieldRenderSize(tiny)).toBe(Math.ceil(Math.max(w, hgt) / 10));
+    expect(fieldRenderSize(tiny)).toBeGreaterThanOrEqual(12);
+    expect(fieldRenderSize([76, 13, 76.0004, 13.0004])).toBe(12); // 44 m: clamped up to 12
+    expect(fieldRenderSize([76, 13, 76.01, 13.01])).toBe(Math.ceil(1113.2 / 10)); // unclamped middle
+    expect(fieldRenderSize([76, 13, 76.1, 13.1])).toBe(768); // 11 km: clamped down
+  });
+
+  it('builds the scene paths and the storage key per zoom', () => {
+    const farm = '11111111-1111-4111-8111-111111111111', item = ID('2026-10-27');
+    expect(fieldScenePaths(farm, item)).toEqual({
+      fieldImagePath: `/api/v1/farms/${farm}/ndvi/${item}/image?kind=visual&zoom=field`,
+      fieldNdviImagePath: `/api/v1/farms/${farm}/ndvi/${item}/image?kind=ndvi&zoom=field`,
+    });
+    expect(sceneImageKey(farm, item, 'visual')).toBe(`ndvi/${farm}/${item}/visual.png`);
+    expect(sceneImageKey(farm, item, 'ndvi', 'wide')).toBe(`ndvi/${farm}/${item}/ndvi.png`);
+    expect(sceneImageKey(farm, item, 'visual', 'field')).toBe(`ndvi/${farm}/${item}/visual-field.png`);
+    expect(sceneImageKey(farm, item, 'ndvi', 'field')).toBe(`ndvi/${farm}/${item}/ndvi-field.png`);
+    expect(fieldImageBbox(ringOf(76.2495, 13.2495, 76.2505, 13.2505))).toEqual(fieldBbox(ringOf(76.2495, 13.2495, 76.2505, 13.2505)));
+  });
+});
+
+describe('sceneImage field zoom', () => {
+  it('asks the tiler for the field window at native size, stores it apart from the wide render, and serves it from storage', async () => {
+    const {farmId, ownerId} = await farmWithBoundary(owner);
+    const fake = fakePlanetary(OCTOBER.slice(0, 2));
+    const deps = {...live(fake.fetchImpl), storage: h.storage};
+    await ndviSeries(deps, ownerId, farmId);
+    const item = ID('2026-10-27');
+    const expectedBbox = fieldBbox(HA.coordinates[0] as [number, number][]);
+
+    const first = await sceneImage(deps, ownerId, farmId, item, 'visual', 'field');
+    expect(first).toMatchObject({contentType: 'image/png', cached: false, bbox: expectedBbox});
+    const call = parseImageCall(imageCall(fake.calls));
+    expect(call.bbox).toEqual(expectedBbox);
+    expect(call.width).toBe(fieldRenderSize(expectedBbox));
+    expect(call.height).toBe(call.width);
+    expect(call.width).toBeLessThan(40); // native 10 m pixels, not the 512 px wide render
+    expect(new URL(imageCall(fake.calls).url).searchParams.get('resampling')).toBe('nearest');
+    expect(await h.storage.exists({ownerId, key: `ndvi/${farmId}/${item}/visual-field.png`})).toBe(true);
+    expect(await h.storage.exists({ownerId, key: `ndvi/${farmId}/${item}/visual.png`})).toBe(false);
+
+    // The wide render is a separate object, still 512 px over the 600 m display window.
+    const wide = await sceneImage(deps, ownerId, farmId, item, 'visual');
+    expect(wide.cached).toBe(false);
+    const wideCall = parseImageCall(imageCall(fake.calls));
+    expect(wideCall.width).toBe(512);
+    expect(wideCall.bbox).not.toEqual(expectedBbox);
+    const row = (await h.pool.query('SELECT image_keys FROM ndvi_scene_stats WHERE farm_id=$1 AND item_id=$2', [farmId, item])).rows[0];
+    expect(row.image_keys).toEqual({'visual-field': `ndvi/${farmId}/${item}/visual-field.png`, visual: `ndvi/${farmId}/${item}/visual.png`});
+
+    const before = fake.calls.length;
+    const again = await sceneImage(deps, ownerId, farmId, item, 'visual', 'field');
+    expect(again.cached).toBe(true);
+    expect(Buffer.compare(again.bytes, first.bytes)).toBe(0);
+    expect(fake.calls.length).toBe(before);
+
+    // NDVI colour map, field zoom: own key, same window and size, offset-aware expression.
+    await sceneImage(deps, ownerId, farmId, item, 'ndvi', 'field');
+    const ndviCall = imageCall(fake.calls);
+    expect(parseImageCall(ndviCall)).toEqual(call);
+    expect(new URL(ndviCall.url).searchParams.get('expression')).toBe('(B08-B04)/(B08+B04-2000)');
+    expect(await h.storage.exists({ownerId, key: `ndvi/${farmId}/${item}/ndvi-field.png`})).toBe(true);
+  });
+
+  it('is a 409 outside live mode and makes no network call', async () => {
+    const {farmId, ownerId} = await farmWithBoundary(owner);
+    const fake = fakePlanetary(OCTOBER.slice(0, 2));
+    for (const mode of ['synthetic', 'replay'] as const) {
+      const deps = {...live(fake.fetchImpl), config: {RUNTIME_MODE: mode}, storage: h.storage};
+      expect(await status(sceneImage(deps, ownerId, farmId, ID('2026-10-27'), 'visual', 'field'))).toBe(409);
+    }
+    expect(fake.calls.length).toBe(0);
+  });
+});
+
 describe('today NDVI routes', () => {
   let liveApp: FastifyInstance, synthApp: FastifyInstance;
   const fake = fakePlanetary(OCTOBER.slice(1, 2));
@@ -306,6 +417,18 @@ describe('today NDVI routes', () => {
     expect((await liveApp.inject({method: 'GET', url: `/api/v1/farms/${farmId}/ndvi`, headers: {origin: ORIGIN}})).statusCode).toBe(401);
     expect((await get(liveApp, owner, `/api/v1/farms/${farmId}/ndvi/${item}/image?kind=infrared`)).statusCode).toBe(400);
     expect((await get(liveApp, owner, `/api/v1/farms/${farmId}/ndvi/bad%2Fid/image`)).statusCode).toBe(400);
+    // zoom: wide (default) and field are served; anything else is a 400.
+    const calls0 = fake.calls.length;
+    expect((await get(liveApp, owner, `/api/v1/farms/${farmId}/ndvi/${item}/image?kind=visual&zoom=wide`)).statusCode).toBe(200);
+    const fieldImg = await get(liveApp, owner, `/api/v1/farms/${farmId}/ndvi/${item}/image?kind=ndvi&zoom=field`);
+    expect(fieldImg.statusCode).toBe(200);
+    expect(fieldImg.headers['cache-control']).toBe('private, max-age=3600');
+    expect(fieldImg.rawPayload.subarray(0, 4).toString('hex')).toBe('89504e47');
+    expect(parseImageCall(imageCall(fake.calls)).width).toBeLessThan(40);
+    expect(fake.calls.length).toBeGreaterThan(calls0);
+    expect((await get(liveApp, owner, `/api/v1/farms/${farmId}/ndvi/${item}/image?zoom=close`)).statusCode).toBe(400);
+    expect((await get(liveApp, owner, `/api/v1/farms/${farmId}/ndvi/${item}/image?zoom=`)).statusCode).toBe(400);
+    expect((await get(liveApp, stranger, `/api/v1/farms/${farmId}/ndvi/${item}/image?zoom=field`)).statusCode).toBe(404);
     expect((await get(liveApp, owner, `/api/v1/farms/${farmId}/ndvi?from=2026-10-31&to=2026-10-01`)).statusCode).toBe(400);
     expect((await get(liveApp, owner, `/api/v1/farms/not-a-uuid/ndvi`)).statusCode).toBe(400);
   });
@@ -317,6 +440,7 @@ describe('today NDVI routes', () => {
     expect(res.statusCode).toBe(200);
     expect(res.json().data).toMatchObject({status: 'unavailable', reason: 'live_mode_required'});
     expect((await get(synthApp, owner, `/api/v1/farms/${farmId}/ndvi/${ID('2026-10-27')}/image`)).statusCode).toBe(409);
+    expect((await get(synthApp, owner, `/api/v1/farms/${farmId}/ndvi/${ID('2026-10-27')}/image?kind=ndvi&zoom=field`)).statusCode).toBe(409);
     expect(fake.calls.length).toBe(before);
   });
 });

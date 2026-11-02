@@ -28,7 +28,7 @@ import {sha256Hex} from '../hash';
 import {NdviStats, type NdviReading, type NdviSeries, type NeighbourhoodSeasonality} from '@harvest/contracts';
 import {
   DEFAULT_MAX_SCENE_CLOUD_PCT, INDEX_METHOD_VERSION, ITEM_ID_RE, MIN_CLEAR_FRACTION, MIN_CLEAR_PIXELS, NDVI_METHOD_VERSION, SCL_KEEP, SENTINEL2_ATTRIBUTION,
-  baselineOffset, bboxProblem, displayBbox, listScenes, neighbourhoodBands, polygonBands, prepareRing, renderScene, ringBbox, squareAround,
+  baselineOffset, bboxProblem, displayBbox, fieldBbox, fieldRenderSize, listScenes, neighbourhoodBands, polygonBands, prepareRing, renderScene, ringBbox, squareAround,
   type Bbox, type ImageKind, type LonLat, type SceneSummary, type Sentinel2Fetch,
 } from '../../providers/sentinel2';
 
@@ -281,15 +281,31 @@ export async function neighbourhoodSeasonality(deps: NdviDeps, ownerId: string, 
   };
 }
 
+export type SceneZoom = 'wide' | 'field';
 export interface SceneImage { bytes: Buffer; contentType: 'image/png'; acquiredAt: string; bbox: Bbox; cached: boolean }
+
+/** Storage key and `image_keys` name for a render: the wide key is unchanged, the field crop adds a `-field` suffix. */
+export const sceneImageName = (kind: ImageKind, zoom: SceneZoom) => (zoom === 'field' ? `${kind}-field` : kind);
+export const sceneImageKey = (farmId: string, itemId: string, kind: ImageKind, zoom: SceneZoom = 'wide') => `ndvi/${farmId}/${itemId}/${sceneImageName(kind, zoom)}.png`;
+
+/** Owner-private route URLs of a scene's field-zoom renders (true colour and NDVI colour map), for `SceneRef`. */
+export function fieldScenePaths(farmId: string, itemId: string): {fieldImagePath: string; fieldNdviImagePath: string} {
+  const base = `/api/v1/farms/${farmId}/ndvi/${itemId}/image`;
+  return {fieldImagePath: `${base}?kind=visual&zoom=field`, fieldNdviImagePath: `${base}?kind=ndvi&zoom=field`};
+}
+
+/** Window of the field-zoom render, for `TodayView.fieldImageBbox` (same for every scene of a polygon). */
+export const fieldImageBbox = (boundary: readonly LonLat[]): [number, number, number, number] => [...fieldBbox(boundary)] as [number, number, number, number];
 
 /**
  * Rendered PNG for a scene that the farm's series already analysed. Stored once under the owner's private key
- * ndvi/{farmId}/{itemId}/{kind}.png and served from storage afterwards.
+ * ndvi/{farmId}/{itemId}/{kind}.png (wide, 600 m window) or {kind}-field.png (field zoom: the field window at native 10 m
+ * pixels, see `fieldBbox`) and served from storage afterwards.
  */
-export async function sceneImage(deps: NdviImageDeps, ownerId: string, farmId: string, itemId: string, kind: ImageKind): Promise<SceneImage> {
+export async function sceneImage(deps: NdviImageDeps, ownerId: string, farmId: string, itemId: string, kind: ImageKind, zoom: SceneZoom = 'wide'): Promise<SceneImage> {
   if (!ITEM_ID_RE.test(itemId)) throw new ApiError(400, 'validation_error', 'Invalid satellite scene id');
   if (kind !== 'visual' && kind !== 'ndvi') throw new ApiError(400, 'validation_error', 'Image kind must be visual or ndvi');
+  if (zoom !== 'wide' && zoom !== 'field') throw new ApiError(400, 'validation_error', 'Image zoom must be wide or field');
   const field = await fieldPolygon(deps.pool, ownerId, farmId);
   if (deps.config.RUNTIME_MODE !== 'live') throw new ApiError(409, 'mode_mismatch', 'Satellite images are only available in live mode');
   if ('reason' in field) throw notFound('Satellite scene');
@@ -297,21 +313,22 @@ export async function sceneImage(deps: NdviImageDeps, ownerId: string, farmId: s
     'SELECT id,item_id,acquired_at,baseline,scene_cloud_pct,field_stats,neighbourhood_stats,usable,image_keys FROM ndvi_scene_stats WHERE owner_id=$1 AND farm_id=$2 AND polygon_hash=$3 AND item_id=$4',
     [ownerId, farmId, field.hash, itemId])).rows[0];
   if (!row) throw notFound('Satellite scene');
-  const bbox = displayBbox(field.ring);
-  const key = `ndvi/${farmId}/${itemId}/${kind}.png`;
+  const bbox = zoom === 'field' ? fieldBbox(field.ring) : displayBbox(field.ring);
+  const name = sceneImageName(kind, zoom);
+  const key = sceneImageKey(farmId, itemId, kind, zoom);
   const acquiredAt = row.acquired_at.toISOString();
-  if (row.image_keys?.[kind] === key) {
+  if (row.image_keys?.[name] === key) {
     try {
       return {bytes: Buffer.from(await deps.storage.get({ownerId, key})), contentType: 'image/png', acquiredAt, bbox, cached: true};
     } catch (e) {
       if (!(e instanceof StorageError && e.code === 'not_found')) throw e;
     }
   }
-  const rendered = await renderScene({itemId, bbox, kind, baseline: row.baseline, fetchImpl: deps.fetchImpl});
+  const rendered = await renderScene({itemId, bbox, kind, baseline: row.baseline, fetchImpl: deps.fetchImpl, ...(zoom === 'field' ? {size: fieldRenderSize(bbox)} : {})});
   if (rendered.status !== 'ok') throw new ApiError(424, 'provider_unavailable', 'The satellite image could not be rendered now', {reason: rendered.reason});
   await deps.storage.put({ownerId, key}, rendered.bytes);
-  await deps.pool.query(`UPDATE ndvi_scene_stats SET image_keys=COALESCE(image_keys,'{}'::jsonb) || jsonb_build_object($3::text,$4::text) WHERE id=$1 AND owner_id=$2`, [row.id, ownerId, kind, key]);
-  // The key is per farm/item/kind, not per polygon: rows for an earlier boundary must not claim the re-rendered file.
-  await deps.pool.query('UPDATE ndvi_scene_stats SET image_keys=image_keys - $4::text WHERE farm_id=$1 AND owner_id=$2 AND item_id=$3 AND id<>$5 AND image_keys ? $4::text', [farmId, ownerId, itemId, kind, row.id]);
+  await deps.pool.query(`UPDATE ndvi_scene_stats SET image_keys=COALESCE(image_keys,'{}'::jsonb) || jsonb_build_object($3::text,$4::text) WHERE id=$1 AND owner_id=$2`, [row.id, ownerId, name, key]);
+  // The key is per farm/item/kind/zoom, not per polygon: rows for an earlier boundary must not claim the re-rendered file.
+  await deps.pool.query('UPDATE ndvi_scene_stats SET image_keys=image_keys - $4::text WHERE farm_id=$1 AND owner_id=$2 AND item_id=$3 AND id<>$5 AND image_keys ? $4::text', [farmId, ownerId, itemId, name, row.id]);
   return {bytes: rendered.bytes, contentType: 'image/png', acquiredAt, bbox, cached: false};
 }

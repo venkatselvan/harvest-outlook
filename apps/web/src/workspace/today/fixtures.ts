@@ -3,6 +3,8 @@ import type {
   CarbonFootprint,
   EnergyFootprint,
   FarmAlert,
+  FieldConditionPoint,
+  FieldConditions,
   HarvestEconomics,
   IndexId,
   IndexStageReading,
@@ -12,6 +14,7 @@ import type {
   OverviewFact,
   OverviewPoint,
   PricePoint,
+  RainClass,
   ResidueIncome,
   SceneRef,
   TodayOverview,
@@ -19,7 +22,7 @@ import type {
   UpcomingStep,
   WeatherPoint,
 } from "@harvest/contracts";
-import { addDays, daysBetween } from "./model";
+import { addDays, daysBetween, stageAt } from "./model";
 
 /**
  * SYNTHETIC TEST FIXTURE for unit tests, Playwright route mocks and interface screenshots only.
@@ -44,6 +47,11 @@ export const FIXTURE_BOUNDARY = {
   coordinates: [[[76.1, 13.0], [76.101, 13.0], [76.101, 13.001], [76.1, 13.001], [76.1, 13.0]]],
 };
 const IMAGE_BBOX: [number, number, number, number] = [76.0977, 12.9978, 76.1033, 13.0032];
+/**
+ * Field-zoom render window (spec section 10.1 item 1): a square of 1.6 x the larger field side (about 111 m, so about
+ * 178 m), centred on the field, rounded to 4 decimals. Synthetic like the rest of the fixture.
+ */
+export const FIXTURE_FIELD_BBOX: [number, number, number, number] = [76.0997, 12.9997, 76.1013, 13.0013];
 
 export const FIXTURE_STAGES: NonNullable<TodayView["timeline"]>["stages"] = [
   { id: "emergence", name: "Emergence", from: "2026-09-15", to: "2026-09-24", basis: "sourced" },
@@ -109,6 +117,9 @@ function stats(mean: number, clearFraction: number) {
 function scenes(farmId: string): SceneRef[] {
   const observed: SceneRef[] = OBSERVED_SCENES.map(([date, cloud], i) => {
     const itemId = itemIdFor(date, i);
+    // Every scene but the latest has its field-zoom render; the latest (27 Oct) is "not rendered yet" (null), so the
+    // fixture exercises both the crisp 10 m view and the 600 m fallback.
+    const field = i < OBSERVED_SCENES.length - 1;
     return {
       date,
       kind: "observed",
@@ -117,6 +128,8 @@ function scenes(farmId: string): SceneRef[] {
       cloudPct: cloud,
       imagePath: `/api/v1/farms/${farmId}/ndvi/${itemId}/image?kind=visual`,
       ndviImagePath: `/api/v1/farms/${farmId}/ndvi/${itemId}/image?kind=ndvi`,
+      fieldImagePath: field ? `/api/v1/farms/${farmId}/ndvi/${itemId}/image?kind=visual&zoom=field` : null,
+      fieldNdviImagePath: field ? `/api/v1/farms/${farmId}/ndvi/${itemId}/image?kind=ndvi&zoom=field` : null,
       derivedFromItemId: null,
       stageId: null,
     };
@@ -131,6 +144,8 @@ function scenes(farmId: string): SceneRef[] {
       cloudPct: null,
       imagePath: `/api/v1/farms/${farmId}/ndvi/${LATEST_ITEM_ID}/future?stageId=grain_fill`,
       ndviImagePath: null,
+      fieldImagePath: null,
+      fieldNdviImagePath: null,
       derivedFromItemId: LATEST_ITEM_ID,
       stageId: "grain_fill",
     },
@@ -189,6 +204,22 @@ export function fixturePriceTrack(): PricePoint[] {
   return points;
 }
 
+/**
+ * Invented weather days that give the season progression something to show: a moderate shower, a heavy-rain day that
+ * ponds the field, a two-day heat spell, a very heavy day and the forecast rain behind the 4 Nov alert. Synthetic.
+ */
+export const FIXTURE_WEATHER_DAYS: Readonly<Record<string, { rainMm?: number; tMaxC?: number }>> = {
+  "2026-09-19": { rainMm: 17 },
+  "2026-09-27": { rainMm: 0 },
+  "2026-09-28": { rainMm: 82 },
+  "2026-10-04": { rainMm: 0 },
+  "2026-10-05": { rainMm: 0, tMaxC: 40.6 },
+  "2026-10-06": { rainMm: 0, tMaxC: 41.2 },
+  "2026-10-14": { rainMm: 128 },
+  "2026-11-03": { rainMm: 22 },
+  "2026-11-04": { rainMm: 48 },
+};
+
 /** Daily: observed before today, a 16-day forecast from today, typical (three-year climatology) after. */
 export function fixtureWeatherTrack(from: string, to: string, today = FIXTURE_TODAY): WeatherPoint[] {
   const days = daysBetween(from, to);
@@ -197,8 +228,9 @@ export function fixtureWeatherTrack(from: string, to: string, today = FIXTURE_TO
     const date = addDays(from, i);
     const ahead = daysBetween(today, date);
     const kind = ahead < 0 ? "observed" : ahead <= 15 ? "forecast" : "typical";
-    const tMaxC = Math.round((29 + 2 * Math.sin(i / 9) - (date >= "2026-12-01" ? 1.5 : 0)) * 10) / 10;
-    const rainMm = kind === "typical" ? 1.8 : i % 7 === 3 ? 12.4 : i % 5 === 0 ? 3 : 0;
+    const special = FIXTURE_WEATHER_DAYS[date];
+    const tMaxC = special?.tMaxC ?? Math.round((29 + 2 * Math.sin(i / 9) - (date >= "2026-12-01" ? 1.5 : 0)) * 10) / 10;
+    const rainMm = special?.rainMm ?? (kind === "typical" ? 1.8 : i % 7 === 3 ? 12.4 : i % 5 === 0 ? 3 : 0);
     points.push({
       date,
       kind,
@@ -260,6 +292,136 @@ function alerts(farmId: string): FarmAlert[] {
       suggestedStep: "Scout 20 plants for fresh leaf damage this week",
       createdAt: "2026-10-20T03:00:00Z",
     },
+  ];
+}
+
+// ---------------------------------------------------------------- daily field conditions (spec section 10)
+
+/** Lower bound (mm) of each IMD daily rainfall class, as section 10.1 item 4 quotes them. The API engine is the authority. */
+const RAIN_CLASS_FROM: readonly [RainClass, number][] = [
+  ["extremely_heavy", 204.5],
+  ["very_heavy", 115.6],
+  ["heavy", 64.5],
+  ["moderate", 15.6],
+  ["light", 2.5],
+  ["very_light", 0.1],
+];
+export function fixtureRainClass(mm: number | null): RainClass {
+  if (mm == null) return "unknown";
+  return RAIN_CLASS_FROM.find(([, from]) => mm >= from)?.[0] ?? "none";
+}
+/** Synthetic greenness verdict per observed scene (index into OBSERVED_SCENES); the 22 Sep scene is too cloudy to use. */
+const SCENE_VERDICT: readonly ("above_typical" | "near_typical" | "below_typical" | "no_reference")[] = [
+  "no_reference",
+  "near_typical",
+  "near_typical",
+  "below_typical",
+  "below_typical",
+  "near_typical",
+  "above_typical",
+  "near_typical",
+];
+/** Heat threshold used by the fixture for maize: the project's 40 degree alert threshold (no crop figure; flagged). */
+const FIXTURE_HEAT_C = 40;
+const SEVERITY_RANK = { warning: 0, watch: 1, info: 2 } as const;
+
+/**
+ * SYNTHETIC daily conditions for the maize fixture, built with the same rules section 10.1 item 4 gives the API engine
+ * (IMD classes; ponded on heavy rain or a 100 mm three-day sum, held two days; moist for two days after light rain or
+ * more; heat stress at 40 degrees; greenness held from the latest usable scene; alerts by validity, warnings first).
+ * The days it covers: dry, moist, ponded (28 to 29 Sep, 14 to 15 Oct), heat stress (5 to 6 Oct), heavy and very heavy
+ * rain, forecast rain under the 4 Nov alert, typical days after the forecast and alert days from 20 Oct.
+ */
+export function fixtureConditions(view: Pick<TodayView, "weatherTrack" | "alerts" | "timeline" | "slider">): FieldConditions {
+  const points: FieldConditionPoint[] = [];
+  const slider = view.slider!;
+  const weather = new Map(view.weatherTrack.map((point) => [point.date, point]));
+  const usable = OBSERVED_SCENES.map(([date, cloud], i) => ({ date, i, usable: 1 - cloud / 100 >= 0.6 })).filter((scene) => scene.usable);
+  let wetUntil = -1,
+    pondUntil = -1;
+  const days = daysBetween(slider.from, slider.to);
+  for (let d = 0; d <= days; d++) {
+    const date = addDays(slider.from, d);
+    const w = weather.get(date) ?? null;
+    const mm = w?.rainMm ?? null;
+    const rainClass = fixtureRainClass(mm);
+    const threeDay = [0, 1, 2].reduce((sum, back) => sum + (weather.get(addDays(date, -back))?.rainMm ?? 0), 0);
+    if (rainClass === "heavy" || rainClass === "very_heavy" || rainClass === "extremely_heavy" || threeDay >= 100) pondUntil = d + 1;
+    if (mm != null && mm >= 2.5) wetUntil = d + 2;
+    const state = d <= pondUntil ? "ponded" : d <= wetUntil ? "moist" : w ? "dry" : "unknown";
+    const reading = usable.filter((scene) => scene.date <= date).at(-1);
+    const stage = stageAt(view.timeline, date);
+    const events = view.alerts
+      .filter((alert) => alert.validFrom <= date && (alert.validTo ? date <= alert.validTo : daysBetween(alert.validFrom, date) <= 3))
+      .sort((a, b) => SEVERITY_RANK[a.severity] - SEVERITY_RANK[b.severity])
+      .slice(0, 5)
+      .map((alert) => ({ alertId: alert.id, type: alert.type, severity: alert.severity, title: alert.title }));
+    points.push({
+      date,
+      kind: w ? w.kind : "unavailable",
+      rain: { mm, class: rainClass },
+      water: { state, basis: state === "ponded" ? "rain_rule" : "none" },
+      heat: { tMaxC: w?.tMaxC ?? null, stress: w?.tMaxC != null && w.tMaxC >= FIXTURE_HEAT_C, thresholdC: w?.tMaxC != null ? FIXTURE_HEAT_C : null },
+      greenness: reading
+        ? { ndvi: SCENE_NDVI[reading.i]!, verdict: SCENE_VERDICT[reading.i]!, observedOn: reading.date, daysSince: daysBetween(reading.date, date) }
+        : { ndvi: null, verdict: null, observedOn: null, daysSince: null },
+      events,
+      stage:
+        stage.kind === "stage"
+          ? {
+              id: stage.stage.id,
+              name: stage.stage.name,
+              progress: Math.round(Math.min(1, Math.max(0, daysBetween(stage.stage.from, date) / Math.max(1, daysBetween(stage.stage.from, stage.stage.to)))) * 100) / 100,
+            }
+          : null,
+    });
+  }
+  return {
+    points,
+    basis: [
+      { kind: "climatology", label: "IMD daily rainfall classes (test fixture)", sourceId: null, url: "https://example.org/imd-rainfall-classes", scope: "India", note: "Bands as quoted in the build spec; the API engine cites the IMD page." },
+      { kind: "model", label: "Ponding rule: heavy rain or 100 mm in three days, held two days (test fixture)", sourceId: null, url: null, scope: "field", note: "Engine assumption, flagged." },
+      { kind: "model", label: "Heat threshold 40 degrees C, the project's alert threshold (test fixture)", sourceId: null, url: null, scope: "maize", note: "No crop figure in the fixture; flagged." },
+    ],
+    limitations: [
+      "Test fixture: every condition is synthetic.",
+      "The scene is drawn from weather records and forecasts, not seen on the field.",
+    ],
+  };
+}
+
+/**
+ * SYNTHETIC paddy-style days for tests and static renders: standing water kept by crop practice through tillering
+ * (flooded, basis crop_practice) on an observed dry day, a forecast heavy-rain day and a day with no weather record, then
+ * a drained day at grain filling.
+ */
+export function paddyConditionPoints(): FieldConditionPoint[] {
+  const base = (date: string, over: Partial<FieldConditionPoint>): FieldConditionPoint => ({
+    date,
+    kind: "observed",
+    rain: { mm: 0, class: "none" },
+    water: { state: "flooded", basis: "crop_practice" },
+    heat: { tMaxC: 31, stress: false, thresholdC: 35 },
+    greenness: { ndvi: 0.48, verdict: "near_typical", observedOn: "2026-08-20", daysSince: 2 },
+    events: [],
+    stage: { id: "tillering", name: "Tillering", progress: 0.4 },
+    ...over,
+  });
+  return [
+    base("2026-08-22", {}),
+    base("2026-08-26", {
+      kind: "forecast",
+      rain: { mm: 92, class: "heavy" },
+      greenness: { ndvi: 0.48, verdict: "near_typical", observedOn: "2026-08-20", daysSince: 6 },
+      events: [{ alertId: "5f0c6b1e-1a2b-4c3d-8e4f-000000000011", type: "weather", severity: "warning", title: "Heavy rain warning for the district" }],
+    }),
+    base("2026-08-27", { kind: "unavailable", rain: { mm: null, class: "unknown" }, heat: { tMaxC: null, stress: false, thresholdC: null }, greenness: { ndvi: 0.48, verdict: "near_typical", observedOn: "2026-08-20", daysSince: 7 } }),
+    base("2026-10-02", {
+      water: { state: "dry", basis: "none" },
+      heat: { tMaxC: 36.2, stress: true, thresholdC: 35 },
+      greenness: { ndvi: 0.71, verdict: "above_typical", observedOn: "2026-09-29", daysSince: 3 },
+      stage: { id: "flowering", name: "Flowering", progress: 0.5 },
+    }),
   ];
 }
 
@@ -783,7 +945,7 @@ const monitoring = {
 
 /** The full maize scenario. Pass another farm id to get the same data owned by that farm. */
 export function todayFixture(farmId = FIXTURE_FARM_ID): TodayView {
-  return {
+  const view: TodayView = {
     farmId,
     asOf: "2026-11-01T04:30:00Z",
     today: FIXTURE_TODAY,
@@ -860,9 +1022,12 @@ export function todayFixture(farmId = FIXTURE_FARM_ID): TodayView {
       generatedAt: "2026-11-01T04:20:00Z",
       modelInvocation: null,
     },
+    fieldImageBbox: FIXTURE_FIELD_BBOX,
     monitoring,
     limitations: ["Test fixture: every value on this view is synthetic.", "Direct IMD feed not connected (needs a key); official warnings are searched daily."],
   };
+  view.conditions = fixtureConditions(view);
+  return view;
 }
 
 /** A farm with no current crop: no timeline or slider, but weather and alerts still arrive. */

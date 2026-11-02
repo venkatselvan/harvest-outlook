@@ -1,4 +1,4 @@
-import { createEffect, createMemo, createSignal, For, Match, on, Show, Switch, untrack } from "solid-js";
+import { createEffect, createMemo, createSignal, For, Match, on, onCleanup, Show, Switch, untrack } from "solid-js";
 import type { CareTask, FarmAlert, TodayView as TodayData, UpcomingStep } from "@harvest/contracts";
 import { useWorkspace, today as browserToday } from "../state";
 import { newEntryId } from "../../features/photo-region/http";
@@ -7,14 +7,18 @@ import type { FieldBoundary } from "../fieldGeometry";
 import type { TodayViewProps } from "./types";
 import { completeCare, describeTodayError, dismissAlert, loadToday, type TodayErrorInfo } from "./todayApi";
 import {
+  conditionAt,
+  createSeasonPlayer,
   dateAtIndex,
   formatDay,
   growthProgress,
   priceAt,
+  sceneMarks,
   sliderModel,
   stageAt,
   stageTicks,
   weatherAt,
+  withoutDismissed,
 } from "./model";
 import { TodayHero, type HeroMode } from "./TodayHero";
 import { StageSlider } from "./StageSlider";
@@ -68,6 +72,8 @@ export function TodayView(props: TodayViewProps) {
   const [dismissed, setDismissed] = createSignal<ReadonlySet<string>>(new Set());
   const [alertError, setAlertError] = createSignal("");
   const [sheet, setSheet] = createSignal<SheetKind | null>(null);
+  /** Play the season (spec section 10.1 item 6): one day per 120 ms to the end; any slider interaction pauses. */
+  const [playing, setPlaying] = createSignal(false);
   const careEntries = new Map<string, string>();
   let request = 0;
   /** Workspace version this view last saw for the selected farm; undefined until the first version is known. */
@@ -113,6 +119,7 @@ export function TodayView(props: TodayViewProps) {
   createEffect(
     on([farmId, s.sessionEpoch], ([target, epoch]) => {
       ++request;
+      player.stop();
       setPick(null);
       setCompleted(new Set<string>());
       setDismissed(new Set<string>());
@@ -144,7 +151,16 @@ export function TodayView(props: TodayViewProps) {
     });
   });
   // A different cycle starts the slider at today again.
-  createEffect(on(() => view()?.cycle?.id, () => setPick(null), { defer: true }));
+  createEffect(
+    on(
+      () => view()?.cycle?.id,
+      () => {
+        player.stop();
+        setPick(null);
+      },
+      { defer: true },
+    ),
+  );
 
   // ---------------------------------------------------------------- slider-driven values
   const slider = createMemo(() => {
@@ -169,6 +185,20 @@ export function TodayView(props: TodayViewProps) {
     const model = slider();
     return model ? stageTicks(view()?.timeline, model) : [];
   });
+  const marks = createMemo(() => {
+    const model = slider();
+    return model ? sceneMarks(view()?.scenes ?? [], model) : [];
+  });
+  // The slider day's field condition, without alerts dismissed on this screen.
+  const condition = createMemo(() => withoutDismissed(conditionAt(view()?.conditions, date()), dismissed()));
+  const player = createSeasonPlayer({
+    position: index,
+    total: () => slider()?.total ?? 0,
+    step: (next) => setPick(next),
+    onChange: setPlaying,
+  });
+  onCleanup(() => player.stop());
+  const togglePlay = () => (player.playing ? player.stop() : player.start());
   const mode = (): HeroMode => (props.scene() === "satellite" ? "satellite" : "illustration");
   const boundary = () => (props.workspace()?.boundary ?? null) as FieldBoundary | null;
   const cropName = () => {
@@ -357,6 +387,9 @@ export function TodayView(props: TodayViewProps) {
                 imageBbox={view()!.ndvi?.imageBbox ?? null}
                 indexStage={view()!.indexStage ?? null}
                 onCurveDetails={() => setSheet("curve")}
+                condition={condition()}
+                hasConditions={!!view()!.conditions}
+                fieldImageBbox={view()!.fieldImageBbox ?? null}
               />
               <Show
                 when={slider()}
@@ -372,6 +405,10 @@ export function TodayView(props: TodayViewProps) {
                     onBackToToday={() => setPick(null)}
                     startLabel={`Sown ${formatDay(view()!.cycle!.sowingDate, false)}`}
                     endLabel={`Harvest by ${formatDay(model().to, false)}`}
+                    marks={marks()}
+                    playing={playing()}
+                    onPlay={togglePlay}
+                    onInteract={() => player.stop()}
                   />
                 )}
               </Show>

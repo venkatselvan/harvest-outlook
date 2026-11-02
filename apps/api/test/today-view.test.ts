@@ -15,6 +15,8 @@ import {isoWeek} from '../src/plans/adapters/market-outlook';
 import {ApiError, notFound} from '../src/services/errors';
 import {CarbonFootprint, EnergyFootprint, HarvestEconomics, ResidueIncome, TodayOverview} from '@harvest/contracts';
 import {gateOverview} from '../src/services/today/overview';
+import {fieldImageBbox, fieldScenePaths} from '../src/services/today/ndvi';
+import {FieldConditions} from '@harvest/contracts';
 import * as footprintData from '../src/services/today/footprint-data';
 
 /**
@@ -751,5 +753,49 @@ describe('todayView: the Today overview (spec section 9, synthetic mode)', () =>
     expect(view.limitations.join(' ')).not.toMatch(/Today overview/);
     const empty = TodayView.parse(await todayView(deps, ownerId, emptyFarmId));
     expect(empty.overview).toBeNull();
+  });
+});
+
+describe('todayView: daily field conditions and the field-zoom satellite view (spec section 10)', () => {
+  it('one contract-valid condition point per slider day; observed scenes carry the field-zoom paths; the bbox follows the boundary', async () => {
+    const spy = fetchSpy();
+    const view = TodayView.parse(await todayView(liveDeps(), ownerId, farmId));
+    const c = FieldConditions.parse(view.conditions);
+    expect(c.points.map((p) => p.date)).toEqual(view.weatherTrack.map((w) => w.date));
+    expect(c.points[0]!.date).toBe(view.slider!.from);
+    expect(c.points.at(-1)!.date).toBe(view.slider!.to);
+    for (const [k, p] of c.points.entries()) expect(p.kind).toBe(view.weatherTrack[k]!.kind);
+    // Greenness is held from the latest usable reading (27 Oct, NDVI 0.70 vs 0.55: above typical) and null before the first.
+    const today = c.points.find((p) => p.date === TODAY)!;
+    expect(today.greenness).toMatchObject({observedOn: '2026-10-27', verdict: 'above_typical', daysSince: 5});
+    expect(today.greenness.ndvi).toBeCloseTo(0.7, 2);
+    expect(c.points.find((p) => p.date === SOWING)!.greenness).toMatchObject({observedOn: '2026-08-20'});
+    // The live alert (28 Oct to 15 Nov) is an event on its days only.
+    expect(today.events.map((e) => e.title)).toEqual(['Fall armyworm scouting window']);
+    expect(c.points.find((p) => p.date === '2026-10-27')!.events).toEqual([]);
+    expect(today.stage?.id).toBe(expectedTimeline().stages.filter((s) => s.from <= TODAY).at(-1)!.id);
+    expect(c.limitations[0]).toMatch(/not seen on the field/);
+    // Field-zoom paths on every observed scene, none on illustrations; the field window from the drawn boundary.
+    const observed = view.scenes.filter((s) => s.kind === 'observed');
+    expect(observed.length).toBeGreaterThan(0);
+    for (const s of observed) expect({fieldImagePath: s.fieldImagePath, fieldNdviImagePath: s.fieldNdviImagePath}).toEqual(fieldScenePaths(farmId, s.itemId!));
+    expect(observed[0]!.fieldImagePath).toMatch(/zoom=field/);
+    expect(view.scenes.filter((s) => s.kind === 'illustration').every((s) => !s.fieldImagePath)).toBe(true);
+    expect(view.fieldImageBbox).toEqual(fieldImageBbox(HA.coordinates[0] as [number, number][]));
+    expect(spy).not.toHaveBeenCalled();
+  });
+
+  it('synthetic mode: conditions present without satellite readings (greenness null), no bbox without a boundary; no crop -> null', async () => {
+    const farm = await owner.call('POST', '/api/v1/farms', {payload: {name: 'Hassan maize conditions', location: HASSAN}});
+    const id = farm.json().data.id as string;
+    await owner.call('PUT', `/api/v1/farms/${id}/workspace`, {payload: {expectedVersion: 0, boundary: null, previousHarvest: {status: 'unknown'}, cycles: [maizeCycle], rotationPlans: []}});
+    const deps: TodayViewDeps = {...liveDeps({scenes: []}), config: {RUNTIME_MODE: 'synthetic'}};
+    const view = TodayView.parse(await todayView(deps, ownerId, id));
+    const c = FieldConditions.parse(view.conditions);
+    expect(c.points).toHaveLength(view.weatherTrack.length);
+    expect(c.points.every((p) => p.greenness.observedOn === null)).toBe(true);
+    expect(view.fieldImageBbox).toBeNull();
+    const empty = TodayView.parse(await todayView(deps, ownerId, emptyFarmId));
+    expect(empty.conditions).toBeNull();
   });
 });

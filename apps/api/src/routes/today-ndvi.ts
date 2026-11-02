@@ -28,9 +28,9 @@ export async function todayNdviRoutes(app: FastifyInstance, deps: TodayNdviDeps)
   });
   r.get('/api/v1/farms/:id/ndvi/:itemId/image', {
     config: {rateLimit: {max: 60, timeWindow: '1 minute'}},
-    schema: {tags: ['farms'], params: z.object({id: z.uuid(), itemId: z.string().regex(ITEM_ID_RE)}), querystring: z.object({kind: z.enum(['visual', 'ndvi']).default('visual')}).strict()},
+    schema: {tags: ['farms'], params: z.object({id: z.uuid(), itemId: z.string().regex(ITEM_ID_RE)}), querystring: z.object({kind: z.enum(['visual', 'ndvi']).default('visual'), zoom: z.enum(['wide', 'field']).default('wide')}).strict()},
   }, async (req, reply) => {
-    const image = await sceneImage(deps, requireAuth(req).ownerId, req.params.id, req.params.itemId, req.query.kind);
+    const image = await sceneImage(deps, requireAuth(req).ownerId, req.params.id, req.params.itemId, req.query.kind, req.query.zoom);
     reply.header('cache-control', 'private, max-age=3600').header('x-scene-acquired-at', image.acquiredAt);
     return reply.type(image.contentType).send(image.bytes);
   });

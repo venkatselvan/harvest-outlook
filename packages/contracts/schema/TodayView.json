@@ -451,6 +451,28 @@
               }
             ]
           },
+          "fieldImagePath": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 300
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "fieldNdviImagePath": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 300
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "derivedFromItemId": {
             "anyOf": [
               {
@@ -6755,6 +6777,387 @@
             "modelInvocation"
           ],
           "additionalProperties": false
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "conditions": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "points": {
+              "maxItems": 400,
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "date": {
+                    "type": "string",
+                    "format": "date",
+                    "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+                  },
+                  "kind": {
+                    "type": "string",
+                    "enum": [
+                      "observed",
+                      "forecast",
+                      "typical",
+                      "unavailable"
+                    ]
+                  },
+                  "rain": {
+                    "type": "object",
+                    "properties": {
+                      "mm": {
+                        "type": [
+                          "number",
+                          "null"
+                        ]
+                      },
+                      "class": {
+                        "type": "string",
+                        "enum": [
+                          "none",
+                          "very_light",
+                          "light",
+                          "moderate",
+                          "heavy",
+                          "very_heavy",
+                          "extremely_heavy",
+                          "unknown"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "mm",
+                      "class"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "water": {
+                    "type": "object",
+                    "properties": {
+                      "state": {
+                        "type": "string",
+                        "enum": [
+                          "dry",
+                          "moist",
+                          "ponded",
+                          "flooded",
+                          "unknown"
+                        ]
+                      },
+                      "basis": {
+                        "type": "string",
+                        "enum": [
+                          "crop_practice",
+                          "rain_rule",
+                          "none"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "state",
+                      "basis"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "heat": {
+                    "type": "object",
+                    "properties": {
+                      "tMaxC": {
+                        "type": [
+                          "number",
+                          "null"
+                        ]
+                      },
+                      "stress": {
+                        "type": "boolean"
+                      },
+                      "thresholdC": {
+                        "type": [
+                          "number",
+                          "null"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "tMaxC",
+                      "stress",
+                      "thresholdC"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "greenness": {
+                    "type": "object",
+                    "properties": {
+                      "ndvi": {
+                        "type": [
+                          "number",
+                          "null"
+                        ]
+                      },
+                      "verdict": {
+                        "anyOf": [
+                          {
+                            "type": "string",
+                            "enum": [
+                              "above_typical",
+                              "near_typical",
+                              "below_typical",
+                              "no_reference"
+                            ]
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "observedOn": {
+                        "anyOf": [
+                          {
+                            "type": "string",
+                            "format": "date",
+                            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "daysSince": {
+                        "anyOf": [
+                          {
+                            "type": "integer",
+                            "minimum": -9007199254740991,
+                            "maximum": 9007199254740991
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      }
+                    },
+                    "required": [
+                      "ndvi",
+                      "verdict",
+                      "observedOn",
+                      "daysSince"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "events": {
+                    "maxItems": 5,
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "alertId": {
+                          "type": "string",
+                          "format": "uuid",
+                          "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                        },
+                        "type": {
+                          "type": "string",
+                          "maxLength": 40
+                        },
+                        "severity": {
+                          "type": "string",
+                          "enum": [
+                            "info",
+                            "watch",
+                            "warning"
+                          ]
+                        },
+                        "title": {
+                          "type": "string",
+                          "maxLength": 160
+                        }
+                      },
+                      "required": [
+                        "alertId",
+                        "type",
+                        "severity",
+                        "title"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "stage": {
+                    "anyOf": [
+                      {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "maxLength": 80
+                          },
+                          "name": {
+                            "type": "string",
+                            "maxLength": 80
+                          },
+                          "progress": {
+                            "type": "number",
+                            "minimum": 0,
+                            "maximum": 1
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "name",
+                          "progress"
+                        ],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  }
+                },
+                "required": [
+                  "date",
+                  "kind",
+                  "rain",
+                  "water",
+                  "heat",
+                  "greenness",
+                  "events",
+                  "stage"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "basis": {
+              "maxItems": 12,
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "kind": {
+                    "type": "string",
+                    "enum": [
+                      "price_history",
+                      "yield_reference",
+                      "cost_reference",
+                      "sowing_window",
+                      "duration",
+                      "rotation",
+                      "water",
+                      "soil",
+                      "ndvi",
+                      "climatology",
+                      "model",
+                      "residue_reference",
+                      "emission_factor",
+                      "energy_reference"
+                    ]
+                  },
+                  "label": {
+                    "type": "string",
+                    "maxLength": 200
+                  },
+                  "sourceId": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "maxLength": 200
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "url": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "format": "uri"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "scope": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "maxLength": 120
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "note": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "maxLength": 1000
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  }
+                },
+                "required": [
+                  "kind",
+                  "label",
+                  "sourceId",
+                  "url",
+                  "scope",
+                  "note"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "limitations": {
+              "maxItems": 12,
+              "type": "array",
+              "items": {
+                "type": "string",
+                "maxLength": 1000
+              }
+            }
+          },
+          "required": [
+            "points",
+            "basis",
+            "limitations"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "fieldImageBbox": {
+      "anyOf": [
+        {
+          "type": "array",
+          "items": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            }
+          ],
+          "additionalItems": false,
+          "minItems": 4,
+          "maxItems": 4
         },
         {
           "type": "null"

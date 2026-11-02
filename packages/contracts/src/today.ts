@@ -22,6 +22,9 @@ export const SceneRef = z.object({
  /** Owner-private image path on this API (visual or ndvi), never a third-party URL. */
  imagePath: z.string().max(300).nullable(),
  ndviImagePath: z.string().max(300).nullable(),
+ /** 2026-11-02 (spec section 10): the same scene cropped to the field at native 10 m pixels (crisp squares), visual and NDVI colour map; null until rendered. */
+ fieldImagePath: z.string().max(300).nullable().optional(),
+ fieldNdviImagePath: z.string().max(300).nullable().optional(),
  derivedFromItemId: z.string().max(200).nullable(),
  stageId: z.string().max(80).nullable(),
 }).strict();
@@ -283,6 +286,35 @@ export const TodayOverview = z.object({
  modelInvocation: ModelInvocation.nullable(),
 }).strict();
 
+/**
+ * Season progression (2026-11-02, TODAY_ECONOMICS_FOOTPRINT_SPEC.md section 10): one code-computed condition per slider
+ * day, so the illustration and satellite scenes can show rain, standing water, heat, canopy greenness and dated alerts
+ * as the farmer moves through the season. Every field is derived from the weather track, the alerts, the satellite
+ * readings and sourced crop practice; nothing is a camera view or a forecast of the field itself.
+ */
+export const RainClass = z.enum(['none', 'very_light', 'light', 'moderate', 'heavy', 'very_heavy', 'extremely_heavy', 'unknown']);
+export const WaterState = z.enum(['dry', 'moist', 'ponded', 'flooded', 'unknown']);
+export const FieldConditionPoint = z.object({
+ date: isoDate,
+ /** Weather basis of the day (observed, forecast, typical) or unavailable. */
+ kind: z.enum(['observed', 'forecast', 'typical', 'unavailable']),
+ rain: z.object({mm: z.number().nullable(), class: RainClass}).strict(),
+ /** flooded: the crop practice keeps standing water in this stage (paddy); ponded: a rain rule; moist: recent rain; dry otherwise. */
+ water: z.object({state: WaterState, basis: z.enum(['crop_practice', 'rain_rule', 'none'])}).strict(),
+ heat: z.object({tMaxC: z.number().nullable(), stress: z.boolean(), thresholdC: z.number().nullable()}).strict(),
+ /** Latest usable satellite reading on or before the date, held until the next one; null before the first. */
+ greenness: z.object({ndvi: z.number().nullable(), verdict: z.enum(['above_typical', 'near_typical', 'below_typical', 'no_reference']).nullable(), observedOn: isoDate.nullable(), daysSince: z.number().int().nullable()}).strict(),
+ /** Alerts whose validity covers the date. */
+ events: z.array(z.object({alertId: z.uuid(), type: z.string().max(40), severity: z.enum(['info', 'watch', 'warning']), title: z.string().max(160)}).strict()).max(5),
+ stage: z.object({id: z.string().max(80), name: z.string().max(80), progress: z.number().min(0).max(1)}).strict().nullable(),
+}).strict();
+export const FieldConditions = z.object({
+ points: z.array(FieldConditionPoint).max(400),
+ /** Thresholds used, each with its source. */
+ basis: z.array(BasisRef).max(12),
+ limitations: z.array(text).max(12),
+}).strict();
+
 export const TodayView = z.object({
  farmId: z.uuid(),
  asOf: z.iso.datetime(),
@@ -315,6 +347,9 @@ export const TodayView = z.object({
  carbonFootprint: CarbonFootprint.nullable().optional(),
  /** 2026-11-02 (spec section 9): the AI overview of today, written from code facts. */
  overview: TodayOverview.nullable().optional(),
+ /** 2026-11-02 (spec section 10): daily field conditions for the season progression; the field-zoom image bbox for the crisp satellite crop. */
+ conditions: FieldConditions.nullable().optional(),
+ fieldImageBbox: z.tuple([z.number(), z.number(), z.number(), z.number()]).nullable().optional(),
  monitoring: z.object({enabled: z.boolean(), lastCheckedAt: z.iso.datetime().nullable(), nextCheckAt: z.iso.datetime().nullable()}).strict(),
  limitations: z.array(text),
 }).strict();
@@ -343,4 +378,8 @@ export type OverviewRef = z.infer<typeof OverviewRef>;
 export type OverviewFact = z.infer<typeof OverviewFact>;
 export type OverviewPoint = z.infer<typeof OverviewPoint>;
 export type TodayOverview = z.infer<typeof TodayOverview>;
+export type RainClass = z.infer<typeof RainClass>;
+export type WaterState = z.infer<typeof WaterState>;
+export type FieldConditionPoint = z.infer<typeof FieldConditionPoint>;
+export type FieldConditions = z.infer<typeof FieldConditions>;
 export type TodayView = z.infer<typeof TodayView>;

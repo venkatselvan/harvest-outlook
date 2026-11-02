@@ -1,10 +1,27 @@
-import { createMemo, createSignal, Match, Show, Switch } from "solid-js";
-import type { IndexStageReading, NdviSeries, SceneRef } from "@harvest/contracts";
-import { FieldGrowthScene } from "../FieldGrowthScene";
-import type { FieldBoundary } from "../fieldGeometry";
+import { createEffect, createMemo, createSignal, For, Match, onCleanup, Show, Switch, untrack } from "solid-js";
+import type { FieldConditionPoint, IndexStageReading, NdviSeries, SceneRef } from "@harvest/contracts";
+import { createReducedMotion, FieldGrowthScene } from "../FieldGrowthScene";
+import { conditionLayers, rainStreaks, type ConditionEvent, type ConditionLayers, type FieldBoundary } from "../fieldGeometry";
 import { Icon } from "../icons";
 import { AiSpark } from "../ui/AiSpark";
-import { curveAsOfNote, curveLine, formatDay, rangeLabel, sceneDate, sceneFor, type ScenePick, type StageAt } from "./model";
+import {
+  conditionCaption,
+  conditionKindChip,
+  CROSS_FADE_MS,
+  crossFadeMs,
+  curveAsOfNote,
+  curveLine,
+  formatDay,
+  futureImageLabel,
+  rangeLabel,
+  satelliteImage,
+  sceneAgeCaption,
+  sceneDate,
+  sceneFor,
+  type SatelliteImage,
+  type ScenePick,
+  type StageAt,
+} from "./model";
 import { sceneImageUrl } from "./todayApi";
 
 export type HeroMode = "illustration" | "satellite";
@@ -29,6 +46,12 @@ export interface TodayHeroProps {
   indexStage?: IndexStageReading | null | undefined;
   /** Opens the curve sheet from the info button. */
   onCurveDetails?: (() => void) | undefined;
+  /** The slider day's field condition (spec section 10); null when the series has no point for the day. */
+  condition?: FieldConditionPoint | null | undefined;
+  /** The view carries a conditions series: the caption line shows (a missing day reads "No weather record for this day"). */
+  hasConditions?: boolean | undefined;
+  /** Bbox of the field-zoom renders (`TodayView.fieldImageBbox`), for the outline over the crisp 10 m image. */
+  fieldImageBbox?: [number, number, number, number] | null | undefined;
 }
 
 /** Stage name and date range for the bottom overlay ("Tillering · 12 Nov to 3 Dec"), plus its basis caption. */
@@ -60,37 +83,70 @@ const stageName = (stage: StageAt) =>
   stage.kind === "stage" ? stage.stage.name : stage.kind === "harvest" ? "harvest window" : "crop";
 const stageIdOf = (stage: StageAt) => (stage.kind === "stage" ? stage.stage.id : null);
 
-/** Normalised polygon points (0..1) of the field boundary inside the rendered image bbox (EPSG:4326, square PNG). */
-function outlinePoints(boundary: FieldBoundary | null, bbox: NdviSeries["imageBbox"] | null): string | null {
+/** Polygon points (0..scale, default 0..1) of the field boundary inside the rendered image bbox (EPSG:4326, square PNG). */
+export function outlinePoints(boundary: FieldBoundary | null, bbox: NdviSeries["imageBbox"] | null | undefined, scale = 1): string | null {
   const ring = boundary?.coordinates[0];
   if (!ring || ring.length < 4 || !bbox) return null;
   const [minLon, minLat, maxLon, maxLat] = bbox;
   if (!(maxLon > minLon && maxLat > minLat)) return null;
   return ring
     .slice(0, -1)
-    .map(([lon, lat]) => `${(((lon ?? 0) - minLon) / (maxLon - minLon)).toFixed(4)},${((maxLat - (lat ?? 0)) / (maxLat - minLat)).toFixed(4)}`)
+    .map(([lon, lat]) => `${((((lon ?? 0) - minLon) / (maxLon - minLon)) * scale).toFixed(4)},${(((maxLat - (lat ?? 0)) / (maxLat - minLat)) * scale).toFixed(4)}`)
     .join(" ");
 }
 
+/** CSS `url()` for a same-origin image path already checked by `sceneImageUrl`. */
+const cssUrl = (src: string) => `url("${src.replace(/["\\\n]/g, encodeURIComponent)}")`;
+
 function SatelliteScene(props: {
   pick: ScenePick;
+  image: SatelliteImage;
   date: string;
   stage: StageAt;
   boundary: FieldBoundary | null;
   imageBbox: NdviSeries["imageBbox"] | null;
+  fieldImageBbox: [number, number, number, number] | null;
+  layers: ConditionLayers;
+  /** Field polygon in 0..100 image units for the water tint, or null (no outline, or an illustration). */
+  water: string | null;
 }) {
   const [failed, setFailed] = createSignal<string | null>(null);
+  const reduced = createReducedMotion();
   const scene = () => (props.pick.mode === "none" ? null : props.pick.scene);
-  const src = () => sceneImageUrl(scene()?.imagePath);
-  const outline = () => (props.pick.mode === "illustration" ? null : outlinePoints(props.boundary, props.imageBbox));
+  const src = () => sceneImageUrl(props.image.path);
+  const field = () => props.image.zoom === "field";
+  const bbox = () => (field() ? props.fieldImageBbox : props.imageBbox);
+  const outline = () => (props.pick.mode === "illustration" ? null : outlinePoints(props.boundary, bbox()));
+  const dimmed = () => props.pick.mode === "latest";
   const alt = () => {
     const pick = props.pick;
     if (pick.mode === "illustration")
       return `Illustration of a typical ${stageName(props.stage)}, made from the satellite image of ${formatDay(pick.derivedFrom ? sceneDate(pick.derivedFrom) : null)}. Not an observation.`;
     if (pick.mode === "none") return "";
     const cloud = pick.scene.cloudPct != null ? `, ${Math.round(pick.scene.cloudPct)}% cloud in the scene` : "";
-    return `${pick.mode === "latest" ? "Latest satellite" : "Satellite"} image of your field, observed ${formatDay(sceneDate(pick.scene))}${cloud}`;
+    const what = props.image.layer === "ndvi" ? "greenness colour map (NDVI)" : "image";
+    const latest = pick.mode === "latest";
+    const lead = `${latest ? "Latest satellite" : "Satellite"} ${what} of your field`;
+    return `${lead.charAt(0).toUpperCase()}${lead.slice(1)}, observed ${formatDay(sceneDate(pick.scene))}${cloud}${field() ? ". Close-up at 10 m pixels" : ""}${latest ? ". No image yet for this date" : ""}`;
   };
+  // Cross-fade: the previous image stays on top for 150 ms and fades out (none under reduced motion).
+  const [previous, setPrevious] = createSignal<{ src: string; pixel: boolean } | null>(null);
+  let last: { src: string; pixel: boolean } | null = null;
+  let fadeTimer: ReturnType<typeof setTimeout> | undefined;
+  createEffect(() => {
+    const next = src(),
+      pixel = field();
+    untrack(() => {
+      const ms = crossFadeMs(reduced());
+      if (last && next && last.src !== next && ms > 0) {
+        setPrevious({ ...last });
+        clearTimeout(fadeTimer);
+        fadeTimer = setTimeout(() => setPrevious(null), ms);
+      }
+      last = next ? { src: next, pixel } : null;
+    });
+  });
+  onCleanup(() => clearTimeout(fadeTimer));
   return (
     <div class="today-sat">
       <Show
@@ -109,17 +165,37 @@ function SatelliteScene(props: {
           </div>
         }
       >
-        <div class="today-sat-box">
+        <div class="today-sat-box" classList={{ "is-dimmed": dimmed(), "is-field": field() }} data-zoom={props.image.zoom} data-layer={props.image.layer}>
           <img
             src={src()!}
             alt={alt()}
             data-scene-kind={props.pick.mode}
+            data-zoom={props.image.zoom}
+            style={field() ? { "image-rendering": "pixelated" } : undefined}
             onError={() => setFailed(src())}
           />
+          <Show when={previous()} keyed>
+            {(prev) => (
+              <div
+                class="today-sat-prev"
+                classList={{ "is-field": prev.pixel }}
+                style={{ "background-image": cssUrl(prev.src), "animation-duration": `${CROSS_FADE_MS}ms` }}
+                aria-hidden="true"
+              />
+            )}
+          </Show>
           <Show when={outline()}>
             <svg class="today-sat-outline" viewBox="0 0 1 1" preserveAspectRatio="none" aria-hidden="true">
               <polygon points={outline()!} vector-effect="non-scaling-stroke" />
             </svg>
+          </Show>
+          <SatelliteConditions layers={props.layers} water={props.water} />
+          <Show when={futureImageLabel(props.pick)}>
+            {(label) => (
+              <p class="today-sat-future" data-testid="today-sat-future">
+                {label()}
+              </p>
+            )}
           </Show>
         </div>
       </Show>
@@ -127,24 +203,144 @@ function SatelliteScene(props: {
   );
 }
 
-/** Caption chips for the satellite view: kind, date and cloud, or the illustration label. */
-function SatelliteCaption(props: { pick: ScenePick; stage: StageAt }) {
+/**
+ * The day's conditions over the satellite image, as a labelled SVG layer on top (never drawn into the image): a water
+ * tint over the field polygon when ponded or flooded, and rain streaks by class (dashed for forecast and typical days).
+ * The streaks are the same deterministic set the illustration uses; they fall by CSS animation, static under reduced motion.
+ */
+export function SatelliteConditions(props: { layers: ConditionLayers; water: string | null }) {
+  const streaks = createMemo(() => rainStreaks(props.layers.rain.count));
+  const rain = () => props.layers.rain;
+  const water = () => (props.water && props.layers.water.look !== "none" ? props.water : null);
+  return (
+    <Show when={rain().count > 0 || water()}>
+      <svg
+        class="today-sat-conditions"
+        viewBox="0 0 100 100"
+        preserveAspectRatio="none"
+        aria-hidden="true"
+        data-rain-count={rain().count}
+        data-water={water() ? props.layers.water.look : "none"}
+      >
+        <Show when={water()}>
+          <polygon class={`today-sat-water ${props.layers.water.look}`} points={water()!} />
+        </Show>
+        <Show when={rain().count > 0}>
+          <g
+            class="today-sat-rain"
+            classList={{ "is-dashed": rain().dashed }}
+            style={{ "animation-duration": `${(1.6 / Math.max(0.3, rain().speed)).toFixed(2)}s` }}
+            stroke-width={(rain().width * 0.32).toFixed(2)}
+          >
+            <For each={streaks()}>
+              {(s) => {
+                const len = (rain().length * s.len * 0.32).toFixed(2);
+                const x = (s.x * 100).toFixed(2),
+                  y = (s.y * 100).toFixed(2);
+                return (
+                  <>
+                    <line x1={x} y1={y} x2={(Number(x) - Number(len) * 0.22).toFixed(2)} y2={(Number(y) + Number(len)).toFixed(2)} />
+                    <line x1={x} y1={(Number(y) - 100).toFixed(2)} x2={(Number(x) - Number(len) * 0.22).toFixed(2)} y2={(Number(y) - 100 + Number(len)).toFixed(2)} />
+                  </>
+                );
+              }}
+            </For>
+          </g>
+        </Show>
+      </svg>
+    </Show>
+  );
+}
+
+/** Small legend for the NDVI colour map the API renders (rescale -0.2 to 0.9, red to yellow to green). */
+export function NdviLegend() {
+  return (
+    <span class="today-ndvi-legend" role="img" aria-label="Greenness colour map: red at NDVI −0.2 or lower, yellow in the middle, green at 0.9 or higher" data-testid="today-ndvi-legend">
+      <span aria-hidden="true">−0.2</span>
+      <span class="today-ndvi-bar" aria-hidden="true" />
+      <span aria-hidden="true">0.9</span>
+    </span>
+  );
+}
+
+const EVENT_ICON: Record<string, string> = { weather: "rain", price: "trend", market_event: "trend", crop_threat: "leaf", satellite: "layers" };
+/** The day's alerts as badges over the scene (both modes): severity colour, icon and title; at most two, then a count. */
+export function EventBadges(props: { events: ConditionEvent[] }) {
+  const shown = () => props.events.slice(0, 2);
+  const more = () => Math.max(0, props.events.length - 2);
+  return (
+    <Show when={props.events.length}>
+      <ul class="today-events" aria-label="Alerts on this date" data-testid="today-events">
+        <For each={shown()}>
+          {(event) => (
+            <li class={`today-event severity ${event.severity}`} title={event.title} data-alert-id={event.alertId}>
+              <Icon name={EVENT_ICON[event.type] ?? "sun"} size={13} />
+              <span>{event.title}</span>
+            </li>
+          )}
+        </For>
+        <Show when={more()}>
+          <li class="today-event more">+{more()} more</li>
+        </Show>
+      </ul>
+    </Show>
+  );
+}
+
+/** The conditions caption under the hero: the weather-basis chip and the day's conditions in words. */
+export function ConditionsLine(props: { point: FieldConditionPoint | null; date: string }) {
+  const chip = () => conditionKindChip(props.point);
+  return (
+    <p class="today-conditions" data-testid="today-conditions" data-kind={props.point?.kind ?? "none"}>
+      <Show when={chip()}>{(c) => <span class={`today-chip ${c().tone}`}>{c().label}</span>}</Show>
+      <span>{conditionCaption(props.point, props.date)}</span>
+    </p>
+  );
+}
+
+/**
+ * Notes for the satellite image, on one line right under the frame so they never cover the field: the 10 m pixel
+ * caption for the close-up, the NDVI legend under Greenness, and the label for the weather overlay.
+ */
+export function SatelliteNotes(props: { image: SatelliteImage; overlay: boolean }) {
+  return (
+    <Show when={props.image.zoom === "field" || props.image.layer === "ndvi" || props.overlay}>
+      <p class="today-sat-notes" data-testid="today-sat-notes">
+        <Show when={props.image.zoom === "field"}>
+          <span data-testid="today-sat-pixels">Sentinel-2, 10 m pixels: each square is 10 m</span>
+        </Show>
+        <Show when={props.image.layer === "ndvi"}>
+          <NdviLegend />
+        </Show>
+        <Show when={props.overlay}>
+          <span class="today-chip illustration" title="Rain and standing water drawn over the image from weather records and forecasts">
+            Weather overlay
+          </span>
+        </Show>
+      </p>
+    </Show>
+  );
+}
+
+/** Caption chips for the satellite view: kind, which image and how old, and cloud; or the illustration label. */
+function SatelliteCaption(props: { pick: ScenePick; stage: StageAt; date: string }) {
   return (
     <Switch>
       <Match when={props.pick.mode === "observed" || props.pick.mode === "latest"}>
         {(() => {
           const scene = () => (props.pick as Extract<ScenePick, { scene: SceneRef }>).scene;
           return (
-            <span class="today-hero-caption">
-              <span class="today-chip observed">Observed</span>
-              <span class="today-scene-date">
-                {props.pick.mode === "latest" ? "Latest image " : ""}
-                {formatDay(sceneDate(scene()))}
+            <>
+              <span class="today-hero-caption">
+                <span class="today-chip observed">Observed</span>
+                <span class="today-scene-date" data-testid="today-scene-age">
+                  {sceneAgeCaption(props.pick, props.date)}
+                </span>
+                <Show when={scene().cloudPct != null}>
+                  <span class="today-chip">Cloud {Math.round(scene().cloudPct!)}%</span>
+                </Show>
               </span>
-              <Show when={scene().cloudPct != null}>
-                <span class="today-chip">Cloud {Math.round(scene().cloudPct!)}%</span>
-              </Show>
-            </span>
+            </>
           );
         })()}
       </Match>
@@ -206,11 +402,23 @@ export function TodayHero(props: TodayHeroProps) {
   const overlay = createMemo(() => stageOverlay(props.stage));
   const pick = createMemo(() => sceneFor(props.scenes, props.date, props.today, stageIdOf(props.stage)));
   const isToday = () => props.date === props.today;
+  const satellite = () => props.mode === "satellite";
+  const point = () => (props.hasConditions ? props.condition ?? null : null);
+  const layers = createMemo(() => conditionLayers(point()));
+  const caption = () => (props.hasConditions ? conditionCaption(point(), props.date) : null);
+  // Satellite image choices persist while the farmer moves the slider: field close-up by default, Wider view and Greenness on demand.
+  const [wide, setWide] = createSignal(false);
+  const [greenness, setGreenness] = createSignal(false);
+  const image = createMemo(() => satelliteImage(pick(), { wide: wide(), greenness: greenness() }));
+  const shownBbox = () => (image().zoom === "field" ? props.fieldImageBbox ?? null : props.imageBbox);
+  // Water is tinted only over the field polygon of an observed image; an illustration gets rain only.
+  const waterPoints = () => (pick().mode === "observed" || pick().mode === "latest" ? outlinePoints(props.boundary, shownBbox(), 100) : null);
+  const overlayDrawn = () => pick().mode !== "none" && (layers().rain.count > 0 || (layers().water.look !== "none" && !!waterPoints()));
   return (
     <section class="today-hero" aria-label="Your field">
-      <div class="today-hero-frame" classList={{ satellite: props.mode === "satellite" }}>
+      <div class="today-hero-frame" classList={{ satellite: satellite() }}>
         <Show
-          when={props.mode === "satellite"}
+          when={satellite()}
           fallback={
             <FieldGrowthScene
               cropId={props.cropId}
@@ -218,11 +426,23 @@ export function TodayHero(props: TodayHeroProps) {
               boundary={props.boundary}
               progress={props.progress}
               date={props.date}
+              condition={point()}
+              conditionCaption={caption()}
               compact
             />
           }
         >
-          <SatelliteScene pick={pick()} date={props.date} stage={props.stage} boundary={props.boundary} imageBbox={props.imageBbox} />
+          <SatelliteScene
+            pick={pick()}
+            image={image()}
+            date={props.date}
+            stage={props.stage}
+            boundary={props.boundary}
+            imageBbox={props.imageBbox}
+            fieldImageBbox={props.fieldImageBbox ?? null}
+            layers={layers()}
+            water={waterPoints()}
+          />
         </Show>
         <div class="today-hero-top">
           <div class="today-hero-toggle" role="group" aria-label="Field view">
@@ -240,6 +460,23 @@ export function TodayHero(props: TodayHeroProps) {
             {formatDay(props.date)}
           </span>
         </div>
+        <div class="today-hero-second" classList={{ "has-tools": satellite() && (image().fieldAvailable || image().ndviAvailable) }}>
+          <EventBadges events={layers().events} />
+          <Show when={satellite() && (image().fieldAvailable || image().ndviAvailable)}>
+            <div class="today-sat-tools" role="group" aria-label="Satellite image options">
+              <Show when={image().ndviAvailable}>
+                <button type="button" aria-pressed={image().layer === "ndvi"} onClick={() => setGreenness((on) => !on)}>
+                  Greenness
+                </button>
+              </Show>
+              <Show when={image().fieldAvailable}>
+                <button type="button" aria-pressed={wide()} onClick={() => setWide((on) => !on)}>
+                  Wider view
+                </button>
+              </Show>
+            </div>
+          </Show>
+        </div>
         <div class="today-hero-overlay" data-testid="today-stage">
           <p class="today-stage-line">
             <strong>{overlay().name}</strong>
@@ -251,7 +488,7 @@ export function TodayHero(props: TodayHeroProps) {
             </Show>
           </p>
           <Show
-            when={props.mode === "satellite"}
+            when={satellite()}
             fallback={
               <Show when={overlay().caption}>
                 <span class="today-hero-caption">
@@ -261,10 +498,16 @@ export function TodayHero(props: TodayHeroProps) {
               </Show>
             }
           >
-            <SatelliteCaption pick={pick()} stage={props.stage} />
+            <SatelliteCaption pick={pick()} stage={props.stage} date={props.date} />
           </Show>
         </div>
       </div>
+      <Show when={satellite()}>
+        <SatelliteNotes image={image()} overlay={overlayDrawn()} />
+      </Show>
+      <Show when={props.hasConditions}>
+        <ConditionsLine point={point()} date={props.date} />
+      </Show>
       <CurveLine reading={props.indexStage} date={props.date} today={props.today} onDetails={props.onCurveDetails} />
     </section>
   );

@@ -3,6 +3,9 @@ import type {
   BasisRef,
   CarbonTerm,
   EnergyEquivalent,
+  FieldConditionPoint,
+  FieldConditions,
+  RainClass,
   HarvestEconomics,
   IndexId,
   IndexStagePhase,
@@ -258,6 +261,212 @@ export function sceneFor(
   return nearest ? { mode: "observed", scene: nearest } : { mode: "none", reason: "none_before_date" };
 }
 export { observedDate as sceneDate };
+
+// ------------------------------------------------------------------ season progression (spec section 10)
+
+export { rainStreakCount } from "../fieldGeometry";
+
+/** The day's condition point (exact day only, never a neighbouring day). Null without a series or a point for the day. */
+export function conditionAt(conditions: FieldConditions | null | undefined, date: string): FieldConditionPoint | null {
+  if (!conditions) return null;
+  return conditions.points.find((point) => point.date === date) ?? null;
+}
+/** The day's point without alerts the farmer has dismissed on this screen. */
+export function withoutDismissed(point: FieldConditionPoint | null, dismissed: ReadonlySet<string>): FieldConditionPoint | null {
+  if (!point || !dismissed.size || !point.events.some((event) => dismissed.has(event.alertId))) return point;
+  return { ...point, events: point.events.filter((event) => !dismissed.has(event.alertId)) };
+}
+
+const RAIN_WORDS: Record<RainClass, string> = {
+  none: "no rain",
+  very_light: "very light",
+  light: "light",
+  moderate: "moderate",
+  heavy: "heavy",
+  very_heavy: "very heavy",
+  extremely_heavy: "extremely heavy",
+  unknown: "unknown",
+};
+const VERDICT_WORDS = { above_typical: "above typical", near_typical: "near typical", below_typical: "below typical" } as const;
+function rainPart(point: FieldConditionPoint): string {
+  const { mm, class: rainClass } = point.rain;
+  if (rainClass === "unknown") return mm == null ? "rain not recorded" : formatRain(mm);
+  if (rainClass === "none") return "no rain";
+  return `${formatRain(mm)} (${RAIN_WORDS[rainClass]})`;
+}
+function waterPart(point: FieldConditionPoint): string | null {
+  switch (point.water.state) {
+    case "flooded":
+      return point.water.basis === "crop_practice" ? "standing water kept by crop practice" : "field flooded";
+    case "ponded":
+      return "field ponded";
+    case "moist":
+      return "soil moist";
+    case "dry":
+      return "soil dry";
+    default:
+      return null;
+  }
+}
+function canopyPart(point: FieldConditionPoint): string {
+  const g = point.greenness;
+  if (g.ndvi == null && !g.verdict) return "no satellite reading yet";
+  const what = g.verdict && g.verdict !== "no_reference" ? `canopy ${VERDICT_WORDS[g.verdict]}` : `greenness ${formatIndexValue(g.ndvi)}`;
+  // A held reading names its image date, so an older image never reads as this day's view.
+  return g.observedOn && g.daysSince ? `${what} as of ${formatDay(g.observedOn, false)}` : what;
+}
+const formatIndexValue = (value: number | null) => (value == null ? "unknown" : value.toFixed(2).replace(/^-/, "−"));
+
+/**
+ * The day's conditions in one sentence, from the point and nothing else:
+ * "19 Sep: 17 mm rain (moderate), field ponded, canopy near typical, alert: Heavy rain watch". Forecast and typical days
+ * say so after the date; a day without a weather record says "No weather record for this day" and still names what does
+ * not depend on weather (crop-practice standing water, the satellite reading, alerts). With no point at all (the series
+ * has no entry for the date) the sentence is the no-record one for `date`.
+ */
+export function conditionCaption(point: FieldConditionPoint | null, date?: string): string {
+  if (!point) return `${date ? `${formatDay(date, false)}: ` : ""}No weather record for this day`;
+  const day = formatDay(point.date, false);
+  const head = point.kind === "forecast" ? `${day} (forecast)` : point.kind === "typical" ? `${day} (typical weather)` : day;
+  const parts: string[] = [];
+  if (point.kind === "unavailable") {
+    parts.push("No weather record for this day");
+    if (point.water.basis === "crop_practice" && point.water.state === "flooded") parts.push(waterPart(point)!);
+  } else {
+    parts.push(rainPart(point));
+    if (point.heat.stress)
+      parts.push(`heat stress (${formatTemp(point.heat.tMaxC)}${point.heat.thresholdC != null ? `, threshold ${formatTemp(point.heat.thresholdC)}` : ""})`);
+    const water = waterPart(point);
+    if (water) parts.push(water);
+  }
+  parts.push(canopyPart(point));
+  if (point.events.length === 1) parts.push(`alert: ${point.events[0]!.title}`);
+  else if (point.events.length > 1) parts.push(`alerts: ${point.events.map((event) => event.title).join("; ")}`);
+  return `${head}: ${parts.join(", ")}`;
+}
+/** Chip for the weather basis of the day: Observed, Forecast or Typical; none without a weather record. */
+export function conditionKindChip(point: FieldConditionPoint | null): { label: string; tone: "observed" | "forecast" | "typical" } | null {
+  if (!point) return null;
+  if (point.kind === "observed") return { label: "Observed", tone: "observed" };
+  if (point.kind === "forecast") return { label: "Forecast", tone: "forecast" };
+  if (point.kind === "typical") return { label: "Typical", tone: "typical" };
+  return null;
+}
+
+export interface SceneMark {
+  date: string;
+  kind: "observed" | "illustration";
+  /** 0..1 along the slider. */
+  fraction: number;
+}
+/**
+ * Slider marks at every observed scene date with an image and every stage illustration date, inside the slider range,
+ * one mark per date and kind, in date order.
+ */
+export function sceneMarks(scenes: readonly SceneRef[], model: SliderModel): SceneMark[] {
+  const marks = new Map<string, SceneMark>();
+  for (const scene of scenes) {
+    if (!scene.imagePath || (scene.kind !== "observed" && scene.kind !== "illustration")) continue;
+    const date = scene.kind === "observed" ? observedDate(scene) : scene.date;
+    if (!Number.isFinite(dayNumber(date)) || date < model.from || date > model.to) continue;
+    const key = `${scene.kind}|${date}`;
+    if (!marks.has(key)) marks.set(key, { date, kind: scene.kind, fraction: fractionOf(model, date) });
+  }
+  return [...marks.values()].sort((a, b) => a.date.localeCompare(b.date) || a.kind.localeCompare(b.kind));
+}
+
+/**
+ * Which image the satellite hero shows. Observed and latest scenes use the field-zoom render (native 10 m pixels) when
+ * it exists, unless the farmer chose the wider 600 m view; Greenness switches to the NDVI colour map of the same zoom when
+ * that render exists. Illustrations always use their own image.
+ */
+export interface SatelliteImage {
+  path: string | null;
+  zoom: "field" | "wide";
+  layer: "visual" | "ndvi";
+  /** The field-zoom render exists for this scene (the Wider view toggle is offered). */
+  fieldAvailable: boolean;
+  /** An NDVI colour map exists at the shown zoom (the Greenness toggle is offered). */
+  ndviAvailable: boolean;
+}
+export function satelliteImage(pick: ScenePick, prefs: { wide: boolean; greenness: boolean }): SatelliteImage {
+  if (pick.mode === "none") return { path: null, zoom: "wide", layer: "visual", fieldAvailable: false, ndviAvailable: false };
+  const scene = pick.scene;
+  if (pick.mode === "illustration") return { path: scene.imagePath, zoom: "wide", layer: "visual", fieldAvailable: false, ndviAvailable: false };
+  const fieldAvailable = !!scene.fieldImagePath;
+  const zoom = fieldAvailable && !prefs.wide ? "field" : "wide";
+  const ndviPath = zoom === "field" ? scene.fieldNdviImagePath ?? null : scene.ndviImagePath;
+  const ndvi = prefs.greenness && !!ndviPath;
+  return {
+    path: ndvi ? ndviPath : zoom === "field" ? scene.fieldImagePath! : scene.imagePath,
+    zoom,
+    layer: ndvi ? "ndvi" : "visual",
+    fieldAvailable,
+    ndviAvailable: !!ndviPath,
+  };
+}
+/** "Image of 7 Sept 2026 (12 days before this date)", "Latest image 27 Oct 2026 (19 days before this date)". */
+export function sceneAgeCaption(pick: ScenePick, date: string): string | null {
+  if (pick.mode !== "observed" && pick.mode !== "latest") return null;
+  const taken = observedDate(pick.scene);
+  const gap = daysBetween(taken, date);
+  const age = !Number.isFinite(gap) ? "" : gap === 0 ? " (taken on this date)" : gap > 0 ? ` (${gap} day${gap === 1 ? "" : "s"} before this date)` : "";
+  return `${pick.mode === "latest" ? "Latest image" : "Image of"} ${formatDay(taken)}${age}`;
+}
+/** Label on a dimmed latest image for a future date: "No image yet for this date; latest image 27 Oct". */
+export function futureImageLabel(pick: ScenePick): string | null {
+  return pick.mode === "latest" ? `No image yet for this date; latest image ${formatDay(observedDate(pick.scene), false)}` : null;
+}
+
+/** Cross-fade between satellite scenes: 150 ms, none under reduced motion. */
+export const CROSS_FADE_MS = 150;
+export const crossFadeMs = (reducedMotion: boolean) => (reducedMotion ? 0 : CROSS_FADE_MS);
+
+/** Play steps the slider one day per 120 ms. Code animation only; reduced motion does not change the stepping. */
+export const PLAY_STEP_MS = 120;
+export interface SeasonPlayer {
+  start(): void;
+  stop(): void;
+  readonly playing: boolean;
+}
+/**
+ * Season player: from the current position (or from the start when already at the end) one day per `intervalMs` to the
+ * end, then stops. `stop()` is called on any slider interaction. Uses the global timers, so fake timers drive it in tests.
+ */
+export function createSeasonPlayer(options: {
+  position: () => number;
+  total: () => number;
+  step: (index: number) => void;
+  onChange?: (playing: boolean) => void;
+  intervalMs?: number;
+}): SeasonPlayer {
+  let timer: ReturnType<typeof setInterval> | null = null;
+  const stop = () => {
+    if (timer == null) return;
+    clearInterval(timer);
+    timer = null;
+    options.onChange?.(false);
+  };
+  const start = () => {
+    if (timer != null) return;
+    const total = options.total();
+    if (!(total > 0)) return;
+    if (options.position() >= total) options.step(0);
+    timer = setInterval(() => {
+      const next = Math.min(options.total(), options.position() + 1);
+      options.step(next);
+      if (next >= options.total()) stop();
+    }, options.intervalMs ?? PLAY_STEP_MS);
+    options.onChange?.(true);
+  };
+  return {
+    start,
+    stop,
+    get playing() {
+      return timer != null;
+    },
+  };
+}
 
 // ------------------------------------------------------------------ formatting
 

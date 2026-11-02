@@ -150,6 +150,42 @@ export function displayBbox(ring: readonly LonLat[]): Bbox {
   return [floor4(cx - halfM / (M_PER_DEG * cos)), floor4(cy - halfM / M_PER_DEG), ceil4(cx + halfM / (M_PER_DEG * cos)), ceil4(cy + halfM / M_PER_DEG)];
 }
 
+/** Smallest field-zoom window: 120 m across (12 native 10 m pixels). */
+export const FIELD_WINDOW_MIN_M = 120;
+export const FIELD_WINDOW_FACTOR = 1.6;
+export const NATIVE_PIXEL_M = 10;
+/** Rendered image size limits: 12 px is the smallest field window (the Data API accepted 12x12 on 2026-11-02), 768 the cap. */
+export const RENDER_SIZE_MIN = 12;
+export const RENDER_SIZE_MAX = 768;
+
+/** Metres across a bbox at its mid latitude: [east-west, north-south]. */
+export function bboxMeters(b: Bbox): [number, number] {
+  const cos = Math.max(0.1, Math.cos(((b[1] + b[3]) / 2) * Math.PI / 180));
+  return [(b[2] - b[0]) * M_PER_DEG * cos, (b[3] - b[1]) * M_PER_DEG];
+}
+
+/**
+ * Field-zoom window: a square around the field centre with side 1.6 times the field's larger side, at least 120 m, edges rounded
+ * outward to 4 decimals like `displayBbox` (so each side can exceed the ideal by up to one 4-decimal step, about 11 m).
+ */
+export function fieldBbox(ring: readonly LonLat[]): Bbox {
+  const b = ringBbox(ring);
+  const latMid = ((b[1] + b[3]) / 2) * Math.PI / 180, cos = Math.max(0.1, Math.cos(latMid));
+  const widthM = (b[2] - b[0]) * M_PER_DEG * cos, heightM = (b[3] - b[1]) * M_PER_DEG;
+  const halfM = Math.max(FIELD_WINDOW_MIN_M, FIELD_WINDOW_FACTOR * Math.max(widthM, heightM)) / 2;
+  const cx = (b[0] + b[2]) / 2, cy = (b[1] + b[3]) / 2;
+  return [floor4(cx - halfM / (M_PER_DEG * cos)), floor4(cy - halfM / M_PER_DEG), ceil4(cx + halfM / (M_PER_DEG * cos)), ceil4(cy + halfM / M_PER_DEG)];
+}
+
+/**
+ * Native render size for a field window: ceil(larger side in metres / 10), clamped 12..768, so one output pixel is one 10 m
+ * Sentinel-2 pixel (or a little less; the same size is used both ways so the image stays square).
+ */
+export function fieldRenderSize(b: Bbox): number {
+  const [w, h] = bboxMeters(b);
+  return Math.max(RENDER_SIZE_MIN, Math.min(RENDER_SIZE_MAX, Math.ceil(Math.max(w, h) / NATIVE_PIXEL_M - 1e-9)));
+}
+
 const bboxRing = (b: Bbox): LonLat[] => [[b[0], b[1]], [b[2], b[1]], [b[2], b[3]], [b[0], b[3]], [b[0], b[1]]];
 
 /** Square of `sideMeters` centred on a point (fallback when no boundary is drawn), rounded to 4 decimals. */
@@ -501,7 +537,7 @@ export async function renderScene(input: RenderSceneInput): Promise<RenderSceneR
   const bbox: Bbox = [floor4(input.bbox[0]), floor4(input.bbox[1]), ceil4(input.bbox[2]), ceil4(input.bbox[3])];
   const problem = bboxProblem(bbox);
   if (problem) return unavailable(problem);
-  const size = Math.max(64, Math.min(768, Math.trunc(input.size ?? 512)));
+  const size = Math.max(RENDER_SIZE_MIN, Math.min(RENDER_SIZE_MAX, Math.trunc(input.size ?? 512)));
   const params = new URLSearchParams([['collection', S2_COLLECTION], ['item', input.itemId]]);
   if (input.kind === 'visual') {
     params.append('assets', 'visual'); params.append('asset_bidx', 'visual|1,2,3');
@@ -512,6 +548,9 @@ export async function renderScene(input: RenderSceneInput): Promise<RenderSceneR
     params.append('expression', offset ? `(B08-B04)/(B08+B04-${2 * offset})` : '(B08-B04)/(B08+B04)');
     params.append('rescale', '-0.2,0.9'); params.append('colormap_name', 'rdylgn');
   }
+  // `resampling` is a documented Data API parameter (RasterIO algorithm, default nearest): stated so a native-size field render
+  // keeps hard 10 m pixel edges even if the service default changes. The wide render is a downscale, where nearest is also fine.
+  params.append('resampling', 'nearest');
   params.append('nodata', '0'); params.append('coord_crs', 'EPSG:4326'); params.append('dst_crs', 'EPSG:4326');
   const url = `${DATA_API_URL}/item/bbox/${bbox.map(fmt).join(',')}/${size}x${size}.png?${params}`;
   const res = await boundedFetch(input.fetchImpl ?? defaultFetch, url, {method: 'GET', accept: 'image/png'}, MAX_PNG_BYTES);

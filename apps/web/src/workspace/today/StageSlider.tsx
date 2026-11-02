@@ -1,5 +1,5 @@
 import { For, Show } from "solid-js";
-import { formatDay, type SliderModel } from "./model";
+import { formatDay, type SceneMark, type SliderModel } from "./model";
 
 export interface StageSliderTick {
   id: string;
@@ -22,38 +22,77 @@ export interface StageSliderProps {
   /** Labels under the two ends, for example "Sown 15 Sep" and "Harvest by 13 Jan". */
   startLabel: string;
   endLabel: string;
+  /** Observed scene dates and illustration dates, drawn as small marks on the rail. */
+  marks?: SceneMark[] | undefined;
+  /** Play state: when `onPlay` is given a Play / Pause button sits beside "Back to today". */
+  playing?: boolean | undefined;
+  onPlay?: (() => void) | undefined;
+  /** Any direct slider interaction (pointer, key, input); the parent pauses play. */
+  onInteract?: (() => void) | undefined;
 }
 
 /**
  * Season slider: one step per day from `slider.from` to `slider.to`. A native range input, so arrows, Home, End and
- * Page keys work everywhere; ticks mark stage boundaries and a marker shows today.
+ * Page keys work everywhere; ticks mark stage boundaries, small marks show the dates with a satellite image (dots) or a
+ * stage illustration (rings), and a marker shows today. Play steps one day at a time; any slider interaction pauses it.
  */
 export function StageSlider(props: StageSliderProps) {
   let input: HTMLInputElement | undefined;
   const fraction = (index: number) => (props.model.total ? index / props.model.total : 0);
   const atToday = () => props.value === props.model.todayIndex;
+  const observedMarks = () => (props.marks ?? []).filter((mark) => mark.kind === "observed").length;
   return (
     <div class="today-slider">
       <div class="today-slider-head">
         <label for="today-season-slider">Move through the season</label>
-        <Show when={!atToday()}>
-          <button
-            type="button"
-            class="text-button"
-            onClick={() => {
-              props.onBackToToday();
-              input?.focus();
-            }}
-          >
-            Back to today
-          </button>
-        </Show>
+        <span class="today-slider-actions">
+          <Show when={!atToday()}>
+            <button
+              type="button"
+              class="text-button"
+              onClick={() => {
+                props.onInteract?.();
+                props.onBackToToday();
+                input?.focus();
+              }}
+            >
+              Back to today
+            </button>
+          </Show>
+          <Show when={props.onPlay}>
+            <button
+              type="button"
+              class="today-play"
+              classList={{ "is-playing": !!props.playing }}
+              aria-pressed={!!props.playing}
+              data-testid="today-play"
+              onClick={() => props.onPlay?.()}
+            >
+              <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true">
+                <Show when={props.playing} fallback={<path d="M3 1.5v9l7.5-4.5Z" fill="currentColor" />}>
+                  <path d="M2.5 1.5h2.5v9H2.5Zm4.5 0h2.5v9H7Z" fill="currentColor" />
+                </Show>
+              </svg>
+              <span>{props.playing ? "Pause" : "Play"}</span>
+            </button>
+          </Show>
+        </span>
       </div>
       <div class="today-slider-track">
         <div class="today-slider-rail" aria-hidden="true">
           <span class="today-slider-fill" style={{ width: `${fraction(props.value) * 100}%` }} />
           <For each={props.ticks}>
             {(tick) => <span class="today-slider-tick" style={{ left: `${tick.fraction * 100}%` }} title={`${tick.name} from ${formatDay(tick.date)}`} />}
+          </For>
+          <For each={props.marks ?? []}>
+            {(mark) => (
+              <span
+                class={`today-slider-mark ${mark.kind}`}
+                style={{ left: `${mark.fraction * 100}%` }}
+                data-date={mark.date}
+                title={`${mark.kind === "observed" ? "Satellite image" : "Stage illustration"} ${formatDay(mark.date)}`}
+              />
+            )}
           </For>
           <span class="today-slider-today" style={{ left: `${fraction(props.model.todayIndex) * 100}%` }}>
             <span>Today</span>
@@ -68,9 +107,20 @@ export function StageSlider(props: StageSliderProps) {
           step="1"
           value={props.value}
           aria-valuetext={formatDay(props.valueDate)}
-          onInput={(event) => props.onChange(Number(event.currentTarget.value))}
+          aria-describedby={observedMarks() ? "today-slider-marks-note" : undefined}
+          onPointerDown={() => props.onInteract?.()}
+          onKeyDown={() => props.onInteract?.()}
+          onInput={(event) => {
+            props.onInteract?.();
+            props.onChange(Number(event.currentTarget.value));
+          }}
         />
       </div>
+      <Show when={observedMarks()}>
+        <span id="today-slider-marks-note" class="today-sr">
+          Dots on the slider mark the {observedMarks()} dates with a satellite image.
+        </span>
+      </Show>
       <div class="today-slider-ends" aria-hidden="true">
         <span>{props.startLabel}</span>
         <span>{props.endLabel}</span>

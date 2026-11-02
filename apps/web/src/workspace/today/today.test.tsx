@@ -338,8 +338,9 @@ describe("rendered states", () => {
         />
       ));
     const past = hero("2026-10-20");
-    expect(text(past)).toContain("Observed 17 Oct 2026 Cloud 6%");
-    expect(past).toContain(`alt="Satellite image of your field, observed 17 Oct 2026, 6% cloud in the scene"`);
+    // Spec section 10: the caption names which image is shown and how old it is; the 17 Oct scene has a 10 m field render.
+    expect(text(past)).toContain("Observed Image of 17 Oct 2026 (3 days before this date) Cloud 6%");
+    expect(past).toContain(`alt="Satellite image of your field, observed 17 Oct 2026, 6% cloud in the scene. Close-up at 10 m pixels"`);
     const future = text(hero("2026-12-10"));
     expect(future).toContain("Grain filling · 29 Nov to 28 Dec");
     expect(future).toContain("Illustration of a typical Grain filling");

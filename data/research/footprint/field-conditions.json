@@ -1,0 +1,90 @@
+{
+  "generatedAt": "2026-11-02",
+  "purpose": "Thresholds for the Today view's daily field conditions (TODAY_ECONOMICS_FOOTPRINT_SPEC.md section 10.1 item 4): IMD daily rainfall classes, crop standing-water practice windows and crop heat-stress thresholds. Read by apps/api/src/services/today/conditions.ts.",
+  "status": "research_candidate_unreviewed",
+  "conventions": {
+    "units": "Rain in mm per 24 hours (IMD 0830 to 0830 IST day); temperatures in degrees C (daily maximum).",
+    "nulls": "A missing value means no cited figure was found or the crop was not searched in this pass; it never means zero.",
+    "rainBands": "Each class applies from its lowerMm (inclusive) up to the next class's lowerMm; 0 mm is 'none' (IMD prints DRY separately)."
+  },
+  "rainClasses": {
+    "sourceId": "IMD-MC-AGARTALA-DAILY-RAINFALL",
+    "additionalSourceIds": ["IMD-RSMC-NATIONAL-BULLETIN-2024-09-09"],
+    "locator": "Map legend (Agartala); 'Rainfall amount (mm)' line printed under each warning table (national bulletin)",
+    "note": "The Agartala legend prints very heavy as 115.5 - 204.4 mm, overlapping the heavy band's upper edge 115.5; the IMD national bulletin prints very heavy as 115.6 - 204.4 and extremely heavy as 204.5 or more, which is used here. The legend prints very light as 0.0 - 2.4 with DRY as its own class, so very light starts above 0 mm.",
+    "classes": [
+      {"class": "very_light", "lowerMm": 0.1, "upperMm": 2.4},
+      {"class": "light", "lowerMm": 2.5, "upperMm": 15.5},
+      {"class": "moderate", "lowerMm": 15.6, "upperMm": 64.4},
+      {"class": "heavy", "lowerMm": 64.5, "upperMm": 115.5},
+      {"class": "very_heavy", "lowerMm": 115.6, "upperMm": 204.4},
+      {"class": "extremely_heavy", "lowerMm": 204.5, "upperMm": null}
+    ]
+  },
+  "waterPractice": [
+    {
+      "cropId": "paddy",
+      "standingWater": {
+        "startDaysAfterEstablishment": {"transplanted": 0, "otherMethods": 7},
+        "drainDaysBeforeHarvest": {"low": 7, "high": 10},
+        "depthCm": {"low": 2, "high": 5}
+      },
+      "sourceId": "TNAU-AGRITECH-PADDY-WATER",
+      "locator": "Water Management for Different Ecosystem: Transplanted lowland rice; Wet Seeded Puddled Lowland Rice; Water stress: Maturity stage",
+      "note": "Transplanted lowland rice: 2 cm for seven days after transplanting, then cyclic 5 cm submergence throughout the crop period; drained about 7 to 10 days before harvest. Wet-seeded rice is only wetted with a thin film in the first week, so standing water is taken from day 7 for methods other than transplanting. Dry-seeded and semi-dry rice are irrigated to shallow depths later; they are not modelled separately. Tamil Nadu (TNAU) practice, used for every state until a state-specific page is cited."
+    }
+  ],
+  "waterPracticeNotSearched": ["maize", "finger-millet", "sorghum", "groundnut", "soybean", "chickpea", "green-gram", "black-gram", "pigeon-pea", "sesame", "sunflower", "cotton", "potato", "onion", "tomato", "chilli", "ginger", "turmeric"],
+  "heatThresholds": [
+    {
+      "cropId": "paddy",
+      "tMaxC": 35,
+      "stage": "flowering (anthesis)",
+      "stagePattern": "mid|flower|reproduct|heading|anthesis|panicle",
+      "sourceId": "CSU-RICE2001-HIGH-TEMP-FLOWERING",
+      "locator": "Mechanisms: High Temperature At Flowering, paragraph 2",
+      "note": "Secondary source: a NSW Agriculture and Rice CRC travel report citing Yoshida (1981), Fundamentals of Rice Crop Science, IRRI; the original was not retrieved. The threshold is for the day of flowering; spikelet sterility also depends on duration, humidity and variety."
+    }
+  ],
+  "heatThresholdsNotSearched": ["maize", "finger-millet", "sorghum", "groundnut", "soybean", "chickpea", "green-gram", "black-gram", "pigeon-pea", "sesame", "sunflower", "cotton", "potato", "onion", "tomato", "chilli", "ginger", "turmeric"],
+  "sources": {
+    "IMD-MC-AGARTALA-DAILY-RAINFALL": {
+      "url": "https://mausam.imd.gov.in/agartala/mcdata/Daily%20Rainfall.pdf",
+      "title": "Districtwise average rainfall distribution of past 24 hours (Tripura)",
+      "publisher": "India Meteorological Department, Meteorological Centre Agartala",
+      "retrievedAt": "2026-11-02",
+      "locator": "Map legend",
+      "excerpt": "VERY LIGHT RAINFALL(0.0 - 2.4 mm); LIGHT RAINFALL(2.5 - 15.5 mm); MODERATE RAINFALL(15.6 - 64.4 mm); HEAVY RAINFALL(64.5 - 115.5 mm); VERY HEAVY RAINFALL(115.5 - 204.4 mm); EXTREMELY HEAVY RAINFALL(> 204.4 mm)"
+    },
+    "IMD-RSMC-NATIONAL-BULLETIN-2024-09-09": {
+      "url": "https://rsmcnewdelhi.imd.gov.in/uploads/archive/1/1_ac3c93_10.National%20Bulletin%20No%2010-9th%20Sept2024_2330%20IST.pdf",
+      "title": "National Bulletin No. 10, 9 September 2024, 2330 IST",
+      "publisher": "India Meteorological Department, RSMC New Delhi",
+      "retrievedAt": "2026-11-02",
+      "locator": "Line under the warning tables",
+      "excerpt": "Rainfall amount (mm): Heavy rain: 64.5 - 115.5, Very heavy rain: 115.6 - 204.4, Extremely heavy rain: 204.5 or more."
+    },
+    "TNAU-AGRITECH-PADDY-WATER": {
+      "url": "https://agritech.tnau.ac.in/expert_system/paddy/cultivationpractices3.html",
+      "title": "Rice: Cultivation Practices >> Water Management",
+      "publisher": "TNAU Agritech Portal, Tamil Nadu Agricultural University",
+      "retrievedAt": "2026-11-02",
+      "locator": "Transplanted lowland rice; Wet Seeded Puddled Lowland Rice; Maturity stage",
+      "excerpt": "Maintain 2 cm of water up to seven days of transplanting. After the establishment stage, cyclic submergence of water is the best practice for rice crop. This cyclic 5 cm submergence has to be continued throughout the crop period. ... During first one week just wet the soil by thin film of water. ... After yellowish ripening stage, there is no necessity for standing water. Water may be drained from the field about 7-10 days before harvest to facilitate harvesting."
+    },
+    "CSU-RICE2001-HIGH-TEMP-FLOWERING": {
+      "url": "https://farrer.csu.edu.au/rice2001/report/P2201STR11-00-12.htm",
+      "title": "Travel report: Temperature variability; Mechanisms; High Temperature At Flowering",
+      "publisher": "Charles Sturt University (Farrer Centre), report to NSW Agriculture and the Cooperative Research Centre for Sustainable Rice Production",
+      "retrievedAt": "2026-11-02",
+      "locator": "Mechanisms, paragraph on anthesis timing",
+      "excerpt": "Anthesis usually occurs between 1000 hours and 1200 hours, with temperature rising in the morning and exceeding the critical temperature (35oC) by 1000 hours in high temperature areas."
+    }
+  },
+  "failedSources": [
+    {"url": "http://www.knowledgebank.irri.org/training/fact-sheets/crop-damage/abiotic-disorders/item/heat-stress", "reason": "HTTP 404; the https variant timed out. IRRI's own heat-stress fact sheet was not retrieved."},
+    {"url": "https://www.moes.gov.in/sites/default/files/RS-in-25-27-07-2023.pdf", "reason": "HTTP 404 (search result listed a Rajya Sabha reply with the full IMD rainfall category table); not retrieved."},
+    {"url": "https://mausam.imd.gov.in/imd_latest/contents/faq.php", "reason": "Retrieved; it does not print the rainfall intensity bands."},
+    {"url": "https://www.jircas.go.jp/sites/default/files/publication/jarq/jarq11-2_127-128.pdf", "reason": "Retrieved (IRRI phytotron study at 35, 38 and 41 C); it reports treatment effects, not a threshold, so it is not used as the threshold source."}
+  ]
+}

@@ -57,6 +57,8 @@
  *   then residue income, energy and carbon on the economics' yield for the field (footprint.ts over
  *   data/research/footprint/crop-footprint.json). Pure stored-data arithmetic, no network or model call in any mode; each
  *   block runs under its own guard and its limitations are appended to the view's, deduplicated.
+ * - field conditions (spec section 10.1 item 4): one point per day of the bounded slider window (conditions.ts), only with a
+ *   slider; observed scenes also carry the field-zoom image paths and the view the field-zoom bbox (ndvi.ts helpers);
  * - Today overview (spec section 9): after every other block, overview.ts builds facts from the composed view and
  *   ensureTodayOverview returns the stored, pending or code-written overview (synthetic and replay: code-written inline,
  *   no job, no Meta call); null without a current cycle or when it fails (a limitation names it).
@@ -82,7 +84,8 @@ import type {FocusedCareCrop} from '../focused-crops';
 import {OUTLOOK_TREND_MONTHS, ensureOutlookNote, outlookFacts} from './outlook-note';
 import {listAlerts} from './alerts';
 import {listReadyFutureLooks} from './future-look';
-import {ndviSeries} from './ndvi';
+import {fieldImageBbox, fieldScenePaths, ndviSeries} from './ndvi';
+import {fieldConditions} from './conditions';
 import {STAGE_READER_ASSUMPTIONS, readIndexStage} from './index-stage';
 import {stageAt, stageTimeline, timelineSpan} from './stage-timeline';
 import {unavailableTrack, weatherTrack, type WeatherTrack} from './weather-track';
@@ -263,6 +266,8 @@ function observedScenes(farmId: string, series: NdviSeries | null, timeline: Sta
   return (series?.readings ?? []).filter((r) => r.usable).map((r) => ({
     date: r.date, kind: 'observed', itemId: r.itemId, acquisitionDate: r.date, cloudPct: r.sceneCloudPct,
     imagePath: sceneImagePath(farmId, r.itemId, 'visual'), ndviImagePath: sceneImagePath(farmId, r.itemId, 'ndvi'),
+    // Spec 10.1 item 1: the field at native 10 m pixels (ndvi.ts fieldScenePaths, zoom=field).
+    ...fieldScenePaths(farmId, r.itemId),
     derivedFromItemId: null, stageId: timeline ? stageAt(timeline, r.date).stage?.id ?? null : null,
   }));
 }
@@ -288,13 +293,19 @@ function illustrationScenes(looks: ReadyFutureLook[], cycle: Cycle, timeline: St
   return {scenes, skipped};
 }
 
+/** The health card's verdict for one reading (field mean against the 1 km neighbourhood mean, NEIGHBOURHOOD_MARGIN). */
+export function readingVerdict(r: NdviReading, smallField: boolean): {nb: number | null; verdict: HealthReading['verdict']} {
+  const nb = r.neighbourhood && r.neighbourhood.usable && r.neighbourhood.mean !== null ? r.neighbourhood.mean : null;
+  const diff = nb === null || r.field.mean === null ? null : Math.round((r.field.mean - nb) * 1e4) / 1e4;
+  const verdict: HealthReading['verdict'] = smallField || diff === null ? 'no_reference'
+    : diff >= NEIGHBOURHOOD_MARGIN ? 'above_typical' : diff <= -NEIGHBOURHOOD_MARGIN ? 'below_typical' : 'near_typical';
+  return {nb, verdict};
+}
+
 export function healthFrom(series: NdviSeries | null): HealthReading | null {
   const r = series?.latestUsable;
   if (!series || !r || r.field.mean === null) return null;
-  const nb = r.neighbourhood && r.neighbourhood.usable && r.neighbourhood.mean !== null ? r.neighbourhood.mean : null;
-  const diff = nb === null ? null : Math.round((r.field.mean - nb) * 1e4) / 1e4;
-  const verdict: HealthReading['verdict'] = series.smallField || diff === null ? 'no_reference'
-    : diff >= NEIGHBOURHOOD_MARGIN ? 'above_typical' : diff <= -NEIGHBOURHOOD_MARGIN ? 'below_typical' : 'near_typical';
+  const {nb, verdict} = readingVerdict(r, series.smallField);
   const note = [
     `No typical NDVI range is sourced for this crop stage, so the reading is compared with the neighbourhood only: above or below when the field mean differs from the neighbourhood mean by at least ${NEIGHBOURHOOD_MARGIN} (a design threshold, not a validated agronomic one).`,
     nb === null && 'No usable neighbourhood reading exists for this scene, so there is no reference.',
@@ -807,6 +818,17 @@ export async function todayView(deps: TodayViewDeps, ownerId: string, farmId: st
     monitoring: monitor ? {enabled: monitor.enabled, lastCheckedAt: monitor.lastCheckedAt, nextCheckAt: monitor.nextCheckAt} : {enabled: true, lastCheckedAt: null, nextCheckAt: null},
     limitations: [],
   };
+
+  // ---- daily field conditions along the slider (spec section 10.1 item 4): pure, over the blocks above
+  if (slider && cycle && anchor) {
+    composed.conditions = await guard('The field conditions', async () => fieldConditions({
+      cropId: cycle.cropId, establishmentMethod: cycle.establishmentMethod ?? null, anchorDate: anchor, window: {from: weatherWindow.from, to: weatherWindow.to},
+      timeline, irrigationCategory: irrigationCategoryOf(farm.facts), weather: composed.weatherTrack, alerts: composed.alerts,
+      readings: (ndvi?.readings ?? []).filter((r) => r.usable && r.field.mean !== null).map((r) => ({date: r.date, ndvi: r.field.mean, verdict: readingVerdict(r, ndvi?.smallField ?? false).verdict})),
+    }), null);
+  } else composed.conditions = null;
+  // The window of the field-zoom renders (ndvi.ts fieldImageBbox) when a boundary is drawn.
+  composed.fieldImageBbox = workspace.boundary ? fieldImageBbox(workspace.boundary.coordinates[0]! as [number, number][]) : null;
 
   // ---- Today overview (spec section 9): facts from every block above, after all of them; stored, queued or code-written
   let overview: TodayOverview | null = null;
