@@ -1,5 +1,5 @@
 import {z} from 'zod';
-import {CropCycle,FarmWorkspace} from './workspace';
+import {CropCycle,FarmWorkspace,FieldId} from './workspace';
 import {FarmSoilMarkers} from './soil-reports';
 import {CurrentMandiQuotes,CurrentMandiQuote} from './market-quotes';
 export const CareSourceRef=z.object({sourceId:z.string(),locator:z.string()}).strict();
@@ -8,7 +8,13 @@ export const CareTask=z.object({id:z.string(),actionId:z.string(),cycleId:z.stri
 export const SoilCropFit=z.object({cropId:z.string(),status:z.enum(['needs_soil_report','insufficient_compatible_measurements','within_published_ph_range','outside_published_ph_range']),summary:z.string(),checks:z.array(z.object({parameter:z.string(),sampleId:z.uuid(),reportId:z.uuid(),collectionDate:z.iso.date().nullable(),measuredValue:z.number(),unit:z.string(),method:z.string().nullable(),sourceRange:z.object({min:z.number(),max:z.number()}).strict(),result:z.enum(['within','outside']),sourceRefs:z.array(CareSourceRef),conditions:z.array(z.string())}).strict()),requirements:z.array(z.object({parameter:z.string(),value:z.unknown(),unit:z.string().nullable(),conditions:z.array(z.string()),sourceRefs:z.array(CareSourceRef)}).strict()),limitations:z.array(z.string())}).strict();
 export const PriorYearMarket=z.object({productId:z.string(),period:z.object({from:z.iso.date(),to:z.iso.date()}).strict(),basis:z.literal('same_calendar_period_previous_year'),targetDate:z.iso.date().optional(),targetBasis:z.enum(['harvest_scenario','planned_harvest','as_of_date']).optional(),status:z.enum(['available','unavailable']),missingReason:z.string().nullable(),scope:z.enum(['district','state','national','unavailable']),observations:z.array(CurrentMandiQuote).max(20),coverageDays:z.number().int(),limitations:z.array(z.string())}).strict();
 export const FarmCommandCenter=z.object({farmId:z.uuid(),asOf:z.iso.datetime(),workspace:FarmWorkspace,focusedCrops:z.array(FocusedCrop),sources:z.array(z.object({id:z.string(),url:z.url(),publisher:z.string(),title:z.string(),retrievedAt:z.string(),geography:z.unknown()}).passthrough()),currentCycles:z.array(z.object({cycle:CropCycle,careTasks:z.array(CareTask),referenceGuidance:z.array(z.object({actionId:z.string(),title:z.string(),action:z.string(),conditions:z.array(z.string()),sourceRefs:z.array(CareSourceRef),geographyIds:z.array(z.string()),reason:z.string()}).strict()).optional(),stageGuidance:z.array(z.object({actionId:z.string(),title:z.string(),action:z.string(),stage:z.string().nullable(),conditions:z.array(z.string()),sourceRefs:z.array(CareSourceRef),geographyIds:z.array(z.string()).optional(),applicability:z.enum(['matched','outside_source_region','location_unknown']).optional(),requiresObservation:z.literal(true)}).strict()).optional(),limitations:z.array(z.string())}).strict()),soil:z.object({markers:FarmSoilMarkers,fit:z.array(SoilCropFit)}).strict(),weather:z.object({kind:z.literal('forecast'),status:z.enum(['fresh','stale','unavailable']),reason:z.string().nullable(),issuedAt:z.iso.datetime().nullable(),source:z.string(),days:z.array(z.object({date:z.iso.date(),rainMm:z.number().nullable(),tMinC:z.number().nullable(),tMaxC:z.number().nullable(),et0Mm:z.number().nullable()}).strict())}).strict(),currentQuotes:CurrentMandiQuotes,priorYearMarkets:z.array(PriorYearMarket),limitations:z.array(z.string())}).strict();
-export const PlantCrop=z.object({clientEntryId:z.string().min(1).max(120),cropId:z.string().min(1).max(120),productId:z.string().min(1).max(200).optional(),establishmentMethod:z.string().min(1).max(80),establishmentDate:z.iso.date(),expectedWorkspaceVersion:z.number().int().nonnegative(),notes:z.string().max(2000).optional()}).strict();
+/**
+ * Plant crop. 2026-11-03 (FIELDS_MULTICROP_SOIL_SPEC.md 2.2): `fieldId` is required when the farm has fields (400
+ * field_required otherwise; 404 field_not_found for an unknown id); `companion` records an intercrop, its names filled from
+ * the catalogue and rowRatio defaulting to "not stated".
+ */
+export const PlantCropCompanion=z.object({cropId:z.string().min(1).max(120),productId:z.string().min(1).max(200).optional(),rowRatio:z.string().trim().min(1).max(20).optional()}).strict();
+export const PlantCrop=z.object({clientEntryId:z.string().min(1).max(120),cropId:z.string().min(1).max(120),productId:z.string().min(1).max(200).optional(),establishmentMethod:z.string().min(1).max(80),establishmentDate:z.iso.date(),expectedWorkspaceVersion:z.number().int().nonnegative(),notes:z.string().max(2000).optional(),fieldId:FieldId.optional(),companion:PlantCropCompanion.optional()}).strict();
 export const PlantCropResult=z.object({cycle:CropCycle,workspace:FarmWorkspace,journalEntryId:z.uuid(),alreadyRecorded:z.boolean()}).strict();
 export const CompleteCareTask=z.object({clientEntryId:z.string().min(1).max(120),completedOn:z.iso.date(),note:z.string().max(2000).optional()}).strict();
 export const CompleteCareTaskResult=z.object({journalEntryId:z.uuid(),completedOn:z.iso.date(),alreadyCompleted:z.boolean()}).strict();
@@ -18,4 +24,5 @@ export type FarmCommandCenter=z.infer<typeof FarmCommandCenter>;
 export type SoilCropFit=z.infer<typeof SoilCropFit>;
 export type PriorYearMarket=z.infer<typeof PriorYearMarket>;
 export type PlantCrop=z.infer<typeof PlantCrop>;
+export type PlantCropCompanion=z.infer<typeof PlantCropCompanion>;
 export type CompleteCareTask=z.infer<typeof CompleteCareTask>;

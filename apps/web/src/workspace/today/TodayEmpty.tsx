@@ -6,6 +6,8 @@ export interface TodayEmptyProps {
   onPlant: () => void;
   /** False while the crop list behind the plant dialog has not loaded. */
   canPlant: boolean;
+  /** 2026-11-03: the selected field on a farm with fields; the heading and the button name it ("Plant a crop on North strip"). */
+  fieldName?: string | null | undefined;
 }
 
 /** No current crop: the planting entry and the Year plan shortcut replace the hero and slider. */
@@ -15,11 +17,11 @@ export function TodayEmpty(props: TodayEmptyProps) {
       <span class="today-empty-icon" aria-hidden="true">
         <Icon name="leaf" size={30} />
       </span>
-      <h2 id="today-empty-title">What's growing on this field?</h2>
+      <h2 id="today-empty-title">{props.fieldName ? `What's growing on ${props.fieldName}?` : "What's growing on this field?"}</h2>
       <p>Record what you planted and when. Stage dates, prices and care steps follow from that date.</p>
       <div class="today-empty-actions">
         <button type="button" class="btn" onClick={() => props.onPlant()} disabled={!props.canPlant}>
-          <Icon name="plus" size={16} /> Plant a crop
+          <Icon name="plus" size={16} /> {props.fieldName ? `Plant a crop on ${props.fieldName}` : "Plant a crop"}
         </button>
         <A href="/planner" class="text-link">
           See your year plan <Icon name="arrow" size={14} />

@@ -60,7 +60,10 @@
         "too_many_stages",
         "transform_mismatch",
         "unknown_stage",
-        "unpriced_model"
+        "unpriced_model",
+        "field_not_found",
+        "field_required",
+        "cycle_required"
       ]
     },
     "message": {

@@ -9,7 +9,12 @@ import {
   on,
 } from "solid-js";
 import { A, useSearchParams } from "@solidjs/router";
-import { FarmMap } from "./FarmMap";
+import { FarmMap, type MapField } from "./FarmMap";
+import { FieldsPanel } from "./fields/FieldsPanel";
+import { checkFieldOutline, currentCycleOf, type FieldCycleLike } from "./fields/fieldsModel";
+import { cropColor } from "./today/model";
+import { farmHref } from "./farmTabs";
+import { ringWithin } from "@harvest/contracts";
 import { Icon } from "./icons";
 import {
   useWorkspace,
@@ -250,6 +255,9 @@ export function FarmWorkspace(
   const demoKey = newEntryId("demo");
   const [editing, setEditing] = createSignal(false);
   const [draft, setDraft] = createSignal<Boundary | null>(null);
+  /** Fields (FIELDS_MULTICROP_SOIL_SPEC.md 6.1): the map draws a new field while `fieldDrawing`; the finished outline waits in `fieldDraft`. */
+  const [fieldDrawing, setFieldDrawing] = createSignal(false);
+  const [fieldDraft, setFieldDraft] = createSignal<Boundary | null>(null);
   const [history, setHistory] = createSignal(false);
   createEffect(() => {
     if (pageQuery.history === "1" && s.farm()?.id) setHistory(true);
@@ -287,6 +295,8 @@ export function FarmWorkspace(
         setBoundaryComplete(false);
         setEditing(false);
         setDraft(null);
+        setFieldDrawing(false);
+        setFieldDraft(null);
         setSavingBoundary(false);
         setAdding(false);
         setError("");
@@ -324,6 +334,22 @@ export function FarmWorkspace(
     s.farm()?.facts.demo_prefilled?.value === true ||
     s.farm()?.facts.demo_illustrative?.value === true;
   const drawMode = () => (onboarding() ? !boundaryComplete() : editing());
+  const currentWorkspace = () =>
+    s.workspace()?.farmId === s.farm()?.id ? s.workspace() : undefined;
+  const farmFields = () => currentWorkspace()?.fields ?? [];
+  /** Field mode on the map: drawing a new field, or showing the finished outline before it is named. */
+  const fieldMode = () => !onboarding() && !editing() && (fieldDrawing() || !!fieldDraft());
+  const mapFields = (): MapField[] =>
+    farmFields().map((field) => ({
+      id: field.id,
+      name: field.name,
+      boundary: field.boundary,
+      color: cropColor(currentCycleOf(field.id, (currentWorkspace()?.cycles ?? []) as FieldCycleLike[])?.cropId),
+    }));
+  const endFieldDraw = () => {
+    setFieldDrawing(false);
+    setFieldDraft(null);
+  };
   const visibleBoundary = () =>
     onboarding() || editing()
       ? draft()
@@ -442,9 +468,24 @@ export function FarmWorkspace(
       setBusy(false);
     }
   }
+  /** A new farm boundary must still hold every field (the server rejects it otherwise); the message names the fields. */
+  function fieldsOutside(b: Boundary): string | null {
+    const ring = b.coordinates[0] as [number, number][];
+    const out = farmFields().filter(
+      (field) => !ringWithin(ring, field.boundary.coordinates[0] as [number, number][]),
+    );
+    return out.length
+      ? `The new boundary leaves ${out.map((f) => f.name).join(", ")} outside the farm. Keep the fields inside it, or delete those fields first. Your points are kept.`
+      : null;
+  }
   async function saveBoundary() {
     setError("");
     if (!draft()) return;
+    const outside = fieldsOutside(draft()!);
+    if (outside) {
+      setError(outside);
+      return;
+    }
     try {
       await s.saveWorkspace({ boundary: draft() });
       setEditing(false);
@@ -534,6 +575,11 @@ export function FarmWorkspace(
     } finally {
       setDemoBusy(false);
     }
+  }
+  /** A finished field outline from the map (already checked by `validate`); the panel names and saves it. */
+  function finishField(boundary: Boundary | null) {
+    setFieldDraft(boundary);
+    if (boundary) setFieldDrawing(false);
   }
   function finishBoundary(boundary: Boundary | null) {
     setError("");
@@ -729,7 +775,7 @@ export function FarmWorkspace(
               </Show>
             </div>
             <FarmMap
-              boundary={visibleBoundary()}
+              boundary={fieldMode() ? fieldDraft() : visibleBoundary()}
               {...(center()
                 ? { center: center()! }
                 : s.farm()?.location.lat != null &&
@@ -741,22 +787,39 @@ export function FarmWorkspace(
                       ] as [number, number],
                     }
                   : {})}
-              editing={drawMode()}
+              editing={fieldMode() ? fieldDrawing() : drawMode()}
               saving={savingBoundary()}
-              onBoundary={finishBoundary}
+              onBoundary={fieldMode() ? finishField : finishBoundary}
               {...(onboarding()
                 ? {
                     onEdit: () => {
                       setBoundaryComplete(false);
                     },
                   }
-                : {
-                    farmName: s.farm()?.name ?? "Your farm",
-                    onEdit: () => {
-                      setDraft(s.workspace()?.boundary ?? null);
-                      setEditing(true);
-                    },
-                  })}
+                : fieldMode()
+                  ? {
+                      farmName: s.farm()?.name ?? "Your farm",
+                      onEdit: () => setFieldDrawing(true),
+                      subject: "field" as const,
+                      context: currentWorkspace()?.boundary ?? null,
+                      fitTo: currentWorkspace()?.boundary ?? null,
+                      fields: mapFields(),
+                      validate: (outline: Boundary) =>
+                        checkFieldOutline(
+                          currentWorkspace()?.boundary ?? null,
+                          farmFields(),
+                          outline,
+                        ),
+                    }
+                  : {
+                      farmName: s.farm()?.name ?? "Your farm",
+                      onEdit: () => {
+                        endFieldDraw();
+                        setDraft(s.workspace()?.boundary ?? null);
+                        setEditing(true);
+                      },
+                      fields: mapFields(),
+                    })}
             />
             <div class="map-footer">
               <span>
@@ -772,6 +835,30 @@ export function FarmWorkspace(
               </span>
               <span>Basemap imagery · not a crop-health observation</span>
             </div>
+            <Show when={!onboarding() && s.farm()}>
+              <FieldsPanel
+                fields={farmFields()}
+                farmBoundary={currentWorkspace()?.boundary ?? null}
+                cycles={(currentWorkspace()?.cycles ?? []) as FieldCycleLike[]}
+                plans={currentWorkspace()?.rotationPlans ?? []}
+                cropName={s.cropName}
+                saving={s.saving() || savingBoundary()}
+                disabled={editing() || !currentWorkspace()}
+                onSave={async (fields, notice) => {
+                  await s.saveWorkspace({ fields });
+                  s.setNotice(notice);
+                }}
+                drawing={fieldDrawing()}
+                drawn={fieldDraft()}
+                onStartDraw={(keep) => {
+                  setEditing(false);
+                  if (!keep) setFieldDraft(null);
+                  setFieldDrawing(true);
+                }}
+                onEndDraw={endFieldDraw}
+                todayHref={(id) => farmHref("today", undefined, id)}
+              />
+            </Show>
           </section>
           <aside class="farm-inspector">
             <Show
@@ -1167,6 +1254,11 @@ export function FarmWorkspace(
       return;
     }
     if (savingBoundary()) return;
+    const outside = fieldsOutside(b);
+    if (outside) {
+      setError(outside);
+      return;
+    }
     setSavingBoundary(true);
     try {
       await s.saveWorkspace({ boundary: b });

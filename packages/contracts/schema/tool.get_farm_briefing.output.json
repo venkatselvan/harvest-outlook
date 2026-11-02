@@ -4042,6 +4042,32 @@
         }
       ]
     },
+    "fields": {
+      "type": "object",
+      "properties": {
+        "count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "viewedField": {
+          "anyOf": [
+            {
+              "type": "string",
+              "maxLength": 80
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "count",
+        "viewedField"
+      ],
+      "additionalProperties": false
+    },
     "limitations": {
       "maxItems": 30,
       "type": "array",

@@ -1057,3 +1057,141 @@ export function todayEmptyFixture(farmId = FIXTURE_FARM_ID): TodayView {
     limitations: ["Test fixture: every value on this view is synthetic."],
   };
 }
+
+// ------------------------------------------------------------------ fields inside a farm (FIELDS_MULTICROP_SOIL_SPEC.md 6.3)
+
+/** Three synthetic strips of FIXTURE_BOUNDARY (south to north). Shared edges only, so they pass the contract's overlap rule. */
+const strip = (south: number, north: number) => ({
+  type: "Polygon" as const,
+  coordinates: [[[76.1, south], [76.101, south], [76.101, north], [76.1, north], [76.1, south]]] as [number, number][][],
+});
+export const FIXTURE_FIELD_IDS = { north: "north", middle: "middle", south: "south" } as const;
+export const FIXTURE_FIELD_BOUNDARIES = {
+  north: strip(13.0007, 13.001),
+  middle: strip(13.0003, 13.0007),
+  south: strip(13.0, 13.0003),
+};
+
+/**
+ * Every field of the synthetic farm, in stored order: North strip with the maize cycle of `todayFixture` (a stored reading),
+ * Middle strip with paddy and a black gram companion (never viewed, so no reading), South strip with no crop. Invented values.
+ */
+export function fieldSummariesFixture(): NonNullable<TodayView["fields"]> {
+  return [
+    {
+      id: FIXTURE_FIELD_IDS.north,
+      name: "North strip",
+      areaHa: 0.36,
+      boundary: FIXTURE_FIELD_BOUNDARIES.north,
+      cycle: {
+        id: "maize-cycle",
+        cropId: "maize",
+        cropName: "Maize",
+        companion: null,
+        establishmentDate: FIXTURE_SOWN,
+        stage: { id: "vegetative", name: "Vegetative", progress: 0.4 },
+        daysToHarvest: { earliest: daysBetween(FIXTURE_TODAY, FIXTURE_HARVEST.earliest), latest: daysBetween(FIXTURE_TODAY, FIXTURE_HARVEST.latest) },
+      },
+      greenness: { ndvi: 0.62, observedOn: "2026-10-27", verdict: "near_typical" },
+      alertCount: 3,
+    },
+    {
+      id: FIXTURE_FIELD_IDS.middle,
+      name: "Middle strip",
+      areaHa: 0.48,
+      boundary: FIXTURE_FIELD_BOUNDARIES.middle,
+      cycle: {
+        id: "paddy-cycle",
+        cropId: "paddy",
+        cropName: "Paddy / rice",
+        companion: { cropId: "black_gram", cropName: "Black gram" },
+        establishmentDate: "2026-10-01",
+        stage: { id: "tillering", name: "Tillering", progress: 0.25 },
+        daysToHarvest: { earliest: 92, latest: 104 },
+      },
+      greenness: null,
+      alertCount: 1,
+    },
+    {
+      id: FIXTURE_FIELD_IDS.south,
+      name: "South strip",
+      areaHa: 0.36,
+      boundary: FIXTURE_FIELD_BOUNDARIES.south,
+      cycle: null,
+      greenness: null,
+      alertCount: 1,
+    },
+  ];
+}
+
+/**
+ * The maize view on a farm with three fields. Without `fieldId` it is the "All fields" answer (the first field with a crop,
+ * North strip, is described); with "north" it is that field's own view. Same synthetic numbers as `todayFixture`.
+ */
+export function todayFieldsFixture(farmId = FIXTURE_FARM_ID): TodayView {
+  const view = todayFixture(farmId);
+  view.cycle = { ...view.cycle!, fieldId: FIXTURE_FIELD_IDS.north };
+  view.field = { id: FIXTURE_FIELD_IDS.north, name: "North strip", areaHa: 0.36 };
+  view.fields = fieldSummariesFixture();
+  view.farmBoundary = FIXTURE_BOUNDARY as NonNullable<TodayView["farmBoundary"]>;
+  view.limitations = [...view.limitations, "This farm has 3 fields; this view describes North strip."];
+  return view;
+}
+
+/** South strip's own view: no crop on it yet. */
+export function todayFieldEmptyFixture(farmId = FIXTURE_FARM_ID): TodayView {
+  return {
+    ...todayEmptyFixture(farmId),
+    field: { id: FIXTURE_FIELD_IDS.south, name: "South strip", areaHa: 0.36 },
+    fields: fieldSummariesFixture(),
+    farmBoundary: FIXTURE_BOUNDARY as NonNullable<TodayView["farmBoundary"]>,
+  };
+}
+
+// ------------------------------------------------------------------ AI-predicted looks (FIELDS_MULTICROP_SOIL_SPEC.md 11.4)
+
+/**
+ * SYNTHETIC. Predicted-look dates for the maize scenario (latest real image 27 Oct, today 1 Nov):
+ * - 28 Oct: the automatic look for today's week (the week starts 26 Oct, before the real image, so the API stores the day after it);
+ * - 16 Nov: a look a farmer asked for with "Predict with AI" (a Monday, the stored week start);
+ * - 20 Oct: an older look made from the 17 Oct image, superseded by the real 27 Oct image (never shown).
+ */
+export const PREDICTED_DATES = { auto: "2026-10-28", manual: "2026-11-16", superseded: "2026-10-20" } as const;
+export const predictedAssetId = (n: number) => `9c1d2e3f-4a5b-4c6d-8e7f-${String(n).padStart(12, "0")}`;
+
+/** One ready gap look as the Today view lists it: kind 'predicted', date = targetDate, the owner-private asset image path. */
+export function predictedSceneFixture(
+  farmId: string,
+  targetDate: string,
+  n: number,
+  source: { itemId: string; date: string } = { itemId: LATEST_ITEM_ID, date: "2026-10-27" },
+  fieldId?: string,
+): SceneRef {
+  const stage = FIXTURE_STAGES.find((entry) => entry.from <= targetDate && targetDate <= entry.to) ?? null;
+  return {
+    date: targetDate,
+    kind: "predicted",
+    itemId: null,
+    acquisitionDate: source.date,
+    cloudPct: null,
+    imagePath: `/api/v1/farms/${farmId}/future-look/${predictedAssetId(n)}/image${fieldId ? `?fieldId=${encodeURIComponent(fieldId)}` : ""}`,
+    ndviImagePath: null,
+    derivedFromItemId: source.itemId,
+    stageId: stage?.id ?? null,
+    targetDate,
+    guidance: "Synthetic guidance for interface checks: the canopy closes further and the field turns a denser green.",
+  };
+}
+
+/** The maize scenario with the three predicted looks above and the live `predictions` block (nothing pending). */
+export function todayPredictedFixture(farmId = FIXTURE_FARM_ID, predictions: TodayView["predictions"] = { autoRequested: false, pending: 0, reason: "week_exists" }): TodayView {
+  const view = todayFixture(farmId);
+  view.scenes = [
+    ...view.scenes,
+    predictedSceneFixture(farmId, PREDICTED_DATES.auto, 1),
+    predictedSceneFixture(farmId, PREDICTED_DATES.manual, 2),
+    predictedSceneFixture(farmId, PREDICTED_DATES.superseded, 3, { itemId: itemIdFor("2026-10-17", 5), date: "2026-10-17" }),
+  ];
+  view.predictions = predictions;
+  return view;
+}

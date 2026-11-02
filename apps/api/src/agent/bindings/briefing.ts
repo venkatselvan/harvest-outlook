@@ -9,7 +9,7 @@ import { resolveStateName } from "../../services/price-series";
 import { farmSoilMarkers } from "../../services/soil-reports";
 import { readSoilReview } from "../../services/soil-review";
 import { irrigationCategoryOf } from "../../services/today/footprint";
-import { todayView, type TodayViewDeps } from "../../services/today/view";
+import { currentCycle, todayView, type TodayViewDeps } from "../../services/today/view";
 import { getWorkspace } from "../../services/workspace";
 import { cropDisplayName } from "../../services/year-plan/data";
 import { readYearPlan } from "../../services/year-plan/service";
@@ -162,14 +162,17 @@ export async function farmBriefing(deps: BriefingDeps, farmId: string, ctx: Tool
       (e: unknown) => void failed.set(name, e instanceof ReadOnlyViolation ? "it would have needed a write" : (e as { code?: unknown })?.code === "not_found" ? "not found" : "it could not be read now"),
     );
   const tasks = [
-    section("today", () =>
-      todayView(
+    // Fields (2026-11-03): the briefing stays farm-level. Its cycle is currentCycle(workspace) (latest unharvested cycle of
+    // any field), so the Today view is read for that cycle's field; a farm without fields reads exactly as before.
+    section("today", async () => {
+      const fieldId = currentCycle(await getWorkspace(ro, ctx.ownerId, farmId))?.fieldId;
+      return todayView(
         { config, pool: ro, now, sentinelFetch: noNetwork as never, weatherFetch: noNetwork as never, providers: { readyFutureLooks: async () => [], ...deps.today?.providers }, ...(deps.today?.snapshot ? { snapshot: deps.today.snapshot } : {}) },
         ctx.ownerId,
         farmId,
-        { asOf: ctx.asOf },
-      ),
-    ),
+        { asOf: ctx.asOf, predictions: "off", ...(fieldId !== undefined ? { fieldId } : {}) },
+      );
+    }),
     section("soilMarkers", () => farmSoilMarkers(svc, ctx.ownerId, farmId)),
     section("soilReview", () => readSoilReview(svc, ctx.ownerId, farmId)),
     section("yearPlan", () => readYearPlan(svc, ctx.ownerId, farmId)),
@@ -234,6 +237,14 @@ export async function farmBriefing(deps: BriefingDeps, farmId: string, ctx: Tool
   };
 
   if (view) composeFromToday(briefing, view, today, limitations);
+  // Fields: only on a farm that has them (a farm without fields briefs exactly as before). viewedField is null: the briefing
+  // describes the farm-level current cycle, and the limitation names the field that cycle is on.
+  const fieldCount = (done.get("workspace") as import("@harvest/contracts").FarmWorkspace | undefined)?.fields.length ?? view?.fields?.length ?? 0;
+  if (fieldCount > 0) {
+    briefing.fields = { count: fieldCount, viewedField: null };
+    const n = `This farm has ${fieldCount} field${fieldCount > 1 ? "s" : ""}`;
+    limitations.push(view?.field ? `${n}; the figures describe ${view.field.name}.` : `${n}; no field has a current crop cycle, so the figures describe the whole farm.`);
+  }
   // Review fix 4: when the Today view's outlook note is missing or pending (ensureOutlookNote needs a transaction the read-only
   // pool refuses, or its job is still writing), the latest stored ready note for the same farm, mode and product is read
   // directly with a plain SELECT, so a ready note is never lost to the read-only wrapper.
@@ -256,7 +267,8 @@ export async function farmBriefing(deps: BriefingDeps, farmId: string, ctx: Tool
   // Today-view notes after the briefing's own (deduplicated, without the parts the briefing does not use, at most 10).
   // Review fix 4: the guard lines the read-only wrapper itself causes (satellite scene reads refused by the no-network seam,
   // the outlook note's refused transaction) are not data gaps of the farm; they become one plain sentence.
-  const UNUSED = /Today overview|Stage illustration|harvest outlook sentence is written|monitor/i;
+  // The view's own "This farm has N fields; this view describes ..." line is replaced by the briefing's field line above.
+  const UNUSED = /Today overview|Stage illustration|harvest outlook sentence is written|monitor|^This farm has \d+ fields?;/i;
   // In the briefing every provider call is refused by the no-network seam, so a provider_unreachable/briefing_no_network code
   // is always the wrapper's, as is the outlook note's internal_error (its transaction refused by the read-only pool).
   const WRAPPER_CAUSED = /^The harvest outlook note could not be read now|scenes could not be read from the provider|^The scene catalogue could not be read now|\((?:provider_unreachable|briefing_no_network|read_only_briefing)\)/i;

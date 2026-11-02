@@ -59,12 +59,12 @@ export const AI_USES: Record<AiUseKey, AiUse> = {
   },
   future_look: {
     key: "future_look",
-    title: "Satellite future look",
+    title: "Satellite predicted look",
     model: "Meta Muse Image 1.0",
     where: "Today tab, satellite view",
-    does: "Edits the latest satellite picture of the field into an illustration of how a later crop stage typically looks.",
-    code: "Code picks the scene, masks clouds and labels the result as an illustration, never a prediction or an observation.",
-    benefit: "Helps picture what the field should look like weeks ahead.",
+    does: "Edits the latest real satellite picture of the field to show how its green cover is expected to look on a later date or stage.",
+    code: "Code picks the scene, writes the expected change from the calendar stage, the field's own greenness curve and the weather, keeps every pixel outside the field, and labels the result as predicted with AI, never an observation.",
+    benefit: "Fills the days between clear satellite passes and shows what the field should look like weeks ahead.",
     status: "live",
   },
   soil_extraction: {

@@ -205,6 +205,11 @@ export const ApiErrorCode = z.enum([
   'transform_mismatch',
   'unknown_stage',
   'unpriced_model',
+  // 2026-11-03 fields inside a farm (FIELDS_MULTICROP_SOIL_SPEC.md 3): unknown field id (404); plant crop without a field on a farm with fields (400).
+  'field_not_found',
+  'field_required',
+  // 2026-11-03: a predicted-look request on a farm with fields must name the crop cycle (400).
+  'cycle_required',
 ]);
 export type ApiErrorCode = z.infer<typeof ApiErrorCode>;
 

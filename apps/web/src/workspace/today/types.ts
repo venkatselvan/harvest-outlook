@@ -51,4 +51,14 @@ export interface TodayViewProps {
   openPlant: (cropId?: string) => void;
   /** Open the soil-reports or compare-crops drawer. */
   showTool: (tool: Tool) => void;
+  /**
+   * 2026-11-03 (FIELDS_MULTICROP_SOIL_SPEC.md 6.3): the field selected on Today, kept in the shell as `?field=<id>` so it
+   * survives tab switches. A field id; null for "All fields" and on a farm without fields; undefined while the shell cannot
+   * tell yet (a `?field=` link is open and the farm's workspace is still loading), and the view waits.
+   */
+  field: Accessor<string | null | undefined>;
+  /** Select a field (or null for "All fields"). */
+  selectField: (fieldId: string | null) => void;
+  /** Open the Farm tab at its Soil records section (the soil card's "All soil values"). */
+  openSoilRecords: () => void;
 }

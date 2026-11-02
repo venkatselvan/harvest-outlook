@@ -6,7 +6,7 @@ import type {Config} from '../config';
 import {insertFact} from '../journal/repository';
 import {createWeatherSource} from '../plans/adapters/weather-source';
 import {getFarm} from './farms';
-import {getWorkspace} from './workspace';
+import {fieldOf,getWorkspace} from './workspace';
 import {focusedResearch,establishmentAnchor,type FocusedResearch,type FocusedCareCrop} from './focused-crops';
 import {farmSoilMarkers} from './soil-reports';
 import {hasUnresolvedSoilWarnings} from './soil-normalization';
@@ -100,12 +100,31 @@ export async function plantCrop(deps:CommandDeps,ownerId:string,farmId:string,bo
   // An explicit product may be any catalogue harvest form of the crop; without one, a focused crop defaults to its market-mapped forms.
   const products=body.productId?catalogue:catalogue.filter(p=>!focused||!Array.isArray(focused.marketProductIds)||(focused.marketProductIds as string[]).includes(p.slug));if(!products.length)throw new ApiError(400,'validation_error','Selected product does not belong to this crop');
   if(!body.productId&&products.length>1)throw new ApiError(400,'validation_error','Select the intended harvested product');const product=products[0]!;
-  const cycle={id:randomUUID(),cropId:body.cropId,cropName,productId:product.slug,productName:product.name,sowingDate:body.establishmentDate,establishmentDate:body.establishmentDate,establishmentMethod:body.establishmentMethod,stage:'sowed' as const,...(body.notes?{notes:body.notes}:{})};
+  // Fields (2026-11-03, FIELDS_MULTICROP_SOIL_SPEC.md 3.2): a farm with fields needs the field; an unknown field is a 404.
+  if(state.fields.length&&body.fieldId===undefined)throw new ApiError(400,'field_required','Choose the field this crop is planted on');
+  const field=body.fieldId!==undefined?fieldOf(state,body.fieldId):null;
+  const companion=body.companion?await companionOf(c,body.companion,body.cropId,research.crops):undefined;
+  const cycle={id:randomUUID(),cropId:body.cropId,cropName,productId:product.slug,productName:product.name,sowingDate:body.establishmentDate,establishmentDate:body.establishmentDate,establishmentMethod:body.establishmentMethod,stage:'sowed' as const,...(body.notes?{notes:body.notes}:{}),...(field?{fieldId:field.id}:{}),...(companion?{companion}:{})};
   const updated=FarmWorkspaceState.parse({...state,cycles:[...state.cycles,cycle]});
   const saved=(await c.query('INSERT INTO farm_workspaces(farm_id,version,state) VALUES($1,$2,$3::jsonb) ON CONFLICT(farm_id) DO UPDATE SET version=EXCLUDED.version,state=EXCLUDED.state RETURNING version,updated_at',[farmId,(row?.version??0)+1,JSON.stringify(updated)])).rows[0]!;
-  const journalEntryId=await journalAction(c,deps,ownerId,farmId,cycle.id,'establishment',body.clientEntryId,body.establishmentDate,`${cropName}: ${body.establishmentMethod} recorded on ${body.establishmentDate}.${body.notes?' '+body.notes:''}`,hash,{cycle});
+  // Names the companion and the field when present ("Rice (with Black gram) on North strip: transplanting recorded on ..."); unchanged otherwise.
+  const where=`${companion?` (with ${companion.cropName})`:''}${field?` on ${field.name}`:''}`;
+  const journalEntryId=await journalAction(c,deps,ownerId,farmId,cycle.id,'establishment',body.clientEntryId,body.establishmentDate,`${cropName}${where}: ${body.establishmentMethod} recorded on ${body.establishmentDate}.${body.notes?' '+body.notes:''}`,hash,{cycle});
   return{cycle,workspace:{...updated,farmId,version:saved.version,updatedAt:saved.updated_at.toISOString()},journalEntryId,alreadyRecorded:false};
  });
+}
+/**
+ * The companion of an intercrop cycle with names from the catalogue (focused crop name, else the crop identity's English
+ * name); an explicit product must belong to the companion crop. rowRatio defaults to "not stated" (nothing is inferred).
+ */
+async function companionOf(c:PoolClient,input:NonNullable<PlantCrop['companion']>,mainCropId:string,crops:readonly FocusedCareCrop[]){
+ if(input.cropId===mainCropId)throw new ApiError(400,'validation_error','The companion crop must differ from the main crop');
+ const focused=crops.find(x=>x.cropId===input.cropId);
+ const identity=(await c.query<{name:string|null}>(`SELECT names->'en'->0->>'text' AS name FROM crop_identities WHERE slug=$1`,[input.cropId])).rows[0];
+ if(!focused&&!identity)throw new ApiError(400,'validation_error','Choose a companion crop from the catalogue');
+ let product:{slug:string;name:string}|undefined;
+ if(input.productId){product=(await c.query<{slug:string;name:string}>('SELECT p.slug,p.name FROM crop_products p JOIN crop_identities c ON c.id=p.crop_id WHERE c.slug=$1 AND (p.slug=$2 OR p.id::text=$2)',[input.cropId,input.productId])).rows[0];if(!product)throw new ApiError(400,'validation_error','Selected companion product does not belong to the companion crop');}
+ return{cropId:input.cropId,cropName:(focused?.displayName??identity?.name??input.cropId).slice(0,120),...(product?{productId:product.slug,productName:product.name.slice(0,120)}:{}),rowRatio:input.rowRatio??'not stated'};
 }
 export async function completeCareTask(deps:CommandDeps,ownerId:string,farmId:string,cycleId:string,taskId:string,body:CompleteCareTask){
  const now=today((deps.now??(()=>new Date()))());if(body.completedOn>now)throw new ApiError(400,'validation_error','Completion cannot be in the future');const research=await focusedResearch();

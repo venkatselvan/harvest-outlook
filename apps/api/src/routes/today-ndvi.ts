@@ -8,29 +8,29 @@ import {privateRouteGuard} from '../security/guards';
 import {requireAuth} from '../security/session';
 import {envelope} from '../envelope';
 import {envelopeSchema, uuidParam} from './schemas/common';
-import {NdviSeries} from '@harvest/contracts';
+import {FieldId, NdviSeries} from '@harvest/contracts';
 import {ITEM_ID_RE, type Sentinel2Fetch} from '../providers/sentinel2';
 import {ndviSeries, sceneImage} from '../services/today/ndvi';
 
 export interface TodayNdviDeps { config: Config; pool: Pool; storage: StorageAdapter; fetchImpl?: Sentinel2Fetch | undefined }
 
-/** Owner-private Sentinel-2 NDVI series and scene images for one farm. */
+/** Owner-private Sentinel-2 NDVI series and scene images for one farm; `fieldId` (2026-11-03) reads one field's polygon instead (404 field_not_found when unknown). */
 export async function todayNdviRoutes(app: FastifyInstance, deps: TodayNdviDeps) {
   const {config, pool} = deps;
   app.addHook('onRequest', privateRouteGuard(config, pool));
   const r = app.withTypeProvider<ZodTypeProvider>();
   r.get('/api/v1/farms/:id/ndvi', {
     config: {rateLimit: {max: 20, timeWindow: '1 minute'}},
-    schema: {tags: ['farms'], params: uuidParam, querystring: z.object({from: z.iso.date().optional(), to: z.iso.date().optional()}).strict(), response: {200: envelopeSchema(NdviSeries)}},
+    schema: {tags: ['farms'], params: uuidParam, querystring: z.object({from: z.iso.date().optional(), to: z.iso.date().optional(), fieldId: FieldId.optional()}).strict(), response: {200: envelopeSchema(NdviSeries)}},
   }, async (req) => {
-    const series = await ndviSeries(deps, requireAuth(req).ownerId, req.params.id, {from: req.query.from, to: req.query.to});
+    const series = await ndviSeries(deps, requireAuth(req).ownerId, req.params.id, {from: req.query.from, to: req.query.to, fieldId: req.query.fieldId});
     return envelope(req.id, config.RUNTIME_MODE, series);
   });
   r.get('/api/v1/farms/:id/ndvi/:itemId/image', {
     config: {rateLimit: {max: 60, timeWindow: '1 minute'}},
-    schema: {tags: ['farms'], params: z.object({id: z.uuid(), itemId: z.string().regex(ITEM_ID_RE)}), querystring: z.object({kind: z.enum(['visual', 'ndvi']).default('visual'), zoom: z.enum(['wide', 'field']).default('wide')}).strict()},
+    schema: {tags: ['farms'], params: z.object({id: z.uuid(), itemId: z.string().regex(ITEM_ID_RE)}), querystring: z.object({kind: z.enum(['visual', 'ndvi']).default('visual'), zoom: z.enum(['wide', 'field']).default('wide'), fieldId: FieldId.optional()}).strict()},
   }, async (req, reply) => {
-    const image = await sceneImage(deps, requireAuth(req).ownerId, req.params.id, req.params.itemId, req.query.kind, req.query.zoom);
+    const image = await sceneImage(deps, requireAuth(req).ownerId, req.params.id, req.params.itemId, req.query.kind, req.query.zoom, req.query.fieldId);
     reply.header('cache-control', 'private, max-age=3600').header('x-scene-acquired-at', image.acquiredAt);
     return reply.type(image.contentType).send(image.bytes);
   });

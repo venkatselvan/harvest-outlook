@@ -29,6 +29,24 @@ export interface Cycle {
   stage: "sowed" | "growing" | "flowering" | "harvested";
   harvestDate?: string;
   notes?: string;
+  /** 2026-11-03: the field the crop grows on; absent = a farm-wide cycle (FIELDS_MULTICROP_SOIL_SPEC.md 2.1). */
+  fieldId?: string;
+  /** 2026-11-03: the companion crop of an intercrop. */
+  companion?: {
+    systemId?: string;
+    cropId: string;
+    cropName?: string;
+    productId?: string;
+    productName?: string;
+    rowRatio: string;
+  };
+}
+/** A named field inside the farm boundary (contracts `FarmField`). */
+export interface Field {
+  id: string;
+  name: string;
+  boundary: Boundary;
+  notes?: string;
 }
 export interface Rotation {
   id: string;
@@ -52,6 +70,8 @@ export interface Rotation {
     productName?: string;
     rowRatio: string;
   };
+  /** 2026-11-03: the field this season is planned for; absent = the whole farm. */
+  fieldId?: string;
 }
 export interface Workspace {
   farmId: string;
@@ -68,6 +88,8 @@ export interface Workspace {
       };
   cycles: Cycle[];
   rotationPlans: Rotation[];
+  /** 2026-11-03: fields inside the farm in drawn order; older servers omit it (read as none). */
+  fields?: Field[];
 }
 export interface Monitor {
   checkedAt: string;
@@ -305,7 +327,7 @@ function model() {
     patch: Partial<
       Pick<
         Workspace,
-        "boundary" | "previousHarvest" | "cycles" | "rotationPlans"
+        "boundary" | "previousHarvest" | "cycles" | "rotationPlans" | "fields"
       >
     >,
   ) {
@@ -328,6 +350,7 @@ function model() {
             previousHarvest: w.previousHarvest,
             cycles: w.cycles,
             rotationPlans: w.rotationPlans,
+            // `fields` is sent only when the patch carries it: an omitted list leaves the stored fields unchanged.
             ...patch,
           }),
         )

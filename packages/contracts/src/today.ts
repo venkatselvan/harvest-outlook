@@ -2,7 +2,7 @@ import {z} from 'zod';
 import {FarmAlert, FarmNewsReviewStatus} from './alerts';
 import {NdviSeries} from './ndvi';
 import {CareTask} from './command-center';
-import {CropCycle} from './workspace';
+import {CropCycle, GeographicBoundary} from './workspace';
 import {StageTimeline, NumberRange, BasisRef, CostEstimate, HarvestWindow, NumberEstimate} from './year-plan';
 import {ModelInvocation} from './common';
 
@@ -15,18 +15,26 @@ const isoDate = z.iso.date();
 
 export const SceneRef = z.object({
  date: isoDate,
- kind: z.enum(['observed', 'illustration']),
+ /** 2026-11-03: 'predicted' = a code-guided Meta edit of the latest real scene for a date after it (FIELDS_MULTICROP_SOIL_SPEC.md 11); not an observation. */
+ kind: z.enum(['observed', 'illustration', 'predicted']),
  itemId: z.string().max(200).nullable(),
  acquisitionDate: isoDate.nullable(),
  cloudPct: z.number().nullable(),
- /** Owner-private image path on this API (visual or ndvi), never a third-party URL. */
- imagePath: z.string().max(300).nullable(),
- ndviImagePath: z.string().max(300).nullable(),
+ /**
+  * Owner-private image path on this API (visual or ndvi), never a third-party URL. 2026-11-03: in a field view the paths carry
+  * `&fieldId=<id>` (ids are URL-safe by contract), so the image route resolves that field's polygon; max widened to 400.
+  */
+ imagePath: z.string().max(400).nullable(),
+ ndviImagePath: z.string().max(400).nullable(),
  /** 2026-11-02 (spec section 10): the same scene cropped to the field at native 10 m pixels (crisp squares), visual and NDVI colour map; null until rendered. */
- fieldImagePath: z.string().max(300).nullable().optional(),
- fieldNdviImagePath: z.string().max(300).nullable().optional(),
+ fieldImagePath: z.string().max(400).nullable().optional(),
+ fieldNdviImagePath: z.string().max(400).nullable().optional(),
  derivedFromItemId: z.string().max(200).nullable(),
  stageId: z.string().max(80).nullable(),
+ /** 2026-11-03: predicted scenes: the date the look is for (equals `date`). */
+ targetDate: isoDate.optional(),
+ /** 2026-11-03: predicted and v2 stage illustrations: the code-written guidance used in the prompt. */
+ guidance: z.string().max(400).optional(),
 }).strict();
 
 export const HealthReading = z.object({
@@ -315,6 +323,34 @@ export const FieldConditions = z.object({
  limitations: z.array(text).max(12),
 }).strict();
 
+/**
+ * One field of the farm for the "All fields" overview (2026-11-03, FIELDS_MULTICROP_SOIL_SPEC.md 2.3). Code-composed from the
+ * workspace, the stage timeline and stored satellite rows; no provider call is made for it.
+ */
+export const FieldSummary = z.object({
+ id: z.string().max(120),
+ name: z.string().max(80),
+ /** Spherical area of the drawn field polygon, hectares (not a survey). */
+ areaHa: z.number().nonnegative(),
+ boundary: GeographicBoundary,
+ /** The field's current cycle (latest unharvested cycle naming this field), or null. */
+ cycle: z.object({
+  id: z.string().max(120),
+  cropId: z.string().max(120),
+  cropName: z.string().max(120),
+  companion: z.object({cropId: z.string().max(120), cropName: z.string().max(120)}).strict().nullable(),
+  /** Establishment date, else the sowing date. */
+  establishmentDate: isoDate,
+  /** Calendar stage today; `progress` is the share of the whole season elapsed (as TodayView.slider.todayProgress), not of the stage. */
+  stage: z.object({id: z.string().max(80), name: z.string().max(80), progress: z.number().min(0).max(1)}).strict().nullable(),
+  daysToHarvest: z.object({earliest: z.number().int(), latest: z.number().int()}).strict().nullable(),
+ }).strict().nullable(),
+ /** Latest stored usable reading for this field's own polygon; null when the field was never viewed (no fetch is made for the overview) and outside live mode. */
+ greenness: z.object({ndvi: z.number(), observedOn: isoDate, verdict: HealthReading.shape.verdict}).strict().nullable(),
+ /** Active alerts naming this field plus farm-wide alerts (no fieldId). */
+ alertCount: z.number().int().nonnegative(),
+}).strict();
+
 export const TodayView = z.object({
  farmId: z.uuid(),
  asOf: z.iso.datetime(),
@@ -351,6 +387,18 @@ export const TodayView = z.object({
  conditions: FieldConditions.nullable().optional(),
  fieldImageBbox: z.tuple([z.number(), z.number(), z.number(), z.number()]).nullable().optional(),
  monitoring: z.object({enabled: z.boolean(), lastCheckedAt: z.iso.datetime().nullable(), nextCheckAt: z.iso.datetime().nullable()}).strict(),
+ /** 2026-11-03: the field this view describes; null on a farm without fields (and on a farm with fields when no field has a current cycle). */
+ field: z.object({id: z.string().max(120), name: z.string().max(80), areaHa: z.number().nonnegative()}).strict().nullable().optional(),
+ /** 2026-11-03: every field of the farm in stored (drawn) order; [] on a farm without fields. */
+ fields: z.array(FieldSummary).max(50).optional(),
+ /** 2026-11-03: the farm's outer boundary for the overview scene; null when none is drawn. */
+ farmBoundary: GeographicBoundary.nullable().optional(),
+ /**
+  * 2026-11-03 (FIELDS_MULTICROP_SOIL_SPEC.md 11.3): AI-predicted looks of this cycle. autoRequested: this load queued one;
+  * pending: predicted looks queued or running with a live job; reason: why none was queued (null when one was). Null outside
+  * live mode and without a current cycle.
+  */
+ predictions: z.object({autoRequested: z.boolean(), pending: z.number().int().min(0), reason: z.string().max(80).nullable()}).strict().nullable().optional(),
  limitations: z.array(text),
 }).strict();
 
@@ -382,4 +430,5 @@ export type RainClass = z.infer<typeof RainClass>;
 export type WaterState = z.infer<typeof WaterState>;
 export type FieldConditionPoint = z.infer<typeof FieldConditionPoint>;
 export type FieldConditions = z.infer<typeof FieldConditions>;
+export type FieldSummary = z.infer<typeof FieldSummary>;
 export type TodayView = z.infer<typeof TodayView>;

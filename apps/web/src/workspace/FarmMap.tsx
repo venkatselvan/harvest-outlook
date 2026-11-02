@@ -11,6 +11,13 @@ import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { Icon } from "./icons";
 import { boundaryArea, type Boundary } from "./state";
+/** A saved field drawn on the map in its crop colour (FIELDS_MULTICROP_SOIL_SPEC.md 6.1). */
+export interface MapField {
+  id: string;
+  name: string;
+  boundary: Boundary;
+  color: string;
+}
 export function FarmMap(props: {
   boundary: Boundary | null;
   center?: [number, number];
@@ -19,12 +26,57 @@ export function FarmMap(props: {
   onBoundary: (b: Boundary | null) => void;
   farmName?: string;
   onEdit?: () => void;
+  /** 2026-11-03: the farm boundary, dashed, as context while a field is drawn. */
+  context?: Boundary | null;
+  /** 2026-11-03: saved fields in their crop colours, with name tooltips. */
+  fields?: readonly MapField[];
+  /** 2026-11-03: an extra check on a finished outline (inside the farm, no overlap); a message keeps the points. */
+  validate?: (b: Boundary) => string | null;
+  /** 2026-11-03: what is being drawn; changes the instructions and button labels. */
+  subject?: "farm" | "field";
+  /** 2026-11-03: fit the view to this outline instead of `boundary` (drawing a field keeps the whole farm in view). */
+  fitTo?: Boundary | null;
 }) {
   let container!: HTMLDivElement;
   let map: L.Map | undefined;
   let shape: L.Polygon | undefined;
   let line: L.Polyline | undefined;
+  let contextShape: L.Polygon | undefined;
+  const fieldShapes: L.Polygon[] = [];
   const dots: L.CircleMarker[] = [];
+  const field = () => props.subject === "field";
+  const latLngs = (b: Boundary | null | undefined) =>
+    b?.coordinates[0]?.slice(0, -1).map((p) => L.latLng(p[1]!, p[0]!)) ?? [];
+  /** Context layers under the outline being drawn: the farm boundary (dashed) and the saved fields in crop colours. */
+  const redrawContext = () => {
+    if (!map) return;
+    contextShape?.remove();
+    contextShape = undefined;
+    fieldShapes.splice(0).forEach((f) => f.remove());
+    const ctx = latLngs(props.context);
+    if (ctx.length > 2)
+      contextShape = L.polygon(ctx, {
+        color: "#ffffff",
+        weight: 2,
+        dashArray: "6 6",
+        fill: false,
+        interactive: false,
+      }).addTo(map);
+    for (const f of props.fields ?? []) {
+      const points = latLngs(f.boundary);
+      if (points.length < 3) continue;
+      const polygon = L.polygon(points, {
+        color: f.color,
+        weight: 2,
+        fillColor: f.color,
+        fillOpacity: 0.28,
+        // While drawing, clicks must reach the map so a corner can sit on a shared edge.
+        interactive: !props.editing,
+      }).addTo(map);
+      polygon.bindTooltip(f.name, { direction: "center", className: "map-field-tooltip" });
+      fieldShapes.push(polygon);
+    }
+  };
   const [vertices, setVertices] = createSignal<L.LatLng[]>([]);
   const [validationError, setValidationError] = createSignal("");
   const [satellite, setSatellite] = createSignal(true);
@@ -79,6 +131,11 @@ export function FarmMap(props: {
       );
       return;
     }
+    const problem = props.validate?.(boundary);
+    if (problem) {
+      setValidationError(problem);
+      return;
+    }
     setValidationError("");
     props.onBoundary(boundary);
   };
@@ -107,11 +164,13 @@ export function FarmMap(props: {
       if (props.editing && !props.saving)
         setVertices([...vertices(), e.latlng]);
     });
-    if (props.boundary)
-      map.fitBounds(L.geoJSON(props.boundary as GeoJSON.Polygon).getBounds(), {
+    const fit = props.fitTo ?? props.boundary;
+    if (fit)
+      map.fitBounds(L.geoJSON(fit as GeoJSON.Polygon).getBounds(), {
         padding: [70, 70],
         maxZoom: 18,
       });
+    redrawContext();
     redraw();
     const observer = new ResizeObserver(() => map?.invalidateSize());
     observer.observe(container);
@@ -138,13 +197,20 @@ export function FarmMap(props: {
     vertices();
     redraw();
   });
+  createEffect(() => {
+    props.context;
+    props.fields;
+    props.editing;
+    redrawContext();
+    redraw();
+  });
   createEffect(on(vertices, () => setValidationError(""), { defer: true }));
   createEffect(() => {
     const c = props.center;
     if (map && c) map.setView(c, 15);
   });
   createEffect(() => {
-    const b = props.boundary;
+    const b = props.fitTo ?? props.boundary;
     if (map && b && !props.editing)
       map.fitBounds(L.geoJSON(b as GeoJSON.Polygon).getBounds(), {
         padding: [70, 70],
@@ -237,13 +303,19 @@ export function FarmMap(props: {
           <div>
             <strong>
               {vertices().length
-                ? `${vertices().length} boundary points`
-                : "Trace the edge of your farm"}
+                ? `${vertices().length} ${field() ? "field" : "boundary"} points`
+                : field()
+                  ? "Trace the edge of the field"
+                  : "Trace the edge of your farm"}
             </strong>
             <span>
               {vertices().length >= 3
-                ? "Add more points or finish your boundary."
-                : "Click each corner on the map. Pan to move around."}
+                ? field()
+                  ? "Add more points or finish the field."
+                  : "Add more points or finish your boundary."
+                : field()
+                  ? "Click each corner inside the dashed farm outline. Corners may sit on its edge or on another field's edge."
+                  : "Click each corner on the map. Pan to move around."}
             </span>
           </div>
           <div class="draw-actions">
@@ -269,7 +341,11 @@ export function FarmMap(props: {
               disabled={props.saving || vertices().length < 3}
               onClick={finish}
             >
-              {props.saving ? "Saving boundary…" : "Finish boundary"}{" "}
+              {props.saving
+                ? "Saving boundary…"
+                : field()
+                  ? "Finish field"
+                  : "Finish boundary"}{" "}
               <Icon name="check" size={16} />
             </button>
           </div>
@@ -279,7 +355,7 @@ export function FarmMap(props: {
         <div class="boundary-label">
           <span class="status-dot" />
           <strong>{boundaryArea(props.boundary).toFixed(2)} ha</strong>
-          <span>Mapped boundary</span>
+          <span>{field() ? "New field" : "Mapped boundary"}</span>
           <Show when={props.onEdit}>
             <button onClick={() => props.onEdit?.()}>Edit</button>
           </Show>

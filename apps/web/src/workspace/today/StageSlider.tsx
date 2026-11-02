@@ -22,7 +22,7 @@ export interface StageSliderProps {
   /** Labels under the two ends, for example "Sown 15 Sep" and "Harvest by 13 Jan". */
   startLabel: string;
   endLabel: string;
-  /** Observed scene dates and illustration dates, drawn as small marks on the rail. */
+  /** Observed scene dates, illustration dates and AI-predicted look dates, drawn as small marks on the rail. */
   marks?: SceneMark[] | undefined;
   /** Play state: when `onPlay` is given a Play / Pause button sits beside "Back to today". */
   playing?: boolean | undefined;
@@ -33,14 +33,17 @@ export interface StageSliderProps {
 
 /**
  * Season slider: one step per day from `slider.from` to `slider.to`. A native range input, so arrows, Home, End and
- * Page keys work everywhere; ticks mark stage boundaries, small marks show the dates with a satellite image (dots) or a
- * stage illustration (rings), and a marker shows today. Play steps one day at a time; any slider interaction pauses it.
+ * Page keys work everywhere; ticks mark stage boundaries, small marks show the dates with a satellite image (dots), a
+ * stage illustration (dashed rings) or an AI-predicted look (hollow rings), and a marker shows today. Play steps one day at a time; any slider interaction pauses it.
  */
 export function StageSlider(props: StageSliderProps) {
   let input: HTMLInputElement | undefined;
   const fraction = (index: number) => (props.model.total ? index / props.model.total : 0);
   const atToday = () => props.value === props.model.todayIndex;
   const observedMarks = () => (props.marks ?? []).filter((mark) => mark.kind === "observed").length;
+  const predictedMarks = () => (props.marks ?? []).filter((mark) => mark.kind === "predicted").length;
+  const markTitle = (mark: SceneMark) =>
+    `${mark.kind === "observed" ? "Satellite image" : mark.kind === "predicted" ? "AI-predicted look" : "Stage illustration"} ${formatDay(mark.date)}`;
   return (
     <div class="today-slider">
       <div class="today-slider-head">
@@ -90,7 +93,8 @@ export function StageSlider(props: StageSliderProps) {
                 class={`today-slider-mark ${mark.kind}`}
                 style={{ left: `${mark.fraction * 100}%` }}
                 data-date={mark.date}
-                title={`${mark.kind === "observed" ? "Satellite image" : "Stage illustration"} ${formatDay(mark.date)}`}
+                title={markTitle(mark)}
+                data-scene-kind={mark.kind}
               />
             )}
           </For>
@@ -107,7 +111,7 @@ export function StageSlider(props: StageSliderProps) {
           step="1"
           value={props.value}
           aria-valuetext={formatDay(props.valueDate)}
-          aria-describedby={observedMarks() ? "today-slider-marks-note" : undefined}
+          aria-describedby={observedMarks() || predictedMarks() ? "today-slider-marks-note" : undefined}
           onPointerDown={() => props.onInteract?.()}
           onKeyDown={() => props.onInteract?.()}
           onInput={(event) => {
@@ -116,9 +120,13 @@ export function StageSlider(props: StageSliderProps) {
           }}
         />
       </div>
-      <Show when={observedMarks()}>
+      <Show when={observedMarks() || predictedMarks()}>
         <span id="today-slider-marks-note" class="today-sr">
-          Dots on the slider mark the {observedMarks()} dates with a satellite image.
+          <Show when={observedMarks()}>Dots on the slider mark the {observedMarks()} dates with a satellite image.</Show>
+          <Show when={predictedMarks()}>
+            {" "}
+            Hollow rings mark {predictedMarks()} {predictedMarks() === 1 ? "date" : "dates"} with an AI-predicted look, not an observation.
+          </Show>
         </span>
       </Show>
       <div class="today-slider-ends" aria-hidden="true">

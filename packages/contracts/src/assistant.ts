@@ -209,6 +209,8 @@ export const FarmBriefing = z
       })
       .strict()
       .nullable(),
+    /** 2026-11-03: fields inside the farm; viewedField is null because the briefing describes the farm-level current cycle. */
+    fields: z.object({ count: z.number().int().nonnegative(), viewedField: bText(80).nullable() }).strict().optional(),
     limitations: z.array(bText(300)).max(30),
   })
   .strict();

@@ -2,7 +2,7 @@ import {afterAll, beforeAll, beforeEach, describe, expect, it} from 'vitest';
 import type {FastifyInstance} from 'fastify';
 import {NdviSeries, NeighbourhoodSeasonality} from '@harvest/contracts';
 import {buildServer} from '../src/server';
-import {fieldImageBbox, fieldScenePaths, ndviSeries, neighbourhoodSeasonality, sceneImage, sceneImageKey, type NdviDeps} from '../src/services/today/ndvi';
+import {boundaryPolygonHash, fieldImageBbox, fieldScenePaths, ndviSeries, neighbourhoodSeasonality, sceneImage, sceneImageKey, wideScenePaths, type NdviDeps} from '../src/services/today/ndvi';
 import {bboxMeters, fieldBbox, fieldRenderSize, type Bbox} from '../src/providers/sentinel2';
 import {ApiError} from '../src/services/errors';
 import {setupHarness, login, farmBody, testConfig, ORIGIN, type Harness, type Client} from './helpers';
@@ -321,16 +321,28 @@ describe('field window arithmetic', () => {
     expect(fieldRenderSize([76, 13, 76.1, 13.1])).toBe(768); // 11 km: clamped down
   });
 
-  it('builds the scene paths and the storage key per zoom', () => {
+  it('builds the scene paths and the storage key per zoom and polygon (fields: no two fields share a render key)', () => {
     const farm = '11111111-1111-4111-8111-111111111111', item = ID('2026-10-27');
     expect(fieldScenePaths(farm, item)).toEqual({
       fieldImagePath: `/api/v1/farms/${farm}/ndvi/${item}/image?kind=visual&zoom=field`,
       fieldNdviImagePath: `/api/v1/farms/${farm}/ndvi/${item}/image?kind=ndvi&zoom=field`,
     });
-    expect(sceneImageKey(farm, item, 'visual')).toBe(`ndvi/${farm}/${item}/visual.png`);
-    expect(sceneImageKey(farm, item, 'ndvi', 'wide')).toBe(`ndvi/${farm}/${item}/ndvi.png`);
-    expect(sceneImageKey(farm, item, 'visual', 'field')).toBe(`ndvi/${farm}/${item}/visual-field.png`);
-    expect(sceneImageKey(farm, item, 'ndvi', 'field')).toBe(`ndvi/${farm}/${item}/ndvi-field.png`);
+    expect(fieldScenePaths(farm, item, 'strip-2')).toEqual({
+      fieldImagePath: `/api/v1/farms/${farm}/ndvi/${item}/image?kind=visual&zoom=field&fieldId=strip-2`,
+      fieldNdviImagePath: `/api/v1/farms/${farm}/ndvi/${item}/image?kind=ndvi&zoom=field&fieldId=strip-2`,
+    });
+    expect(wideScenePaths(farm, item)).toEqual({imagePath: `/api/v1/farms/${farm}/ndvi/${item}/image?kind=visual`, ndviImagePath: `/api/v1/farms/${farm}/ndvi/${item}/image?kind=ndvi`});
+    expect(wideScenePaths(farm, item, 'strip-2').imagePath).toBe(`/api/v1/farms/${farm}/ndvi/${item}/image?kind=visual&fieldId=strip-2`);
+    const hash = 'abcdef0123456789', other = '9876543210fedcba';
+    // Farm polygon: the wide key is unchanged; the field zoom carries the first 8 hex of the polygon hash.
+    expect(sceneImageKey(farm, item, 'visual', 'wide', hash)).toBe(`ndvi/${farm}/${item}/visual.png`);
+    expect(sceneImageKey(farm, item, 'ndvi', 'wide', hash)).toBe(`ndvi/${farm}/${item}/ndvi.png`);
+    expect(sceneImageKey(farm, item, 'visual', 'field', hash)).toBe(`ndvi/${farm}/${item}/visual-field-abcdef01.png`);
+    expect(sceneImageKey(farm, item, 'ndvi', 'field', hash)).toBe(`ndvi/${farm}/${item}/ndvi-field-abcdef01.png`);
+    // A field's polygon: both zooms carry its hash8, so two fields never share a key.
+    expect(sceneImageKey(farm, item, 'visual', 'wide', hash, 'field')).toBe(`ndvi/${farm}/${item}/visual-abcdef01.png`);
+    expect(sceneImageKey(farm, item, 'visual', 'field', other, 'field')).toBe(`ndvi/${farm}/${item}/visual-field-98765432.png`);
+    expect(sceneImageKey(farm, item, 'visual', 'wide', other, 'field')).not.toBe(sceneImageKey(farm, item, 'visual', 'wide', hash, 'field'));
     expect(fieldImageBbox(ringOf(76.2495, 13.2495, 76.2505, 13.2505))).toEqual(fieldBbox(ringOf(76.2495, 13.2495, 76.2505, 13.2505)));
   });
 });
@@ -343,6 +355,7 @@ describe('sceneImage field zoom', () => {
     await ndviSeries(deps, ownerId, farmId);
     const item = ID('2026-10-27');
     const expectedBbox = fieldBbox(HA.coordinates[0] as [number, number][]);
+    const h8 = boundaryPolygonHash(HA)!.slice(0, 8);
 
     const first = await sceneImage(deps, ownerId, farmId, item, 'visual', 'field');
     expect(first).toMatchObject({contentType: 'image/png', cached: false, bbox: expectedBbox});
@@ -352,7 +365,7 @@ describe('sceneImage field zoom', () => {
     expect(call.height).toBe(call.width);
     expect(call.width).toBeLessThan(40); // native 10 m pixels, not the 512 px wide render
     expect(new URL(imageCall(fake.calls).url).searchParams.get('resampling')).toBe('nearest');
-    expect(await h.storage.exists({ownerId, key: `ndvi/${farmId}/${item}/visual-field.png`})).toBe(true);
+    expect(await h.storage.exists({ownerId, key: `ndvi/${farmId}/${item}/visual-field-${h8}.png`})).toBe(true);
     expect(await h.storage.exists({ownerId, key: `ndvi/${farmId}/${item}/visual.png`})).toBe(false);
 
     // The wide render is a separate object, still 512 px over the 600 m display window.
@@ -362,7 +375,7 @@ describe('sceneImage field zoom', () => {
     expect(wideCall.width).toBe(512);
     expect(wideCall.bbox).not.toEqual(expectedBbox);
     const row = (await h.pool.query('SELECT image_keys FROM ndvi_scene_stats WHERE farm_id=$1 AND item_id=$2', [farmId, item])).rows[0];
-    expect(row.image_keys).toEqual({'visual-field': `ndvi/${farmId}/${item}/visual-field.png`, visual: `ndvi/${farmId}/${item}/visual.png`});
+    expect(row.image_keys).toEqual({[`visual-field-${h8}`]: `ndvi/${farmId}/${item}/visual-field-${h8}.png`, visual: `ndvi/${farmId}/${item}/visual.png`});
 
     const before = fake.calls.length;
     const again = await sceneImage(deps, ownerId, farmId, item, 'visual', 'field');
@@ -375,7 +388,7 @@ describe('sceneImage field zoom', () => {
     const ndviCall = imageCall(fake.calls);
     expect(parseImageCall(ndviCall)).toEqual(call);
     expect(new URL(ndviCall.url).searchParams.get('expression')).toBe('(B08-B04)/(B08+B04-2000)');
-    expect(await h.storage.exists({ownerId, key: `ndvi/${farmId}/${item}/ndvi-field.png`})).toBe(true);
+    expect(await h.storage.exists({ownerId, key: `ndvi/${farmId}/${item}/ndvi-field-${h8}.png`})).toBe(true);
   });
 
   it('is a 409 outside live mode and makes no network call', async () => {

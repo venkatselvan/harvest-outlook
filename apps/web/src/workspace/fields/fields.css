@@ -1,0 +1,221 @@
+/* Fields on the Farm page and the plant dialog's field and companion controls (FIELDS_MULTICROP_SOIL_SPEC.md 6.1, 6.2).
+   Mobile first (390 px, 16 px gutters), theme tokens only; crop swatches use the deterministic palette from today/model.ts. */
+.fields-panel {
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+  border-top: 1px solid var(--border);
+  min-width: 0;
+  color: var(--text);
+}
+.fields-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+.fields-head h2 {
+  margin: 0;
+  font-size: 15px;
+}
+.fields-head p {
+  margin: 3px 0 0;
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--text-secondary);
+}
+.fields-count {
+  flex: none;
+  padding: 2px 9px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--surface-soft);
+  font-size: 11px;
+  font-weight: 650;
+  color: var(--text-secondary);
+}
+.fields-empty,
+.fields-note {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--text-secondary);
+}
+.fields-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+.fields-item {
+  display: grid;
+  gap: 8px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+  min-width: 0;
+}
+.fields-item-row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 4px 10px;
+}
+.fields-swatch {
+  width: 14px;
+  height: 14px;
+  border-radius: 4px;
+  border: 1px solid rgb(0 0 0 / 25%);
+}
+.fields-item-main {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+.fields-item-main strong {
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+.fields-item-meta {
+  font-size: 11.5px;
+  color: var(--text-secondary);
+  overflow-wrap: anywhere;
+}
+.fields-item-actions {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 14px;
+  font-size: 12px;
+}
+.fields-item-actions .text-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 32px;
+}
+.fields-panel .text-button {
+  min-height: 32px;
+  font-size: 12px;
+}
+.fields-panel .text-button.danger,
+.fields-panel .btn.danger {
+  color: var(--danger);
+}
+.fields-panel .btn.danger {
+  background: var(--danger-soft);
+  border-color: var(--danger);
+}
+.fields-inline-form,
+.fields-confirm,
+.fields-draw,
+.fields-split {
+  display: grid;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: var(--surface-soft);
+  border: 1px solid var(--border);
+  font-size: 12px;
+  min-width: 0;
+}
+.fields-inline-form p,
+.fields-confirm p,
+.fields-draw p,
+.fields-split p,
+.fields-split h3 {
+  margin: 0;
+  line-height: 1.45;
+}
+.fields-split h3 {
+  font-size: 13px;
+}
+.fields-inline-form label,
+.fields-split label {
+  display: grid;
+  gap: 4px;
+  font-size: 12px;
+  font-weight: 600;
+}
+.fields-inline-form input,
+.fields-split input {
+  min-height: 40px;
+  width: 100%;
+  max-width: 320px;
+  font-size: 14px;
+}
+.fields-inline-actions,
+.fields-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+}
+.fields-refusal {
+  margin: 0;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: var(--danger-soft);
+  color: var(--danger);
+  font-size: 12px;
+  line-height: 1.45;
+}
+.fields-split-preview {
+  color: var(--text-secondary);
+}
+.fields-panel .inline-error {
+  margin-top: 0;
+}
+.map-field-tooltip {
+  font-size: 11px;
+  font-weight: 650;
+}
+
+/* Plant dialog: which field, and a companion crop (spec 6.2). */
+.plant-field-select {
+  display: grid;
+  gap: 5px;
+  margin: 0 0 16px;
+  font-size: 12px;
+  font-weight: 600;
+}
+.plant-field-select select {
+  min-height: 40px;
+  font-size: 13px;
+}
+.plant-companion {
+  display: grid;
+  gap: 8px;
+  margin: 4px 0 12px;
+}
+.plant-companion-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 32px;
+  font-size: 12px;
+  font-weight: 600;
+}
+.plant-companion-toggle input {
+  width: 18px;
+  height: 18px;
+}
+.plant-companion .inline-note {
+  margin: 0;
+}
+
+@media (min-width: 760px) {
+  .fields-panel {
+    padding: 18px 20px;
+  }
+  .fields-item-row {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+  }
+  .fields-item-actions {
+    grid-column: auto;
+    justify-content: flex-end;
+  }
+}

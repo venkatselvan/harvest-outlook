@@ -62,6 +62,22 @@
  * - Today overview (spec section 9): after every other block, overview.ts builds facts from the composed view and
  *   ensureTodayOverview returns the stored, pending or code-written overview (synthetic and replay: code-written inline,
  *   no job, no Meta call); null without a current cycle or when it fails (a limitation names it).
+ * - fields (FIELDS_MULTICROP_SOIL_SPEC.md 3.3, 2026-11-03): with `fieldId` the view describes that field (404 field_not_found
+ *   when unknown): its current cycle (`currentCycle(workspace, fieldId)`), its ring for NDVI, scene renders, the field-zoom
+ *   bbox and the weather point, its spherical area for economics and footprint, and the alerts naming it or no field. Without
+ *   `fieldId` on a farm with fields, the first field in stored order with a current cycle is described; when no field has
+ *   one, a farm-wide (legacy, no fieldId) current cycle is described on the farm boundary if one exists (the spec says
+ *   null here; this keeps a cycle recorded before the fields were drawn visible), else there is no cycle. A farm without
+ *   fields is unchanged. `fields` summarises every field from stored data only (greenness: the newest stored usable row of
+ *   the field's own polygon, live mode only; no provider call), `field` names the described field, `farmBoundary` is the
+ *   outer boundary.
+ * - AI-predicted looks (FIELDS_MULTICROP_SOIL_SPEC.md 11, 2026-11-03), live mode only: ready `gap` looks of the cycle are listed
+ *   in `scenes` as kind 'predicted' (date = targetDate, newest per week, image path carrying `?fieldId=` when the cycle names a
+ *   field). When the latest usable scene is more than AUTO_PREDICT_AFTER_DAYS (5) days old, the view asks future-look.ts for a
+ *   gap look for today (`auto: true`: no gap row of any status for this cycle and week, at most 2 automatic gap rows per farm
+ *   in any 24 hours, the per-cycle cap of 10), with its own index phase, latest NDVI and conditions as the guidance inputs.
+ *   It runs under the guard after the conditions block, is a database write plus a queued job (no provider call here), and
+ *   never runs in synthetic or replay mode or with the option `predictions: 'off'` (read-only callers such as the farm briefing; `predictions` is then null); `predictions` reports whether one was queued, how many are pending and why not.
  */
 import type {Config} from '../../config';
 import type {Pool} from '../../db/pool';
@@ -71,10 +87,11 @@ import type {ProviderConfig} from '../../providers/config';
 import type {Sentinel2Fetch} from '../../providers/sentinel2';
 import type {WeatherSource} from '../../plans/sources';
 import {isoWeek} from '../../plans/adapters/market-outlook';
-import type {CarbonFootprint, CareTask, EnergyFootprint, FarmAlert, FarmWorkspace, HarvestEconomics, HealthReading, NdviReading, NdviSeries, OutlookNote, PricePoint, ResidueIncome, SceneRef, StageTimeline, TodayOverview, TodayView, UpcomingStep, WeatherPoint} from '@harvest/contracts';
+import type {CarbonFootprint, CareTask, EnergyFootprint, FarmAlert, FarmField, FarmWorkspace, FieldSummary, HarvestEconomics, HealthReading, NdviReading, NdviSeries, OutlookNote, PricePoint, ResidueIncome, SceneRef, StageTimeline, TodayOverview, TodayView, UpcomingStep, WeatherPoint} from '@harvest/contracts';
 import {ApiError, notFound} from '../errors';
 import {getFarm} from '../farms';
-import {boundaryMetrics, getWorkspace} from '../workspace';
+import {boundaryMetrics, fieldOf, getWorkspace} from '../workspace';
+import {displayBbox, prepareRing} from '../../providers/sentinel2';
 import {careSchedule} from '../command-center';
 import {focusedResearch, type FocusedResearch} from '../focused-crops';
 import {readMonitorSettings} from '../monitor-schedule';
@@ -83,8 +100,8 @@ import {stateNameFor} from '../../plans/adapters/market-outlook';
 import type {FocusedCareCrop} from '../focused-crops';
 import {OUTLOOK_TREND_MONTHS, ensureOutlookNote, outlookFacts} from './outlook-note';
 import {listAlerts} from './alerts';
-import {listReadyFutureLooks} from './future-look';
-import {fieldImageBbox, fieldScenePaths, ndviSeries} from './ndvi';
+import {listReadyFutureLooks, pendingGapLooks, requestFutureLook, weekStart, type PredictionContext} from './future-look';
+import {boundaryPolygonHash, fieldImageBbox, fieldScenePaths, latestStoredReading, ndviSeries, wideScenePaths} from './ndvi';
 import {fieldConditions} from './conditions';
 import {STAGE_READER_ASSUMPTIONS, readIndexStage} from './index-stage';
 import {stageAt, stageTimeline, timelineSpan} from './stage-timeline';
@@ -111,6 +128,8 @@ const MAX_UPCOMING = 30;
 const NDVI_MAX_WINDOW_DAYS = 400;
 const STALE_HEALTH_DAYS = 30;
 const OUTLOOK_CONCURRENCY = 4;
+/** Spec 11.2: a predicted look for today is requested automatically when the latest usable scene is older than this. */
+export const AUTO_PREDICT_AFTER_DAYS = 5;
 
 // ------------------------------------------------------------------ deps
 
@@ -128,10 +147,13 @@ export interface TodayProviders {
   weatherSource: WeatherSource | undefined;
   readyFutureLooks: typeof listReadyFutureLooks;
   focusedResearch: () => Promise<FocusedResearch>;
+  /** 2026-11-03: the automatic predicted-look request and the pending count (live mode only). */
+  requestFutureLook: typeof requestFutureLook;
+  pendingGapLooks: typeof pendingGapLooks;
 }
 
 export interface TodayViewDeps {
-  config: Pick<Config, 'RUNTIME_MODE'> & Partial<Pick<Config, 'WEATHER_CLIMATOLOGY_YEARS' | 'WEATHER_CLIMATOLOGY_END_YEAR'>>;
+  config: Pick<Config, 'RUNTIME_MODE'> & Partial<Pick<Config, 'WEATHER_CLIMATOLOGY_YEARS' | 'WEATHER_CLIMATOLOGY_END_YEAR' | 'MODEL_API_KEY'>>;
   pool: Pool;
   now?: (() => Date) | undefined;
   /** Planetary Computer fetch for NDVI (live mode only). */
@@ -149,6 +171,13 @@ export interface TodayViewOptions {
   asOf?: string | Date | undefined;
   /** Days after today in the weather track when there is no crop timeline (default 14, 1 to 60). */
   sliderWindowDays?: number | undefined;
+  /** 2026-11-03: the field of the farm this view describes (404 field_not_found when the farm has no such field). */
+  fieldId?: string | undefined;
+  /**
+   * 2026-11-03: 'off' skips the automatic predicted-look request and the pending count entirely (`predictions` stays null, no
+   * row is written, no job is queued). The farm briefing reads through a read-only pool and passes 'off'. Default 'auto'.
+   */
+  predictions?: 'auto' | 'off' | undefined;
 }
 
 // ------------------------------------------------------------------ date helpers (calendar dates, UTC arithmetic)
@@ -228,10 +257,16 @@ function makeGuard() {
 
 // ------------------------------------------------------------------ small readers
 
-export function currentCycle(workspace: FarmWorkspace): Cycle | null {
+/**
+ * The current cycle: the not-harvested cycle with the latest establishment (else sowing) date. With `fieldId` (2026-11-03)
+ * only cycles naming that field count; without it every cycle counts (farm-level consumers: monitoring, the outlook note,
+ * the market timeline and the briefing keep this behaviour).
+ */
+export function currentCycle(workspace: Pick<FarmWorkspace, 'cycles'>, fieldId?: string): Cycle | null {
   const anchorOf = (c: Cycle) => c.establishmentDate ?? c.sowingDate;
-  return [...workspace.cycles].filter((c) => c.stage !== 'harvested').sort((a, b) => anchorOf(b).localeCompare(anchorOf(a)))[0] ?? null;
+  return [...workspace.cycles].filter((c) => c.stage !== 'harvested' && (fieldId === undefined || c.fieldId === fieldId)).sort((a, b) => anchorOf(b).localeCompare(anchorOf(a)))[0] ?? null;
 }
+export {fieldOf};
 
 /** First readable name in crop_identities.names ({en: "x"}, {en: ["x"]} or {en: [{text}]}), English first. */
 function nameFrom(names: unknown): string | null {
@@ -258,22 +293,22 @@ export async function productIdentity(pool: Pool, cycle: Pick<Cycle, 'productId'
 /** Midpoint of the harvest window: the date the headline harvest price (and the outlook note) is computed for. */
 export const harvestMidpoint = (harvest: NonNullable<StageTimeline['harvest']>) => addDays(harvest.earliest, Math.floor(dayDiff(harvest.earliest, harvest.latest) / 2));
 
-const sceneImagePath = (farmId: string, itemId: string, kind: 'visual' | 'ndvi') => `/api/v1/farms/${farmId}/ndvi/${itemId}/image?kind=${kind}`;
-
 // ------------------------------------------------------------------ satellite: scenes and health
 
-function observedScenes(farmId: string, series: NdviSeries | null, timeline: StageTimeline | null): SceneRef[] {
+function observedScenes(farmId: string, series: NdviSeries | null, timeline: StageTimeline | null, fieldId: string | null): SceneRef[] {
   return (series?.readings ?? []).filter((r) => r.usable).map((r) => ({
     date: r.date, kind: 'observed', itemId: r.itemId, acquisitionDate: r.date, cloudPct: r.sceneCloudPct,
-    imagePath: sceneImagePath(farmId, r.itemId, 'visual'), ndviImagePath: sceneImagePath(farmId, r.itemId, 'ndvi'),
+    // A field view's paths carry the field id, so the image route renders that field's polygon (ndvi.ts sceneImage).
+    ...wideScenePaths(farmId, r.itemId, fieldId),
     // Spec 10.1 item 1: the field at native 10 m pixels (ndvi.ts fieldScenePaths, zoom=field).
-    ...fieldScenePaths(farmId, r.itemId),
+    ...fieldScenePaths(farmId, r.itemId, fieldId),
     derivedFromItemId: null, stageId: timeline ? stageAt(timeline, r.date).stage?.id ?? null : null,
   }));
 }
 
-/** One illustration per stage (newest asset wins), dated at the stage start of the current timeline. */
-function illustrationScenes(looks: ReadyFutureLook[], cycle: Cycle, timeline: StageTimeline | null, readings: Map<string, NdviReading>): {scenes: SceneRef[]; skipped: number} {
+/** One illustration per stage (newest asset wins), dated at the stage start of the current timeline. Stage looks only. */
+function illustrationScenes(all: ReadyFutureLook[], cycle: Cycle, timeline: StageTimeline | null, readings: Map<string, NdviReading>): {scenes: SceneRef[]; skipped: number} {
+  const looks = all.filter((l) => l.kind !== 'gap');
   if (!timeline) return {scenes: [], skipped: looks.length};
   const byStage = new Map<string, ReadyFutureLook>();
   let skipped = 0;
@@ -288,6 +323,34 @@ function illustrationScenes(looks: ReadyFutureLook[], cycle: Cycle, timeline: St
     return {
       date: stage.from, kind: 'illustration', itemId: null, acquisitionDate: src?.date ?? itemDate(l.sourceItemId), cloudPct: src?.sceneCloudPct ?? null,
       imagePath: l.imagePath, ndviImagePath: null, derivedFromItemId: l.sourceItemId, stageId: l.stageId,
+      ...(l.guidance ? {guidance: cap(l.guidance, 400)} : {}),
+    };
+  });
+  return {scenes, skipped};
+}
+
+/**
+ * Ready predicted looks (gap kind) of the cycle as 'predicted' scenes dated at their target date, newest asset per week;
+ * looks made for another crop on this cycle id are skipped. Owner-private image path, `?fieldId=` when the cycle names a field.
+ */
+export function predictedScenes(all: ReadyFutureLook[], cycle: Cycle, timeline: StageTimeline | null, readings: Map<string, NdviReading>): {scenes: SceneRef[]; skipped: number} {
+  const byWeek = new Map<string, ReadyFutureLook>();
+  let skipped = 0;
+  for (const l of all) {
+    if (l.kind !== 'gap') continue;
+    if (!l.targetDate || l.cropId !== cycle.cropId) { skipped++; continue; }
+    const wk = weekStart(l.targetDate);
+    const prev = byWeek.get(wk);
+    if (!prev || prev.createdAt < l.createdAt) byWeek.set(wk, l);
+  }
+  const fieldQuery = cycle.fieldId ? `?fieldId=${encodeURIComponent(cycle.fieldId)}` : '';
+  const scenes = [...byWeek.values()].map((l): SceneRef => {
+    const src = readings.get(l.sourceItemId);
+    return {
+      date: l.targetDate!, kind: 'predicted', itemId: null, acquisitionDate: src?.date ?? itemDate(l.sourceItemId), cloudPct: src?.sceneCloudPct ?? null,
+      imagePath: `${l.imagePath}${fieldQuery}`, ndviImagePath: null, derivedFromItemId: l.sourceItemId,
+      stageId: timeline ? stageAt(timeline, l.targetDate!).stage?.id ?? null : null,
+      targetDate: l.targetDate!, ...(l.guidance ? {guidance: cap(l.guidance, 400)} : {}),
     };
   });
   return {scenes, skipped};
@@ -641,6 +704,66 @@ export function pickNextAction(steps: readonly UpcomingStep[]): UpcomingStep | n
   return [...steps].filter((st) => st.status !== 'completed').sort((a, b) => preferredTier(a) - preferredTier(b) || byStatusThenDate(a, b))[0] ?? null;
 }
 
+// ------------------------------------------------------------------ fields (FIELDS_MULTICROP_SOIL_SPEC.md 3.3)
+
+type Ring = [number, number][];
+const ringOf = (b: {coordinates: number[][][]}) => b.coordinates[0] as Ring;
+
+/** Every field vertex inside the satellite frame of the described polygon (the 600 m or larger wide window, ndvi.ts displayBbox). */
+function fieldsInFrame(ring: Ring, fields: readonly FarmField[]): boolean {
+  const prepared = prepareRing(ring);
+  if (!prepared) return true;
+  const [w, s, e, n] = displayBbox(prepared);
+  return fields.every((f) => ringOf(f.boundary).every(([x, y]) => x >= w && x <= e && y >= s && y <= n));
+}
+
+interface SummaryInputs {
+  pool: Pool; mode: Config['RUNTIME_MODE']; ownerId: string; farmId: string; today: string;
+  workspace: FarmWorkspace; alerts: readonly FarmAlert[];
+  stateId: string | null; districtId: string | null; snapshot: TodayViewDeps['snapshot'];
+  /** The view's own cycle and timeline, reused for its field. */
+  viewCycle: Cycle | null; viewTimeline: StageTimeline | null; viewCropName: string | null;
+}
+
+/** One summary per field in stored order, from stored data only (no provider call in any mode). */
+async function fieldSummaries(i: SummaryInputs): Promise<FieldSummary[]> {
+  return Promise.all(i.workspace.fields.map(async (f): Promise<FieldSummary> => {
+    const c = currentCycle(i.workspace, f.id);
+    let cycle: FieldSummary['cycle'] = null;
+    if (c) {
+      const anchor = c.establishmentDate ?? c.sowingDate;
+      let timeline: StageTimeline | null = null;
+      if (i.viewCycle && c.id === i.viewCycle.id) timeline = i.viewTimeline;
+      else {
+        try {
+          timeline = stageTimeline({cropId: c.cropId, productId: c.productId ?? null, establishmentMethod: c.establishmentMethod ?? null, anchorDate: anchor, stateId: i.stateId, districtId: i.districtId, snapshot: i.snapshot});
+        } catch { timeline = null; }
+      }
+      const at = timeline ? stageAt(timeline, i.today) : null;
+      const harvest = timeline?.harvest ?? null;
+      cycle = {
+        id: c.id, cropId: c.cropId,
+        cropName: cap((i.viewCycle && c.id === i.viewCycle.id ? i.viewCropName : null) ?? c.cropName ?? cropDisplayName(c.cropId), 120),
+        companion: c.companion ? {cropId: c.companion.cropId, cropName: cap(c.companion.cropName ?? cropDisplayName(c.companion.cropId), 120)} : null,
+        establishmentDate: anchor,
+        stage: at?.stage ? {id: at.stage.id, name: cap(at.stage.name, 80), progress: at.progress} : null,
+        daysToHarvest: harvest ? {earliest: dayDiff(i.today, harvest.earliest), latest: dayDiff(i.today, harvest.latest)} : null,
+      };
+    }
+    // Greenness: the newest stored usable reading of this field's own polygon; live mode only, never fetched for the overview.
+    let greenness: FieldSummary['greenness'] = null;
+    const hash = i.mode === 'live' ? boundaryPolygonHash(f.boundary) : null;
+    if (hash) {
+      const latest = await latestStoredReading(i.pool, i.ownerId, i.farmId, hash);
+      if (latest && latest.reading.field.mean !== null) greenness = {ndvi: latest.reading.field.mean, observedOn: latest.reading.date, verdict: readingVerdict(latest.reading, latest.smallField).verdict};
+    }
+    return {
+      id: f.id, name: f.name, areaHa: boundaryMetrics(f.boundary).areaHectares, boundary: f.boundary, cycle, greenness,
+      alertCount: i.alerts.filter((a) => a.fieldId === undefined || a.fieldId === f.id).length,
+    };
+  }));
+}
+
 // ------------------------------------------------------------------ the view
 
 export async function todayView(deps: TodayViewDeps, ownerId: string, farmId: string, opts: TodayViewOptions = {}): Promise<TodayView> {
@@ -659,11 +782,36 @@ export async function todayView(deps: TodayViewDeps, ownerId: string, farmId: st
   const p: TodayProviders = {
     ndviSeries: o.ndviSeries ?? ndviSeries, priceSeries: o.priceSeries ?? priceSeries, harvestPriceOutlook: o.harvestPriceOutlook ?? harvestPriceOutlook, priceTrend: o.priceTrend ?? priceTrend,
     weatherSource: o.weatherSource, readyFutureLooks: o.readyFutureLooks ?? listReadyFutureLooks, focusedResearch: o.focusedResearch ?? focusedResearch,
+    requestFutureLook: o.requestFutureLook ?? requestFutureLook, pendingGapLooks: o.pendingGapLooks ?? pendingGapLooks,
   };
   const {guard, failures} = makeGuard();
 
-  // ---- cycle, product, timeline
-  const cycle = currentCycle(workspace);
+  // ---- field and cycle (FIELDS_MULTICROP_SOIL_SPEC.md 3.3; see the header)
+  const fields = workspace.fields;
+  let selected: FarmField | null = null;
+  let cycle: Cycle | null;
+  if (opts.fieldId !== undefined) {
+    selected = fieldOf(workspace, opts.fieldId);
+    cycle = currentCycle(workspace, selected.id);
+  } else if (fields.length) {
+    selected = fields.find((f) => currentCycle(workspace, f.id)) ?? null;
+    cycle = selected ? currentCycle(workspace, selected.id) : currentCycle({cycles: workspace.cycles.filter((c) => c.fieldId === undefined)});
+  } else {
+    cycle = currentCycle(workspace);
+  }
+  /** The polygon this view describes: the selected field's ring, else the farm boundary (null: the farm point stands in). */
+  const viewBoundary = selected ? selected.boundary : workspace.boundary;
+  const selectedAreaHa = selected ? boundaryMetrics(selected.boundary).areaHectares : null;
+  const fieldNotes: string[] = [];
+  if (fields.length) {
+    const n = `This farm has ${fields.length} field${fields.length > 1 ? 's' : ''}`;
+    if (selected) fieldNotes.push(`${n}; this view describes ${selected.name}.`);
+    else fieldNotes.push(cycle ? `${n}; no field has a current crop cycle, so this view describes the farm-wide cycle recorded without a field, on the whole farm boundary.` : `${n}; no field has a current crop cycle.`);
+    if (viewBoundary && !fieldsInFrame(ringOf(viewBoundary), fields)) fieldNotes.push('The satellite frame covers 600 m; fields outside it are not in the image.');
+    if (selected) fieldNotes.push('The field area is the spherical area of the drawn field polygon, not a survey; profit, residue, energy and carbon are for this field.');
+  }
+
+  // ---- product, timeline
   const anchor = cycle ? cycle.establishmentDate ?? cycle.sowingDate : null;
   const product = cycle ? await guard('The crop product name', () => productIdentity(deps.pool, cycle), null) : null;
   const timelineNotes: string[] = [];
@@ -687,14 +835,14 @@ export async function todayView(deps: TodayViewDeps, ownerId: string, farmId: st
 
   // ---- weather point and window
   let point: {lat: number; lon: number} | null = null;
-  if (workspace.boundary) { const m = boundaryMetrics(workspace.boundary); point = {lat: m.lat, lon: m.lon}; }
+  if (viewBoundary) { const m = boundaryMetrics(viewBoundary); point = {lat: m.lat, lon: m.lon}; }
   else if (farm.location.lat !== null && farm.location.lon !== null) point = {lat: farm.location.lat, lon: farm.location.lon};
   const weatherWindow = slider ? boundedWindow(slider.from, slider.to, today, MAX_TRACK_POINTS) : {from: addDays(today, -NO_TIMELINE_PAST_DAYS), to: addDays(today, windowDays), clipped: false};
 
   // ---- independent sections in parallel
   const ndviTask = cycle && anchor ? guard('Satellite readings', () => {
     const from = ndviWindowFrom(anchor, today);
-    return p.ndviSeries({config: deps.config, pool: deps.pool, fetchImpl: deps.sentinelFetch, now}, ownerId, farmId, {from, to: today, maxScenes: NDVI_MAX_SCENES});
+    return p.ndviSeries({config: deps.config, pool: deps.pool, fetchImpl: deps.sentinelFetch, now}, ownerId, farmId, {from, to: today, maxScenes: NDVI_MAX_SCENES, ...(selected ? {fieldId: selected.id} : {})});
   }, null) : Promise.resolve(null);
   const looksTask = cycle && mode === 'live' ? guard('Stage illustrations', () => p.readyFutureLooks({config: deps.config, pool: deps.pool, now}, ownerId, farmId, cycle.id), []) : Promise.resolve([]);
   const priceTask = cycle && anchor ? guard('Mandi prices', () => priceSection({
@@ -718,16 +866,21 @@ export async function todayView(deps: TodayViewDeps, ownerId: string, farmId: st
     return {schedule: careSchedule(cycle, crop, today, completed.rows, {stateId: farm.location.stateCode, districtId: farm.location.districtId}), crop, sources: research.sources};
   }, null) : Promise.resolve(null);
   const monitorTask = guard('Monitoring status', () => readMonitorSettings(deps.pool, ownerId, farmId, mode), null);
-  const [ndvi, looks, price, weather, alerts, care, monitor] = await Promise.all([ndviTask, looksTask, priceTask, weatherTask, alertsTask, careTask, monitorTask]);
+  const [ndvi, looks, price, weather, alertsRead, care, monitor] = await Promise.all([ndviTask, looksTask, priceTask, weatherTask, alertsTask, careTask, monitorTask]);
+  // A field view lists the alerts naming that field plus the farm-wide ones (no fieldId).
+  const alerts = alertsRead && selected ? {...alertsRead, alerts: alertsRead.alerts.filter((a) => a.fieldId === undefined || a.fieldId === selected.id)} : alertsRead;
 
   // ---- scenes and health
   const satelliteNotes: string[] = [];
   const readingsById = new Map((ndvi?.readings ?? []).map((r) => [r.itemId, r]));
   const illustrations = cycle ? illustrationScenes(looks, cycle, timeline, readingsById) : {scenes: [], skipped: 0};
-  const scenes = [...observedScenes(farmId, ndvi, timeline), ...illustrations.scenes]
+  const predicted = cycle ? predictedScenes(looks, cycle, timeline, readingsById) : {scenes: [], skipped: 0};
+  const scenes = [...observedScenes(farmId, ndvi, timeline, selected?.id ?? null), ...illustrations.scenes, ...predicted.scenes]
     .sort((a, b) => a.date.localeCompare(b.date) || a.kind.localeCompare(b.kind)).slice(-MAX_SCENES);
   if (illustrations.skipped) satelliteNotes.push(`${illustrations.skipped} stage illustration${illustrations.skipped > 1 ? 's are' : ' is'} not shown because the stage is no longer in this cycle's timeline.`);
   if (illustrations.scenes.length) satelliteNotes.push('Stage illustrations are generated edits of a real satellite image showing a typical look of that stage; they are not observations of this field or predictions.');
+  if (predicted.scenes.length) satelliteNotes.push('Predicted looks are AI image edits (Meta) of the latest real satellite image of this field, guided by code from the crop calendar, the field\'s greenness curve and the expected weather; they are not observations and the change they show is not measured.');
+  if (predicted.skipped) satelliteNotes.push(`${predicted.skipped} predicted look${predicted.skipped > 1 ? 's are' : ' is'} not shown because ${predicted.skipped > 1 ? 'they were' : 'it was'} made for another crop on this cycle.`);
   if (ndvi && ndvi.status === 'unavailable' && ndvi.reason) satelliteNotes.push(`Satellite readings are unavailable (${ndvi.reason}).`);
   const health = healthFrom(ndvi);
   if (health && dayDiff(health.date, today) > STALE_HEALTH_DAYS) satelliteNotes.push(`The latest clear satellite reading of the field is from ${health.date} (${dayDiff(health.date, today)} days ago).`);
@@ -791,14 +944,14 @@ export async function todayView(deps: TodayViewDeps, ownerId: string, farmId: st
     const headline = price?.headline ?? null;
     harvestEconomics = await guard('The harvest economics', async () => harvestEconomicsOf({
       cycle: {id: cycle.id, cropId: cycle.cropId, productId: cycle.productId ?? null, sowingDate: cycle.sowingDate},
-      farm: {stateId: farm.location.stateCode, districtId: farm.location.districtId, areaHa: farm.areaHectares},
+      farm: {stateId: farm.location.stateCode, districtId: farm.location.districtId, areaHa: selectedAreaHa ?? farm.areaHectares},
       harvest, harvestDate, headline, today,
       priceScopeLabel: price?.harvestPrice.scopeLabel ?? 'No harvest-week price reference',
       priceMissingText: headline?.missingReason ? REASON_TEXT[headline.missingReason] ?? null : null,
     }), null);
     const fp: FootprintInput = {
       cropId: cycle.cropId, cropName: product?.cropName ?? cycle.cropName ?? cropDisplayName(cycle.cropId), productId: cycle.productId ?? null,
-      stateId: farm.location.stateCode, districtId: farm.location.districtId, areaHa: farm.areaHectares,
+      stateId: farm.location.stateCode, districtId: farm.location.districtId, areaHa: selectedAreaHa ?? farm.areaHectares,
       yieldForFieldKg: harvestEconomics?.yieldForFieldKg ?? null, irrigationCategory: irrigationCategoryOf(farm.facts),
       seasonDays: harvest ? dayDiff(anchor, harvest.earliest) : null, establishmentMethod: cycle.establishmentMethod ?? null,
     };
@@ -816,8 +969,18 @@ export async function todayView(deps: TodayViewDeps, ownerId: string, farmId: st
     upcoming, nextAction, outlookNote, indexStage, harvestEconomics, residueIncome, energyFootprint, carbonFootprint,
     // When the monitor row cannot be read, the documented default (on) is reported and the failure is a limitation.
     monitoring: monitor ? {enabled: monitor.enabled, lastCheckedAt: monitor.lastCheckedAt, nextCheckAt: monitor.nextCheckAt} : {enabled: true, lastCheckedAt: null, nextCheckAt: null},
+    field: selected ? {id: selected.id, name: selected.name, areaHa: selectedAreaHa ?? 0} : null,
+    fields: [],
+    farmBoundary: workspace.boundary,
     limitations: [],
   };
+  if (fields.length) {
+    composed.fields = await guard('The field summaries', () => fieldSummaries({
+      pool: deps.pool, mode, ownerId, farmId, today, workspace, alerts: alertsRead?.alerts ?? [],
+      stateId: farm.location.stateCode, districtId: farm.location.districtId, snapshot: deps.snapshot,
+      viewCycle: cycle, viewTimeline: timeline, viewCropName: product?.cropName ?? null,
+    }), []);
+  }
 
   // ---- daily field conditions along the slider (spec section 10.1 item 4): pure, over the blocks above
   if (slider && cycle && anchor) {
@@ -827,8 +990,44 @@ export async function todayView(deps: TodayViewDeps, ownerId: string, farmId: st
       readings: (ndvi?.readings ?? []).filter((r) => r.usable && r.field.mean !== null).map((r) => ({date: r.date, ndvi: r.field.mean, verdict: readingVerdict(r, ndvi?.smallField ?? false).verdict})),
     }), null);
   } else composed.conditions = null;
+  // ---- AI-predicted look for today (spec 11.2): live only, after the conditions it is guided by; never fails the view
+  let predictions: TodayView['predictions'] = null;
+  const predictionNotes: string[] = [];
+  if (mode === 'live' && cycle && timeline && opts.predictions !== 'off') {
+    predictions = await guard('The AI predicted look', async () => {
+      const latestScene = ndvi?.latestUsable ?? null;
+      let autoRequested = false;
+      let reason: string | null = null;
+      if (!latestScene) reason = 'no_usable_scene';
+      else if (dayDiff(latestScene.date, today) <= AUTO_PREDICT_AFTER_DAYS) reason = 'latest_scene_recent';
+      else {
+        const context: PredictionContext = {
+          sourcePhase: indexStage?.status === 'available' ? indexStage.phase : null,
+          latestNdvi: latestScene.field.mean !== null ? {value: latestScene.field.mean, date: latestScene.date} : null,
+          conditionsAt: (d) => composed.conditions?.points.find((pt) => pt.date === d) ?? null,
+        };
+        try {
+          const out = await p.requestFutureLook(
+            {config: {RUNTIME_MODE: mode, MODEL_API_KEY: deps.config.MODEL_API_KEY}, pool: deps.pool, now, timeline: () => timeline},
+            ownerId, farmId, {itemId: latestScene.itemId, kind: 'gap', targetDate: today, cycleId: cycle.id, auto: true, context});
+          autoRequested = !out.deduplicated && (out.status === 'queued' || out.status === 'running');
+          reason = autoRequested ? null : out.deduplicated ? 'week_exists' : (out.reason ?? out.status);
+        } catch (e) {
+          // A data-state refusal (for example a newer stored scene than this series shows) is a reason, not a failure.
+          if (!(e instanceof ApiError) || mustPropagate(e) || e.statusCode >= 500) throw e;
+          const why = (e.details as {reason?: unknown} | undefined)?.reason;
+          reason = cap(typeof why === 'string' ? why : e.code, 80);
+        }
+        if (autoRequested) predictionNotes.push(`The latest clear satellite image is ${dayDiff(latestScene.date, today)} days old, so a predicted look for this week is being made with AI from the real image of ${latestScene.date}. It is not an observation.`);
+      }
+      const pending = await p.pendingGapLooks({config: deps.config, pool: deps.pool, now}, ownerId, farmId, cycle.id);
+      return {autoRequested, pending, reason: reason === null ? null : cap(reason, 80)};
+    }, null);
+  }
+  composed.predictions = predictions;
+
   // The window of the field-zoom renders (ndvi.ts fieldImageBbox) when a boundary is drawn.
-  composed.fieldImageBbox = workspace.boundary ? fieldImageBbox(workspace.boundary.coordinates[0]! as [number, number][]) : null;
+  composed.fieldImageBbox = viewBoundary ? fieldImageBbox(viewBoundary.coordinates[0]! as [number, number][]) : null;
 
   // ---- Today overview (spec section 9): facts from every block above, after all of them; stored, queued or code-written
   let overview: TodayOverview | null = null;
@@ -846,8 +1045,8 @@ export async function todayView(deps: TodayViewDeps, ownerId: string, farmId: st
   const weatherNotes = [...weather.limitations];
   if (weatherWindow.clipped) weatherNotes.push(`The crop cycle is longer than ${MAX_TRACK_POINTS} days; weather covers ${weatherWindow.from} to ${weatherWindow.to}.`);
   const limitations = [...new Set([
-    ...failures(), ...timelineNotes, ...satelliteNotes, ...(ndvi?.limitations ?? []), ...(price?.limitations ?? []), ...weatherNotes,
-    ...(alerts?.limitations ?? []), ...careNotes, ...noteNotes, ...footprintNotes, ...overviewNotes,
+    ...failures(), ...fieldNotes, ...timelineNotes, ...satelliteNotes, ...(ndvi?.limitations ?? []), ...(price?.limitations ?? []), ...weatherNotes,
+    ...(alerts?.limitations ?? []), ...careNotes, ...noteNotes, ...footprintNotes, ...predictionNotes, ...overviewNotes,
   ].map((s) => cap(s, 1000)))];
 
   return {...composed, overview, limitations};

@@ -1,17 +1,30 @@
-import { createEffect, createMemo, createSignal, For, Match, on, onCleanup, Show, Switch, untrack } from "solid-js";
-import type { CareTask, FarmAlert, TodayView as TodayData, UpcomingStep } from "@harvest/contracts";
-import { useWorkspace, today as browserToday } from "../state";
+import { createEffect, createMemo, createSignal, For, Match, on, onCleanup, Show, Switch, untrack, type JSX } from "solid-js";
+import type { CareTask, FarmAlert, FieldSummary, PricePoint, TodayView as TodayData, UpcomingStep, WeatherPoint } from "@harvest/contracts";
+import { useWorkspace, today as browserToday, type Field } from "../state";
 import { newEntryId } from "../../features/photo-region/http";
 import { Icon } from "../icons";
 import type { FieldBoundary } from "../fieldGeometry";
 import type { TodayViewProps } from "./types";
-import { completeCare, describeTodayError, dismissAlert, loadToday, type TodayErrorInfo } from "./todayApi";
+import {
+  completeCare,
+  describeTodayError,
+  dismissAlert,
+  loadToday,
+  pollPrediction,
+  PREDICTION_RELOAD_REASONS,
+  predictionErrorReason,
+  predictionMessage,
+  requestPrediction,
+  type TodayErrorInfo,
+} from "./todayApi";
 import {
   conditionAt,
   createSeasonPlayer,
   dateAtIndex,
   formatDay,
   growthProgress,
+  predictionBlockedReason,
+  predictionSourceScene,
   priceAt,
   sceneMarks,
   sliderModel,
@@ -20,7 +33,7 @@ import {
   weatherAt,
   withoutDismissed,
 } from "./model";
-import { TodayHero, type HeroMode } from "./TodayHero";
+import { heroFieldOf, TodayHero, type FarmHero, type HeroField, type HeroMode, type HeroPrediction } from "./TodayHero";
 import { StageSlider } from "./StageSlider";
 import { TodayCards, type CardKind } from "./TodayCards";
 import { TodayOverview } from "./TodayOverview";
@@ -28,13 +41,17 @@ import { AlertsList } from "./AlertsList";
 import { UpcomingSteps, stepDomId } from "./UpcomingSteps";
 import { TodayEmpty } from "./TodayEmpty";
 import { TodaySheet, type SheetKind } from "./TodaySheet";
+import TodaySoil, { createSoilCardController, SoilCardContext } from "./TodaySoil";
+import { chipItemOf, FieldChips, FieldsLegend, FieldsTable, type FieldChipItem } from "../fields/FieldsToday";
+import { boundsPolygon, cropLabel, currentCycleOf, defaultPlantField, type FieldCycleLike } from "../fields/fieldsModel";
 import "./today.css";
 
+/** `fieldId` is the field the request asked for (null: no field, the farm view or the "All fields" overview). */
 type LoadState =
   | { status: "idle" }
-  | { status: "loading"; farmId: string }
-  | { status: "ready"; farmId: string; view: TodayData }
-  | { status: "error"; farmId: string; error: TodayErrorInfo };
+  | { status: "loading"; farmId: string; fieldId: string | null }
+  | { status: "ready"; farmId: string; fieldId: string | null; view: TodayData }
+  | { status: "error"; farmId: string; fieldId: string | null; error: TodayErrorInfo };
 
 /** A command-center care task as an upcoming step (used only while the Today endpoint is unavailable). */
 export function careTaskStep(task: CareTask): UpcomingStep {
@@ -49,6 +66,72 @@ export function careTaskStep(task: CareTask): UpcomingStep {
     careTask: task,
     alertId: null,
   };
+}
+
+/**
+ * The right-hand column of a crop view: "Today for you", the soil card under it (FIELDS_MULTICROP_SOIL_SPEC.md 7), then the
+ * cards. Shared by the field view and the first-field section of the "All fields" overview.
+ */
+export function TodaySide(props: {
+  view: TodayData;
+  farmId: string;
+  epoch: number;
+  date: string;
+  price: PricePoint | null;
+  weather: WeatherPoint | null;
+  onDetails: (kind: CardKind) => void;
+  onUpload: () => void;
+  onRecords: () => void;
+}) {
+  return (
+    <div class="today-side">
+      <TodayOverview overview={props.view.overview} onDetails={props.onDetails} />
+      <TodaySoil farmId={props.farmId} epoch={props.epoch} onUpload={props.onUpload} onRecords={props.onRecords} />
+      <TodayCards view={props.view} date={props.date} price={props.price} weather={props.weather} onDetails={props.onDetails} />
+    </div>
+  );
+}
+
+/**
+ * Which Today layout a farm gets (FIELDS_MULTICROP_SOIL_SPEC.md 6.3): "none" on a farm without fields (exactly the view it
+ * had before fields existed), "all" for the "All fields" overview, "field" for one selected field. Fields come from the
+ * loaded view, else from the stored workspace (so the chips show while the view loads).
+ */
+export type FieldsMode = "none" | "all" | "field";
+export function fieldsMode(summaries: readonly unknown[], workspaceFields: readonly unknown[], selected: string | null | undefined): FieldsMode {
+  if (!summaries.length && !workspaceFields.length) return "none";
+  return selected ? "field" : "all";
+}
+
+/** The chips row, shown only on a farm with fields. */
+export function TodayFieldChips(props: { mode: FieldsMode; items: readonly FieldChipItem[]; selected: string | null | undefined; onSelect: (fieldId: string | null) => void }) {
+  return (
+    <Show when={props.mode !== "none"}>
+      <FieldChips items={props.items} selected={props.selected} onSelect={props.onSelect} />
+    </Show>
+  );
+}
+
+/** Crop names by crop id from the field summaries (main and companion), for the scene labels. */
+export function summaryCropNames(fields: readonly FieldSummary[]): Record<string, string> {
+  const names: Record<string, string> = {};
+  for (const field of fields) {
+    if (!field.cycle) continue;
+    names[field.cycle.cropId] = field.cycle.cropName;
+    if (field.cycle.companion) names[field.cycle.companion.cropId] = field.cycle.companion.cropName;
+  }
+  return names;
+}
+
+/**
+ * The "All fields" hero input: the farm boundary (else the box around the fields, when the farm has no outer boundary) and
+ * every field summary. Null without summaries.
+ */
+export function farmHeroOf(view: Pick<TodayData, "fields" | "farmBoundary" | "field">, fallbackBoundary?: FieldBoundary | null): FarmHero | null {
+  const fields = view.fields ?? [];
+  if (!fields.length) return null;
+  const boundary = (view.farmBoundary ?? fallbackBoundary ?? boundsPolygon(fields.map((f) => f.boundary))) as FieldBoundary | null;
+  return boundary ? { boundary, fields, selectedId: view.field?.id ?? null } : null;
 }
 
 /**
@@ -74,15 +157,28 @@ export function TodayView(props: TodayViewProps) {
   const [sheet, setSheet] = createSignal<SheetKind | null>(null);
   /** Play the season (spec section 10.1 item 6): one day per 120 ms to the end; any slider interaction pauses. */
   const [playing, setPlaying] = createSignal(false);
+  /** "Predict with AI" (spec 11.4): the request in flight or its last message, keyed to the farm and field it was made on. */
+  const [predicting, setPredicting] = createSignal<{ farmId: string; fieldId: string | null; busy: boolean; message: string | null } | null>(null);
+  /** One prediction request in flight per farm: a double tap, or a tap while polling, is ignored. */
+  const predictionsInFlight = new Set<string>();
+  /** Quiet refreshes while the server reports a look being made (see the pending effect below). */
+  const PENDING_REFRESH_MS = 20_000;
+  const PENDING_REFRESH_LIMIT = 9;
+  let pendingRefreshes = 0;
+  let pendingTimer: ReturnType<typeof setTimeout> | undefined;
   const careEntries = new Map<string, string>();
   let request = 0;
   /** Workspace version this view last saw for the selected farm; undefined until the first version is known. */
   let seenVersion: number | undefined;
 
   const farmId = () => s.farm()?.id;
+  /** The shell's field selection: an id, null (no field / All fields), or undefined while it cannot tell yet (the view waits). */
+  const fieldKey = () => props.field();
   const state = (): LoadState => {
     const current = load();
-    return current.status === "idle" || current.farmId === farmId() ? current : { status: "idle" };
+    if (current.status === "idle") return current;
+    const field = fieldKey();
+    return current.farmId === farmId() && field !== undefined && current.fieldId === field ? current : { status: "idle" };
   };
   const view = () => {
     const current = state();
@@ -90,20 +186,20 @@ export function TodayView(props: TodayViewProps) {
   };
   const stale = (target: string, epoch: number) => target !== farmId() || epoch !== s.sessionEpoch();
 
-  async function fetchView(target: string, epoch: number, quiet: boolean) {
+  async function fetchView(target: string, fieldId: string | null, epoch: number, quiet: boolean) {
     const id = ++request;
-    if (!quiet) setLoad({ status: "loading", farmId: target });
+    if (!quiet) setLoad({ status: "loading", farmId: target, fieldId });
     try {
-      const next = await loadToday(target);
-      if (id !== request || stale(target, epoch)) return;
-      setLoad({ status: "ready", farmId: target, view: next });
+      const next = await loadToday(target, undefined, fieldId);
+      if (id !== request || stale(target, epoch) || fieldKey() !== fieldId) return;
+      setLoad({ status: "ready", farmId: target, fieldId, view: next });
     } catch (error) {
-      if (id !== request || stale(target, epoch)) return;
+      if (id !== request || stale(target, epoch) || fieldKey() !== fieldId) return;
       // A failed background refresh keeps the view that is already on screen, unless that view is the empty prompt
       // while the farm now has a crop: showing "nothing growing" would be wrong, so the error with Retry takes over.
       const staleEmpty = view() && !view()!.cycle && props.cycles().length > 0;
       if (quiet && state().status === "ready" && !staleEmpty) return;
-      setLoad({ status: "error", farmId: target, error: describeTodayError(error) });
+      setLoad({ status: "error", farmId: target, fieldId, error: describeTodayError(error) });
     }
   }
   const errorInfo = () => {
@@ -111,29 +207,43 @@ export function TodayView(props: TodayViewProps) {
     return current.status === "error" ? current.error : null;
   };
   const retry = () => {
-    const target = farmId();
-    if (target) void fetchView(target, s.sessionEpoch(), false);
+    const target = farmId(),
+      field = fieldKey();
+    if (target && field !== undefined) void fetchView(target, field, s.sessionEpoch(), false);
   };
 
-  // Farm or session change: drop everything that belonged to the previous farm, then load the next one.
+  // Farm or session change: drop everything that belonged to the previous farm, then load the next one. A field change
+  // (FIELDS_MULTICROP_SOIL_SPEC.md 6.3) keeps the farm's local overrides (dismissed alerts, optimistic Done) and only
+  // resets the slider and the open sheet before loading that field.
+  let lastFarm: string | undefined;
+  let lastEpoch: number | undefined;
   createEffect(
-    on([farmId, s.sessionEpoch], ([target, epoch]) => {
+    on([farmId, s.sessionEpoch, fieldKey], ([target, epoch, field]) => {
+      const farmChanged = target !== lastFarm || epoch !== lastEpoch;
+      lastFarm = target;
+      lastEpoch = epoch;
       ++request;
       player.stop();
       setPick(null);
-      setCompleted(new Set<string>());
-      setDismissed(new Set<string>());
-      setBusyStep("");
-      setStepError("");
-      setAlertError("");
       setSheet(null);
-      careEntries.clear();
-      seenVersion = undefined;
+      setPredicting(null);
+      pendingRefreshes = 0;
+      if (farmChanged) {
+        setCompleted(new Set<string>());
+        setDismissed(new Set<string>());
+        setBusyStep("");
+        setStepError("");
+        setAlertError("");
+        careEntries.clear();
+        seenVersion = undefined;
+      }
       if (!target) {
         setLoad({ status: "idle" });
         return;
       }
-      void fetchView(target, epoch, false);
+      // The shell is still resolving a `?field=` link against the farm's fields: wait (the skeleton shows).
+      if (field === undefined) return;
+      void fetchView(target, field, epoch, false);
     }),
   );
   // A saved workspace (for example a crop planted from the shell's dialog) refreshes the view without a skeleton.
@@ -146,8 +256,9 @@ export function TodayView(props: TodayViewProps) {
     untrack(() => {
       const previous = seenVersion;
       if (version !== undefined) seenVersion = version;
-      if (!target || version === undefined || previous === undefined || version === previous) return;
-      void fetchView(target, s.sessionEpoch(), true);
+      const field = fieldKey();
+      if (!target || version === undefined || previous === undefined || version === previous || field === undefined) return;
+      void fetchView(target, field, s.sessionEpoch(), true);
     });
   });
   // A different cycle starts the slider at today again.
@@ -200,15 +311,134 @@ export function TodayView(props: TodayViewProps) {
   onCleanup(() => player.stop());
   const togglePlay = () => (player.playing ? player.stop() : player.start());
   const mode = (): HeroMode => (props.scene() === "satellite" ? "satellite" : "illustration");
-  const boundary = () => (props.workspace()?.boundary ?? null) as FieldBoundary | null;
+
+  // ---------------------------------------------------------------- fields (FIELDS_MULTICROP_SOIL_SPEC.md 5, 6.3)
+  const workspaceFields = (): Field[] => (props.workspace() as { fields?: Field[] } | undefined)?.fields ?? [];
+  const summaries = (): FieldSummary[] => view()?.fields ?? [];
+  /** The farm has fields: chips, the overview and field views apply. A farm without fields looks exactly as before. */
+  const layout = () => fieldsMode(summaries(), workspaceFields(), fieldKey());
+  const hasFields = () => layout() !== "none";
+  const selectedId = () => (layout() === "field" ? (fieldKey() ?? null) : null);
+  const overview = () => layout() === "all";
+  const chipItems = (): FieldChipItem[] =>
+    summaries().length
+      ? summaries().map(chipItemOf)
+      : workspaceFields().map((field) => {
+          const cycle = currentCycleOf<FieldCycleLike>(field.id, (props.workspace()?.cycles ?? []) as FieldCycleLike[]);
+          return { id: field.id, name: field.name, crop: cropLabel(cycle, s.cropName), cropId: cycle?.cropId ?? null };
+        });
+  const fieldNamed = (id: string | null | undefined) =>
+    id ? (summaries().find((f) => f.id === id)?.name ?? workspaceFields().find((f) => f.id === id)?.name ?? null) : null;
+  /** The field the loaded view describes (its name labels the hero, the overlay and the empty state). */
+  const viewField = () => view()?.field ?? null;
+  const fieldName = () => viewField()?.name ?? fieldNamed(selectedId());
+  const fieldBoundaryOf = (id: string) =>
+    (summaries().find((f) => f.id === id)?.boundary ?? workspaceFields().find((f) => f.id === id)?.boundary ?? null) as FieldBoundary | null;
+  const farmBoundary = () => (view()?.farmBoundary ?? props.workspace()?.boundary ?? null) as FieldBoundary | null;
+  /** The polygon the view describes: the selected field's own ring, else the farm boundary (unchanged for farms without fields). */
+  const boundary = () => {
+    const id = viewField()?.id;
+    return (id && !overview() ? fieldBoundaryOf(id) : null) ?? farmBoundary();
+  };
+  const farmHero = createMemo(() => {
+    const current = view();
+    return overview() && current ? farmHeroOf(current, farmBoundary()) : null;
+  });
+  const otherFields = (): HeroField[] => {
+    const id = viewField()?.id;
+    return summaries().filter((f) => f.id !== id).map(heroFieldOf);
+  };
+  const cropNames = () => summaryCropNames(summaries());
+  /** The field the plant dialog will choose by default when nothing is selected (named on the empty state). */
+  const plantFieldName = () => fieldName() ?? fieldNamed(defaultPlantField(workspaceFields(), (props.workspace()?.cycles ?? []) as FieldCycleLike[], null));
+  // One soil load per farm and epoch, owned by the view root: the card under the loading branches reads it, so a field
+  // switch or a reload does not repeat GET /soil-review.
+  const soilCard = createSoilCardController(farmId, () => s.sessionEpoch());
+  const soilProps = () => ({ onUpload: () => props.showTool("soil"), onRecords: () => props.openSoilRecords() });
   const cropName = () => {
     const current = view();
     if (!current?.cycle) return "";
     return current.product?.cropName ?? current.cycle.cropName ?? s.cropName(current.cycle.cropId);
   };
+  // On a farm with fields the chips name every field's crop, so the "Also growing" line is not needed.
   const otherCycles = () => {
     const current = view()?.cycle?.id;
-    return current ? props.cycles().filter((entry) => entry.cycle.id !== current) : [];
+    return current && !hasFields() ? props.cycles().filter((entry) => entry.cycle.id !== current) : [];
+  };
+
+  // ---------------------------------------------------------------- AI-predicted looks (FIELDS_MULTICROP_SOIL_SPEC.md 11.4)
+  const reloadQuiet = (target: string, epoch: number) => {
+    const field = fieldKey();
+    if (!stale(target, epoch) && field !== undefined) void fetchView(target, field, epoch, true);
+  };
+  /**
+   * POSTs a gap look for the slider date from the latest real scene, polls the asset every 3 s for up to 3 minutes, then
+   * reloads the view quietly so the new predicted scene arrives through `scenes`. A tap while a request for this farm is in
+   * flight does nothing. A changed latest scene reloads the view; every other refusal leaves a short message.
+   */
+  async function predict(targetDate: string) {
+    const target = farmId(),
+      epoch = s.sessionEpoch(),
+      current = view(),
+      field = fieldKey() ?? null;
+    const source = current ? predictionSourceScene(current.scenes) : null;
+    if (!target || !current?.cycle || !source?.itemId || predictionsInFlight.has(target)) return;
+    predictionsInFlight.add(target);
+    const mine = () => {
+      const now = predicting();
+      return !stale(target, epoch) && now?.farmId === target && now.fieldId === field;
+    };
+    setPredicting({ farmId: target, fieldId: field, busy: true, message: null });
+    let reason: string | null = null;
+    try {
+      const result = await requestPrediction(target, source.itemId, targetDate, current.cycle.id);
+      if (result.status !== "ready" && result.assetId) {
+        const outcome = await pollPrediction(target, result.assetId, { cancelled: () => !mine() });
+        if (outcome.status === "cancelled") return;
+        if (outcome.status !== "ready") reason = outcome.reason;
+      }
+    } catch (error) {
+      reason = predictionErrorReason(error);
+    } finally {
+      predictionsInFlight.delete(target);
+    }
+    if (!mine()) return;
+    setPredicting(reason ? { farmId: target, fieldId: field, busy: false, message: predictionMessage(reason) } : null);
+    if (!reason || PREDICTION_RELOAD_REASONS.has(reason)) reloadQuiet(target, epoch);
+  }
+  /**
+   * While the server reports a look being made (an automatic one for today, or one from another tab), the view refreshes
+   * quietly every 20 s, at most 9 times per pending stretch (3 minutes), so the look appears without a manual reload.
+   */
+  createEffect(() => {
+    const current = view(),
+      target = farmId(),
+      epoch = s.sessionEpoch();
+    clearTimeout(pendingTimer);
+    const pending = (current?.predictions?.pending ?? 0) > 0;
+    if (!pending || !target) {
+      pendingRefreshes = 0;
+      return;
+    }
+    if (pendingRefreshes >= PENDING_REFRESH_LIMIT || untrack(() => predictionsInFlight.has(target))) return;
+    pendingTimer = setTimeout(() => {
+      pendingRefreshes++;
+      reloadQuiet(target, epoch);
+    }, PENDING_REFRESH_MS);
+  });
+  onCleanup(() => clearTimeout(pendingTimer));
+  /** The hero's prediction state: live views only (a real scene with an item id), never on the farm overview. */
+  const heroPrediction = (): HeroPrediction | null => {
+    const current = view();
+    if (!current?.cycle || !predictionSourceScene(current.scenes)) return null;
+    const local = predicting();
+    const mine = local && local.farmId === farmId() && local.fieldId === (fieldKey() ?? null) ? local : null;
+    return {
+      pending: !!mine?.busy || (current.predictions?.pending ?? 0) > 0,
+      blocked: predictionBlockedReason(current.predictions?.reason, date(), current.today),
+      message: mine?.message ?? null,
+      onPredict: (target) => void predict(target),
+    };
   };
 
   // ---------------------------------------------------------------- steps and alerts
@@ -237,7 +467,8 @@ export function TodayView(props: TodayViewProps) {
       await completeCare(target, task, entry, view()?.today ?? browserToday());
       if (stale(target, epoch)) return;
       s.setNotice("Care activity recorded in your field journal.");
-      if (state().status === "ready") void fetchView(target, epoch, true);
+      const field = fieldKey();
+      if (state().status === "ready" && field !== undefined) void fetchView(target, field, epoch, true);
     } catch (error) {
       if (stale(target, epoch)) return;
       setCompleted((previous) => {
@@ -304,8 +535,23 @@ export function TodayView(props: TodayViewProps) {
     </div>
   );
 
+  const side = (current: TodayData) => (
+    <TodaySide
+      view={current}
+      farmId={current.farmId}
+      epoch={s.sessionEpoch()}
+      date={date()}
+      price={price()}
+      weather={weather()}
+      onDetails={openDetails}
+      {...soilProps()}
+    />
+  );
+
   return (
-    <div class="today-view" aria-busy={state().status === "loading"}>
+    <SoilCardContext.Provider value={soilCard}>
+    <div class="today-view" aria-busy={state().status === "loading"} data-fields={hasFields() ? (overview() ? "all" : "field") : undefined}>
+      <TodayFieldChips mode={layout()} items={chipItems()} selected={selectedId()} onSelect={(id) => props.selectField(id)} />
       <Switch>
         <Match when={state().status === "idle" || state().status === "loading"}>
           <div class="today-layout" role="status" aria-label="Loading today's field view">
@@ -323,7 +569,7 @@ export function TodayView(props: TodayViewProps) {
             <div class="today-primary">
               <Show
                 when={props.cycles().length || !props.data()}
-                fallback={<TodayEmpty onPlant={() => props.openPlant()} canPlant={canPlant()} />}
+                fallback={<TodayEmpty onPlant={() => props.openPlant()} canPlant={canPlant()} fieldName={plantFieldName()} />}
               >
                 <section class="today-hero" aria-label="Your field">
                   <div class="today-hero-frame today-hero-error">
@@ -361,11 +607,32 @@ export function TodayView(props: TodayViewProps) {
             </Show>
           </div>
         </Match>
+        <Match when={view() && overview()}>
+          <FarmOverview
+            view={view()!}
+            hero={farmHero()}
+            mode={mode()}
+            onMode={(next) => props.setScene(next === "satellite" ? "satellite" : "growth")}
+            date={date()}
+            stage={stage()}
+            progress={progress()}
+            cropName={cropName()}
+            condition={condition()}
+            cropNames={cropNames()}
+            onSelect={(id) => props.selectField(id)}
+            onCurveDetails={() => setSheet("curve")}
+            empty={<TodayEmpty onPlant={() => props.openPlant()} canPlant={canPlant()} fieldName={plantFieldName()} />}
+            side={side(view()!)}
+            lists={lists(view()!)}
+            onAbout={() => setSheet("about")}
+          />
+        </Match>
         <Match when={view() && !view()!.cycle}>
           <div class="today-layout is-empty">
             <div class="today-primary">
-              <TodayEmpty onPlant={() => props.openPlant()} canPlant={canPlant()} />
+              <TodayEmpty onPlant={() => props.openPlant()} canPlant={canPlant()} fieldName={hasFields() ? fieldName() : null} />
             </div>
+            <TodaySoil farmId={view()!.farmId} epoch={s.sessionEpoch()} {...soilProps()} />
             <TodayCards view={view()!} date={view()!.today} price={null} weather={weatherAt(view()!.weatherTrack, view()!.today)} weatherOnly onDetails={openDetails} />
             {lists(view()!)}
           </div>
@@ -390,6 +657,12 @@ export function TodayView(props: TodayViewProps) {
                 condition={condition()}
                 hasConditions={!!view()!.conditions}
                 fieldImageBbox={view()!.fieldImageBbox ?? null}
+                fieldName={hasFields() ? fieldName() : null}
+                companionCropId={view()!.cycle!.companion?.cropId ?? null}
+                rowRatio={view()!.cycle!.companion?.rowRatio ?? null}
+                cropNames={cropNames()}
+                otherFields={hasFields() ? otherFields() : null}
+                prediction={heroPrediction()}
               />
               <Show
                 when={slider()}
@@ -419,10 +692,7 @@ export function TodayView(props: TodayViewProps) {
                 </p>
               </Show>
             </div>
-            <div class="today-side">
-              <TodayOverview overview={view()!.overview} onDetails={openDetails} />
-              <TodayCards view={view()!} date={date()} price={price()} weather={weather()} onDetails={openDetails} />
-            </div>
+            {side(view()!)}
             {lists(view()!)}
             <button type="button" class="text-button today-about" onClick={() => setSheet("about")}>
               <Icon name="info" size={14} /> About this view
@@ -432,6 +702,92 @@ export function TodayView(props: TodayViewProps) {
       </Switch>
       <Show when={sheet() && view()}>
         <TodaySheet kind={sheet()!} view={view()!} date={date()} price={price()} weather={weather()} onClose={() => setSheet(null)} />
+      </Show>
+    </div>
+    </SoilCardContext.Provider>
+  );
+}
+
+/**
+ * "All fields" (FIELDS_MULTICROP_SOIL_SPEC.md 6.3): the farm hero (every field in its crop colour, illustration or the wide
+ * satellite image with outlines), the legend, the "Your fields" table where a row opens that field, then the cards, soil,
+ * alerts and steps of the field the server described (the first field with a current crop), under a heading naming it.
+ * Without a crop anywhere, the planting entry takes that place.
+ */
+export function FarmOverview(props: {
+  view: TodayData;
+  hero: FarmHero | null;
+  mode: HeroMode;
+  onMode: (mode: HeroMode) => void;
+  date: string;
+  stage: ReturnType<typeof stageAt>;
+  progress: number;
+  cropName: string;
+  condition: ReturnType<typeof conditionAt>;
+  cropNames: Record<string, string>;
+  onSelect: (fieldId: string) => void;
+  onCurveDetails?: () => void;
+  empty: JSX.Element;
+  side: JSX.Element;
+  lists: JSX.Element;
+  onAbout?: () => void;
+}) {
+  const fields = () => props.view.fields ?? [];
+  const described = () => props.view.field ?? null;
+  const heading = () =>
+    described() ? `${described()!.name}: ${props.cropName}` : props.view.cycle ? `Whole farm: ${props.cropName}` : "No crop on any field yet";
+  return (
+    <div class="today-layout is-farm" data-testid="today-farm-overview">
+      <div class="today-primary">
+        <Show when={props.hero} fallback={<p class="today-note">The farm outline is not available, so the farm picture is hidden. Your fields are listed below.</p>}>
+          {(hero) => (
+            <TodayHero
+              mode={props.mode}
+              onMode={props.onMode}
+              date={props.date}
+              today={props.view.today}
+              stage={props.stage}
+              progress={props.progress}
+              cropId={props.view.cycle?.cropId ?? ""}
+              cropName={props.cropName}
+              boundary={hero().boundary}
+              scenes={props.view.scenes}
+              imageBbox={props.view.ndvi?.imageBbox ?? null}
+              indexStage={null}
+              onCurveDetails={props.onCurveDetails}
+              condition={props.condition}
+              hasConditions={!!props.view.conditions}
+              fieldImageBbox={props.view.fieldImageBbox ?? null}
+              cropNames={props.cropNames}
+              farm={hero()}
+            />
+          )}
+        </Show>
+        <FieldsLegend fields={fields()} />
+      </div>
+      <div class="today-side">
+        <FieldsTable fields={fields()} selected={described()?.id ?? null} onSelect={props.onSelect} />
+      </div>
+      <section class="today-first-field" aria-labelledby="today-first-field-title" data-testid="today-first-field">
+        <h2 id="today-first-field-title">{heading()}</h2>
+        <p class="today-note">
+          {described()
+            ? "The first field with a crop. Choose a field above for its own season slider, satellite close-up and steps."
+            : props.view.cycle
+              ? "This crop was recorded for the whole farm, before fields were drawn."
+              : "Plant a crop on a field to start its stage dates, prices and care steps."}
+        </p>
+        <div class="today-first-field-body">
+          <Show when={props.view.cycle} fallback={props.empty}>
+            {props.side}
+          </Show>
+          {props.lists}
+        </div>
+      </section>
+      <Show when={props.onAbout}>
+        <button type="button" class="text-button today-about" onClick={() => props.onAbout?.()}>
+          <Icon name="info" size={14} /> About this view
+        </button>
       </Show>
     </div>
   );

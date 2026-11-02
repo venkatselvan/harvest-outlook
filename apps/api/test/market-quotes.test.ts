@@ -65,7 +65,7 @@ describe('latest dated mandi observations',()=>{
  });
  it('removes complete known seed records but preserves every edited or extra field',()=>{
   const cycle={id:'demo-cycle',cropId:'ginger',cropName:'Ginger (illustrative crop)',sowingDate:'2026-06-01',stage:'growing' as const,notes:'Illustrative planning record, not an observation of research-station operations.'};
-  const state={boundary:null,previousHarvest:{status:'known' as const,cropId:'maize',cropName:'Maize (illustrative previous crop)',harvestDate:'2026-04-20'},cycles:[cycle],rotationPlans:[]};expect(withoutLegacyDemoRecords(state).cycles).toEqual([]);expect(withoutLegacyDemoRecords(state).previousHarvest.status).toBe('unknown');
+  const state={boundary:null,previousHarvest:{status:'known' as const,cropId:'maize',cropName:'Maize (illustrative previous crop)',harvestDate:'2026-04-20'},cycles:[cycle],rotationPlans:[],fields:[]};expect(withoutLegacyDemoRecords(state).cycles).toEqual([]);expect(withoutLegacyDemoRecords(state).previousHarvest.status).toBe('unknown');
   for(const patch of [{notes:cycle.notes+' My observation.'},{harvestDate:'2026-10-01'},{rootPlanId:'00000000-0000-4000-8000-000000000222'}])expect(withoutLegacyDemoRecords({...state,cycles:[{...cycle,...patch}]}).cycles).toHaveLength(1);
   const registry=new ToolRegistry({});expect(registry.isAllowed('request_visual_keyframes','live')).toBe(false);
  });

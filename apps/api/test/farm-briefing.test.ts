@@ -15,6 +15,8 @@ import { loadCatalogueIntoDb, splitNameParts } from "../src/catalogue/load";
 import { loadConfig } from "../src/config";
 import { Budget } from "../src/services/budget";
 import { persistAlerts } from "../src/services/today/alerts";
+import { ndviSeries } from "../src/services/today/ndvi";
+import { fakePlanetary } from "./fixtures/sentinel2/fake-provider";
 import { ensureYearPlan, generateYearPlan } from "../src/services/year-plan/service";
 import { farmBody, login, setupHarness, type Client, type Harness } from "./helpers";
 
@@ -290,6 +292,28 @@ describe("get_farm_briefing: composition on seeded farms (test DB, synthetic mod
     const again = await farmBriefing({ config: { ...h.config, RUNTIME_MODE: "live", MODEL_API_KEY: "test-key" }, budget }, farmId, await ctxFor(ownerId, "live"));
     expect(again.price?.outlook).toBe("Stored outlook sentence for the briefing.");
     expect(again.limitations.join(" ")).toMatch(/harvest outlook sentence is the latest stored one/);
+  }, 60_000);
+
+  it("live mode with a stale stored scene: no automatic predicted-look request, no fake limitation, nothing written", async () => {
+    // SYNTHETIC farm and scenes; the injected fake Planetary Computer only primes the stored readings through the writable pool.
+    const f = (await a.call("POST", "/api/v1/farms", { payload: farmBody({ name: `Stale ${randomUUID()}`, facts: {} }) })).json().data as { id: string };
+    const ownerId = await ownerOf(f.id);
+    const ring = [[76.2495, 13.2495], [76.2505, 13.2495], [76.2505, 13.2505], [76.2495, 13.2505], [76.2495, 13.2495]];
+    const put = await a.call("PUT", `/api/v1/farms/${f.id}/workspace`, { payload: { expectedVersion: 0, boundary: { type: "Polygon", coordinates: [ring] }, previousHarvest: { status: "unknown" }, cycles: [{ id: "cycle-1", cropId: "maize", cropName: "Maize", sowingDate: "2026-09-20", stage: "growing" }], rotationPlans: [] } });
+    expect(put.statusCode, put.body).toBe(200);
+    const id = "S2A_MSIL2A_20261027T052231_R062_T43PFQ_20261027T101714";
+    const fake = fakePlanetary([{ id, datetime: "2026-10-27T05:22:31.024Z", field: { ndvi: 0.63 }, neighbourhood: { ndvi: 0.63 } }]);
+    const asOf = "2026-11-04T04:00:00.000Z"; // the newest scene is 8 days old
+    const requestFutureLook = vi.fn(async () => { throw new Error("must not be called"); });
+    const pendingGapLooks = vi.fn(async () => 0);
+    const today = { providers: { requestFutureLook: requestFutureLook as never, pendingGapLooks: pendingGapLooks as never, ndviSeries: ((d: Parameters<typeof ndviSeries>[0], ...r: unknown[]) => (ndviSeries as (...x: unknown[]) => unknown)({ ...d, pool: h.pool, fetchImpl: fake.fetchImpl }, ...r)) as never } };
+    const before = await h.pool.query("SELECT (SELECT count(*) FROM future_look_assets) a, (SELECT count(*) FROM jobs) j");
+    const out = await farmBriefing(briefingDeps({ config: { ...h.config, RUNTIME_MODE: "live", MODEL_API_KEY: "test-key" }, today }), f.id, await ctxFor(ownerId, "live", { asOf }));
+    expect(out.today).toBe("2026-11-04");
+    expect(requestFutureLook).not.toHaveBeenCalled();
+    expect(pendingGapLooks).not.toHaveBeenCalled();
+    expect(out.limitations.join(" ")).not.toMatch(/predicted look|internal_error|being made with AI/i);
+    expect(await h.pool.query("SELECT (SELECT count(*) FROM future_look_assets) a, (SELECT count(*) FROM jobs) j")).toMatchObject({ rows: before.rows });
   }, 60_000);
 
   it("readOnlyPool refuses writes and transactions, runs reads", async () => {

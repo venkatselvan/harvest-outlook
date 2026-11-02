@@ -1,9 +1,14 @@
 import {
   CompleteCareTaskResult,
   FarmAlert as farmAlertSchema,
+  FutureLookAsset as futureLookAssetSchema,
+  FutureLookRequestResult as futureLookRequestSchema,
   TodayView as todayViewSchema,
   type CareTask,
   type FarmAlert,
+  type FutureLookAsset,
+  type FutureLookRequestBody,
+  type FutureLookRequestResult,
   type TodayView,
 } from "@harvest/contracts";
 import { apiRequest, jsonInit } from "../../features/photo-region/http";
@@ -23,11 +28,18 @@ export class TodayDataError extends Error {
   }
 }
 
-export async function loadToday(farmId: string, fetchImpl?: typeof fetch): Promise<TodayView> {
-  const env = await apiRequest<unknown>(`${farmPath(farmId)}/today`, undefined, fetchImpl);
+/** `.../today`, or `.../today?fieldId=<id>` for one field of a farm with fields (FIELDS_MULTICROP_SOIL_SPEC.md 3.3). */
+export const todayPath = (farmId: string, fieldId?: string | null) =>
+  `${farmPath(farmId)}/today${fieldId ? `?fieldId=${encodeURIComponent(fieldId)}` : ""}`;
+
+export async function loadToday(farmId: string, fetchImpl?: typeof fetch, fieldId?: string | null): Promise<TodayView> {
+  const env = await apiRequest<unknown>(todayPath(farmId, fieldId), undefined, fetchImpl);
   const parsed = todayViewSchema.safeParse(env.data);
   if (!parsed.success) throw new TodayDataError("The Today view response did not match the expected format.");
   if (parsed.data.farmId !== farmId) throw new TodayDataError("The Today view response belongs to another farm.");
+  // A field view must describe the field that was asked for (an older server without fields omits `field`).
+  if (fieldId && parsed.data.field && parsed.data.field.id !== fieldId)
+    throw new TodayDataError("The Today view response describes another field.");
   return parsed.data;
 }
 
@@ -73,6 +85,168 @@ export function sceneImageUrl(path: string | null | undefined): string | null {
   return path;
 }
 
+// ------------------------------------------------------------------ AI-predicted looks (FIELDS_MULTICROP_SOIL_SPEC.md 11.4)
+
+/**
+ * A "Predict with AI" request that did not produce a look. `reason` is the API's `details.reason` (target_too_far,
+ * scene_not_latest, ...), the result's unavailable/failed reason (cycle_limit_reached, budget_exceeded, provider_*), or a
+ * client reason (network, rate_limited, timeout, invalid).
+ */
+export class PredictionError extends Error {
+  constructor(
+    readonly reason: string,
+    message: string,
+  ) {
+    super(message);
+    this.name = "PredictionError";
+  }
+}
+
+/**
+ * POST path for a predicted look from one real scene. The cycle id is sent so a field view's request uses that field's
+ * cycle and polygon; without it the API picks the farm's most recent cycle, which on a farm with fields can be another
+ * field's (the route's query takes `stageId` and `cycleId` only, so a field id is never sent here).
+ */
+export const predictionPath = (farmId: string, itemId: string, cycleId?: string | null) =>
+  `${farmPath(farmId)}/ndvi/${encodeURIComponent(itemId)}/future${cycleId ? `?cycleId=${encodeURIComponent(cycleId)}` : ""}`;
+/** The strict request body of a gap look: the slider date (the API stores the start of its week). */
+export const predictionBody = (targetDate: string): FutureLookRequestBody => ({ kind: "gap", targetDate });
+
+/** The error envelope's `details.reason` of the last non-2xx response seen through this fetch (ApiError drops details). */
+function reasonCapturingFetch(fetchImpl: typeof fetch = fetch) {
+  const seen = { reason: null as string | null };
+  const wrapped: typeof fetch = async (input, init) => {
+    const res = await fetchImpl(input, init);
+    if (!res.ok) {
+      seen.reason = null;
+      try {
+        const body = (await res.clone().json()) as { error?: { details?: { reason?: unknown } } } | null;
+        const reason = body?.error?.details?.reason;
+        if (typeof reason === "string" && reason.length <= 80) seen.reason = reason;
+      } catch {
+        // Not JSON: request() reports it as invalid_response.
+      }
+    }
+    return res;
+  };
+  return { fetch: wrapped, seen };
+}
+
+/** Reason code for a failed prediction call: the API's details.reason when it gave one, else from the HTTP status. */
+export function predictionErrorReason(error: unknown, detailsReason?: string | null): string {
+  if (error instanceof PredictionError) return error.reason;
+  if (detailsReason) return detailsReason;
+  if (error instanceof TodayDataError) return "invalid";
+  if (error instanceof ApiError) {
+    if (error.status === 0) return "network";
+    if (error.status === 429) return "rate_limited";
+    if (error.code === "budget_exceeded") return "budget_exceeded";
+    if (error.code === "mode_mismatch") return "live_mode_required";
+    if (error.code === "invalid_envelope" || error.code === "invalid_response" || error.code === "empty_response") return "invalid";
+    if (error.status === 404) return "not_found";
+  }
+  return "error";
+}
+
+/**
+ * POST .../ndvi/:itemId/future with `{kind: 'gap', targetDate}`. Returns the result when a look is queued, running or
+ * ready; throws PredictionError for an unavailable or failed result (cap, budget, provider) and for every API refusal.
+ */
+export async function requestPrediction(
+  farmId: string,
+  itemId: string,
+  targetDate: string,
+  cycleId?: string | null,
+  fetchImpl?: typeof fetch,
+): Promise<FutureLookRequestResult> {
+  const capture = reasonCapturingFetch(fetchImpl);
+  let data: unknown;
+  try {
+    data = (await apiRequest<unknown>(predictionPath(farmId, itemId, cycleId), jsonInit("POST", predictionBody(targetDate)), capture.fetch)).data;
+  } catch (error) {
+    const reason = predictionErrorReason(error, capture.seen.reason);
+    throw new PredictionError(reason, predictionMessage(reason));
+  }
+  const parsed = futureLookRequestSchema.safeParse(data);
+  if (!parsed.success) throw new PredictionError("invalid", predictionMessage("invalid"));
+  const result = parsed.data;
+  if (result.status === "unavailable" || result.status === "failed" || (result.status !== "ready" && !result.assetId)) {
+    const reason = result.reason ?? result.status;
+    throw new PredictionError(reason, predictionMessage(reason));
+  }
+  return result;
+}
+
+/** GET .../future-look/:assetId, validated and checked to belong to the farm. */
+export async function loadPrediction(farmId: string, assetId: string, fetchImpl?: typeof fetch): Promise<FutureLookAsset> {
+  const env = await apiRequest<unknown>(`${farmPath(farmId)}/future-look/${encodeURIComponent(assetId)}`, undefined, fetchImpl);
+  const parsed = futureLookAssetSchema.safeParse(env.data);
+  if (!parsed.success || parsed.data.farmId !== farmId || parsed.data.assetId !== assetId)
+    throw new TodayDataError("The predicted look response did not match this request.");
+  return parsed.data;
+}
+
+/** Poll every 3 s for up to 3 minutes (spec 11.4). */
+export const PREDICTION_POLL_MS = 3_000;
+export const PREDICTION_POLL_LIMIT_MS = 180_000;
+export interface PollOptions {
+  intervalMs?: number;
+  timeoutMs?: number;
+  fetchImpl?: typeof fetch;
+  /** Waits between polls (tests pass an instant one). */
+  wait?: (ms: number) => Promise<void>;
+  /** True once the result no longer matters (farm switch, sign-out): polling stops without another request. */
+  cancelled?: () => boolean;
+}
+export type PollOutcome =
+  | { status: "ready"; asset: FutureLookAsset }
+  | { status: "failed" | "unavailable"; asset: FutureLookAsset; reason: string }
+  | { status: "timeout" | "cancelled"; asset: FutureLookAsset | null; reason: string };
+
+/**
+ * Polls the asset until it is ready, failed or unavailable, at most `timeoutMs / intervalMs` requests (60 by default). A
+ * transient failure (network, 5xx, 429) counts as one poll and polling goes on; any other API error ends it.
+ */
+export async function pollPrediction(farmId: string, assetId: string, options: PollOptions = {}): Promise<PollOutcome> {
+  const interval = options.intervalMs ?? PREDICTION_POLL_MS;
+  const attempts = Math.max(1, Math.floor((options.timeoutMs ?? PREDICTION_POLL_LIMIT_MS) / interval));
+  const wait = options.wait ?? ((ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms)));
+  let last: FutureLookAsset | null = null;
+  for (let i = 0; i < attempts; i++) {
+    await wait(interval);
+    if (options.cancelled?.()) return { status: "cancelled", asset: last, reason: "cancelled" };
+    try {
+      last = await loadPrediction(farmId, assetId, options.fetchImpl);
+    } catch (error) {
+      const transient = error instanceof ApiError && (error.status === 0 || error.status === 429 || error.status >= 500);
+      if (!transient) throw new PredictionError(predictionErrorReason(error), predictionMessage(predictionErrorReason(error)));
+      continue;
+    }
+    if (options.cancelled?.()) return { status: "cancelled", asset: last, reason: "cancelled" };
+    if (last.status === "ready") return { status: "ready", asset: last };
+    if (last.status === "failed" || last.status === "unavailable") return { status: last.status, asset: last, reason: last.failureReason ?? last.status };
+  }
+  return { status: "timeout", asset: last, reason: "timeout" };
+}
+
+/** Reasons after which the view is reloaded: the latest real scene changed since the view was loaded. */
+export const PREDICTION_RELOAD_REASONS: ReadonlySet<string> = new Set(["scene_not_latest", "target_not_after_scene", "no_current_cycle"]);
+
+/** Short message for a prediction that did not come through. */
+export function predictionMessage(reason: string): string {
+  if (reason === "cycle_limit_reached") return "This crop has used all its AI predicted looks for the season.";
+  if (reason === "target_too_far") return `That date is too far ahead to predict. Pick a date within 120 days of today.`;
+  if (PREDICTION_RELOAD_REASONS.has(reason)) return "The satellite images changed since this view loaded. Reloading the view.";
+  if (reason === "budget_exceeded") return "Today's AI budget is used up. Try again tomorrow.";
+  if (reason === "provider_unavailable" || reason.startsWith("provider_")) return "The AI image service is unavailable right now. Try again later.";
+  if (reason === "live_mode_required") return "Predicted looks need live satellite data.";
+  if (reason === "no_usable_scene") return "There is no clear satellite image of this field to predict from yet.";
+  if (reason === "rate_limited") return "Too many requests. Wait a minute and try again.";
+  if (reason === "network") return "Could not reach the server. Check your connection and try again.";
+  if (reason === "timeout") return "The predicted look is taking longer than usual. It will show here once it is ready.";
+  return "The predicted look could not be made this time.";
+}
+
 export type TodayErrorKind = "not_available" | "network" | "invalid" | "server";
 export interface TodayErrorInfo {
   kind: TodayErrorKind;
@@ -83,6 +257,8 @@ export function describeTodayError(error: unknown): TodayErrorInfo {
   if (error instanceof TodayDataError)
     return { kind: "invalid", message: "Today's field view could not be read. Your saved records are unchanged." };
   if (error instanceof ApiError) {
+    if (error.status === 404 && error.code === "field_not_found")
+      return { kind: "not_available", message: "That field is no longer on this farm. Choose another field above." };
     if (error.status === 404)
       return { kind: "not_available", message: "Today's field view is not available on this server yet." };
     if (error.status === 0)

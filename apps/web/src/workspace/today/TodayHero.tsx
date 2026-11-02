@@ -1,18 +1,23 @@
-import { createEffect, createMemo, createSignal, For, Match, onCleanup, Show, Switch, untrack } from "solid-js";
-import type { FieldConditionPoint, IndexStageReading, NdviSeries, SceneRef } from "@harvest/contracts";
+import { createEffect, createMemo, createSignal, For, Match, onCleanup, onMount, Show, Switch, untrack } from "solid-js";
+import type { FieldConditionPoint, FieldSummary, IndexStageReading, NdviSeries, SceneRef } from "@harvest/contracts";
 import { createReducedMotion, FieldGrowthScene } from "../FieldGrowthScene";
-import { conditionLayers, rainStreaks, type ConditionEvent, type ConditionLayers, type FieldBoundary } from "../fieldGeometry";
+import { conditionLayers, normalizeWithin, rainStreaks, type ConditionEvent, type ConditionLayers, type FieldBoundary, type SceneField, type WaterLook } from "../fieldGeometry";
 import { Icon } from "../icons";
-import { AiSpark } from "../ui/AiSpark";
+import { AiSpark, AiSparkIcon } from "../ui/AiSpark";
 import {
   conditionCaption,
   conditionKindChip,
+  cropColor,
   CROSS_FADE_MS,
   crossFadeMs,
   curveAsOfNote,
   curveLine,
   formatDay,
   futureImageLabel,
+  PREDICTED_DISCLAIMER,
+  predictedCaption,
+  predictedDate,
+  predictionSourceDate,
   rangeLabel,
   satelliteImage,
   sceneAgeCaption,
@@ -52,7 +57,151 @@ export interface TodayHeroProps {
   hasConditions?: boolean | undefined;
   /** Bbox of the field-zoom renders (`TodayView.fieldImageBbox`), for the outline over the crisp 10 m image. */
   fieldImageBbox?: [number, number, number, number] | null | undefined;
+  /** 2026-11-03 (FIELDS_MULTICROP_SOIL_SPEC.md 6.3): the field this view describes, named in the label and the stage overlay. */
+  fieldName?: string | null | undefined;
+  /** The companion crop of an intercrop: the illustration alternates rows by `rowRatio` (spec 4.1). */
+  companionCropId?: string | null | undefined;
+  rowRatio?: string | null | undefined;
+  /** Display names by crop id for the scene's labels. */
+  cropNames?: Readonly<Record<string, string>> | null | undefined;
+  /** The farm's other fields, outlined faintly over the wide satellite view so the farmer sees where this field sits (spec 5). */
+  otherFields?: readonly HeroField[] | null | undefined;
+  /**
+   * "All fields" mode (spec 5 and 6.3): the farm boundary and every field. The illustration draws the whole farm, one crop
+   * per field at its own stage today; the satellite view is the wide image with every field outlined in its crop colour and
+   * labelled. The stage overlay names the farm instead of a stage.
+   */
+  farm?: FarmHero | null | undefined;
+  /**
+   * 2026-11-03 (FIELDS_MULTICROP_SOIL_SPEC.md 11.4): "Predict with AI" on the dimmed latest image of a future date. Absent
+   * (null) outside live mode and on the farm overview, which uses the real wide image only.
+   */
+  prediction?: HeroPrediction | null | undefined;
 }
+
+/** State of the AI-predicted look for the satellite hero, from the view's `predictions` and the request in flight. */
+export interface HeroPrediction {
+  /** A look is being made (the view's `predictions.pending > 0`, or this screen's own request is in flight). */
+  pending: boolean;
+  /** Why the button is disabled (cycle cap, budget, provider, too far ahead), or null. */
+  blocked: string | null;
+  /** Short message from the last request that did not produce a look, or null. */
+  message: string | null;
+  /** Requests a predicted look for the slider date (TodayView keeps one request in flight per farm). */
+  onPredict: (date: string) => void;
+}
+
+/** A field outline for the hero: id, name, drawn polygon and crop (for the colour). */
+export interface HeroField {
+  id: string;
+  name: string;
+  boundary: FieldBoundary;
+  cropId: string | null;
+}
+export interface FarmHero {
+  boundary: FieldBoundary;
+  fields: readonly FieldSummary[];
+  /** The field whose cards are shown below (drawn with a brighter edge), or null. */
+  selectedId: string | null;
+}
+
+/** One polygon over the satellite image: points in 0..1 image units, crop colour, and an optional label at its centre. */
+export interface OutlineShape {
+  id: string;
+  points: string;
+  color: string;
+  selected: boolean;
+  faint: boolean;
+  label: string | null;
+  /** Label position, 0..100 percent of the image. */
+  cx: number;
+  cy: number;
+  /** Width of the field's bounding box in the image, 0..100 percent of the image width. */
+  width: number;
+  /** 1-based position in the stored field order: the number on the badge, the legend and the Your fields table. */
+  index: number;
+}
+
+/** Nominal image width in px when the real frame has not been measured (server render, first paint). */
+export const NOMINAL_FRAME_PX = 640;
+/**
+ * Label rule. A field gets its full chip when its bounding box in the image is at least as wide as the chip: the chip is
+ * estimated at 7 px per character plus 16 px padding (capped at 42% of the frame, the CSS max-width, where the text is cut
+ * with an ellipsis), the box width being its 0..100 image share times the frame width in px. A narrower field gets a small
+ * numbered badge instead (the same number sits before its name in the legend and the Your fields table), so chips never
+ * overlap on narrow strips.
+ */
+export function chipFits(label: string, widthPct: number, framePx = NOMINAL_FRAME_PX): boolean {
+  const chipPx = Math.min(label.length * 7 + 16, framePx * 0.42);
+  return (widthPct / 100) * framePx >= chipPx;
+}
+
+/** Bounding-box width in 0..100 image units of a polygon given as `outlinePoints(..., 100)`. */
+function pointsWidth(points: string): number {
+  const xs = points.split(" ").map((pair) => Number(pair.split(",")[0]));
+  return xs.length ? Math.max(...xs) - Math.min(...xs) : 0;
+}
+
+/** Mean of the ring's vertices inside the image bbox, in 0..100 percent (clamped so a label stays on the image). */
+export function ringCentre(boundary: FieldBoundary, bbox: NdviSeries["imageBbox"] | null | undefined): { cx: number; cy: number } | null {
+  const ring = boundary.coordinates[0]?.slice(0, -1) ?? [];
+  if (!ring.length || !bbox) return null;
+  const [minLon, minLat, maxLon, maxLat] = bbox;
+  if (!(maxLon > minLon && maxLat > minLat)) return null;
+  const lon = ring.reduce((sum, p) => sum + (p[0] ?? 0), 0) / ring.length;
+  const lat = ring.reduce((sum, p) => sum + (p[1] ?? 0), 0) / ring.length;
+  const clamp = (v: number) => Math.max(6, Math.min(94, v));
+  return { cx: clamp(((lon - minLon) / (maxLon - minLon)) * 100), cy: clamp(((maxLat - lat) / (maxLat - minLat)) * 100) };
+}
+
+/**
+ * Field outlines over an image bbox. Farm mode: every field in its crop colour with a name label, the selected one thicker.
+ * Field mode: the other fields only, faint and unlabelled (the field itself keeps the white outline).
+ */
+export function fieldOutlines(
+  fields: readonly HeroField[],
+  bbox: NdviSeries["imageBbox"] | null | undefined,
+  options: { selectedId?: string | null; faint?: boolean; labels?: Readonly<Record<string, string>> },
+): OutlineShape[] {
+  return fields.flatMap((field, index) => {
+    const points = outlinePoints(field.boundary, bbox);
+    const centre = ringCentre(field.boundary, bbox);
+    if (!points || !centre) return [];
+    return [
+      {
+        id: field.id,
+        points,
+        color: cropColor(field.cropId),
+        selected: !options.faint && options.selectedId === field.id,
+        faint: !!options.faint,
+        label: options.faint ? null : (options.labels?.[field.id] ?? field.name),
+        width: pointsWidth(outlinePoints(field.boundary, bbox, 100) ?? ""),
+        index: index + 1,
+        ...centre,
+      },
+    ];
+  });
+}
+
+/**
+ * Farm-mode scene fields: each field's ring in the farm's normalised frame, its crop and its share of the season today.
+ * `water` is the described field's own water look from the day's condition point; it is set on that field alone.
+ */
+export function sceneFields(farm: FarmHero, water: WaterLook = "none"): SceneField[] {
+  return farm.fields.map((field) => ({
+    id: field.id,
+    name: field.name,
+    ring: normalizeWithin(farm.boundary, field.boundary as FieldBoundary),
+    cropId: field.cycle?.cropId ?? null,
+    // Share of the season elapsed today; a crop without stage dates is drawn just established rather than guessed.
+    progress: field.cycle?.stage?.progress ?? 0,
+    companionCropId: field.cycle?.companion?.cropId ?? null,
+    selected: field.id === farm.selectedId,
+    // The day's condition belongs to the described field only: standing water is drawn in it, and only when it has a crop.
+    ...(water !== "none" && field.id === farm.selectedId && field.cycle ? { water } : {}),
+  }));
+}
+export const heroFieldOf = (field: FieldSummary): HeroField => ({ id: field.id, name: field.name, boundary: field.boundary as FieldBoundary, cropId: field.cycle?.cropId ?? null });
 
 /** Stage name and date range for the bottom overlay ("Tillering · 12 Nov to 3 Dec"), plus its basis caption. */
 export function stageOverlay(stage: StageAt): { name: string; range: string | null; caption: string | null } {
@@ -109,24 +258,49 @@ function SatelliteScene(props: {
   layers: ConditionLayers;
   /** Field polygon in 0..100 image units for the water tint, or null (no outline, or an illustration). */
   water: string | null;
+  /** Field outlines in crop colours (farm mode: all fields; field mode: the other fields, faint, wide view only). */
+  outlines?: readonly OutlineShape[] | undefined;
+  /** Farm mode: the described field is one of many, so the single white outline is not drawn. */
+  farmMode?: boolean | undefined;
+  /** Names the field in the image description. */
+  fieldName?: string | null | undefined;
+  prediction?: HeroPrediction | null | undefined;
 }) {
   const [failed, setFailed] = createSignal<string | null>(null);
+  const [framePx, setFramePx] = createSignal(NOMINAL_FRAME_PX);
+  let box: HTMLDivElement | undefined;
+  onMount(() => {
+    if (!box || typeof ResizeObserver === "undefined") return;
+    const observer = new ResizeObserver((entries) => {
+      const width = entries[0]?.contentRect.width;
+      if (width && width > 0) setFramePx(width);
+    });
+    observer.observe(box);
+    onCleanup(() => observer.disconnect());
+  });
   const reduced = createReducedMotion();
   const scene = () => (props.pick.mode === "none" ? null : props.pick.scene);
   const src = () => sceneImageUrl(props.image.path);
   const field = () => props.image.zoom === "field";
   const bbox = () => (field() ? props.fieldImageBbox : props.imageBbox);
-  const outline = () => (props.pick.mode === "illustration" ? null : outlinePoints(props.boundary, bbox()));
+  // A predicted look is an edit inside the field outline of the real wide image, so the outline is drawn as on that image.
+  const outline = () => (props.pick.mode === "illustration" || props.farmMode ? null : outlinePoints(props.boundary, bbox()));
+  const shapes = () => (props.pick.mode === "illustration" ? [] : (props.outlines ?? []));
+  const subject = () => (props.farmMode ? "your farm with your field outlines" : props.fieldName ? props.fieldName : "your field");
   const dimmed = () => props.pick.mode === "latest";
   const alt = () => {
     const pick = props.pick;
     if (pick.mode === "illustration")
       return `Illustration of a typical ${stageName(props.stage)}, made from the satellite image of ${formatDay(pick.derivedFrom ? sceneDate(pick.derivedFrom) : null)}. Not an observation.`;
     if (pick.mode === "none") return "";
+    if (pick.mode === "predicted") {
+      const source = predictionSourceDate(pick);
+      return `Predicted look of ${subject()} for ${formatDay(predictedDate(pick.scene))}, made with AI from the real satellite image of ${source ? formatDay(source) : "an earlier date"}. Not an observation.`;
+    }
     const cloud = pick.scene.cloudPct != null ? `, ${Math.round(pick.scene.cloudPct)}% cloud in the scene` : "";
     const what = props.image.layer === "ndvi" ? "greenness colour map (NDVI)" : "image";
     const latest = pick.mode === "latest";
-    const lead = `${latest ? "Latest satellite" : "Satellite"} ${what} of your field`;
+    const lead = `${latest ? "Latest satellite" : "Satellite"} ${what} of ${subject()}`;
     return `${lead.charAt(0).toUpperCase()}${lead.slice(1)}, observed ${formatDay(sceneDate(pick.scene))}${cloud}${field() ? ". Close-up at 10 m pixels" : ""}${latest ? ". No image yet for this date" : ""}`;
   };
   // Cross-fade: the previous image stays on top for 150 ms and fades out (none under reduced motion).
@@ -165,7 +339,7 @@ function SatelliteScene(props: {
           </div>
         }
       >
-        <div class="today-sat-box" classList={{ "is-dimmed": dimmed(), "is-field": field() }} data-zoom={props.image.zoom} data-layer={props.image.layer}>
+        <div class="today-sat-box" ref={box} classList={{ "is-dimmed": dimmed(), "is-field": field() }} data-zoom={props.image.zoom} data-layer={props.image.layer}>
           <img
             src={src()!}
             alt={alt()}
@@ -184,6 +358,42 @@ function SatelliteScene(props: {
               />
             )}
           </Show>
+          <Show when={shapes().length}>
+            <svg class="today-sat-fields" viewBox="0 0 1 1" preserveAspectRatio="none" aria-hidden="true" data-testid="today-sat-fields">
+              <For each={shapes()}>
+                {(shape) => (
+                  <polygon
+                    points={shape.points}
+                    vector-effect="non-scaling-stroke"
+                    style={{ stroke: shape.color }}
+                    classList={{ "is-selected": shape.selected, "is-faint": shape.faint }}
+                    data-field-outline={shape.id}
+                  />
+                )}
+              </For>
+            </svg>
+            <For each={shapes().filter((shape) => shape.label)}>
+              {(shape) => (
+                <Show
+                  when={chipFits(shape.label!, shape.width, framePx())}
+                  fallback={
+                    <span
+                      class="today-sat-field-badge"
+                      style={{ left: `${shape.cx.toFixed(1)}%`, top: `${shape.cy.toFixed(1)}%`, "border-color": shape.color }}
+                      data-field-badge={shape.index}
+                      aria-hidden="true"
+                    >
+                      {shape.index}
+                    </span>
+                  }
+                >
+                  <span class="today-sat-field-label" style={{ left: `${shape.cx.toFixed(1)}%`, top: `${shape.cy.toFixed(1)}%`, "border-color": shape.color }} aria-hidden="true">
+                    {shape.label}
+                  </span>
+                </Show>
+              )}
+            </For>
+          </Show>
           <Show when={outline()}>
             <svg class="today-sat-outline" viewBox="0 0 1 1" preserveAspectRatio="none" aria-hidden="true">
               <polygon points={outline()!} vector-effect="non-scaling-stroke" />
@@ -191,13 +401,55 @@ function SatelliteScene(props: {
           </Show>
           <SatelliteConditions layers={props.layers} water={props.water} />
           <Show when={futureImageLabel(props.pick)}>
-            {(label) => (
-              <p class="today-sat-future" data-testid="today-sat-future">
-                {label()}
-              </p>
-            )}
+            {(label) => <FutureImageLabel label={label()} date={props.date} prediction={props.prediction ?? null} />}
           </Show>
         </div>
+      </Show>
+    </div>
+  );
+}
+
+/**
+ * The label on the dimmed latest image of a future date (spec 11.4): "Predicting with AI…" while a look is being made,
+ * else "No image yet for this date; latest image …" with "Predict with AI" in live mode (disabled with its reason when a cap
+ * stops it) and the last request's message. The status line is a polite live region.
+ */
+export function FutureImageLabel(props: { label: string; date: string; prediction: HeroPrediction | null }) {
+  const pending = () => !!props.prediction?.pending;
+  return (
+    <div class="today-sat-future" data-testid="today-sat-future" data-predicting={pending() ? "true" : undefined}>
+      <p class="today-sat-future-text" role="status" aria-live="polite">
+        <Show when={pending()} fallback={props.label}>
+          <AiSparkIcon size={14} class="today-predicting-icon" />
+          <span data-testid="today-predicting">Predicting with AI…</span>
+        </Show>
+      </p>
+      <Show when={props.prediction && !pending() ? props.prediction : null}>
+        {(prediction) => (
+          <>
+            <button
+              type="button"
+              class="btn compact secondary today-predict"
+              data-testid="today-predict"
+              disabled={!!prediction().blocked}
+              aria-describedby={prediction().blocked ? "today-predict-blocked" : undefined}
+              onClick={() => prediction().onPredict(props.date)}
+            >
+              <AiSparkIcon size={14} />
+              <span>Predict with AI</span>
+            </button>
+            <Show when={prediction().blocked}>
+              <span id="today-predict-blocked" class="today-predict-note">
+                {prediction().blocked}
+              </span>
+            </Show>
+          </>
+        )}
+      </Show>
+      <Show when={props.prediction?.message}>
+        <span class="today-predict-note is-error" role="alert" data-testid="today-predict-message">
+          {props.prediction!.message}
+        </span>
       </Show>
     </div>
   );
@@ -302,10 +554,15 @@ export function ConditionsLine(props: { point: FieldConditionPoint | null; date:
  * Notes for the satellite image, on one line right under the frame so they never cover the field: the 10 m pixel
  * caption for the close-up, the NDVI legend under Greenness, and the label for the weather overlay.
  */
-export function SatelliteNotes(props: { image: SatelliteImage; overlay: boolean }) {
+export function SatelliteNotes(props: { image: SatelliteImage; overlay: boolean; predicted?: boolean | undefined }) {
   return (
-    <Show when={props.image.zoom === "field" || props.image.layer === "ndvi" || props.overlay}>
+    <Show when={props.image.zoom === "field" || props.image.layer === "ndvi" || props.overlay || props.predicted}>
       <p class="today-sat-notes" data-testid="today-sat-notes">
+        <Show when={props.predicted}>
+          <span class="today-sat-predicted-note" data-testid="today-sat-predicted-note">
+            {PREDICTED_DISCLAIMER}
+          </span>
+        </Show>
         <Show when={props.image.zoom === "field"}>
           <span data-testid="today-sat-pixels">Sentinel-2, 10 m pixels: each square is 10 m</span>
         </Show>
@@ -341,6 +598,18 @@ function SatelliteCaption(props: { pick: ScenePick; stage: StageAt; date: string
                 </Show>
               </span>
             </>
+          );
+        })()}
+      </Match>
+      <Match when={props.pick.mode === "predicted"}>
+        {(() => {
+          const pick = () => props.pick as Extract<ScenePick, { mode: "predicted" }>;
+          return (
+            <span class="today-hero-caption" data-testid="today-predicted-caption">
+              <span class="today-chip predicted">Predicted with AI</span>
+              <AiSpark use="future_look" size={14} />
+              <span class="today-scene-date">{predictedCaption(pick())}</span>
+            </span>
           );
         })()}
       </Match>
@@ -399,8 +668,11 @@ export function CurveLine(props: { reading: IndexStageReading | null | undefined
 }
 
 export function TodayHero(props: TodayHeroProps) {
+  const farm = () => (props.farm && props.farm.fields.length ? props.farm : null);
   const overlay = createMemo(() => stageOverlay(props.stage));
-  const pick = createMemo(() => sceneFor(props.scenes, props.date, props.today, stageIdOf(props.stage)));
+  // The farm overview uses the real wide image only (spec 11.2): predicted looks belong to one field's cycle.
+  const scenes = () => (farm() ? props.scenes.filter((scene) => scene.kind !== "predicted") : props.scenes);
+  const pick = createMemo(() => sceneFor(scenes(), props.date, props.today, stageIdOf(props.stage)));
   const isToday = () => props.date === props.today;
   const satellite = () => props.mode === "satellite";
   const point = () => (props.hasConditions ? props.condition ?? null : null);
@@ -409,27 +681,62 @@ export function TodayHero(props: TodayHeroProps) {
   // Satellite image choices persist while the farmer moves the slider: field close-up by default, Wider view and Greenness on demand.
   const [wide, setWide] = createSignal(false);
   const [greenness, setGreenness] = createSignal(false);
-  const image = createMemo(() => satelliteImage(pick(), { wide: wide(), greenness: greenness() }));
+  // The farm overview always uses the wide image: the 10 m close-up covers one field only.
+  const image = createMemo(() => satelliteImage(pick(), { wide: wide() || !!farm(), greenness: greenness() }));
   const shownBbox = () => (image().zoom === "field" ? props.fieldImageBbox ?? null : props.imageBbox);
-  // Water is tinted only over the field polygon of an observed image; an illustration gets rain only.
-  const waterPoints = () => (pick().mode === "observed" || pick().mode === "latest" ? outlinePoints(props.boundary, shownBbox(), 100) : null);
+  // Water is tinted only over the field polygon of an observed image or a predicted look of it; an illustration gets rain only.
+  const waterPoints = () =>
+    pick().mode === "observed" || pick().mode === "latest" || pick().mode === "predicted" ? outlinePoints(props.boundary, shownBbox(), 100) : null;
   const overlayDrawn = () => pick().mode !== "none" && (layers().rain.count > 0 || (layers().water.look !== "none" && !!waterPoints()));
+  const outlines = createMemo(() => {
+    const current = farm();
+    if (current)
+      return fieldOutlines(current.fields.map(heroFieldOf), props.imageBbox, {
+        selectedId: current.selectedId,
+        labels: Object.fromEntries(current.fields.map((f) => [f.id, `${f.name} · ${f.cycle ? f.cycle.cropName : "no crop"}`])),
+      });
+    return image().zoom === "wide" && props.otherFields?.length ? fieldOutlines(props.otherFields, props.imageBbox, { faint: true }) : [];
+  });
+  const scene = createMemo(() => (farm() ? sceneFields(farm()!, layers().water.look) : null));
+  const heroLabel = () => (farm() ? "Your farm" : props.fieldName ? `Your field ${props.fieldName}` : "Your field");
+  const fieldCount = () => farm()?.fields.length ?? 0;
   return (
-    <section class="today-hero" aria-label="Your field">
+    <section class="today-hero" aria-label={heroLabel()} data-hero-mode={farm() ? "farm" : "field"}>
       <div class="today-hero-frame" classList={{ satellite: satellite() }}>
         <Show
           when={satellite()}
           fallback={
-            <FieldGrowthScene
-              cropId={props.cropId}
-              cropName={props.cropName}
-              boundary={props.boundary}
-              progress={props.progress}
-              date={props.date}
-              condition={point()}
-              conditionCaption={caption()}
-              compact
-            />
+            <Show
+              when={farm()}
+              fallback={
+                <FieldGrowthScene
+                  cropId={props.cropId}
+                  cropName={props.cropName}
+                  boundary={props.boundary}
+                  progress={props.progress}
+                  date={props.date}
+                  condition={point()}
+                  conditionCaption={caption()}
+                  companionCropId={props.companionCropId ?? null}
+                  rowRatio={props.rowRatio ?? null}
+                  cropNames={props.cropNames ?? null}
+                  compact
+                />
+              }
+            >
+              {(current) => (
+                <FieldGrowthScene
+                  farmBoundary={current().boundary}
+                  fields={scene()}
+                  cropNames={props.cropNames ?? null}
+                  progress={props.progress}
+                  date={props.date}
+                  condition={point()}
+                  conditionCaption={caption()}
+                  compact
+                />
+              )}
+            </Show>
           }
         >
           <SatelliteScene
@@ -442,6 +749,10 @@ export function TodayHero(props: TodayHeroProps) {
             fieldImageBbox={props.fieldImageBbox ?? null}
             layers={layers()}
             water={waterPoints()}
+            outlines={outlines()}
+            farmMode={!!farm()}
+            fieldName={props.fieldName}
+            prediction={farm() ? null : props.prediction}
           />
         </Show>
         <div class="today-hero-top">
@@ -460,16 +771,16 @@ export function TodayHero(props: TodayHeroProps) {
             {formatDay(props.date)}
           </span>
         </div>
-        <div class="today-hero-second" classList={{ "has-tools": satellite() && (image().fieldAvailable || image().ndviAvailable) }}>
+        <div class="today-hero-second" classList={{ "has-tools": satellite() && ((image().fieldAvailable && !farm()) || image().ndviAvailable) }}>
           <EventBadges events={layers().events} />
-          <Show when={satellite() && (image().fieldAvailable || image().ndviAvailable)}>
+          <Show when={satellite() && ((image().fieldAvailable && !farm()) || image().ndviAvailable)}>
             <div class="today-sat-tools" role="group" aria-label="Satellite image options">
               <Show when={image().ndviAvailable}>
                 <button type="button" aria-pressed={image().layer === "ndvi"} onClick={() => setGreenness((on) => !on)}>
                   Greenness
                 </button>
               </Show>
-              <Show when={image().fieldAvailable}>
+              <Show when={image().fieldAvailable && !farm()}>
                 <button type="button" aria-pressed={wide()} onClick={() => setWide((on) => !on)}>
                   Wider view
                 </button>
@@ -478,23 +789,43 @@ export function TodayHero(props: TodayHeroProps) {
           </Show>
         </div>
         <div class="today-hero-overlay" data-testid="today-stage">
-          <p class="today-stage-line">
-            <strong>{overlay().name}</strong>
-            <Show when={overlay().range}>
-              <span> · {overlay().range}</span>
-            </Show>
-            <Show when={isToday() && props.stage.kind === "stage"}>
-              <span class="today-chip growing">Growing</span>
-            </Show>
-          </p>
+          <Show
+            when={!farm()}
+            fallback={
+              <p class="today-stage-line">
+                <strong>Your farm</strong>
+                <span>
+                  {" "}
+                  · {fieldCount()} {fieldCount() === 1 ? "field" : "fields"}
+                </span>
+              </p>
+            }
+          >
+            <p class="today-stage-line">
+              <Show when={props.fieldName}>
+                <span class="today-hero-field" data-testid="today-hero-field">
+                  {props.fieldName}
+                </span>
+              </Show>
+              <strong>{overlay().name}</strong>
+              <Show when={overlay().range}>
+                <span> · {overlay().range}</span>
+              </Show>
+              <Show when={isToday() && props.stage.kind === "stage"}>
+                <span class="today-chip growing">Growing</span>
+              </Show>
+            </p>
+          </Show>
           <Show
             when={satellite()}
             fallback={
-              <Show when={overlay().caption}>
-                <span class="today-hero-caption">
-                  <span class="today-chip illustration">Illustration</span>
-                  <span class="today-scene-date">{overlay().caption}</span>
-                </span>
+              <Show when={farm() ? "Each field drawn at its own stage today" : overlay().caption}>
+                {(text) => (
+                  <span class="today-hero-caption">
+                    <span class="today-chip illustration">Illustration</span>
+                    <span class="today-scene-date">{text()}</span>
+                  </span>
+                )}
               </Show>
             }
           >
@@ -503,12 +834,14 @@ export function TodayHero(props: TodayHeroProps) {
         </div>
       </div>
       <Show when={satellite()}>
-        <SatelliteNotes image={image()} overlay={overlayDrawn()} />
+        <SatelliteNotes image={image()} overlay={overlayDrawn()} predicted={pick().mode === "predicted"} />
       </Show>
       <Show when={props.hasConditions}>
         <ConditionsLine point={point()} date={props.date} />
       </Show>
-      <CurveLine reading={props.indexStage} date={props.date} today={props.today} onDetails={props.onCurveDetails} />
+      <Show when={!farm()}>
+        <CurveLine reading={props.indexStage} date={props.date} today={props.today} onDetails={props.onCurveDetails} />
+      </Show>
     </section>
   );
 }

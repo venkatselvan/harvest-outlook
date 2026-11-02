@@ -9,13 +9,18 @@
  * `uncertain_needs_review` (counted as billed).
  *
  * The edited image is accepted only if deterministic QA (`evaluateFutureLook`) finds the outside of the field unchanged
- * within the documented threshold. A rejected image is billed but not stored. The image edit endpoint returns no
+ * within the documented threshold. A rejected image is billed but not stored. An accepted image is stored as the real scene
+ * with the model's pixels pasted strictly inside the cycle's field ring (compositeInsideField, 2026-11-03). The image edit endpoint returns no
  * response id, so `response_deleted` stays NULL (nothing to delete); provider-side retention of the input image is unknown.
+ *
+ * Prompt (2026-11-03): `buildFutureLookPrompt` with the row's `kind` and stored `guidance` (prompt version future-look-v2);
+ * rows without guidance use the v1 template. Stage and gap looks share every other step, including the QA.
  *
  * Registered in worker/handlers/index.ts as `today.future-look` (wrapped there by the generic model-activity wrapper).
  * The registry wrapper's model-activity purpose is overridden here by `future_look`.
  */
 import sharp from 'sharp';
+import {getWorkspace} from '../../services/workspace';
 import {z} from 'zod';
 import type {Config} from '../../config';
 import type {Pool} from '../../db/pool';
@@ -27,7 +32,7 @@ import {displayBbox, type Sentinel2Fetch} from '../../providers/sentinel2';
 import {sceneImage as defaultSceneImage, type NdviImageDeps, type SceneImage} from '../../services/today/ndvi';
 import type {FutureLookQa, FutureLookStatus} from '@harvest/contracts';
 import {
-  buildFutureLookPrompt, evaluateFutureLook, futureLookField, futureLookStorageKey, ringToImage,
+  buildFutureLookPrompt, compositeInsideField, evaluateFutureLook, futureLookField, futureLookStorageKey, ringToImage,
   type FutureLookRow,
 } from '../../services/today/future-look';
 import {claimDispatch, finishDispatch, unresolvedDispatches} from '../../visuals/dispatch';
@@ -54,7 +59,7 @@ export interface FutureLookHandlerDeps {
   sentinelFetch?: Sentinel2Fetch | undefined;
   sleep?: ((ms: number) => Promise<void>) | undefined;
   /** Test injection; defaults to services/today/ndvi.ts sceneImage. */
-  sceneImage?: ((deps: NdviImageDeps, ownerId: string, farmId: string, itemId: string, kind: 'visual') => Promise<SceneImage>) | undefined;
+  sceneImage?: ((deps: NdviImageDeps, ownerId: string, farmId: string, itemId: string, kind: 'visual', zoom?: 'wide', fieldId?: string) => Promise<SceneImage>) | undefined;
   timeoutMs?: number | undefined;
 }
 
@@ -127,9 +132,11 @@ export async function runFutureLook(deps: FutureLookHandlerDeps, job: JobLike, c
   let field: Awaited<ReturnType<typeof futureLookField>>;
   let scene: SceneImage;
   try {
-    field = await futureLookField(pool, ownerId, farmId);
+    // Fields (2026-11-03): the cycle's own field polygon (ring, scene render and mask), as the request path chose it.
+    const fieldId = (await getWorkspace(pool, ownerId, farmId)).cycles.find((c) => c.id === row.cycle_id)?.fieldId;
+    field = await futureLookField(pool, ownerId, farmId, fieldId);
     if ('reason' in field) { await close('unavailable', {reason: 'field_unavailable'}); return result('unavailable', 'field_unavailable'); }
-    scene = await (deps.sceneImage ?? defaultSceneImage)({config, pool, storage, fetchImpl: deps.sentinelFetch}, ownerId, farmId, row.source_item_id, 'visual');
+    scene = await (deps.sceneImage ?? defaultSceneImage)({config, pool, storage, fetchImpl: deps.sentinelFetch}, ownerId, farmId, row.source_item_id, 'visual', 'wide', fieldId);
   } catch (e) {
     if (!(e instanceof ApiError)) throw e;
     const reason = e.statusCode === 404 ? 'scene_unavailable' : `scene_${e.code}`.slice(0, 80);
@@ -149,7 +156,9 @@ export async function runFutureLook(deps: FutureLookHandlerDeps, job: JobLike, c
   const svg = Buffer.from(`<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}"><polygon points="${pts}" fill="none" stroke="${OUTLINE_COLOUR}" stroke-width="${stroke}" stroke-linejoin="round"/></svg>`);
   const sent = await base.composite([{input: svg, top: 0, left: 0}]).jpeg({quality: 92}).toBuffer();
   const imageDataUrl = `data:image/jpeg;base64,${sent.toString('base64')}`;
-  const prompt = buildFutureLookPrompt({stageId: row.stage_id, stageName: row.stage_name, cropName: row.crop_name});
+  // Prompt v2 (2026-11-03): the row's stored code guidance (and kind) go into the prompt; a row without guidance (made
+  // before v2) gets the v1 template, so queued v1 rows render exactly what was decided when they were requested.
+  const prompt = buildFutureLookPrompt({stageId: row.stage_id, stageName: row.stage_name, cropName: row.crop_name, kind: row.kind, guidance: row.guidance, promptVersion: row.prompt_version});
   await ctx.heartbeat(0.2).catch(() => undefined);
 
   const unitUsd = budget.estimate(PROVIDER, model, {images: 1}).usd ?? 0;
@@ -187,8 +196,10 @@ export async function runFutureLook(deps: FutureLookHandlerDeps, job: JobLike, c
       final = {status: 'failed', reason: `qa_${qa.reasons[0] ?? 'failed'}`.slice(0, 80)};
       await close('failed', {reason: final.reason, billed: true, qa, requestId, withModel: true});
     } else {
-      // Stored at the observed scene's size so the illustration and the real scene line up in the view.
-      const png = await sharp(res.png).flatten({background: '#000000'}).resize({width: W, height: H, fit: 'fill'}).png().toBuffer();
+      // Stored at the observed scene's size so the illustration and the real scene line up in the view. 2026-11-03: only the
+      // pixels strictly inside the cycle's field ring come from the model; the rest (and the outline band) is the clean real
+      // scene, so a redrawn or resized outline (seen live on a narrow field) cannot change what is stored.
+      const png = await compositeInsideField({scene: scene.bytes, output: res.png, field: norm, width: W, height: H, edgePx: Math.ceil(stroke / 2)});
       const key = futureLookStorageKey(farmId, assetId);
       await storage.put({ownerId, key}, png);
       if (await close('ready', {billed: true, qa, storageKey: key, requestId, withModel: true})) final = {status: 'ready', reason: null};

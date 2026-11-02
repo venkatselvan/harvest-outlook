@@ -522,6 +522,7 @@ export const workspaceBefore: FarmWorkspace = {
   updatedAt: "2026-10-30T00:00:00Z",
   boundary: null,
   previousHarvest: { status: "none" },
+  fields: [],
   cycles: [
     {
       id: "paddy-cycle-2026",

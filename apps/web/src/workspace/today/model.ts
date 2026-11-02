@@ -224,15 +224,69 @@ export function priceTrend(track: readonly PricePoint[], today: string): PriceTr
 export type ScenePick =
   | { mode: "observed"; scene: SceneRef }
   | { mode: "illustration"; scene: SceneRef; derivedFrom: SceneRef | null }
+  /** 2026-11-03 (FIELDS_MULTICROP_SOIL_SPEC.md 11.4): an AI-predicted look (Meta image edit guided by code); never an observation. */
+  | { mode: "predicted"; scene: SceneRef; derivedFrom: SceneRef | null }
   | { mode: "latest"; scene: SceneRef }
   | { mode: "none"; reason: "no_scenes" | "none_before_date" };
 
 const observedDate = (scene: SceneRef) => scene.acquisitionDate ?? scene.date;
+/** The date a predicted look is for (its `targetDate`, else `date`, which the API sets to the same day). */
+export const predictedDate = (scene: SceneRef) => scene.targetDate ?? scene.date;
 
 /**
- * Scene for the slider date. Past and today: the nearest observed scene on or before the date. Future: the
- * illustration for the stage at that date when one with an image exists, else the latest observed scene, labelled
- * as the latest image. Observed scenes without an image path are skipped.
+ * Spec 11.4: a predicted look stands for the slider date when its target date is the latest one on or before that date and
+ * no more than this many days earlier. Beyond it the stage illustration or the dimmed latest image shows instead.
+ */
+export const PREDICTED_MAX_GAP_DAYS = 10;
+
+function observedWithImage(scenes: readonly SceneRef[]): SceneRef[] {
+  return scenes
+    .filter((s) => s.kind === "observed" && s.imagePath)
+    .sort((a, b) => observedDate(a).localeCompare(observedDate(b)));
+}
+
+/** Acquisition date of the latest observed scene with an image, or null without one. */
+export function latestObservedDate(scenes: readonly SceneRef[]): string | null {
+  const latest = observedWithImage(scenes).at(-1);
+  return latest ? observedDate(latest) : null;
+}
+
+/**
+ * The real scene a "Predict with AI" request is made from: the latest observed scene with an image and a Sentinel-2 item
+ * id. Only live views carry item ids on their scenes, so null also means "not live" and the button is not offered.
+ */
+export function predictionSourceScene(scenes: readonly SceneRef[]): SceneRef | null {
+  const latest = observedWithImage(scenes).at(-1);
+  return latest?.itemId ? latest : null;
+}
+
+/**
+ * The predicted look for a date: among predicted scenes with an image whose target date is after the latest real image
+ * (an older prediction is superseded by the real scene that followed it), the one with the latest target on or before
+ * the date, when that target is at most PREDICTED_MAX_GAP_DAYS earlier.
+ */
+function predictedFor(scenes: readonly SceneRef[], date: string, latestObserved: string | null): SceneRef | null {
+  let found: SceneRef | null = null;
+  for (const scene of scenes) {
+    if (scene.kind !== "predicted" || !scene.imagePath) continue;
+    const target = predictedDate(scene);
+    if (!Number.isFinite(dayNumber(target)) || target > date) continue;
+    if (latestObserved && target <= latestObserved) continue;
+    if (!found || target > predictedDate(found)) found = scene;
+  }
+  if (!found) return null;
+  return daysBetween(predictedDate(found), date) <= PREDICTED_MAX_GAP_DAYS ? found : null;
+}
+
+/**
+ * Scene for the slider date.
+ * - Any date after the latest observed scene (today included): the AI-predicted look whose target date is the latest on
+ *   or before the date and within PREDICTED_MAX_GAP_DAYS of it (spec 11.4). A predicted look is only ever made for a date
+ *   after its real source image, so a date on or before the latest real image never shows one.
+ * - Otherwise, past and today: the nearest observed scene on or before the date.
+ * - Otherwise, future: the illustration for the stage at that date when one with an image exists, else the latest observed
+ *   scene, labelled as the latest image.
+ * Observed scenes without an image path are skipped.
  */
 export function sceneFor(
   scenes: readonly SceneRef[],
@@ -240,9 +294,17 @@ export function sceneFor(
   today: string,
   stageId: string | null,
 ): ScenePick {
-  const observed = scenes
-    .filter((s) => s.kind === "observed" && s.imagePath)
-    .sort((a, b) => observedDate(a).localeCompare(observedDate(b)));
+  const observed = observedWithImage(scenes);
+  const latestObserved = observed.length ? observedDate(observed.at(-1)!) : null;
+  if (latestObserved === null || date > latestObserved) {
+    const predicted = predictedFor(scenes, date, latestObserved);
+    if (predicted)
+      return {
+        mode: "predicted",
+        scene: predicted,
+        derivedFrom: observed.find((s) => s.itemId && s.itemId === predicted.derivedFromItemId) ?? null,
+      };
+  }
   if (date > today) {
     const illustration = stageId
       ? scenes.find((s) => s.kind === "illustration" && s.stageId === stageId && s.imagePath)
@@ -259,6 +321,35 @@ export function sceneFor(
   if (!observed.length) return { mode: "none", reason: "no_scenes" };
   const nearest = observed.filter((s) => observedDate(s) <= date).at(-1);
   return nearest ? { mode: "observed", scene: nearest } : { mode: "none", reason: "none_before_date" };
+}
+
+/** Real acquisition date of the image a predicted look was made from (the matched scene, else the date the API carried). */
+export function predictionSourceDate(pick: Extract<ScenePick, { mode: "predicted" }>): string | null {
+  return pick.derivedFrom ? observedDate(pick.derivedFrom) : pick.scene.acquisitionDate;
+}
+/** "Predicted look for 3 Nov 2026, made from the real image of 27 Oct 2026. Not an observation." */
+export function predictedCaption(pick: Extract<ScenePick, { mode: "predicted" }>): string {
+  const source = predictionSourceDate(pick);
+  return `Predicted look for ${formatDay(predictedDate(pick.scene))}, made from the real image of ${source ? formatDay(source) : "an earlier date"}. Not an observation.`;
+}
+/** One line for the satellite notes under a predicted look. */
+export const PREDICTED_DISCLAIMER =
+  "AI-predicted look: a Meta image edit of the real satellite image, guided by the crop calendar, the field's greenness curve and the weather. Not an observation; the change it shows is not measured.";
+
+/** Spec 11.2: a gap look may be requested at most this many days after today (the API answers 400 target_too_far beyond). */
+export const PREDICTION_MAX_DAYS_AHEAD = 120;
+/**
+ * Why "Predict with AI" is disabled, from the view's `predictions.reason` and the date, or null when it can be tapped.
+ * Only reasons that also stop a tap are named: the per-cycle cap, the AI budget and a missing provider. The automatic
+ * daily limit and "a look exists this week" do not stop a farmer's own request.
+ */
+export function predictionBlockedReason(reason: string | null | undefined, date: string, today: string): string | null {
+  if (reason === "cycle_limit_reached") return "This crop has used all its AI predicted looks for the season.";
+  if (reason === "budget_exceeded") return "Today's AI budget is used up. Try again tomorrow.";
+  if (reason === "provider_unavailable") return "The AI image service is not set up on this server.";
+  const ahead = daysBetween(today, date);
+  if (Number.isFinite(ahead) && ahead > PREDICTION_MAX_DAYS_AHEAD) return `Predicted looks are made up to ${PREDICTION_MAX_DAYS_AHEAD} days ahead.`;
+  return null;
 }
 export { observedDate as sceneDate };
 
@@ -355,20 +446,23 @@ export function conditionKindChip(point: FieldConditionPoint | null): { label: s
 
 export interface SceneMark {
   date: string;
-  kind: "observed" | "illustration";
+  kind: "observed" | "illustration" | "predicted";
   /** 0..1 along the slider. */
   fraction: number;
 }
 /**
- * Slider marks at every observed scene date with an image and every stage illustration date, inside the slider range,
- * one mark per date and kind, in date order.
+ * Slider marks at every observed scene date with an image, every stage illustration date and every AI-predicted look date
+ * (its target date; looks superseded by a later real image are left off), inside the slider range, one mark per date and
+ * kind, in date order.
  */
 export function sceneMarks(scenes: readonly SceneRef[], model: SliderModel): SceneMark[] {
   const marks = new Map<string, SceneMark>();
+  const latestObserved = latestObservedDate(scenes);
   for (const scene of scenes) {
-    if (!scene.imagePath || (scene.kind !== "observed" && scene.kind !== "illustration")) continue;
-    const date = scene.kind === "observed" ? observedDate(scene) : scene.date;
+    if (!scene.imagePath || (scene.kind !== "observed" && scene.kind !== "illustration" && scene.kind !== "predicted")) continue;
+    const date = scene.kind === "observed" ? observedDate(scene) : scene.kind === "predicted" ? predictedDate(scene) : scene.date;
     if (!Number.isFinite(dayNumber(date)) || date < model.from || date > model.to) continue;
+    if (scene.kind === "predicted" && latestObserved && date <= latestObserved) continue;
     const key = `${scene.kind}|${date}`;
     if (!marks.has(key)) marks.set(key, { date, kind: scene.kind, fraction: fractionOf(model, date) });
   }
@@ -378,7 +472,7 @@ export function sceneMarks(scenes: readonly SceneRef[], model: SliderModel): Sce
 /**
  * Which image the satellite hero shows. Observed and latest scenes use the field-zoom render (native 10 m pixels) when
  * it exists, unless the farmer chose the wider 600 m view; Greenness switches to the NDVI colour map of the same zoom when
- * that render exists. Illustrations always use their own image.
+ * that render exists. Illustrations and predicted looks always use their own image (an edit of the wide visual render).
  */
 export interface SatelliteImage {
   path: string | null;
@@ -392,7 +486,8 @@ export interface SatelliteImage {
 export function satelliteImage(pick: ScenePick, prefs: { wide: boolean; greenness: boolean }): SatelliteImage {
   if (pick.mode === "none") return { path: null, zoom: "wide", layer: "visual", fieldAvailable: false, ndviAvailable: false };
   const scene = pick.scene;
-  if (pick.mode === "illustration") return { path: scene.imagePath, zoom: "wide", layer: "visual", fieldAvailable: false, ndviAvailable: false };
+  if (pick.mode === "illustration" || pick.mode === "predicted")
+    return { path: scene.imagePath, zoom: "wide", layer: "visual", fieldAvailable: false, ndviAvailable: false };
   const fieldAvailable = !!scene.fieldImagePath;
   const zoom = fieldAvailable && !prefs.wide ? "field" : "wide";
   const ndviPath = zoom === "field" ? scene.fieldNdviImagePath ?? null : scene.ndviImagePath;
@@ -983,4 +1078,32 @@ export function unavailableReason(block: { reason: string | null; limitations: r
   if (first) return first;
   const reason = block.reason?.trim();
   return reason && /\s/.test(reason) ? reason : fallback;
+}
+
+// ------------------------------------------------------------------ fields inside a farm (FIELDS_MULTICROP_SOIL_SPEC.md 5, 6)
+
+/**
+ * Crop colours for field outlines, legend swatches and map polygons: eight mid-tone hues that read on satellite imagery
+ * and on both themes (outlines get a dark halo). Keyed by crop id through a 32-bit FNV-1a hash, so a crop keeps its colour
+ * across fields, farms and sessions; two crops may share a colour, which is why every swatch sits beside a name.
+ */
+export const CROP_PALETTE = ["#e2b33c", "#4fa3d9", "#e0704f", "#a07ce0", "#3fb39a", "#e07fb0", "#9cc93d", "#d39a5a"] as const;
+/** Colour for a field without a crop (bare soil). */
+export const NO_CROP_COLOR = "#a8a294";
+export function cropColor(cropId: string | null | undefined): string {
+  if (!cropId) return NO_CROP_COLOR;
+  let hash = 0x811c9dc5;
+  for (let i = 0; i < cropId.length; i++) {
+    hash ^= cropId.charCodeAt(i);
+    hash = Math.imul(hash, 0x01000193) >>> 0;
+  }
+  return CROP_PALETTE[hash % CROP_PALETTE.length]!;
+}
+
+/** "62 to 72 days", "In the harvest window", "Past the expected harvest"; null without dates. */
+export function harvestInText(days: { earliest: number; latest: number } | null | undefined): string | null {
+  if (!days) return null;
+  if (days.latest < 0) return "Past the expected harvest";
+  if (days.earliest <= 0) return "In the harvest window";
+  return days.earliest === days.latest ? `${days.earliest} days` : `${days.earliest} to ${days.latest} days`;
 }

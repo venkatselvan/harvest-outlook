@@ -88,9 +88,21 @@ export const activeFarmTab = (
     ? selectedTab(path, new URLSearchParams(search).get("tab") ?? undefined)
     : undefined;
 
-/** `/farm?tab=soil&view=activity`. The default sub-view stays out of the URL. */
-export const farmHref = (tab: FarmTab, section?: FarmSection) =>
-  `/farm?tab=${tab}${tab === "soil" && section && section !== "fit" ? `&view=${section}` : ""}`;
+/**
+ * `/farm?tab=soil&view=activity`. The default sub-view stays out of the URL. `field` (2026-11-03,
+ * FIELDS_MULTICROP_SOIL_SPEC.md 6.3) is the field selected on Today; it rides along on every tab link so the choice
+ * survives tab switches. Field ids are URL-safe by contract; they are encoded anyway.
+ */
+export const farmHref = (tab: FarmTab, section?: FarmSection, field?: string | null) =>
+  `/farm?tab=${tab}${tab === "soil" && section && section !== "fit" ? `&view=${section}` : ""}${field ? `&field=${encodeURIComponent(field)}` : ""}`;
+
+/**
+ * The field selected on Today, published by the command center for the tab bars (which live in the shell, outside it),
+ * the same way as the due badge. Null = no field (a farm without fields, or "All fields"). Cleared when the command
+ * center unmounts.
+ */
+const [tabField, setTabField] = createSignal<string | null>(null);
+export { tabField, setTabField };
 
 /**
  * Open care tasks that are due or overdue. The command center publishes it so the tab bars, which live in different
@@ -119,7 +131,7 @@ export function FarmTabNav(props: {
           const dueId = `farm-tab-${props.variant}-due`;
           return (
             <a
-              href={farmHref(item.id)}
+              href={farmHref(item.id, undefined, tabField())}
               aria-label={item.label}
               classList={{ active: props.current() === item.id }}
               aria-current={props.current() === item.id ? "page" : undefined}

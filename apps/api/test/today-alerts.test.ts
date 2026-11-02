@@ -19,7 +19,7 @@ import { ensureSource } from '../src/ingest/sources';
 
 /** All farms, quotes, forecasts and provider responses in this file are synthetic test data. */
 const ASOF = '2026-11-01T06:00:00Z'; // 11:30 IST, calendar date 2026-11-01
-const workspace = (over: Partial<FarmWorkspace> = {}): FarmWorkspace => ({ farmId: randomUUID(), version: 1, updatedAt: null, boundary: null, previousHarvest: { status: 'unknown' }, cycles: [], rotationPlans: [], ...over });
+const workspace = (over: Partial<FarmWorkspace> = {}): FarmWorkspace => ({ farmId: randomUUID(), version: 1, updatedAt: null, boundary: null, previousHarvest: { status: 'unknown' }, cycles: [], rotationPlans: [], fields: [], ...over });
 const day = (date: string, v: Partial<MonitoringSnapshot['weather']['days'][number]> & { windGustKmh?: number } = {}) => ({ date, rainMm: 0, tMinC: 18, tMaxC: 28, et0Mm: 3, ...v });
 const snapshot = (days: ReturnType<typeof day>[], over: Partial<MonitoringSnapshot['weather']> = {}): MonitoringSnapshot => ({
   mode: 'live', farmId: randomUUID(), checkedAt: ASOF,

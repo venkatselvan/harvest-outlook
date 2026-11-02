@@ -22,7 +22,7 @@ import type {Pool} from '../../db/pool';
 import {StorageError, type StorageAdapter} from '../../storage/types';
 import {pgCache} from '../../ingest/cache';
 import {getFarm} from '../farms';
-import {getWorkspace} from '../workspace';
+import {fieldOf, getWorkspace} from '../workspace';
 import {ApiError, notFound} from '../errors';
 import {sha256Hex} from '../hash';
 import {NdviStats, type NdviReading, type NdviSeries, type NeighbourhoodSeasonality} from '@harvest/contracts';
@@ -39,7 +39,11 @@ export interface NdviDeps {
   now?: (() => Date) | undefined;
 }
 export interface NdviImageDeps extends NdviDeps { storage: StorageAdapter }
-export interface NdviSeriesOptions { from?: string | undefined; to?: string | undefined; maxScenes?: number | undefined; maxSceneCloudPct?: number | undefined }
+export interface NdviSeriesOptions {
+  from?: string | undefined; to?: string | undefined; maxScenes?: number | undefined; maxSceneCloudPct?: number | undefined;
+  /** 2026-11-03: read the named field's polygon instead of the farm boundary (404 field_not_found when unknown). */
+  fieldId?: string | undefined;
+}
 
 export const DEFAULT_MAX_SCENES = 12;
 const MAX_WINDOW_DAYS = 400;
@@ -68,17 +72,34 @@ const BASE_LIMITATIONS = [
 
 // ------------------------------------------------------------------ field polygon
 
-interface FieldPolygon { ring: LonLat[]; basis: 'boundary' | 'farm_point_square'; hash: string; limitations: string[] }
+interface FieldPolygon { ring: LonLat[]; basis: 'boundary' | 'farm_point_square'; hash: string; limitations: string[]; fieldId: string | null }
 
-/** Owner-scoped; throws 404 for a foreign or deleted farm before anything else happens. */
-async function fieldPolygon(pool: Pool, ownerId: string, farmId: string): Promise<FieldPolygon | {reason: string}> {
+/** Hash of a prepared ring under the current method: the `polygon_hash` of ndvi_scene_stats rows. */
+const ringHash = (ring: readonly LonLat[]) => sha256Hex(`${NDVI_METHOD_VERSION}|${JSON.stringify(ring)}`);
+/** The `polygon_hash` a drawn boundary's rows are stored under (same rounding and hash as fieldPolygon), or null when the ring is unusable. */
+export function boundaryPolygonHash(boundary: {coordinates: readonly (readonly (readonly number[])[])[]}): string | null {
+  const ring = prepareRing(boundary.coordinates[0] ?? []);
+  return ring ? ringHash(ring) : null;
+}
+
+/**
+ * Owner-scoped; throws 404 for a foreign or deleted farm before anything else happens. With `fieldId` (2026-11-03) the
+ * field's own ring is the polygon (basis 'boundary'), 404 field_not_found when the farm has no such field; the hash rule is
+ * unchanged, so stored rows are naturally per field.
+ */
+async function fieldPolygon(pool: Pool, ownerId: string, farmId: string, fieldId?: string): Promise<FieldPolygon | {reason: string}> {
   const farm = await getFarm(pool, ownerId, farmId);
   if (!farm) throw notFound('Farm');
   const workspace = await getWorkspace(pool, ownerId, farmId);
   let ring: LonLat[] | null;
   let basis: FieldPolygon['basis'];
   const limitations: string[] = [];
-  if (workspace.boundary) {
+  if (fieldId !== undefined) {
+    const field = fieldOf(workspace, fieldId);
+    ring = prepareRing(field.boundary.coordinates[0]!);
+    if (!ring) return {reason: 'boundary_too_small'};
+    basis = 'boundary';
+  } else if (workspace.boundary) {
     ring = prepareRing(workspace.boundary.coordinates[0]!);
     if (!ring) return {reason: 'boundary_too_small'};
     basis = 'boundary';
@@ -93,7 +114,7 @@ async function fieldPolygon(pool: Pool, ownerId: string, farmId: string): Promis
     if (precision === 'approximate') limitations.push('The farm location is approximate (about 1 km), so the field reading may describe a neighbouring area.');
   }
   if (bboxProblem(ringBbox(ring))) return {reason: 'boundary_too_large'};
-  return {ring, basis, hash: sha256Hex(`${NDVI_METHOD_VERSION}|${JSON.stringify(ring)}`), limitations};
+  return {ring, basis, hash: ringHash(ring), limitations, fieldId: fieldId ?? null};
 }
 
 // ------------------------------------------------------------------ scene list (cached per window per day)
@@ -169,7 +190,7 @@ export async function ndviSeries(deps: NdviDeps, ownerId: string, farmId: string
   }
   const maxScenes = Math.max(0, Math.min(120, Math.trunc(opts.maxScenes ?? DEFAULT_MAX_SCENES)));
   const maxCloud = Math.max(1, Math.min(100, opts.maxSceneCloudPct ?? DEFAULT_MAX_SCENE_CLOUD_PCT));
-  const field = await fieldPolygon(deps.pool, ownerId, farmId);
+  const field = await fieldPolygon(deps.pool, ownerId, farmId, opts.fieldId);
   const base: NdviSeries = {
     farmId, status: 'unavailable', reason: null, window: {from, to}, polygonBasis: null, polygonPixels: null, smallField: false, imageBbox: null,
     scenesListed: 0, scenesAnalysed: 0, scenesPending: 0, scenesFailed: 0, readings: [], latestUsable: null,
@@ -281,32 +302,66 @@ export async function neighbourhoodSeasonality(deps: NdviDeps, ownerId: string, 
   };
 }
 
+/**
+ * Latest stored usable reading for a drawn polygon, newest acquired_at (2026-11-03, FieldSummary.greenness). Stored rows only:
+ * no scene list, no provider call. Live mode only, like every other NDVI read; the caller has already resolved the farm for
+ * the owner. `smallField` uses the row's own pixel count, as ndviSeries does for its newest reading.
+ */
+export async function latestStoredReading(pool: Pool, ownerId: string, farmId: string, polygonHash: string): Promise<{reading: NdviReading; smallField: boolean} | null> {
+  const rows = (await pool.query<StatsRow>(
+    `SELECT id,item_id,acquired_at,baseline,scene_cloud_pct,field_stats,neighbourhood_stats,usable,image_keys FROM ndvi_scene_stats
+     WHERE owner_id=$1 AND farm_id=$2 AND polygon_hash=$3 AND usable ORDER BY acquired_at DESC LIMIT 5`, [ownerId, farmId, polygonHash])).rows;
+  for (const row of rows) {
+    const reading = toReading(row);
+    if (reading && reading.usable && reading.field.mean !== null) return {reading, smallField: reading.field.totalPixels < SMALL_FIELD_PIXELS};
+  }
+  return null;
+}
+
 export type SceneZoom = 'wide' | 'field';
 export interface SceneImage { bytes: Buffer; contentType: 'image/png'; acquiredAt: string; bbox: Bbox; cached: boolean }
 
-/** Storage key and `image_keys` name for a render: the wide key is unchanged, the field crop adds a `-field` suffix. */
-export const sceneImageName = (kind: ImageKind, zoom: SceneZoom) => (zoom === 'field' ? `${kind}-field` : kind);
-export const sceneImageKey = (farmId: string, itemId: string, kind: ImageKind, zoom: SceneZoom = 'wide') => `ndvi/${farmId}/${itemId}/${sceneImageName(kind, zoom)}.png`;
+/**
+ * Storage key and `image_keys` name for a render (2026-11-03, FIELDS_MULTICROP_SOIL_SPEC.md 3.4). Two fields of one farm must
+ * never share a render, so the name carries the first 8 hex characters of the polygon hash:
+ * - field zoom: `{kind}-field-{hash8}` for every polygon (a farm without fields uses its farm ring's hash8);
+ * - wide: `{kind}` for the farm polygon (unchanged), `{kind}-{hash8}` for a field's polygon (its 600 m frame is centred on
+ *   the field, so it differs per field; the spec names only the field zoom, the wide key follows the same rule for fields).
+ * Earlier `{kind}-field` entries stay in image_keys, so farm deletion still removes those objects.
+ */
+export function sceneImageName(kind: ImageKind, zoom: SceneZoom, polygonHash: string, scope: 'farm' | 'field' = 'farm'): string {
+  const hash8 = polygonHash.slice(0, 8);
+  if (zoom === 'field') return `${kind}-field-${hash8}`;
+  return scope === 'field' ? `${kind}-${hash8}` : kind;
+}
+export const sceneImageKey = (farmId: string, itemId: string, kind: ImageKind, zoom: SceneZoom, polygonHash: string, scope: 'farm' | 'field' = 'farm') =>
+  `ndvi/${farmId}/${itemId}/${sceneImageName(kind, zoom, polygonHash, scope)}.png`;
 
-/** Owner-private route URLs of a scene's field-zoom renders (true colour and NDVI colour map), for `SceneRef`. */
-export function fieldScenePaths(farmId: string, itemId: string): {fieldImagePath: string; fieldNdviImagePath: string} {
+const fieldQuery = (fieldId: string | null | undefined) => (fieldId ? `&fieldId=${encodeURIComponent(fieldId)}` : '');
+/** Owner-private route URLs of a scene's wide renders; a field view adds `&fieldId=` so the route reads that field's polygon. */
+export function wideScenePaths(farmId: string, itemId: string, fieldId?: string | null): {imagePath: string; ndviImagePath: string} {
   const base = `/api/v1/farms/${farmId}/ndvi/${itemId}/image`;
-  return {fieldImagePath: `${base}?kind=visual&zoom=field`, fieldNdviImagePath: `${base}?kind=ndvi&zoom=field`};
+  return {imagePath: `${base}?kind=visual${fieldQuery(fieldId)}`, ndviImagePath: `${base}?kind=ndvi${fieldQuery(fieldId)}`};
+}
+/** Owner-private route URLs of a scene's field-zoom renders (true colour and NDVI colour map), for `SceneRef`. */
+export function fieldScenePaths(farmId: string, itemId: string, fieldId?: string | null): {fieldImagePath: string; fieldNdviImagePath: string} {
+  const base = `/api/v1/farms/${farmId}/ndvi/${itemId}/image`;
+  return {fieldImagePath: `${base}?kind=visual&zoom=field${fieldQuery(fieldId)}`, fieldNdviImagePath: `${base}?kind=ndvi&zoom=field${fieldQuery(fieldId)}`};
 }
 
 /** Window of the field-zoom render, for `TodayView.fieldImageBbox` (same for every scene of a polygon). */
 export const fieldImageBbox = (boundary: readonly LonLat[]): [number, number, number, number] => [...fieldBbox(boundary)] as [number, number, number, number];
 
 /**
- * Rendered PNG for a scene that the farm's series already analysed. Stored once under the owner's private key
- * ndvi/{farmId}/{itemId}/{kind}.png (wide, 600 m window) or {kind}-field.png (field zoom: the field window at native 10 m
- * pixels, see `fieldBbox`) and served from storage afterwards.
+ * Rendered PNG for a scene that the farm's (or, with `fieldId`, the field's) series already analysed. Stored once under the
+ * owner's private key ndvi/{farmId}/{itemId}/{name}.png (see sceneImageName: wide 600 m window, or the field window at
+ * native 10 m pixels, see `fieldBbox`) and served from storage afterwards.
  */
-export async function sceneImage(deps: NdviImageDeps, ownerId: string, farmId: string, itemId: string, kind: ImageKind, zoom: SceneZoom = 'wide'): Promise<SceneImage> {
+export async function sceneImage(deps: NdviImageDeps, ownerId: string, farmId: string, itemId: string, kind: ImageKind, zoom: SceneZoom = 'wide', fieldId?: string): Promise<SceneImage> {
   if (!ITEM_ID_RE.test(itemId)) throw new ApiError(400, 'validation_error', 'Invalid satellite scene id');
   if (kind !== 'visual' && kind !== 'ndvi') throw new ApiError(400, 'validation_error', 'Image kind must be visual or ndvi');
   if (zoom !== 'wide' && zoom !== 'field') throw new ApiError(400, 'validation_error', 'Image zoom must be wide or field');
-  const field = await fieldPolygon(deps.pool, ownerId, farmId);
+  const field = await fieldPolygon(deps.pool, ownerId, farmId, fieldId);
   if (deps.config.RUNTIME_MODE !== 'live') throw new ApiError(409, 'mode_mismatch', 'Satellite images are only available in live mode');
   if ('reason' in field) throw notFound('Satellite scene');
   const row = (await deps.pool.query<StatsRow>(
@@ -314,8 +369,9 @@ export async function sceneImage(deps: NdviImageDeps, ownerId: string, farmId: s
     [ownerId, farmId, field.hash, itemId])).rows[0];
   if (!row) throw notFound('Satellite scene');
   const bbox = zoom === 'field' ? fieldBbox(field.ring) : displayBbox(field.ring);
-  const name = sceneImageName(kind, zoom);
-  const key = sceneImageKey(farmId, itemId, kind, zoom);
+  const scope = field.fieldId ? 'field' : 'farm';
+  const name = sceneImageName(kind, zoom, field.hash, scope);
+  const key = sceneImageKey(farmId, itemId, kind, zoom, field.hash, scope);
   const acquiredAt = row.acquired_at.toISOString();
   if (row.image_keys?.[name] === key) {
     try {
@@ -328,7 +384,8 @@ export async function sceneImage(deps: NdviImageDeps, ownerId: string, farmId: s
   if (rendered.status !== 'ok') throw new ApiError(424, 'provider_unavailable', 'The satellite image could not be rendered now', {reason: rendered.reason});
   await deps.storage.put({ownerId, key}, rendered.bytes);
   await deps.pool.query(`UPDATE ndvi_scene_stats SET image_keys=COALESCE(image_keys,'{}'::jsonb) || jsonb_build_object($3::text,$4::text) WHERE id=$1 AND owner_id=$2`, [row.id, ownerId, name, key]);
-  // The key is per farm/item/kind/zoom, not per polygon: rows for an earlier boundary must not claim the re-rendered file.
+  // The farm wide key is per farm/item/kind, not per polygon: rows for an earlier boundary must not claim the re-rendered
+  // file. Hashed names only meet here on an 8-hex prefix collision, which this also keeps correct.
   await deps.pool.query('UPDATE ndvi_scene_stats SET image_keys=image_keys - $4::text WHERE farm_id=$1 AND owner_id=$2 AND item_id=$3 AND id<>$5 AND image_keys ? $4::text', [farmId, ownerId, itemId, name, row.id]);
   return {bytes: rendered.bytes, contentType: 'image/png', acquiredAt, bbox, cached: false};
 }

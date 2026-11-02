@@ -7,6 +7,7 @@ import {
   createSignal,
   on,
   onCleanup,
+  untrack,
 } from "solid-js";
 import { A, useLocation, useNavigate } from "@solidjs/router";
 import {
@@ -46,8 +47,17 @@ import {
   selectedSection,
   selectedTab,
   setDueBadge,
+  setTabField,
 } from "./farmTabs";
+import {
+  buildPlantPayload,
+  currentCycleOf,
+  defaultPlantField,
+  normalizeRowRatio,
+  type FieldCycleLike,
+} from "./fields/fieldsModel";
 import "./farm-command.css";
+import "./fields/fields.css";
 
 const words = (value: string) =>
   value.replace(/_/g, " ").replace(/^\w/, (s) => s.toUpperCase());
@@ -155,6 +165,11 @@ export function FarmCommandCenter() {
   const [careBusy, setCareBusy] = createSignal("");
   const [allCare, setAllCare] = createSignal(false);
   const [history, setHistory] = createSignal(false);
+  /** Plant dialog (FIELDS_MULTICROP_SOIL_SPEC.md 6.2): the field, and an optional companion crop with its row ratio. */
+  const [plantField, setPlantField] = createSignal("");
+  const [mixed, setMixed] = createSignal(false);
+  const [companionCrop, setCompanionCrop] = createSignal("");
+  const [rowRatio, setRowRatio] = createSignal("");
   let plantEntry = "",
     editorFarm = "",
     editorEpoch = 0,
@@ -223,9 +238,48 @@ export function FarmCommandCenter() {
   );
   const plantChoiceGroups = createMemo(() => plantGroups(plantChoices()));
   const chosenCrop = () => plantChoices().find((crop) => crop.cropId === plantCrop());
+  // ---------------------------------------------------------------- fields (FIELDS_MULTICROP_SOIL_SPEC.md 6.3)
+  const farmFields = () => workspace()?.fields ?? [];
+  const fieldParam = () => query().get("field");
+  /** The farm's workspace for the selected farm is known (stored or from the command center). */
+  const workspaceKnown = () =>
+    s.workspace()?.farmId === s.farm()?.id || !!data();
+  /**
+   * The field selected on Today, kept in the URL as `?field=<id>` so it survives tab switches and reloads. A field id when
+   * the param names a field of this farm; null with no param ("All fields", or a farm without fields) or an unknown id;
+   * undefined while a `?field=` link waits for the farm's workspace (the Today view waits rather than loading the wrong view).
+   */
+  const todayField = (): string | null | undefined => {
+    const raw = fieldParam();
+    if (!raw) return null;
+    if (!workspaceKnown()) return s.workspace.error ? null : undefined;
+    return farmFields().some((field) => field.id === raw) ? raw : null;
+  };
+  const selectField = (fieldId: string | null) =>
+    navigate(farmHref("today", undefined, fieldId));
+  // The tab bars live in the shell: publish the field so their links keep it.
+  createEffect(() => setTabField(todayField() ?? null));
+  onCleanup(() => setTabField(null));
+  // Another farm or session never inherits a field id; an id the farm no longer has is dropped from the URL.
+  let fieldOwner: string | undefined;
+  createEffect(() => {
+    const id = s.farm()?.id,
+      epoch = s.sessionEpoch();
+    untrack(() => {
+      if (!id) return;
+      const owner = `${id}|${epoch}`;
+      if (fieldOwner && fieldOwner !== owner && fieldParam())
+        navigate(farmHref(tab(), section()), { replace: true });
+      fieldOwner = owner;
+    });
+  });
+  createEffect(() => {
+    if (fieldParam() && todayField() === null)
+      navigate(farmHref(tab(), section()), { replace: true });
+  });
   const showTool = (tool: Tool) =>
     navigate(
-      `${farmHref(tab(), section())}${tool ? `&tool=${tool}` : ""}`,
+      `${farmHref(tab(), section(), todayField())}${tool ? `&tool=${tool}` : ""}`,
     );
   // The tab bars live in the shell, outside this component: publish the due count for the Today badge.
   createEffect(() => setDueBadge(dueCount()));
@@ -256,9 +310,29 @@ export function FarmCommandCenter() {
     setPlantDate(today());
     setPlantNote("");
     setError("");
+    setPlantField(
+      defaultPlantField(
+        farmFields(),
+        (workspace()?.cycles ?? []) as FieldCycleLike[],
+        todayField(),
+      ),
+    );
+    setMixed(false);
+    setCompanionCrop("");
+    setRowRatio("");
     setPlanting(true);
     chooseCrop(cropId ?? "");
   }
+  /** "Growing paddy now" for a field that already has a current crop (shown in the field select). */
+  const fieldNote = (fieldId: string) => {
+    const cycle = currentCycleOf(
+      fieldId,
+      (workspace()?.cycles ?? []) as FieldCycleLike[],
+    );
+    return cycle
+      ? ` (growing ${cycle.cropName ?? s.cropName(cycle.cropId)} now)`
+      : "";
+  };
   function chooseCrop(id: string) {
     setPlantCrop(id);
     const crop = plantChoices().find((crop) => crop.cropId === id);
@@ -293,21 +367,58 @@ export function FarmCommandCenter() {
       setError("Choose the product you are growing.");
       return;
     }
+    const fields = farmFields();
+    if (fields.length && !fields.some((field) => field.id === plantField())) {
+      setError("Choose which field you planted.");
+      return;
+    }
+    if (mixed() && !companionCrop()) {
+      setError(
+        "Choose the crop growing with it, or turn off “Growing another crop with it”.",
+      );
+      return;
+    }
+    if (mixed() && companionCrop() === selected.cropId) {
+      setError("The companion crop must differ from the main crop.");
+      return;
+    }
+    if (mixed() && normalizeRowRatio(rowRatio()) === false) {
+      setError(
+        "Write the row ratio as two whole numbers, for example 4:2 (four rows of the main crop, then two of the companion).",
+      );
+      return;
+    }
     const target = editorFarm,
       epoch = editorEpoch,
       request = ++plantRequest;
     setPlantBusy(true);
     setError("");
     try {
-      const payload = plantPayload() ?? {
-        clientEntryId: plantEntry,
-        cropId: selected.cropId,
-        ...(product() ? { productId: product() } : {}),
-        establishmentMethod: method(),
-        establishmentDate: plantDate(),
-        expectedWorkspaceVersion: snapshot.version,
-        ...(plantNote().trim() ? { notes: plantNote().trim() } : {}),
-      };
+      const companion = mixed()
+        ? plantChoices().find((crop) => crop.cropId === companionCrop())
+        : undefined;
+      const payload =
+        plantPayload() ??
+        buildPlantPayload({
+          clientEntryId: plantEntry,
+          cropId: selected.cropId,
+          productId: product(),
+          method: method(),
+          date: plantDate(),
+          expectedWorkspaceVersion: snapshot.version,
+          note: plantNote(),
+          fieldId: fields.length ? plantField() : null,
+          companion: companion
+            ? {
+                cropId: companion.cropId,
+                productId:
+                  companion.products.length === 1
+                    ? companion.products[0]!.productId
+                    : null,
+                rowRatio: rowRatio(),
+              }
+            : null,
+        });
       setPlantPayload(payload);
       const result = PlantCropResult.parse(
         (
@@ -327,6 +438,14 @@ export function FarmCommandCenter() {
       setCycleId(result.cycle.id);
       await Promise.resolve(s.refreshWorkspace()).catch(() => undefined);
       await Promise.resolve(refetch()).catch(() => undefined);
+      // On a farm with fields, Today opens the field that was just planted.
+      if (
+        result.cycle.fieldId &&
+        tab() === "today" &&
+        target === s.farm()?.id &&
+        epoch === s.sessionEpoch()
+      )
+        selectField(result.cycle.fieldId);
       s.setNotice(
         `${selected.name} recorded. Source-based care is ready where evidence is available.`,
       );
@@ -402,8 +521,8 @@ export function FarmCommandCenter() {
           <A
             href="/farm/manage"
             class="command-icon-button"
-            aria-label="Manage farm boundary"
-            title="Manage farm boundary"
+            aria-label="Manage farm boundary and fields"
+            title="Manage farm boundary and fields"
           >
             <Icon name="settings" size={18} />
           </A>
@@ -451,6 +570,11 @@ export function FarmCommandCenter() {
           complete={complete}
           openPlant={openPlant}
           showTool={showTool}
+          field={todayField}
+          selectField={selectField}
+          openSoilRecords={() =>
+            navigate(farmHref("soil", "records", todayField()))
+          }
         />
       </Show>
       <Show when={tab() === "soil"}>
@@ -458,7 +582,7 @@ export function FarmCommandCenter() {
           <For each={farmSections}>
             {(item) => (
               <a
-                href={farmHref("soil", item.id)}
+                href={farmHref("soil", item.id, todayField())}
                 classList={{ active: section() === item.id }}
                 aria-current={section() === item.id ? "page" : undefined}
               >
@@ -590,6 +714,31 @@ export function FarmCommandCenter() {
               </button>
             </header>
             <form onSubmit={(event) => void recordPlanting(event)}>
+              <Show when={farmFields().length}>
+                <label class="plant-field-select">
+                  Which field?
+                  <select
+                    required
+                    value={plantField()}
+                    disabled={plantBusy() || !!plantPayload()}
+                    onChange={(e) => setPlantField(e.currentTarget.value)}
+                    data-testid="plant-field"
+                  >
+                    <option value="">Choose a field</option>
+                    <For each={farmFields()}>
+                      {(field) => (
+                        <option
+                          value={field.id}
+                          selected={plantField() === field.id}
+                        >
+                          {field.name}
+                          {fieldNote(field.id)}
+                        </option>
+                      )}
+                    </For>
+                  </select>
+                </label>
+              </Show>
               <fieldset
                 class="plant-choice-grid"
                 disabled={plantBusy() || !!plantPayload()}
@@ -694,6 +843,60 @@ export function FarmCommandCenter() {
                         </select>
                       </label>
                     </Show>
+                    <div class="plant-companion">
+                      <label class="plant-companion-toggle">
+                        <input
+                          type="checkbox"
+                          checked={mixed()}
+                          onChange={(e) => setMixed(e.currentTarget.checked)}
+                          data-testid="plant-mixed"
+                        />
+                        Growing another crop with it
+                      </label>
+                      <Show when={mixed()}>
+                        <div class="form-grid">
+                          <label>
+                            Companion crop
+                            <select
+                              required
+                              value={companionCrop()}
+                              onChange={(e) =>
+                                setCompanionCrop(e.currentTarget.value)
+                              }
+                              data-testid="plant-companion"
+                            >
+                              <option value="">Choose the crop</option>
+                              <For
+                                each={plantChoices().filter(
+                                  (crop) => crop.cropId !== item().cropId,
+                                )}
+                              >
+                                {(crop) => (
+                                  <option value={crop.cropId}>{crop.name}</option>
+                                )}
+                              </For>
+                            </select>
+                          </label>
+                          <label>
+                            Row ratio <small>optional</small>
+                            <input
+                              type="text"
+                              inputmode="numeric"
+                              maxlength="7"
+                              placeholder="4:2"
+                              value={rowRatio()}
+                              onInput={(e) => setRowRatio(e.currentTarget.value)}
+                              aria-describedby="plant-ratio-hint"
+                              data-testid="plant-row-ratio"
+                            />
+                          </label>
+                        </div>
+                        <p class="inline-note" id="plant-ratio-hint">
+                          Rows of the main crop, then rows of the companion: 4:2
+                          means four rows, then two.
+                        </p>
+                      </Show>
+                    </div>
                     <label>
                       Field note <small>optional</small>
                       <textarea
@@ -742,7 +945,7 @@ export function FarmCommandCenter() {
         <HistoryDialog
           onClose={() => {
             setHistory(false);
-            navigate(farmHref(tab(), section()));
+            navigate(farmHref(tab(), section(), todayField()));
           }}
         />
       </Show>

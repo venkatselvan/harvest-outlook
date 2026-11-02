@@ -1,4 +1,4 @@
-import { FarmWorkspaceState, type FarmWorkspace, type GeographicBoundary, type PutFarmWorkspace } from '@harvest/contracts';
+import { FarmWorkspaceState, type FarmField, type FarmWorkspace, type GeographicBoundary, type PutFarmWorkspace } from '@harvest/contracts';
 import { withTransaction, type Pool } from '../db/pool';
 import { ApiError, notFound } from './errors';
 import type {PoolClient} from 'pg';
@@ -18,7 +18,14 @@ export function boundaryMetrics(boundary: GeographicBoundary) {
 }
 
 interface WorkspaceRow { version: number; state: unknown; updated_at: Date }
-const emptyState = () => ({ boundary: null, previousHarvest: { status: 'unknown' as const }, cycles: [], rotationPlans: [] });
+const emptyState = () => ({ boundary: null, previousHarvest: { status: 'unknown' as const }, cycles: [], rotationPlans: [], fields: [] });
+
+/** The named field of the workspace, else 404 field_not_found (2026-11-03). */
+export function fieldOf(workspace: Pick<FarmWorkspace, 'fields'>, fieldId: string): FarmField {
+  const field = workspace.fields.find((f) => f.id === fieldId);
+  if (!field) throw new ApiError(404, 'field_not_found', 'Field not found on this farm');
+  return field;
+}
 const assemble = (farmId: string, row?: WorkspaceRow): FarmWorkspace => ({
   ...(row ? FarmWorkspaceState.parse(row.state) : emptyState()),
   farmId, version: row?.version ?? 0, updatedAt: row?.updated_at.toISOString() ?? null,
@@ -42,7 +49,16 @@ export async function putWorkspace(pool: Pool, ownerId: string, farmId: string, 
     const version = current.rows[0]?.version ?? 0;
     if (body.expectedVersion !== version) throw new ApiError(409, 'version_conflict', 'Farm workspace was changed elsewhere; reload before saving', { currentVersion: version });
     const { expectedVersion: _, ...rawState } = body;
-    const state = FarmWorkspaceState.parse(rawState);
+    // A PUT without `fields` keeps the stored fields (2026-11-03): writers built before fields existed (the year-plan apply,
+    // older web saves) must not delete them. The merged state is validated as a whole (fields inside the boundary, no
+    // overlap, every cycle and plan fieldId naming a field), so deleting a field a cycle still names is refused here.
+    const storedFields = current.rows[0] ? FarmWorkspaceState.parse(current.rows[0].state).fields : [];
+    const parsed = FarmWorkspaceState.safeParse({ ...rawState, fields: rawState.fields ?? storedFields });
+    if (!parsed.success) {
+      const issue = parsed.error.issues[0]!;
+      throw new ApiError(400, 'validation_error', issue.message, { field: issue.path.join('.') });
+    }
+    const state = parsed.data;
     for(const rotation of [...state.rotationPlans,...state.cycles]){
       if(!rotation.productId)continue;
       const product=(await c.query<{slug:string;name:string}>(`SELECT p.slug,p.name FROM crop_products p JOIN crop_identities crop ON crop.id=p.crop_id

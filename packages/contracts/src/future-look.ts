@@ -9,6 +9,26 @@ import {z} from 'zod';
 export const FutureLookStatus = z.enum(['queued', 'running', 'ready', 'failed', 'unavailable']);
 export type FutureLookStatus = z.infer<typeof FutureLookStatus>;
 
+/**
+ * 2026-11-03 (FIELDS_MULTICROP_SOIL_SPEC.md section 11): `stage` = a typical look of a stage (target date = the stage start,
+ * or today when the stage is current); `gap` = the predicted look of this field on a date after the latest real scene (at
+ * most one per crop cycle per calendar week). Both are code-guided Meta image edits, never observations.
+ */
+export const FutureLookKind = z.enum(['stage', 'gap']);
+export type FutureLookKind = z.infer<typeof FutureLookKind>;
+
+/**
+ * Body of POST /api/v1/farms/:id/ndvi/:itemId/future (optional; an empty body is a `stage` request). `targetDate` is required
+ * for `gap`: it must be after the source scene date and at most 120 days after today (Asia/Kolkata); the stored target is the
+ * start (Monday) of its week, or the day after the source scene when that is later. `stageId` stays in the query string and
+ * is required for `stage` only.
+ */
+export const FutureLookRequestBody = z.object({
+  kind: FutureLookKind.default('stage'),
+  targetDate: z.iso.date().optional(),
+}).strict();
+export type FutureLookRequestBody = z.infer<typeof FutureLookRequestBody>;
+
 export const FutureLookRequestResult = z.object({
   assetId: z.uuid().nullable(),
   status: FutureLookStatus,
@@ -18,6 +38,9 @@ export const FutureLookRequestResult = z.object({
   stageId: z.string().max(80),
   /** True when an existing asset was returned instead of a new generation being queued. */
   deduplicated: z.boolean(),
+  /** 2026-11-03: the kind and stored target date of the asset (absent on results without an asset). */
+  kind: FutureLookKind.optional(),
+  targetDate: z.iso.date().nullable().optional(),
 }).strict();
 export type FutureLookRequestResult = z.infer<typeof FutureLookRequestResult>;
 
@@ -63,6 +86,12 @@ export const FutureLookAsset = z.object({
   responseDeleted: z.boolean().nullable(),
   promptVersion: z.string(),
   attempt: z.number().int(),
+  /** 2026-11-03: rows made before prompt v2 are `stage` with a null targetDate and guidance. */
+  kind: FutureLookKind,
+  /** The date the look is for (gap: the week start or the day after the source scene; stage: the stage start or the request day). */
+  targetDate: z.iso.date().nullable(),
+  /** The code-written guidance sentence that went into the prompt (no NDVI number). */
+  guidance: z.string().max(400).nullable(),
   createdAt: z.iso.datetime(),
   updatedAt: z.iso.datetime(),
 }).strict();
