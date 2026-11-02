@@ -46,7 +46,8 @@ export interface BuildScenarioArgs {
   assumedPredecessor?: AssumedPredecessorInput | null | undefined;
 }
 
-function factValue(farm: ScenarioFarm, key: string): unknown {
+/** A farm fact value that counts (farmer-reported, lab or confirmed); exported for the Today footprint (no behaviour change). */
+export function factValue(farm: ScenarioFarm, key: string): unknown {
   const f = farm.facts?.[key];
   if (!f || f.basis === 'unknown') return undefined;
   return f.basis === 'farmer_reported' || f.basis === 'lab_test' || f.confirmed ? f.value : undefined;

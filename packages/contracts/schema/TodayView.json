@@ -240,7 +240,10 @@
                     "soil",
                     "ndvi",
                     "climatology",
-                    "model"
+                    "model",
+                    "residue_reference",
+                    "emission_factor",
+                    "energy_reference"
                   ]
                 },
                 "label": {
@@ -3332,7 +3335,10 @@
                     "soil",
                     "ndvi",
                     "climatology",
-                    "model"
+                    "model",
+                    "residue_reference",
+                    "emission_factor",
+                    "energy_reference"
                   ]
                 },
                 "label": {
@@ -4608,7 +4614,10 @@
                     "soil",
                     "ndvi",
                     "climatology",
-                    "model"
+                    "model",
+                    "residue_reference",
+                    "emission_factor",
+                    "energy_reference"
                   ]
                 },
                 "label": {
@@ -4701,6 +4710,2049 @@
             "summary",
             "basis",
             "limitations"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "harvestEconomics": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "status": {
+              "type": "string",
+              "enum": [
+                "available",
+                "partial",
+                "unavailable"
+              ]
+            },
+            "reason": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 120
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "harvest": {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "earliest": {
+                      "type": "string",
+                      "format": "date",
+                      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+                    },
+                    "latest": {
+                      "type": "string",
+                      "format": "date",
+                      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+                    }
+                  },
+                  "required": [
+                    "earliest",
+                    "latest"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "harvestDate": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date",
+                  "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "fieldAreaHa": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "yieldKgPerHa": {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "low": {
+                      "type": "number"
+                    },
+                    "high": {
+                      "type": "number"
+                    }
+                  },
+                  "required": [
+                    "low",
+                    "high"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "yieldBasis": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "district",
+                    "state",
+                    "reference",
+                    "farmer"
+                  ]
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "yieldForFieldKg": {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "low": {
+                      "type": "number"
+                    },
+                    "high": {
+                      "type": "number"
+                    }
+                  },
+                  "required": [
+                    "low",
+                    "high"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "keepFraction": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            },
+            "price": {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "enum": [
+                        "available",
+                        "insufficient"
+                      ]
+                    },
+                    "unit": {
+                      "type": "string",
+                      "const": "INR/kg"
+                    },
+                    "p50": {
+                      "type": [
+                        "number",
+                        "null"
+                      ]
+                    },
+                    "likely": {
+                      "anyOf": [
+                        {
+                          "type": "object",
+                          "properties": {
+                            "low": {
+                              "type": "number"
+                            },
+                            "high": {
+                              "type": "number"
+                            }
+                          },
+                          "required": [
+                            "low",
+                            "high"
+                          ],
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "scopeLabel": {
+                      "type": "string",
+                      "maxLength": 160
+                    }
+                  },
+                  "required": [
+                    "status",
+                    "unit",
+                    "p50",
+                    "likely",
+                    "scopeLabel"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "cost": {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "a2flPerHa": {
+                      "type": [
+                        "number",
+                        "null"
+                      ]
+                    },
+                    "c2PerHa": {
+                      "type": [
+                        "number",
+                        "null"
+                      ]
+                    },
+                    "authority": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "enum": [
+                            "cacp",
+                            "des",
+                            "sau",
+                            "other"
+                          ]
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "year": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "maxLength": 20
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "region": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "maxLength": 40
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    }
+                  },
+                  "required": [
+                    "a2flPerHa",
+                    "c2PerHa",
+                    "authority",
+                    "year",
+                    "region"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "revenuePerHa": {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "central": {
+                      "type": "number"
+                    },
+                    "likely": {
+                      "type": "object",
+                      "properties": {
+                        "low": {
+                          "type": "number"
+                        },
+                        "high": {
+                          "type": "number"
+                        }
+                      },
+                      "required": [
+                        "low",
+                        "high"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "possible": {
+                      "type": "object",
+                      "properties": {
+                        "low": {
+                          "type": "number"
+                        },
+                        "high": {
+                          "type": "number"
+                        }
+                      },
+                      "required": [
+                        "low",
+                        "high"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "central",
+                    "likely",
+                    "possible"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "revenueForField": {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "central": {
+                      "type": "number"
+                    },
+                    "likely": {
+                      "type": "object",
+                      "properties": {
+                        "low": {
+                          "type": "number"
+                        },
+                        "high": {
+                          "type": "number"
+                        }
+                      },
+                      "required": [
+                        "low",
+                        "high"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "possible": {
+                      "type": "object",
+                      "properties": {
+                        "low": {
+                          "type": "number"
+                        },
+                        "high": {
+                          "type": "number"
+                        }
+                      },
+                      "required": [
+                        "low",
+                        "high"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "central",
+                    "likely",
+                    "possible"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "profitPerHa": {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "central": {
+                      "type": "number"
+                    },
+                    "likely": {
+                      "type": "object",
+                      "properties": {
+                        "low": {
+                          "type": "number"
+                        },
+                        "high": {
+                          "type": "number"
+                        }
+                      },
+                      "required": [
+                        "low",
+                        "high"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "possible": {
+                      "type": "object",
+                      "properties": {
+                        "low": {
+                          "type": "number"
+                        },
+                        "high": {
+                          "type": "number"
+                        }
+                      },
+                      "required": [
+                        "low",
+                        "high"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "central",
+                    "likely",
+                    "possible"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "profitForField": {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "central": {
+                      "type": "number"
+                    },
+                    "likely": {
+                      "type": "object",
+                      "properties": {
+                        "low": {
+                          "type": "number"
+                        },
+                        "high": {
+                          "type": "number"
+                        }
+                      },
+                      "required": [
+                        "low",
+                        "high"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "possible": {
+                      "type": "object",
+                      "properties": {
+                        "low": {
+                          "type": "number"
+                        },
+                        "high": {
+                          "type": "number"
+                        }
+                      },
+                      "required": [
+                        "low",
+                        "high"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "central",
+                    "likely",
+                    "possible"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "basis": {
+              "maxItems": 14,
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "kind": {
+                    "type": "string",
+                    "enum": [
+                      "price_history",
+                      "yield_reference",
+                      "cost_reference",
+                      "sowing_window",
+                      "duration",
+                      "rotation",
+                      "water",
+                      "soil",
+                      "ndvi",
+                      "climatology",
+                      "model",
+                      "residue_reference",
+                      "emission_factor",
+                      "energy_reference"
+                    ]
+                  },
+                  "label": {
+                    "type": "string",
+                    "maxLength": 200
+                  },
+                  "sourceId": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "maxLength": 200
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "url": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "format": "uri"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "scope": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "maxLength": 120
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "note": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "maxLength": 1000
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  }
+                },
+                "required": [
+                  "kind",
+                  "label",
+                  "sourceId",
+                  "url",
+                  "scope",
+                  "note"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "limitations": {
+              "maxItems": 12,
+              "type": "array",
+              "items": {
+                "type": "string",
+                "maxLength": 1000
+              }
+            }
+          },
+          "required": [
+            "status",
+            "reason",
+            "harvest",
+            "harvestDate",
+            "fieldAreaHa",
+            "yieldKgPerHa",
+            "yieldBasis",
+            "yieldForFieldKg",
+            "keepFraction",
+            "price",
+            "cost",
+            "revenuePerHa",
+            "revenueForField",
+            "profitPerHa",
+            "profitForField",
+            "basis",
+            "limitations"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "residueIncome": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "status": {
+              "type": "string",
+              "enum": [
+                "available",
+                "unavailable"
+              ]
+            },
+            "reason": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 120
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "residueName": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 80
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "residueToProductRatio": {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "low": {
+                      "type": "number"
+                    },
+                    "high": {
+                      "type": "number"
+                    }
+                  },
+                  "required": [
+                    "low",
+                    "high"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "residueForFieldKg": {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "low": {
+                      "type": "number"
+                    },
+                    "high": {
+                      "type": "number"
+                    }
+                  },
+                  "required": [
+                    "low",
+                    "high"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "surplusFraction": {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "low": {
+                      "type": "number"
+                    },
+                    "high": {
+                      "type": "number"
+                    }
+                  },
+                  "required": [
+                    "low",
+                    "high"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "surplusForFieldKg": {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "low": {
+                      "type": "number"
+                    },
+                    "high": {
+                      "type": "number"
+                    }
+                  },
+                  "required": [
+                    "low",
+                    "high"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "options": {
+              "maxItems": 6,
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "use": {
+                    "type": "string",
+                    "enum": [
+                      "cbg_feedstock",
+                      "dry_fodder",
+                      "biomass_fuel",
+                      "mushroom_substrate",
+                      "soil_incorporation",
+                      "other"
+                    ]
+                  },
+                  "label": {
+                    "type": "string",
+                    "maxLength": 80
+                  },
+                  "quantityKg": {
+                    "type": "object",
+                    "properties": {
+                      "low": {
+                        "type": "number"
+                      },
+                      "high": {
+                        "type": "number"
+                      }
+                    },
+                    "required": [
+                      "low",
+                      "high"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "priceInrPerTonne": {
+                    "anyOf": [
+                      {
+                        "type": "object",
+                        "properties": {
+                          "low": {
+                            "type": "number"
+                          },
+                          "high": {
+                            "type": "number"
+                          }
+                        },
+                        "required": [
+                          "low",
+                          "high"
+                        ],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "priceBasis": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "maxLength": 240
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "incomeForField": {
+                    "anyOf": [
+                      {
+                        "type": "object",
+                        "properties": {
+                          "low": {
+                            "type": "number"
+                          },
+                          "high": {
+                            "type": "number"
+                          }
+                        },
+                        "required": [
+                          "low",
+                          "high"
+                        ],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "note": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "maxLength": 1000
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "sourceIds": {
+                    "maxItems": 8,
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "maxLength": 80
+                    }
+                  }
+                },
+                "required": [
+                  "use",
+                  "label",
+                  "quantityKg",
+                  "priceInrPerTonne",
+                  "priceBasis",
+                  "incomeForField",
+                  "note",
+                  "sourceIds"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "basis": {
+              "maxItems": 14,
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "kind": {
+                    "type": "string",
+                    "enum": [
+                      "price_history",
+                      "yield_reference",
+                      "cost_reference",
+                      "sowing_window",
+                      "duration",
+                      "rotation",
+                      "water",
+                      "soil",
+                      "ndvi",
+                      "climatology",
+                      "model",
+                      "residue_reference",
+                      "emission_factor",
+                      "energy_reference"
+                    ]
+                  },
+                  "label": {
+                    "type": "string",
+                    "maxLength": 200
+                  },
+                  "sourceId": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "maxLength": 200
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "url": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "format": "uri"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "scope": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "maxLength": 120
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "note": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "maxLength": 1000
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  }
+                },
+                "required": [
+                  "kind",
+                  "label",
+                  "sourceId",
+                  "url",
+                  "scope",
+                  "note"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "limitations": {
+              "maxItems": 12,
+              "type": "array",
+              "items": {
+                "type": "string",
+                "maxLength": 1000
+              }
+            }
+          },
+          "required": [
+            "status",
+            "reason",
+            "residueName",
+            "residueToProductRatio",
+            "residueForFieldKg",
+            "surplusFraction",
+            "surplusForFieldKg",
+            "options",
+            "basis",
+            "limitations"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "energyFootprint": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "status": {
+              "type": "string",
+              "enum": [
+                "available",
+                "partial",
+                "unavailable"
+              ]
+            },
+            "reason": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 120
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "inputEnergyGJPerHa": {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "low": {
+                      "type": "number"
+                    },
+                    "high": {
+                      "type": "number"
+                    }
+                  },
+                  "required": [
+                    "low",
+                    "high"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "inputEnergyGJForField": {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "low": {
+                      "type": "number"
+                    },
+                    "high": {
+                      "type": "number"
+                    }
+                  },
+                  "required": [
+                    "low",
+                    "high"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "inputEnergyBasis": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 240
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "inputBreakdown": {
+              "maxItems": 10,
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "item": {
+                    "type": "string",
+                    "maxLength": 60
+                  },
+                  "share": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1
+                  }
+                },
+                "required": [
+                  "item",
+                  "share"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "calorificValueMJPerKg": {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "low": {
+                      "type": "number"
+                    },
+                    "high": {
+                      "type": "number"
+                    }
+                  },
+                  "required": [
+                    "low",
+                    "high"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "residueEnergyGJForField": {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "low": {
+                      "type": "number"
+                    },
+                    "high": {
+                      "type": "number"
+                    }
+                  },
+                  "required": [
+                    "low",
+                    "high"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "equivalents": {
+              "maxItems": 4,
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "label": {
+                    "type": "string",
+                    "maxLength": 80
+                  },
+                  "amount": {
+                    "type": "object",
+                    "properties": {
+                      "low": {
+                        "type": "number"
+                      },
+                      "high": {
+                        "type": "number"
+                      }
+                    },
+                    "required": [
+                      "low",
+                      "high"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "unit": {
+                    "type": "string",
+                    "maxLength": 30
+                  },
+                  "sourceIds": {
+                    "maxItems": 8,
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "maxLength": 80
+                    }
+                  }
+                },
+                "required": [
+                  "label",
+                  "amount",
+                  "unit",
+                  "sourceIds"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "basis": {
+              "maxItems": 14,
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "kind": {
+                    "type": "string",
+                    "enum": [
+                      "price_history",
+                      "yield_reference",
+                      "cost_reference",
+                      "sowing_window",
+                      "duration",
+                      "rotation",
+                      "water",
+                      "soil",
+                      "ndvi",
+                      "climatology",
+                      "model",
+                      "residue_reference",
+                      "emission_factor",
+                      "energy_reference"
+                    ]
+                  },
+                  "label": {
+                    "type": "string",
+                    "maxLength": 200
+                  },
+                  "sourceId": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "maxLength": 200
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "url": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "format": "uri"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "scope": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "maxLength": 120
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "note": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "maxLength": 1000
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  }
+                },
+                "required": [
+                  "kind",
+                  "label",
+                  "sourceId",
+                  "url",
+                  "scope",
+                  "note"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "limitations": {
+              "maxItems": 12,
+              "type": "array",
+              "items": {
+                "type": "string",
+                "maxLength": 1000
+              }
+            }
+          },
+          "required": [
+            "status",
+            "reason",
+            "inputEnergyGJPerHa",
+            "inputEnergyGJForField",
+            "inputEnergyBasis",
+            "inputBreakdown",
+            "calorificValueMJPerKg",
+            "residueEnergyGJForField",
+            "equivalents",
+            "basis",
+            "limitations"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "carbonFootprint": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "status": {
+              "type": "string",
+              "enum": [
+                "available",
+                "partial",
+                "unavailable"
+              ]
+            },
+            "reason": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 120
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "fieldAreaHa": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "seasonDays": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 9007199254740991
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "emissionsForField": {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "low": {
+                      "type": "number"
+                    },
+                    "high": {
+                      "type": "number"
+                    }
+                  },
+                  "required": [
+                    "low",
+                    "high"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "emissionsPerHa": {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "low": {
+                      "type": "number"
+                    },
+                    "high": {
+                      "type": "number"
+                    }
+                  },
+                  "required": [
+                    "low",
+                    "high"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "terms": {
+              "maxItems": 10,
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "source": {
+                    "type": "string",
+                    "enum": [
+                      "rice_methane",
+                      "fertiliser_n2o",
+                      "fertiliser_manufacture",
+                      "fuel_and_machinery",
+                      "residue_burning",
+                      "residue_carbon",
+                      "other"
+                    ]
+                  },
+                  "label": {
+                    "type": "string",
+                    "maxLength": 80
+                  },
+                  "tCO2eForField": {
+                    "anyOf": [
+                      {
+                        "type": "object",
+                        "properties": {
+                          "low": {
+                            "type": "number"
+                          },
+                          "high": {
+                            "type": "number"
+                          }
+                        },
+                        "required": [
+                          "low",
+                          "high"
+                        ],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "tCO2ePerHa": {
+                    "type": "object",
+                    "properties": {
+                      "low": {
+                        "type": "number"
+                      },
+                      "high": {
+                        "type": "number"
+                      }
+                    },
+                    "required": [
+                      "low",
+                      "high"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "method": {
+                    "type": "string",
+                    "maxLength": 400
+                  },
+                  "kind": {
+                    "type": "string",
+                    "enum": [
+                      "baseline",
+                      "scenario"
+                    ]
+                  },
+                  "sourceIds": {
+                    "maxItems": 8,
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "maxLength": 80
+                    }
+                  }
+                },
+                "required": [
+                  "source",
+                  "label",
+                  "tCO2eForField",
+                  "tCO2ePerHa",
+                  "method",
+                  "kind",
+                  "sourceIds"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "residueScenarios": {
+              "maxItems": 4,
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "enum": [
+                      "burn",
+                      "incorporate",
+                      "sell_cbg",
+                      "sell_fodder"
+                    ]
+                  },
+                  "label": {
+                    "type": "string",
+                    "maxLength": 80
+                  },
+                  "netForField": {
+                    "type": "object",
+                    "properties": {
+                      "low": {
+                        "type": "number"
+                      },
+                      "high": {
+                        "type": "number"
+                      }
+                    },
+                    "required": [
+                      "low",
+                      "high"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "note": {
+                    "type": "string",
+                    "maxLength": 1000
+                  }
+                },
+                "required": [
+                  "id",
+                  "label",
+                  "netForField",
+                  "note"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "comparison": {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "rank": {
+                      "type": "integer",
+                      "minimum": 1,
+                      "maximum": 9007199254740991
+                    },
+                    "of": {
+                      "type": "integer",
+                      "minimum": 1,
+                      "maximum": 9007199254740991
+                    },
+                    "lowest": {
+                      "anyOf": [
+                        {
+                          "type": "object",
+                          "properties": {
+                            "cropId": {
+                              "type": "string",
+                              "maxLength": 120
+                            },
+                            "cropName": {
+                              "type": "string",
+                              "maxLength": 120
+                            },
+                            "tCO2eForField": {
+                              "type": "object",
+                              "properties": {
+                                "low": {
+                                  "type": "number"
+                                },
+                                "high": {
+                                  "type": "number"
+                                }
+                              },
+                              "required": [
+                                "low",
+                                "high"
+                              ],
+                              "additionalProperties": false
+                            }
+                          },
+                          "required": [
+                            "cropId",
+                            "cropName",
+                            "tCO2eForField"
+                          ],
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "highest": {
+                      "anyOf": [
+                        {
+                          "type": "object",
+                          "properties": {
+                            "cropId": {
+                              "type": "string",
+                              "maxLength": 120
+                            },
+                            "cropName": {
+                              "type": "string",
+                              "maxLength": 120
+                            },
+                            "tCO2eForField": {
+                              "type": "object",
+                              "properties": {
+                                "low": {
+                                  "type": "number"
+                                },
+                                "high": {
+                                  "type": "number"
+                                }
+                              },
+                              "required": [
+                                "low",
+                                "high"
+                              ],
+                              "additionalProperties": false
+                            }
+                          },
+                          "required": [
+                            "cropId",
+                            "cropName",
+                            "tCO2eForField"
+                          ],
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    }
+                  },
+                  "required": [
+                    "rank",
+                    "of",
+                    "lowest",
+                    "highest"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "gwp": {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "ch4": {
+                      "type": "number"
+                    },
+                    "n2o": {
+                      "type": "number"
+                    },
+                    "basis": {
+                      "type": "string",
+                      "maxLength": 160
+                    }
+                  },
+                  "required": [
+                    "ch4",
+                    "n2o",
+                    "basis"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "summary": {
+              "type": "string",
+              "maxLength": 300
+            },
+            "basis": {
+              "maxItems": 14,
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "kind": {
+                    "type": "string",
+                    "enum": [
+                      "price_history",
+                      "yield_reference",
+                      "cost_reference",
+                      "sowing_window",
+                      "duration",
+                      "rotation",
+                      "water",
+                      "soil",
+                      "ndvi",
+                      "climatology",
+                      "model",
+                      "residue_reference",
+                      "emission_factor",
+                      "energy_reference"
+                    ]
+                  },
+                  "label": {
+                    "type": "string",
+                    "maxLength": 200
+                  },
+                  "sourceId": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "maxLength": 200
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "url": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "format": "uri"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "scope": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "maxLength": 120
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "note": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "maxLength": 1000
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  }
+                },
+                "required": [
+                  "kind",
+                  "label",
+                  "sourceId",
+                  "url",
+                  "scope",
+                  "note"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "limitations": {
+              "maxItems": 12,
+              "type": "array",
+              "items": {
+                "type": "string",
+                "maxLength": 1000
+              }
+            }
+          },
+          "required": [
+            "status",
+            "reason",
+            "fieldAreaHa",
+            "seasonDays",
+            "emissionsForField",
+            "emissionsPerHa",
+            "terms",
+            "residueScenarios",
+            "comparison",
+            "gwp",
+            "summary",
+            "basis",
+            "limitations"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "overview": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "status": {
+              "type": "string",
+              "enum": [
+                "ready",
+                "pending",
+                "unavailable"
+              ]
+            },
+            "headline": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 160
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "points": {
+              "maxItems": 5,
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "kind": {
+                    "type": "string",
+                    "enum": [
+                      "do_now",
+                      "watch",
+                      "money",
+                      "later",
+                      "good_news"
+                    ]
+                  },
+                  "text": {
+                    "type": "string",
+                    "maxLength": 240
+                  },
+                  "factIds": {
+                    "maxItems": 6,
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "maxLength": 40
+                    }
+                  },
+                  "ref": {
+                    "anyOf": [
+                      {
+                        "type": "object",
+                        "properties": {
+                          "kind": {
+                            "type": "string",
+                            "enum": [
+                              "step",
+                              "alert",
+                              "card"
+                            ]
+                          },
+                          "id": {
+                            "type": "string",
+                            "maxLength": 160
+                          }
+                        },
+                        "required": [
+                          "kind",
+                          "id"
+                        ],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  }
+                },
+                "required": [
+                  "kind",
+                  "text",
+                  "factIds",
+                  "ref"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "facts": {
+              "maxItems": 16,
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "maxLength": 40
+                  },
+                  "text": {
+                    "type": "string",
+                    "maxLength": 240
+                  },
+                  "ref": {
+                    "anyOf": [
+                      {
+                        "type": "object",
+                        "properties": {
+                          "kind": {
+                            "type": "string",
+                            "enum": [
+                              "step",
+                              "alert",
+                              "card"
+                            ]
+                          },
+                          "id": {
+                            "type": "string",
+                            "maxLength": 160
+                          }
+                        },
+                        "required": [
+                          "kind",
+                          "id"
+                        ],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  }
+                },
+                "required": [
+                  "id",
+                  "text",
+                  "ref"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "origin": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "model",
+                    "deterministic"
+                  ]
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "generatedAt": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date-time",
+                  "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "modelInvocation": {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "format": "uuid",
+                      "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                    },
+                    "provider": {
+                      "type": "string",
+                      "const": "meta"
+                    },
+                    "requestedModel": {
+                      "type": "string"
+                    },
+                    "model": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "purpose": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "string",
+                      "enum": [
+                        "running",
+                        "succeeded",
+                        "failed"
+                      ]
+                    },
+                    "startedAt": {
+                      "type": "string",
+                      "format": "date-time",
+                      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                    },
+                    "finishedAt": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "format": "date-time",
+                          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "processing": {
+                      "type": "string",
+                      "const": "standard"
+                    },
+                    "requestedStorage": {
+                      "type": "boolean",
+                      "const": false
+                    },
+                    "responseDeleted": {
+                      "type": [
+                        "boolean",
+                        "null"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "provider",
+                    "requestedModel",
+                    "model",
+                    "purpose",
+                    "status",
+                    "startedAt",
+                    "finishedAt",
+                    "processing",
+                    "requestedStorage",
+                    "responseDeleted"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": [
+            "status",
+            "headline",
+            "points",
+            "facts",
+            "origin",
+            "generatedAt",
+            "modelInvocation"
           ],
           "additionalProperties": false
         },

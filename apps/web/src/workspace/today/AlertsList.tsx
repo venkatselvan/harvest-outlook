@@ -17,6 +17,9 @@ export interface AlertsListProps {
   error: string;
 }
 
+/** DOM id of an alert card, so the Today overview can scroll to it. */
+export const alertDomId = (alertId: string) => `today-alert-${alertId.replace(/[^A-Za-z0-9_-]/g, "-")}`;
+
 const severityOrder: Record<FarmAlert["severity"], number> = { warning: 0, watch: 1, info: 2 };
 const severityLabel: Record<FarmAlert["severity"], string> = { warning: "Warning", watch: "Watch", info: "Info" };
 const typeLabel: Record<FarmAlert["type"], string> = {
@@ -78,7 +81,7 @@ export function AlertsList(props: AlertsListProps) {
         <ul class="today-alert-list">
           <For each={sorted()}>
             {(alert) => (
-              <li class={`today-alert ${alert.severity}`} data-alert-id={alert.id}>
+              <li class={`today-alert ${alert.severity}`} id={alertDomId(alert.id)} tabIndex={-1} data-alert-id={alert.id}>
                 <span class="today-alert-bar" aria-hidden="true" />
                 <div class="today-alert-body">
                   <p class="today-alert-kicker">

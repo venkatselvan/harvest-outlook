@@ -14,6 +14,7 @@ export type AiUseKey =
   | "soil_review"
   | "crop_fit_picks"
   | "harvest_outlook_note"
+  | "today_overview"
   | "assistant"
   | "speech"
   | "journal_observation";
@@ -104,6 +105,16 @@ export const AI_USES: Record<AiUseKey, AiUse> = {
     does: "Writes a one-line outlook from the computed harvest-week price range and the seasonal pattern of past years.",
     code: "Code computes the range from three years of mandi history for the same weeks; the model may not add numbers of its own.",
     benefit: "A number with a reason, not a bare range.",
+    status: "live",
+  },
+  today_overview: {
+    key: "today_overview",
+    title: "Today overview",
+    model: "Meta Muse Spark 1.3 (text)",
+    where: "Today tab, top of the right column",
+    does: "Turns the facts the code computed for today into a headline and up to five points that say what to do and why, in plain words.",
+    code: "Code computes every fact and number, resolves the links to steps, alerts and cards, and rejects any number the facts do not hold. A code-written version is always available.",
+    benefit: "What today's numbers mean for you and what to do next, not just a list of figures.",
     status: "live",
   },
   assistant: {

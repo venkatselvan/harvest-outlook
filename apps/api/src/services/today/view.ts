@@ -52,6 +52,14 @@
  * - index stage (open-source comparison 2026-11-01): the field's own NDVI curve read by code (index-stage.ts) beside the
  *   calendar stage, only for a current cycle. It never moves the stage timeline; when it is insufficient or unavailable
  *   one limitation names its reason.
+ * - economics and footprint (TODAY_ECONOMICS_FOOTPRINT_SPEC.md, 2026-11-02): for a current cycle only, after the price
+ *   section resolves: the expected profit at the harvest midpoint from the price headline already fetched (economics.ts),
+ *   then residue income, energy and carbon on the economics' yield for the field (footprint.ts over
+ *   data/research/footprint/crop-footprint.json). Pure stored-data arithmetic, no network or model call in any mode; each
+ *   block runs under its own guard and its limitations are appended to the view's, deduplicated.
+ * - Today overview (spec section 9): after every other block, overview.ts builds facts from the composed view and
+ *   ensureTodayOverview returns the stored, pending or code-written overview (synthetic and replay: code-written inline,
+ *   no job, no Meta call); null without a current cycle or when it fails (a limitation names it).
  */
 import type {Config} from '../../config';
 import type {Pool} from '../../db/pool';
@@ -61,7 +69,7 @@ import type {ProviderConfig} from '../../providers/config';
 import type {Sentinel2Fetch} from '../../providers/sentinel2';
 import type {WeatherSource} from '../../plans/sources';
 import {isoWeek} from '../../plans/adapters/market-outlook';
-import type {CareTask, FarmAlert, FarmWorkspace, HealthReading, NdviReading, NdviSeries, OutlookNote, PricePoint, SceneRef, StageTimeline, TodayView, UpcomingStep, WeatherPoint} from '@harvest/contracts';
+import type {CarbonFootprint, CareTask, EnergyFootprint, FarmAlert, FarmWorkspace, HarvestEconomics, HealthReading, NdviReading, NdviSeries, OutlookNote, PricePoint, ResidueIncome, SceneRef, StageTimeline, TodayOverview, TodayView, UpcomingStep, WeatherPoint} from '@harvest/contracts';
 import {ApiError, notFound} from '../errors';
 import {getFarm} from '../farms';
 import {boundaryMetrics, getWorkspace} from '../workspace';
@@ -78,6 +86,10 @@ import {ndviSeries} from './ndvi';
 import {STAGE_READER_ASSUMPTIONS, readIndexStage} from './index-stage';
 import {stageAt, stageTimeline, timelineSpan} from './stage-timeline';
 import {unavailableTrack, weatherTrack, type WeatherTrack} from './weather-track';
+import {harvestEconomics as harvestEconomicsOf} from './economics';
+import {carbonFootprint as carbonFootprintOf, energyFootprint as energyFootprintOf, irrigationCategoryOf, residueIncome as residueIncomeOf, type FootprintInput} from './footprint';
+import {cropDisplayName} from '../year-plan/data';
+import {ensureTodayOverview, overviewFacts} from './overview';
 
 // ------------------------------------------------------------------ constants (design choices, see the header)
 
@@ -758,22 +770,63 @@ export async function todayView(deps: TodayViewDeps, ownerId: string, farmId: st
     outlookNote = {status: 'unavailable', text: null, facts: [], origin: null, generatedAt: null, modelInvocation: null};
   }
 
+  // ---- economics and footprint (pure stored-data arithmetic on the price headline fetched above; no network)
+  let harvestEconomics: HarvestEconomics | null = null;
+  let residueIncome: ResidueIncome | null = null;
+  let energyFootprint: EnergyFootprint | null = null;
+  let carbonFootprint: CarbonFootprint | null = null;
+  if (cycle && anchor) {
+    const harvestDate = harvest ? harvestMidpoint(harvest) : null;
+    const headline = price?.headline ?? null;
+    harvestEconomics = await guard('The harvest economics', async () => harvestEconomicsOf({
+      cycle: {id: cycle.id, cropId: cycle.cropId, productId: cycle.productId ?? null, sowingDate: cycle.sowingDate},
+      farm: {stateId: farm.location.stateCode, districtId: farm.location.districtId, areaHa: farm.areaHectares},
+      harvest, harvestDate, headline, today,
+      priceScopeLabel: price?.harvestPrice.scopeLabel ?? 'No harvest-week price reference',
+      priceMissingText: headline?.missingReason ? REASON_TEXT[headline.missingReason] ?? null : null,
+    }), null);
+    const fp: FootprintInput = {
+      cropId: cycle.cropId, cropName: product?.cropName ?? cycle.cropName ?? cropDisplayName(cycle.cropId), productId: cycle.productId ?? null,
+      stateId: farm.location.stateCode, districtId: farm.location.districtId, areaHa: farm.areaHectares,
+      yieldForFieldKg: harvestEconomics?.yieldForFieldKg ?? null, irrigationCategory: irrigationCategoryOf(farm.facts),
+      seasonDays: harvest ? dayDiff(anchor, harvest.earliest) : null, establishmentMethod: cycle.establishmentMethod ?? null,
+    };
+    residueIncome = await guard('The residue income', async () => residueIncomeOf(fp), null);
+    energyFootprint = await guard('The energy footprint', async () => energyFootprintOf(fp), null);
+    carbonFootprint = await guard('The carbon footprint', async () => carbonFootprintOf(fp), null);
+  }
+  const footprintNotes = [harvestEconomics, residueIncome, energyFootprint, carbonFootprint].flatMap((b) => b?.limitations ?? []);
+
+  const composed: TodayView = {
+    farmId, asOf, today, cycle, product, timeline, slider, daysToHarvest, scenes, ndvi, health,
+    priceTrack: price?.track ?? [], harvestPrice: price?.harvestPrice ?? null,
+    weatherTrack: weather.days.slice(0, MAX_TRACK_POINTS).map(toWeatherPoint),
+    alerts: alerts?.alerts ?? [], newsReview: alerts?.newsReview ?? null, imdStatus: 'not_connected',
+    upcoming, nextAction, outlookNote, indexStage, harvestEconomics, residueIncome, energyFootprint, carbonFootprint,
+    // When the monitor row cannot be read, the documented default (on) is reported and the failure is a limitation.
+    monitoring: monitor ? {enabled: monitor.enabled, lastCheckedAt: monitor.lastCheckedAt, nextCheckAt: monitor.nextCheckAt} : {enabled: true, lastCheckedAt: null, nextCheckAt: null},
+    limitations: [],
+  };
+
+  // ---- Today overview (spec section 9): facts from every block above, after all of them; stored, queued or code-written
+  let overview: TodayOverview | null = null;
+  const overviewNotes: string[] = [];
+  if (cycle) {
+    overview = await guard('The Today overview', async () => {
+      const set = overviewFacts(composed);
+      if (!set) return null;
+      return ensureTodayOverview({pool: deps.pool, config: deps.config, now}, {ownerId, farmId, set, districtName: farm.location.districtName, stateName: resolveStateName(farm.location.stateCode)});
+    }, null);
+    if (overview?.origin === 'model' || overview?.status === 'pending') overviewNotes.push('The Today overview is written by Meta muse-spark from the code facts listed with it; every number in it must appear in the facts each point cites, otherwise a code-written overview is shown.');
+  }
+
   // ---- limitations, failures first, deduplicated
   const weatherNotes = [...weather.limitations];
   if (weatherWindow.clipped) weatherNotes.push(`The crop cycle is longer than ${MAX_TRACK_POINTS} days; weather covers ${weatherWindow.from} to ${weatherWindow.to}.`);
   const limitations = [...new Set([
     ...failures(), ...timelineNotes, ...satelliteNotes, ...(ndvi?.limitations ?? []), ...(price?.limitations ?? []), ...weatherNotes,
-    ...(alerts?.limitations ?? []), ...careNotes, ...noteNotes,
+    ...(alerts?.limitations ?? []), ...careNotes, ...noteNotes, ...footprintNotes, ...overviewNotes,
   ].map((s) => cap(s, 1000)))];
 
-  return {
-    farmId, asOf, today, cycle, product, timeline, slider, daysToHarvest, scenes, ndvi, health,
-    priceTrack: price?.track ?? [], harvestPrice: price?.harvestPrice ?? null,
-    weatherTrack: weather.days.slice(0, MAX_TRACK_POINTS).map(toWeatherPoint),
-    alerts: alerts?.alerts ?? [], newsReview: alerts?.newsReview ?? null, imdStatus: 'not_connected',
-    upcoming, nextAction, outlookNote, indexStage,
-    // When the monitor row cannot be read, the documented default (on) is reported and the failure is a limitation.
-    monitoring: monitor ? {enabled: monitor.enabled, lastCheckedAt: monitor.lastCheckedAt, nextCheckAt: monitor.nextCheckAt} : {enabled: true, lastCheckedAt: null, nextCheckAt: null},
-    limitations,
-  };
+  return {...composed, overview, limitations};
 }

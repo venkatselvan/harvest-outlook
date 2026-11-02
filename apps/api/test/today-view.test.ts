@@ -13,6 +13,9 @@ import type {DailyWeather, WeatherSource} from '../src/plans/sources';
 import {eachDate} from '../src/plans/weather';
 import {isoWeek} from '../src/plans/adapters/market-outlook';
 import {ApiError, notFound} from '../src/services/errors';
+import {CarbonFootprint, EnergyFootprint, HarvestEconomics, ResidueIncome, TodayOverview} from '@harvest/contracts';
+import {gateOverview} from '../src/services/today/overview';
+import * as footprintData from '../src/services/today/footprint-data';
 
 /**
  * Every farm, scene, price, forecast, care schedule and alert in this file is SYNTHETIC test data. Providers are
@@ -610,5 +613,143 @@ describe('todayView: Hassan maize with Tamil Nadu guidance only (real focused re
     expect(notes).toMatch(/2 later guidance steps appear when their window is within 14 days/);
     expect(notes).not.toMatch(/not dated for this field/);
     expect(view.outlookNote?.status).toBe('pending');
+  });
+});
+
+// ------------------------------------------------------------------ economics and footprint (TODAY_ECONOMICS_FOOTPRINT_SPEC.md)
+
+/**
+ * SYNTHETIC footprint fixture of the section 5 shape for the maize case (invented numbers, not research values), injected
+ * through footprint-data invalidate(). Yields and costs come from the year-plan research files as in production; prices are
+ * the fake outlook above.
+ */
+const r2 = (low: number, high: number, extra: Record<string, unknown> = {}) => ({low, high, sourceId: 'SYN-FP', locator: 'Table S1', ...extra});
+const MAIZE_FOOTPRINT = {
+  constants: {
+    gwp100: {ch4: 27, n2o: 273, sourceId: 'SYN-GWP'}, n2oNToN2o: {value: 1.5714}, cToCo2: {value: 3.6667}, biomassCarbonFraction: r2(0.47, 0.47),
+    n2oEf1: {default: {low: 0.002, central: 0.01, high: 0.018}, floodedRice: {low: 0.001, central: 0.004, high: 0.029}, sourceId: 'SYN-IPCC'},
+    residueBurning: {ch4GPerKgDm: 2.7, n2oGPerKgDm: 0.07, combustionFactor: {low: 0.8, high: 0.9}, sourceId: 'SYN-IPCC'},
+    lpgMjPerKg: {value: 45.8, sourceId: 'SYN-LPG'}, lpgCylinderKg: {value: 14.2, sourceId: 'SYN-LPG'}, dieselMjPerLitre: {value: 36, sourceId: 'SYN-LPG'},
+  },
+  crops: [{
+    cropId: 'maize',
+    residue: {
+      name: 'maize stover', productBasis: 'maize-grain', rpr: r2(1.5, 2), surplusFraction: [r2(0.3, 0.4, {region: 'IN-KA'})], calorificValueMJPerKg: r2(16, 17),
+      uses: [{use: 'dry_fodder', label: 'Dry fodder for cattle', share: null, priceInrPerTonne: r2(2000, 3000), priceBasis: 'Synthetic fodder market, 2025', sourceId: 'SYN-FP'}],
+    },
+    nitrogenRateKgPerHa: [r2(150, 150, {region: 'IN-KA'})], energyInput: {gjPerHa: {low: 20, high: 30}, region: 'Synthetic', sourceId: 'SYN-FP', breakdown: []},
+    methane: {applies: false},
+  }],
+  sources: {},
+};
+
+describe('todayView: expected profit, residue income, energy and carbon (synthetic footprint fixture)', () => {
+  afterEach(() => footprintData.invalidate());
+  let areaFarm: string, noAreaFarm: string;
+  // No drawn boundary (a boundary would set the area from its own geometry): the recorded 1.2 ha, or no area at all.
+  const maizeFarm = async (name: string, areaHectares?: number) => {
+    const res = await owner.call('POST', '/api/v1/farms', {payload: {name, location: HASSAN, ...(areaHectares ? {areaHectares} : {})}});
+    expect(res.statusCode, res.body).toBe(201);
+    const id = res.json().data.id as string;
+    const put = await owner.call('PUT', `/api/v1/farms/${id}/workspace`, {payload: {expectedVersion: 0, boundary: null, previousHarvest: {status: 'unknown'}, cycles: [maizeCycle], rotationPlans: []}});
+    expect(put.statusCode, put.body).toBe(200);
+    return id;
+  };
+  beforeAll(async () => {
+    areaFarm = await maizeFarm('Hassan maize 1.2 ha', 1.2);
+    noAreaFarm = await maizeFarm('Hassan maize, area not recorded');
+  });
+
+  it('the four blocks are present and contract-valid for the maize case; the profit is for the harvest midpoint the price is for', async () => {
+    footprintData.invalidate(structuredClone(MAIZE_FOOTPRINT));
+    const spy = fetchSpy();
+    const calls: PriceCalls = {series: [], outlook: []};
+    const view = TodayView.parse(await todayView(liveDeps({calls, scenes: []}), ownerId, areaFarm));
+    const harvest = expectedTimeline().harvest!;
+    const econ = HarvestEconomics.parse(view.harvestEconomics);
+    const mid = plus(harvest.earliest, Math.floor(dayDiff(harvest.earliest, harvest.latest) / 2));
+    expect(econ).toMatchObject({status: 'available', harvest, harvestDate: mid, fieldAreaHa: 1.2});
+    expect(econ.price).toMatchObject({status: 'available', p50: refP50(mid), likely: {low: refP50(mid) - 4, high: refP50(mid) + 5}});
+    expect(econ.price!.scopeLabel).toBe(view.harvestPrice!.scopeLabel);
+    expect(econ.profitForField).not.toBeNull();
+    expect(econ.yieldForFieldKg).toEqual({low: Math.round(econ.yieldKgPerHa!.low * 1.2), high: Math.round(econ.yieldKgPerHa!.high * 1.2)});
+    // The price headline is not fetched again for the economics: only the slider's weekly references and the headline.
+    expect(calls.outlook.filter((c) => c.harvestDate === mid)).toHaveLength(1);
+
+    const residue = ResidueIncome.parse(view.residueIncome);
+    expect(residue).toMatchObject({status: 'available', residueName: 'maize stover', surplusFraction: {low: 0.3, high: 0.4}});
+    expect(residue.residueForFieldKg).toEqual({low: Math.round(econ.yieldForFieldKg!.low * 1.5), high: Math.round(econ.yieldForFieldKg!.high * 2)});
+    const energy = EnergyFootprint.parse(view.energyFootprint);
+    expect(energy).toMatchObject({status: 'available', inputEnergyGJForField: {low: 24, high: 36}});
+    const carbon = CarbonFootprint.parse(view.carbonFootprint);
+    // 150 kg N x EF1 default 0.002 to 0.018 x 1.5714 x 273 / 1000 = 0.1287 to 1.1583 t/ha; x 1.2 ha = 0.15444 -> 0.15 and 1.38996 -> 1.39.
+    expect(carbon).toMatchObject({status: 'available', fieldAreaHa: 1.2, emissionsForField: {low: 0.15, high: 1.39}, comparison: null});
+    expect(carbon.residueScenarios.map((s) => s.id)).toEqual(['burn', 'incorporate', 'sell_fodder']);
+    // Each block's limitations are in the view's list, once.
+    for (const line of ['Options are alternatives for the same residue and do not add up.', 'Residue scenarios are alternatives; only one happens.', ...econ.limitations]) {
+      expect(view.limitations.filter((l) => l === line)).toHaveLength(1);
+    }
+    expect(view.limitations.join(' ')).not.toMatch(/could not be read now/);
+    expect(spy).not.toHaveBeenCalled();
+  });
+
+  it('an unreadable footprint file leaves residue, energy and carbon null with a limitation; the profit is still shown', async () => {
+    footprintData.invalidate('not the section 5 shape');
+    const view = TodayView.parse(await todayView(liveDeps({scenes: []}), ownerId, areaFarm));
+    expect(view.harvestEconomics?.status).toBe('available');
+    expect(view.residueIncome).toBeNull();
+    expect(view.energyFootprint).toBeNull();
+    expect(view.carbonFootprint).toBeNull();
+    for (const section of ['The residue income', 'The energy footprint', 'The carbon footprint']) {
+      expect(view.limitations).toContain(`${section} could not be read now (internal_error); that part of the view is left empty.`);
+    }
+  });
+
+  it('a farm without a crop has none of the four blocks; without an area the profit is per hectare and the residue needs the area', async () => {
+    footprintData.invalidate(structuredClone(MAIZE_FOOTPRINT));
+    const empty = TodayView.parse(await todayView(liveDeps({scenes: []}), ownerId, emptyFarmId));
+    expect([empty.harvestEconomics, empty.residueIncome, empty.energyFootprint, empty.carbonFootprint]).toEqual([null, null, null, null]);
+    const noArea = TodayView.parse(await todayView(liveDeps({scenes: []}), ownerId, noAreaFarm));
+    expect(noArea.harvestEconomics).toMatchObject({status: 'available', fieldAreaHa: null, profitForField: null});
+    expect(noArea.harvestEconomics!.profitPerHa).not.toBeNull();
+    expect(noArea.residueIncome).toMatchObject({status: 'unavailable', reason: 'yield_or_area_missing'});
+    expect(noArea.carbonFootprint).toMatchObject({status: 'partial', reason: 'field_area_missing', emissionsForField: null});
+  });
+});
+
+describe('todayView: the Today overview (spec section 9, synthetic mode)', () => {
+  it('carries a contract-valid code-written overview whose facts point at real step and alert ids of the same view; no crop -> null', async () => {
+    const farm = await owner.call('POST', '/api/v1/farms', {payload: {name: 'Hassan maize overview', location: HASSAN, areaHectares: 1.2}});
+    expect(farm.statusCode, farm.body).toBe(201);
+    const id = farm.json().data.id as string;
+    const put = await owner.call('PUT', `/api/v1/farms/${id}/workspace`, {payload: {expectedVersion: 0, boundary: null, previousHarvest: {status: 'unknown'}, cycles: [maizeCycle], rotationPlans: []}});
+    expect(put.statusCode, put.body).toBe(200);
+    await persistAlerts(h.pool, ownerId, id, 'synthetic', [alert('Fall armyworm scouting window')]);
+    const spy = fetchSpy();
+    const deps: TodayViewDeps = {...liveDeps({scenes: []}), config: {RUNTIME_MODE: 'synthetic'}};
+    const view = TodayView.parse(await todayView(deps, ownerId, id));
+    const overview = TodayOverview.parse(view.overview);
+    expect(overview).toMatchObject({status: 'ready', origin: 'deterministic', modelInvocation: null});
+    expect(overview.headline).toMatch(/^Maize, /);
+    const stepIds = new Set([...view.upcoming.map((s) => s.id), ...(view.nextAction ? [view.nextAction.id] : [])]);
+    const alertIds = new Set(view.alerts.map((a) => a.id));
+    const refs = [...overview.facts.map((f) => f.ref), ...overview.points.map((p) => p.ref)].filter((r) => r !== null);
+    expect(refs.some((r) => r.kind === 'step')).toBe(true);
+    expect(refs.some((r) => r.kind === 'alert')).toBe(true);
+    for (const r of refs) {
+      if (r.kind === 'step') expect(stepIds.has(r.id), r.id).toBe(true);
+      if (r.kind === 'alert') expect(alertIds.has(r.id), r.id).toBe(true);
+    }
+    expect(overview.facts.find((f) => f.id === 'next')!.ref).toEqual({kind: 'step', id: view.nextAction!.id});
+    expect(overview.points[0]).toMatchObject({kind: 'do_now', factIds: ['next']});
+    // The code-written overview passes the model gate against its own facts.
+    expect(gateOverview({headline: overview.headline, points: overview.points.map(({kind, text, factIds}) => ({kind, text, factIds}))}, overview.facts).ok).toBe(true);
+    // Synthetic mode: no overview row or job, no network.
+    expect((await h.pool.query('SELECT 1 FROM farm_today_overviews WHERE farm_id=$1', [id])).rowCount).toBe(0);
+    expect((await h.pool.query("SELECT 1 FROM jobs WHERE type='today.overview' AND payload->>'farmId'=$1", [id])).rowCount).toBe(0);
+    expect(spy).not.toHaveBeenCalled();
+    expect(view.limitations.join(' ')).not.toMatch(/Today overview/);
+    const empty = TodayView.parse(await todayView(deps, ownerId, emptyFarmId));
+    expect(empty.overview).toBeNull();
   });
 });

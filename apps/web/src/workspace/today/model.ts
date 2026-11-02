@@ -1,9 +1,18 @@
 import type {
+  CarbonFootprint,
+  BasisRef,
+  CarbonTerm,
+  EnergyEquivalent,
+  HarvestEconomics,
   IndexId,
   IndexStagePhase,
   IndexStageReading,
   NdviStats,
+  NumberEstimate,
+  NumberRange,
   PricePoint,
+  ResidueIncome,
+  ResidueOption,
   SceneRef,
   StageTimeline,
   TodayView,
@@ -522,4 +531,247 @@ export function curveAsOfNote(reading: Pick<IndexStageReading, "asOf"> | null | 
   const age = daysBetween(reading.asOf, today);
   const stale = Number.isFinite(age) && age > CURVE_STALE_DAYS;
   return date !== today || stale ? `reading of ${formatDay(reading.asOf, false)}` : null;
+}
+
+// ---------------------------------------------------------------- economics and footprint cards (TODAY_ECONOMICS_FOOTPRINT_SPEC section 6)
+
+const TRUE_MINUS = "\u2212";
+const grouped = (value: number, decimals: number) =>
+  value.toLocaleString("en-IN", { maximumFractionDigits: decimals, minimumFractionDigits: decimals });
+/** A number with a true minus sign (never "-0.0"). `value` is already rounded to `decimals`. */
+function signedText(value: number, decimals: number, trim = false): string {
+  const text = trim
+    ? Math.abs(value).toLocaleString("en-IN", { maximumFractionDigits: decimals, minimumFractionDigits: 0 })
+    : grouped(Math.abs(value), decimals);
+  return value < 0 && Number(text.replace(/,/g, "")) !== 0 ? `${TRUE_MINUS}${text}` : text;
+}
+/**
+ * Two ends of a range as one text, rounded outward (low down, high up) so the shown range is never narrower than the
+ * data. One number when both ends round to the same value. An en dash joins non-negative ends; ends below zero use
+ * "to" so "−0.8–−0.3" is never printed.
+ */
+export function rangeText(range: NumberRange, decimals: number, trim = false): string {
+  const step = 10 ** -decimals;
+  const down = Math.floor(range.low / step + 1e-9) * step;
+  const up = Math.ceil(range.high / step - 1e-9) * step;
+  const low = Number(down.toFixed(decimals)), high = Number(up.toFixed(decimals));
+  if (low === high) return signedText(low, decimals, trim);
+  return `${signedText(low, decimals, trim)}${low < 0 || high < 0 ? " to " : "–"}${signedText(high, decimals, trim)}`;
+}
+
+/** Residue quantity: kilograms in, tonnes out with one decimal and a "t" ("4,200 kg" becomes "4.2 t"). */
+export function formatTonnes(kg: number): string {
+  return `${signedText(Math.round((kg / 1000) * 10) / 10, 1)} t`;
+}
+/** A kilogram range as tonnes, "3.8–4.6 t". */
+export function formatTonnesRange(kg: NumberRange): string {
+  return `${rangeText({ low: kg.low / 1000, high: kg.high / 1000 }, 1)} t`;
+}
+/** Energy range in gigajoules: one decimal below 100 GJ, whole gigajoules from 100. */
+export function formatGJ(range: NumberRange): string {
+  return `${rangeText(range, range.high >= 100 ? 0 : 1)} GJ`;
+}
+/** Parts of a tonnes-of-CO2e range, so a card can set the unit small. Kilograms when the whole range is under 1 t. */
+export function co2eParts(range: NumberRange): { short: string; unit: string } {
+  if (Math.max(Math.abs(range.low), Math.abs(range.high)) < 1) {
+    const kg = { low: range.low * 1000, high: range.high * 1000 };
+    return { short: rangeText(kg, 0), unit: "kg CO₂e" };
+  }
+  return { short: rangeText(range, 1), unit: "t CO₂e" };
+}
+/** "2.1–3.4 t CO₂e", or "420–610 kg CO₂e" when the whole range is under 1 t. */
+export function formatCo2e(range: NumberRange): string {
+  const { short, unit } = co2eParts(range);
+  return `${short} ${unit}`;
+}
+/** The same for a screen reader ("2.1 to 3.4 tonnes of carbon dioxide equivalent"). */
+export function spokenCo2e(range: NumberRange): string {
+  const { short, unit } = co2eParts(range);
+  return `${short.replace("–", " to ")} ${unit.startsWith("kg") ? "kilograms" : "tonnes"} of carbon dioxide equivalent`;
+}
+
+/** Rupees in the short Indian form for a card: "₹950", "₹4.5k", "₹29.5k", "₹1.2 L" (lakh), "₹1.4 Cr" (crore). */
+export function compactInr(value: number): string {
+  const abs = Math.abs(value);
+  const sign = value < 0 ? TRUE_MINUS : "";
+  const unit = (div: number, suffix: string, decimals: number) => {
+    const text = grouped(Math.round((abs / div) * 10 ** decimals) / 10 ** decimals, decimals).replace(/\.0+$/, "");
+    return `${sign}₹${text}${suffix}`;
+  };
+  if (abs >= 1e7) return unit(1e7, " Cr", 1);
+  if (abs >= 1e5) return unit(1e5, " L", 1);
+  if (abs >= 1000) return unit(1000, "k", 1);
+  return `${sign}₹${grouped(Math.round(abs), 0)}`;
+}
+/**
+ * A rupee range for a card, one shared unit: "₹18–41k", "₹1.2–1.9 L". Lakh only when the low end is itself at least one
+ * lakh, so "₹96k to ₹1.3 lakh" is written "₹96–134k" and never as a loosened "₹0.9–1.4 L". Ends of different sign are written in
+ * full ("−₹4k to ₹12k").
+ */
+export function compactInrRange(low: number, high: number): string {
+  if (low < 0 || high < 0) return `${compactInr(low)} to ${compactInr(high)}`;
+  const [div, suffix] = low >= 1e7 ? [1e7, " Cr"] : low >= 1e5 ? [1e5, " L"] : high >= 1000 ? [1000, "k"] : [1, ""];
+  const decimals = div === 1 || low / div >= 10 ? 0 : 1;
+  const step = 10 ** -decimals;
+  const down = Math.floor(low / div / step + 1e-9) * step, up = Math.ceil(high / div / step - 1e-9) * step;
+  const fmt = (v: number) => grouped(Number(v.toFixed(decimals)), decimals);
+  return fmt(down) === fmt(up) ? `₹${fmt(down)}${suffix}` : `₹${fmt(down)}–${fmt(up)}${suffix}`;
+}
+/** Full rupees for a screen reader or a sheet; a loss reads "minus ₹4,200". */
+export function spokenInr(value: number): string {
+  return value < 0 ? `minus ${formatInr(-value)}` : formatInr(value);
+}
+/** "₹18,000 to ₹41,000" for a range, in full rupees. */
+export function inrRangeText(low: number, high: number): string {
+  return `${spokenInr(low)} to ${spokenInr(high)}`;
+}
+
+export interface ProfitValue {
+  /** Profit when the cost is sourced; revenue (profit not computable) otherwise. */
+  kind: "profit" | "revenue";
+  /** The whole field when its area is known, else one hectare. */
+  scope: "field" | "ha";
+  estimate: NumberEstimate;
+}
+/** The figure the profit card leads with: the field total when `fieldAreaHa` is known, else per hectare. Null when nothing is computable. */
+export function profitValue(econ: Pick<HarvestEconomics, "fieldAreaHa" | "profitForField" | "profitPerHa" | "revenueForField" | "revenuePerHa">): ProfitValue | null {
+  const field = econ.fieldAreaHa != null;
+  if (field && econ.profitForField) return { kind: "profit", scope: "field", estimate: econ.profitForField };
+  if (econ.profitPerHa) return { kind: "profit", scope: "ha", estimate: econ.profitPerHa };
+  if (field && econ.revenueForField) return { kind: "revenue", scope: "field", estimate: econ.revenueForField };
+  if (econ.revenuePerHa) return { kind: "revenue", scope: "ha", estimate: econ.revenuePerHa };
+  return null;
+}
+/** Revenue, for the same scope as the profit figure: the field when the area is known, else per hectare. */
+export function revenueValue(econ: Pick<HarvestEconomics, "fieldAreaHa" | "revenueForField" | "revenuePerHa">): { scope: "field" | "ha"; estimate: NumberEstimate } | null {
+  if (econ.fieldAreaHa != null && econ.revenueForField) return { scope: "field", estimate: econ.revenueForField };
+  return econ.revenuePerHa ? { scope: "ha", estimate: econ.revenuePerHa } : null;
+}
+/** Cost the profit was computed with: A2+FL when sourced, else C2, times the field area when it is known. Null when no cost is sourced. */
+export function costValue(econ: Pick<HarvestEconomics, "fieldAreaHa" | "cost">): { label: string; scope: "field" | "ha"; value: number } | null {
+  const a2fl = econ.cost?.a2flPerHa ?? null, c2 = econ.cost?.c2PerHa ?? null;
+  const perHa = a2fl ?? c2;
+  if (perHa == null) return null;
+  const label = a2fl != null ? "A2+FL cost" : "C2 cost";
+  return econ.fieldAreaHa != null ? { label, scope: "field", value: perHa * econ.fieldAreaHa } : { label, scope: "ha", value: perHa };
+}
+export const yieldBasisWords: Record<NonNullable<HarvestEconomics["yieldBasis"]>, string> = {
+  district: "district yield",
+  state: "state yield",
+  reference: "reference yield",
+  farmer: "your own recorded yield",
+};
+
+/** A residue income in rupees, central value of its range; null when no price is sourced for the use. */
+const optionCentre = (option: ResidueOption) => (option.incomeForField ? (option.incomeForField.low + option.incomeForField.high) / 2 : null);
+/**
+ * Options best first: highest central income, options without an income after every priced one, ties and the unpriced
+ * keep the order the API sent. Residue options are alternatives for the same residue, so nothing here adds them up.
+ */
+export function orderResidueOptions(options: readonly ResidueOption[]): ResidueOption[] {
+  return options
+    .map((option, index) => ({ option, index, centre: optionCentre(option) }))
+    .sort((a, b) => (a.centre == null ? 1 : 0) - (b.centre == null ? 1 : 0) || (b.centre ?? 0) - (a.centre ?? 0) || a.index - b.index)
+    .map((entry) => entry.option);
+}
+export function bestResidueOption(options: readonly ResidueOption[]): ResidueOption | null {
+  return orderResidueOptions(options)[0] ?? null;
+}
+export const RESIDUE_ALTERNATIVES = "Alternatives, not added together";
+export const RESIDUE_SHEET_ALTERNATIVES = "These are alternatives for the same residue. The incomes do not add up: the residue can be used once.";
+/** "Paddy straw income" from the residue's name; "Residue income" when the API names none. */
+export function residueTitle(name: string | null | undefined): string {
+  const trimmed = name?.trim();
+  return trimmed ? `${trimmed.charAt(0).toUpperCase()}${trimmed.slice(1)} income` : "Residue income";
+}
+
+/**
+ * The high end of a term in one common unit: the field value when every baseline term has one, else the per-hectare value
+ * for every term (the field area is unknown, so a mix of units is never compared). Shares are the same either way.
+ */
+function termHighs(terms: readonly CarbonTerm[]): Map<CarbonTerm, number> {
+  const baseline = terms.filter((t) => t.kind === "baseline");
+  const useField = baseline.every((t) => t.tCO2eForField != null);
+  return new Map(baseline.map((t) => [t, (useField ? t.tCO2eForField! : t.tCO2ePerHa).high]));
+}
+/**
+ * The baseline term with the largest high value (the one that dominates the footprint); scenario terms are not baseline.
+ * Shared rule with the API summary (TODAY_ECONOMICS_FOOTPRINT_SPEC section 4): "largest" and "mostly" (share of at least
+ * 0.5 of the sum of baseline high values) are judged on high values, never on midpoints.
+ */
+export function largestCarbonTerm(terms: readonly CarbonTerm[]): CarbonTerm | null {
+  let best: CarbonTerm | null = null;
+  const highs = termHighs(terms);
+  for (const [term, high] of highs) if (!best || high > highs.get(best)!) best = term;
+  return best;
+}
+/**
+ * "Mostly methane from flooded rice" when the term is at least half of the baseline (by high values, the same rule as
+ * `largestCarbonTerm` and the API summary), else "Largest part: ...".
+ */
+export function carbonTermLine(terms: readonly CarbonTerm[]): string | null {
+  const term = largestCarbonTerm(terms);
+  if (!term) return null;
+  const highs = termHighs(terms);
+  const total = [...highs.values()].reduce((sum, high) => sum + Math.max(0, high), 0);
+  const label = term.label.charAt(0).toLowerCase() + term.label.slice(1);
+  return total > 0 && highs.get(term)! / total >= 0.5 ? `Mostly ${label}` : `Largest part: ${label}`;
+}
+const RESIDUE_CARBON_NOTE =
+  "carbon the residue holds; not a removal and not counted (most of it returns to the air as the residue decays)";
+const KEPT_OUT_NOTE = "carbon kept out of the air";
+/**
+ * The plain-words note a carbon term's figures carry in the sheet, or null. The informational residue-carbon term is
+ * never described as a removal; only a term whose method line names a retained share keeps "carbon kept out of the air".
+ */
+export function carbonTermNote(term: Pick<CarbonTerm, "source" | "method" | "tCO2ePerHa" | "tCO2eForField">): string | null {
+  if (term.source === "residue_carbon") return RESIDUE_CARBON_NOTE;
+  const negative = term.tCO2ePerHa.low < 0 || term.tCO2ePerHa.high < 0 || (term.tCO2eForField != null && (term.tCO2eForField.low < 0 || term.tCO2eForField.high < 0));
+  return negative && /retained share/i.test(term.method) ? KEPT_OUT_NOTE : null;
+}
+const ORDINALS = ["first", "second", "third"];
+/** The rank chip's text and its spoken form. */
+export function rankChip(comparison: NonNullable<CarbonFootprint["comparison"]>): { text: string; spoken: string } {
+  const place = comparison.rank <= 3 ? ORDINALS[comparison.rank - 1]! : `number ${comparison.rank}`;
+  return {
+    text: `${comparison.rank} of ${comparison.of} crops`,
+    spoken: `Ranked ${place} lowest of ${comparison.of} crops by emissions per hectare`,
+  };
+}
+/** The energy equivalent to quote on the card: household LPG cylinders when the API sent them, else the first. */
+export function lpgEquivalent(equivalents: readonly EnergyEquivalent[]): EnergyEquivalent | null {
+  return equivalents.find((e) => /lpg/i.test(`${e.label} ${e.unit}`)) ?? null;
+}
+/** "30–38 cylinders": the amount and its unit as the API sent them (the sheet puts the label in front). */
+export function equivalentAmount(eq: EnergyEquivalent): string {
+  return `${rangeText(eq.amount, eq.amount.high >= 100 ? 0 : 1)} ${eq.unit}`;
+}
+/** "30–38 LPG cylinders": the amount, then the unit, with "LPG" kept in the words when only the label names it. */
+export function equivalentText(eq: EnergyEquivalent): string {
+  const unit = /lpg/i.test(eq.label) && !/lpg/i.test(eq.unit) ? `LPG ${eq.unit}` : eq.unit;
+  return `${rangeText(eq.amount, eq.amount.high >= 100 ? 0 : 1)} ${unit}`;
+}
+/**
+ * The energy card's one-line basis: "Published energy study · Andhra Pradesh 1996-97", with the region and year parsed from
+ * the basis text ("IN-AP (Andhra Pradesh, 20 districts)", the last year or year range in it) or from the energy_reference
+ * BasisRef's scope and note. A basis from which neither parses is cut to 60 characters with an ellipsis. The full citation
+ * stays in the sheet.
+ */
+export function energyBasisShort(basis: string | null | undefined, refs: readonly Pick<BasisRef, "kind" | "scope" | "note">[] = []): string {
+  const text = basis?.trim() ?? "";
+  const ref = refs.find((r) => r.kind === "energy_reference");
+  const years = (value: string) => value.match(/\b(?:19|20)\d{2}(?:-\d{2})?\b/g)?.at(-1) ?? null;
+  const region = text.match(/\bIN-[A-Z]{2}\s*\(([^,)]+)/)?.[1]?.trim() ?? (ref?.scope?.trim() || null);
+  const year = years(text) ?? (ref?.note ? years(ref.note) : null);
+  const where = [region, year].filter(Boolean).join(" ");
+  if (where) return `Published energy study · ${where}`;
+  if (!text) return "Published energy-use studies and calorific values";
+  return text.length > 60 ? `${text.slice(0, 60).trimEnd()}…` : text;
+}
+/** The reason a block has no figure: the first limitation, else the reason when it reads as a sentence, else the fallback. */
+export function unavailableReason(block: { reason: string | null; limitations: readonly string[] }, fallback: string): string {
+  const first = block.limitations[0]?.trim();
+  if (first) return first;
+  const reason = block.reason?.trim();
+  return reason && /\s/.test(reason) ? reason : fallback;
 }

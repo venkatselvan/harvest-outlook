@@ -21,7 +21,8 @@ export const DateWindow = z.object({from: isoDate, to: isoDate}).strict();
 export const HarvestWindow = z.object({earliest: isoDate, latest: isoDate}).strict();
 
 export const BasisRef = z.object({
- kind: z.enum(['price_history', 'yield_reference', 'cost_reference', 'sowing_window', 'duration', 'rotation', 'water', 'soil', 'ndvi', 'climatology', 'model']),
+ /** 2026-11-02: residue_reference, emission_factor and energy_reference serve the Today footprint blocks (TODAY_ECONOMICS_FOOTPRINT_SPEC.md). */
+ kind: z.enum(['price_history', 'yield_reference', 'cost_reference', 'sowing_window', 'duration', 'rotation', 'water', 'soil', 'ndvi', 'climatology', 'model', 'residue_reference', 'emission_factor', 'energy_reference']),
  label: z.string().max(200),
  sourceId: z.string().max(200).nullable(),
  url: z.url().nullable(),

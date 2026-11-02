@@ -1,12 +1,20 @@
 import type {
+  BasisRef,
+  CarbonFootprint,
+  EnergyFootprint,
   FarmAlert,
+  HarvestEconomics,
   IndexId,
   IndexStageReading,
   IndexSummaries,
   NdviReading,
   NdviSeries,
+  OverviewFact,
+  OverviewPoint,
   PricePoint,
+  ResidueIncome,
   SceneRef,
+  TodayOverview,
   TodayView,
   UpcomingStep,
   WeatherPoint,
@@ -21,6 +29,10 @@ import { addDays, daysBetween } from "./model";
  * catalogue. Source names and URLs point at example.org so a screenshot can never be mistaken for real evidence.
  *
  * Scenario: maize (direct sowing) in Hassan sown 2026-09-15, viewed on 2026-11-01.
+ *
+ * The economics and footprint blocks (profit, residue income, energy, carbon) belong to the same maize cycle on 1.2 ha:
+ * invented yields, prices, residue ratios, energy and emission figures that exercise the four cards. They are not research
+ * data and must not be copied into the API.
  */
 export const FIXTURE_FARM_ID = "11111111-1111-4111-8111-111111111111";
 export const FIXTURE_TODAY = "2026-11-01";
@@ -420,6 +432,349 @@ function emptyCurve(): IndexStageReading {
   };
 }
 
+
+// ---------------------------------------------------------------- economics and footprint blocks (synthetic maize case, 1.2 ha)
+
+const fixtureBasis = (kind: BasisRef["kind"], label: string, scope: string | null = "Hassan", note: string | null = null): BasisRef => ({
+  kind,
+  label,
+  sourceId: null,
+  url: "https://example.org/test-fixture",
+  scope,
+  note,
+});
+const FIXTURE_AREA_HA = 1.2;
+
+/** Everything sourced: profit for the field with the likely and possible bands. */
+export function harvestEconomicsFixture(): HarvestEconomics {
+  return {
+    status: "available",
+    reason: null,
+    harvest: { ...FIXTURE_HARVEST },
+    harvestDate: "2027-01-08",
+    fieldAreaHa: FIXTURE_AREA_HA,
+    yieldKgPerHa: { low: 5500, high: 7000 },
+    yieldBasis: "district",
+    yieldForFieldKg: { low: 6600, high: 8400 },
+    keepFraction: 0.95,
+    price: {
+      status: "available",
+      unit: "INR/kg",
+      p50: 21.4,
+      likely: { low: 19.2, high: 23.8 },
+      scopeLabel: "Based on 3 years of Karnataka mandi prices (test fixture)",
+    },
+    cost: { a2flPerHa: 48000, c2PerHa: 68000, authority: "cacp", year: "2024-25", region: "Karnataka" },
+    revenuePerHa: { central: 127000, likely: { low: 105000, high: 150000 }, possible: { low: 88000, high: 168000 } },
+    revenueForField: { central: 152400, likely: { low: 126000, high: 180000 }, possible: { low: 105600, high: 201600 } },
+    profitPerHa: { central: 79000, likely: { low: 57000, high: 102000 }, possible: { low: 40000, high: 120000 } },
+    profitForField: { central: 94800, likely: { low: 68400, high: 122400 }, possible: { low: 48000, high: 144000 } },
+    basis: [
+      fixtureBasis("yield_reference", "District maize yield, 2021 to 2023 (test fixture)", "Hassan"),
+      fixtureBasis("price_history", "Harvest-week prices, 2023 to 2025 (test fixture)", "Karnataka"),
+      fixtureBasis("cost_reference", "A2+FL cost of cultivation, 2024-25 (test fixture)", "Karnataka"),
+    ],
+    limitations: ["Test fixture: every number here is invented.", "The price is a past harvest-week reference, not a forecast."],
+  };
+}
+/** Revenue is known, the cost is not: the card shows the revenue and says the cost is missing. */
+export function harvestEconomicsPartialFixture(): HarvestEconomics {
+  return {
+    ...harvestEconomicsFixture(),
+    status: "partial",
+    cost: null,
+    profitPerHa: null,
+    profitForField: null,
+    limitations: ["No cost of cultivation is sourced for this crop and state, so profit is not shown."],
+  };
+}
+export function harvestEconomicsUnavailableFixture(): HarvestEconomics {
+  return {
+    status: "unavailable",
+    reason: "no_yield_row",
+    harvest: null,
+    harvestDate: null,
+    fieldAreaHa: null,
+    yieldKgPerHa: null,
+    yieldBasis: null,
+    yieldForFieldKg: null,
+    keepFraction: 1,
+    price: null,
+    cost: null,
+    revenuePerHa: null,
+    revenueForField: null,
+    profitPerHa: null,
+    profitForField: null,
+    basis: [],
+    limitations: ["No regional yield is sourced for this crop, so profit at harvest is not estimated."],
+  };
+}
+
+/** Three alternatives for the same stover, sent in the wrong order on purpose (fodder, biomass fuel, CBG) so the card must sort; one has no price. */
+export function residueIncomeFixture(): ResidueIncome {
+  return {
+    status: "available",
+    reason: null,
+    residueName: "maize stover",
+    residueToProductRatio: { low: 1.1, high: 1.5 },
+    residueForFieldKg: { low: 7260, high: 12600 },
+    surplusFraction: { low: 0.4, high: 0.6 },
+    surplusForFieldKg: { low: 2904, high: 7560 },
+    options: [
+      {
+        use: "dry_fodder",
+        label: "Dry fodder",
+        quantityKg: { low: 1500, high: 3000 },
+        priceInrPerTonne: { low: 3500, high: 5500 },
+        priceBasis: "farm-gate, dry basis, Karnataka 2025 (test fixture)",
+        incomeForField: { low: 5250, high: 16500 },
+        note: "Only the part cattle owners nearby will take.",
+        sourceIds: [],
+      },
+      {
+        use: "biomass_fuel",
+        label: "Biomass fuel",
+        quantityKg: { low: 1000, high: 2500 },
+        priceInrPerTonne: null,
+        priceBasis: null,
+        incomeForField: null,
+        note: "No price is sourced for stover sold as boiler fuel.",
+        sourceIds: [],
+      },
+      {
+        use: "cbg_feedstock",
+        label: "CBG feedstock",
+        quantityKg: { low: 2904, high: 7560 },
+        priceInrPerTonne: { low: 1800, high: 2500 },
+        priceBasis: "plant-gate, as reported, 2025 (test fixture)",
+        incomeForField: { low: 5227, high: 18900 },
+        note: "Needs a compressed biogas plant within hauling distance.",
+        sourceIds: [],
+      },
+    ],
+    basis: [fixtureBasis("yield_reference", "Published residue-to-product ratio for maize (test fixture)", "India"), fixtureBasis("model", "Surplus share of the residue (test fixture)", "India", "India-wide figure, flagged.")],
+    limitations: ["Test fixture: invented ratio, share and prices.", "Prices are as reported by one plant and one region; yours may differ."],
+  };
+}
+/** A crop whose residue is usually not sold: no figure, a reason. */
+export function residueIncomeUnavailableFixture(): ResidueIncome {
+  return {
+    status: "unavailable",
+    reason: "residue_not_usually_sold",
+    residueName: null,
+    residueToProductRatio: null,
+    residueForFieldKg: null,
+    surplusFraction: null,
+    surplusForFieldKg: null,
+    options: [],
+    basis: [],
+    limitations: ["The haulm of this crop is usually left on the field, so no income is estimated."],
+  };
+}
+
+export function energyFootprintFixture(): EnergyFootprint {
+  return {
+    status: "available",
+    reason: null,
+    inputEnergyGJPerHa: { low: 12, high: 16 },
+    inputEnergyGJForField: { low: 14.4, high: 19.2 },
+    inputEnergyBasis: "Energy-use study of maize farms in southern India (test fixture)",
+    inputBreakdown: [
+      { item: "Fertiliser", share: 0.38 },
+      { item: "Fuel", share: 0.27 },
+      { item: "Irrigation", share: 0.12 },
+      { item: "Labour", share: 0.13 },
+      { item: "Seed", share: 0.1 },
+    ],
+    calorificValueMJPerKg: { low: 15, high: 17 },
+    residueEnergyGJForField: { low: 39.6, high: 128.5 },
+    equivalents: [
+      { label: "Household LPG cylinders (14.2 kg)", amount: { low: 61, high: 198 }, unit: "cylinders", sourceIds: [] },
+      { label: "Diesel", amount: { low: 1040, high: 3380 }, unit: "litres", sourceIds: [] },
+    ],
+    basis: [fixtureBasis("model", "Calorific value of maize stover (test fixture)", "India")],
+    limitations: ["Test fixture: invented energy figures.", "The input energy is a study average, not what this farm used."],
+  };
+}
+/** The residue energy is known but no energy-use study is sourced for the crop. */
+export function energyFootprintPartialFixture(): EnergyFootprint {
+  return {
+    ...energyFootprintFixture(),
+    status: "partial",
+    inputEnergyGJPerHa: null,
+    inputEnergyGJForField: null,
+    inputEnergyBasis: null,
+    inputBreakdown: [],
+    limitations: ["No energy-use study is sourced for this crop, so only the energy in the residue is shown."],
+  };
+}
+export function energyFootprintUnavailableFixture(): EnergyFootprint {
+  return {
+    status: "unavailable",
+    reason: "no_energy_row",
+    inputEnergyGJPerHa: null,
+    inputEnergyGJForField: null,
+    inputEnergyBasis: null,
+    inputBreakdown: [],
+    calorificValueMJPerKg: null,
+    residueEnergyGJForField: null,
+    equivalents: [],
+    basis: [],
+    limitations: ["No energy figures are sourced for this crop."],
+  };
+}
+
+export function carbonFootprintFixture(): CarbonFootprint {
+  return {
+    status: "available",
+    reason: null,
+    fieldAreaHa: FIXTURE_AREA_HA,
+    seasonDays: 110,
+    emissionsForField: { low: 1.2, high: 2.1 },
+    emissionsPerHa: { low: 1, high: 1.75 },
+    // Maize is not flooded: no methane term. The largest term (nitrous oxide) is not first, so the card has to pick it.
+    terms: [
+      { source: "fertiliser_manufacture", label: "Making the fertiliser", tCO2eForField: { low: 0.4, high: 0.6 }, tCO2ePerHa: { low: 0.33, high: 0.5 }, method: "150 kg N per ha x 1.2 ha x embodied factor (test fixture)", kind: "baseline", sourceIds: [] },
+      { source: "fertiliser_n2o", label: "Nitrous oxide from fertiliser nitrogen", tCO2eForField: { low: 0.6, high: 1.1 }, tCO2ePerHa: { low: 0.5, high: 0.92 }, method: "150 kg N per ha x 1.2 ha x emission factor 0.01 x 44/28 x 273 (test fixture)", kind: "baseline", sourceIds: [] },
+      { source: "fuel_and_machinery", label: "Diesel and machinery", tCO2eForField: { low: 0.2, high: 0.4 }, tCO2ePerHa: { low: 0.17, high: 0.33 }, method: "study diesel use x 1.2 ha x diesel factor (test fixture)", kind: "baseline", sourceIds: [] },
+      { source: "residue_burning", label: "Burning the stover in the field", tCO2eForField: { low: 0.3, high: 0.6 }, tCO2ePerHa: { low: 0.25, high: 0.5 }, method: "stover burnt x methane and nitrous oxide factors; the carbon dioxide is biogenic and not counted (test fixture)", kind: "scenario", sourceIds: [] },
+      { source: "residue_carbon", label: "Carbon held in stover worked into the soil", tCO2eForField: { low: -0.9, high: -0.3 }, tCO2ePerHa: { low: -0.75, high: -0.25 }, method: "stover carbon share x 44/12; only part stays in the soil and that part is not estimated (test fixture)", kind: "scenario", sourceIds: [] },
+    ],
+    residueScenarios: [
+      { id: "burn", label: "Burn the stover", netForField: { low: 1.5, high: 2.7 }, note: "Burning adds methane and nitrous oxide on top of the season's emissions." },
+      { id: "incorporate", label: "Work the stover into the soil", netForField: { low: 1.2, high: 2.1 }, note: "No credit is claimed for the carbon in the stover: only part of it stays in the soil and that part is not estimated, so the total equals the emissions above." },
+      { id: "sell_cbg", label: "Sell it for CBG", netForField: { low: 1.2, high: 2.1 }, note: "No emission in the field; no credit is claimed for the fuel it replaces." },
+      { id: "sell_fodder", label: "Sell it as dry fodder", netForField: { low: 1.2, high: 2.1 }, note: "No emission in the field; no credit is claimed." },
+    ],
+    comparison: {
+      rank: 9,
+      of: 14,
+      lowest: { cropId: "finger-millet", cropName: "Finger millet", tCO2eForField: { low: 0.5, high: 0.9 } },
+      highest: { cropId: "paddy", cropName: "Paddy", tCO2eForField: { low: 3.5, high: 6.7 } },
+    },
+    gwp: { ch4: 27, n2o: 273, basis: "IPCC AR6 100-year values (test fixture)" },
+    summary: "A maize season on 1.2 ha emits about 1.2 to 2.1 t CO₂e, mostly nitrous oxide from fertiliser nitrogen.",
+    basis: [fixtureBasis("model", "IPCC 2019 Refinement emission factors (test fixture)", "India")],
+    limitations: ["Test fixture: invented factors.", "Nitrogen rates are the state recommendation, not what this farm applied."],
+  };
+}
+/** The field area is not known: every term carries only its per-hectare figure, there is no field total and no scenario net. */
+export function carbonFootprintNoAreaFixture(): CarbonFootprint {
+  const full = carbonFootprintFixture();
+  return {
+    ...full,
+    status: "partial",
+    fieldAreaHa: null,
+    emissionsForField: null,
+    terms: full.terms.map((term) => ({ ...term, tCO2eForField: null })),
+    residueScenarios: [],
+    comparison: null,
+    summary: "A maize season emits about 1.0 to 1.75 t CO₂e per hectare, mostly nitrous oxide from fertiliser nitrogen.",
+    limitations: ["The field area is not known, so the figures are per hectare only."],
+  };
+}
+/** The baseline is known but the pool comparison is not (too few crops with a figure). */
+export function carbonFootprintPartialFixture(): CarbonFootprint {
+  return { ...carbonFootprintFixture(), status: "partial", comparison: null, residueScenarios: [], limitations: ["Fewer than three crops have a footprint figure here, so no comparison is shown."] };
+}
+export function carbonFootprintUnavailableFixture(): CarbonFootprint {
+  return {
+    status: "unavailable",
+    reason: "no_footprint_row",
+    fieldAreaHa: null,
+    seasonDays: null,
+    emissionsForField: null,
+    emissionsPerHa: null,
+    terms: [],
+    residueScenarios: [],
+    comparison: null,
+    gwp: null,
+    summary: "",
+    basis: [],
+    limitations: ["No emission factors are sourced for this crop."],
+  };
+}
+
+// ---------------------------------------------------------------- the AI overview (synthetic; refs point at real fixture steps, alerts and cards)
+
+const MOISTURE_STEP_ID = "care:task-moisture";
+const TASSELLING_STEP_ID = "stage:tasselling";
+/** Code-written facts the overview rests on (invented, consistent with the rest of this fixture). */
+export const OVERVIEW_FACTS: OverviewFact[] = [
+  { id: "stage", text: "Day 47 since sowing, vegetative stage", ref: { kind: "card", id: "harvest" } },
+  { id: "harvest", text: "Harvest in 63 to 73 days, window 3 Jan to 13 Jan", ref: { kind: "card", id: "harvest" } },
+  { id: "next", text: "Next: Check field moisture, due 31 Oct to 2 Nov", ref: { kind: "step", id: MOISTURE_STEP_ID } },
+  { id: "alert1", text: "Warning: Leaf-feeding pest window for vegetative maize", ref: { kind: "alert", id: FIXTURE_ALERT_IDS.threat } },
+  { id: "alert2", text: "Watch: Heavy rain expected on 4 Nov", ref: { kind: "alert", id: FIXTURE_ALERT_IDS.weather } },
+  { id: "price", text: "Harvest price likely ₹19 to ₹24 per kg", ref: { kind: "card", id: "price" } },
+  { id: "profit", text: "Profit for the field about ₹94,800, likely ₹68,400 to ₹1,22,400", ref: { kind: "card", id: "profit" } },
+  { id: "health", text: "Vegetation near typical, NDVI 0.62 on 27 Oct", ref: { kind: "card", id: "health" } },
+  { id: "residue", text: "Maize stover could bring ₹5,227 to ₹18,900 as CBG feedstock", ref: { kind: "card", id: "residue" } },
+  { id: "later", text: "Tasselling and silking begins on 9 Nov", ref: { kind: "step", id: TASSELLING_STEP_ID } },
+];
+const point = (kind: OverviewPoint["kind"], text: string, factIds: string[]): OverviewPoint => ({
+  kind,
+  text,
+  factIds,
+  ref: OVERVIEW_FACTS.find((fact) => fact.id === factIds[0])?.ref ?? null,
+});
+
+/** Model-written, ready. Every point cites facts; each ref is the first cited fact's ref (a step, an alert or a card). */
+export function overviewFixture(): TodayOverview {
+  return {
+    status: "ready",
+    headline: "Maize is on track for harvest in 63 to 73 days; check moisture and clear the drains now.",
+    points: [
+      point("do_now", "Check field moisture today before you decide on irrigation, because rain is on the way.", ["next", "alert2"]),
+      point("watch", "Heavy rain is due on 4 Nov: clear the field drains first so water does not stand on your maize.", ["alert2"]),
+      point("money", "Expect about ₹94,800 profit from this field, likely ₹68,400 to ₹1,22,400, if prices stay near ₹19 to ₹24 per kg.", ["profit", "price"]),
+      point("later", "The stover could earn ₹5,227 to ₹18,900 as CBG feedstock: line up a buyer before harvest.", ["residue"]),
+      point("good_news", "Your crop looks near typical for this stage, so nothing needs fixing in the field itself.", ["health"]),
+    ],
+    facts: OVERVIEW_FACTS.map((fact) => ({ ...fact })),
+    origin: "model",
+    generatedAt: "2026-11-01T04:25:00Z",
+    modelInvocation: {
+      id: "33333333-3333-4333-8333-333333333333",
+      provider: "meta",
+      requestedModel: "muse-spark",
+      model: "muse-spark",
+      purpose: "today_overview",
+      status: "succeeded",
+      startedAt: "2026-11-01T04:24:30Z",
+      finishedAt: "2026-11-01T04:25:00Z",
+      processing: "standard",
+      requestedStorage: false,
+      responseDeleted: true,
+    },
+  };
+}
+/** Code-written points shown while the model job runs: pending, origin deterministic. */
+export function overviewPendingFixture(): TodayOverview {
+  return { ...overviewDeterministicFixture(), status: "pending" };
+}
+/** Code-written and final (synthetic and replay modes, or the model answer was rejected): no AI mark. */
+export function overviewDeterministicFixture(): TodayOverview {
+  return {
+    status: "ready",
+    headline: "Maize, vegetative stage: harvest in 63 to 73 days.",
+    points: [
+      point("do_now", "Do next: Check field moisture, due 31 Oct to 2 Nov", ["next"]),
+      point("watch", "Watch: Heavy rain expected on 4 Nov", ["alert2"]),
+      point("money", "Profit for the field about ₹94,800, likely ₹68,400 to ₹1,22,400", ["profit"]),
+      point("later", "Tasselling and silking begins on 9 Nov", ["later"]),
+      point("good_news", "Vegetation near typical, NDVI 0.62 on 27 Oct", ["health"]),
+    ],
+    facts: OVERVIEW_FACTS.map((fact) => ({ ...fact })),
+    origin: "deterministic",
+    generatedAt: "2026-11-01T04:30:00Z",
+    modelInvocation: null,
+  };
+}
+export function overviewUnavailableFixture(): TodayOverview {
+  return { status: "unavailable", headline: null, points: [], facts: [], origin: null, generatedAt: null, modelInvocation: null };
+}
+
 const monitoring = {
   enabled: true,
   lastCheckedAt: "2026-11-01T03:00:00Z",
@@ -488,6 +843,11 @@ export function todayFixture(farmId = FIXTURE_FARM_ID): TodayView {
     upcoming: upcoming(),
     nextAction: upcoming()[0]!,
     indexStage: indexStageFixture(),
+    overview: overviewFixture(),
+    harvestEconomics: harvestEconomicsFixture(),
+    residueIncome: residueIncomeFixture(),
+    energyFootprint: energyFootprintFixture(),
+    carbonFootprint: carbonFootprintFixture(),
     outlookNote: {
       status: "ready",
       text: "Maize grain in Karnataka has usually fetched ₹19 to ₹24 per kg around harvest, close to the yearly average.",

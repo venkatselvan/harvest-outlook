@@ -19,6 +19,7 @@ import {
 import { TodayHero, type HeroMode } from "./TodayHero";
 import { StageSlider } from "./StageSlider";
 import { TodayCards, type CardKind } from "./TodayCards";
+import { TodayOverview } from "./TodayOverview";
 import { AlertsList } from "./AlertsList";
 import { UpcomingSteps, stepDomId } from "./UpcomingSteps";
 import { TodayEmpty } from "./TodayEmpty";
@@ -381,7 +382,10 @@ export function TodayView(props: TodayViewProps) {
                 </p>
               </Show>
             </div>
-            <TodayCards view={view()!} date={date()} price={price()} weather={weather()} onDetails={openDetails} />
+            <div class="today-side">
+              <TodayOverview overview={view()!.overview} onDetails={openDetails} />
+              <TodayCards view={view()!} date={date()} price={price()} weather={weather()} onDetails={openDetails} />
+            </div>
             {lists(view()!)}
             <button type="button" class="text-button today-about" onClick={() => setSheet("about")}>
               <Icon name="info" size={14} /> About this view

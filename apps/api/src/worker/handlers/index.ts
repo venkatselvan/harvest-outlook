@@ -17,6 +17,7 @@ import { createYearPlanHandler } from './year-plan';
 import { createMonitorHandler } from './monitoring';
 import { createFutureLookHandler } from './future-look';
 import { createOutlookNoteHandler, OUTLOOK_NOTE_JOB_TYPE } from './outlook-note';
+import { createTodayOverviewHandler, TODAY_OVERVIEW_JOB_TYPE } from './today-overview';
 import { createCropFitHandler, CROP_FIT_JOB_TYPE } from './crop-fit';
 import { createSoilReviewHandler, SOIL_REVIEW_JOB_TYPE } from './soil-review';
 import {withModelActivity} from '../../services/model-activity';
@@ -45,6 +46,8 @@ export function registerWorkerHandlers(registry: Record<string, JobHandler>, dep
   registry['today.future-look'] = createFutureLookHandler({ config, pool, storage, budget, ...(deps.fetchImpl ? { fetchImpl: deps.fetchImpl } : {}) });
   // Round 2 (docs/research/ROUND2_SPEC.md): harvest outlook note, crop fit review (soil review is added when its handler lands).
   registry[OUTLOOK_NOTE_JOB_TYPE] = createOutlookNoteHandler({ config, pool, budget, ...(deps.fetchImpl ? { fetchImpl: deps.fetchImpl } : {}) });
+  // TODAY_ECONOMICS_FOOTPRINT_SPEC.md section 9: the Today overview.
+  registry[TODAY_OVERVIEW_JOB_TYPE] = createTodayOverviewHandler({ config, pool, budget, ...(deps.fetchImpl ? { fetchImpl: deps.fetchImpl } : {}) });
   registry[CROP_FIT_JOB_TYPE] = createCropFitHandler({ config, pool, budget, ...(deps.fetchImpl ? { fetchImpl: deps.fetchImpl } : {}) });
   registry[SOIL_REVIEW_JOB_TYPE] = createSoilReviewHandler({ config, pool, budget, ...(deps.fetchImpl ? { fetchImpl: deps.fetchImpl } : {}) });
   // T10: vision.segment. Returns status 'unavailable' without any network call in synthetic/replay mode or without a credential.

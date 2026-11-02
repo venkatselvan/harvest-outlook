@@ -1,0 +1,2063 @@
+{
+ "generatedAt": "2026-11-02",
+ "purpose": "Cited residue, nitrogen, energy and emission-factor references for the Today view residue income, energy footprint and carbon footprint blocks (TODAY_ECONOMICS_FOOTPRINT_SPEC section 5). Regional references, not measurements of any field.",
+ "status": "research_candidate_unreviewed",
+ "conventions": {
+  "units": "kg, tonnes, MJ/kg, m3, INR; N rates kg N/ha; methane factors kg CH4/ha/day; N2O EF in kg N2O-N per kg N.",
+  "residueBasis": "rpr is residue mass per unit of product mass in the productBasis form, as the source reports it. The IISc atlas does not state a moisture basis (its method paper speaks of sun-dry residue); treat as approximately air-dry, not oven-dry.",
+  "derivedValues": "Where a source prints generation, production and surplus but not the ratio, rpr and surplusFraction are derived by division and the derivation is recorded on the figure.",
+  "nulls": "A missing value means no cited figure was found; it never means zero."
+ },
+ "constants": {
+  "gwp100": {
+   "ch4": 27.0,
+   "n2o": 273,
+   "ch4Uncertainty": 11,
+   "n2oUncertainty": 130,
+   "sourceId": "IPCC-AR6-WG1-T7.15",
+   "locator": "Table 7.15, GWP-100 column (PDF p95)",
+   "note": "CH4 non-fossil (biogenic; rice and residue burning). CH4-fossil is 29.8. Uncertainties are the printed +/- values (5-95% range); the engine uses the central values."
+  },
+  "n2oNToN2o": {
+   "value": 1.5714,
+   "note": "44/28"
+  },
+  "cToCo2": {
+   "value": 3.6667,
+   "note": "44/12"
+  },
+  "biomassCarbonFraction": {
+   "low": 0.42,
+   "high": 0.42,
+   "sourceId": "IPCC-2019R-V4C5",
+   "locator": "Equation 5.0H, p5.35 (PDF p36)",
+   "note": "IPCC default C content of above-ground crop residues (0.42 kg C/kg dm). The 0.47 value is the herbaceous-biomass carbon fraction for grassland, not a crop-residue value."
+  },
+  "riceMethaneBaselineKgPerHaDay": {
+   "low": 0.58,
+   "central": 0.85,
+   "high": 1.26,
+   "region": "South Asia",
+   "sourceId": "IPCC-2019R-V4C5",
+   "locator": "Table 5.11 (Updated), p5.53, regional row South Asia, 95% interval",
+   "world": {
+    "low": 0.8,
+    "central": 1.19,
+    "high": 1.76
+   },
+   "note": "India lies in the IPCC South Asia region, so the regional default is used; the world default is kept under world. Baseline = continuously flooded, no organic amendment, non-flooded pre-season < 180 days."
+  },
+  "riceCultivationPeriodDays": {
+   "low": 90,
+   "central": 112,
+   "high": 140,
+   "region": "South Asia",
+   "sourceId": "IPCC-2019R-V4C5",
+   "locator": "Table 5.11A (New), South Asia"
+  },
+  "riceWaterRegimeScaling": {
+   "continuouslyFlooded": {
+    "low": 0.73,
+    "central": 1.0,
+    "high": 1.27
+   },
+   "singleDrainage": {
+    "low": 0.53,
+    "central": 0.71,
+    "high": 0.94
+   },
+   "multipleDrainage": {
+    "low": 0.41,
+    "central": 0.55,
+    "high": 0.72
+   },
+   "rainfedRegular": {
+    "low": 0.39,
+    "central": 0.54,
+    "high": 0.74
+   },
+   "rainfedDroughtProne": {
+    "low": 0.11,
+    "central": 0.16,
+    "high": 0.24
+   },
+   "deepWater": {
+    "low": 0.03,
+    "central": 0.06,
+    "high": 0.12
+   },
+   "upland": {
+    "low": 0,
+    "central": 0,
+    "high": 0
+   },
+   "aggregatedIrrigated": {
+    "low": 0.44,
+    "central": 0.6,
+    "high": 0.78
+   },
+   "aggregatedRainfed": {
+    "low": 0.32,
+    "central": 0.45,
+    "high": 0.62
+   },
+   "sourceId": "IPCC-2019R-V4C5",
+   "locator": "Table 5.12 (Updated), disaggregated case unless named aggregated; page image checked"
+  },
+  "ricePreSeasonWaterScaling": {
+   "nonFloodedUnder180d": {
+    "low": 0.88,
+    "central": 1.0,
+    "high": 1.12
+   },
+   "nonFloodedOver180d": {
+    "low": 0.8,
+    "central": 0.89,
+    "high": 0.99
+   },
+   "floodedOver30d": {
+    "low": 2.13,
+    "central": 2.41,
+    "high": 2.73
+   },
+   "nonFloodedOver365d": {
+    "low": 0.41,
+    "central": 0.59,
+    "high": 0.84
+   },
+   "aggregated": {
+    "low": 1.08,
+    "central": 1.22,
+    "high": 1.37
+   },
+   "sourceId": "IPCC-2019R-V4C5",
+   "locator": "Table 5.13 (Updated); page image checked",
+   "note": "SFp, the water regime before the season. Separate from the straw amendment factor below."
+  },
+  "ricePreSeasonStrawScaling": {
+   "none": {
+    "low": 1,
+    "high": 1,
+    "note": "SFo = 1 with no organic amendment (Equation 5.3 with ROA = 0)"
+   },
+   "strawShortBefore": {
+    "low": null,
+    "high": null,
+    "cfoa": {
+     "low": 0.85,
+     "central": 1.0,
+     "high": 1.17
+    }
+   },
+   "strawLongBefore": {
+    "low": null,
+    "high": null,
+    "cfoa": {
+     "low": 0.11,
+     "central": 0.19,
+     "high": 0.28
+    }
+   },
+   "exponent": {
+    "low": 0.54,
+    "central": 0.59,
+    "high": 0.64
+   },
+   "equation": "SFo = (1 + ROA x CFOA)^0.59, ROA = straw applied in t dry matter/ha",
+   "sourceId": "IPCC-2019R-V4C5",
+   "locator": "Equation 5.3 (p5.55) and Table 5.14 (Updated), straw rows",
+   "note": "IPCC gives no fixed straw scaling factor: SFo depends on the straw rate. low/high are null because computing them needs an ROA, which code must take from the field (e.g. residue x share incorporated). Straw left on the surface or burnt does not count (Table 5.14 note a)."
+  },
+  "n2oEf1": {
+   "default": {
+    "low": 0.002,
+    "central": 0.01,
+    "high": 0.018
+   },
+   "floodedRice": {
+    "low": 0.0,
+    "central": 0.004,
+    "high": 0.029
+   },
+   "syntheticWetClimate": {
+    "low": 0.013,
+    "central": 0.016,
+    "high": 0.019
+   },
+   "dryClimate": {
+    "low": 0.0,
+    "central": 0.005,
+    "high": 0.011
+   },
+   "floodedRiceContinuous": {
+    "low": 0.0,
+    "central": 0.003,
+    "high": 0.01
+   },
+   "floodedRiceDrainage": {
+    "low": 0.0,
+    "central": 0.005,
+    "high": 0.016
+   },
+   "sourceId": "IPCC-2019R-V4C11",
+   "locator": "Table 11.1 (Updated)",
+   "note": "Aggregated default low is 0.002 (not 0.001). Wet climate = tropical annual rainfall > 1000 mm."
+  },
+  "residueBurning": {
+   "ch4GPerKgDm": 2.7,
+   "n2oGPerKgDm": 0.07,
+   "combustionFactor": {
+    "low": 0.8,
+    "high": 0.9
+   },
+   "combustionFactorByResidue": {
+    "rice": 0.8,
+    "maize": 0.8,
+    "wheat": 0.9,
+    "sugarcane": 0.8
+   },
+   "sourceId": "IPCC-2006-V4C2",
+   "locator": "Table 2.5 (Agricultural residues row), Table 2.6 (post harvest field burning)",
+   "note": "Table 2.5 prints no SD for the agricultural-residue CH4 and N2O factors. Table 2.6 lists combustion factors only for wheat, maize, rice and sugarcane residues; other crops have none. CO2 from burning crop residue is not reported (assumed balanced by regrowth)."
+  },
+  "dieselKgCo2PerLitre": {
+   "value": 2.6444,
+   "sourceId": "INDIAGHGP-2015-ROAD",
+   "locator": "Section on three-wheeler factors, Step 2 (PDF p27)",
+   "note": "Indian programme figure for diesel combustion CO2 per litre (consultation version 1.0, 2015). CO2 only."
+  },
+  "dieselKgCo2PerTJ": {
+   "low": 72600,
+   "central": 74100,
+   "high": 74800,
+   "sourceId": "IPCC-2006-V2C3",
+   "locator": "Table 3.3.1, off-road mobile sources, Diesel, Agriculture (PDF p36)",
+   "note": "IPCC default for agricultural machinery; per-litre use needs a cited diesel energy content."
+  },
+  "ureaManufactureKgCo2ePerKgN": {
+   "low": 0.92,
+   "high": 2.42,
+   "perTonneUrea": {
+    "low": 0.43,
+    "high": 1.13,
+    "unit": "t CO2 per t urea"
+   },
+   "sourceId": "DTE-2019-CSE-GRP-UREA",
+   "locator": "Plant paragraphs: Yara Babrala 0.43 (lowest), Mangalore Chemicals and Fertilisers 1.13 (highest; naphtha and furnace oil)",
+   "boundary": "Production stage at the plant (CSE Green Rating Project, three-year plant averages to about 2017); CO2 only. Field use and N2O are excluded. Upstream gas supply and transport are not stated as included, and whether the CO2 bound into urea is netted out is not stated.",
+   "derivation": "kg CO2 per kg N = (t CO2 per t urea) / 0.4664, where 0.4664 = 28.01/60.06 is the nitrogen mass fraction of urea CO(NH2)2 by formula. 0.43/0.4664 = 0.92; 1.13/0.4664 = 2.42.",
+   "note": "Plant range, not an India average. Read from Down To Earth (the CSE magazine) reporting the CSE rating; the CSE report \"Grain by Grain\" itself was not retrieved. Urea N only; DAP and complex fertilisers are not covered."
+  },
+  "lpgMjPerKg": {
+   "value": 47.3,
+   "low": 44.8,
+   "high": 52.2,
+   "sourceId": "IPCC-2006-V2C1",
+   "locator": "Table 1.2, Liquefied Petroleum Gases",
+   "note": "IPCC default NET calorific value. The paddy straw value is a GROSS (bomb) value, so LPG equivalents of straw energy are overstated by the gross-net gap (not quantified here). No Indian official LPG calorific value was retrieved."
+  },
+  "lpgCylinderKg": {
+   "value": 14.2,
+   "sourceId": "AIR-2026-01-02-LPG",
+   "locator": "article body",
+   "note": "Domestic cylinder size."
+  },
+  "dieselMjPerLitre": {
+   "value": 35.58,
+   "low": 34.83,
+   "high": 36.34,
+   "sourceId": "IPCC-2006-V2C1",
+   "additionalSourceIds": [
+    "HPCL-HSD-BSVI"
+   ],
+   "locator": "IPCC Table 1.2 Gas/Diesel Oil NCV 43.0 MJ/kg x HPCL BS-VI density at 15 C 810.0-845.0 kg/m3",
+   "derivation": "43.0 MJ/kg x 0.810 kg/l = 34.83 MJ/l (low); 43.0 x 0.845 = 36.34 (high); value = 43.0 x 0.8275 (midpoint of the density specification) = 35.58. The midpoint is an arithmetic choice, not a measured density.",
+   "note": "Net calorific value per litre from an IPCC default and an Indian BS-VI product specification range; actual density of a given lot is not known."
+  },
+  "dieselDensityKgPerLitre": {
+   "low": 0.81,
+   "high": 0.845,
+   "sourceId": "HPCL-HSD-BSVI",
+   "locator": "HSD-BS-VI Specifications, item 3 Density at 15 C (IS 1448 P:16)",
+   "note": "Specification limits, not a measured average."
+  },
+  "dieselMjPerKg": {
+   "value": 43.0,
+   "low": 41.4,
+   "high": 43.3,
+   "sourceId": "IPCC-2006-V2C1",
+   "locator": "Table 1.2, Gas/Diesel Oil",
+   "note": "IPCC default net calorific value per kg."
+  },
+  "methaneKgPerM3": {
+   "value": 0.67,
+   "sourceId": "IPCC-2006-V4C10",
+   "locator": "Equation 10.23 variable list (p10.42)",
+   "note": "IPCC conversion factor of m3 CH4 to kg CH4 (the reference temperature is not printed beside it)."
+  },
+  "cbgMethaneShare": {
+   "low": 0.9,
+   "high": 0.9,
+   "sourceId": "HPCL-SATAT-FAQ",
+   "locator": "Q1",
+   "note": "CBG under IS 16087:2016 is described as more than 90% methane; 0.90 is the floor. Search summaries mention a later revision with a 95% minimum, which was not retrieved."
+  }
+ },
+ "crops": [
+  {
+   "cropId": "paddy",
+   "residue": {
+    "name": "paddy straw",
+    "productBasis": "paddy-grain",
+    "rpr": {
+     "low": 1.5,
+     "high": 1.5,
+     "sourceId": "IISC-CGPL-KA",
+     "locator": "IN-KA Kharif: generation 7289.0 kT / production 4859.5 kT = 1.5; IN-KA Rabi: generation 367.4 kT / production 245.1 kT = 1.5; IN-TN Kharif: generation 183.6 kT / production 122.6 kT = 1.5; IN-TN Rabi: generation 4077.9 kT / production 2718.9 kT = 1.5",
+     "note": "Dry-matter basis is not stated by the atlas (the CGPL paper speaks of sun-dry residue). Ratio derived as biomass generation / crop production from the state residue tables. MoA crop production for paddy in this period is reported as rice; the atlas does not say whether its production column is paddy or rice, so the paddy-grain basis is an assumption to confirm.",
+     "additionalSourceIds": [
+      "IISC-CGPL-TN"
+     ]
+    },
+    "surplusFraction": [
+     {
+      "region": "IN-KA",
+      "low": 0.05,
+      "high": 0.05,
+      "sourceId": "IISC-CGPL-KA",
+      "locator": "State level Residue-wise Data for Karnataka, Kharif, Paddy Straw (Kharif)",
+      "derivation": "surplus 364.5 kT / generation 7289.0 kT",
+      "note": "Surplus after fodder, fuel and other traditional uses per the atlas; MoA reference year 1998-99."
+     },
+     {
+      "region": "IN-KA",
+      "low": 0.05,
+      "high": 0.05,
+      "sourceId": "IISC-CGPL-KA",
+      "locator": "State level Residue-wise Data for Karnataka, Rabi, Paddy Straw (Rabi)",
+      "derivation": "surplus 18.4 kT / generation 367.4 kT",
+      "note": "Surplus after fodder, fuel and other traditional uses per the atlas; MoA reference year 1998-99."
+     },
+     {
+      "region": "IN-TN",
+      "low": 0.1,
+      "high": 0.1,
+      "sourceId": "IISC-CGPL-TN",
+      "locator": "State level Residue-wise Data for Tamil Nadu, Kharif, Paddy Straw (Kharif)",
+      "derivation": "surplus 18.4 kT / generation 183.6 kT",
+      "note": "Surplus after fodder, fuel and other traditional uses per the atlas; MoA reference year 1998-99."
+     },
+     {
+      "region": "IN-TN",
+      "low": 0.1,
+      "high": 0.1,
+      "sourceId": "IISC-CGPL-TN",
+      "locator": "State level Residue-wise Data for Tamil Nadu, Rabi, Paddy Straw (Rabi)",
+      "derivation": "surplus 407.8 kT / generation 4077.9 kT",
+      "note": "Surplus after fodder, fuel and other traditional uses per the atlas; MoA reference year 1998-99."
+     }
+    ],
+    "calorificValueMJPerKg": {
+     "low": 15.27,
+     "high": 15.29,
+     "sourceId": "PAU-IJBSM-2024-BRIQ",
+     "locator": "Table 1 (15.27) and abstract (15.29)",
+     "note": "Bomb-calorimeter (gross) value of briquettes made from chopped paddy straw, PAU Ludhiana, 2019-20, tested at 9.62% moisture (as-tested basis, not oven-dry); ash 23.46%. Loose straw of the same lot was not reported separately."
+    },
+    "biogasM3PerTonneDm": {
+     "low": 146.3,
+     "high": 146.3,
+     "sourceId": "IITD-TRIVEDI-2017",
+     "additionalSourceIds": [
+      "IITG-SCIREP-2024-RS"
+     ],
+     "locator": "IITD abstract (187 L biogas and 85 L CH4 per kg VS, untreated straw) x IITG Table 1 (rice straw VS 78.26% of TS)",
+     "derivation": "187 m3/t VS x 0.7826 t VS/t TS = 146.3 m3 biogas per t dry matter; 85 x 0.7826 = 66.5 m3 CH4 per t dry matter; methane share 85/187 = 0.455.",
+     "methaneShare": {
+      "low": 0.455,
+      "high": 0.455
+     },
+     "note": "Cross-study derivation: the yield is IIT Delhi laboratory digestion of untreated paddy straw; the VS share is rice straw collected near Guwahati (IIT Guwahati). Laboratory specific yield, not a plant figure; pretreated straw yielded 500 m3 biogas per t VS. Dry matter here means total solids."
+    },
+    "uses": [
+     {
+      "use": "cbg_feedstock",
+      "label": "Biomass for compressed biogas",
+      "share": null,
+      "priceInrPerTonne": {
+       "low": 1650,
+       "high": 1650
+      },
+      "priceBasis": "Paddy straw bought from balers for the Farm Gas CBG plant, Ghungreli, Ludhiana, Punjab; previous season (2023) procurement, reported 30 Jan 2024; moisture basis not stated",
+      "sourceId": "RW-2024-01-30-FARMGAS",
+      "locator": "Farm Gas paragraph",
+      "note": "Punjab price, not Karnataka or Tamil Nadu; as-traded (baled, moist) tonnes, not dry matter."
+     },
+     {
+      "use": "biomass_fuel",
+      "label": "Fuel for a biomass power plant",
+      "share": null,
+      "priceInrPerTonne": {
+       "low": 1690,
+       "high": 1690
+      },
+      "priceBasis": "Rs 169 per quintal offered by biomass power plants, Muktsar, Punjab, 2024 season (report of 19 Sep 2024); delivery point and moisture basis not stated",
+      "sourceId": "TRIB-2024-09-19-MUKTSAR",
+      "locator": "paragraph 1",
+      "note": "Converted Rs 169/quintal x 10 = Rs 1,690/tonne. Plants state their own cost as Rs 300/quintal including operations; that is not a farmer price."
+     },
+     {
+      "use": "dry_fodder",
+      "label": "Dry fodder for cattle",
+      "share": null,
+      "priceInrPerTonne": {
+       "low": 2500,
+       "high": 3000
+      },
+      "priceBasis": "Stored paddy straw sold by farmers, Karnal, Haryana, December 2023: Rs 250/quintal (parmal) to Rs 300/quintal (basmati); moisture basis and delivery point not stated",
+      "sourceId": "TRIB-2023-12-05-KARNAL",
+      "locator": "paragraph with the quintal prices; Deputy Director Agriculture quote",
+      "note": "Converted x 10 to Rs/tonne. The buyers named include gaushalas (cattle), buyers in Rajasthan, Gujarat and Delhi, IOCL Panipat and other industries, so this is a general straw market price in a fodder-deficit trade, not a fodder-only price. Haryana, not Karnataka or Tamil Nadu. The DES by-product value per hectare (byProductValueInrPerHa) is the official KA and TN farm value of straw but carries no quantity."
+     }
+    ],
+    "notes": [
+     "Husk (ratio 0.20 of production, surplus 0.60 KA) is a mill by-product and is not listed as a field residue use."
+    ],
+    "biogasM3PerTonneVs": {
+     "low": 187,
+     "high": 187,
+     "methaneM3PerTonneVs": {
+      "low": 85,
+      "high": 85
+     },
+     "sourceId": "IITD-TRIVEDI-2017",
+     "locator": "Abstract, untreated paddy straw",
+     "note": "Laboratory specific yield per tonne of volatile solids for untreated straw (pretreated straw reached 500 m3 biogas and 266 m3 CH4 per t VS). Methane share 85/187 = 0.45. The per-tonne-dry-matter figure in biogasM3PerTonneDm combines this with the IITG VS share."
+    },
+    "carbonFraction": {
+     "low": 0.388,
+     "high": 0.388,
+     "sourceId": "PAU-IJBSM-2024-BRIQ",
+     "locator": "section 3.2 ultimate analysis",
+     "note": "Carbon 38.8% of paddy straw briquettes (as tested). Recorded beside the IPCC 0.42 default; not used by the engine unless the orchestrator decides so."
+    }
+   },
+   "nitrogenRateKgPerHa": [
+    {
+     "region": "IN-KA",
+     "low": 100,
+     "high": 100,
+     "sourceId": "CRIDA-HAS",
+     "locator": "pp26-27",
+     "note": "irrigated paddy 100:50:50 NPK, the full dose printed in the Hassan district contingency plan (the plan is the source document; the dose itself is the full recommendation)",
+     "doseKind": "recommended"
+    },
+    {
+     "region": "IN-TN",
+     "low": 120,
+     "high": 150,
+     "sourceId": "TNAU-RICE-NM",
+     "locator": "blanket recommendation table",
+     "note": "120 kg N short-duration varieties outside the Cauvery delta and Coimbatore tract (low); 150 kg N short-duration in Cauvery delta and Coimbatore tract and for medium and long duration varieties (high). Hybrids 175 and Improved White Ponni 75 are excluded.",
+     "doseKind": "recommended"
+    }
+   ],
+   "energyInput": {
+    "gjPerHa": {
+     "low": 19.4,
+     "high": 19.4
+    },
+    "region": "IN-AP (Andhra Pradesh, 20 districts)",
+    "year": "1996-97",
+    "sourceId": "IJAE-1998-AP-ENERGY",
+    "locator": "Table 5, column (2) Paddy (p269, page image checked)",
+    "breakdown": [
+     {
+      "item": "human labour",
+      "share": 0.103
+     },
+     {
+      "item": "bullock labour",
+      "share": 0.039
+     },
+     {
+      "item": "manure",
+      "share": 0.102
+     },
+     {
+      "item": "fertiliser",
+      "share": 0.437
+     },
+     {
+      "item": "pesticide",
+      "share": 0.009
+     },
+     {
+      "item": "tractor",
+      "share": 0.012
+     },
+     {
+      "item": "irrigation",
+      "share": 0.228
+     },
+     {
+      "item": "seed",
+      "share": 0.069
+     }
+    ],
+    "dieselLitresPerHa": {
+     "low": null,
+     "high": null
+    },
+    "note": "Survey of 495 cultivating households, 1996-97, undivided Andhra Pradesh (includes present Telangana). Energy coefficients from the ICAR/PAU study; irrigation energy is pumping and canal maintenance; no diesel litres printed. Old and from another state: a regional reference only."
+   },
+   "methane": {
+    "applies": true,
+    "note": "flooded rice"
+   },
+   "byProductValueInrPerHa": [
+    {
+     "region": "IN-KA",
+     "low": 6741.6,
+     "high": 6741.6,
+     "year": "2021-22",
+     "sourceId": "DES-CS-2021-22",
+     "locator": "Sheet Paddy, Value of By- Product (Rs./Hectare)",
+     "note": "Imputed farm value of all by-products per hectare in the cost-of-cultivation sample; no by-product quantity is printed, so no price per tonne follows from it."
+    },
+    {
+     "region": "IN-TN",
+     "low": 5220.03,
+     "high": 5220.03,
+     "year": "2021-22",
+     "sourceId": "DES-CS-2021-22",
+     "locator": "Sheet Paddy, Value of By- Product (Rs./Hectare)",
+     "note": "Imputed farm value of all by-products per hectare in the cost-of-cultivation sample; no by-product quantity is printed, so no price per tonne follows from it."
+    }
+   ],
+   "notes": []
+  },
+  {
+   "cropId": "maize",
+   "residue": {
+    "name": "maize stalks",
+    "productBasis": "maize-grain",
+    "rpr": {
+     "low": 2.0,
+     "high": 2.0,
+     "sourceId": "IISC-CGPL-KA",
+     "locator": "IN-KA Kharif: generation 2688.2 kT / production 1344.4 kT = 2.0; IN-TN Kharif: generation 245.2 kT / production 122.6 kT = 2.0",
+     "note": "Dry-matter basis is not stated by the atlas (the CGPL paper speaks of sun-dry residue). Ratio derived as biomass generation / crop production from the state residue tables. Cobs are a separate row in the atlas (ratio 0.50) and are not added here.",
+     "additionalSourceIds": [
+      "IISC-CGPL-TN"
+     ]
+    },
+    "surplusFraction": [
+     {
+      "region": "IN-KA",
+      "low": 0.4,
+      "high": 0.4,
+      "sourceId": "IISC-CGPL-KA",
+      "locator": "State level Residue-wise Data for Karnataka, Kharif, Maize Stalks (Kharif)",
+      "derivation": "surplus 1075.3 kT / generation 2688.2 kT",
+      "note": "Surplus after fodder, fuel and other traditional uses per the atlas; MoA reference year 1998-99."
+     },
+     {
+      "region": "IN-TN",
+      "low": 0.25,
+      "high": 0.25,
+      "sourceId": "IISC-CGPL-TN",
+      "locator": "State level Residue-wise Data for Tamil Nadu, Kharif, Maize Stalks (Kharif)",
+      "derivation": "surplus 61.3 kT / generation 245.2 kT",
+      "note": "Surplus after fodder, fuel and other traditional uses per the atlas; MoA reference year 1998-99."
+     }
+    ],
+    "calorificValueMJPerKg": null,
+    "biogasM3PerTonneDm": null,
+    "uses": [],
+    "notes": []
+   },
+   "nitrogenRateKgPerHa": [
+    {
+     "region": "IN-TN",
+     "low": 135,
+     "high": 135,
+     "sourceId": "TNAU-MAIZE-IRR",
+     "locator": "Application of Fertilizer",
+     "note": "irrigated maize blanket 135:62.5:50; 100 kg N when Azospirillum is used",
+     "doseKind": "recommended"
+    }
+   ],
+   "energyInput": {
+    "gjPerHa": {
+     "low": 16.81,
+     "high": 16.81
+    },
+    "region": "IN-TG (Nagarkurnool district, Telangana)",
+    "year": "2023",
+    "sourceId": "PA-2025-MAIZE-TG",
+    "locator": "Abstract; Table 2",
+    "breakdown": [
+     {
+      "item": "nitrogen fertiliser",
+      "share": 0.6237
+     },
+     {
+      "item": "diesel",
+      "share": 0.1508
+     },
+     {
+      "item": "machinery",
+      "share": 0.1119
+     },
+     {
+      "item": "phosphate fertiliser",
+      "share": 0.0425
+     },
+     {
+      "item": "pesticides",
+      "share": 0.033
+     },
+     {
+      "item": "FYM",
+      "share": 0.0268
+     },
+     {
+      "item": "human labour",
+      "share": 0.007
+     },
+     {
+      "item": "seed",
+      "share": 0.0042
+     }
+    ],
+    "dieselLitresPerHa": {
+     "low": 45,
+     "high": 45,
+     "sourceId": "PA-2025-MAIZE-TG",
+     "locator": "Table 2, Diesel fuel (L) 45"
+    },
+    "note": "16,806.87 MJ/ha rounded to 16.81 GJ/ha. Farm survey of maize growers in 2023 at 159 kg N/ha. The paper's output energy (15,017.6 MJ for 7,904 kg grain) looks inconsistent with usual grain energy values; only the input side is used."
+   },
+   "methane": {
+    "applies": false,
+    "note": "not a flooded crop"
+   },
+   "byProductValueInrPerHa": [
+    {
+     "region": "IN-KA",
+     "low": 6053.52,
+     "high": 6053.52,
+     "year": "2021-22",
+     "sourceId": "DES-CS-2021-22",
+     "locator": "Sheet Maize, Value of By- Product (Rs./Hectare)",
+     "note": "Imputed farm value of all by-products per hectare in the cost-of-cultivation sample; no by-product quantity is printed, so no price per tonne follows from it."
+    },
+    {
+     "region": "IN-TN",
+     "low": 4310.59,
+     "high": 4310.59,
+     "year": "2021-22",
+     "sourceId": "DES-CS-2021-22",
+     "locator": "Sheet Maize, Value of By- Product (Rs./Hectare)",
+     "note": "Imputed farm value of all by-products per hectare in the cost-of-cultivation sample; no by-product quantity is printed, so no price per tonne follows from it."
+    }
+   ],
+   "notes": [
+    "No Karnataka maize dose retrieved in this pass."
+   ]
+  },
+  {
+   "cropId": "finger-millet",
+   "residue": {
+    "name": "ragi straw",
+    "productBasis": "finger-millet-grain",
+    "rpr": {
+     "low": 1.3,
+     "high": 1.3,
+     "sourceId": "IISC-CGPL-KA",
+     "locator": "IN-KA Kharif: generation 2076.7 kT / production 1597.4 kT = 1.3; IN-TN Kharif: generation 149.1 kT / production 115.1 kT = 1.3",
+     "note": "Dry-matter basis is not stated by the atlas (the CGPL paper speaks of sun-dry residue). Ratio derived as biomass generation / crop production from the state residue tables. ",
+     "additionalSourceIds": [
+      "IISC-CGPL-TN"
+     ]
+    },
+    "surplusFraction": [
+     {
+      "region": "IN-KA",
+      "low": 0.05,
+      "high": 0.05,
+      "sourceId": "IISC-CGPL-KA",
+      "locator": "State level Residue-wise Data for Karnataka, Kharif, Ragi Straw (Kharif)",
+      "derivation": "surplus 103.8 kT / generation 2076.7 kT",
+      "note": "Surplus after fodder, fuel and other traditional uses per the atlas; MoA reference year 1998-99."
+     },
+     {
+      "region": "IN-TN",
+      "low": 0.44,
+      "high": 0.44,
+      "sourceId": "IISC-CGPL-TN",
+      "locator": "State level Residue-wise Data for Tamil Nadu, Kharif, Ragi Straw (Kharif)",
+      "derivation": "surplus 65.6 kT / generation 149.1 kT",
+      "note": "Surplus after fodder, fuel and other traditional uses per the atlas; MoA reference year 1998-99."
+     }
+    ],
+    "calorificValueMJPerKg": null,
+    "biogasM3PerTonneDm": null,
+    "uses": [],
+    "notes": []
+   },
+   "nitrogenRateKgPerHa": [
+    {
+     "region": "IN-KA",
+     "low": 25,
+     "high": 25,
+     "sourceId": "CRIDA-HAS",
+     "locator": "p24",
+     "note": "Contingency dose for a second-crop ragi after a fertilised first crop: 25:10:10 NPK = 50% of the RDF. Not the full recommended dose; a full KA RDF was not retrieved.",
+     "doseKind": "contingency_partial"
+    },
+    {
+     "region": "IN-TN",
+     "low": 60,
+     "high": 60,
+     "sourceId": "TNAU-RAGI",
+     "locator": "Application of fertilizers",
+     "note": "blanket recommendation 60:30:30 when no soil test",
+     "doseKind": "recommended"
+    }
+   ],
+   "energyInput": null,
+   "methane": {
+    "applies": false,
+    "note": "not a flooded crop"
+   },
+   "byProductValueInrPerHa": [
+    {
+     "region": "IN-KA",
+     "low": 7292.48,
+     "high": 7292.48,
+     "year": "2021-22",
+     "sourceId": "DES-CS-2021-22",
+     "locator": "Sheet Ragi, Value of By- Product (Rs./Hectare)",
+     "note": "Imputed farm value of all by-products per hectare in the cost-of-cultivation sample; no by-product quantity is printed, so no price per tonne follows from it."
+    }
+   ],
+   "notes": []
+  },
+  {
+   "cropId": "sorghum",
+   "residue": {
+    "name": "jowar stalks",
+    "productBasis": "sorghum-grain",
+    "rpr": {
+     "low": 1.7,
+     "high": 1.7,
+     "sourceId": "IISC-CGPL-KA",
+     "locator": "IN-KA Kharif: generation 1050.6 kT / production 618.4 kT = 1.7; IN-KA Rabi: generation 3108.3 kT / production 1831.1 kT = 1.7; IN-TN Kharif: generation 530.9 kT / production 312.0 kT = 1.7",
+     "note": "Dry-matter basis is not stated by the atlas (the CGPL paper speaks of sun-dry residue). Ratio derived as biomass generation / crop production from the state residue tables. Cobs and husk are separate atlas rows.",
+     "additionalSourceIds": [
+      "IISC-CGPL-TN"
+     ]
+    },
+    "surplusFraction": [
+     {
+      "region": "IN-KA",
+      "low": 0.1,
+      "high": 0.1,
+      "sourceId": "IISC-CGPL-KA",
+      "locator": "State level Residue-wise Data for Karnataka, Kharif, Jowar Stalks (Kharif)",
+      "derivation": "surplus 105.1 kT / generation 1050.6 kT",
+      "note": "Surplus after fodder, fuel and other traditional uses per the atlas; MoA reference year 1998-99."
+     },
+     {
+      "region": "IN-KA",
+      "low": 0.1,
+      "high": 0.1,
+      "sourceId": "IISC-CGPL-KA",
+      "locator": "State level Residue-wise Data for Karnataka, Rabi, Jowar Stalks (Rabi)",
+      "derivation": "surplus 310.8 kT / generation 3108.3 kT",
+      "note": "Surplus after fodder, fuel and other traditional uses per the atlas; MoA reference year 1998-99."
+     },
+     {
+      "region": "IN-TN",
+      "low": 0.1,
+      "high": 0.1,
+      "sourceId": "IISC-CGPL-TN",
+      "locator": "State level Residue-wise Data for Tamil Nadu, Kharif, Jowar Stalks (Kharif)",
+      "derivation": "surplus 53.1 kT / generation 530.9 kT",
+      "note": "Surplus after fodder, fuel and other traditional uses per the atlas; MoA reference year 1998-99."
+     }
+    ],
+    "calorificValueMJPerKg": null,
+    "biogasM3PerTonneDm": null,
+    "uses": [],
+    "notes": []
+   },
+   "nitrogenRateKgPerHa": [
+    {
+     "region": "IN-TN",
+     "low": 90,
+     "high": 90,
+     "sourceId": "TNAU-SORGHUM",
+     "locator": "Application of fertilizers",
+     "note": "blanket recommendation 90:45:45 when no soil test",
+     "doseKind": "recommended"
+    }
+   ],
+   "energyInput": null,
+   "methane": {
+    "applies": false,
+    "note": "not a flooded crop"
+   },
+   "byProductValueInrPerHa": [
+    {
+     "region": "IN-KA",
+     "low": 6368.99,
+     "high": 6368.99,
+     "year": "2021-22",
+     "sourceId": "DES-CS-2021-22",
+     "locator": "Sheet Jowar, Value of By- Product (Rs./Hectare)",
+     "note": "Imputed farm value of all by-products per hectare in the cost-of-cultivation sample; no by-product quantity is printed, so no price per tonne follows from it."
+    },
+    {
+     "region": "IN-TN",
+     "low": 8317.17,
+     "high": 8317.17,
+     "year": "2021-22",
+     "sourceId": "DES-CS-2021-22",
+     "locator": "Sheet Jowar, Value of By- Product (Rs./Hectare)",
+     "note": "Imputed farm value of all by-products per hectare in the cost-of-cultivation sample; no by-product quantity is printed, so no price per tonne follows from it."
+    }
+   ],
+   "notes": []
+  },
+  {
+   "cropId": "groundnut",
+   "residue": {
+    "name": "groundnut haulm (stalks)",
+    "productBasis": "groundnut-pod",
+    "rpr": {
+     "low": 2.0,
+     "high": 2.0,
+     "sourceId": "IISC-CGPL-KA",
+     "locator": "IN-KA Kharif: generation 1904.4 kT / production 950.5 kT = 2.0; IN-TN Kharif: generation 1010.2 kT / production 504.9 kT = 2.0",
+     "note": "Dry-matter basis is not stated by the atlas (the CGPL paper speaks of sun-dry residue). Ratio derived as biomass generation / crop production from the state residue tables. MoA groundnut production is in pods (in shell); the atlas also lists shells at 0.30 of production. Pod basis assumed, to confirm.",
+     "additionalSourceIds": [
+      "IISC-CGPL-TN"
+     ]
+    },
+    "surplusFraction": [
+     {
+      "region": "IN-KA",
+      "low": 0.3,
+      "high": 0.3,
+      "sourceId": "IISC-CGPL-KA",
+      "locator": "State level Residue-wise Data for Karnataka, Kharif, Groundnut Stalks (Kharif)",
+      "derivation": "surplus 571.3 kT / generation 1904.4 kT",
+      "note": "Surplus after fodder, fuel and other traditional uses per the atlas; MoA reference year 1998-99."
+     },
+     {
+      "region": "IN-TN",
+      "low": 0.25,
+      "high": 0.25,
+      "sourceId": "IISC-CGPL-TN",
+      "locator": "State level Residue-wise Data for Tamil Nadu, Kharif, Groundnut Stalks (Kharif)",
+      "derivation": "surplus 252.5 kT / generation 1010.2 kT",
+      "note": "Surplus after fodder, fuel and other traditional uses per the atlas; MoA reference year 1998-99."
+     }
+    ],
+    "calorificValueMJPerKg": null,
+    "biogasM3PerTonneDm": null,
+    "uses": [],
+    "notes": []
+   },
+   "nitrogenRateKgPerHa": [
+    {
+     "region": "IN-TN",
+     "low": 25,
+     "high": 25,
+     "sourceId": "TNAU-GN-NM",
+     "locator": "Application of fertilizers",
+     "note": "blanket 25:50:75 when no soil test",
+     "doseKind": "recommended"
+    }
+   ],
+   "energyInput": {
+    "gjPerHa": {
+     "low": 11.53,
+     "high": 11.53
+    },
+    "region": "IN-AP (Andhra Pradesh, 20 districts)",
+    "year": "1996-97",
+    "sourceId": "IJAE-1998-AP-ENERGY",
+    "locator": "Table 5, column (5) Groundnut (p269, page image checked)",
+    "breakdown": [
+     {
+      "item": "human labour",
+      "share": 0.118
+     },
+     {
+      "item": "bullock labour",
+      "share": 0.087
+     },
+     {
+      "item": "manure",
+      "share": 0.111
+     },
+     {
+      "item": "fertiliser",
+      "share": 0.369
+     },
+     {
+      "item": "pesticide",
+      "share": 0.008
+     },
+     {
+      "item": "tractor",
+      "share": 0.007
+     },
+     {
+      "item": "irrigation",
+      "share": 0.062
+     },
+     {
+      "item": "seed",
+      "share": 0.236
+     }
+    ],
+    "dieselLitresPerHa": {
+     "low": null,
+     "high": null
+    },
+    "note": "Survey of 495 cultivating households, 1996-97, undivided Andhra Pradesh (includes present Telangana). Energy coefficients from the ICAR/PAU study; irrigation energy is pumping and canal maintenance; no diesel litres printed. Old and from another state: a regional reference only."
+   },
+   "methane": {
+    "applies": false,
+    "note": "not a flooded crop"
+   },
+   "byProductValueInrPerHa": [
+    {
+     "region": "IN-KA",
+     "low": 4686.49,
+     "high": 4686.49,
+     "year": "2021-22",
+     "sourceId": "DES-CS-2021-22",
+     "locator": "Sheet Groundnut, Value of By- Product (Rs./Hectare)",
+     "note": "Imputed farm value of all by-products per hectare in the cost-of-cultivation sample; no by-product quantity is printed, so no price per tonne follows from it."
+    },
+    {
+     "region": "IN-TN",
+     "low": 4160.17,
+     "high": 4160.17,
+     "year": "2021-22",
+     "sourceId": "DES-CS-2021-22",
+     "locator": "Sheet Groundnut, Value of By- Product (Rs./Hectare)",
+     "note": "Imputed farm value of all by-products per hectare in the cost-of-cultivation sample; no by-product quantity is printed, so no price per tonne follows from it."
+    }
+   ],
+   "notes": [
+    "No Karnataka groundnut dose retrieved. The repo copy tnau-gingelly.txt holds a 10:10:45 table that could not be tied to a crop and was not used."
+   ]
+  },
+  {
+   "cropId": "soybean",
+   "residue": null,
+   "nitrogenRateKgPerHa": [
+    {
+     "region": "IN-TN",
+     "low": 20,
+     "high": 20,
+     "sourceId": "TNAU-SOYBEAN",
+     "locator": "Fertilizer application",
+     "note": "basal 20:80:40 + 40 S",
+     "doseKind": "recommended"
+    }
+   ],
+   "energyInput": null,
+   "methane": {
+    "applies": false,
+    "note": "not a flooded crop"
+   },
+   "byProductValueInrPerHa": [
+    {
+     "region": "IN-KA",
+     "low": 1312.76,
+     "high": 1312.76,
+     "year": "2021-22",
+     "sourceId": "DES-CS-2021-22",
+     "locator": "Sheet Soyabean, Value of By- Product (Rs./Hectare)",
+     "note": "Imputed farm value of all by-products per hectare in the cost-of-cultivation sample; no by-product quantity is printed, so no price per tonne follows from it."
+    }
+   ],
+   "notes": [
+    "No soybean residue row in the KA or TN atlas state tables."
+   ]
+  },
+  {
+   "cropId": "chickpea",
+   "residue": {
+    "name": "gram stalks",
+    "productBasis": "chickpea-whole",
+    "rpr": {
+     "low": 1.1,
+     "high": 1.1,
+     "sourceId": "IISC-CGPL-KA",
+     "locator": "IN-KA Kharif: generation 21.6 kT / production 19.6 kT = 1.1",
+     "note": "Dry-matter basis is not stated by the atlas (the CGPL paper speaks of sun-dry residue). Ratio derived as biomass generation / crop production from the state residue tables. Small area (32.7 kHa) in the atlas year."
+    },
+    "surplusFraction": [
+     {
+      "region": "IN-KA",
+      "low": 0.8,
+      "high": 0.8,
+      "sourceId": "IISC-CGPL-KA",
+      "locator": "State level Residue-wise Data for Karnataka, Kharif, Gram Stalks (Kharif)",
+      "derivation": "surplus 17.2 kT / generation 21.6 kT",
+      "note": "Surplus after fodder, fuel and other traditional uses per the atlas; MoA reference year 1998-99."
+     }
+    ],
+    "calorificValueMJPerKg": null,
+    "biogasM3PerTonneDm": null,
+    "uses": [],
+    "notes": []
+   },
+   "nitrogenRateKgPerHa": [
+    {
+     "region": "IN-TN",
+     "low": 12.5,
+     "high": 25,
+     "sourceId": "TNAU-BENGALGRAM",
+     "locator": "Fertilizer application",
+     "note": "rainfed 12.5 kg N (low), irrigated 25 kg N (high)",
+     "doseKind": "recommended"
+    }
+   ],
+   "energyInput": null,
+   "methane": {
+    "applies": false,
+    "note": "not a flooded crop"
+   },
+   "byProductValueInrPerHa": [
+    {
+     "region": "IN-KA",
+     "low": 1018.53,
+     "high": 1018.53,
+     "year": "2021-22",
+     "sourceId": "DES-CS-2021-22",
+     "locator": "Sheet Gram, Value of By- Product (Rs./Hectare)",
+     "note": "Imputed farm value of all by-products per hectare in the cost-of-cultivation sample; no by-product quantity is printed, so no price per tonne follows from it."
+    }
+   ],
+   "notes": []
+  },
+  {
+   "cropId": "green-gram",
+   "residue": {
+    "name": "moong stalks",
+    "productBasis": "green-gram-whole",
+    "rpr": {
+     "low": 1.1,
+     "high": 1.1,
+     "sourceId": "IISC-CGPL-KA",
+     "locator": "IN-KA Kharif: generation 12.2 kT / production 11.1 kT = 1.1; IN-TN Kharif: generation 10.1 kT / production 9.2 kT = 1.1; IN-TN Rabi: generation 32.9 kT / production 29.9 kT = 1.1",
+     "note": "Dry-matter basis is not stated by the atlas (the CGPL paper speaks of sun-dry residue). Ratio derived as biomass generation / crop production from the state residue tables. ",
+     "additionalSourceIds": [
+      "IISC-CGPL-TN"
+     ]
+    },
+    "surplusFraction": [
+     {
+      "region": "IN-KA",
+      "low": 0.1,
+      "high": 0.1,
+      "sourceId": "IISC-CGPL-KA",
+      "locator": "State level Residue-wise Data for Karnataka, Kharif, Moong Stalks (Kharif)",
+      "derivation": "surplus 1.2 kT / generation 12.2 kT",
+      "note": "Surplus after fodder, fuel and other traditional uses per the atlas; MoA reference year 1998-99."
+     },
+     {
+      "region": "IN-TN",
+      "low": 0.1,
+      "high": 0.1,
+      "sourceId": "IISC-CGPL-TN",
+      "locator": "State level Residue-wise Data for Tamil Nadu, Kharif, Moong Stalks (Kharif)",
+      "derivation": "surplus 1.0 kT / generation 10.1 kT",
+      "note": "Surplus after fodder, fuel and other traditional uses per the atlas; MoA reference year 1998-99."
+     },
+     {
+      "region": "IN-TN",
+      "low": 0.1,
+      "high": 0.1,
+      "sourceId": "IISC-CGPL-TN",
+      "locator": "State level Residue-wise Data for Tamil Nadu, Rabi, Moong Stalks (Rabi)",
+      "derivation": "surplus 3.3 kT / generation 32.9 kT",
+      "note": "Surplus after fodder, fuel and other traditional uses per the atlas; MoA reference year 1998-99."
+     }
+    ],
+    "calorificValueMJPerKg": null,
+    "biogasM3PerTonneDm": null,
+    "uses": [],
+    "notes": []
+   },
+   "nitrogenRateKgPerHa": [
+    {
+     "region": "IN-TN",
+     "low": 12.5,
+     "high": 25,
+     "sourceId": "TNAU-GREENGRAM-IRR",
+     "locator": "blanket recommendation table",
+     "note": "irrigated 25 kg N (high, page fetched); rainfed 12.5 kg N (low) from TNAU-GREENGRAM read through crop-agronomy.json",
+     "doseKind": "recommended",
+     "additionalSourceIds": [
+      "TNAU-GREENGRAM"
+     ]
+    }
+   ],
+   "energyInput": null,
+   "methane": {
+    "applies": false,
+    "note": "not a flooded crop"
+   },
+   "byProductValueInrPerHa": [
+    {
+     "region": "IN-KA",
+     "low": 1198.4,
+     "high": 1198.4,
+     "year": "2021-22",
+     "sourceId": "DES-CS-2021-22",
+     "locator": "Sheet Moong, Value of By- Product (Rs./Hectare)",
+     "note": "Imputed farm value of all by-products per hectare in the cost-of-cultivation sample; no by-product quantity is printed, so no price per tonne follows from it."
+    },
+    {
+     "region": "IN-TN",
+     "low": 240.73,
+     "high": 240.73,
+     "year": "2021-22",
+     "sourceId": "DES-CS-2021-22",
+     "locator": "Sheet Moong, Value of By- Product (Rs./Hectare)",
+     "note": "Imputed farm value of all by-products per hectare in the cost-of-cultivation sample; no by-product quantity is printed, so no price per tonne follows from it."
+    }
+   ],
+   "notes": []
+  },
+  {
+   "cropId": "black-gram",
+   "residue": {
+    "name": "urad stalks",
+    "productBasis": "black-gram-whole",
+    "rpr": {
+     "low": 1.1,
+     "high": 1.1,
+     "sourceId": "IISC-CGPL-TN",
+     "locator": "IN-TN Kharif: generation 20.0 kT / production 18.2 kT = 1.1",
+     "note": "Dry-matter basis is not stated by the atlas (the CGPL paper speaks of sun-dry residue). Ratio derived as biomass generation / crop production from the state residue tables. "
+    },
+    "surplusFraction": [
+     {
+      "region": "IN-TN",
+      "low": 0.1,
+      "high": 0.1,
+      "sourceId": "IISC-CGPL-TN",
+      "locator": "State level Residue-wise Data for Tamil Nadu, Kharif, Urad Stalks (Kharif)",
+      "derivation": "surplus 2.0 kT / generation 20.0 kT",
+      "note": "Surplus after fodder, fuel and other traditional uses per the atlas; MoA reference year 1998-99."
+     }
+    ],
+    "calorificValueMJPerKg": null,
+    "biogasM3PerTonneDm": null,
+    "uses": [],
+    "notes": []
+   },
+   "nitrogenRateKgPerHa": [],
+   "energyInput": null,
+   "methane": {
+    "applies": false,
+    "note": "not a flooded crop"
+   },
+   "byProductValueInrPerHa": [
+    {
+     "region": "IN-KA",
+     "low": 296.32,
+     "high": 296.32,
+     "year": "2021-22",
+     "sourceId": "DES-CS-2021-22",
+     "locator": "Sheet Urad, Value of By- Product (Rs./Hectare)",
+     "note": "Imputed farm value of all by-products per hectare in the cost-of-cultivation sample; no by-product quantity is printed, so no price per tonne follows from it."
+    },
+    {
+     "region": "IN-TN",
+     "low": 708.01,
+     "high": 708.01,
+     "year": "2021-22",
+     "sourceId": "DES-CS-2021-22",
+     "locator": "Sheet Urad, Value of By- Product (Rs./Hectare)",
+     "note": "Imputed farm value of all by-products per hectare in the cost-of-cultivation sample; no by-product quantity is printed, so no price per tonne follows from it."
+    }
+   ],
+   "notes": [
+    "TNAU blackgram blanket table is in the repo copy but its cells did not parse; dose not recorded."
+   ]
+  },
+  {
+   "cropId": "pigeon-pea",
+   "residue": {
+    "name": "arhar stalks",
+    "productBasis": "pigeon-pea-whole",
+    "rpr": {
+     "low": 2.5,
+     "high": 2.52,
+     "sourceId": "IISC-CGPL-KA",
+     "locator": "IN-KA Kharif: generation 436.4 kT / production 174.6 kT = 2.5; IN-TN Kharif: generation 27.2 kT / production 10.8 kT = 2.52",
+     "note": "Dry-matter basis is not stated by the atlas (the CGPL paper speaks of sun-dry residue). Ratio derived as biomass generation / crop production from the state residue tables. Woody stalks, mostly used as household fuel.",
+     "additionalSourceIds": [
+      "IISC-CGPL-TN"
+     ]
+    },
+    "surplusFraction": [
+     {
+      "region": "IN-KA",
+      "low": 0.1,
+      "high": 0.1,
+      "sourceId": "IISC-CGPL-KA",
+      "locator": "State level Residue-wise Data for Karnataka, Kharif, Arhar Stalks (Kharif)",
+      "derivation": "surplus 43.6 kT / generation 436.4 kT",
+      "note": "Surplus after fodder, fuel and other traditional uses per the atlas; MoA reference year 1998-99."
+     },
+     {
+      "region": "IN-TN",
+      "low": 0.1,
+      "high": 0.1,
+      "sourceId": "IISC-CGPL-TN",
+      "locator": "State level Residue-wise Data for Tamil Nadu, Kharif, Arhar Stalks (Kharif)",
+      "derivation": "surplus 2.7 kT / generation 27.2 kT",
+      "note": "Surplus after fodder, fuel and other traditional uses per the atlas; MoA reference year 1998-99."
+     }
+    ],
+    "calorificValueMJPerKg": null,
+    "biogasM3PerTonneDm": null,
+    "uses": [],
+    "notes": []
+   },
+   "nitrogenRateKgPerHa": [
+    {
+     "region": "IN-TN",
+     "low": 12.5,
+     "high": 25,
+     "sourceId": "TNAU-REDGRAM",
+     "locator": "Application of fertilizers",
+     "note": "rainfed 12.5 kg N (low), irrigated 25 kg N (high)",
+     "doseKind": "recommended"
+    }
+   ],
+   "energyInput": null,
+   "methane": {
+    "applies": false,
+    "note": "not a flooded crop"
+   },
+   "byProductValueInrPerHa": [
+    {
+     "region": "IN-KA",
+     "low": 1346.6,
+     "high": 1346.6,
+     "year": "2021-22",
+     "sourceId": "DES-CS-2021-22",
+     "locator": "Sheet Arhar, Value of By- Product (Rs./Hectare)",
+     "note": "Imputed farm value of all by-products per hectare in the cost-of-cultivation sample; no by-product quantity is printed, so no price per tonne follows from it."
+    }
+   ],
+   "notes": []
+  },
+  {
+   "cropId": "sesame",
+   "residue": {
+    "name": "til stalks",
+    "productBasis": "sesame-seed",
+    "rpr": {
+     "low": 2.48,
+     "high": 2.48,
+     "sourceId": "IISC-CGPL-TN",
+     "locator": "IN-TN Kharif: generation 18.6 kT / production 7.5 kT = 2.48",
+     "note": "Dry-matter basis is not stated by the atlas (the CGPL paper speaks of sun-dry residue). Ratio derived as biomass generation / crop production from the state residue tables. "
+    },
+    "surplusFraction": [
+     {
+      "region": "IN-TN",
+      "low": 0.1,
+      "high": 0.1,
+      "sourceId": "IISC-CGPL-TN",
+      "locator": "State level Residue-wise Data for Tamil Nadu, Kharif, Til Stalks (Kharif)",
+      "derivation": "surplus 1.9 kT / generation 18.6 kT",
+      "note": "Surplus after fodder, fuel and other traditional uses per the atlas; MoA reference year 1998-99."
+     }
+    ],
+    "calorificValueMJPerKg": null,
+    "biogasM3PerTonneDm": null,
+    "uses": [],
+    "notes": []
+   },
+   "nitrogenRateKgPerHa": [],
+   "energyInput": null,
+   "methane": {
+    "applies": false,
+    "note": "not a flooded crop"
+   },
+   "byProductValueInrPerHa": [],
+   "notes": [
+    "No sesame sheet with KA/TN columns in DES-CS-2021-22."
+   ]
+  },
+  {
+   "cropId": "sunflower",
+   "residue": {
+    "name": "sunflower stalks",
+    "productBasis": "sunflower-seed",
+    "rpr": {
+     "low": 2.0,
+     "high": 2.0,
+     "sourceId": "IISC-CGPL-KA",
+     "locator": "IN-KA Kharif: generation 337.3 kT / production 168.8 kT = 2.0",
+     "note": "Dry-matter basis is not stated by the atlas (the CGPL paper speaks of sun-dry residue). Ratio derived as biomass generation / crop production from the state residue tables. "
+    },
+    "surplusFraction": [
+     {
+      "region": "IN-KA",
+      "low": 0.2,
+      "high": 0.2,
+      "sourceId": "IISC-CGPL-KA",
+      "locator": "State level Residue-wise Data for Karnataka, Kharif, Sunflower Stalks (Kharif)",
+      "derivation": "surplus 67.5 kT / generation 337.3 kT",
+      "note": "Surplus after fodder, fuel and other traditional uses per the atlas; MoA reference year 1998-99."
+     }
+    ],
+    "calorificValueMJPerKg": null,
+    "biogasM3PerTonneDm": null,
+    "uses": [],
+    "notes": []
+   },
+   "nitrogenRateKgPerHa": [
+    {
+     "region": "IN-TN",
+     "low": 40,
+     "high": 60,
+     "sourceId": "TNAU-SUNFLOWER",
+     "locator": "blanket recommendation table",
+     "note": "rainfed 40 kg N (low), irrigated 60 kg N (high), hybrids and varieties",
+     "doseKind": "recommended"
+    }
+   ],
+   "energyInput": null,
+   "methane": {
+    "applies": false,
+    "note": "not a flooded crop"
+   },
+   "byProductValueInrPerHa": [
+    {
+     "region": "IN-KA",
+     "low": 909.13,
+     "high": 909.13,
+     "year": "2021-22",
+     "sourceId": "DES-CS-2021-22",
+     "locator": "Sheet Sunflower, Value of By- Product (Rs./Hectare)",
+     "note": "Imputed farm value of all by-products per hectare in the cost-of-cultivation sample; no by-product quantity is printed, so no price per tonne follows from it."
+    }
+   ],
+   "notes": []
+  },
+  {
+   "cropId": "cotton",
+   "residue": {
+    "name": "cotton stalks",
+    "productBasis": "unknown",
+    "rpr": {
+     "low": 3.41,
+     "high": 3.41,
+     "sourceId": "IISC-CGPL-TN",
+     "locator": "IN-TN Yearly: generation 215.8 kT / production 63.2 kT = 3.41",
+     "note": "Dry-matter basis is not stated by the atlas (the CGPL paper speaks of sun-dry residue). Ratio derived as biomass generation / crop production from the state residue tables. The atlas does not state whether cotton production is lint, kapas or bales, so productBasis is \"unknown\" and no conversion is sourced; the engine should treat this as a basis mismatch."
+    },
+    "surplusFraction": [
+     {
+      "region": "IN-TN",
+      "low": 0.35,
+      "high": 0.35,
+      "sourceId": "IISC-CGPL-TN",
+      "locator": "State level Residue-wise Data for Tamil Nadu, Yearly, Cotton Stalks (Yearly)",
+      "derivation": "surplus 75.5 kT / generation 215.8 kT",
+      "note": "Surplus after fodder, fuel and other traditional uses per the atlas; MoA reference year 1998-99."
+     }
+    ],
+    "calorificValueMJPerKg": null,
+    "biogasM3PerTonneDm": null,
+    "uses": [],
+    "notes": [
+     "Cotton stalk is normally burnt or used as household fuel, not traded; no price is recorded.",
+     "The KA yearly cotton rows are misaligned in the text layer and were not used."
+    ]
+   },
+   "nitrogenRateKgPerHa": [],
+   "energyInput": {
+    "gjPerHa": {
+     "low": 19.99,
+     "high": 19.99
+    },
+    "region": "IN-AP (Andhra Pradesh, 20 districts)",
+    "year": "1996-97",
+    "sourceId": "IJAE-1998-AP-ENERGY",
+    "locator": "Table 5, column (6) Cotton (p269, page image checked)",
+    "breakdown": [
+     {
+      "item": "human labour",
+      "share": 0.09
+     },
+     {
+      "item": "bullock labour",
+      "share": 0.053
+     },
+     {
+      "item": "manure",
+      "share": 0.073
+     },
+     {
+      "item": "fertiliser",
+      "share": 0.528
+     },
+     {
+      "item": "pesticide",
+      "share": 0.122
+     },
+     {
+      "item": "tractor",
+      "share": 0.004
+     },
+     {
+      "item": "irrigation",
+      "share": 0.098
+     },
+     {
+      "item": "seed",
+      "share": 0.002
+     }
+    ],
+    "dieselLitresPerHa": {
+     "low": null,
+     "high": null
+    },
+    "note": "Survey of 495 cultivating households, 1996-97, undivided Andhra Pradesh (includes present Telangana). Energy coefficients from the ICAR/PAU study; irrigation energy is pumping and canal maintenance; no diesel litres printed. Old and from another state: a regional reference only."
+   },
+   "methane": {
+    "applies": false,
+    "note": "not a flooded crop"
+   },
+   "byProductValueInrPerHa": [
+    {
+     "region": "IN-KA",
+     "low": 1497.38,
+     "high": 1497.38,
+     "year": "2021-22",
+     "sourceId": "DES-CS-2021-22",
+     "locator": "Sheet Cotton, Value of By- Product (Rs./Hectare)",
+     "note": "Imputed farm value of all by-products per hectare in the cost-of-cultivation sample; no by-product quantity is printed, so no price per tonne follows from it."
+    },
+    {
+     "region": "IN-TN",
+     "low": 927.08,
+     "high": 927.08,
+     "year": "2021-22",
+     "sourceId": "DES-CS-2021-22",
+     "locator": "Sheet Cotton, Value of By- Product (Rs./Hectare)",
+     "note": "Imputed farm value of all by-products per hectare in the cost-of-cultivation sample; no by-product quantity is printed, so no price per tonne follows from it."
+    }
+   ],
+   "notes": []
+  },
+  {
+   "cropId": "potato",
+   "residue": null,
+   "nitrogenRateKgPerHa": [
+    {
+     "region": "IN-TN",
+     "low": 120,
+     "high": 120,
+     "sourceId": "TNAU-POTATO",
+     "locator": "Application of fertilizers",
+     "note": "120:240:120 in two splits",
+     "doseKind": "recommended"
+    }
+   ],
+   "energyInput": null,
+   "methane": {
+    "applies": false,
+    "note": "not a flooded crop"
+   },
+   "byProductValueInrPerHa": [],
+   "notes": [
+    "Haulm is not traded; no residue ratio retrieved."
+   ]
+  },
+  {
+   "cropId": "onion",
+   "residue": null,
+   "nitrogenRateKgPerHa": [
+    {
+     "region": "IN-TN",
+     "low": 100,
+     "high": 100,
+     "sourceId": "TNAU-ONION",
+     "locator": "Application of fertilizers",
+     "note": "Bellary onion: 50 kg N basal + 50 kg N at 30 days",
+     "doseKind": "recommended"
+    }
+   ],
+   "energyInput": null,
+   "methane": {
+    "applies": false,
+    "note": "not a flooded crop"
+   },
+   "byProductValueInrPerHa": [
+    {
+     "region": "IN-KA",
+     "low": 830.24,
+     "high": 830.24,
+     "year": "2021-22",
+     "sourceId": "DES-CS-2021-22",
+     "locator": "Sheet Onion, Value of By- Product (Rs./Hectare)",
+     "note": "Imputed farm value of all by-products per hectare in the cost-of-cultivation sample; no by-product quantity is printed, so no price per tonne follows from it."
+    },
+    {
+     "region": "IN-TN",
+     "low": 0,
+     "high": 0,
+     "year": "2021-22",
+     "sourceId": "DES-CS-2021-22",
+     "locator": "Sheet Onion, Value of By- Product (Rs./Hectare)",
+     "note": "Imputed farm value of all by-products per hectare in the cost-of-cultivation sample; no by-product quantity is printed, so no price per tonne follows from it."
+    }
+   ],
+   "notes": [
+    "DES records a Tamil Nadu onion by-product value of 0 Rs/ha in 2021-22: the residue is not sold."
+   ]
+  },
+  {
+   "cropId": "tomato",
+   "residue": null,
+   "nitrogenRateKgPerHa": [],
+   "energyInput": null,
+   "methane": {
+    "applies": false,
+    "note": "not a flooded crop"
+   },
+   "byProductValueInrPerHa": [],
+   "notes": [
+    "Vegetable haulm is not traded; no residue ratio, N dose or energy study retrieved in this pass."
+   ]
+  },
+  {
+   "cropId": "chilli",
+   "residue": null,
+   "nitrogenRateKgPerHa": [],
+   "energyInput": null,
+   "methane": {
+    "applies": false,
+    "note": "not a flooded crop"
+   },
+   "byProductValueInrPerHa": [],
+   "notes": [
+    "No residue ratio, N dose or energy study retrieved in this pass."
+   ]
+  },
+  {
+   "cropId": "ginger",
+   "residue": null,
+   "nitrogenRateKgPerHa": [
+    {
+     "region": "IN-KA",
+     "low": 100,
+     "high": 100,
+     "sourceId": "IISR-GIN",
+     "locator": "p12 Table 3, Karnataka row",
+     "note": "NPK 100:50:50 kg/ha plus FYM 25 t/ha; read through crop-agronomy.json",
+     "doseKind": "recommended"
+    }
+   ],
+   "energyInput": null,
+   "methane": {
+    "applies": false,
+    "note": "not a flooded crop"
+   },
+   "byProductValueInrPerHa": [],
+   "notes": [
+    "No ginger residue row in the KA or TN atlas tables; ginger tops are not traded."
+   ]
+  },
+  {
+   "cropId": "turmeric",
+   "residue": {
+    "name": "turmeric stalks (leaves)",
+    "productBasis": "turmeric-dry",
+    "rpr": {
+     "low": 0.3,
+     "high": 0.3,
+     "sourceId": "IISC-CGPL-TN",
+     "locator": "IN-TN Rabi: generation 10.0 kT / production 33.2 kT = 0.3",
+     "note": "Dry-matter basis is not stated by the atlas (the CGPL paper speaks of sun-dry residue). Ratio derived as biomass generation / crop production from the state residue tables. The atlas does not state whether turmeric production is fresh or cured; cured (dry) assumed from MoA convention, to confirm."
+    },
+    "surplusFraction": [
+     {
+      "region": "IN-TN",
+      "low": 0.5,
+      "high": 0.5,
+      "sourceId": "IISC-CGPL-TN",
+      "locator": "State level Residue-wise Data for Tamil Nadu, Rabi, Turmeric Stalks (Rabi)",
+      "derivation": "surplus 5.0 kT / generation 10.0 kT",
+      "note": "Surplus after fodder, fuel and other traditional uses per the atlas; MoA reference year 1998-99."
+     }
+    ],
+    "calorificValueMJPerKg": null,
+    "biogasM3PerTonneDm": null,
+    "uses": [],
+    "notes": []
+   },
+   "nitrogenRateKgPerHa": [
+    {
+     "region": "IN-TN",
+     "low": 150,
+     "high": 150,
+     "sourceId": "TNAU-TURMERIC",
+     "locator": "Manures and manuring; fertigation",
+     "note": "25 kg N basal + 5 x 25 kg N top dressings = 150 kg N (also fertigation 150:60:108); read through crop-agronomy.json",
+     "doseKind": "recommended"
+    }
+   ],
+   "energyInput": null,
+   "methane": {
+    "applies": false,
+    "note": "not a flooded crop"
+   },
+   "byProductValueInrPerHa": [],
+   "notes": []
+  }
+ ],
+ "sources": {
+  "IPCC-2019R-V4C5": {
+   "id": "IPCC-2019R-V4C5",
+   "url": "https://www.ipcc-nggip.iges.or.jp/public/2019rf/pdf/4_Volume4/19R_V4_Ch05_Cropland.pdf",
+   "title": "2019 Refinement to the 2006 IPCC Guidelines, Vol. 4 Ch. 5 Cropland",
+   "publisher": "IPCC TFI (IGES)",
+   "retrievedAt": "2026-11-02",
+   "locator": "Table 5.11 and 5.11A (p5.53, PDF p53); Table 5.12 (p5.54, PDF p54, page image checked); Table 5.13, Equation 5.3 (p5.55, PDF p55, page image checked); Table 5.14 (p5.56); Equation 5.0H (p5.35, PDF p36)",
+   "excerpt": "Table 5.11: World 1.19 (0.80 - 1.76) kg CH4 ha-1 d-1; South Asia 0.85 (0.58 - 1.26). Table 5.12 disaggregated: Continuously flooded 1.00 (0.73-1.27); Single drainage period 0.71 (0.53-0.94); Multiple drainage periods 0.55 (0.41-0.72); Regular rainfed 0.54 (0.39-0.74); Drought prone 0.16 (0.11-0.24); Deep water 0.06 (0.03-0.12). Table 5.14: Straw incorporated shortly (<30 days) before cultivation 1.00 (0.85-1.17); Straw incorporated long (>30 days) before cultivation 0.19 (0.11-0.28). Eq 5.0H: CAG = C content of above-ground residues ... (Default: 0.42 kg C (kg d.m.)-1)"
+  },
+  "IPCC-2019R-V4C11": {
+   "id": "IPCC-2019R-V4C11",
+   "url": "https://www.ipcc-nggip.iges.or.jp/public/2019rf/pdf/4_Volume4/19R_V4_Ch11_Soils_N2O_CO2.pdf",
+   "title": "2019 Refinement, Vol. 4 Ch. 11 N2O emissions from managed soils",
+   "publisher": "IPCC TFI (IGES)",
+   "retrievedAt": "2026-11-02",
+   "locator": "Table 11.1 (Updated), default emission factors for direct N2O",
+   "excerpt": "EF1 ... 0.010 0.002 - 0.018 ... Synthetic fertiliser inputs in wet climates 0.016 0.013 - 0.019 ... All N inputs in dry climates 0.005 0.000 - 0.011; EF1FR for flooded rice fields 0.004 0.000 - 0.029; Continuous flooding 0.003 0.000 - 0.010; Single and multiple drainage 0.005 0.000 - 0.016"
+  },
+  "IPCC-2006-V4C2": {
+   "id": "IPCC-2006-V4C2",
+   "url": "https://www.ipcc-nggip.iges.or.jp/public/2006gl/pdf/4_Volume4/V4_02_Ch2_Generic.pdf",
+   "title": "2006 IPCC Guidelines, Vol. 4 Ch. 2 Generic methodologies",
+   "publisher": "IPCC TFI (IGES)",
+   "retrievedAt": "2026-11-02",
+   "locator": "Table 2.5 (p2.47) Agricultural residues row; Table 2.6 (p2.49) Agricultural residues (post harvest field burning)",
+   "excerpt": "Table 2.5: Agricultural residues 1515 92 2.7 0.07 2.5 (CO2 CO CH4 N2O NOx, g kg-1 dry matter burnt). Note: For combustion of non-woody biomass in Grassland and Cropland, CO2 emissions do not need to be estimated and reported. Table 2.6: Wheat residues 0.90; Maize residues 0.80; Rice residues 0.80; Sugarcane 0.80"
+  },
+  "IISC-CGPL-KA": {
+   "id": "IISC-CGPL-KA",
+   "url": "https://www.hsmukunda.in/biomap/agro/Biomass%20Assesssment%20for%20Karnataka.pdf",
+   "title": "Biomass Mapping for Power Generation for Karnataka, Biomass Manual (state, district and taluk residue tables, Kharif, Rabi, Yearly, Agro)",
+   "publisher": "Combustion, Gasification & Propulsion Laboratory (CGPL), Indian Institute of Science, Bangalore, under the MNRE National Biomass Resource Assessment Programme; PDF hosted on the site of H S Mukunda (former CGPL head)",
+   "retrievedAt": "2026-11-02",
+   "locator": "State level Residue-wise Data for Karnataka, Season Kharif (manual p1) and Season Rabi (p97); text layer, columns Area (kHa), Crop Production (kT/Yr), Biomass Generation (kT/Yr), Biomass Surplus (kT/Yr), Power Potential (MWe). Reference year 1998-99 per IISC-CGPL-MGRID.",
+   "excerpt": "Kharif: Paddy Straw 1313.4 4859.5 7289.0 364.5 43.7; Maize Stalks 544.2 1344.4 2688.2 1075.3 139.8; Groundnut Stalks 1025.3 950.5 1904.4 571.3 74.3; Jowar Stalks 362.2 618.4 1050.6 105.1 13.7; Ragi Straw 1057.3 1597.4 2076.7 103.8 12.5; Sunflower Stalks 352.5 168.8 337.3 67.5 8.8; Arhar Stalks 436.4 174.6 436.4 43.6 5.7; Gram Stalks 32.7 19.6 21.6 17.2 2.2; Moong Stalks 36.9 11.1 12.2 1.2 0.16. Rabi: Paddy Straw 66.3 245.1 367.4 18.4 2.2; Jowar Stalks 1520.0 1831.1 3108.3 310.8 40.4"
+  },
+  "IISC-CGPL-TN": {
+   "id": "IISC-CGPL-TN",
+   "url": "https://www.hsmukunda.in/biomap/agro/Biomass%20Assesssment%20for%20Tamil%20Nadu.pdf",
+   "title": "Biomass Assessment for Tamil Nadu, Biomass Manual",
+   "publisher": "CGPL, Indian Institute of Science, Bangalore (MNRE NBRAP); hosted at hsmukunda.in",
+   "retrievedAt": "2026-11-02",
+   "locator": "State level Residue-wise Data for Tamil Nadu, Season Kharif (manual p1), Season Rabi (p79), Season Yearly (p162); text layer, same columns as IISC-CGPL-KA",
+   "excerpt": "Kharif: Paddy Straw 155.1 122.6 183.6 18.4 2.2; Maize Stalks 78.8 122.6 245.2 61.3 8.0; Ragi Straw 94.1 115.1 149.1 65.6 7.9; Jowar Stalks 275.1 312.0 530.9 53.1 6.9; Groundnut Stalks 405.9 504.9 1010.2 252.5 32.8; Arhar Stalks 22.8 10.8 27.2 2.7; Urad Stalks 39.4 18.2 20.0 2.0; Til Stalks 17.6 7.5 18.6 1.9; Moong Stalks 19.1 9.2 10.1 1.0. Rabi: Paddy Straw 1388.3 2718.9 4077.9 407.8 48.9; Turmeric Stalks 6.0 33.2 10.0 5.0 0.65; Moong Stalks 67.8 29.9 32.9 3.3. Yearly: Cotton Stalks 56.8 63.2 215.8 75.5 10.6"
+  },
+  "IISC-CGPL-MGRID": {
+   "id": "IISC-CGPL-MGRID",
+   "url": "https://www.driveonwood.com/static/media/uploads/pdf/biomass_report_for_karnataka_for_publication_mgrid.pdf",
+   "title": "Assessment of Biomass Resource and its Power Potential using Remote Sensing Data for Karnataka State and Nation-wide in General",
+   "publisher": "Sheshagiri G S, Rajan N K S and Mukunda H S, CGPL, IISc (copy hosted at driveonwood.com)",
+   "retrievedAt": "2026-11-02",
+   "locator": "Introduction, method paragraphs (p1-2)",
+   "excerpt": "The survey reports give us Crop Yield [Tons/Hectare], CRR [Crop Residue Ratio = Residue yield (Tons/Ha) / Crop Yield (Tons/Ha)], the surplus biomass available after basic uses such as fodder, fuel etc. ... Presently, the biomass data embedded in the atlas is based on Agricultural crop residues published by MOA for the year 1998-99."
+  },
+  "RW-2024-01-30-FARMGAS": {
+   "id": "RW-2024-01-30-FARMGAS",
+   "url": "https://renewablewatch.in/2024/01/30/taking-action-cbg-helps-address-the-issue-of-stubble-burning-in-punjab/",
+   "title": "Taking Action: CBG helps address the issue of stubble burning in Punjab (Sarita Brara, 30 Jan 2024)",
+   "publisher": "Renewable Watch (trade magazine)",
+   "retrievedAt": "2026-11-02",
+   "locator": "Paragraphs on Farm Gas Private Limited, Ghungreli, Ludhiana",
+   "excerpt": "its annual requirement of paddy straw was already procured last season from balers across 40-50 villages within a radius of 15-20 km, at the rate of Rs 1,650 per tonne. ... The unit consumes 30,000 mt of paddy straw annually ... has a capacity of 30,000 cubic metres (m3) of biogas per day or 12 tpd of CBG"
+  },
+  "TRIB-2024-09-19-MUKTSAR": {
+   "id": "TRIB-2024-09-19-MUKTSAR",
+   "url": "https://www.tribuneindia.com/news/punjab/no-hike-in-paddy-stubble-price-by-biomass-plants/amp",
+   "title": "No hike in paddy stubble price by biomass plants (19 Sep 2024)",
+   "publisher": "The Tribune (newspaper)",
+   "retrievedAt": "2026-11-02",
+   "locator": "Paragraphs 1 and the plant executive quote",
+   "excerpt": "biomass power plant operators have not revised the price for paddy stubble this year, offering the same rate of Rs 169 per quintal as last year ... the actual cost of stubble for the plants amounts to Rs 300 per quintal, considering their operational expenses."
+  },
+  "DES-CS-2021-22": {
+   "id": "DES-CS-2021-22",
+   "url": "https://desagri.gov.in/wp-content/uploads/2023/06/CS-Consolidated-Crop-year-wise-2021-22-4.xlsx",
+   "title": "Estimates of Cost of Cultivation/Production & Related Data, crop year 2021-22 (consolidated workbook)",
+   "publisher": "Economics, Statistics & Evaluation Division, DA&FW (Cost of Cultivation scheme)",
+   "retrievedAt": "2026-11-02",
+   "locator": "One sheet per crop; row 4 \"Value of By- Product (Rs./Hectare)\", Karnataka and Tamil Nadu columns",
+   "excerpt": "Paddy, YEAR: 2021-22, Value of By- Product (Rs./Hectare): Karnataka 6741.6, Tamil Nadu 5220.03"
+  },
+  "IPCC-AR6-WG1-T7.15": {
+   "id": "IPCC-AR6-WG1-T7.15",
+   "url": "https://www.ipcc.ch/report/ar6/wg1/downloads/report/IPCC_AR6_WGI_Chapter07.pdf",
+   "title": "Climate Change 2021: The Physical Science Basis, WG1 Chapter 7 (Forster et al.)",
+   "publisher": "IPCC",
+   "retrievedAt": "2026-11-02",
+   "locator": "Table 7.15 (PDF p95)",
+   "excerpt": "CH4-non fossil ... GWP-100 27.0 +/- 11; N2O ... GWP-100 273 +/- 130; CH4-fossil 29.8 +/- 11"
+  },
+  "IPCC-2006-V2C3": {
+   "id": "IPCC-2006-V2C3",
+   "url": "https://www.ipcc-nggip.iges.or.jp/public/2006gl/pdf/2_Volume2/V2_3_Ch3_Mobile_Combustion.pdf",
+   "title": "2006 IPCC Guidelines, Vol. 2 Ch. 3 Mobile Combustion",
+   "publisher": "IPCC TFI (IGES)",
+   "retrievedAt": "2026-11-02",
+   "locator": "Table 3.3.1, default emission factors for off-road mobile sources and machinery (PDF p36)",
+   "excerpt": "Diesel ... Agriculture 74 100 72 600 74 800 (CO2 default, lower, upper, kg/TJ)"
+  },
+  "INDIAGHGP-2015-ROAD": {
+   "id": "INDIAGHGP-2015-ROAD",
+   "url": "https://indiaghgp.org/sites/default/files/Road%20Transport%20Technical%20Paper.pdf",
+   "title": "India Specific Road Transport Emission Factors, Version 1.0, for stakeholder consultation (2015)",
+   "publisher": "India GHG Program (WRI India, CII, TERI)",
+   "retrievedAt": "2026-11-02",
+   "locator": "Three-wheeler emission factor calculation, Step 2 (PDF p27)",
+   "excerpt": "Emission factor for Diesel - 2.6444 kg CO2/lit"
+  },
+  "TNAU-RICE-NM": {
+   "id": "TNAU-RICE-NM",
+   "url": "https://agritech.tnau.ac.in/agriculture/agri_main_feild_%20InOrganic_biofertilizers_Rice.html",
+   "title": "Nutrient Management :: Rice : Main Field, Application of Inorganic Fertilizers (updated Jan 2023)",
+   "publisher": "Tamil Nadu Agricultural University (TNAU Agritech portal)",
+   "retrievedAt": "2026-11-02",
+   "locator": "blanket recommendation table; fetched 2026-11-02",
+   "excerpt": "Short duration varieties (Dry Season) a) Cauvery delta & Coimbatore tract 150 | 50 | 50 b) For other tracts 120 | 40 | 40; Medium and long duration varieties (Wet Season) 150 | 50 | 50; Hybrid rice 175 | 60 | 60; Low N responsive cultivars (like Improved White Ponni) 75*"
+  },
+  "TNAU-MAIZE-IRR": {
+   "id": "TNAU-MAIZE-IRR",
+   "url": "https://agritech.tnau.ac.in/agriculture/millets_maize_irrigated_maize_fertilizer.html",
+   "title": "Crop Production :: Millets :: Maize :: Irrigated Maize, Application of Fertilizer",
+   "publisher": "Tamil Nadu Agricultural University (TNAU Agritech portal)",
+   "retrievedAt": "2026-11-02",
+   "locator": "Application of Fertilizer; fetched 2026-11-02",
+   "excerpt": "If soil test recommendation is not available adopt a blanket recommendation of 135:62.5:50 NPK kg/ha."
+  },
+  "TNAU-GN-NM": {
+   "id": "TNAU-GN-NM",
+   "url": "https://agritech.tnau.ac.in/agriculture/crop_prot_crop_grounnut_nutrient%20mgmt.html",
+   "title": "Crop Protection :: Oil Seeds :: Groundnut, Nutrient management",
+   "publisher": "Tamil Nadu Agricultural University (TNAU Agritech portal)",
+   "retrievedAt": "2026-11-02",
+   "locator": "Application of fertilizers; fetched 2026-11-02",
+   "excerpt": "If soil test is not done, apply 25:50:75 kg/ha of NPK fertilizers"
+  },
+  "TNAU-GREENGRAM-IRR": {
+   "id": "TNAU-GREENGRAM-IRR",
+   "url": "https://agritech.tnau.ac.in/agriculture/CropProduction/Pulses/crop_prot_crop_irrigated_Nutrient%20Mgmt.html",
+   "title": "Crop Protection :: Pulses :: Greengram, Irrigated, Nutrient Management",
+   "publisher": "Tamil Nadu Agricultural University (TNAU Agritech portal)",
+   "retrievedAt": "2026-11-02",
+   "locator": "blanket recommendation table; fetched 2026-11-02",
+   "excerpt": "Recommended Quantity of Nutrient (kg /ha) ... N | P2O5 | K2O | S ... 25 | 50 | 25 | 40"
+  },
+  "PAU-IJBSM-2024-BRIQ": {
+   "id": "PAU-IJBSM-2024-BRIQ",
+   "url": "https://www.ojs.pphouse.org/index.php/IJBSM/article/download/5376/2962/14031",
+   "title": "Briquettes as an Alternative Fuel to Wood for Circular Economy in Paddy Straw (Dogra, Singh, Singh, Singh and Kumar), IJBSM 15(6) 2024, doi 10.23910/1.2024.5376",
+   "publisher": "International Journal of Bio-resource and Stress Management (open access); authors at Dept. of Renewable Energy Engineering, Punjab Agricultural University, Ludhiana",
+   "retrievedAt": "2026-11-02",
+   "locator": "Abstract; Table 1 (proximate analysis, calorific value); section 3.2 ultimate analysis",
+   "excerpt": "the calorific value, bulk density, ash content, and volatile matter of paddy straw briquettes were 15.29 MJ kg-1, 639.22 kg m-3, 23.46% and 64.03% ... Table 1: Calorific value (MJ kg-1) 15.27; Moisture content (%) 9.62 ... Carbon, Hydrogen, Nitrogen and Sulphur in paddy straw briquettes were found to be 38.8%, 5.2%, 0.9% and 0.1%"
+  },
+  "IITD-TRIVEDI-2017": {
+   "id": "IITD-TRIVEDI-2017",
+   "url": "https://ir.iitd.ac.in/bitstreams/0dd51c3e-757c-47d4-b066-0466ba60086d/download",
+   "title": "Studies on hydrothermal pretreatment process optimization for improved biogas production from paddy straw (PhD thesis, Abhinav Trivedi, Oct 2017)",
+   "publisher": "Centre for Rural Development & Technology, Indian Institute of Technology Delhi (institutional repository; the downloaded file holds the 13-page front matter and abstract only)",
+   "retrievedAt": "2026-11-02",
+   "locator": "Abstract",
+   "excerpt": "in comparison to untreated paddy straw where specific biogas (187 L/kg VS) and methane (85 L/kg VS) yield was lower ... Hydrothermal pretreatment at 200 0C and 5.0% total solids obtained highest value of specific biogas (500 L/kg VS) and methane (266 L/kg VS)"
+  },
+  "HPCL-SATAT-FAQ": {
+   "id": "HPCL-SATAT-FAQ",
+   "url": "https://hindustanpetroleum.com/images/Frequently_Asked_Questions_on_CBG.pdf",
+   "title": "Compendium of Frequently Asked Questions (FAQs) on Compressed Bio Gas (CBG) and SATAT scheme",
+   "publisher": "Hindustan Petroleum Corporation Ltd (oil marketing company under MoPNG, SATAT implementing partner)",
+   "retrievedAt": "2026-11-02",
+   "locator": "Q1 What is Compressed Bio Gas; Q2 (IS 16087:2016)",
+   "excerpt": "CBG or Compressed Bio Gas consist of mainly methane (more than 90%) and other gasses like carbon dioxide (less than 4%) ... BIS has issued IS 16087 2016 standards on CBG"
+  },
+  "IPCC-2006-V4C10": {
+   "id": "IPCC-2006-V4C10",
+   "url": "https://www.ipcc-nggip.iges.or.jp/public/2006gl/pdf/4_Volume4/V4_10_Ch10_Livestock.pdf",
+   "title": "2006 IPCC Guidelines, Vol. 4 Ch. 10 Emissions from livestock and manure management",
+   "publisher": "IPCC TFI (IGES)",
+   "retrievedAt": "2026-11-02",
+   "locator": "Equation 10.23 and its variable list (p10.41-10.42)",
+   "excerpt": "0.67 = conversion factor of m3 CH4 to kilograms CH4"
+  },
+  "IPCC-2006-V2C1": {
+   "id": "IPCC-2006-V2C1",
+   "url": "https://www.ipcc-nggip.iges.or.jp/public/2006gl/pdf/2_Volume2/V2_1_Ch1_Introduction.pdf",
+   "title": "2006 IPCC Guidelines, Vol. 2 Ch. 1 Introduction (energy)",
+   "publisher": "IPCC TFI (IGES)",
+   "retrievedAt": "2026-11-02",
+   "locator": "Table 1.2 default net calorific values (p1.18, PDF p18; page image checked)",
+   "excerpt": "Gas/Diesel Oil 43.0 41.4 43.3; Liquefied Petroleum Gases 47.3 44.8 52.2 (net calorific value TJ/Gg, lower, upper)"
+  },
+  "AIR-2026-01-02-LPG": {
+   "id": "AIR-2026-01-02-LPG",
+   "url": "https://www.newsonair.gov.in/no-change-in-domestic-lpg-prices-for-household-consumers-clarifies-petroleum-ministry",
+   "title": "No change in domestic LPG prices for household consumers, clarifies Petroleum Ministry (2 Jan 2026)",
+   "publisher": "All India Radio News (Prasar Bharati), reporting the Ministry of Petroleum and Natural Gas",
+   "retrievedAt": "2026-11-02",
+   "locator": "article body",
+   "excerpt": "the effective price of a 14.2 kg domestic LPG cylinder, which costs around 950 rupees, is available at 853 rupees for non-PMUY domestic consumers in Delhi"
+  },
+  "IJAE-1998-AP-ENERGY": {
+   "id": "IJAE-1998-AP-ENERGY",
+   "url": "https://ageconsearch.umn.edu/record/297613/files/ijae-244.pdf",
+   "title": "Energy Use and Its Efficiency in Andhra Pradesh Agriculture (Subrahmanyam, Reddy and Mitra), Indian Journal of Agricultural Economics 53(3) 1998",
+   "publisher": "Indian Society of Agricultural Economics (copy on AgEcon Search); authors at the Centre for Economic and Social Studies, Hyderabad",
+   "retrievedAt": "2026-11-02",
+   "locator": "Section II data (p265-266); Table 5 Energy use for different crops (p269, page image checked)",
+   "excerpt": "The paper uses the primary survey data collected from 495 cultivating households spread in 20 districts of Andhra Pradesh during 1996-97 ... Table 5 (GJ/ha) Total input: Paddy 19.40, Groundnut* 11.53, Cotton 19.99; Fertiliser Paddy 8.48 (43.7), Irrigation 4.42 (22.8)"
+  },
+  "PA-2025-MAIZE-TG": {
+   "id": "PA-2025-MAIZE-TG",
+   "url": "https://plantarchives.org/article/142%20ENERGY-ANALYSIS-OF-MAIZE-PRODUCTION-SYSTEMS-IN-NAGARKURNOOL-DISTRICT,-TELANGANA,-INDIA.pdf",
+   "title": "Energy analysis of maize production systems in Nagarkurnool district, Telangana, India (Sravan Kumar and Shankar), Plant Archives 25 Suppl. 2, 2025, pp1150-1153",
+   "publisher": "Plant Archives (journal); authors at AICRP on Farm Implements and Machinery, Rajendranagar, and RARS Palem (PJTSAU)",
+   "retrievedAt": "2026-11-02",
+   "locator": "Abstract; Table 2 energy equivalents of inputs",
+   "excerpt": "Results showed total energy input of 16806.87 MJ/ha with nitrogen fertilizer accounting for 62.37 % and diesel fuel 15.08 % of energy consumption ... Diesel fuel(L) 45 2533.95 15.08"
+  },
+  "DTE-2019-CSE-GRP-UREA": {
+   "id": "DTE-2019-CSE-GRP-UREA",
+   "url": "https://www.downtoearth.org.in/news/agriculture/how-green-is-the-urea-sector--64836",
+   "title": "How green is the urea sector? (30 May 2019), reporting the CSE Green Rating Project report Grain by Grain: Green Rating of the Fertilizer Sector",
+   "publisher": "Down To Earth (Centre for Science and Environment)",
+   "retrievedAt": "2026-11-02",
+   "locator": "Plant paragraphs (IGF Jagdishpur, KRIBHCO Hazira, Mangalore Chemicals and Fertilisers, Yara Babrala) and the scope note",
+   "excerpt": "Average CO2 emission intensity during the past three years has been 0.43 tonnes CO2 per tonne urea (Yara Fertilisers, Babrala) ... Average CO2 emission intensity during the past three years has been 1.13 tonne CO2 per tonne urea produced (Mangalore Chemicals and Fertilisers) ... 0.44 (IGF Jagdishpur) ... 0.5 (KRIBHCO Hazira)",
+   "note": "Secondary: magazine report of the CSE rating; CSE says only production-stage emissions were rated."
+  },
+  "HPCL-HSD-BSVI": {
+   "id": "HPCL-HSD-BSVI",
+   "url": "https://www.hindustanpetroleum.com/images/pdf/MS_HSD_BS-VI_SPECS.pdf",
+   "title": "MS and HSD BS-VI specifications (product specification sheet)",
+   "publisher": "Hindustan Petroleum Corporation Ltd",
+   "retrievedAt": "2026-11-02",
+   "locator": "HSD-BS-VI Specifications table, item 3; conformity line",
+   "excerpt": "3 DENSITY AT 15 C IS 1448 P : 16 kg/m3 810.0 845.0 ... The Product conforms SPECIFICATIONS AS PER IS 1460: 2017 (6TH REVISION)"
+  },
+  "IITG-SCIREP-2024-RS": {
+   "id": "IITG-SCIREP-2024-RS",
+   "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC10928109",
+   "title": "Co-densification of rice straw and cow dung in different food-to-microorganism ratios for biogas production (Singh, Dogra, Induchoodan and Kalamdhad), Scientific Reports 14:5904 (2024)",
+   "publisher": "Scientific Reports (open access, PMC); authors at Indian Institute of Technology Guwahati",
+   "retrievedAt": "2026-11-02",
+   "locator": "Table 1 rice straw row; methods sentence on VS",
+   "excerpt": "Rice straw 11.58 +/- 1.07 69.20 +/- 2.86 88.42 +/- 4.63 78.26 6.9 +/- 0.3 (MC%, VS%, TS%, VS (%TS), pH) ... The volatile solids were calculated by subtracting the fixed solids from the TS.",
+   "note": "Straw collected from a field in Guwahati, Assam."
+  },
+  "TRIB-2023-12-05-KARNAL": {
+   "id": "TRIB-2023-12-05-KARNAL",
+   "url": "https://www.tribuneindia.com/news/haryana/expecting-high-prices-in-coming-days-farmers-store-paddy-straw-568863/amp",
+   "title": "Expecting high prices in coming days, farmers store paddy straw (Karnal, 4 Dec; page updated 5 Dec 2023)",
+   "publisher": "The Tribune (newspaper)",
+   "retrievedAt": "2026-11-02",
+   "locator": "Price paragraph and buyer quotes",
+   "excerpt": "At present, they are getting Rs 300 per quintal for basmati straw and Rs 250 per quintal for parmal straw ... Farmers have been selling paddy straw to the IOCL, Panipat, and other industries ... It is in high demand in gaushalas also ... We send paddy straw to Rajasthan, Gujarat, Delhi and other states."
+  },
+  "CRIDA-HAS": {
+   "id": "CRIDA-HAS",
+   "url": "https://www.icar-crida.res.in/CP-2012/statewiseplans/Karnataka%20(Pdf)/GKVK,%20Bangalore/KA28-Hassan%20%2004.10.2011.pdf",
+   "title": "Agriculture Contingency Plan for District: Hassan (2011-10-04)",
+   "publisher": "ICAR-CRIDA / UAS Bangalore (GKVK)",
+   "retrievedAt": "2026-11-02",
+   "locator": "pp26-28 (irrigated and tank paddy; maize contingency) and p24-25 (second-crop ragi); repo copy data/raw/crida/KA28-Hassan-2011-10-04.pdf, text layer read 2026-11-02",
+   "excerpt": "Application of 100:50:50+ 8 kg ZnSO4 ( Zinc application once in three years) (pp26-27, paddy); Apply only 50 % of the RDF (25:10:10 kg NPK/ha) for the 2nd crop ragi, if fertilizer is applied to the first crop (p24)",
+   "note": "Re-read 2026-11-02 in the repo PDF text layer: pp26-27 irrigated and tank paddy (Paddy-fallow, Paddy-paddy) Application of 100:50:50+ 8 kg ZnSO4; p28 maize contingency 100:50:50 kg NPK."
+  },
+  "TNAU-RAGI": {
+   "id": "TNAU-RAGI",
+   "url": "https://agritech.tnau.ac.in/agriculture/millets_ragi.html",
+   "title": "Crop Production :: Millets :: Ragi",
+   "publisher": "Tamil Nadu Agricultural University (TNAU Agritech portal)",
+   "retrievedAt": "2026-11-02",
+   "locator": "3. Application of fertilizers; repo copy data/raw/crops/tnau-ragi.txt (fetched 2026-10-29), read 2026-11-02",
+   "excerpt": "If soil test recommendation is not available, adopt a blanket recommendation of 60 kg N, 30 kg PO5 and 30 kg K2O5 per ha."
+  },
+  "TNAU-SORGHUM": {
+   "id": "TNAU-SORGHUM",
+   "url": "https://agritech.tnau.ac.in/agriculture/millets_sorghum.html",
+   "title": "Crop Production :: Millets :: Sorghum",
+   "publisher": "Tamil Nadu Agricultural University (TNAU Agritech portal)",
+   "retrievedAt": "2026-11-02",
+   "locator": "Application of fertilizers; repo copy data/raw/crops/tnau-sorghum.txt (fetched 2026-10-29), read 2026-11-02",
+   "excerpt": "If soil test recommendations are not available, adopt a blanket recommendation of 90 N, 45 P2O5, 45 K2O kg/ha."
+  },
+  "TNAU-SOYBEAN": {
+   "id": "TNAU-SOYBEAN",
+   "url": "https://agritech.tnau.ac.in/agriculture/CropProduction/Pulses/pulses_soybean.html",
+   "title": "Crop Production :: Pulses :: Soybean",
+   "publisher": "Tamil Nadu Agricultural University (TNAU Agritech portal)",
+   "retrievedAt": "2026-11-02",
+   "locator": "4. Fertilizer application; repo copy data/raw/crops/tnau-soybean.txt (fetched 2026-10-29), read 2026-11-02",
+   "excerpt": "Apply 20 kg N and 80 kg P2O5 and 40 kg K2O per ha 40 kg of S as gypsum (220 kg/ha) / ha as basal dressing."
+  },
+  "TNAU-BENGALGRAM": {
+   "id": "TNAU-BENGALGRAM",
+   "url": "https://agritech.tnau.ac.in/agriculture/CropProduction/Pulses/pulses_bengalgram.html",
+   "title": "Crop Production :: Pulses :: Bengalgram",
+   "publisher": "Tamil Nadu Agricultural University (TNAU Agritech portal)",
+   "retrievedAt": "2026-11-02",
+   "locator": "4. Fertilizer application; repo copy data/raw/crops/tnau-bengalgram.txt (fetched 2026-10-29), read 2026-11-02",
+   "excerpt": "Rainfed : 12.5 kg N + 25 kg P2O5 + 12.5 kg K2O +10 kg S*/ha; Irrigated : 25 kg N + 50 kg P2O5 + 25 kg K2O + 20 kg S*/ha"
+  },
+  "TNAU-REDGRAM": {
+   "id": "TNAU-REDGRAM",
+   "url": "https://agritech.tnau.ac.in/agriculture/CropProduction/Pulses/pulses_redgram.html",
+   "title": "Crop Production :: Pulses :: Redgram",
+   "publisher": "Tamil Nadu Agricultural University (TNAU Agritech portal)",
+   "retrievedAt": "2026-11-02",
+   "locator": "4. Application of fertilizers; repo copy data/raw/crops/tnau-redgram.txt (fetched 2026-10-29), read 2026-11-02",
+   "excerpt": "Rainfed : 12.5 kg N + 25 kg P2O5 + 12.5 kg K2O +10 kg S*/ha; Irrigated : 25 kg N + 50 kg P2O5 + 25 kg K2O + 20 kg S*/ha"
+  },
+  "TNAU-SUNFLOWER": {
+   "id": "TNAU-SUNFLOWER",
+   "url": "https://agritech.tnau.ac.in/agriculture/oilseeds_sunflower.html",
+   "title": "Crop Production :: Oil Seeds :: Sunflower",
+   "publisher": "Tamil Nadu Agricultural University (TNAU Agritech portal)",
+   "retrievedAt": "2026-11-02",
+   "locator": "2. Application of fertilizers, blanket recommendation table; repo copy data/raw/crops/tnau-sunflower.txt (fetched 2026-10-29), read 2026-11-02",
+   "excerpt": "Blanket recommendation of Nutrients (kg/ha) | N | P2O5 | K2O | Hybrids | Irrigated | 60 | 90 | 60 | Rainfed | 40 | 50 | 40 | Varieties | Irrigated | 60 | 30 | 30 | Rainfed | 40 | 50 | 40"
+  },
+  "TNAU-POTATO": {
+   "id": "TNAU-POTATO",
+   "url": "https://agritech.tnau.ac.in/horticulture/horti_vegetables_potato.html",
+   "title": "Horticulture :: Vegetables :: Potato",
+   "publisher": "Tamil Nadu Agricultural University (TNAU Agritech portal)",
+   "retrievedAt": "2026-11-02",
+   "locator": "Application of fertilizers; repo copy data/raw/crops/tnau-potato.txt (fetched 2026-10-29), read 2026-11-02",
+   "excerpt": "Apply 15 t/ha of FYM ... and 120 kg N, 240 kg P and 120 kg K/ha in two splits"
+  },
+  "TNAU-ONION": {
+   "id": "TNAU-ONION",
+   "url": "https://agritech.tnau.ac.in/horticulture/horti_vegetables_bellaryonion.html",
+   "title": "Horticulture :: Vegetables :: Bellary onion",
+   "publisher": "Tamil Nadu Agricultural University (TNAU Agritech portal)",
+   "retrievedAt": "2026-11-02",
+   "locator": "Application of fertilizers; repo copy data/raw/crops/tnau-onion-bellary.txt (fetched 2026-10-29), read 2026-11-02",
+   "excerpt": "N 50 kg, P 150 kg and K 75 kg/ha as basal dose and N 50 kg/ha as top-dressing is done at 30 days after planting."
+  },
+  "TNAU-GREENGRAM": {
+   "id": "TNAU-GREENGRAM",
+   "url": "https://agritech.tnau.ac.in/agriculture/pulses_greengram.html",
+   "title": "Crop Production :: Pulses :: Greengram",
+   "publisher": "TNAU Agritech portal",
+   "retrievedAt": "2026-11-02",
+   "locator": "Fertilizer application, as summarised in crop-agronomy.json green-gram rotationNotes",
+   "excerpt": "TNAU fertilizer dose: rainfed 12.5 kg N + 25 kg P2O5 + 12.5 kg K2O + 10 kg S/ha; irrigated 25:50:25:20.",
+   "note": "Read through data/research/rotation/crop-agronomy.json (retrieved 2026-11-01 by the agronomy pass); the page itself was not re-read in this pass."
+  },
+  "TNAU-TURMERIC": {
+   "id": "TNAU-TURMERIC",
+   "url": "https://agritech.tnau.ac.in/horticulture/horti_spice%20crops_turmeric.html",
+   "title": "Horticulture :: Spices :: Turmeric",
+   "publisher": "TNAU Agritech portal",
+   "retrievedAt": "2026-11-02",
+   "locator": "Manures and manuring; Fertigation, as summarised in crop-agronomy.json turmeric rotationRole",
+   "excerpt": "TNAU: fertigation 150:60:108 kg NPK/ha; conventional basal 25 kg N plus 25 kg N at each of five top dressings; FYM 25 t/ha.",
+   "note": "Read through data/research/rotation/crop-agronomy.json (retrieved 2026-11-01 by the agronomy pass); the page itself was not re-read in this pass."
+  },
+  "IISR-GIN": {
+   "id": "IISR-GIN",
+   "url": "https://spices.res.in/storage/app/public/pdfs/GINGER/3ENG.pdf",
+   "title": "Ginger (extension pamphlet)",
+   "publisher": "ICAR-Indian Institute of Spices Research, Kozhikode",
+   "retrievedAt": "2026-11-02",
+   "locator": "p12 Table 3 (Karnataka fertilizer row), as summarised in crop-agronomy.json ginger rotationRole; repo copy data/raw/iisr/ginger_3ENG.pdf",
+   "excerpt": "IISR Karnataka fertilizer row NPK 100:50:50 kg/ha plus FYM 25 t/ha (100 kg N).",
+   "note": "Read through data/research/rotation/crop-agronomy.json (retrieved 2026-11-01 by the agronomy pass); the page itself was not re-read in this pass."
+  }
+ },
+ "failedSources": [
+  {
+   "url": "https://pure.qub.ac.uk/files/428398300/1_s2.0_S235248472300197X_main.pdf",
+   "reason": "Deka et al. 2023 Energy Reports (RPR, surplus and heating-value tables): repository copy behind a Cloudflare browser challenge; ScienceDirect returned HTTP 403. Not bypassed."
+  },
+  {
+   "url": "https://ideas.repec.org/a/eee/rensus/v32y2014icp504-512.html",
+   "reason": "Hiloidhari, Das and Baruah 2014: no open full text found; tables not retrieved."
+  },
+  {
+   "url": "https://shodhganga.inflibnet.ac.in:8443/jspui/handle/10603/97466",
+   "reason": "Shodhganga thesis record timed out (60 s, twice)."
+  },
+  {
+   "url": "https://icar-nrri.in/wp-content/uploads/2024/09/NRR_Research-Bulletin_No-31-A.pdf",
+   "reason": "NRRI Research Bulletin 31 (rice straw uses): host icar-nrri.in does not resolve from this machine (curl and WebFetch)."
+  },
+  {
+   "url": "https://krishi.icar.gov.in/jspui/handle/123456789/70677",
+   "reason": "KRISHI repository host does not resolve from this machine."
+  },
+  {
+   "url": "https://tifac.org.in/index.php/reports-publications/recent-publications/2-uncategorised/1062-estimation-of-surplus-crop-residues-in-india-for-biofuel-production",
+   "reason": "TIFAC 2018 surplus residue report is a paid publication (Rs 30,000 per the search summary); not purchased."
+  },
+  {
+   "url": "https://wgbis.ces.iisc.ac.in/energy/paper/TR109/tr109_method.htm",
+   "reason": "IISc TR109 (Karnataka residue ratios and kcal/kg): TLS certificate name mismatch on wgbis.ces.iisc.ac.in; calorific values not retrieved."
+  },
+  {
+   "url": "https://www.deccanherald.com/amp/story/india%2Fkarnataka%2Frise-in-price-of-paddy-straw-worries-farmers-1065723.html",
+   "reason": "Karnataka paddy straw (fodder) price report, Dec 2021: HTTP 403 to WebFetch."
+  },
+  {
+   "url": "https://www.sciencedirect.com/science/article/pii/S235248472300197X",
+   "reason": "HTTP 403."
+  },
+  {
+   "url": "https://dst.gov.in/sites/default/files/Biomethanation%20of%20rice%20straw%2C%20a%20potential%20solution%20to%20stubble%20burning.pdf",
+   "reason": "DST note on ARI Pune rice-straw biomethanation: HTTP 404 page (search summary only: >500 L biogas per kg VS, about 50% methane; not used)."
+  },
+  {
+   "url": "https://www.mdpi.com/1996-1073/16/11/4334",
+   "reason": "Energies 2023 rice straw biogas mass balance (270 m3 per tonne straw per search summary): HTTP 403; not used."
+  },
+  {
+   "url": "https://cstep.in/drupal/node/3066",
+   "reason": "CSTEP green urea report page: HTTP 404; India average urea intensity (0.7 t CO2e/t per an IIT Madras column, search summary only) not retrieved."
+  },
+  {
+   "url": "search: paddy straw fodder price per tonne Mandya / Hassan / Tamil Nadu 2023-2025",
+   "reason": "No Karnataka or Tamil Nadu per-tonne fodder price found; the dry_fodder price uses the Karnal, Haryana market report instead."
+  }
+ ]
+}

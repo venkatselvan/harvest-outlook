@@ -26,6 +26,7 @@ const EXPECTED_KEYS: AiUseKey[] = [
   "soil_review",
   "crop_fit_picks",
   "harvest_outlook_note",
+  "today_overview",
   "assistant",
   "speech",
   "journal_observation",
@@ -35,7 +36,7 @@ const MODELS = ["Meta Muse Spark 1.3 (text)", "Meta Muse Image 1.0", "Meta speec
 const PLANNED: AiUseKey[] = [];
 
 describe("AI use registry", () => {
-  it("holds exactly the ten agreed uses, keyed consistently", () => {
+  it("holds exactly the eleven agreed uses, keyed consistently", () => {
     expect([...AI_USE_KEYS].sort()).toEqual([...EXPECTED_KEYS].sort());
     for (const key of EXPECTED_KEYS) expect(AI_USES[key].key).toBe(key);
   });
@@ -131,15 +132,15 @@ describe("AiSpark sheet content", () => {
     expect(copy).not.toMatch(/\bLive\b/);
   });
 
-  it("lists all ten uses with a status chip each when the full list is shown", () => {
+  it("lists all eleven uses with a status chip each when the full list is shown", () => {
     const html = renderToString(() => <AiUsesList />);
-    expect(html.match(/data-ai-use="/g)).toHaveLength(10);
+    expect(html.match(/data-ai-use="/g)).toHaveLength(11);
     for (const use of Object.values(AI_USES)) {
       expect(html).toContain(`data-ai-use="${use.key}"`);
       expect(text(html)).toContain(use.title);
       expect(text(html)).toContain(`${use.model} · ${use.where}`);
     }
-    expect(text(html).match(/\bLive\b/g)).toHaveLength(10);
+    expect(text(html).match(/\bLive\b/g)).toHaveLength(11);
     expect(text(html).match(/\bPlanned\b/g)).toBeNull();
   });
 });

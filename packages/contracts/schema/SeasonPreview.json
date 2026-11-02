@@ -599,7 +599,10 @@
                     "soil",
                     "ndvi",
                     "climatology",
-                    "model"
+                    "model",
+                    "residue_reference",
+                    "emission_factor",
+                    "energy_reference"
                   ]
                 },
                 "label": {
@@ -1626,7 +1629,10 @@
               "soil",
               "ndvi",
               "climatology",
-              "model"
+              "model",
+              "residue_reference",
+              "emission_factor",
+              "energy_reference"
             ]
           },
           "label": {

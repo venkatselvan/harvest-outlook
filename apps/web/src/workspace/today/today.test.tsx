@@ -1,9 +1,26 @@
 import { describe, expect, it } from "vitest";
+import { readFileSync } from "node:fs";
 import { renderToString } from "solid-js/web";
 import { Route, Router } from "@solidjs/router";
-import { FarmAlert as alertSchema, FarmAlertType, INDEX_IDS, IndexStageReading as curveSchema, TodayView as todaySchema, type FarmAlert, type NdviSeries, type SceneRef, type StageTimeline } from "@harvest/contracts";
+import { CarbonFootprint as carbonSchema, EnergyFootprint as energySchema, FarmAlert as alertSchema, FarmAlertType, HarvestEconomics as economicsSchema, INDEX_IDS, ResidueIncome as residueSchema, IndexStageReading as curveSchema, TodayView as todaySchema, type FarmAlert, type NdviSeries, type SceneRef, type StageTimeline } from "@harvest/contracts";
 import { ApiError } from "../../lib/api";
 import {
+  carbonFootprintFixture,
+  overviewDeterministicFixture,
+  overviewFixture,
+  overviewPendingFixture,
+  overviewUnavailableFixture,
+  carbonFootprintNoAreaFixture,
+  carbonFootprintPartialFixture,
+  carbonFootprintUnavailableFixture,
+  energyFootprintFixture,
+  energyFootprintPartialFixture,
+  energyFootprintUnavailableFixture,
+  harvestEconomicsFixture,
+  harvestEconomicsPartialFixture,
+  harvestEconomicsUnavailableFixture,
+  residueIncomeFixture,
+  residueIncomeUnavailableFixture,
   FIXTURE_ALERT_IDS,
   FIXTURE_FARM_ID,
   FIXTURE_HARVEST,
@@ -21,6 +38,22 @@ import {
 } from "./fixtures";
 import {
   addDays,
+  bestResidueOption,
+  carbonTermLine,
+  co2eParts,
+  compactInr,
+  energyBasisShort,
+  compactInrRange,
+  costValue,
+  formatCo2e,
+  formatGJ,
+  formatTonnes,
+  largestCarbonTerm,
+  profitValue,
+  rangeText,
+  rankChip,
+  residueTitle,
+  unavailableReason,
   CURVE_MIN_READINGS,
   CURVE_MIN_SPAN_DAYS,
   curveAsOfNote,
@@ -51,8 +84,12 @@ import {
 } from "./model";
 import { describeTodayError, sceneImageUrl } from "./todayApi";
 import { TodayEmpty } from "./TodayEmpty";
-import { HealthCard, OutlookLine, TodayCards } from "./TodayCards";
-import { CurveSheetBody, IndexTable, TodaySheetBody } from "./TodaySheet";
+import { TodayOverview, pointTarget, showsAiMark } from "./TodayOverview";
+import { alertDomId } from "./AlertsList";
+import { stepDomId } from "./UpcomingSteps";
+import { TodayOverview as overviewSchema } from "@harvest/contracts";
+import { CarbonCard, EnergyCard, HealthCard, OutlookLine, ProfitCard, ResidueCard, TodayCards } from "./TodayCards";
+import { CarbonSheetBody, CurveSheetBody, EnergySheetBody, IndexTable, ProfitSheetBody, ResidueSheetBody, sheetTitle, TodaySheetBody } from "./TodaySheet";
 import { UpcomingSteps } from "./UpcomingSteps";
 import { AlertsList } from "./AlertsList";
 import type { UpcomingStep } from "@harvest/contracts";
@@ -718,5 +755,549 @@ describe("spectral indices and the stage reader", () => {
     }
     expect(labels.size).toBe(FarmAlertType.options.length);
     expect([...labels]).toContain("Satellite");
+  });
+});
+
+describe("economics and footprint: fixtures", () => {
+  it("every synthetic block, whole and by variant, validates with the contract", () => {
+    for (const block of [harvestEconomicsFixture(), harvestEconomicsPartialFixture(), harvestEconomicsUnavailableFixture()]) expect(economicsSchema.safeParse(block).success).toBe(true);
+    for (const block of [residueIncomeFixture(), residueIncomeUnavailableFixture()]) expect(residueSchema.safeParse(block).success).toBe(true);
+    for (const block of [energyFootprintFixture(), energyFootprintPartialFixture(), energyFootprintUnavailableFixture()]) expect(energySchema.safeParse(block).success).toBe(true);
+    for (const block of [carbonFootprintFixture(), carbonFootprintPartialFixture(), carbonFootprintNoAreaFixture(), carbonFootprintUnavailableFixture()]) expect(carbonSchema.safeParse(block).success).toBe(true);
+    // The view parses with the four blocks, with every unavailable variant, and without them (an API that predates the fields).
+    expect(todaySchema.safeParse(fixture).success).toBe(true);
+    expect(fixture.harvestEconomics?.status).toBe("available");
+    expect(
+      todaySchema.safeParse({ ...fixture, harvestEconomics: harvestEconomicsUnavailableFixture(), residueIncome: residueIncomeUnavailableFixture(), energyFootprint: energyFootprintUnavailableFixture(), carbonFootprint: carbonFootprintUnavailableFixture() }).success,
+    ).toBe(true);
+    const { harvestEconomics, residueIncome, energyFootprint, carbonFootprint, ...legacy } = fixture;
+    void [harvestEconomics, residueIncome, energyFootprint, carbonFootprint];
+    expect(todaySchema.safeParse(legacy).success).toBe(true);
+  });
+  it("the carbon baseline terms add up to the stated total, and the maize numbers are internally consistent", () => {
+    const carbon = carbonFootprintFixture();
+    const baseline = carbon.terms.filter((t) => t.kind === "baseline");
+    expect(baseline.reduce((s, t) => s + t.tCO2eForField!.low, 0)).toBeCloseTo(carbon.emissionsForField!.low, 6);
+    expect(baseline.reduce((s, t) => s + t.tCO2eForField!.high, 0)).toBeCloseTo(carbon.emissionsForField!.high, 6);
+    // Incorporating the stover claims no credit: its net equals the baseline, and the note says why.
+    const incorporate = carbon.residueScenarios.find((s) => s.id === "incorporate")!;
+    expect(incorporate.netForField).toEqual(carbon.emissionsForField);
+    const econ = harvestEconomicsFixture();
+    expect(econ.profitForField!.central).toBeCloseTo(econ.profitPerHa!.central * econ.fieldAreaHa!, 6);
+  });
+});
+
+describe("economics and footprint: formatting and picking helpers", () => {
+  it("formatTonnes takes kilograms and prints one decimal; ranges round outward", () => {
+    expect(formatTonnes(4200)).toBe("4.2 t");
+    expect(formatTonnes(949)).toBe("0.9 t");
+    expect(formatTonnes(12_345)).toBe("12.3 t");
+    expect(rangeText({ low: 2.04, high: 3.41 }, 1)).toBe("2.0–3.5");
+    expect(rangeText({ low: 3.2, high: 3.2 }, 1)).toBe("3.2");
+    expect(rangeText({ low: 3.21, high: 3.24 }, 1)).toBe("3.2–3.3");
+  });
+  it("formatGJ keeps one decimal below 100 GJ and whole gigajoules from 100", () => {
+    expect(formatGJ({ low: 16.8, high: 21.6 })).toBe("16.8–21.6 GJ");
+    expect(formatGJ({ low: 96, high: 144.2 })).toBe("96–145 GJ");
+  });
+  it("formatCo2e switches to kilograms only when the whole range is under 1 t, and never prints -0", () => {
+    expect(formatCo2e({ low: 3.5, high: 6.65 })).toBe("3.5–6.7 t CO₂e");
+    expect(formatCo2e({ low: 0.42, high: 0.61 })).toBe("420–610 kg CO₂e");
+    expect(formatCo2e({ low: 0.4, high: 1.2 })).toBe("0.4–1.2 t CO₂e");
+    expect(formatCo2e({ low: -1.8, high: -0.6 })).toBe("−1.8 to −0.6 t CO₂e");
+    expect(co2eParts({ low: 0.42, high: 0.61 })).toEqual({ short: "420–610", unit: "kg CO₂e" });
+    expect(formatCo2e({ low: 0, high: 0 })).toBe("0 kg CO₂e");
+  });
+  it("compact rupee forms never overflow a card and never narrow the range", () => {
+    expect(compactInr(950)).toBe("₹950");
+    expect(compactInr(4500)).toBe("₹4.5k");
+    expect(compactInr(52800)).toBe("₹52.8k");
+    expect(compactInr(120000)).toBe("₹1.2 L");
+    expect(compactInr(-4200)).toBe("−₹4.2k");
+    expect(compactInrRange(33600, 72000)).toBe("₹33–72k");
+    expect(compactInrRange(96000, 134400)).toBe("₹96–135k");
+    expect(compactInrRange(120000, 190000)).toBe("₹1.2–1.9 L");
+    expect(compactInrRange(5227, 18900)).toBe("₹5.2–18.9k");
+    expect(compactInrRange(500, 900)).toBe("₹500–900");
+    expect(compactInrRange(-4000, 12000)).toBe("−₹4k to ₹12k");
+  });
+  it("profitValue: the field total when the area is known, per hectare otherwise, revenue when there is no profit", () => {
+    const econ = harvestEconomicsFixture();
+    expect(profitValue(econ)).toMatchObject({ kind: "profit", scope: "field", estimate: { central: 94800 } });
+    expect(profitValue({ ...econ, fieldAreaHa: null, profitForField: null, revenueForField: null })).toMatchObject({ kind: "profit", scope: "ha", estimate: { central: 79000 } });
+    expect(profitValue({ ...econ, profitForField: null })).toMatchObject({ kind: "profit", scope: "ha" });
+    expect(profitValue(harvestEconomicsPartialFixture())).toMatchObject({ kind: "revenue", scope: "field", estimate: { central: 152400 } });
+    expect(profitValue(harvestEconomicsUnavailableFixture())).toBeNull();
+    expect(costValue(econ)).toEqual({ label: "A2+FL cost", scope: "field", value: 57600 });
+    expect(costValue({ fieldAreaHa: null, cost: { ...econ.cost!, a2flPerHa: null } })).toEqual({ label: "C2 cost", scope: "ha", value: 68000 });
+    expect(costValue({ fieldAreaHa: 1, cost: null })).toBeNull();
+  });
+  it("bestResidueOption: highest central income first, options with no income after every priced one", () => {
+    const options = residueIncomeFixture().options;
+    expect(options.map((o) => o.use)).toEqual(["dry_fodder", "biomass_fuel", "cbg_feedstock"]);
+    expect(bestResidueOption(options)?.use).toBe("cbg_feedstock");
+    const unpricedOnly = options.filter((o) => o.incomeForField == null);
+    expect(bestResidueOption(unpricedOnly)?.use).toBe("biomass_fuel");
+    expect(bestResidueOption([])).toBeNull();
+    // An unpriced option never outranks a priced one, even a small one.
+    const tiny = { ...options[0]!, incomeForField: { low: 1, high: 2 } };
+    expect(bestResidueOption([options[1]!, tiny])?.use).toBe("dry_fodder");
+  });
+  it("largestCarbonTerm is the baseline term with the largest high value; scenario terms never count", () => {
+    const terms = carbonFootprintFixture().terms;
+    expect(largestCarbonTerm(terms)?.source).toBe("fertiliser_n2o");
+    expect(terms.some((t) => t.source === "rice_methane")).toBe(false);
+    expect(largestCarbonTerm(terms.filter((t) => t.kind === "scenario"))).toBeNull();
+    expect(largestCarbonTerm([])).toBeNull();
+    expect(carbonTermLine(terms)).toBe("Mostly nitrous oxide from fertiliser nitrogen");
+    // No term reaches half of the baseline: "Largest part", never "Mostly".
+    const baseline = terms.filter((t) => t.kind === "baseline");
+    const even = baseline.map((t) => ({ ...t, tCO2eForField: { low: 0.3, high: 0.5 } }));
+    expect(carbonTermLine(even)).toMatch(/^Largest part: /);
+    // Terms with no field figure (area unknown) are compared per hectare, for every term, never in mixed units.
+    const noArea = carbonFootprintNoAreaFixture().terms;
+    expect(noArea.every((t) => t.tCO2eForField === null)).toBe(true);
+    expect(largestCarbonTerm(noArea)?.source).toBe("fertiliser_n2o");
+    expect(carbonTermLine(noArea)).toBe("Mostly nitrous oxide from fertiliser nitrogen");
+    const mixed = terms.map((t, i) => (i === 0 ? { ...t, tCO2eForField: null } : t));
+    expect(largestCarbonTerm(mixed)?.source).toBe("fertiliser_n2o");
+    // A paddy-style block (flooded field) still reads from its methane term.
+    const flooded = [{ ...baseline[1]!, source: "rice_methane" as const, label: "Methane from the flooded field", tCO2eForField: { low: 2.4, high: 4.6 } }, baseline[0]!, baseline[2]!];
+    expect(largestCarbonTerm(flooded)?.source).toBe("rice_methane");
+    expect(carbonTermLine(flooded)).toBe("Mostly methane from the flooded field");
+  });
+  it("small helpers: residue title, rank chip and the reason sentence", () => {
+    expect(residueTitle("maize stover")).toBe("Maize stover income");
+    expect(residueTitle(null)).toBe("Residue income");
+    expect(residueTitle("  ")).toBe("Residue income");
+    expect(rankChip({ rank: 12, of: 14, lowest: null, highest: null })).toMatchObject({ text: "12 of 14 crops" });
+    expect(rankChip({ rank: 1, of: 14, lowest: null, highest: null }).spoken).toContain("first lowest");
+    expect(unavailableReason({ reason: "no_yield_row", limitations: ["Sentence one.", "Two."] }, "fallback")).toBe("Sentence one.");
+    expect(unavailableReason({ reason: "No row for this crop", limitations: [] }, "fallback")).toBe("No row for this crop");
+    expect(unavailableReason({ reason: "no_yield_row", limitations: [] }, "fallback")).toBe("fallback");
+  });
+});
+
+describe("economics and footprint: cards", () => {
+  const cards = (view = fixture, weatherOnly = false) =>
+    renderToString(() => <TodayCards view={view} date={FIXTURE_TODAY} price={null} weather={null} weatherOnly={weatherOnly} onDetails={() => undefined} />);
+  const one = (el: () => unknown) => text(renderToString(() => el() as never));
+  const noop = () => undefined;
+
+  it("order: harvest, profit, price, weather, health, residue, energy, carbon", () => {
+    const html = cards();
+    const kinds = [...html.matchAll(/data-card="([a-z]+)"/g)].map((m) => m[1]);
+    expect(kinds).toEqual(["harvest", "profit", "price", "weather", "health", "residue", "energy", "carbon"]);
+  });
+  it("profit card: field profit with the likely band, harvest dates, revenue and cost, basis", () => {
+    const html = one(() => <ProfitCard econ={harvestEconomicsFixture()} onDetails={noop} />);
+    expect(html).toContain("Expected profit at harvest");
+    expect(html).toContain("₹94.8k");
+    expect(html).not.toContain("/ha");
+    expect(html).toContain("likely ₹68–123k");
+    expect(html).toContain("₹68,400 to ₹1,22,400, likely range");
+    expect(html).toContain("Expected profit for the field, about ₹94,800");
+    expect(html).toContain("Harvest around 3 Jan to 13 Jan");
+    expect(html).toContain("Revenue ₹1.5 L · cost ₹57.6k");
+    expect(html).toContain("Revenue ₹1,52,400, cost ₹57,600 for the field");
+    expect(html).toContain("District maize yield, 2021 to 2023 (test fixture)");
+    expect(html).toContain("Based on 3 years of Karnataka mandi prices (test fixture)");
+  });
+  it("profit card without an area: per hectare with /ha", () => {
+    const econ = { ...harvestEconomicsFixture(), fieldAreaHa: null, profitForField: null, revenueForField: null };
+    const html = one(() => <ProfitCard econ={econ} onDetails={noop} />);
+    expect(html).toContain("₹79k");
+    expect(html).toContain("/ha");
+    expect(html).toContain("per hectare");
+    expect(html).toContain("Revenue ₹1.3 L · cost ₹48k /ha");
+  });
+  it("profit card partial shows revenue, labels it, and says the cost is not sourced; a loss reads as a loss", () => {
+    const partial = one(() => <ProfitCard econ={harvestEconomicsPartialFixture()} onDetails={noop} />);
+    expect(partial).toContain("Revenue before costs");
+    expect(partial).toContain("₹1.5 L");
+    expect(partial).toContain("Expected revenue for the field");
+    expect(partial).toContain("Cost not sourced");
+    const loss = { ...harvestEconomicsFixture(), profitForField: { central: -4200, likely: { low: -9000, high: 1500 }, possible: { low: -15000, high: 8000 } } };
+    const text1 = one(() => <ProfitCard econ={loss} onDetails={noop} />);
+    expect(text1).toContain("−₹4.2k");
+    expect(text1).toContain("minus ₹4,200");
+    expect(text1).toContain("likely −₹9k to ₹1.5k");
+  });
+  it("unavailable profit, residue, energy and carbon cards show a dash and the reason sentence, no figure", () => {
+    const profit = one(() => <ProfitCard econ={harvestEconomicsUnavailableFixture()} onDetails={noop} />);
+    expect(profit).toContain("–");
+    expect(profit).toContain("No regional yield is sourced for this crop, so profit at harvest is not estimated.");
+    expect(profit).not.toContain("likely");
+    const residue = one(() => <ResidueCard residue={residueIncomeUnavailableFixture()} onDetails={noop} />);
+    expect(residue).toContain("Residue income");
+    expect(residue).toContain("The haulm of this crop is usually left on the field, so no income is estimated.");
+    const energy = one(() => <EnergyCard energy={energyFootprintUnavailableFixture()} residueName={null} onDetails={noop} />);
+    expect(energy).toContain("No energy figures are sourced for this crop.");
+    const carbon = one(() => <CarbonCard carbon={carbonFootprintUnavailableFixture()} onDetails={noop} />);
+    expect(carbon).toContain("No emission factors are sourced for this crop.");
+    expect(carbon).not.toContain("CO₂e");
+    // No limitation and a code-like reason: the plain fallback, never the code.
+    const bare = one(() => <ProfitCard econ={{ ...harvestEconomicsUnavailableFixture(), limitations: [] }} onDetails={noop} />);
+    expect(bare).toContain("Profit at harvest cannot be estimated for this crop yet.");
+    expect(bare).not.toContain("no_yield_row");
+  });
+  it("residue card: titled from the residue name, best option's income first, others after 'or', alternatives line, no sum", () => {
+    const residue = residueIncomeFixture();
+    const html = renderToString(() => <ResidueCard residue={residue} onDetails={noop} />);
+    const t = text(html);
+    expect(t).toContain("Maize stover income");
+    expect(t).toContain("₹5.2–18.9k");
+    expect(t).toContain("₹5,227 to ₹18,900 for the field, as CBG feedstock");
+    expect(t).toContain("as CBG feedstock");
+    expect(t).toContain("Maize stover: about 2.9–7.6 t surplus of 7.2–12.6 t");
+    expect(t).toContain("Alternatives, not added together");
+    const chips = [...html.matchAll(/data-use="([a-z_]+)"/g)].map((m) => m[1]);
+    expect(chips).toEqual(["cbg_feedstock", "dry_fodder", "biomass_fuel"]);
+    expect(html.match(/class="[^"]*is-best[^"]*"/g)).toHaveLength(1);
+    expect(t.indexOf("CBG feedstock")).toBeLessThan(t.indexOf("Dry fodder"));
+    expect(t).toContain("or");
+    // No total of the options anywhere: neither the sum of the centres nor of the ends.
+    const sums = [5227 + 5250, 18900 + 16500, 12063.5 + 10875, 10477, 35400];
+    for (const sum of sums) expect(t).not.toContain(sum.toLocaleString("en-IN"));
+    expect(t).not.toContain("₹10.4");
+    expect(t).not.toContain("₹35.4k");
+  });
+  it("residue card without a name says 'Residue income'; with no priced option it shows no income, not zero", () => {
+    const residue = { ...residueIncomeFixture(), residueName: null, options: residueIncomeFixture().options.filter((o) => o.incomeForField == null) };
+    const t = one(() => <ResidueCard residue={residue} onDetails={noop} />);
+    expect(t).toContain("Residue income");
+    expect(t).toContain("No reported price for these uses yet");
+    expect(t).toContain("Biomass fuel");
+    expect(t).not.toContain("₹0");
+    expect(t).toContain("Residue: about 2.9–7.6 t surplus");
+  });
+  it("energy card: used-to-grow figure and breakdown words, then the residue energy and the LPG cylinders", () => {
+    const html = one(() => <EnergyCard energy={energyFootprintFixture()} residueName="maize stover" onDetails={noop} />);
+    expect(html).toContain("14.4–19.2");
+    expect(html).toContain("GJ");
+    expect(html).toContain("14.4 to 19.2 gigajoules used to grow this crop");
+    expect(html).toContain("used to grow this crop (fertiliser, fuel, labour)");
+    expect(html).toContain("Maize stover holds 39–129 GJ · about 61–198 LPG cylinders");
+  });
+  it("energy card basis: a short form on the card, the full citation only in the sheet", () => {
+    const citation = "Energy Use and Its Efficiency in Andhra Pradesh Agriculture (Subrahmanyam, Reddy and Mitra), Indian Journal of Agricultural Economics 53(3) 1998, IN-AP (Andhra Pradesh, 20 districts), 1996-97";
+    expect(energyBasisShort(citation)).toBe("Published energy study · Andhra Pradesh 1996-97");
+    // From the energy_reference BasisRef when the text has no region or year.
+    expect(energyBasisShort("A farm energy survey", [{ kind: "energy_reference", scope: "Karnataka", note: "Survey of 2019-20 farms" }])).toBe("Published energy study · Karnataka 2019-20");
+    expect(energyBasisShort("Study of 2004", [])).toBe("Published energy study · 2004");
+    // Nothing parses: first 60 characters and an ellipsis; a short text is kept whole; no basis at all gets the generic line.
+    const long = "A long description of a study with no place and no year in it at all, really";
+    expect(energyBasisShort(long)).toBe(`${long.slice(0, 60)}…`);
+    expect(energyBasisShort("Short note")).toBe("Short note");
+    expect(energyBasisShort(null)).toBe("Published energy-use studies and calorific values");
+    const energy = { ...energyFootprintFixture(), inputEnergyBasis: citation };
+    const card = one(() => <EnergyCard energy={energy} residueName="maize stover" onDetails={noop} />);
+    expect(card).toContain("Published energy study · Andhra Pradesh 1996-97");
+    expect(card).not.toContain("Subrahmanyam");
+    expect(text(renderToString(() => <TodaySheetBody kind="energy" view={{ ...fixture, energyFootprint: energy }} date={FIXTURE_TODAY} price={null} weather={null} />))).toContain("Subrahmanyam, Reddy and Mitra");
+  });
+  it("energy card partial: whichever figure exists, and it says which one it is", () => {
+    const html = one(() => <EnergyCard energy={energyFootprintPartialFixture()} residueName="maize stover" onDetails={noop} />);
+    expect(html).toContain("39–129");
+    expect(html).toContain("held in the maize stover; the energy used to grow the crop is not sourced");
+    expect(html).toContain("about 61–198 LPG cylinders");
+    expect(html).not.toContain("used to grow this crop (");
+  });
+  it("carbon card: the band, the largest term's line, the rank chip and the lowest crop; the summary stays in the sheet", () => {
+    const html = renderToString(() => <CarbonCard carbon={carbonFootprintFixture()} onDetails={noop} />);
+    const t = text(html);
+    expect(t).toContain("1.2–2.1");
+    expect(t).toContain("t CO₂e");
+    expect(t).toContain("1.2 to 2.1 tonnes of carbon dioxide equivalent emitted this season");
+    expect(t).toContain("Mostly nitrous oxide from fertiliser nitrogen");
+    expect(t).not.toContain("methane");
+    expect(t).toContain("9 of 14 crops");
+    expect(t).toContain("Ranked number 9 lowest of 14 crops by emissions per hectare");
+    expect(t).toContain("lowest here: Finger millet 500–900 kg CO₂e");
+    expect(t).not.toContain("A maize season on 1.2 ha");
+  });
+  it("carbon card without a field area: the per-hectare figure, marked /ha, and the largest term's line from per-hectare values", () => {
+    const html = one(() => <CarbonCard carbon={carbonFootprintNoAreaFixture()} onDetails={noop} />);
+    expect(html).toContain("1.0–1.8");
+    expect(html).toContain("/ha");
+    expect(html).toContain("1.0 to 1.8 tonnes of carbon dioxide equivalent per hectare emitted this season");
+    expect(html).toContain("Mostly nitrous oxide from fertiliser nitrogen");
+    expect(html).toContain("per hectare reference");
+    expect(html).not.toContain("crops");
+    expect(html).not.toContain("on 1.2 ha");
+  });
+  it("carbon card partial (no comparison) and the lowest-crop case", () => {
+    const partial = one(() => <CarbonCard carbon={carbonFootprintPartialFixture()} onDetails={noop} />);
+    expect(partial).toContain("1.2–2.1");
+    expect(partial).not.toContain("crops");
+    expect(partial).not.toContain("lowest here");
+    const best = { ...carbonFootprintFixture(), comparison: { ...carbonFootprintFixture().comparison!, rank: 1 } };
+    expect(one(() => <CarbonCard carbon={best} onDetails={noop} />)).toContain("the lowest here is this crop");
+    const small = { ...carbonFootprintFixture(), emissionsForField: { low: 0.42, high: 0.61 } };
+    expect(one(() => <CarbonCard carbon={small} onDetails={noop} />)).toContain("420–610");
+  });
+  it("every card carries an aria-label and a details button named for it; spoken forms exist for the numbers", () => {
+    const html = cards();
+    for (const [kind, title] of [["profit", "Expected profit at harvest"], ["residue", "Maize stover income"], ["energy", "Energy"], ["carbon", "Carbon"]] as const) {
+      expect(html).toMatch(new RegExp(`data-card="${kind}" aria-label="${title}"`));
+      expect(html).toContain(`aria-label="${title}: details and sources"`);
+    }
+    // The short number is hidden from screen readers and a spoken form is present beside it.
+    expect(html).toContain('class="today-sr"');
+    expect(html.match(/today-econ-value/g)!.length).toBe(4);
+  });
+  it("the outlook line wraps and keeps its mark: the sentence span may shrink, the spark does not", () => {
+    const css = readFileSync(new URL("./today.css", import.meta.url), "utf8");
+    expect(css).toMatch(/\.today-outlook-note\s*\{[^}]*flex-wrap:\s*wrap/);
+    expect(css).toMatch(/\.today-outlook-note > span:first-child\s*\{[^}]*min-width:\s*0/);
+    expect(css).toMatch(/\.today-outlook-note > \.ai-spark-host\s*\{[^}]*flex:\s*none/);
+  });
+  it("a block the API did not send renders no card; the weather-only layout shows none of the new cards", () => {
+    const legacy = { ...fixture, harvestEconomics: undefined, residueIncome: null, energyFootprint: undefined, carbonFootprint: null };
+    const kinds = [...cards(legacy).matchAll(/data-card="([a-z]+)"/g)].map((m) => m[1]);
+    expect(kinds).toEqual(["harvest", "price", "weather", "health"]);
+    const only = [...cards(fixture, true).matchAll(/data-card="([a-z]+)"/g)].map((m) => m[1]);
+    expect(only).toEqual(["weather", "health"]);
+    const empty = { ...todayEmptyFixture(), harvestEconomics: harvestEconomicsFixture(), residueIncome: residueIncomeFixture(), energyFootprint: energyFootprintFixture(), carbonFootprint: carbonFootprintFixture() };
+    const emptyKinds = [...cards(empty, true).matchAll(/data-card="([a-z]+)"/g)].map((m) => m[1]);
+    expect(emptyKinds).toEqual(["weather"]);
+  });
+});
+
+describe("economics and footprint: sheets", () => {
+  const sheet = (kind: "profit" | "residue" | "energy" | "carbon", view = fixture) =>
+    text(renderToString(() => <TodaySheetBody kind={kind} view={view} date={FIXTURE_TODAY} price={null} weather={null} />));
+  const unavailableView = {
+    ...fixture,
+    harvestEconomics: harvestEconomicsUnavailableFixture(),
+    residueIncome: residueIncomeUnavailableFixture(),
+    energyFootprint: energyFootprintUnavailableFixture(),
+    carbonFootprint: carbonFootprintUnavailableFixture(),
+  };
+
+  it("profit sheet: figures per hectare and for the field with both bands, basis, limitations", () => {
+    const t = sheet("profit");
+    expect(t).toContain("Profit at harvest around 8 Jan 2027");
+    expect(t).toContain("5,500–7,000 kg/ha (district yield)");
+    expect(t).toContain("6,600–8,400 kg");
+    expect(t).toContain("95%");
+    expect(t).toContain("₹19.2 to ₹23.8 per kg, middle ₹21.4");
+    expect(t).toContain("₹48,000");
+    expect(t).toContain("CACP · Karnataka · 2024-25");
+    expect(t).toContain("₹79,000 (likely ₹57,000 to ₹1,02,000; possible ₹40,000 to ₹1,20,000)");
+    expect(t).toContain("₹94,800 (likely ₹68,400 to ₹1,22,400; possible ₹48,000 to ₹1,44,000)");
+    expect(t).toContain("not a forecast and not a promised sale");
+    expect(t).toContain("Basis: District maize yield, 2021 to 2023 (test fixture)");
+    expect(t).toContain("Basis: A2+FL cost of cultivation, 2024-25 (test fixture)");
+    expect(t).toContain("What this does not tell you");
+    expect(t).toContain("The price is a past harvest-week reference, not a forecast.");
+  });
+  it("profit sheet partial and unavailable", () => {
+    const partial = sheet("profit", { ...fixture, harvestEconomics: harvestEconomicsPartialFixture() });
+    expect(partial).toContain("incomplete estimate");
+    expect(partial).toContain("not sourced");
+    expect(partial).toContain("Profit per hectare not computed");
+    expect(partial).toContain("No cost of cultivation is sourced for this crop and state, so profit is not shown.");
+    const none = sheet("profit", unavailableView);
+    expect(none).toContain("No regional yield is sourced for this crop, so profit at harvest is not estimated.");
+    expect(none).not.toContain("Likely is the middle half");
+  });
+  it("residue sheet: every option best first with quantity, price and basis, the not-additive sentence, no sum", () => {
+    const html = renderToString(() => <TodaySheetBody kind="residue" view={fixture} date={FIXTURE_TODAY} price={null} weather={null} />);
+    const t = text(html);
+    expect(t).toContain("These are alternatives for the same residue. The incomes do not add up: the residue can be used once.");
+    expect(t).toContain("1.1–1.5 kg dry residue (published ratio)");
+    expect(t).toContain("7.2–12.6 t dry");
+    expect(t).toContain("2.9–7.6 t dry");
+    expect(t).toContain("40–60% after on-farm uses");
+    const uses = [...html.matchAll(/data-use="([a-z_]+)"/g)].map((m) => m[1]);
+    expect(uses).toEqual(["cbg_feedstock", "dry_fodder", "biomass_fuel"]);
+    expect(t).toContain("₹1,800 to ₹2,500 per tonne, plant-gate, as reported, 2025 (test fixture)");
+    expect(t).toContain("₹5,227 to ₹18,900");
+    expect(t).toContain("₹3,500 to ₹5,500 per tonne, farm-gate, dry basis, Karnataka 2025 (test fixture)");
+    expect(t).toContain("no price sourced");
+    expect(t).toContain("not estimated without a price");
+    expect(t).toContain("Needs a compressed biogas plant within hauling distance.");
+    expect(t).toContain("Basis: Published residue-to-product ratio for maize (test fixture)");
+    expect(t).toContain("Prices are as reported by one plant and one region; yours may differ.");
+    expect(t).not.toContain("₹10,477");
+    expect(t).not.toContain("₹35,400");
+    expect(sheet("residue", unavailableView)).toContain("The haulm of this crop is usually left on the field, so no income is estimated.");
+  });
+  it("energy sheet: both figures, breakdown, equivalents, the 'different questions' sentence, basis", () => {
+    const t = sheet("energy");
+    expect(t).toContain("12.0–16.0 GJ");
+    expect(t).toContain("14.4–19.2 GJ");
+    expect(t).toContain("Energy-use study of maize farms in southern India (test fixture)");
+    expect(t).toContain("15.0–17.0 MJ per kg");
+    expect(t).toContain("39–129 GJ");
+    expect(t).toContain("Fertiliser: 38%");
+    expect(t).toContain("Household LPG cylinders (14.2 kg): about 61–198 cylinders");
+    expect(t).toContain("Diesel: about 1,040–3,380 litres");
+    expect(t).toContain("not netted against each other");
+    expect(t).toContain("Basis: Calorific value of maize stover (test fixture)");
+    expect(t).toContain("The input energy is a study average, not what this farm used.");
+    expect(sheet("energy", unavailableView)).toContain("No energy figures are sourced for this crop.");
+    expect(sheet("energy", { ...fixture, energyFootprint: energyFootprintPartialFixture() })).not.toContain("Where the energy to grow the crop goes");
+  });
+  it("carbon sheet: summary, baseline terms with their methods, residue scenarios with net totals and notes, the GWP line, limits", () => {
+    const html = renderToString(() => <TodaySheetBody kind="carbon" view={fixture} date={FIXTURE_TODAY} price={null} weather={null} />);
+    const t = text(html);
+    expect(t).toContain("A maize season on 1.2 ha emits about 1.2 to 2.1 t CO₂e, mostly nitrous oxide from fertiliser nitrogen.");
+    expect(t).toContain("1.2–2.1 t CO₂e");
+    expect(t).toContain("1.0–1.8 t CO₂e");
+    expect(t).toContain("110 days");
+    expect(t).toContain("9 of 14 crops (1 is the lowest emissions per hectare)");
+    expect(t).toContain("Finger millet, 500–900 kg CO₂e");
+    expect(t).toContain("Paddy, 3.5–6.7 t CO₂e");
+    for (const label of ["Nitrous oxide from fertiliser nitrogen", "Making the fertiliser", "Diesel and machinery"]) expect(t).toContain(label);
+    expect(t).not.toContain("Methane from");
+    expect(t).toContain("150 kg N per ha x 1.2 ha x emission factor 0.01 x 44/28 x 273 (test fixture)");
+    // Baseline terms first, then scenarios.
+    expect(t.indexOf("What the emissions are made of")).toBeLessThan(t.indexOf("What happens to the residue"));
+    const scenarios = [...html.matchAll(/data-scenario="([a-z_]+)"/g)].map((m) => m[1]);
+    expect(scenarios).toEqual(["burn", "incorporate", "sell_cbg", "sell_fodder"]);
+    expect(t).toContain("Burn the stover");
+    expect(t).toContain("1.5–2.7 t CO₂e");
+    expect(t).toContain("Burning adds methane and nitrous oxide on top of the season's emissions.");
+    expect(t).toContain("No credit is claimed for the carbon in the stover: only part of it stays in the soil and that part is not estimated, so the total equals the emissions above.");
+    expect(t).not.toContain("0.3–1.8 t CO₂e");
+    expect(t).toContain("−900 to −300 kg CO₂e");
+    expect(t).toContain("carbon the residue holds; not a removal and not counted");
+    expect(t).toContain("alternatives for the same residue, not added together");
+    expect(t).toContain("Global warming potentials (100-year): methane 27, nitrous oxide 273. IPCC AR6 100-year values (test fixture)");
+    expect(t).toContain("Basis: IPCC 2019 Refinement emission factors (test fixture)");
+    expect(t).toContain("Nitrogen rates are the state recommendation, not what this farm applied.");
+    expect(sheet("carbon", unavailableView)).toContain("No emission factors are sourced for this crop.");
+  });
+  it("carbon sheet without a field area: each term says 'per hectare only' and gives its per-hectare figure; no scenario nets", () => {
+    const t = sheet("carbon", { ...fixture, carbonFootprint: carbonFootprintNoAreaFixture() });
+    expect(t.match(/per hectare only \(field area not known\)/g)).toHaveLength(3);
+    expect(t).toContain("500–920 kg CO₂e");
+    expect(t).toContain("1.0–1.8 t CO₂e");
+    expect(t).not.toContain("Emitted this season, for the field");
+    expect(t).not.toContain("What happens to the residue");
+    expect(t).toContain("The field area is not known, so the figures are per hectare only.");
+  });
+  it("the dialog titles follow the card titles, and a missing block says so instead of rendering blank", () => {
+    expect(sheetTitle("profit", fixture, FIXTURE_TODAY)).toBe("Expected profit at harvest");
+    expect(sheetTitle("residue", fixture, FIXTURE_TODAY)).toBe("Maize stover income");
+    expect(sheetTitle("energy", fixture, FIXTURE_TODAY)).toBe("Energy");
+    expect(sheetTitle("carbon", fixture, FIXTURE_TODAY)).toBe("Carbon");
+    expect(sheetTitle("residue", { residueIncome: null }, FIXTURE_TODAY)).toBe("Residue income");
+    expect(sheetTitle("weather", fixture, FIXTURE_TODAY)).toBe("Weather on 1 Nov 2026");
+    const legacy = { ...fixture, harvestEconomics: null, residueIncome: undefined, energyFootprint: null, carbonFootprint: undefined };
+    expect(sheet("profit", legacy)).toContain("No profit estimate was returned");
+    expect(sheet("residue", legacy)).toContain("No residue income estimate was returned");
+    expect(sheet("energy", legacy)).toContain("No energy estimate was returned");
+    expect(sheet("carbon", legacy)).toContain("No carbon footprint estimate was returned");
+  });
+});
+
+describe("Today overview ('Today for you')", () => {
+  const noop = () => undefined;
+  const render = (overview: Parameters<typeof TodayOverview>[0]["overview"], onDetails: (kind: never) => void = noop) =>
+    renderToString(() => <TodayOverview overview={overview} onDetails={onDetails as never} />);
+
+  it("every fixture validates with the contract, the wired view carries the ready model overview, and refs point at real fixture ids", () => {
+    for (const o of [overviewFixture(), overviewPendingFixture(), overviewDeterministicFixture(), overviewUnavailableFixture()]) expect(overviewSchema.safeParse(o).success).toBe(true);
+    expect(fixture.overview).toMatchObject({ status: "ready", origin: "model" });
+    expect(todaySchema.safeParse({ ...fixture, overview: overviewPendingFixture() }).success).toBe(true);
+    expect(todaySchema.safeParse({ ...fixture, overview: null }).success).toBe(true);
+    const stepIds = new Set(fixture.upcoming.map((step) => step.id));
+    const alertIds = new Set(fixture.alerts.map((alert) => alert.id));
+    const cardKinds = new Set(["harvest", "price", "weather", "health", "profit", "residue", "energy", "carbon"]);
+    for (const o of [overviewFixture(), overviewDeterministicFixture()]) {
+      const factIds = new Set(o.facts.map((f) => f.id));
+      for (const ref of [...o.facts.map((f) => f.ref), ...o.points.map((p) => p.ref)]) {
+        if (!ref) continue;
+        expect(ref.kind === "step" ? stepIds.has(ref.id) : ref.kind === "alert" ? alertIds.has(ref.id) : cardKinds.has(ref.id)).toBe(true);
+      }
+      // A point's ref is its first cited fact's ref.
+      for (const p of o.points) {
+        expect(p.factIds.every((id) => factIds.has(id))).toBe(true);
+        expect(p.ref).toEqual(o.facts.find((f) => f.id === p.factIds[0])!.ref);
+      }
+    }
+  });
+  it("shows the headline and the points in order, each with its kind chip", () => {
+    const html = render(overviewFixture());
+    const t = text(html);
+    expect(t).toContain("Today for you");
+    expect(t).toContain("Maize is on track for harvest in 63 to 73 days; check moisture and clear the drains now.");
+    const kinds = [...html.matchAll(/data-kind="([a-z_]+)"/g)].map((m) => m[1]);
+    expect(kinds).toEqual(["do_now", "watch", "money", "later", "good_news"]);
+    const chips = ["Do now", "Watch", "Money", "Later", "Good news"];
+    const positions = chips.map((c) => t.indexOf(c));
+    expect(positions.every((p, i) => p >= 0 && (i === 0 || p > positions[i - 1]!))).toBe(true);
+    expect(t.indexOf("Check field moisture today")).toBeLessThan(t.indexOf("Heavy rain is due on 4 Nov"));
+    expect(t.indexOf("Expect about ₹94,800")).toBeLessThan(t.indexOf("Your crop looks near typical"));
+    expect(html).toContain('aria-labelledby="today-overview-title"');
+  });
+  it("a step ref is a button aimed at the step's DOM id, an alert ref at the alert's, a card ref carries its kind", () => {
+    const html = render(overviewFixture());
+    // do_now cites the moisture step first.
+    expect(html).toContain(`data-target="${stepDomId("care:task-moisture")}"`);
+    expect(stepDomId("care:task-moisture")).toBe("today-step-care-task-moisture");
+    // watch cites the rain alert.
+    expect(html).toContain(`data-target="${alertDomId(FIXTURE_ALERT_IDS.weather)}"`);
+    expect(html).toContain('data-ref-kind="card" data-ref-id="profit"');
+    expect(html).toContain('data-ref-kind="card" data-ref-id="residue"');
+    expect(text(html)).toContain("(go to the step)");
+    expect(text(html)).toContain("(go to the alert)");
+    expect(text(html)).toContain("(open the details)");
+    // The ids the buttons aim at are the ids the real lists render.
+    const list = renderToString(() => (
+      <AlertsList alerts={fixture.alerts} newsReview={fixture.newsReview} today={FIXTURE_TODAY} stepAlertIds={new Set()} onDismiss={noop} onSuggested={noop} error="" />
+    ));
+    expect(list).toContain(`id="${alertDomId(FIXTURE_ALERT_IDS.weather)}"`);
+    const steps = renderToString(() => <UpcomingSteps steps={fixture.upcoming} nextAction={fixture.nextAction ?? null} today={FIXTURE_TODAY} busyId="" onDone={noop} error="" />);
+    expect(steps).toContain(`id="${stepDomId("care:task-moisture")}"`);
+  });
+  it("pointTarget resolves each ref kind, and a card ref that is not a card makes plain text, not a dead button", () => {
+    expect(pointTarget({ ref: { kind: "step", id: "alert:abc" } })).toMatchObject({ kind: "dom", domId: "today-step-alert-abc" });
+    expect(pointTarget({ ref: { kind: "alert", id: "a/b" } })).toMatchObject({ kind: "dom", domId: "today-alert-a-b" });
+    expect(pointTarget({ ref: { kind: "card", id: "carbon" } })).toMatchObject({ kind: "card", card: "carbon" });
+    expect(pointTarget({ ref: { kind: "card", id: "nonsense" } })).toBeNull();
+    expect(pointTarget({ ref: null })).toBeNull();
+    const o = { ...overviewFixture(), points: [{ ...overviewFixture().points[0]!, ref: null }, { ...overviewFixture().points[1]!, ref: { kind: "card" as const, id: "nonsense" } }] };
+    const html = render(o);
+    expect(html).not.toContain("today-overview-button");
+    expect(text(html)).toContain("Check field moisture today");
+  });
+  it("model-written shows the AI mark; pending shows the code-written points, the quiet line and the mark; deterministic shows neither", () => {
+    const model = render(overviewFixture());
+    expect(model).toContain("AI used: Today overview");
+    expect(model).not.toContain("Updating with AI");
+    const pending = render(overviewPendingFixture());
+    expect(text(pending)).toContain("Updating with AI…");
+    expect(pending).toContain('aria-live="polite"');
+    expect(pending).toContain("AI used: Today overview");
+    expect(text(pending)).toContain("Do next: Check field moisture, due 31 Oct to 2 Nov");
+    const code = render(overviewDeterministicFixture());
+    expect(code).not.toContain("AI used");
+    expect(code).not.toContain("Updating with AI");
+    expect(text(code)).toContain("Do next: Check field moisture");
+    expect(showsAiMark({ status: "ready", origin: "deterministic" })).toBe(false);
+    expect(showsAiMark({ status: "ready", origin: "model" })).toBe(true);
+    expect(showsAiMark({ status: "pending", origin: "deterministic" })).toBe(true);
+  });
+  it("null, undefined, unavailable and an empty overview render nothing", () => {
+    expect(render(null)).not.toContain("Today for you");
+    expect(render(undefined)).not.toContain("Today for you");
+    expect(render(overviewUnavailableFixture())).not.toContain("Today for you");
+    expect(render({ ...overviewFixture(), headline: null, points: [] })).not.toContain("Today for you");
+    expect(text(render(null))).toBe("");
+  });
+  it("the card button reports the card kind to openDetails; the weather-only (no crop) layout has no overview at all", () => {
+    // Solid's server render has no click, so check the handler contract through the props the view passes: the kind is the ref id.
+    const seen: string[] = [];
+    const target = pointTarget(overviewFixture().points[2]!);
+    expect(target).toMatchObject({ kind: "card", card: "profit" });
+    if (target?.kind === "card") seen.push(target.card);
+    expect(seen).toEqual(["profit"]);
+    // TodayCards never renders an overview, and the empty fixture carries none.
+    expect(text(renderToString(() => <TodayCards view={fixture} date={FIXTURE_TODAY} price={null} weather={null} weatherOnly onDetails={noop} />))).not.toContain("Today for you");
+    expect(todayEmptyFixture().overview ?? null).toBeNull();
   });
 });

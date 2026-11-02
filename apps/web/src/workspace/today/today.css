@@ -983,12 +983,24 @@
 /* Harvest outlook in words under the price card value (ROUND2_SPEC 2.2). */
 .today-outlook-note {
   display: flex;
+  flex-wrap: wrap;
+  max-width: 100%;
+  min-width: 0;
   align-items: flex-start;
   gap: 6px;
   margin: 4px 0 0;
   font-size: 14px;
   line-height: 1.4;
   color: var(--text);
+}
+/* The sentence may wrap and shrink; the AI mark keeps its size, so the card never grows past its column (375 px, "Writing the outlook…"). */
+.today-outlook-note > span:first-child {
+  flex: 1 1 0;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.today-outlook-note > .ai-spark-host {
+  flex: none;
 }
 .today-outlook-note.pending {
   color: var(--text-secondary);
@@ -1167,5 +1179,262 @@
 @media (prefers-reduced-motion: no-preference) {
   .today-curve-info {
     transition: background-color 0.12s ease;
+  }
+}
+
+/* ---------------------------------------------------------------- economics and footprint cards and sheets (2026-11-02)
+   Profit (today-econ-), residue income (today-residue-), energy (today-energy-) and carbon (today-carbon-). Existing tokens
+   only, so the dark theme follows. Nothing here relies on colour alone: the best residue option is also first, solid-bordered
+   and named in the line above the chips. */
+.today-econ-card {
+  min-width: 0;
+}
+/* Smaller figure than the headline cards so "₹1.2 L", "120–150" and "3.5–6.7" fit a 390 px half-width card; the unit may wrap, the number never. */
+.today-card-value.today-econ-value {
+  font-size: 24px;
+  white-space: normal;
+}
+.today-econ-num {
+  white-space: nowrap;
+}
+.today-econ-reason,
+.today-econ-cost,
+.today-econ-kind {
+  color: var(--text-secondary);
+}
+.today-econ-band,
+.today-residue-best,
+.today-carbon-largest {
+  font-weight: 600;
+}
+.today-residue-quantity {
+  color: var(--text-secondary);
+  overflow-wrap: anywhere;
+}
+.today-residue-options {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 5px;
+  margin: 2px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.today-residue-chip {
+  border-style: dashed;
+  border-color: var(--border-strong);
+  white-space: normal;
+}
+.today-residue-chip.is-best {
+  border-style: solid;
+  border-color: var(--accent-border);
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-weight: 750;
+}
+.today-residue-or {
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+.today-residue-alt {
+  font-size: 11px;
+  font-style: italic;
+  color: var(--text-secondary);
+}
+.today-carbon-rank {
+  margin-top: 2px;
+}
+.today-carbon-chip {
+  border-color: var(--border-strong);
+}
+.today-carbon-lowest,
+.today-energy-held,
+.today-energy-used {
+  overflow-wrap: anywhere;
+}
+.today-energy-held {
+  color: var(--text-secondary);
+}
+
+/* Sheets: figure lists, the residue options, the carbon terms and scenarios, the basis boxes. */
+.today-econ-facts {
+  display: grid;
+  gap: 0;
+  margin: 0;
+}
+.today-econ-facts > div {
+  display: grid;
+  grid-template-columns: minmax(0, 132px) minmax(0, 1fr);
+  column-gap: 12px;
+  padding: 6px 0;
+  border-top: 1px solid var(--border);
+}
+.today-econ-facts dt {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+.today-econ-facts dd {
+  margin: 0;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+.today-residue-list,
+.today-carbon-terms,
+.today-carbon-scenarios {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.today-residue-option,
+.today-carbon-term,
+.today-carbon-scenario {
+  display: grid;
+  gap: 2px;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface-soft);
+}
+.today-residue-option h3,
+.today-carbon-term h4,
+.today-carbon-scenario h4 {
+  margin: 0;
+  font-size: 13px;
+}
+.today-residue-alternatives {
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid var(--accent-ui);
+  background: var(--accent-soft);
+}
+.today-econ-basis {
+  display: grid;
+  gap: 8px;
+}
+.today-econ-limits {
+  display: grid;
+  gap: 4px;
+}
+.today-energy-breakdown,
+.today-energy-equivalents {
+  display: grid;
+  gap: 2px;
+  margin: 0;
+  padding-left: 18px;
+}
+
+/* ---------------------------------------------------------------- Today for you: the AI overview (2026-11-02)
+   Sits in the right column (.today-side) above the cards; on a phone it follows the slider. Existing tokens only. */
+.today-side {
+  display: grid;
+  gap: 14px;
+  min-width: 0;
+  align-content: start;
+}
+.today-overview {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+  padding: 14px;
+  border-radius: var(--today-radius);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  box-shadow: 0 1px 3px var(--shadow-color);
+}
+.today-overview-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.today-overview-head h2 {
+  margin: 0;
+  font-size: 16px;
+  line-height: 1.3;
+}
+.today-overview-headline {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 650;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+.today-overview-pending {
+  margin: 0;
+  font-size: 12px;
+  font-style: italic;
+  color: var(--text-secondary);
+}
+.today-overview-points {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.today-overview-point {
+  display: grid;
+  grid-template-columns: 64px minmax(0, 1fr);
+  align-items: start;
+  gap: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+}
+.today-overview-chip {
+  justify-content: center;
+  margin-top: 2px;
+}
+.today-overview-point[data-kind="do_now"] .today-overview-chip,
+.today-overview-point[data-kind="good_news"] .today-overview-chip {
+  background: var(--accent-soft);
+  color: var(--accent);
+  border-color: var(--accent-border);
+}
+.today-overview-point[data-kind="watch"] .today-overview-chip {
+  background: var(--info-soft);
+  color: var(--info);
+  border-color: transparent;
+}
+.today-overview-point[data-kind="later"] .today-overview-chip {
+  border-style: dashed;
+  border-color: var(--border-strong);
+}
+.today-overview-text {
+  min-width: 0;
+  font-size: 13.5px;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+.today-overview-button {
+  display: inline;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+}
+.today-overview-button svg {
+  margin-left: 4px;
+  color: var(--accent);
+  vertical-align: -1px;
+}
+.today-overview-button:hover > span:first-child {
+  text-decoration: underline;
+}
+.today-overview-button:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+.today-overview .ai-spark-host {
+  display: inline-flex;
+  align-items: center;
+}
+@media (min-width: 1100px) {
+  .today-layout > .today-side {
+    min-width: 0;
   }
 }
