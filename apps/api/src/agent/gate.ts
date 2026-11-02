@@ -2,12 +2,12 @@ import { z } from "zod";
 import { Mode, StructuredAssistantOutput, type Unit } from "@harvest/contracts";
 import { Decimal, convertDecimal } from "@harvest/domain";
 import type { Pool } from "../db/pool";
-import { CERTAINTY, CHEMICAL_NOUNS, DISEASE, DOSAGE_VERBS, DRY_CROP_EN, DRY_NOT_PRODUCT_EN, DRY_SUBJECT_NOT_PRODUCT_EN, DRY_WORD_EN, GRANULARITY_LABEL, GUARANTEE, INDIC_SCRIPT, MONTH_NAMES_INDIC, PRODUCT_FORM_WORDS, ROMAN_CHEMICAL_NOUNS, ROMAN_DOSAGE_VERBS, UNIT_TERMS, termRe, termSource } from "./lexicon";
+import { CERTAINTY, CHEMICAL_NOUNS, DISEASE, DOSAGE_VERBS, DRY_CROP_EN, DRY_NOT_PRODUCT_EN, DRY_SUBJECT_NOT_PRODUCT_EN, DRY_WORD_EN, GRANULARITY_LABEL, GUARANTEE, INDIC_SCRIPT, MONTH_NAMES_INDIC, PRODUCT_FORM_WORDS, ROMAN_CHEMICAL_NOUNS, ROMAN_DOSAGE_VERBS, SEASON_MARKER, UNIT_TERMS, termRe, termSource } from "./lexicon";
 import { MONTH_RE, compatNormalise, contextWord, latinWordBeforeQuantity, numberTokens, proseNumbers, unitAdjacent, unitAt, unsupportedNumberChar, unsupportedNumberWord, type NumberToken } from "./numbers";
 import { farmPlaces, isRegistryPlace, placeRegistry, placesNamedIn } from "./place-names";
-import { detectHighRisk, dosageMentions, hasApplicationWords, isApplicationContext, nativeLexiconHits, type RiskCode } from "./risk";
+import { detectFutureRain, detectHighRisk, detectSeasonalRain, dosageMentions, hasApplicationWords, isApplicationContext, nativeLexiconHits, type RiskCode } from "./risk";
 import { PROFILE_FIELDS, splitClaimExtras, type ClaimGranularity, type ClaimScopeExtras } from "./schemas";
-import { isYieldPointer, unitAtPointer } from "./tool-units";
+import { isForecastBriefingPointer, isYieldPointer, unitAtPointer } from "./tool-units";
 
 export { proseNumbers };
 
@@ -277,6 +277,8 @@ export function evidenceCoversScope(e: EvidenceFact, ctx: Ctx, scope: { cropIds:
 // ---------------------------------------------------------------- text checks
 /** F14: tools whose stored output is a rain forecast or rain scenario (water balance runs carry forecast rain). */
 const isForecastTool = (tool: string) => tool === "calculate_water_balance" || /forecast|weather/i.test(tool);
+/** 2026-11-02: a farm-briefing ref is forecast-backed only by pointer (its weather forecast part), never by tool name. */
+const isForecastRef = (tool: string, pointer: string) => (tool === "get_farm_briefing" ? isForecastBriefingPointer(pointer) : isForecastTool(tool));
 interface Presented {
   id: string;
   value: Decimal;
@@ -285,6 +287,28 @@ interface Presented {
   yieldField?: boolean;
   /** F14: the ref comes from the water-balance (rain forecast/scenario) tool or a forecast/weather tool. */
   forecast?: boolean;
+  /** 2026-11-02: the ref points into a get_farm_briefing result (its forecast backs only 7-day, non-seasonal sentences). */
+  briefing?: boolean;
+}
+
+const SEASON_MARKER_RE = termRe(SEASON_MARKER);
+/**
+ * Review fix 2 (2026-11-02): a farm-briefing forecast ref (/weather/forecast/..., /weather/rainNext7Days) is a 7-day forecast,
+ * so it backs a seasonal-rain hit only sentence by sentence: every sentence the seasonal detector flags (with the same code)
+ * must display one of those briefing forecast numbers with its unit, carry no seasonal marker (monsoon, season, month, year,
+ * Kharif, Rabi, and the Hindi/Tamil equivalents) and state no horizon beyond rainHorizonDays (the future-rain detector's
+ * date, relative-day and weekday readings, applied to the sentence as a rain sentence). "This monsoon season will bring
+ * 32 mm" with a rainNext7Days ref is therefore refused. Other tools' forecast refs keep the block-level F14 rule.
+ */
+function briefingForecastBacks(text: string, code: RiskCode, briefingRefs: Presented[], ctx: Ctx, native: boolean): boolean {
+  const flagged = text.normalize("NFC").split(/(?<=[.!?।॥])\s+|\n+/u).map((x) => x.trim()).filter((x) => x && detectSeasonalRain(x)?.code === code);
+  if (flagged.length === 0) return false;
+  return flagged.every((sentence) => {
+    if (SEASON_MARKER_RE.test(sentence)) return false;
+    if (detectFutureRain(`rain ${sentence}`, new Date(ctx.asOf), ctx.rainHorizonDays) !== null) return false;
+    const { tokens } = numberTokens(sentence, { englishDates: !native });
+    return tokens.some((t) => briefingRefs.some((p) => t.value.equals(p.value) && unitAdjacent(t, p.unit)));
+  });
 }
 interface FarmerToken {
   value: Decimal;
@@ -353,7 +377,11 @@ function checkText(
     if (h.code === "chemical_dosage" && o.dosageAllowed?.(dosageMentions(text))) continue;
     // F14: a seasonal rain statement passes only with a forecast-tool reference or a verified evidence claim (F16: so does
     // a current-season present-perfect weather statement, `weather_claim_unsourced`).
-    if ((h.code === "future_rain_unsourced" || h.code === "weather_claim_unsourced") && (o.forecastBacked === true || o.presented.some((p) => p.forecast))) continue;
+    if (h.code === "future_rain_unsourced" || h.code === "weather_claim_unsourced") {
+      if (o.forecastBacked === true || o.presented.some((p) => p.forecast && !p.briefing)) continue;
+      const briefingRefs = o.presented.filter((p) => p.forecast && p.briefing);
+      if (briefingRefs.length > 0 && briefingForecastBacks(text, h.code, briefingRefs, ctx, native)) continue;
+    }
     risks.push(h.code);
     issues.push({ code: h.code, message: `${o.label}: ${h.message}` });
   }
@@ -561,7 +589,14 @@ export function evaluateGate(raw: unknown, ctxIn: GateContext, facts: GateFacts)
         continue;
       }
       try {
-        refPresented.set(r.id, presentedValue(dec, derived.unit, r.presentation.unit, r.presentation.rounding));
+        const shown = presentedValue(dec, derived.unit, r.presentation.unit, r.presentation.rounding);
+        // Review fix 1 (2026-11-02): a farm-briefing soil reading or satellite index that is not zero may not be shown as 0
+        // ("Zinc is 0 ppm" for 0.004 ppm); the presentation rounding must keep a significant digit.
+        if (tr.toolName === "get_farm_briefing" && /^\/(soil|satellite)\//.test(r.jsonPointer) && !dec.isZero() && shown.isZero()) {
+          refProblem.set(r.id, { code: "numeric_ref_rounds_to_zero", message: `numericRef ${r.id}: the stored value ${dec.toString()} is not zero; round it so a significant digit stays (for example significant digits)` });
+          continue;
+        }
+        refPresented.set(r.id, shown);
         refTool.set(r.id, tr.toolName);
       } catch {
         refProblem.set(r.id, { code: "unit_conversion_not_permitted", message: `numericRef ${r.id}: ${r.presentation.sourceUnit} to ${r.presentation.unit} is not a permitted conversion` });
@@ -574,7 +609,8 @@ export function evaluateGate(raw: unknown, ctxIn: GateContext, facts: GateFacts)
         const monitorRecord = tr?.toolName === 'get_farm_context' && /^\/farm\/monitoring\/references\/\d+\/value$/.test(ref.jsonPointer)
           ? resolvePointer(tr.result, ref.jsonPointer.replace(/\/value$/, '')) : null;
         const monitorForecast = monitorRecord?.found && (monitorRecord.value as { evidenceState?: string } | null)?.evidenceState === 'forecast';
-        return { id, value: refPresented.get(id)!, unit: ref.presentation.unit, yieldField: isYieldPointer(refTool.get(id) ?? "", ref.jsonPointer), forecast: isForecastTool(refTool.get(id) ?? "") || !!monitorForecast };
+        const tool = refTool.get(id) ?? "";
+        return { id, value: refPresented.get(id)!, unit: ref.presentation.unit, yieldField: isYieldPointer(tool, ref.jsonPointer), forecast: isForecastRef(tool, ref.jsonPointer) || !!monitorForecast, briefing: tool === "get_farm_briefing" };
       });
 
     // Step 4: claim evidence resolution, crop scope, granularity, and the claim text itself.
@@ -684,7 +720,7 @@ export function evaluateGate(raw: unknown, ctxIn: GateContext, facts: GateFacts)
       for (const i of t.issues) addBlockIssue(b.id, i.code, i.message);
       if (blockIssues.has(b.id)) {
         const validRefIds = b.numericRefIds.filter((id) => refPresented.has(id) && !refProblem.has(id) && !["kg/ha", "kg/acre"].includes(refById.get(id)!.presentation.unit));
-        withheld.push({ blockId: b.id, riskCodes: t.risks, validRefIds, forecastRefIds: validRefIds.filter((id) => /forecast|weather/i.test(refTool.get(id) ?? "")) });
+        withheld.push({ blockId: b.id, riskCodes: t.risks, validRefIds, forecastRefIds: validRefIds.filter((id) => { const tn = refTool.get(id) ?? ""; return tn === "get_farm_briefing" ? isForecastBriefingPointer(refById.get(id)!.jsonPointer) : /forecast|weather/i.test(tn); }) });
         report.removed.push({ field: "answerBlock", id: b.id, index: out.answerBlocks.indexOf(b), codes: [...new Set(blockIssues.get(b.id)!.map((i) => i.code))] });
       }
     }

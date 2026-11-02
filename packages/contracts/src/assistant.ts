@@ -19,6 +19,201 @@ export { ToolName };
  */
 const Normalized = z.number().min(0).max(1);
 
+/**
+ * get_farm_briefing (2026-11-02, docs/research/ASSISTANT_FARM_BRIEFING_SPEC.md): the selected farm's current state composed by
+ * code from read-only services. Every quantity is a unit record ({value, unit} or {value: {low, central?, high}, unit}) at a
+ * pointer listed in the API's UNIT_RECORD_OWNERS; dates are ISO strings; no farm name, coordinates, owner or session ids.
+ */
+const BQ = z.object({ value: z.number(), unit: Unit }).strict();
+const BR = z.object({ value: z.object({ low: z.number(), central: z.number().optional(), high: z.number() }).strict(), unit: Unit }).strict();
+const bText = (n: number) => z.string().max(n);
+const BriefingStep = z
+  .object({ id: bText(160), kind: bText(40), title: bText(160), detail: bText(240).nullable(), dueFrom: IsoDate, dueTo: IsoDate, status: bText(20) })
+  .strict();
+const BriefingWeatherDay = z.object({ date: IsoDate, rainMm: BQ.nullable(), tMinC: BQ.nullable(), tMaxC: BQ.nullable() }).strict();
+export const FarmBriefing = z
+  .object({
+    asOf: IsoDateTime,
+    today: IsoDate,
+    farm: z
+      .object({
+        districtId: bText(120).nullable(),
+        districtName: bText(120).nullable(),
+        stateId: bText(20).nullable(),
+        stateName: bText(120).nullable(),
+        area: BQ.nullable(),
+        waterCategory: bText(60).nullable(),
+        labour: bText(60).nullable(),
+        budget: BQ.nullable(),
+      })
+      .strict(),
+    cycle: z
+      .object({
+        cropId: bText(120),
+        cropName: bText(120),
+        productId: bText(200).nullable(),
+        productName: bText(120).nullable(),
+        sowingDate: IsoDate,
+        establishmentDate: IsoDate.nullable(),
+        establishmentMethod: bText(80).nullable(),
+        workspaceStage: bText(20),
+        dayOfSeason: BQ.nullable(),
+        stageToday: z.object({ id: bText(80), name: bText(80), from: IsoDate, to: IsoDate, basis: bText(20) }).strict().nullable(),
+        nextStage: z.object({ id: bText(80), name: bText(80), from: IsoDate, to: IsoDate }).strict().nullable(),
+        harvestWindow: z.object({ earliest: IsoDate, latest: IsoDate }).strict().nullable(),
+        daysToHarvest: BR.nullable(),
+        timelineBasis: bText(200).nullable(),
+        satellitePhase: z.object({ status: bText(20), phase: bText(20), asOf: IsoDate.nullable(), agreement: bText(20), summary: bText(300) }).strict().nullable(),
+      })
+      .strict()
+      .nullable(),
+    weather: z
+      .object({
+        source: bText(120).nullable(),
+        issuedAt: IsoDateTime.nullable(),
+        observed: z.array(BriefingWeatherDay).max(7),
+        forecast: z.array(BriefingWeatherDay).max(7),
+        rainLast7Days: BQ.nullable(),
+        rainNext7Days: BQ.nullable(),
+      })
+      .strict()
+      .nullable(),
+    satellite: z
+      .object({
+        latestDate: IsoDate.nullable(),
+        ndvi: BQ.nullable(),
+        neighbourhoodNdvi: BQ.nullable(),
+        typicalRange: BR.nullable(),
+        verdict: bText(20).nullable(),
+        clearShare: BQ.nullable(),
+        previous: z.object({ date: IsoDate, ndvi: BQ }).strict().nullable(),
+        indices: z.array(z.object({ name: bText(10), mean: BQ }).strict()).max(7),
+        source: bText(200),
+      })
+      .strict()
+      .nullable(),
+    alerts: z
+      .array(
+        z
+          .object({ id: bText(60), type: bText(20), severity: bText(10), title: bText(120), detail: bText(300), validFrom: IsoDate, validTo: IsoDate, suggestedStep: bText(300).nullable(), source: bText(200), sourceDate: IsoDate })
+          .strict(),
+      )
+      .max(5),
+    steps: z.object({ nextAction: BriefingStep.nullable(), upcoming: z.array(BriefingStep).max(8) }).strict(),
+    price: z
+      .object({
+        status: bText(20),
+        scopeLabel: bText(160),
+        harvestDate: IsoDate.nullable(),
+        harvestPrice: BQ.nullable(),
+        likelyRange: BR.nullable(),
+        latestObserved: z.object({ date: IsoDate, median: BQ }).strict().nullable(),
+        outlook: bText(300).nullable(),
+      })
+      .strict()
+      .nullable(),
+    economics: z
+      .object({
+        harvest: z
+          .object({ status: bText(20), reason: bText(120).nullable(), yieldForField: BR.nullable(), revenueForField: BR.nullable(), costPerHa: BQ.nullable(), profitForField: BR.nullable(), limitations: z.array(bText(240)).max(3) })
+          .strict()
+          .optional(),
+        residue: z
+          .object({
+            status: bText(20),
+            reason: bText(120).nullable(),
+            residueName: bText(80).nullable(),
+            surplusForField: BR.nullable(),
+            options: z.array(z.object({ label: bText(80), incomeForField: BR.nullable() }).strict()).max(4),
+            limitations: z.array(bText(240)).max(3),
+          })
+          .strict()
+          .optional(),
+        energy: z
+          .object({ status: bText(20), reason: bText(120).nullable(), inputEnergyForField: BR.nullable(), residueEnergyForField: BR.nullable(), limitations: z.array(bText(240)).max(3) })
+          .strict()
+          .optional(),
+        carbon: z
+          .object({
+            status: bText(20),
+            reason: bText(120).nullable(),
+            emissionsForField: BR.nullable(),
+            largestTerm: z.object({ label: bText(80), amount: BR }).strict().nullable(),
+            limitations: z.array(bText(240)).max(3),
+          })
+          .strict()
+          .optional(),
+      })
+      .strict()
+      .nullable(),
+    soil: z
+      .object({
+        status: bText(20),
+        samples: z.array(z.object({ reportDate: IsoDate.nullable(), collectionDate: IsoDate.nullable(), depth: BR.nullable() }).strict()).max(4),
+        readings: z
+          .array(z.object({ parameter: bText(60), label: bText(120), measured: BQ.nullable(), rating: bText(30), status: bText(20), assumption: bText(300).nullable() }).strict())
+          .max(16),
+        facts: z.array(bText(200)).max(12),
+        narrative: z.array(bText(160)).max(11).nullable(),
+        narrativeOrigin: bText(20).nullable(),
+        ratedFor: z.object({ currentCrop: bText(120).nullable(), nextCrop: bText(120).nullable() }).strict(),
+      })
+      .strict()
+      .nullable(),
+    plans: z
+      .object({
+        status: bText(20),
+        stale: z.boolean(),
+        option: z
+          .object({
+            label: bText(60),
+            chosen: z.boolean(),
+            slots: z
+              .array(
+                z
+                  .object({
+                    cropName: bText(120),
+                    productName: bText(120),
+                    kind: bText(20),
+                    fixed: z.boolean(),
+                    sowing: IsoDate,
+                    harvest: z.object({ earliest: IsoDate, latest: IsoDate }).strict(),
+                    yield: BR.nullable(),
+                    harvestPrice: BQ.nullable(),
+                    cost: BQ.nullable(),
+                    margin: BR.nullable(),
+                  })
+                  .strict(),
+              )
+              .max(6),
+          })
+          .strict()
+          .nullable(),
+        savedSeasons: z
+          .array(z.object({ year: z.number().int(), season: bText(80), cropName: bText(120), productName: bText(120).nullable(), kind: bText(20), plannedSowingDate: IsoDate.nullable(), plannedHarvestDate: IsoDate.nullable() }).strict())
+          .max(6),
+        previousHarvest: z.object({ status: bText(20), cropName: bText(120).nullable(), harvestDate: IsoDate.nullable() }).strict().nullable(),
+      })
+      .strict()
+      .nullable(),
+    cropFit: z
+      .object({ generatedAt: IsoDateTime.nullable(), picks: z.array(z.object({ rank: z.number().int(), cropId: bText(120), cropName: bText(120), productName: bText(120), reason: bText(160) }).strict()).max(3) })
+      .strict()
+      .nullable(),
+    journal: z
+      .object({
+        entries: z
+          .array(z.object({ date: IsoDate, kind: bText(40), text: bText(120).nullable(), quantity: BQ.nullable(), expense: BQ.nullable(), sale: BQ.nullable() }).strict())
+          .max(8),
+        totalsSinceSowing: z.object({ from: IsoDate, sales: BQ, expenses: BQ, entries: z.number().int().nonnegative() }).strict().nullable(),
+      })
+      .strict()
+      .nullable(),
+    limitations: z.array(bText(300)).max(30),
+  })
+  .strict();
+export type FarmBriefing = z.infer<typeof FarmBriefing>;
+
 export const ToolSchemas = {
   resolve_crop_identity: {
     input: z
@@ -210,6 +405,10 @@ export const ToolSchemas = {
     output: z
       .object({ jobId: Id, state: JobState, progress: z.number().min(0).max(1), resultIds: z.array(Id), errorCode: z.string().nullable() })
       .strict(),
+  },
+  get_farm_briefing: {
+    input: z.object({ farmId: Id }).strict(),
+    output: FarmBriefing,
   },
 } as const satisfies Record<ToolName, { input: z.ZodType; output: z.ZodType }>;
 

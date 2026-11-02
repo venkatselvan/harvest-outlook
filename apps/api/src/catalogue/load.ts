@@ -54,6 +54,27 @@ export function makeGrounder(root = REPO_ROOT): Grounder {
   };
 }
 
+/**
+ * 2026-11-02 (ASSISTANT_FARM_BRIEFING_SPEC.md 2.5): a name written as a combined label ("Paddy / rice", "Tur, arhar") also
+ * yields each part as an alias of the same language and kind, after the original, so "paddy" and "rice" resolve exactly.
+ * Case-insensitive duplicates are dropped. The resolver applies the same split to stored names (handlers.ts aliasesFromNames).
+ */
+export function splitNameParts<T extends { text: string }>(names: readonly T[]): T[] {
+  const out: T[] = [];
+  const seen = new Set<string>();
+  const add = (n: T) => {
+    const key = n.text.trim().toLowerCase();
+    if (!key || seen.has(key)) return;
+    seen.add(key);
+    out.push(n);
+  };
+  for (const n of names) {
+    add(n);
+    if (/ \/ |, /.test(n.text)) for (const part of n.text.split(/ \/ |, /)) add({ ...n, text: part.trim() });
+  }
+  return out;
+}
+
 /** Deterministic UUID (v5-style, fixed namespace) so evidence ids are stable across reloads and databases. */
 const NS = Buffer.from("6ba7b8109dad11d180b400c04fd430c8", "hex");
 export function uuidFromKey(key: string): string {
@@ -149,13 +170,13 @@ export async function loadCatalogueIntoDb(pool: Pool, files: CatalogueFiles = re
     const profileByCrop = new Map(files.profiles.map((p) => [p.cropId, p]));
     for (const i of files.identities) {
       const names = {
-        en: [
+        en: splitNameParts([
           ...i.commonNames.filter((n) => n.language === "en").map((n) => ({ text: n.text, kind: n.kind })),
           ...i.aliases.filter((n) => n.language === "en").map((n) => ({ text: n.text, kind: n.kind })),
-        ],
+        ]),
         ...Object.fromEntries(
           ["ta", "hi"].flatMap((l) => {
-            const t = [...i.commonNames, ...i.aliases].filter((n) => n.language === l).map((n) => ({ text: n.text, kind: n.kind }));
+            const t = splitNameParts([...i.commonNames, ...i.aliases].filter((n) => n.language === l).map((n) => ({ text: n.text, kind: n.kind })));
             return t.length ? [[l, t]] : [];
           }),
         ),

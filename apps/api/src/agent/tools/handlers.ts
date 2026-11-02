@@ -9,6 +9,8 @@ import { getWorkspace } from "../../services/workspace";
 import { monitoringAt, monitoringReferences, type MonitoringSnapshot } from '../../services/monitoring';
 import { getJob } from "../../services/jobs";
 import type { ToolBindings, ToolContext, ToolHandler } from "./registry";
+import { bindFarmBriefing, type BriefingDeps } from "../bindings/briefing";
+import { splitNameParts } from "../../catalogue/load";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const KIND_BY_LANG_INDEX: Alias["kind"][] = ["common", "local"];
@@ -55,7 +57,10 @@ export function aliasesFromNames(names: unknown, slug: string): Alias[] {
     }
   }
   if (out.length === 0) out.push({ text: slug.replace(/[-_]+/g, " "), language: "en", kind: "common", sourceIds: [] });
-  return out;
+  // 2026-11-02: combined labels ("Paddy / rice") also match by each part, per language (rows loaded before the catalogue split).
+  const split: Alias[] = [];
+  for (const lang of [...new Set(out.map((a) => a.language))]) split.push(...splitNameParts(out.filter((a) => a.language === lang)));
+  return split;
 }
 
 const basisOf = (form: string | null): z.infer<typeof ProductBasis> => {
@@ -296,10 +301,16 @@ export async function getJobStatusHandler(input: { jobId: string }, ctx: ToolCon
   };
 }
 
-/** The four tools implemented in T09. The rest are bound by their owning tasks. */
-export const implementedBindings = (): ToolBindings => ({
+/**
+ * The four tools implemented in T09, plus get_farm_briefing (2026-11-02) when its deps are given. The briefing needs the
+ * server config (mode-scoped reads, the year-plan context hash) and the Budget the read-only services are typed with, so it is
+ * a closure over those deps; without them it is not bound (not advertised, never server-called). The rest are bound by their
+ * owning tasks.
+ */
+export const implementedBindings = (briefing?: BriefingDeps): ToolBindings => ({
   resolve_crop_identity: resolveCropIdentityHandler as ToolHandler<"resolve_crop_identity">,
   get_farm_context: getFarmContextHandler,
   retrieve_evidence: retrieveEvidenceHandler as ToolHandler<"retrieve_evidence">,
   get_job_status: getJobStatusHandler,
+  ...(briefing ? { get_farm_briefing: bindFarmBriefing(briefing) } : {}),
 });

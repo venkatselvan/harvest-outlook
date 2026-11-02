@@ -58,6 +58,20 @@ export const UNIT_TERMS: Record<string, TermList> = {
   m: { en: ["m", "met(?:re|er)s?"], indic: ["मीटर", "மீட்டர"] },
   cm: { en: ["cm", "centimet(?:re|er)s?"], indic: ["सेमी", "से.मी.", "सेंटीमीटर", "செமீ", "செ.மீ", "சென்டிமீட்டர"] },
   m3: { raw: ["m³"], en: ["m3", "cubic\\s+met(?:re|er)s?"], indic: ["घन मीटर", "கன மீட்டர"] },
+  /**
+   * 2026-11-02 (farm briefing units). `index` is a dimensionless satellite index: the index name stands for the unit and is
+   * usually written before the number ("NDVI 0.62", "NDVI of 0.62"), which `unitAdjacent` accepts for index and pH only.
+   * `pH` likewise ("pH 6.4"). The others follow the number like any unit.
+   */
+  index: { en: ["ndvi", "ndmi", "ndre", "ndwi", "gndvi", "evi", "savi", "lswi", "index", "indices"], indic: ["सूचकांक", "குறியீடு"] },
+  pH: { en: ["ph"], indic: ["पीएच", "பிஎச்"] },
+  "dS/m": { en: ["ds\\s?/\\s?m", "ds\\s?m-1", "ds\\s?m⁻¹", "deci\\s?siemens?\\s+per\\s+met(?:re|er)"] },
+  ppm: { en: ["ppm", "parts\\s+per\\s+million"] },
+  "mg/kg": { en: ["mg\\s?/\\s?kg", "milligrams?\\s+per\\s+kilo(?:gram)?s?"] },
+  GJ: { en: ["gj", "giga\\s?joules?"], indic: ["गीगाजूल", "ஜிகாஜூல்"] },
+  kgCO2e: { en: ["kg\\s?co[2₂]-?e(?:q)?", "kg\\s?co[2₂]", "kilograms?\\s+(?:of\\s+)?co[2₂](?:-?e|\\s+equivalent)?"] },
+  tCO2e: { en: ["t\\s?co[2₂]-?e(?:q)?", "t\\s?co[2₂]", "tonnes?\\s+(?:of\\s+)?co[2₂](?:-?e|\\s+equivalent)?"] },
+  "mm/week": { en: ["mm\\s?(?:/|per)\\s?(?:week|wk)", "millimet(?:re|er)s?\\s+per\\s+week"] },
   spoon: {
     en: ["spoons?", "spoonfuls?", "teaspoons?", "tablespoons?", "tsp", "tbsp", "caps?", "capfuls?", "packets?", "sachets?", "bottles?", "bags?", "drops?", "handfuls?",
       // Containers that measure an input amount (F8): "two tanks", "a pump of" ...; romanised Hindi/Tamil too.
@@ -443,3 +457,26 @@ export const MONTH_NAMES_INDIC = ["जनवरी", "फरवरी", "फ़�
   "ஜனவரி", "பிப்ரவரி", "மார்ச்", "ஏப்ரல்", "மே$", "ஜூன்", "ஜூலை", "ஆகஸ்ட்", "செப்டம்பர்", "அக்டோபர்", "நவம்பர்", "டிசம்பர்", "சித்திரை", "வைகாசி", "ஆனி", "ஆடி", "ஆவணி", "புரட்டாசி", "ஐப்பசி", "கார்த்திகை", "மார்கழி", "தை$", "மாசி", "பங்குனி"];
 
 export const INDIC_SCRIPT = /[\p{Script=Devanagari}\p{Script=Tamil}]/u;
+
+/**
+ * Review nit (a), 2026-11-02: the named satellite indices. Only these may stand before a number as its unit ("NDVI 0.62",
+ * "NDVI index of 0.62"); the bare words "index"/"indices" count only after a number ("0.62 index"), so "forecast index of 3"
+ * is not an index reading.
+ */
+export const INDEX_NAMES: TermList = { en: ["ndvi", "ndmi", "ndre", "ndwi", "gndvi", "evi", "savi", "lswi"] };
+
+/**
+ * Review fix 2, 2026-11-02: words that make a rain sentence seasonal rather than a 7-day forecast (monsoon, season, month,
+ * year, Kharif, Rabi). A farm-briefing forecast ref backs a rain sentence only when the sentence has none of them. Hindi and
+ * Tamil terms are the season/year phrases and month words already used by the risk lexicon (SEASONAL_RAIN, UNIT_TERMS.months);
+ * bare वर्ष is left out because it is the stem of वर्षा (rain).
+ */
+export const SEASON_MARKER: TermList = {
+  en: ["monsoons?", "mansoon", "onset", "seasons?", "seasonal(?:ly)?", "months?", "monthly", "years?", "yearly", "annual(?:ly)?", "kharif", "rabi", "zaid", "summer", "winter"],
+  indic: [
+    ...(SEASONAL_RAIN.monsoon.indic ?? []),
+    ...(SEASONAL_RAIN.seasonal.indic ?? []).filter((t) => /साल|वर्ष|सीजन|सीज़न|मौसम|ஆண்டு|வருட|பருவ|சீசன/u.test(t)),
+    ...(UNIT_TERMS.months!.indic ?? []),
+    "खरीफ", "रबी$", "हर साल", "ஒவ்வொரு ஆண்டும்",
+  ],
+};

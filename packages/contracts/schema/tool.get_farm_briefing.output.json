@@ -1,0 +1,4074 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "asOf": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+    },
+    "today": {
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+    },
+    "farm": {
+      "type": "object",
+      "properties": {
+        "districtId": {
+          "anyOf": [
+            {
+              "type": "string",
+              "maxLength": 120
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "districtName": {
+          "anyOf": [
+            {
+              "type": "string",
+              "maxLength": 120
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "stateId": {
+          "anyOf": [
+            {
+              "type": "string",
+              "maxLength": 20
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "stateName": {
+          "anyOf": [
+            {
+              "type": "string",
+              "maxLength": 120
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "area": {
+          "anyOf": [
+            {
+              "type": "object",
+              "properties": {
+                "value": {
+                  "type": "number"
+                },
+                "unit": {
+                  "type": "string",
+                  "enum": [
+                    "ha",
+                    "acre",
+                    "kg",
+                    "quintal",
+                    "t",
+                    "INR",
+                    "INR/kg",
+                    "INR/quintal",
+                    "INR/ha",
+                    "mm",
+                    "L",
+                    "m3",
+                    "kg/ha",
+                    "kg/acre",
+                    "days",
+                    "celsius",
+                    "percent",
+                    "m",
+                    "cm",
+                    "g",
+                    "months",
+                    "index",
+                    "GJ",
+                    "kgCO2e",
+                    "tCO2e",
+                    "pH",
+                    "dS/m",
+                    "ppm",
+                    "mg/kg",
+                    "mm/week"
+                  ]
+                }
+              },
+              "required": [
+                "value",
+                "unit"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "waterCategory": {
+          "anyOf": [
+            {
+              "type": "string",
+              "maxLength": 60
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "labour": {
+          "anyOf": [
+            {
+              "type": "string",
+              "maxLength": 60
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "budget": {
+          "anyOf": [
+            {
+              "type": "object",
+              "properties": {
+                "value": {
+                  "type": "number"
+                },
+                "unit": {
+                  "type": "string",
+                  "enum": [
+                    "ha",
+                    "acre",
+                    "kg",
+                    "quintal",
+                    "t",
+                    "INR",
+                    "INR/kg",
+                    "INR/quintal",
+                    "INR/ha",
+                    "mm",
+                    "L",
+                    "m3",
+                    "kg/ha",
+                    "kg/acre",
+                    "days",
+                    "celsius",
+                    "percent",
+                    "m",
+                    "cm",
+                    "g",
+                    "months",
+                    "index",
+                    "GJ",
+                    "kgCO2e",
+                    "tCO2e",
+                    "pH",
+                    "dS/m",
+                    "ppm",
+                    "mg/kg",
+                    "mm/week"
+                  ]
+                }
+              },
+              "required": [
+                "value",
+                "unit"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "districtId",
+        "districtName",
+        "stateId",
+        "stateName",
+        "area",
+        "waterCategory",
+        "labour",
+        "budget"
+      ],
+      "additionalProperties": false
+    },
+    "cycle": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "cropId": {
+              "type": "string",
+              "maxLength": 120
+            },
+            "cropName": {
+              "type": "string",
+              "maxLength": 120
+            },
+            "productId": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 200
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "productName": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 120
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "sowingDate": {
+              "type": "string",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+            },
+            "establishmentDate": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "establishmentMethod": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 80
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "workspaceStage": {
+              "type": "string",
+              "maxLength": 20
+            },
+            "dayOfSeason": {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "value": {
+                      "type": "number"
+                    },
+                    "unit": {
+                      "type": "string",
+                      "enum": [
+                        "ha",
+                        "acre",
+                        "kg",
+                        "quintal",
+                        "t",
+                        "INR",
+                        "INR/kg",
+                        "INR/quintal",
+                        "INR/ha",
+                        "mm",
+                        "L",
+                        "m3",
+                        "kg/ha",
+                        "kg/acre",
+                        "days",
+                        "celsius",
+                        "percent",
+                        "m",
+                        "cm",
+                        "g",
+                        "months",
+                        "index",
+                        "GJ",
+                        "kgCO2e",
+                        "tCO2e",
+                        "pH",
+                        "dS/m",
+                        "ppm",
+                        "mg/kg",
+                        "mm/week"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "value",
+                    "unit"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "stageToday": {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "maxLength": 80
+                    },
+                    "name": {
+                      "type": "string",
+                      "maxLength": 80
+                    },
+                    "from": {
+                      "type": "string",
+                      "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                    },
+                    "to": {
+                      "type": "string",
+                      "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                    },
+                    "basis": {
+                      "type": "string",
+                      "maxLength": 20
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "name",
+                    "from",
+                    "to",
+                    "basis"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "nextStage": {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "maxLength": 80
+                    },
+                    "name": {
+                      "type": "string",
+                      "maxLength": 80
+                    },
+                    "from": {
+                      "type": "string",
+                      "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                    },
+                    "to": {
+                      "type": "string",
+                      "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "name",
+                    "from",
+                    "to"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "harvestWindow": {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "earliest": {
+                      "type": "string",
+                      "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                    },
+                    "latest": {
+                      "type": "string",
+                      "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                    }
+                  },
+                  "required": [
+                    "earliest",
+                    "latest"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "daysToHarvest": {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "value": {
+                      "type": "object",
+                      "properties": {
+                        "low": {
+                          "type": "number"
+                        },
+                        "central": {
+                          "type": "number"
+                        },
+                        "high": {
+                          "type": "number"
+                        }
+                      },
+                      "required": [
+                        "low",
+                        "high"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "unit": {
+                      "type": "string",
+                      "enum": [
+                        "ha",
+                        "acre",
+                        "kg",
+                        "quintal",
+                        "t",
+                        "INR",
+                        "INR/kg",
+                        "INR/quintal",
+                        "INR/ha",
+                        "mm",
+                        "L",
+                        "m3",
+                        "kg/ha",
+                        "kg/acre",
+                        "days",
+                        "celsius",
+                        "percent",
+                        "m",
+                        "cm",
+                        "g",
+                        "months",
+                        "index",
+                        "GJ",
+                        "kgCO2e",
+                        "tCO2e",
+                        "pH",
+                        "dS/m",
+                        "ppm",
+                        "mg/kg",
+                        "mm/week"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "value",
+                    "unit"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "timelineBasis": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 200
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "satellitePhase": {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "maxLength": 20
+                    },
+                    "phase": {
+                      "type": "string",
+                      "maxLength": 20
+                    },
+                    "asOf": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "agreement": {
+                      "type": "string",
+                      "maxLength": 20
+                    },
+                    "summary": {
+                      "type": "string",
+                      "maxLength": 300
+                    }
+                  },
+                  "required": [
+                    "status",
+                    "phase",
+                    "asOf",
+                    "agreement",
+                    "summary"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": [
+            "cropId",
+            "cropName",
+            "productId",
+            "productName",
+            "sowingDate",
+            "establishmentDate",
+            "establishmentMethod",
+            "workspaceStage",
+            "dayOfSeason",
+            "stageToday",
+            "nextStage",
+            "harvestWindow",
+            "daysToHarvest",
+            "timelineBasis",
+            "satellitePhase"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "weather": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "source": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 120
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "issuedAt": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date-time",
+                  "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "observed": {
+              "maxItems": 7,
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "date": {
+                    "type": "string",
+                    "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                  },
+                  "rainMm": {
+                    "anyOf": [
+                      {
+                        "type": "object",
+                        "properties": {
+                          "value": {
+                            "type": "number"
+                          },
+                          "unit": {
+                            "type": "string",
+                            "enum": [
+                              "ha",
+                              "acre",
+                              "kg",
+                              "quintal",
+                              "t",
+                              "INR",
+                              "INR/kg",
+                              "INR/quintal",
+                              "INR/ha",
+                              "mm",
+                              "L",
+                              "m3",
+                              "kg/ha",
+                              "kg/acre",
+                              "days",
+                              "celsius",
+                              "percent",
+                              "m",
+                              "cm",
+                              "g",
+                              "months",
+                              "index",
+                              "GJ",
+                              "kgCO2e",
+                              "tCO2e",
+                              "pH",
+                              "dS/m",
+                              "ppm",
+                              "mg/kg",
+                              "mm/week"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "value",
+                          "unit"
+                        ],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "tMinC": {
+                    "anyOf": [
+                      {
+                        "type": "object",
+                        "properties": {
+                          "value": {
+                            "type": "number"
+                          },
+                          "unit": {
+                            "type": "string",
+                            "enum": [
+                              "ha",
+                              "acre",
+                              "kg",
+                              "quintal",
+                              "t",
+                              "INR",
+                              "INR/kg",
+                              "INR/quintal",
+                              "INR/ha",
+                              "mm",
+                              "L",
+                              "m3",
+                              "kg/ha",
+                              "kg/acre",
+                              "days",
+                              "celsius",
+                              "percent",
+                              "m",
+                              "cm",
+                              "g",
+                              "months",
+                              "index",
+                              "GJ",
+                              "kgCO2e",
+                              "tCO2e",
+                              "pH",
+                              "dS/m",
+                              "ppm",
+                              "mg/kg",
+                              "mm/week"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "value",
+                          "unit"
+                        ],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "tMaxC": {
+                    "anyOf": [
+                      {
+                        "type": "object",
+                        "properties": {
+                          "value": {
+                            "type": "number"
+                          },
+                          "unit": {
+                            "type": "string",
+                            "enum": [
+                              "ha",
+                              "acre",
+                              "kg",
+                              "quintal",
+                              "t",
+                              "INR",
+                              "INR/kg",
+                              "INR/quintal",
+                              "INR/ha",
+                              "mm",
+                              "L",
+                              "m3",
+                              "kg/ha",
+                              "kg/acre",
+                              "days",
+                              "celsius",
+                              "percent",
+                              "m",
+                              "cm",
+                              "g",
+                              "months",
+                              "index",
+                              "GJ",
+                              "kgCO2e",
+                              "tCO2e",
+                              "pH",
+                              "dS/m",
+                              "ppm",
+                              "mg/kg",
+                              "mm/week"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "value",
+                          "unit"
+                        ],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  }
+                },
+                "required": [
+                  "date",
+                  "rainMm",
+                  "tMinC",
+                  "tMaxC"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "forecast": {
+              "maxItems": 7,
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "date": {
+                    "type": "string",
+                    "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                  },
+                  "rainMm": {
+                    "anyOf": [
+                      {
+                        "type": "object",
+                        "properties": {
+                          "value": {
+                            "type": "number"
+                          },
+                          "unit": {
+                            "type": "string",
+                            "enum": [
+                              "ha",
+                              "acre",
+                              "kg",
+                              "quintal",
+                              "t",
+                              "INR",
+                              "INR/kg",
+                              "INR/quintal",
+                              "INR/ha",
+                              "mm",
+                              "L",
+                              "m3",
+                              "kg/ha",
+                              "kg/acre",
+                              "days",
+                              "celsius",
+                              "percent",
+                              "m",
+                              "cm",
+                              "g",
+                              "months",
+                              "index",
+                              "GJ",
+                              "kgCO2e",
+                              "tCO2e",
+                              "pH",
+                              "dS/m",
+                              "ppm",
+                              "mg/kg",
+                              "mm/week"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "value",
+                          "unit"
+                        ],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "tMinC": {
+                    "anyOf": [
+                      {
+                        "type": "object",
+                        "properties": {
+                          "value": {
+                            "type": "number"
+                          },
+                          "unit": {
+                            "type": "string",
+                            "enum": [
+                              "ha",
+                              "acre",
+                              "kg",
+                              "quintal",
+                              "t",
+                              "INR",
+                              "INR/kg",
+                              "INR/quintal",
+                              "INR/ha",
+                              "mm",
+                              "L",
+                              "m3",
+                              "kg/ha",
+                              "kg/acre",
+                              "days",
+                              "celsius",
+                              "percent",
+                              "m",
+                              "cm",
+                              "g",
+                              "months",
+                              "index",
+                              "GJ",
+                              "kgCO2e",
+                              "tCO2e",
+                              "pH",
+                              "dS/m",
+                              "ppm",
+                              "mg/kg",
+                              "mm/week"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "value",
+                          "unit"
+                        ],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "tMaxC": {
+                    "anyOf": [
+                      {
+                        "type": "object",
+                        "properties": {
+                          "value": {
+                            "type": "number"
+                          },
+                          "unit": {
+                            "type": "string",
+                            "enum": [
+                              "ha",
+                              "acre",
+                              "kg",
+                              "quintal",
+                              "t",
+                              "INR",
+                              "INR/kg",
+                              "INR/quintal",
+                              "INR/ha",
+                              "mm",
+                              "L",
+                              "m3",
+                              "kg/ha",
+                              "kg/acre",
+                              "days",
+                              "celsius",
+                              "percent",
+                              "m",
+                              "cm",
+                              "g",
+                              "months",
+                              "index",
+                              "GJ",
+                              "kgCO2e",
+                              "tCO2e",
+                              "pH",
+                              "dS/m",
+                              "ppm",
+                              "mg/kg",
+                              "mm/week"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "value",
+                          "unit"
+                        ],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  }
+                },
+                "required": [
+                  "date",
+                  "rainMm",
+                  "tMinC",
+                  "tMaxC"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "rainLast7Days": {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "value": {
+                      "type": "number"
+                    },
+                    "unit": {
+                      "type": "string",
+                      "enum": [
+                        "ha",
+                        "acre",
+                        "kg",
+                        "quintal",
+                        "t",
+                        "INR",
+                        "INR/kg",
+                        "INR/quintal",
+                        "INR/ha",
+                        "mm",
+                        "L",
+                        "m3",
+                        "kg/ha",
+                        "kg/acre",
+                        "days",
+                        "celsius",
+                        "percent",
+                        "m",
+                        "cm",
+                        "g",
+                        "months",
+                        "index",
+                        "GJ",
+                        "kgCO2e",
+                        "tCO2e",
+                        "pH",
+                        "dS/m",
+                        "ppm",
+                        "mg/kg",
+                        "mm/week"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "value",
+                    "unit"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "rainNext7Days": {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "value": {
+                      "type": "number"
+                    },
+                    "unit": {
+                      "type": "string",
+                      "enum": [
+                        "ha",
+                        "acre",
+                        "kg",
+                        "quintal",
+                        "t",
+                        "INR",
+                        "INR/kg",
+                        "INR/quintal",
+                        "INR/ha",
+                        "mm",
+                        "L",
+                        "m3",
+                        "kg/ha",
+                        "kg/acre",
+                        "days",
+                        "celsius",
+                        "percent",
+                        "m",
+                        "cm",
+                        "g",
+                        "months",
+                        "index",
+                        "GJ",
+                        "kgCO2e",
+                        "tCO2e",
+                        "pH",
+                        "dS/m",
+                        "ppm",
+                        "mg/kg",
+                        "mm/week"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "value",
+                    "unit"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": [
+            "source",
+            "issuedAt",
+            "observed",
+            "forecast",
+            "rainLast7Days",
+            "rainNext7Days"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "satellite": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "latestDate": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "ndvi": {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "value": {
+                      "type": "number"
+                    },
+                    "unit": {
+                      "type": "string",
+                      "enum": [
+                        "ha",
+                        "acre",
+                        "kg",
+                        "quintal",
+                        "t",
+                        "INR",
+                        "INR/kg",
+                        "INR/quintal",
+                        "INR/ha",
+                        "mm",
+                        "L",
+                        "m3",
+                        "kg/ha",
+                        "kg/acre",
+                        "days",
+                        "celsius",
+                        "percent",
+                        "m",
+                        "cm",
+                        "g",
+                        "months",
+                        "index",
+                        "GJ",
+                        "kgCO2e",
+                        "tCO2e",
+                        "pH",
+                        "dS/m",
+                        "ppm",
+                        "mg/kg",
+                        "mm/week"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "value",
+                    "unit"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "neighbourhoodNdvi": {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "value": {
+                      "type": "number"
+                    },
+                    "unit": {
+                      "type": "string",
+                      "enum": [
+                        "ha",
+                        "acre",
+                        "kg",
+                        "quintal",
+                        "t",
+                        "INR",
+                        "INR/kg",
+                        "INR/quintal",
+                        "INR/ha",
+                        "mm",
+                        "L",
+                        "m3",
+                        "kg/ha",
+                        "kg/acre",
+                        "days",
+                        "celsius",
+                        "percent",
+                        "m",
+                        "cm",
+                        "g",
+                        "months",
+                        "index",
+                        "GJ",
+                        "kgCO2e",
+                        "tCO2e",
+                        "pH",
+                        "dS/m",
+                        "ppm",
+                        "mg/kg",
+                        "mm/week"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "value",
+                    "unit"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "typicalRange": {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "value": {
+                      "type": "object",
+                      "properties": {
+                        "low": {
+                          "type": "number"
+                        },
+                        "central": {
+                          "type": "number"
+                        },
+                        "high": {
+                          "type": "number"
+                        }
+                      },
+                      "required": [
+                        "low",
+                        "high"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "unit": {
+                      "type": "string",
+                      "enum": [
+                        "ha",
+                        "acre",
+                        "kg",
+                        "quintal",
+                        "t",
+                        "INR",
+                        "INR/kg",
+                        "INR/quintal",
+                        "INR/ha",
+                        "mm",
+                        "L",
+                        "m3",
+                        "kg/ha",
+                        "kg/acre",
+                        "days",
+                        "celsius",
+                        "percent",
+                        "m",
+                        "cm",
+                        "g",
+                        "months",
+                        "index",
+                        "GJ",
+                        "kgCO2e",
+                        "tCO2e",
+                        "pH",
+                        "dS/m",
+                        "ppm",
+                        "mg/kg",
+                        "mm/week"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "value",
+                    "unit"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "verdict": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 20
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "clearShare": {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "value": {
+                      "type": "number"
+                    },
+                    "unit": {
+                      "type": "string",
+                      "enum": [
+                        "ha",
+                        "acre",
+                        "kg",
+                        "quintal",
+                        "t",
+                        "INR",
+                        "INR/kg",
+                        "INR/quintal",
+                        "INR/ha",
+                        "mm",
+                        "L",
+                        "m3",
+                        "kg/ha",
+                        "kg/acre",
+                        "days",
+                        "celsius",
+                        "percent",
+                        "m",
+                        "cm",
+                        "g",
+                        "months",
+                        "index",
+                        "GJ",
+                        "kgCO2e",
+                        "tCO2e",
+                        "pH",
+                        "dS/m",
+                        "ppm",
+                        "mg/kg",
+                        "mm/week"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "value",
+                    "unit"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "previous": {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "date": {
+                      "type": "string",
+                      "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                    },
+                    "ndvi": {
+                      "type": "object",
+                      "properties": {
+                        "value": {
+                          "type": "number"
+                        },
+                        "unit": {
+                          "type": "string",
+                          "enum": [
+                            "ha",
+                            "acre",
+                            "kg",
+                            "quintal",
+                            "t",
+                            "INR",
+                            "INR/kg",
+                            "INR/quintal",
+                            "INR/ha",
+                            "mm",
+                            "L",
+                            "m3",
+                            "kg/ha",
+                            "kg/acre",
+                            "days",
+                            "celsius",
+                            "percent",
+                            "m",
+                            "cm",
+                            "g",
+                            "months",
+                            "index",
+                            "GJ",
+                            "kgCO2e",
+                            "tCO2e",
+                            "pH",
+                            "dS/m",
+                            "ppm",
+                            "mg/kg",
+                            "mm/week"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "value",
+                        "unit"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "date",
+                    "ndvi"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "indices": {
+              "maxItems": 7,
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "maxLength": 10
+                  },
+                  "mean": {
+                    "type": "object",
+                    "properties": {
+                      "value": {
+                        "type": "number"
+                      },
+                      "unit": {
+                        "type": "string",
+                        "enum": [
+                          "ha",
+                          "acre",
+                          "kg",
+                          "quintal",
+                          "t",
+                          "INR",
+                          "INR/kg",
+                          "INR/quintal",
+                          "INR/ha",
+                          "mm",
+                          "L",
+                          "m3",
+                          "kg/ha",
+                          "kg/acre",
+                          "days",
+                          "celsius",
+                          "percent",
+                          "m",
+                          "cm",
+                          "g",
+                          "months",
+                          "index",
+                          "GJ",
+                          "kgCO2e",
+                          "tCO2e",
+                          "pH",
+                          "dS/m",
+                          "ppm",
+                          "mg/kg",
+                          "mm/week"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "value",
+                      "unit"
+                    ],
+                    "additionalProperties": false
+                  }
+                },
+                "required": [
+                  "name",
+                  "mean"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "source": {
+              "type": "string",
+              "maxLength": 200
+            }
+          },
+          "required": [
+            "latestDate",
+            "ndvi",
+            "neighbourhoodNdvi",
+            "typicalRange",
+            "verdict",
+            "clearShare",
+            "previous",
+            "indices",
+            "source"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "alerts": {
+      "maxItems": 5,
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "maxLength": 60
+          },
+          "type": {
+            "type": "string",
+            "maxLength": 20
+          },
+          "severity": {
+            "type": "string",
+            "maxLength": 10
+          },
+          "title": {
+            "type": "string",
+            "maxLength": 120
+          },
+          "detail": {
+            "type": "string",
+            "maxLength": 300
+          },
+          "validFrom": {
+            "type": "string",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+          },
+          "validTo": {
+            "type": "string",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+          },
+          "suggestedStep": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 300
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "source": {
+            "type": "string",
+            "maxLength": 200
+          },
+          "sourceDate": {
+            "type": "string",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+          }
+        },
+        "required": [
+          "id",
+          "type",
+          "severity",
+          "title",
+          "detail",
+          "validFrom",
+          "validTo",
+          "suggestedStep",
+          "source",
+          "sourceDate"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "steps": {
+      "type": "object",
+      "properties": {
+        "nextAction": {
+          "anyOf": [
+            {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "maxLength": 160
+                },
+                "kind": {
+                  "type": "string",
+                  "maxLength": 40
+                },
+                "title": {
+                  "type": "string",
+                  "maxLength": 160
+                },
+                "detail": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "maxLength": 240
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "dueFrom": {
+                  "type": "string",
+                  "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                },
+                "dueTo": {
+                  "type": "string",
+                  "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                },
+                "status": {
+                  "type": "string",
+                  "maxLength": 20
+                }
+              },
+              "required": [
+                "id",
+                "kind",
+                "title",
+                "detail",
+                "dueFrom",
+                "dueTo",
+                "status"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "upcoming": {
+          "maxItems": 8,
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "maxLength": 160
+              },
+              "kind": {
+                "type": "string",
+                "maxLength": 40
+              },
+              "title": {
+                "type": "string",
+                "maxLength": 160
+              },
+              "detail": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "maxLength": 240
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "dueFrom": {
+                "type": "string",
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+              },
+              "dueTo": {
+                "type": "string",
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+              },
+              "status": {
+                "type": "string",
+                "maxLength": 20
+              }
+            },
+            "required": [
+              "id",
+              "kind",
+              "title",
+              "detail",
+              "dueFrom",
+              "dueTo",
+              "status"
+            ],
+            "additionalProperties": false
+          }
+        }
+      },
+      "required": [
+        "nextAction",
+        "upcoming"
+      ],
+      "additionalProperties": false
+    },
+    "price": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "status": {
+              "type": "string",
+              "maxLength": 20
+            },
+            "scopeLabel": {
+              "type": "string",
+              "maxLength": 160
+            },
+            "harvestDate": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "harvestPrice": {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "value": {
+                      "type": "number"
+                    },
+                    "unit": {
+                      "type": "string",
+                      "enum": [
+                        "ha",
+                        "acre",
+                        "kg",
+                        "quintal",
+                        "t",
+                        "INR",
+                        "INR/kg",
+                        "INR/quintal",
+                        "INR/ha",
+                        "mm",
+                        "L",
+                        "m3",
+                        "kg/ha",
+                        "kg/acre",
+                        "days",
+                        "celsius",
+                        "percent",
+                        "m",
+                        "cm",
+                        "g",
+                        "months",
+                        "index",
+                        "GJ",
+                        "kgCO2e",
+                        "tCO2e",
+                        "pH",
+                        "dS/m",
+                        "ppm",
+                        "mg/kg",
+                        "mm/week"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "value",
+                    "unit"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "likelyRange": {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "value": {
+                      "type": "object",
+                      "properties": {
+                        "low": {
+                          "type": "number"
+                        },
+                        "central": {
+                          "type": "number"
+                        },
+                        "high": {
+                          "type": "number"
+                        }
+                      },
+                      "required": [
+                        "low",
+                        "high"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "unit": {
+                      "type": "string",
+                      "enum": [
+                        "ha",
+                        "acre",
+                        "kg",
+                        "quintal",
+                        "t",
+                        "INR",
+                        "INR/kg",
+                        "INR/quintal",
+                        "INR/ha",
+                        "mm",
+                        "L",
+                        "m3",
+                        "kg/ha",
+                        "kg/acre",
+                        "days",
+                        "celsius",
+                        "percent",
+                        "m",
+                        "cm",
+                        "g",
+                        "months",
+                        "index",
+                        "GJ",
+                        "kgCO2e",
+                        "tCO2e",
+                        "pH",
+                        "dS/m",
+                        "ppm",
+                        "mg/kg",
+                        "mm/week"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "value",
+                    "unit"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "latestObserved": {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "date": {
+                      "type": "string",
+                      "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                    },
+                    "median": {
+                      "type": "object",
+                      "properties": {
+                        "value": {
+                          "type": "number"
+                        },
+                        "unit": {
+                          "type": "string",
+                          "enum": [
+                            "ha",
+                            "acre",
+                            "kg",
+                            "quintal",
+                            "t",
+                            "INR",
+                            "INR/kg",
+                            "INR/quintal",
+                            "INR/ha",
+                            "mm",
+                            "L",
+                            "m3",
+                            "kg/ha",
+                            "kg/acre",
+                            "days",
+                            "celsius",
+                            "percent",
+                            "m",
+                            "cm",
+                            "g",
+                            "months",
+                            "index",
+                            "GJ",
+                            "kgCO2e",
+                            "tCO2e",
+                            "pH",
+                            "dS/m",
+                            "ppm",
+                            "mg/kg",
+                            "mm/week"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "value",
+                        "unit"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "date",
+                    "median"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "outlook": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 300
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": [
+            "status",
+            "scopeLabel",
+            "harvestDate",
+            "harvestPrice",
+            "likelyRange",
+            "latestObserved",
+            "outlook"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "economics": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "harvest": {
+              "type": "object",
+              "properties": {
+                "status": {
+                  "type": "string",
+                  "maxLength": 20
+                },
+                "reason": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "maxLength": 120
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "yieldForField": {
+                  "anyOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "value": {
+                          "type": "object",
+                          "properties": {
+                            "low": {
+                              "type": "number"
+                            },
+                            "central": {
+                              "type": "number"
+                            },
+                            "high": {
+                              "type": "number"
+                            }
+                          },
+                          "required": [
+                            "low",
+                            "high"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "unit": {
+                          "type": "string",
+                          "enum": [
+                            "ha",
+                            "acre",
+                            "kg",
+                            "quintal",
+                            "t",
+                            "INR",
+                            "INR/kg",
+                            "INR/quintal",
+                            "INR/ha",
+                            "mm",
+                            "L",
+                            "m3",
+                            "kg/ha",
+                            "kg/acre",
+                            "days",
+                            "celsius",
+                            "percent",
+                            "m",
+                            "cm",
+                            "g",
+                            "months",
+                            "index",
+                            "GJ",
+                            "kgCO2e",
+                            "tCO2e",
+                            "pH",
+                            "dS/m",
+                            "ppm",
+                            "mg/kg",
+                            "mm/week"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "value",
+                        "unit"
+                      ],
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "revenueForField": {
+                  "anyOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "value": {
+                          "type": "object",
+                          "properties": {
+                            "low": {
+                              "type": "number"
+                            },
+                            "central": {
+                              "type": "number"
+                            },
+                            "high": {
+                              "type": "number"
+                            }
+                          },
+                          "required": [
+                            "low",
+                            "high"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "unit": {
+                          "type": "string",
+                          "enum": [
+                            "ha",
+                            "acre",
+                            "kg",
+                            "quintal",
+                            "t",
+                            "INR",
+                            "INR/kg",
+                            "INR/quintal",
+                            "INR/ha",
+                            "mm",
+                            "L",
+                            "m3",
+                            "kg/ha",
+                            "kg/acre",
+                            "days",
+                            "celsius",
+                            "percent",
+                            "m",
+                            "cm",
+                            "g",
+                            "months",
+                            "index",
+                            "GJ",
+                            "kgCO2e",
+                            "tCO2e",
+                            "pH",
+                            "dS/m",
+                            "ppm",
+                            "mg/kg",
+                            "mm/week"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "value",
+                        "unit"
+                      ],
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "costPerHa": {
+                  "anyOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "value": {
+                          "type": "number"
+                        },
+                        "unit": {
+                          "type": "string",
+                          "enum": [
+                            "ha",
+                            "acre",
+                            "kg",
+                            "quintal",
+                            "t",
+                            "INR",
+                            "INR/kg",
+                            "INR/quintal",
+                            "INR/ha",
+                            "mm",
+                            "L",
+                            "m3",
+                            "kg/ha",
+                            "kg/acre",
+                            "days",
+                            "celsius",
+                            "percent",
+                            "m",
+                            "cm",
+                            "g",
+                            "months",
+                            "index",
+                            "GJ",
+                            "kgCO2e",
+                            "tCO2e",
+                            "pH",
+                            "dS/m",
+                            "ppm",
+                            "mg/kg",
+                            "mm/week"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "value",
+                        "unit"
+                      ],
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "profitForField": {
+                  "anyOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "value": {
+                          "type": "object",
+                          "properties": {
+                            "low": {
+                              "type": "number"
+                            },
+                            "central": {
+                              "type": "number"
+                            },
+                            "high": {
+                              "type": "number"
+                            }
+                          },
+                          "required": [
+                            "low",
+                            "high"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "unit": {
+                          "type": "string",
+                          "enum": [
+                            "ha",
+                            "acre",
+                            "kg",
+                            "quintal",
+                            "t",
+                            "INR",
+                            "INR/kg",
+                            "INR/quintal",
+                            "INR/ha",
+                            "mm",
+                            "L",
+                            "m3",
+                            "kg/ha",
+                            "kg/acre",
+                            "days",
+                            "celsius",
+                            "percent",
+                            "m",
+                            "cm",
+                            "g",
+                            "months",
+                            "index",
+                            "GJ",
+                            "kgCO2e",
+                            "tCO2e",
+                            "pH",
+                            "dS/m",
+                            "ppm",
+                            "mg/kg",
+                            "mm/week"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "value",
+                        "unit"
+                      ],
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "limitations": {
+                  "maxItems": 3,
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "maxLength": 240
+                  }
+                }
+              },
+              "required": [
+                "status",
+                "reason",
+                "yieldForField",
+                "revenueForField",
+                "costPerHa",
+                "profitForField",
+                "limitations"
+              ],
+              "additionalProperties": false
+            },
+            "residue": {
+              "type": "object",
+              "properties": {
+                "status": {
+                  "type": "string",
+                  "maxLength": 20
+                },
+                "reason": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "maxLength": 120
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "residueName": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "maxLength": 80
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "surplusForField": {
+                  "anyOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "value": {
+                          "type": "object",
+                          "properties": {
+                            "low": {
+                              "type": "number"
+                            },
+                            "central": {
+                              "type": "number"
+                            },
+                            "high": {
+                              "type": "number"
+                            }
+                          },
+                          "required": [
+                            "low",
+                            "high"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "unit": {
+                          "type": "string",
+                          "enum": [
+                            "ha",
+                            "acre",
+                            "kg",
+                            "quintal",
+                            "t",
+                            "INR",
+                            "INR/kg",
+                            "INR/quintal",
+                            "INR/ha",
+                            "mm",
+                            "L",
+                            "m3",
+                            "kg/ha",
+                            "kg/acre",
+                            "days",
+                            "celsius",
+                            "percent",
+                            "m",
+                            "cm",
+                            "g",
+                            "months",
+                            "index",
+                            "GJ",
+                            "kgCO2e",
+                            "tCO2e",
+                            "pH",
+                            "dS/m",
+                            "ppm",
+                            "mg/kg",
+                            "mm/week"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "value",
+                        "unit"
+                      ],
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "options": {
+                  "maxItems": 4,
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "label": {
+                        "type": "string",
+                        "maxLength": 80
+                      },
+                      "incomeForField": {
+                        "anyOf": [
+                          {
+                            "type": "object",
+                            "properties": {
+                              "value": {
+                                "type": "object",
+                                "properties": {
+                                  "low": {
+                                    "type": "number"
+                                  },
+                                  "central": {
+                                    "type": "number"
+                                  },
+                                  "high": {
+                                    "type": "number"
+                                  }
+                                },
+                                "required": [
+                                  "low",
+                                  "high"
+                                ],
+                                "additionalProperties": false
+                              },
+                              "unit": {
+                                "type": "string",
+                                "enum": [
+                                  "ha",
+                                  "acre",
+                                  "kg",
+                                  "quintal",
+                                  "t",
+                                  "INR",
+                                  "INR/kg",
+                                  "INR/quintal",
+                                  "INR/ha",
+                                  "mm",
+                                  "L",
+                                  "m3",
+                                  "kg/ha",
+                                  "kg/acre",
+                                  "days",
+                                  "celsius",
+                                  "percent",
+                                  "m",
+                                  "cm",
+                                  "g",
+                                  "months",
+                                  "index",
+                                  "GJ",
+                                  "kgCO2e",
+                                  "tCO2e",
+                                  "pH",
+                                  "dS/m",
+                                  "ppm",
+                                  "mg/kg",
+                                  "mm/week"
+                                ]
+                              }
+                            },
+                            "required": [
+                              "value",
+                              "unit"
+                            ],
+                            "additionalProperties": false
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      }
+                    },
+                    "required": [
+                      "label",
+                      "incomeForField"
+                    ],
+                    "additionalProperties": false
+                  }
+                },
+                "limitations": {
+                  "maxItems": 3,
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "maxLength": 240
+                  }
+                }
+              },
+              "required": [
+                "status",
+                "reason",
+                "residueName",
+                "surplusForField",
+                "options",
+                "limitations"
+              ],
+              "additionalProperties": false
+            },
+            "energy": {
+              "type": "object",
+              "properties": {
+                "status": {
+                  "type": "string",
+                  "maxLength": 20
+                },
+                "reason": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "maxLength": 120
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "inputEnergyForField": {
+                  "anyOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "value": {
+                          "type": "object",
+                          "properties": {
+                            "low": {
+                              "type": "number"
+                            },
+                            "central": {
+                              "type": "number"
+                            },
+                            "high": {
+                              "type": "number"
+                            }
+                          },
+                          "required": [
+                            "low",
+                            "high"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "unit": {
+                          "type": "string",
+                          "enum": [
+                            "ha",
+                            "acre",
+                            "kg",
+                            "quintal",
+                            "t",
+                            "INR",
+                            "INR/kg",
+                            "INR/quintal",
+                            "INR/ha",
+                            "mm",
+                            "L",
+                            "m3",
+                            "kg/ha",
+                            "kg/acre",
+                            "days",
+                            "celsius",
+                            "percent",
+                            "m",
+                            "cm",
+                            "g",
+                            "months",
+                            "index",
+                            "GJ",
+                            "kgCO2e",
+                            "tCO2e",
+                            "pH",
+                            "dS/m",
+                            "ppm",
+                            "mg/kg",
+                            "mm/week"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "value",
+                        "unit"
+                      ],
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "residueEnergyForField": {
+                  "anyOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "value": {
+                          "type": "object",
+                          "properties": {
+                            "low": {
+                              "type": "number"
+                            },
+                            "central": {
+                              "type": "number"
+                            },
+                            "high": {
+                              "type": "number"
+                            }
+                          },
+                          "required": [
+                            "low",
+                            "high"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "unit": {
+                          "type": "string",
+                          "enum": [
+                            "ha",
+                            "acre",
+                            "kg",
+                            "quintal",
+                            "t",
+                            "INR",
+                            "INR/kg",
+                            "INR/quintal",
+                            "INR/ha",
+                            "mm",
+                            "L",
+                            "m3",
+                            "kg/ha",
+                            "kg/acre",
+                            "days",
+                            "celsius",
+                            "percent",
+                            "m",
+                            "cm",
+                            "g",
+                            "months",
+                            "index",
+                            "GJ",
+                            "kgCO2e",
+                            "tCO2e",
+                            "pH",
+                            "dS/m",
+                            "ppm",
+                            "mg/kg",
+                            "mm/week"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "value",
+                        "unit"
+                      ],
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "limitations": {
+                  "maxItems": 3,
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "maxLength": 240
+                  }
+                }
+              },
+              "required": [
+                "status",
+                "reason",
+                "inputEnergyForField",
+                "residueEnergyForField",
+                "limitations"
+              ],
+              "additionalProperties": false
+            },
+            "carbon": {
+              "type": "object",
+              "properties": {
+                "status": {
+                  "type": "string",
+                  "maxLength": 20
+                },
+                "reason": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "maxLength": 120
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "emissionsForField": {
+                  "anyOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "value": {
+                          "type": "object",
+                          "properties": {
+                            "low": {
+                              "type": "number"
+                            },
+                            "central": {
+                              "type": "number"
+                            },
+                            "high": {
+                              "type": "number"
+                            }
+                          },
+                          "required": [
+                            "low",
+                            "high"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "unit": {
+                          "type": "string",
+                          "enum": [
+                            "ha",
+                            "acre",
+                            "kg",
+                            "quintal",
+                            "t",
+                            "INR",
+                            "INR/kg",
+                            "INR/quintal",
+                            "INR/ha",
+                            "mm",
+                            "L",
+                            "m3",
+                            "kg/ha",
+                            "kg/acre",
+                            "days",
+                            "celsius",
+                            "percent",
+                            "m",
+                            "cm",
+                            "g",
+                            "months",
+                            "index",
+                            "GJ",
+                            "kgCO2e",
+                            "tCO2e",
+                            "pH",
+                            "dS/m",
+                            "ppm",
+                            "mg/kg",
+                            "mm/week"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "value",
+                        "unit"
+                      ],
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "largestTerm": {
+                  "anyOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "label": {
+                          "type": "string",
+                          "maxLength": 80
+                        },
+                        "amount": {
+                          "type": "object",
+                          "properties": {
+                            "value": {
+                              "type": "object",
+                              "properties": {
+                                "low": {
+                                  "type": "number"
+                                },
+                                "central": {
+                                  "type": "number"
+                                },
+                                "high": {
+                                  "type": "number"
+                                }
+                              },
+                              "required": [
+                                "low",
+                                "high"
+                              ],
+                              "additionalProperties": false
+                            },
+                            "unit": {
+                              "type": "string",
+                              "enum": [
+                                "ha",
+                                "acre",
+                                "kg",
+                                "quintal",
+                                "t",
+                                "INR",
+                                "INR/kg",
+                                "INR/quintal",
+                                "INR/ha",
+                                "mm",
+                                "L",
+                                "m3",
+                                "kg/ha",
+                                "kg/acre",
+                                "days",
+                                "celsius",
+                                "percent",
+                                "m",
+                                "cm",
+                                "g",
+                                "months",
+                                "index",
+                                "GJ",
+                                "kgCO2e",
+                                "tCO2e",
+                                "pH",
+                                "dS/m",
+                                "ppm",
+                                "mg/kg",
+                                "mm/week"
+                              ]
+                            }
+                          },
+                          "required": [
+                            "value",
+                            "unit"
+                          ],
+                          "additionalProperties": false
+                        }
+                      },
+                      "required": [
+                        "label",
+                        "amount"
+                      ],
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "limitations": {
+                  "maxItems": 3,
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "maxLength": 240
+                  }
+                }
+              },
+              "required": [
+                "status",
+                "reason",
+                "emissionsForField",
+                "largestTerm",
+                "limitations"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "soil": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "status": {
+              "type": "string",
+              "maxLength": 20
+            },
+            "samples": {
+              "maxItems": 4,
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "reportDate": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "collectionDate": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "depth": {
+                    "anyOf": [
+                      {
+                        "type": "object",
+                        "properties": {
+                          "value": {
+                            "type": "object",
+                            "properties": {
+                              "low": {
+                                "type": "number"
+                              },
+                              "central": {
+                                "type": "number"
+                              },
+                              "high": {
+                                "type": "number"
+                              }
+                            },
+                            "required": [
+                              "low",
+                              "high"
+                            ],
+                            "additionalProperties": false
+                          },
+                          "unit": {
+                            "type": "string",
+                            "enum": [
+                              "ha",
+                              "acre",
+                              "kg",
+                              "quintal",
+                              "t",
+                              "INR",
+                              "INR/kg",
+                              "INR/quintal",
+                              "INR/ha",
+                              "mm",
+                              "L",
+                              "m3",
+                              "kg/ha",
+                              "kg/acre",
+                              "days",
+                              "celsius",
+                              "percent",
+                              "m",
+                              "cm",
+                              "g",
+                              "months",
+                              "index",
+                              "GJ",
+                              "kgCO2e",
+                              "tCO2e",
+                              "pH",
+                              "dS/m",
+                              "ppm",
+                              "mg/kg",
+                              "mm/week"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "value",
+                          "unit"
+                        ],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  }
+                },
+                "required": [
+                  "reportDate",
+                  "collectionDate",
+                  "depth"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "readings": {
+              "maxItems": 16,
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "parameter": {
+                    "type": "string",
+                    "maxLength": 60
+                  },
+                  "label": {
+                    "type": "string",
+                    "maxLength": 120
+                  },
+                  "measured": {
+                    "anyOf": [
+                      {
+                        "type": "object",
+                        "properties": {
+                          "value": {
+                            "type": "number"
+                          },
+                          "unit": {
+                            "type": "string",
+                            "enum": [
+                              "ha",
+                              "acre",
+                              "kg",
+                              "quintal",
+                              "t",
+                              "INR",
+                              "INR/kg",
+                              "INR/quintal",
+                              "INR/ha",
+                              "mm",
+                              "L",
+                              "m3",
+                              "kg/ha",
+                              "kg/acre",
+                              "days",
+                              "celsius",
+                              "percent",
+                              "m",
+                              "cm",
+                              "g",
+                              "months",
+                              "index",
+                              "GJ",
+                              "kgCO2e",
+                              "tCO2e",
+                              "pH",
+                              "dS/m",
+                              "ppm",
+                              "mg/kg",
+                              "mm/week"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "value",
+                          "unit"
+                        ],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "rating": {
+                    "type": "string",
+                    "maxLength": 30
+                  },
+                  "status": {
+                    "type": "string",
+                    "maxLength": 20
+                  },
+                  "assumption": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "maxLength": 300
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  }
+                },
+                "required": [
+                  "parameter",
+                  "label",
+                  "measured",
+                  "rating",
+                  "status",
+                  "assumption"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "facts": {
+              "maxItems": 12,
+              "type": "array",
+              "items": {
+                "type": "string",
+                "maxLength": 200
+              }
+            },
+            "narrative": {
+              "anyOf": [
+                {
+                  "maxItems": 11,
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "maxLength": 160
+                  }
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "narrativeOrigin": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 20
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "ratedFor": {
+              "type": "object",
+              "properties": {
+                "currentCrop": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "maxLength": 120
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "nextCrop": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "maxLength": 120
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              },
+              "required": [
+                "currentCrop",
+                "nextCrop"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "required": [
+            "status",
+            "samples",
+            "readings",
+            "facts",
+            "narrative",
+            "narrativeOrigin",
+            "ratedFor"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "plans": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "status": {
+              "type": "string",
+              "maxLength": 20
+            },
+            "stale": {
+              "type": "boolean"
+            },
+            "option": {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "label": {
+                      "type": "string",
+                      "maxLength": 60
+                    },
+                    "chosen": {
+                      "type": "boolean"
+                    },
+                    "slots": {
+                      "maxItems": 6,
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "cropName": {
+                            "type": "string",
+                            "maxLength": 120
+                          },
+                          "productName": {
+                            "type": "string",
+                            "maxLength": 120
+                          },
+                          "kind": {
+                            "type": "string",
+                            "maxLength": 20
+                          },
+                          "fixed": {
+                            "type": "boolean"
+                          },
+                          "sowing": {
+                            "type": "string",
+                            "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                          },
+                          "harvest": {
+                            "type": "object",
+                            "properties": {
+                              "earliest": {
+                                "type": "string",
+                                "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                              },
+                              "latest": {
+                                "type": "string",
+                                "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                              }
+                            },
+                            "required": [
+                              "earliest",
+                              "latest"
+                            ],
+                            "additionalProperties": false
+                          },
+                          "yield": {
+                            "anyOf": [
+                              {
+                                "type": "object",
+                                "properties": {
+                                  "value": {
+                                    "type": "object",
+                                    "properties": {
+                                      "low": {
+                                        "type": "number"
+                                      },
+                                      "central": {
+                                        "type": "number"
+                                      },
+                                      "high": {
+                                        "type": "number"
+                                      }
+                                    },
+                                    "required": [
+                                      "low",
+                                      "high"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  "unit": {
+                                    "type": "string",
+                                    "enum": [
+                                      "ha",
+                                      "acre",
+                                      "kg",
+                                      "quintal",
+                                      "t",
+                                      "INR",
+                                      "INR/kg",
+                                      "INR/quintal",
+                                      "INR/ha",
+                                      "mm",
+                                      "L",
+                                      "m3",
+                                      "kg/ha",
+                                      "kg/acre",
+                                      "days",
+                                      "celsius",
+                                      "percent",
+                                      "m",
+                                      "cm",
+                                      "g",
+                                      "months",
+                                      "index",
+                                      "GJ",
+                                      "kgCO2e",
+                                      "tCO2e",
+                                      "pH",
+                                      "dS/m",
+                                      "ppm",
+                                      "mg/kg",
+                                      "mm/week"
+                                    ]
+                                  }
+                                },
+                                "required": [
+                                  "value",
+                                  "unit"
+                                ],
+                                "additionalProperties": false
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
+                          "harvestPrice": {
+                            "anyOf": [
+                              {
+                                "type": "object",
+                                "properties": {
+                                  "value": {
+                                    "type": "number"
+                                  },
+                                  "unit": {
+                                    "type": "string",
+                                    "enum": [
+                                      "ha",
+                                      "acre",
+                                      "kg",
+                                      "quintal",
+                                      "t",
+                                      "INR",
+                                      "INR/kg",
+                                      "INR/quintal",
+                                      "INR/ha",
+                                      "mm",
+                                      "L",
+                                      "m3",
+                                      "kg/ha",
+                                      "kg/acre",
+                                      "days",
+                                      "celsius",
+                                      "percent",
+                                      "m",
+                                      "cm",
+                                      "g",
+                                      "months",
+                                      "index",
+                                      "GJ",
+                                      "kgCO2e",
+                                      "tCO2e",
+                                      "pH",
+                                      "dS/m",
+                                      "ppm",
+                                      "mg/kg",
+                                      "mm/week"
+                                    ]
+                                  }
+                                },
+                                "required": [
+                                  "value",
+                                  "unit"
+                                ],
+                                "additionalProperties": false
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
+                          "cost": {
+                            "anyOf": [
+                              {
+                                "type": "object",
+                                "properties": {
+                                  "value": {
+                                    "type": "number"
+                                  },
+                                  "unit": {
+                                    "type": "string",
+                                    "enum": [
+                                      "ha",
+                                      "acre",
+                                      "kg",
+                                      "quintal",
+                                      "t",
+                                      "INR",
+                                      "INR/kg",
+                                      "INR/quintal",
+                                      "INR/ha",
+                                      "mm",
+                                      "L",
+                                      "m3",
+                                      "kg/ha",
+                                      "kg/acre",
+                                      "days",
+                                      "celsius",
+                                      "percent",
+                                      "m",
+                                      "cm",
+                                      "g",
+                                      "months",
+                                      "index",
+                                      "GJ",
+                                      "kgCO2e",
+                                      "tCO2e",
+                                      "pH",
+                                      "dS/m",
+                                      "ppm",
+                                      "mg/kg",
+                                      "mm/week"
+                                    ]
+                                  }
+                                },
+                                "required": [
+                                  "value",
+                                  "unit"
+                                ],
+                                "additionalProperties": false
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
+                          "margin": {
+                            "anyOf": [
+                              {
+                                "type": "object",
+                                "properties": {
+                                  "value": {
+                                    "type": "object",
+                                    "properties": {
+                                      "low": {
+                                        "type": "number"
+                                      },
+                                      "central": {
+                                        "type": "number"
+                                      },
+                                      "high": {
+                                        "type": "number"
+                                      }
+                                    },
+                                    "required": [
+                                      "low",
+                                      "high"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  "unit": {
+                                    "type": "string",
+                                    "enum": [
+                                      "ha",
+                                      "acre",
+                                      "kg",
+                                      "quintal",
+                                      "t",
+                                      "INR",
+                                      "INR/kg",
+                                      "INR/quintal",
+                                      "INR/ha",
+                                      "mm",
+                                      "L",
+                                      "m3",
+                                      "kg/ha",
+                                      "kg/acre",
+                                      "days",
+                                      "celsius",
+                                      "percent",
+                                      "m",
+                                      "cm",
+                                      "g",
+                                      "months",
+                                      "index",
+                                      "GJ",
+                                      "kgCO2e",
+                                      "tCO2e",
+                                      "pH",
+                                      "dS/m",
+                                      "ppm",
+                                      "mg/kg",
+                                      "mm/week"
+                                    ]
+                                  }
+                                },
+                                "required": [
+                                  "value",
+                                  "unit"
+                                ],
+                                "additionalProperties": false
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          }
+                        },
+                        "required": [
+                          "cropName",
+                          "productName",
+                          "kind",
+                          "fixed",
+                          "sowing",
+                          "harvest",
+                          "yield",
+                          "harvestPrice",
+                          "cost",
+                          "margin"
+                        ],
+                        "additionalProperties": false
+                      }
+                    }
+                  },
+                  "required": [
+                    "label",
+                    "chosen",
+                    "slots"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "savedSeasons": {
+              "maxItems": 6,
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "year": {
+                    "type": "integer",
+                    "minimum": -9007199254740991,
+                    "maximum": 9007199254740991
+                  },
+                  "season": {
+                    "type": "string",
+                    "maxLength": 80
+                  },
+                  "cropName": {
+                    "type": "string",
+                    "maxLength": 120
+                  },
+                  "productName": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "maxLength": 120
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "kind": {
+                    "type": "string",
+                    "maxLength": 20
+                  },
+                  "plannedSowingDate": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "plannedHarvestDate": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  }
+                },
+                "required": [
+                  "year",
+                  "season",
+                  "cropName",
+                  "productName",
+                  "kind",
+                  "plannedSowingDate",
+                  "plannedHarvestDate"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "previousHarvest": {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "maxLength": 20
+                    },
+                    "cropName": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "maxLength": 120
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "harvestDate": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    }
+                  },
+                  "required": [
+                    "status",
+                    "cropName",
+                    "harvestDate"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": [
+            "status",
+            "stale",
+            "option",
+            "savedSeasons",
+            "previousHarvest"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "cropFit": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "generatedAt": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date-time",
+                  "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "picks": {
+              "maxItems": 3,
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "rank": {
+                    "type": "integer",
+                    "minimum": -9007199254740991,
+                    "maximum": 9007199254740991
+                  },
+                  "cropId": {
+                    "type": "string",
+                    "maxLength": 120
+                  },
+                  "cropName": {
+                    "type": "string",
+                    "maxLength": 120
+                  },
+                  "productName": {
+                    "type": "string",
+                    "maxLength": 120
+                  },
+                  "reason": {
+                    "type": "string",
+                    "maxLength": 160
+                  }
+                },
+                "required": [
+                  "rank",
+                  "cropId",
+                  "cropName",
+                  "productName",
+                  "reason"
+                ],
+                "additionalProperties": false
+              }
+            }
+          },
+          "required": [
+            "generatedAt",
+            "picks"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "journal": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "entries": {
+              "maxItems": 8,
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "date": {
+                    "type": "string",
+                    "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                  },
+                  "kind": {
+                    "type": "string",
+                    "maxLength": 40
+                  },
+                  "text": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "maxLength": 120
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "quantity": {
+                    "anyOf": [
+                      {
+                        "type": "object",
+                        "properties": {
+                          "value": {
+                            "type": "number"
+                          },
+                          "unit": {
+                            "type": "string",
+                            "enum": [
+                              "ha",
+                              "acre",
+                              "kg",
+                              "quintal",
+                              "t",
+                              "INR",
+                              "INR/kg",
+                              "INR/quintal",
+                              "INR/ha",
+                              "mm",
+                              "L",
+                              "m3",
+                              "kg/ha",
+                              "kg/acre",
+                              "days",
+                              "celsius",
+                              "percent",
+                              "m",
+                              "cm",
+                              "g",
+                              "months",
+                              "index",
+                              "GJ",
+                              "kgCO2e",
+                              "tCO2e",
+                              "pH",
+                              "dS/m",
+                              "ppm",
+                              "mg/kg",
+                              "mm/week"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "value",
+                          "unit"
+                        ],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "expense": {
+                    "anyOf": [
+                      {
+                        "type": "object",
+                        "properties": {
+                          "value": {
+                            "type": "number"
+                          },
+                          "unit": {
+                            "type": "string",
+                            "enum": [
+                              "ha",
+                              "acre",
+                              "kg",
+                              "quintal",
+                              "t",
+                              "INR",
+                              "INR/kg",
+                              "INR/quintal",
+                              "INR/ha",
+                              "mm",
+                              "L",
+                              "m3",
+                              "kg/ha",
+                              "kg/acre",
+                              "days",
+                              "celsius",
+                              "percent",
+                              "m",
+                              "cm",
+                              "g",
+                              "months",
+                              "index",
+                              "GJ",
+                              "kgCO2e",
+                              "tCO2e",
+                              "pH",
+                              "dS/m",
+                              "ppm",
+                              "mg/kg",
+                              "mm/week"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "value",
+                          "unit"
+                        ],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "sale": {
+                    "anyOf": [
+                      {
+                        "type": "object",
+                        "properties": {
+                          "value": {
+                            "type": "number"
+                          },
+                          "unit": {
+                            "type": "string",
+                            "enum": [
+                              "ha",
+                              "acre",
+                              "kg",
+                              "quintal",
+                              "t",
+                              "INR",
+                              "INR/kg",
+                              "INR/quintal",
+                              "INR/ha",
+                              "mm",
+                              "L",
+                              "m3",
+                              "kg/ha",
+                              "kg/acre",
+                              "days",
+                              "celsius",
+                              "percent",
+                              "m",
+                              "cm",
+                              "g",
+                              "months",
+                              "index",
+                              "GJ",
+                              "kgCO2e",
+                              "tCO2e",
+                              "pH",
+                              "dS/m",
+                              "ppm",
+                              "mg/kg",
+                              "mm/week"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "value",
+                          "unit"
+                        ],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  }
+                },
+                "required": [
+                  "date",
+                  "kind",
+                  "text",
+                  "quantity",
+                  "expense",
+                  "sale"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "totalsSinceSowing": {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "from": {
+                      "type": "string",
+                      "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                    },
+                    "sales": {
+                      "type": "object",
+                      "properties": {
+                        "value": {
+                          "type": "number"
+                        },
+                        "unit": {
+                          "type": "string",
+                          "enum": [
+                            "ha",
+                            "acre",
+                            "kg",
+                            "quintal",
+                            "t",
+                            "INR",
+                            "INR/kg",
+                            "INR/quintal",
+                            "INR/ha",
+                            "mm",
+                            "L",
+                            "m3",
+                            "kg/ha",
+                            "kg/acre",
+                            "days",
+                            "celsius",
+                            "percent",
+                            "m",
+                            "cm",
+                            "g",
+                            "months",
+                            "index",
+                            "GJ",
+                            "kgCO2e",
+                            "tCO2e",
+                            "pH",
+                            "dS/m",
+                            "ppm",
+                            "mg/kg",
+                            "mm/week"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "value",
+                        "unit"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "expenses": {
+                      "type": "object",
+                      "properties": {
+                        "value": {
+                          "type": "number"
+                        },
+                        "unit": {
+                          "type": "string",
+                          "enum": [
+                            "ha",
+                            "acre",
+                            "kg",
+                            "quintal",
+                            "t",
+                            "INR",
+                            "INR/kg",
+                            "INR/quintal",
+                            "INR/ha",
+                            "mm",
+                            "L",
+                            "m3",
+                            "kg/ha",
+                            "kg/acre",
+                            "days",
+                            "celsius",
+                            "percent",
+                            "m",
+                            "cm",
+                            "g",
+                            "months",
+                            "index",
+                            "GJ",
+                            "kgCO2e",
+                            "tCO2e",
+                            "pH",
+                            "dS/m",
+                            "ppm",
+                            "mg/kg",
+                            "mm/week"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "value",
+                        "unit"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "entries": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 9007199254740991
+                    }
+                  },
+                  "required": [
+                    "from",
+                    "sales",
+                    "expenses",
+                    "entries"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": [
+            "entries",
+            "totalsSinceSowing"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "limitations": {
+      "maxItems": 30,
+      "type": "array",
+      "items": {
+        "type": "string",
+        "maxLength": 300
+      }
+    }
+  },
+  "required": [
+    "asOf",
+    "today",
+    "farm",
+    "cycle",
+    "weather",
+    "satellite",
+    "alerts",
+    "steps",
+    "price",
+    "economics",
+    "soil",
+    "plans",
+    "cropFit",
+    "journal",
+    "limitations"
+  ],
+  "additionalProperties": false,
+  "$id": "https://harvest-outlook.local/schema/1.0/tool.get_farm_briefing.output.json",
+  "x-schemaVersion": "1.0"
+}

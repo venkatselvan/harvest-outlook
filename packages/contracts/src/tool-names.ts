@@ -14,5 +14,7 @@ export const ToolName = z.enum([
   'request_segmentation',
   'request_visual_keyframes',
   'get_job_status',
+  /** 2026-11-02: server-composed, read-only state of the selected farm (docs/research/ASSISTANT_FARM_BRIEFING_SPEC.md). */
+  'get_farm_briefing',
 ]);
 export type ToolName = z.infer<typeof ToolName>;

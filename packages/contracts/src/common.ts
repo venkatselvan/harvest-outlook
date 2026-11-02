@@ -91,6 +91,16 @@ export const Unit = z.enum([
   'cm',
   'g',
   'months',
+  /** 2026-11-02 (farm briefing): dimensionless satellite index (NDVI, NDMI, NDRE, NDWI, EVI, SAVI, GNDVI, LSWI). */
+  'index',
+  'GJ',
+  'kgCO2e',
+  'tCO2e',
+  'pH',
+  'dS/m',
+  'ppm',
+  'mg/kg',
+  'mm/week',
 ]);
 export type Unit = z.infer<typeof Unit>;
 

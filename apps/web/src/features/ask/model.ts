@@ -51,6 +51,35 @@ export function wasWithheld(t: TurnResult): boolean {
   return t.gateStatus === "partial" || t.gateStatus === "correction_requested" || t.gateStatus === "unverified" || t.status === "partial" || t.status === "incomplete" || (t.incomplete?.reasons.length ?? 0) > 0;
 }
 
+/** Welcome paragraph of the Evara panel: with a farm it names the farm and what Evara will check, wherever recorded (a bare farm may have none of it, and in replay mode no briefing is composed). */
+export function assistantWelcomeText(farmName: string | null | undefined): string {
+  const name = farmName?.trim();
+  if (!name) return "Finish your farm boundary and I'll help prefill its location, name, and area. Review my suggestions, then let's plan what comes next.";
+  return `I'm looking at ${name}. I'll check its crop and stage, weather, satellite greenness, alerts, upcoming steps, prices and expected returns, soil report, plans and journal, wherever they are recorded. What would you like to know?`;
+}
+
+export const ASSISTANT_PROMPTS = [
+  "How should I care for my crop in the next 15 days?",
+  "What should I plant next?",
+  "Review my farm's weather and market outlook",
+  "Help me compare crops for this season",
+] as const;
+
+const NO_CHECKED_ANSWER = "I couldn't produce a checked answer from the available information.";
+
+/** Text shown for an assistant turn: approved blocks, else clarification questions, else a failed-turn or generic line. */
+export function turnAnswerText(t: TurnResult): string {
+  const blocks = t.answerBlocks.map((b) => b.text).join("\n\n");
+  if (blocks) return blocks;
+  const questions = t.clarifications.map((c) => c.question).join("\n");
+  if (questions) return questions;
+  if (t.status === "failed") {
+    const base = `I couldn't finish writing that answer (reference ${t.traceId}). Please ask again.`;
+    return t.incomplete?.reasons.includes("max_output_tokens") ? `${base} The answer ran out of room.` : base;
+  }
+  return NO_CHECKED_ANSWER;
+}
+
 export const WITHHELD_NOTICE = "Part of this answer was withheld or corrected because it could not be checked against the app's data. Only checked statements are shown.";
 
 export function costLabel(c: TurnResult["costEstimate"]): string {

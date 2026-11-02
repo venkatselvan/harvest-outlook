@@ -71,7 +71,44 @@ export const UNIT_RECORD_OWNERS: Partial<Record<ToolName, string[]>> = {
   get_farm_context: ["/farm/area/value", "/farm/monitoring/references/*"],
   screen_crops: ["/results/*/dimensions/*/value"],
   get_market_outlook: ["/references/*"],
+  // 2026-11-02 (ASSISTANT_FARM_BRIEFING_SPEC.md 2.1): every unit record the code-written farm briefing carries. The drift test
+  // in apps/api/test/farm-briefing.test.ts walks a full briefing and fails when a {value, unit} sits anywhere else.
+  get_farm_briefing: [
+    "/farm/{area|budget}",
+    "/cycle/{dayOfSeason|daysToHarvest}",
+    "/weather/{observed|forecast}/*/{rainMm|tMinC|tMaxC}",
+    "/weather/{rainLast7Days|rainNext7Days}",
+    "/satellite/{ndvi|neighbourhoodNdvi|typicalRange|clearShare}",
+    "/satellite/previous/ndvi",
+    "/satellite/indices/*/mean",
+    "/price/{harvestPrice|likelyRange}",
+    "/price/latestObserved/median",
+    "/economics/harvest/{yieldForField|revenueForField|costPerHa|profitForField}",
+    "/economics/residue/surplusForField",
+    "/economics/residue/options/*/incomeForField",
+    "/economics/energy/{inputEnergyForField|residueEnergyForField}",
+    "/economics/carbon/emissionsForField",
+    "/economics/carbon/largestTerm/amount",
+    "/soil/samples/*/depth",
+    "/soil/readings/*/measured",
+    "/plans/option/slots/*/{yield|harvestPrice|cost|margin}",
+    "/journal/entries/*/{quantity|expense|sale}",
+    "/journal/totalsSinceSowing/{sales|expenses}",
+  ],
 };
+
+/** Expanded owner patterns per tool (for the briefing drift test). */
+export function unitRecordOwnerPatterns(tool: ToolName): string[] {
+  return (UNIT_RECORD_OWNERS[tool] ?? []).flatMap(expand);
+}
+
+/**
+ * 2026-11-02: refs into a farm briefing are forecast-backed only under the forecast part of its weather section; observed
+ * weather and every other section are not forecasts.
+ */
+export function isForecastBriefingPointer(pointer: string): boolean {
+  return /^\/weather\/(forecast|rainNext7Days)(\/|$)/.test(pointer);
+}
 
 /** Map pointers that hold a marketable/yield quantity (kg/ha, kg): shown as yields, never as an input dose. */
 const YIELD_POINTERS: Partial<Record<ToolName, string[]>> = {
@@ -80,6 +117,7 @@ const YIELD_POINTERS: Partial<Record<ToolName, string[]>> = {
     "/result/scenarios/*/{perHa|total}/marketableQuantityKg/*/kg",
     "/result/scenarios/*/{perHa|total}/breakEvenMarketableYieldKgPerHa",
   ],
+  get_farm_briefing: ["/economics/harvest/yieldForField/value/{low|central|high}", "/plans/option/slots/*/yield/value/{low|central|high}"],
 };
 
 const matches = (patternSegs: string[], segs: string[]) => patternSegs.length === segs.length && patternSegs.every((s, i) => s === "*" || s === segs[i]);

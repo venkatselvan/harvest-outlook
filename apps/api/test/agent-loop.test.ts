@@ -359,8 +359,8 @@ describe("tool registry and allowlist", () => {
   const ctx = (over: Partial<ToolContext> = {}): ToolContext => ({ ownerId: owner, mode: "synthetic", requestId: "r", pool, agentRunId: "run", asOf: "2026-10-30T00:00:00Z", ...over });
   const reg = new ToolRegistry(implementedBindings());
 
-  it("exposes exactly the 12 contract tools; unbound ones answer unavailable/tool_not_bound and are not advertised", async () => {
-    expect(reg.all()).toHaveLength(12);
+  it("exposes exactly the 13 contract tools (12 + get_farm_briefing); unbound ones answer unavailable/tool_not_bound and are not advertised", async () => {
+    expect(reg.all()).toHaveLength(13);
     const advertised = reg.advertisedFor("synthetic").map((t) => t.name).sort();
     expect(advertised).toEqual(["get_farm_context", "get_job_status", "resolve_crop_identity", "retrieve_evidence"]);
     const def = reg.get("screen_crops")!;

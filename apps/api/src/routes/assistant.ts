@@ -8,6 +8,7 @@ import { loadAgentLimits, type AgentLimits } from "../agent/limits";
 import { runAgentTurn, type AgentRunResult } from "../agent/loop";
 import { selectProvider, type TextModelProvider } from "../agent/provider";
 import { implementedBindings } from "../agent/tools/handlers";
+import type { BriefingDeps } from "../agent/bindings/briefing";
 import { ToolRegistry, type ToolBindings } from "../agent/tools/registry";
 import { recordApprovedText } from "../speech/approved";
 import { privateRouteGuard } from "../security/guards";
@@ -33,6 +34,8 @@ export interface AssistantRouteDeps {
   /** Synthetic-mode fixture scenario (server-side only; never a client input). */
   fixtureScenario?: string;
   fetchImpl?: typeof fetch;
+  /** Test hook for the farm briefing (Today view providers, timeout). Production passes none. */
+  briefing?: Partial<Omit<BriefingDeps, "config" | "budget">> | undefined;
 }
 
 export function toTurnOut(r: AgentRunResult, approved: { text: string | null; hash: string | null } = { text: null, hash: null }): TurnOut {
@@ -68,7 +71,8 @@ export async function registerAssistantRoutes(app: FastifyInstance, deps: Assist
   const { config, pool } = deps;
   const limits = loadAgentLimits(process.env, deps.limits);
   const budget = deps.budget ?? Budget.fromConfig(pool, config);
-  const registry = new ToolRegistry({ ...implementedBindings(), ...deps.toolBindings });
+  // 2026-11-02: get_farm_briefing is bound here with the route's config and budget (a closure; ToolContext is unchanged).
+  const registry = new ToolRegistry({ ...implementedBindings({ config, budget, ...deps.briefing }), ...deps.toolBindings });
   const scenario = deps.fixtureScenario ?? process.env.AGENT_FIXTURE_SCENARIO ?? "profile_extraction";
   const providerFor = (mode: Config["RUNTIME_MODE"]): TextModelProvider =>
     deps.providerFactory

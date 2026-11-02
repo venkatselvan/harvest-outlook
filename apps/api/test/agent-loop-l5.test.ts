@@ -11,7 +11,7 @@ import { mentionedProductBasis, resolveTurnProduct } from "../src/agent/product-
 import { canonicalCropText, expandTopicWords, implementedBindings, retrieveEvidenceHandler, resolveCropIdentityHandler } from "../src/agent/tools/handlers";
 import { ToolRegistry, type ToolBindings, type ToolContext } from "../src/agent/tools/registry";
 import { GINGER_ID, GINGER_PRODUCT_ID, seedEvidence, seedGinger, seedOwner, seedRun, seedSession } from "./fixtures/meta/helpers";
-import { TEST_DB } from "./helpers";
+import { TEST_DB, testConfig } from "./helpers";
 
 /** Task L5: fixes for the agent-quality findings of the L4 live runs. All providers here are scripted (synthetic). */
 let pool: Pool;
@@ -66,7 +66,8 @@ const farm = () => createFarm(pool, owner, { name: "Plot", location: { districtI
 
 describe("L5 finding 1: crop-choice questions are screened", () => {
   const screened: string[] = [];
-  const bindings = (): ToolBindings => ({ ...implementedBindings(), screen_crops: async (input) => { screened.push(input.contextId); return { results: [] }; } });
+  // 2026-11-02: production binds get_farm_briefing, so every farm turn also carries the server-initiated briefing.
+  const bindings = (): ToolBindings => ({ ...implementedBindings({ config: testConfig(), budget: new Budget(pool, { totalUsd: 100, devAllocationUsd: 50, demoReserveUsd: 1, perSessionUsd: 40, perOwnerDayUsd: 40 }) }), screen_crops: async (input) => { screened.push(input.contextId); return { results: [] }; } });
 
   it("server-initiated screen_crops when the model ends tool rounds without it; result reaches synthesis and the trace", async () => {
     screened.length = 0;
@@ -78,14 +79,14 @@ describe("L5 finding 1: crop-choice questions are screened", () => {
         : result({ outputText: answerJson() }));
     const r = await runAgentTurn(await deps(p, bindings()), turn({ farmId: f.id }));
     expect(screened).toEqual([f.id]);
-    expect(r.serverInitiatedTools).toEqual(["screen_crops"]);
-    const ev = r.trace.toJSON().steps.find((s) => s.kind === "server_initiated_tool");
+    expect(r.serverInitiatedTools).toEqual(["get_farm_briefing", "screen_crops"]);
+    const ev = r.trace.toJSON().steps.find((s) => s.kind === "server_initiated_tool" && (s.detail as { tool?: string }).tool === "screen_crops");
     expect(ev?.detail).toMatchObject({ tool: "screen_crops", reason: "crop_choice_intent_without_screening", intent: "compare_crops" });
     const synth = p.requests.find((q) => q.pass === "synthesis")!;
     const text = JSON.stringify(synth.input);
     expect(text).toContain("server_initiated_tool_result");
     const stored = await pool.query("SELECT tool_name, status FROM tool_results WHERE agent_run_id=$1 ORDER BY ordinal", [r.runId]);
-    expect(stored.rows.map((x) => `${x.tool_name}:${x.status}`)).toEqual(["get_farm_context:ok", "screen_crops:ok"]);
+    expect(stored.rows.map((x) => `${x.tool_name}:${x.status}`)).toEqual(["get_farm_briefing:ok", "get_farm_context:ok", "screen_crops:ok"]);
     expect(r.toolCalls).toBe(2);
   });
 
@@ -97,10 +98,10 @@ describe("L5 finding 1: crop-choice questions are screened", () => {
         : req.pass === "tool_round" && !req.previousResponseId ? result({ functionCalls: [call("screen_crops", { contextId: f.id })] })
         : req.pass === "tool_round" ? result({ outputText: "done" }) : result({ outputText: answerJson() }));
     const a = await runAgentTurn(await deps(modelScreens, bindings()), turn({ farmId: f.id }));
-    expect(a.serverInitiatedTools).toBeUndefined();
+    expect(a.serverInitiatedTools).toEqual(["get_farm_briefing"]);
     expect(screened).toEqual([f.id]);
     const water = new Scripted((req) => req.pass === "interpretation" ? result({ outputText: profileJson("water_question") }) : req.pass === "tool_round" ? result({ outputText: "done" }) : result({ outputText: answerJson() }));
-    expect((await runAgentTurn(await deps(water, bindings()), turn({ farmId: f.id }))).serverInitiatedTools).toBeUndefined();
+    expect((await runAgentTurn(await deps(water, bindings()), turn({ farmId: f.id }))).serverInitiatedTools).toEqual(["get_farm_briefing"]);
     const noFarm = new Scripted((req) => req.pass === "interpretation" ? result({ outputText: profileJson("compare_crops") }) : req.pass === "tool_round" ? result({ outputText: "done" }) : result({ outputText: answerJson() }));
     expect((await runAgentTurn(await deps(noFarm, bindings()), turn())).serverInitiatedTools).toBeUndefined();
     expect(screened).toEqual([f.id]);

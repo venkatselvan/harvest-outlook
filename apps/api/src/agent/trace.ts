@@ -47,6 +47,7 @@ export type TraceStepKind =
   | "product_resolution"
   | "response_cleanup"
   | "chain_recovery"
+  | "cap_recovery"
   | "run_finished";
 
 export interface TraceStep {

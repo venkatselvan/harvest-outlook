@@ -62,6 +62,9 @@ const META: Record<ToolName, { description: string; modes: Mode[]; readsCurrentD
   request_segmentation: { description: "Request a segmentation job for an owned photo (budget gated, manual fallback always available).", modes: NOT_REPLAY, readsCurrentData: true },
   request_visual_keyframes: { description: "Synthetic-mode visual test tool; current field views use dated owner photos only.", modes: ["synthetic"], readsCurrentData: true },
   get_job_status: { description: "Read the sanitized status of an owned job.", modes: NOT_REPLAY, readsCurrentData: true },
+  // 2026-11-02: read-only, code-composed current state of the selected farm. The server calls it once per farm turn and puts the
+  // result in the context; it reads present-day data, so replay never sees it.
+  get_farm_briefing: { description: "The selected farm's current state, composed by code: current crop and calendar stage, weather observed and forecast, satellite greenness and indices, open alerts, upcoming steps, prices and expected returns, soil report readings and ratings, year plan and saved seasons, stored crop-fit picks and recent journal. The server already calls it for the selected farm (its result is in the context as server_initiated_tool_result); do not call it again.", modes: NOT_REPLAY, readsCurrentData: true },
 };
 
 export const UNBOUND_REASON = "tool_not_bound";

@@ -96,7 +96,8 @@
               "propose_plan_revision",
               "request_segmentation",
               "request_visual_keyframes",
-              "get_job_status"
+              "get_job_status",
+              "get_farm_briefing"
             ]
           },
           "inputHash": {

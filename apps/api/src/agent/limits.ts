@@ -13,6 +13,11 @@ export interface AgentLimits {
   maxOutputTokens: number;
   interpretationMaxOutputTokens: number;
   /**
+   * 2026-11-02: ceiling for the one output-cap recovery per run. A call that ends `incomplete` / `max_output_tokens` (hidden
+   * reasoning counts against the cap) is re-sent once with the cap doubled, at most this value.
+   */
+  maxOutputTokensCeiling: number;
+  /**
    * Sent as `reasoning.effort` on every Spark call. Default "low" when AGENT_REASONING_EFFORT is unset or invalid:
    * verified live 2026-10-30 that muse-spark-1.3 otherwise reasons at "high", and hidden reasoning tokens count
    * against max_output_tokens (a 200-token cap ended `incomplete` with only a reasoning item). At "low" the observed
@@ -31,8 +36,11 @@ export const DEFAULT_LIMITS: AgentLimits = {
   maxWonderEscalations: 1,
   maxRepairAttempts: 2,
   wonderEnabled: false,
-  maxOutputTokens: 3000,
-  interpretationMaxOutputTokens: 1200,
+  // 2026-11-02: raised from 3000/1200 after live synthesis passes spent 1,927 and 2,624 of 3,000 tokens on hidden reasoning
+  // and ended incomplete (docs/research/ASSISTANT_FARM_BRIEFING_SPEC.md section 1).
+  maxOutputTokens: 6000,
+  interpretationMaxOutputTokens: 2000,
+  maxOutputTokensCeiling: 16000,
   reasoningEffort: "low",
   rainHorizonDays: 7,
   turnsPerMinute: 20,
@@ -58,6 +66,7 @@ export function loadAgentLimits(env: Record<string, string | undefined> = proces
     wonderEnabled: env.AGENT_WONDER_ENABLED === "true",
     maxOutputTokens: pick(posInt, "AGENT_MAX_OUTPUT_TOKENS", DEFAULT_LIMITS.maxOutputTokens),
     interpretationMaxOutputTokens: pick(posInt, "AGENT_INTERPRETATION_MAX_OUTPUT_TOKENS", DEFAULT_LIMITS.interpretationMaxOutputTokens),
+    maxOutputTokensCeiling: pick(posInt, "AGENT_MAX_OUTPUT_TOKENS_CEILING", DEFAULT_LIMITS.maxOutputTokensCeiling),
     reasoningEffort: effort === "minimal" || effort === "low" || effort === "medium" || effort === "high" || effort === "max" ? effort : DEFAULT_LIMITS.reasoningEffort,
     rainHorizonDays: pick(posInt, "AGENT_RAIN_HORIZON_DAYS", DEFAULT_LIMITS.rainHorizonDays),
     turnsPerMinute: pick(posInt, "ASSISTANT_TURNS_PER_MINUTE", DEFAULT_LIMITS.turnsPerMinute),

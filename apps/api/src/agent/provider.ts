@@ -44,6 +44,8 @@ export interface ProviderFailure {
   outcomeUncertain: boolean;
   requestId: string | null;
   retries: number;
+  /** 2026-11-02: the provider's incomplete_details.reason when a response ended `incomplete` (e.g. max_output_tokens). */
+  incompleteReason?: string | null | undefined;
 }
 export type ProviderOutcome = { ok: true; result: TextResult } | { ok: false; error: ProviderFailure };
 
@@ -88,7 +90,7 @@ export class MetaProvider implements TextModelProvider {
       if (e instanceof MetaError) {
         const code: ProviderErrorCode =
           e.kind === "provider_unavailable" || e.kind === "unauthorized" ? "provider_unavailable" : e.kind === "timeout" ? "timeout" : e.kind === "aborted" ? "aborted" : e.kind === "rate_limited" ? "rate_limited" : e.kind === "bad_request" ? "bad_request" : "provider_error";
-        return { ok: false, error: { code, message: redactSecrets(e.message, this.apiKey), retryable: e.retryable, outcomeUncertain: e.outcomeUncertain, requestId: e.requestId, retries: e.retries } };
+        return { ok: false, error: { code, message: redactSecrets(e.message, this.apiKey), retryable: e.retryable, outcomeUncertain: e.outcomeUncertain, requestId: e.requestId, retries: e.retries, incompleteReason: e.info.incompleteReason ?? null } };
       }
       return { ok: false, error: { code: "provider_error", message: redactSecrets(String((e as Error).message ?? e).slice(0, 200), this.apiKey), retryable: false, outcomeUncertain: true, requestId: null, retries: 0 } };
     }

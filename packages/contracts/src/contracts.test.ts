@@ -12,6 +12,7 @@ import {
   StructuredAssistantOutput,
   ToolName,
   ToolSchemas,
+  Unit,
   ValueRecord,
   VisualAsset,
   apiEnvelope,
@@ -273,9 +274,37 @@ describe('EvidenceRecord', () => {
 });
 
 describe('Tools and structured assistant output', () => {
-  it('defines exactly the 12 BUILD_SPEC tools with input and output schemas', () => {
+  it('defines the 12 BUILD_SPEC tools plus get_farm_briefing with input and output schemas', () => {
     expect(Object.keys(ToolSchemas).sort()).toEqual([...ToolName.options].sort());
-    expect(ToolName.options).toHaveLength(12);
+    expect(ToolName.options).toHaveLength(13);
+    expect(ToolName.options).toContain('get_farm_briefing');
+  });
+  it('get_farm_briefing: input is {farmId} only; output quantities are unit records with contract units', () => {
+    expect(ToolSchemas.get_farm_briefing.input.safeParse({ farmId: 'synthetic-farm' }).success).toBe(true);
+    expect(ToolSchemas.get_farm_briefing.input.safeParse({ farmId: 'synthetic-farm', ownerId: 'x' }).success).toBe(false);
+    expect(ToolSchemas.get_farm_briefing.input.safeParse({}).success).toBe(false);
+    const q = (value: number, unit: string) => ({ value, unit });
+    const day = (date: string) => ({ date, rainMm: q(4.2, 'mm'), tMinC: q(21, 'celsius'), tMaxC: q(29, 'celsius') });
+    const briefing = {
+      asOf: '2026-11-02T10:00:00.000Z', today: '2026-11-02',
+      farm: { districtId: 'IN-KA-hassan', districtName: 'Hassan', stateId: 'KA', stateName: 'Karnataka', area: q(0.16, 'ha'), waterCategory: 'rainfed', labour: null, budget: null },
+      cycle: null,
+      weather: { source: 'Open-Meteo', issuedAt: null, observed: [day('2026-11-01')], forecast: [day('2026-11-03')], rainLast7Days: q(12, 'mm'), rainNext7Days: q(30, 'mm') },
+      satellite: { latestDate: '2026-10-30', ndvi: q(0.41, 'index'), neighbourhoodNdvi: null, typicalRange: { value: { low: 0.3, high: 0.6 }, unit: 'index' }, verdict: 'near_typical', clearShare: q(92, 'percent'), previous: null, indices: [{ name: 'NDMI', mean: q(0.1, 'index') }], source: 'Sentinel-2' },
+      alerts: [], steps: { nextAction: null, upcoming: [] }, price: null,
+      economics: { carbon: { status: 'available', reason: null, emissionsForField: { value: { low: 0.4, high: 0.9 }, unit: 'tCO2e' }, largestTerm: null, limitations: [] }, energy: { status: 'partial', reason: null, inputEnergyForField: { value: { low: 2, central: 3, high: 4 }, unit: 'GJ' }, residueEnergyForField: null, limitations: [] } },
+      soil: { status: 'ready', samples: [], readings: [{ parameter: 'ph', label: 'pH', measured: q(6.4, 'pH'), rating: 'neutral', status: 'rated', assumption: null }, { parameter: 'electrical_conductivity', label: 'EC', measured: q(0.2, 'dS/m'), rating: 'normal', status: 'rated', assumption: null }, { parameter: 'zinc', label: 'Zn', measured: q(1.1, 'ppm'), rating: 'sufficient', status: 'rated', assumption: null }, { parameter: 'iron', label: 'Fe', measured: q(5, 'mg/kg'), rating: 'sufficient', status: 'rated', assumption: null }], facts: [], narrative: null, narrativeOrigin: null, ratedFor: { currentCrop: null, nextCrop: null } },
+      plans: null, cropFit: null, journal: null, limitations: [],
+    };
+    roundTrip(ToolSchemas.get_farm_briefing.output, briefing);
+    expect(ToolSchemas.get_farm_briefing.output.safeParse({ ...briefing, farm: { ...briefing.farm, area: 0.16 } }).success).toBe(false);
+    expect(ToolSchemas.get_farm_briefing.output.safeParse({ ...briefing, farm: { ...briefing.farm, area: q(0.16, 'bigha') } }).success).toBe(false);
+    expect(ToolSchemas.get_farm_briefing.output.safeParse({ ...briefing, farmName: 'Hassan field' }).success).toBe(false);
+    expect(ToolSchemas.get_farm_briefing.output.safeParse({ ...briefing, farm: { ...briefing.farm, lat: 13.0 } }).success).toBe(false);
+  });
+  it('Unit carries the briefing units', () => {
+    for (const u of ['index', 'GJ', 'kgCO2e', 'tCO2e', 'pH', 'dS/m', 'ppm', 'mg/kg', 'mm/week']) expect(Unit.safeParse(u).success, u).toBe(true);
+    expect(Unit.safeParse('NDVI').success).toBe(false);
   });
   it('tool inputs never accept ownerId or mode', () => {
     expect(ToolSchemas.get_farm_context.input.safeParse({ farmId: 'synthetic-farm' }).success).toBe(true);
@@ -320,8 +349,8 @@ describe('Job state machine', () => {
 });
 
 describe('registry', () => {
-  it('exports every top-level contract plus 24 tool schemas', () => {
-    expect(Object.keys(PUBLIC_CONTRACTS).filter((k) => k.startsWith('tool.'))).toHaveLength(24);
+  it('exports every top-level contract plus 26 tool schemas', () => {
+    expect(Object.keys(PUBLIC_CONTRACTS).filter((k) => k.startsWith('tool.'))).toHaveLength(26);
     for (const [k, v] of Object.entries(PUBLIC_CONTRACTS)) expect(v, k).toBeDefined();
   });
 });

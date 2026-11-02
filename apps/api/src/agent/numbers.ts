@@ -7,6 +7,7 @@ import {
   HI_FRACTION_WORDS,
   HI_MODIFIERS,
   HI_NUMBER_WORDS,
+  INDEX_NAMES,
   INDIC_SCRIPT,
   LONE_MAGNITUDE_EXCLUDE,
   MULTIPLIERS,
@@ -115,7 +116,7 @@ export function unsupportedNumberWord(text: string): string | null {
  */
 const SHORT_WORD_OK = new Set(["kg", "kgs", "mm", "ha", "cm", "ml", "l", "g", "t", "m", "per", "a", "an", "of", "the", "in", "to", "or", "and", "by", "at", "on", "for", "its", "our", "my", "few", "any", "all", "no", "not", "how", "net", "is", "are", "was", "as", "be", "rs", "inr", "qtl", "har", "ke", "ki", "ka", "se", "me", "pe"]);
 /** Units for the short-word rule: mass, volume, area, length and currency (not days/weeks/months/%/°C, which follow ordinary words). */
-const SHORT_QTY_UNIT_RE = new RegExp(`^\\s*(?:${Object.entries(UNIT_TERMS).filter(([k]) => !["days", "weeks", "months", "celsius", "percent"].includes(k)).map(([, v]) => termSource(v)).join("|")}|${termSource(CURRENCY_WORD)})`, "iu");
+const SHORT_QTY_UNIT_RE = new RegExp(`^\\s*(?:${Object.entries(UNIT_TERMS).filter(([k]) => !["days", "weeks", "months", "celsius", "percent", "index", "pH"].includes(k)).map(([, v]) => termSource(v)).join("|")}|${termSource(CURRENCY_WORD)})`, "iu");
 /** The word is itself a unit, currency or multiplier word ("mm", "cc", "Rs"). */
 function ownQuantityWord(self: string, word: string): boolean {
   return [ANY_UNIT_RE.exec(self), ANY_MULT_RE.exec(self), CUR_PREFIX_START.exec(self)].some((x) => x !== null && x[0].trim().length >= word.length);
@@ -435,6 +436,8 @@ export function normaliseForChecks(input: string, o: { englishDates: boolean }):
     t = t.replace(/(^|\n)\s*\d{1,2}[.)]\s/g, "$1 ");
   }
   t = t.replace(/(?<![\p{L}\p{M}])m3(?![\p{L}\p{M}\p{N}])/gu, "m³");
+  // 2026-11-02 (farm briefing): the chemical formula CO2 (kg CO2e, tCO2e) is a unit, not the number 2.
+  t = t.replace(/(?<![\p{L}\p{M}])((?:kg|t)\s?)?co2(?=(?:-?e(?:q)?)?(?![\p{L}\p{M}\p{N}]))/giu, (_m, pre: string | undefined) => `${pre ?? ""}CO₂`);
   t = englishQuantityPhrases(t);
   t = wordsToDigits(t);
   // Digits glued to letters ("Rs500", "500kg", "INR2,000") are separated so they are always counted.
@@ -487,12 +490,17 @@ const CUR_PREFIX_END = endRe(termSource(CURRENCY_PREFIX));
 const CUR_PREFIX_START = new RegExp(`^${termSource(CURRENCY_PREFIX)}`, "iu");
 const CUR_WORD_START = startRe(termSource(CURRENCY_WORD));
 const within = (key: string) => new RegExp(termSource(UNIT_TERMS[key]!), "iu");
+// Review nit (a): before the number only a named index (NDVI, NDMI ... optionally followed by "index") or pH counts; the bare
+// word "index" counts only after the number (UNIT_TERMS.index), so "forecast index of 3" is not an index reading.
+const nameBefore = (src: string) => new RegExp(`${src}(?:\\s+(?:reading|value|mean|level|score))?(?:\\s+(?:of|was|is|at|around|about|near|reads))?[\\s:=(]*$`, "iu");
+const NAME_BEFORE: Record<string, RegExp> = { index: nameBefore(`${termSource(INDEX_NAMES)}(?:\\s+ind(?:ex|ices))?`), pH: nameBefore(termSource(UNIT_TERMS.pH!)) };
 
 /** Canonical unit stated directly next to the number, or null. Currency counts as "INR". */
 export function unitAt(tok: NumberToken): string | null {
   if (CUR_PREFIX_END.test(tok.prefix) || CUR_WORD_START.test(tok.suffix)) return "INR";
   // Longer unit names first so "mm" wins over "m" and "kg" over "g".
-  for (const k of ["mm", "ml", "cm", "m3", "kg", "quintal", "acre", "ha", "days", "weeks", "months", "celsius", "percent", "spoon", "L", "g", "t", "m"]) {
+  // 2026-11-02: briefing units first where they share a prefix with an older unit (mm/week before mm, kgCO2e before kg, tCO2e before t).
+  for (const k of ["mm/week", "mg/kg", "dS/m", "kgCO2e", "tCO2e", "ppm", "GJ", "pH", "index", "mm", "ml", "cm", "m3", "kg", "quintal", "acre", "ha", "days", "weeks", "months", "celsius", "percent", "spoon", "L", "g", "t", "m"]) {
     if (UNIT_START[k]!.test(tok.suffix)) return k;
   }
   return null;
@@ -517,6 +525,10 @@ export function unitAdjacent(tok: NumberToken, unit: string): boolean {
     case "kg/ha":
     case "kg/acre":
       return UNIT_START.kg!.test(tok.suffix) && within(unit.slice(3)).test(around);
+    // 2026-11-02: an index name or pH may stand before the number ("NDVI 0.62", "NDVI of 0.62", "pH 6.4") or after it.
+    case "index":
+    case "pH":
+      return (UNIT_START[unit]!.test(tok.suffix) && unitAt(tok) === unit) || NAME_BEFORE[unit]!.test(tok.prefix);
     default:
       return UNIT_START[unit] ? UNIT_START[unit]!.test(tok.suffix) && unitAt(tok) === unit : new RegExp(`^\\s*${unit.replace(/[.*+?^${}()|[\]\\/]/g, "\\$&")}`, "iu").test(tok.suffix);
   }

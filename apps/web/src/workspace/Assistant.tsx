@@ -6,8 +6,11 @@ import { AiSpark } from "./ui/AiSpark";
 import { useWorkspace } from "./state";
 import { postTurn } from "../features/ask/askApi";
 import {
+  ASSISTANT_PROMPTS,
   askErrorMessage,
+  assistantWelcomeText,
   provenanceLabel,
+  turnAnswerText,
   type AskLanguage,
   type TurnResult,
   wasWithheld,
@@ -160,10 +163,7 @@ export function Assistant() {
         newEntryId("chat"),
       );
       if (!active()) return;
-      const answer =
-        result.answerBlocks.map((b) => b.text).join("\n\n") ||
-        result.clarifications.map((c) => c.question).join("\n") ||
-        "I couldn't produce a checked answer from the available information.";
+      const answer = turnAnswerText(result);
       const next: Message[] = [
         ...previous,
         { role: "user", text: question },
@@ -215,21 +215,11 @@ export function Assistant() {
                 <Evara size={61} />
                 <h3>Hi, I'm Evara.</h3>
               </div>
-              <p>
-                Finish your farm boundary and I'll help prefill its location,
-                name, and area. Review my suggestions, then let's plan what
-                comes next.
-              </p>
+              <p>{assistantWelcomeText(s.farm()?.name)}</p>
             </div>
             <Show when={!messages().length}>
               <div class="assistant-prompts">
-                <For
-                  each={[
-                    "What should I plant next?",
-                    "Review my farm's weather and market outlook",
-                    "Help me compare crops for this season",
-                  ]}
-                >
+                <For each={ASSISTANT_PROMPTS}>
                   {(q) => (
                     <button onClick={() => void send(q)}>
                       {q}

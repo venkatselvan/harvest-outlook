@@ -191,6 +191,11 @@ export async function runAgentTurn(deps: AgentDeps, input: AgentTurnInput): Prom
   let escalations = 0;
   let repairs = 0;
   let chainRecoveries = 0;
+  let capRecoveries = 0;
+  /** 2026-11-02: the stored farm briefing of this run (server-initiated once per farm turn). */
+  let briefingToolResultId: string | null = null;
+  /** The model-visible view of that stored briefing; a repeat call by the model in a tool round gets this view back. */
+  let briefingView: string | null = null;
   let chainTokens = 0;
   const toolResultIds: string[] = [];
   const responseIds: string[] = [];
@@ -248,7 +253,21 @@ export async function runAgentTurn(deps: AgentDeps, input: AgentTurnInput): Prom
           trace.add("budget", { pass, detail: { action: "reservation_update_failed", error: (e as Error).name } });
         }
       }
-      trace.add("provider_error", { pass, model: req.model, requestId: f.requestId, retries: f.retries, detail: { code: f.code, message: f.message } });
+      trace.add("provider_error", { pass, model: req.model, requestId: f.requestId, retries: f.retries, detail: { code: f.code, message: f.message, ...(f.incompleteReason ? { incompleteReason: f.incompleteReason } : {}) } });
+      // 2026-11-02 (ASSISTANT_FARM_BRIEFING_SPEC.md 2.4): hidden reasoning counts against max_output_tokens; live synthesis passes
+      // ended `incomplete` after 1,927 and 2,624 reasoning tokens of a 3,000 cap. Recover once per run: re-send the same request
+      // (same input and previousResponseId) with the cap doubled, at most the ceiling, under a new budget reservation (the first
+      // one stays marked uncertain above). A second overflow fails the run with reason max_output_tokens.
+      if (f.incompleteReason === "max_output_tokens") {
+        const ceiling = limits.maxOutputTokensCeiling ?? 16000;
+        if (capRecoveries < 1 && req.maxOutputTokens < ceiling) {
+          capRecoveries++;
+          const toTokens = Math.min(req.maxOutputTokens * 2, ceiling);
+          trace.add("cap_recovery", { pass, model: req.model, detail: { pass, fromTokens: req.maxOutputTokens, toTokens } });
+          return call(pass, { ...req, maxOutputTokens: toTokens }, opts);
+        }
+        throw new Stop("failed", "max_output_tokens", "The model ran out of output tokens before finishing the answer");
+      }
       // L5: observed live once (2026-10-30): a chained call failed with HTTP 400 "referenced response not found or
       // expired" 3 s after the referenced response was created (not deleted by us). Recover once per run by
       // re-sending the same pass unchained, with the request context and every stored tool result as text.
@@ -291,6 +310,7 @@ export async function runAgentTurn(deps: AgentDeps, input: AgentTurnInput): Prom
       runtimeMode: input.mode, farmId: input.farmId ?? null, planId: input.planId ?? null, selectedDate: input.selectedDate ?? null, scenarioId: input.scenarioId ?? null, today: asOf.slice(0, 10),
       ...(selectedFarmProvenance ? { selectedFarmProvenance } : {}),
       ...(productResolutions.size > 0 ? { productResolution: [...productResolutions.values()] } : {}),
+      ...(briefingToolResultId ? { briefingToolResultId } : {}),
     };
     return `<farmer_input language="${input.language}">\n${input.text}\n</farmer_input>\n<request_context>${JSON.stringify(rc)}</request_context>` + (profile ? `\n<interpretation>${JSON.stringify(profile)}</interpretation>` : "");
   };
@@ -345,13 +365,30 @@ export async function runAgentTurn(deps: AgentDeps, input: AgentTurnInput): Prom
     }
     void interpResponseId;
 
+    // ------------------------------------------------------------ server-initiated farm briefing (2026-11-02)
+    // Every turn with a selected farm gets the farm's current state (crop and stage, weather, satellite, alerts, steps, prices,
+    // returns, soil, plans, journal) composed by code, before any tool round, so it reaches synthesis in every path. It is not
+    // counted against the model's tool-call allowance. Replay never advertises it (it reads present-day data).
+    const advertised = registry.advertisedFor(input.mode);
+    let briefingMessage: InputItem | null = null;
+    if (farmUuid && advertised.some((t) => t.name === "get_farm_briefing")) {
+      if (deps.signal?.aborted) throw new Stop("cancelled", "cancelled", "Request cancelled");
+      const callId = "server_get_farm_briefing_1";
+      const view = await executeCall("get_farm_briefing", JSON.stringify({ farmId: farmUuid }), callId);
+      briefingView = view;
+      serverInitiated.push("get_farm_briefing");
+      briefingToolResultId = toolResultIds[toolResultIds.length - 1] ?? null;
+      trace.add("server_initiated_tool", { pass: "tool_round", detail: { tool: "get_farm_briefing", reason: "farm_selected", callId, toolResultId: briefingToolResultId } });
+      briefingMessage = userMsg(`<server_initiated_tool_result tool="get_farm_briefing" reason="the selected farm's current state">\n${view}\n</server_initiated_tool_result>`);
+    }
+    const briefingMsgs = briefingMessage ? [briefingMessage] : [];
+
     // ------------------------------------------------------------ tool phase
     let lastResponseId: string | undefined;
     let pendingOutputs: InputItem[] = [];
-    const advertised = registry.advertisedFor(input.mode);
     const skipTools = profile!.intent === "clarification_needed" || profile!.intent === "out_of_scope" || advertised.length === 0;
     if (!skipTools) {
-      let toolInput: InputItem[] = [userMsg(contextMessage())];
+      let toolInput: InputItem[] = [userMsg(contextMessage()), ...briefingMsgs];
       let prev: string | undefined;
       for (let round = 1; ; round++) {
         const r = await call("tool_round", {
@@ -380,6 +417,13 @@ export async function runAgentTurn(deps: AgentDeps, input: AgentTurnInput): Prom
         let hitCallCeiling = false;
         for (const c of r.functionCalls) {
           if (deps.signal?.aborted) throw new Stop("cancelled", "cancelled", "Request cancelled");
+          // Review nit (c), 2026-11-02: a repeat get_farm_briefing call for the selected farm gets the stored server result view
+          // (same toolResultId); it is not run again and not counted as a tool call. Another farm id runs normally (owner-checked).
+          if (c.name === "get_farm_briefing" && briefingView !== null && sameFarmArg(c.arguments, farmUuid)) {
+            trace.add("tool_call", { pass: "tool_round", detail: { tool: "get_farm_briefing", callId: c.callId, status: "reused", toolResultId: briefingToolResultId } });
+            outputs.push({ type: "function_call_output", call_id: c.callId, output: briefingView });
+            continue;
+          }
           if (toolCalls >= limits.maxToolCalls) {
             hitCallCeiling = true;
             trace.add("ceiling_refused", { pass: "tool_round", detail: { ceiling: "tool_calls", limit: limits.maxToolCalls, refusedCall: c.name } });
@@ -491,7 +535,8 @@ export async function runAgentTurn(deps: AgentDeps, input: AgentTurnInput): Prom
     );
     let prevId: string | undefined = lastResponseId;
     const serverMsgs = serverToolMessage ? [serverToolMessage] : [];
-    let nextInput: InputItem[] = skipTools || !prevId ? [userMsg(contextMessage()), ...serverMsgs, synthesisMessage] : [...pendingOutputs, ...serverMsgs, synthesisMessage];
+    // The briefing travels in the chain when tool rounds ran; otherwise it is sent with the context here.
+    let nextInput: InputItem[] = skipTools || !prevId ? [userMsg(contextMessage()), ...briefingMsgs, ...serverMsgs, synthesisMessage] : [...pendingOutputs, ...serverMsgs, synthesisMessage];
     let pass: AgentPass = "synthesis";
     let model = profile!.needsEscalation && canEscalate() ? models.escalation : models.text;
     if (model === models.escalation) {
@@ -620,7 +665,9 @@ export async function runAgentTurn(deps: AgentDeps, input: AgentTurnInput): Prom
   if (templateUsed) spokenNotices.push(TEMPLATE_LIMITATION[templateLanguage(input.language)]);
   if (templateUsed) limitations.push(TEMPLATE_LIMITATION[templateLanguage(input.language)]);
   if (final && final.gate.report.groundedEvidenceIds.length > 0) limitations.push("Some cited evidence is a machine-grounded excerpt; human review of its meaning and scope is pending.");
-  const incomplete = status === "approved" ? undefined : (final?.gate.incomplete ?? (stop ? { reasons: [stop.code] } : useGate?.incomplete ?? { reasons: ["no_verified_answer"] }));
+  let incomplete = status === "approved" ? undefined : (final?.gate.incomplete ?? (stop ? { reasons: [stop.code] } : useGate?.incomplete ?? { reasons: ["no_verified_answer"] }));
+  // 2026-11-02: an output-cap failure is always named, so the panel can say the answer ran out of room.
+  if (incomplete && stop?.code === "max_output_tokens" && !incomplete.reasons.includes("max_output_tokens")) incomplete = { reasons: [...incomplete.reasons, "max_output_tokens"] };
   if (incomplete && status !== "approved") {
     limitations.push(WITHHELD_LIMITATION.en);
     spokenNotices.push(WITHHELD_LIMITATION[templateLanguage(input.language)]);
@@ -706,4 +753,14 @@ export async function runAgentTurn(deps: AgentDeps, input: AgentTurnInput): Prom
     )
     .catch(() => undefined);
   return result;
+}
+
+/** True when a get_farm_briefing argument string names the given farm (anything unparsable is false). */
+function sameFarmArg(rawArgs: string, farmId: string | null | undefined): boolean {
+  if (!farmId) return false;
+  try {
+    return (JSON.parse(rawArgs) as { farmId?: unknown } | null)?.farmId === farmId;
+  } catch {
+    return false;
+  }
 }

@@ -20,7 +20,9 @@ export const LITRES_PER_MM_HA = new Decimal(10000);
 /** Calendar months are not a fixed length: 365.25 / 12 days, usable only with approximate: true. */
 export const DAYS_PER_MONTH_APPROX = new Decimal('30.4375');
 
-export type Dimension = 'length' | 'area' | 'mass' | 'currency' | 'price_per_mass' | 'cost_per_area' | 'depth' | 'volume' | 'yield' | 'time' | 'temperature' | 'ratio';
+export type Dimension = 'length' | 'area' | 'mass' | 'currency' | 'price_per_mass' | 'cost_per_area' | 'depth' | 'volume' | 'yield' | 'time' | 'temperature' | 'ratio'
+  // 2026-11-02 (farm briefing units): each has its own dimension, so none converts to another (ppm and mg/kg are kept apart).
+  | 'index' | 'energy' | 'emissions' | 'acidity' | 'conductivity' | 'ppm' | 'mass_fraction' | 'depth_rate';
 
 /** Each unit: dimension and factor to the canonical unit of that dimension. */
 const UNIT_TABLE: Record<Unit, { dim: Dimension; toCanonical: Decimal }> = {
@@ -45,6 +47,15 @@ const UNIT_TABLE: Record<Unit, { dim: Dimension; toCanonical: Decimal }> = {
   cm: { dim: 'length', toCanonical: new Decimal('0.01') },
   g: { dim: 'mass', toCanonical: new Decimal('0.001') },
   months: { dim: 'time', toCanonical: DAYS_PER_MONTH_APPROX },
+  index: { dim: 'index', toCanonical: new Decimal(1) },
+  GJ: { dim: 'energy', toCanonical: new Decimal(1) },
+  kgCO2e: { dim: 'emissions', toCanonical: new Decimal(1) },
+  tCO2e: { dim: 'emissions', toCanonical: KG_PER_TONNE },
+  pH: { dim: 'acidity', toCanonical: new Decimal(1) },
+  'dS/m': { dim: 'conductivity', toCanonical: new Decimal(1) },
+  ppm: { dim: 'ppm', toCanonical: new Decimal(1) },
+  'mg/kg': { dim: 'mass_fraction', toCanonical: new Decimal(1) },
+  'mm/week': { dim: 'depth_rate', toCanonical: new Decimal(1) },
 };
 
 export const CANONICAL_UNIT: Record<Dimension, Unit> = {
@@ -60,6 +71,14 @@ export const CANONICAL_UNIT: Record<Dimension, Unit> = {
   temperature: 'celsius',
   ratio: 'percent',
   length: 'm',
+  index: 'index',
+  energy: 'GJ',
+  emissions: 'kgCO2e',
+  acidity: 'pH',
+  conductivity: 'dS/m',
+  ppm: 'ppm',
+  mass_fraction: 'mg/kg',
+  depth_rate: 'mm/week',
 };
 
 export class UnitError extends Error {

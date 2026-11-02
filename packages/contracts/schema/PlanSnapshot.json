@@ -283,7 +283,16 @@
                       "m",
                       "cm",
                       "g",
-                      "months"
+                      "months",
+                      "index",
+                      "GJ",
+                      "kgCO2e",
+                      "tCO2e",
+                      "pH",
+                      "dS/m",
+                      "ppm",
+                      "mg/kg",
+                      "mm/week"
                     ]
                   }
                 },
@@ -513,7 +522,16 @@
                       "m",
                       "cm",
                       "g",
-                      "months"
+                      "months",
+                      "index",
+                      "GJ",
+                      "kgCO2e",
+                      "tCO2e",
+                      "pH",
+                      "dS/m",
+                      "ppm",
+                      "mg/kg",
+                      "mm/week"
                     ]
                   }
                 },
@@ -1109,7 +1127,16 @@
                           "m",
                           "cm",
                           "g",
-                          "months"
+                          "months",
+                          "index",
+                          "GJ",
+                          "kgCO2e",
+                          "tCO2e",
+                          "pH",
+                          "dS/m",
+                          "ppm",
+                          "mg/kg",
+                          "mm/week"
                         ]
                       }
                     },
@@ -1339,7 +1366,16 @@
                           "m",
                           "cm",
                           "g",
-                          "months"
+                          "months",
+                          "index",
+                          "GJ",
+                          "kgCO2e",
+                          "tCO2e",
+                          "pH",
+                          "dS/m",
+                          "ppm",
+                          "mg/kg",
+                          "mm/week"
                         ]
                       }
                     },

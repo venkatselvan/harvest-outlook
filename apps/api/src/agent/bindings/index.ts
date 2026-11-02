@@ -103,7 +103,8 @@ export function allBindings(deps: BindingDeps): ToolBindings {
     extra.request_visual_keyframes = bindVisualKeyframes(d);
   }
   if (deps.journal) Object.assign(extra, journalToolBindings({ pool: deps.pool, service: deps.journal, plans: deps.plans }));
-  return { ...implementedBindings(), ...createToolBindings(deps), ...extra };
+  // 2026-11-02: the farm briefing needs the server config; production passes it through int2.
+  return { ...implementedBindings(deps.int2?.config ? { config: deps.int2.config, budget: deps.budget } : undefined), ...createToolBindings(deps), ...extra };
 }
 
 export { implementedBindings };

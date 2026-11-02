@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { ApiError } from "../../lib/api";
-import { askErrorMessage, clarificationFollowUp, wasWithheld, type TurnResult } from "./model";
+import { ASSISTANT_PROMPTS, askErrorMessage, assistantWelcomeText, clarificationFollowUp, turnAnswerText, wasWithheld, type TurnResult } from "./model";
 
 const base: TurnResult = {
   status: "approved", provenance: "synthetic_fixture", traceId: "t", intent: null, language: "en", gateStatus: "approved", answerBlocks: [], numericRefs: [], claimEvidenceRefs: [],
@@ -37,5 +37,33 @@ describe("clarification follow-up", () => {
   it("keeps the earlier question for a stateless server and stays within the 2000 character body limit", () => {
     expect(clarificationFollowUp("When to plant?", "Which district?", "Hassan")).toContain("When to plant?");
     expect(clarificationFollowUp("q".repeat(1990), "Which?", "x".repeat(50)).length).toBeLessThanOrEqual(2000);
+  });
+});
+
+describe("Evara panel copy", () => {
+  it("welcome names the farm and what Evara will check, without claiming it can see it; without a farm it keeps the boundary text", () => {
+    const withFarm = assistantWelcomeText("Green Acre");
+    expect(withFarm).toContain("Green Acre");
+    for (const part of ["crop and stage", "weather", "satellite greenness", "alerts", "upcoming steps", "prices and expected returns", "soil report", "plans and journal"]) expect(withFarm).toContain(part);
+    expect(withFarm).toContain("wherever they are recorded");
+    expect(withFarm).not.toMatch(/I can see|farm boundary/);
+    for (const none of [null, undefined, "  "]) expect(assistantWelcomeText(none)).toMatch(/^Finish your farm boundary/);
+  });
+  it("lists the 15-day care prompt first", () => {
+    expect(ASSISTANT_PROMPTS[0]).toBe("How should I care for my crop in the next 15 days?");
+    expect(ASSISTANT_PROMPTS.length).toBe(4);
+  });
+  it("a failed empty turn shows the reference, with the ran-out-of-room sentence only for max_output_tokens", () => {
+    const failed: TurnResult = { ...base, status: "failed", traceId: "tr_9", gateStatus: null, incomplete: { reasons: ["provider_error"] } };
+    expect(turnAnswerText(failed)).toBe("I couldn't finish writing that answer (reference tr_9). Please ask again.");
+    expect(turnAnswerText({ ...failed, incomplete: { reasons: ["max_output_tokens"] } })).toBe("I couldn't finish writing that answer (reference tr_9). Please ask again. The answer ran out of room.");
+    expect(turnAnswerText({ ...failed, incomplete: null })).toBe("I couldn't finish writing that answer (reference tr_9). Please ask again.");
+  });
+  it("keeps the generic line for other empty results, and prefers blocks and clarifications over the failure line", () => {
+    expect(turnAnswerText({ ...base, status: "incomplete" })).toBe("I couldn't produce a checked answer from the available information.");
+    const clar = { id: "c", question: "Which plot?", field: null, options: [] };
+    expect(turnAnswerText({ ...base, status: "failed", clarifications: [clar] })).toBe("Which plot?");
+    const block = { text: "Irrigate lightly." } as TurnResult["answerBlocks"][number];
+    expect(turnAnswerText({ ...base, status: "failed", answerBlocks: [block], clarifications: [clar] })).toBe("Irrigate lightly.");
   });
 });
