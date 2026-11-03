@@ -1,7 +1,7 @@
 import { IsoDate, IrrigationCategory } from "@harvest/contracts";
 import { addDays } from "@harvest/domain";
 import type { PlanChange } from "../plans/types";
-import { isPlanField, type PlanField } from "./types";
+import { isIssueField, isPlanField, type PlanField } from "./types";
 
 export type MappingResult =
   | { mapped: false }
@@ -18,10 +18,12 @@ export interface MappingContext {
 
 /**
  * Maps a confirmed fact to the typed plan change it may trigger. Pure and deterministic: the model never
- * supplies the observation date or the change type. Facts on other fields never change a plan.
+ * supplies the observation date or the change type. Facts on other fields (including the issue category suggestion)
+ * never change a plan.
  */
 export function factToPlanChange(fact: { field: string; value: unknown }, ctx: MappingContext): MappingResult {
-  if (!isPlanField(fact.field)) return { mapped: false };
+  // observed_issue / observed_issue_note (FIELD_OPERATIONS_SPEC 5.5) record what was seen; accepting them never touches the plan.
+  if (isIssueField(fact.field) || !isPlanField(fact.field)) return { mapped: false };
   const field = fact.field;
   const bad = (message: string, code: "unknown_stage" | "invalid_value" = "invalid_value"): MappingResult => ({ mapped: true, ok: false, field, code, message });
   if (typeof fact.value !== "string") return bad(`${field} needs a text value`);

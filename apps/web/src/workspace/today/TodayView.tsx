@@ -1,5 +1,6 @@
 import { createEffect, createMemo, createSignal, For, Match, on, onCleanup, Show, Switch, untrack, type JSX } from "solid-js";
-import type { CareTask, FarmAlert, FieldSummary, PricePoint, TodayView as TodayData, UpcomingStep, WeatherPoint } from "@harvest/contracts";
+import type { CareTask, CompleteCheck, FarmAlert, FieldSummary, PricePoint, TodayView as TodayData, UpcomingStep, WeatherPoint } from "@harvest/contracts";
+import { useLocation, useNavigate } from "@solidjs/router";
 import { useWorkspace, today as browserToday, type Field } from "../state";
 import { newEntryId } from "../../features/photo-region/http";
 import { Icon } from "../icons";
@@ -44,6 +45,14 @@ import { TodaySheet, type SheetKind } from "./TodaySheet";
 import TodaySoil, { createSoilCardController, SoilCardContext } from "./TodaySoil";
 import { FieldChips, FieldsLegend, FieldsTable, type FieldChipItem } from "../fields/FieldsToday";
 import { boundsPolygon, defaultPlantField, type FieldCycleLike } from "../fields/fieldsModel";
+import { completeCheck } from "../scouting/scoutingApi";
+import { checkCompletionNotice, clearScoutingDraft, issueFromSearch, runCheckCompletion, withId, withIssueParam, withoutId } from "../scouting/scoutingModel";
+import { scoutingStore } from "../scouting/scoutingStore";
+import { CheckCompleteSheet, checkSlot } from "../scouting/CheckCompleteSheet";
+import { IssueSheet } from "../scouting/IssueSheet";
+import { ISSUES_SECTION_ID, IssuesLine, IssuesSection } from "../scouting/IssuesList";
+import type { FieldOption } from "../scouting/IssueForm";
+import type { Boundary } from "../state";
 import "./today.css";
 
 /** `fieldId` is the field the request asked for (null: no field, the farm view or the "All fields" overview). */
@@ -155,6 +164,11 @@ export function TodayView(props: TodayViewProps) {
   const [dismissed, setDismissed] = createSignal<ReadonlySet<string>>(new Set());
   const [alertError, setAlertError] = createSignal("");
   const [sheet, setSheet] = createSignal<SheetKind | null>(null);
+  /** Field operations (FIELD_OPERATIONS_SPEC.md 4, 5): the check being completed, and a reload counter for the issue list. */
+  const [checkStep, setCheckStep] = createSignal<UpcomingStep | null>(null);
+  const [issuesReload, setIssuesReload] = createSignal(0);
+  const location = useLocation();
+  const navigate = useNavigate();
   /** Play the season (spec section 10.1 item 6): one day per 120 ms to the end; any slider interaction pauses. */
   const [playing, setPlaying] = createSignal(false);
   /** "Predict with AI" (spec 11.4): the request in flight or its last message, keyed to the farm and field it was made on. */
@@ -226,6 +240,7 @@ export function TodayView(props: TodayViewProps) {
       player.stop();
       setPick(null);
       setSheet(null);
+      setCheckStep(null);
       setPredicting(null);
       pendingRefreshes = 0;
       if (farmChanged) {
@@ -495,6 +510,50 @@ export function TodayView(props: TodayViewProps) {
     }
   }
 
+  // ---------------------------------------------------------------- field checks and issues (FIELD_OPERATIONS_SPEC.md 4, 5)
+  /** The workspace fields as issue-form choices (name and polygon, for the location checks). */
+  const fieldOptions = (): FieldOption[] => workspaceFields().map((f) => ({ id: f.id, name: f.name, boundary: f.boundary }));
+  const formToday = () => view()?.today ?? browserToday();
+  /** `?issue=<id>` opens the issue sheet (a deep link, a list row, a recheck step); closing it removes the parameter. */
+  const issueParam = () => issueFromSearch(location.search);
+  const setIssueParam = (issueId: string | null) => navigate(withIssueParam(location.pathname, location.search, issueId), { replace: true });
+  const scoutingChanged = () => {
+    setIssuesReload((n) => n + 1);
+    const target = farmId();
+    if (target) reloadQuiet(target, s.sessionEpoch());
+  };
+  /**
+   * A field check's completion, optimistic like a care task: the step shows Done at once and rolls back when the server
+   * refuses or cannot be reached (the sheet's draft stays on the device, so reopening Done restores it).
+   */
+  async function completeFieldCheck(step: UpcomingStep, body: CompleteCheck) {
+    const target = farmId(),
+      epoch = s.sessionEpoch();
+    if (!target || busyStep()) return;
+    setCheckStep(null);
+    setBusyStep(step.id);
+    setStepError("");
+    const outcome = await runCheckCompletion(body, {
+      mark: () => setCompleted((previous) => withId(previous, step.id)),
+      unmark: () => {
+        if (!stale(target, epoch)) setCompleted((previous) => withoutId(previous, step.id));
+      },
+      send: (payload) => completeCheck(target, payload),
+      clearDraft: () => clearScoutingDraft(scoutingStore(), "check", target, checkSlot(body.checkId), body.clientEntryId),
+    });
+    if (stale(target, epoch)) return;
+    setBusyStep("");
+    if (outcome.ok) {
+      s.setNotice(checkCompletionNotice(outcome.result));
+      scoutingChanged();
+    } else setStepError(`Could not record "${step.title}". ${outcome.error.message}${outcome.kept ? ` ${outcome.kept}.` : " Your answers are kept; tap Done to try again."}`);
+  }
+  const showIssues = () => {
+    const node = document.getElementById(ISSUES_SECTION_ID);
+    node?.scrollIntoView({ block: "start", behavior: "smooth" });
+    node?.focus({ preventScroll: true });
+  };
+
   const showStep = (alert: FarmAlert) => {
     const step = steps().find((item) => item.alertId === alert.id);
     const node = step ? document.getElementById(stepDomId(step.id)) : null;
@@ -516,6 +575,7 @@ export function TodayView(props: TodayViewProps) {
         error={alertError()}
         fieldView={hasFields()}
       />
+      <IssuesLine issues={current.issues} onShow={showIssues} />
       <Show when={current.cycle}>
         <UpcomingSteps
           steps={steps()}
@@ -525,8 +585,20 @@ export function TodayView(props: TodayViewProps) {
           onDone={(step) => void markDone(step)}
           error={stepError()}
           sources={props.data()?.sources}
+          onCheck={(step) => setCheckStep(step)}
+          onOpenIssue={(issueId) => setIssueParam(issueId)}
         />
       </Show>
+      <IssuesSection
+        farmId={current.farmId}
+        fieldId={hasFields() ? (selectedId() ?? null) : null}
+        fields={fieldOptions()}
+        farmBoundary={farmBoundary() as Boundary | null}
+        today={current.today}
+        onOpenIssue={(issueId) => setIssueParam(issueId)}
+        onChanged={scoutingChanged}
+        reloadKey={issuesReload()}
+      />
     </div>
   );
 
@@ -697,6 +769,32 @@ export function TodayView(props: TodayViewProps) {
       </Switch>
       <Show when={sheet() && view()}>
         <TodaySheet kind={sheet()!} view={view()!} date={date()} price={price()} weather={weather()} onClose={() => setSheet(null)} />
+      </Show>
+      <Show when={checkStep() && farmId() ? { step: checkStep()!, farmId: farmId()! } : null}>
+        {(open) => (
+          <CheckCompleteSheet
+            farmId={open().farmId}
+            step={open().step}
+            today={formToday()}
+            fields={fieldOptions()}
+            farmBoundary={farmBoundary() as Boundary | null}
+            onSubmit={(body) => void completeFieldCheck(open().step, body)}
+            onIssueCreated={() => setIssuesReload((n) => n + 1)}
+            onClose={() => setCheckStep(null)}
+          />
+        )}
+      </Show>
+      <Show when={issueParam() && farmId() ? `${farmId()}|${issueParam()}` : null} keyed>
+        {(key) => (
+          <IssueSheet
+            farmId={key.split("|")[0]!}
+            issueId={key.split("|")[1]!}
+            today={formToday()}
+            fieldName={(id) => fieldNamed(id)}
+            onChanged={scoutingChanged}
+            onClose={() => setIssueParam(null)}
+          />
+        )}
       </Show>
     </div>
     </SoilCardContext.Provider>

@@ -47,7 +47,7 @@ import {
   words,
   yieldBasisWords,
 } from "./model";
-import { priceGapText, trendText, verdictLabel, weatherBasis, weatherKindLabel, type CardKind } from "./TodayCards";
+import { agroKindNote, AGRO_LABEL, priceGapText, trendText, verdictLabel, weatherAgroFacts, weatherBasis, weatherKindLabel, type CardKind } from "./TodayCards";
 
 export type SheetKind = CardKind | "about" | "curve";
 
@@ -710,6 +710,14 @@ export function TodaySheetBody(props: Omit<TodaySheetProps, "onClose">) {
             {props.weather!.rainMm ?? "–"} mm rain.
           </p>
           <p>{weatherBasis(props.weather)}</p>
+          <Show when={weatherAgroFacts(props.weather).length}>
+            <p data-testid="today-agro-detail">
+              {weatherAgroFacts(props.weather)
+                .map((fact) => fact.spoken)
+                .join("; ")}
+              . {AGRO_LABEL} ({agroKindNote(props.weather!)}). Weather data by Open-Meteo.com.
+            </p>
+          </Show>
         </Show>
         <p>
           Forecasts cover about two weeks. Beyond that the view shows typical weather for the same dates in recent years,

@@ -24,13 +24,14 @@ import { NdviSeries, NeighbourhoodSeasonality } from './ndvi';
 import { PriceSeries, HarvestPriceOutlook, PriceTrend } from './price-outlook';
 import { StageTimeline, YearPlanReview, YearPlanOption, RescoreYearPlan, ApplyYearPlan, ApplyYearPlanResult } from './year-plan';
 import { FutureLookAsset } from './future-look';
+import { SeasonReport } from './season-report';
 
 /**
  * Every public contract exported as JSON Schema for Python analytics.
  * Keys become file names under packages/contracts/schema/.
  */
 export const PUBLIC_CONTRACTS: Record<string, z.ZodType> = {
-  TodayView,FarmAlert,FarmAlerts,NdviSeries,NeighbourhoodSeasonality,PriceSeries,HarvestPriceOutlook,PriceTrend,StageTimeline,YearPlanReview,YearPlanOption,RescoreYearPlan,ApplyYearPlan,ApplyYearPlanResult,FutureLookAsset,MarketTimeline,CropFitReview,SoilReview,SeasonPreview,
+  TodayView,FarmAlert,FarmAlerts,NdviSeries,NeighbourhoodSeasonality,PriceSeries,HarvestPriceOutlook,PriceTrend,StageTimeline,YearPlanReview,YearPlanOption,RescoreYearPlan,ApplyYearPlan,ApplyYearPlanResult,FutureLookAsset,MarketTimeline,CropFitReview,SoilReview,SeasonPreview,SeasonReport,
   FarmCommandCenter,PlantCrop,PlantCropResult,CompleteCareTask,CompleteCareTaskResult,FocusedCrop,CareTask,SoilCropFit,PriorYearMarket,
   SoilReportedReference,SoilParameter,SoilMarkerDraft,SoilSampleDraft,SoilReportExtraction,SoilCanonicalValue,SoilMarker,SoilReport,ReviewSoilReport,ConfirmSoilReport,FarmSoilMarkers,CommodityCatalogue,PricedCommodity,ResearchedCropProfile,
   CurrentMandiQuotes,

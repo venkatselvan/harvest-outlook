@@ -342,6 +342,51 @@ describe('weatherTrack labels', () => {
     expect(text).toMatch(/2 past days have no archive value/);
   });
 
+  it('weather depth: agro is attached per kind from the same source day (observed, forecast, typical, past-day filled from forecast), labelled as a grid-cell estimate, and absent when the source has none', async () => {
+    const agro = (gust: number, soil: number | null = 0.3): NonNullable<DailyWeather['agro']> => ({
+      et0Mm: 3, rhMeanPct: 80, rhMinPct: 55, rhMaxPct: 95, dewPointC: 19, vpdMaxKpa: 1.2, windMaxKmh: 15, gustMaxKmh: gust, soilMoisture0to7: soil, soilTemp0to7C: 24, leafWetnessPct: 60, sunshineHours: 7.5, rainHours: 2, rainProbabilityPct: 30,
+    });
+    const typicalAgro = {...agro(0, 0.28), rhMinPct: null, rhMaxPct: null, dewPointC: null, windMaxKmh: null, gustMaxKmh: null, soilTemp0to7C: null, sunshineHours: null, rainHours: null, rainProbabilityPct: null};
+    const source: WeatherSource = {
+      modes: ['live', 'replay', 'synthetic'],
+      getDailyObservations: async () => [{...dw('2026-10-28', 5, 19, 28), agro: agro(21)}, dw('2026-10-27', 0, 20, 30)],
+      getForecast: async () => ({issuedAt: '2026-10-31T02:00:00.000Z', sourceId: 'open-meteo-forecast', days: eachDate('2026-10-31', '2026-11-03').map((d, i) => ({...dw(d, 1, 21, 31, 'open-meteo-forecast'), agro: agro(40 + i * 10)}))}),
+      getClimatology: async (_s, range) => ({years: {from: 2019, to: 2025}, qualifyingYears: YEARS, sourceId: 'open-meteo-archive', days: eachDate(range.start, range.end).map((d) => ({...dw(d, 4, 20, 30), agro: typicalAgro}))}),
+      dataVersion: async () => 'v',
+    };
+    const t = await track(source, '2026-10-27', '2026-11-06');
+    const at = (d: string) => t.days.find((x) => x.date === d)!;
+    expect(at('2026-10-28')).toMatchObject({kind: 'observed', agro: {basis: 'grid_model_estimate', gustMaxKmh: 21, soilMoisture0to7: 0.3}});
+    expect('agro' in at('2026-10-27')).toBe(false); // an observed day whose stored row has no deeper values gets no block
+    expect(at('2026-10-31')).toMatchObject({kind: 'forecast', agro: {gustMaxKmh: 40}}); // past day filled from the forecast
+    expect(at('2026-11-02')).toMatchObject({kind: 'forecast', agro: {gustMaxKmh: 60, basis: 'grid_model_estimate'}});
+    expect(at('2026-11-05')).toMatchObject({kind: 'typical', agro: {rhMeanPct: 80, soilMoisture0to7: 0.28, gustMaxKmh: null, rainProbabilityPct: null}});
+    expect(t.limitations.join(' ')).toMatch(/model estimates for the grid cell around the field.*not field readings/);
+    // the plain fixture-style source (no agro anywhere) produces no agro keys and no extra limitation
+    const plain = await track(full(), '2026-10-26', '2026-11-12');
+    expect(plain.days.every((d) => !('agro' in d))).toBe(true);
+    expect(plain.limitations.join(' ')).not.toMatch(/grid cell/);
+  });
+
+  it('weather depth: when the deeper typical values rest on fewer years than rain and temperature, the limitation names those years', async () => {
+    const typicalAgro = {et0Mm: 3, rhMeanPct: 80, rhMinPct: null, rhMaxPct: null, dewPointC: null, vpdMaxKpa: null, windMaxKmh: null, gustMaxKmh: null, soilMoisture0to7: 0.28, soilTemp0to7C: null, leafWetnessPct: null, sunshineHours: null, rainHours: null, rainProbabilityPct: null};
+    const source = (agroYears: Record<string, number[]>): WeatherSource => ({
+      modes: ['live', 'replay', 'synthetic'],
+      getDailyObservations: async () => [],
+      getForecast: async () => null,
+      getClimatology: async (_s, range) => ({years: {from: 2019, to: 2025}, qualifyingYears: YEARS, agroYears, sourceId: 'open-meteo-archive', days: eachDate(range.start, range.end).map((d) => ({...dw(d, 4, 20, 30), agro: typicalAgro}))}),
+      dataVersion: async () => 'v',
+    });
+    const text = (t: {limitations: string[]}) => t.limitations.join(' ');
+    const fewer = await track(source({rhMeanPct: [2021, 2022, 2023, 2024, 2025], soilMoisture0to7: [2021, 2022, 2023, 2024, 2025]}), '2026-11-01', '2026-11-03');
+    expect(text(fewer)).toMatch(/Typical humidity, soil moisture are the mean over 2021 to 2025 only, fewer years than the rain and temperature normals/);
+    expect(text(fewer)).toMatch(/7 years \(2019 to 2025\)/);
+    const gap = await track(source({rhMeanPct: [2019, 2020, 2022, 2023, 2025]}), '2026-11-01', '2026-11-03');
+    expect(text(gap)).toMatch(/Typical humidity is the mean over 2019, 2020, 2022, 2023, 2025 only/);
+    const same = await track(source({rhMeanPct: YEARS}), '2026-11-01', '2026-11-03');
+    expect(text(same)).not.toMatch(/fewer years/); // same years as rain and temperature: the existing line already names them
+  });
+
   it('without enough archive years the days beyond the horizon are unavailable, not typical and not forecast', async () => {
     const t = await track(fakeSource({forecast: forecastBundle('2026-10-31T02:00:00.000Z', '2026-10-31', '2026-11-03'), clim: false}), '2026-11-01', '2026-11-08');
     expect(kinds(t.days)).toEqual({

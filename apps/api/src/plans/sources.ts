@@ -22,8 +22,35 @@ export interface DailyWeather {
   et0Mm: number | null;
   tMaxC: number | null;
   tMinC: number | null;
+  /**
+   * Deeper daily variables (WEATHER_DEPTH_SPEC.md section 4): Open-Meteo model estimates for the grid cell around the
+   * field, never a field reading. Absent when the stored row carries none of them; null for a key the provider did not
+   * give. On typical (climatology) days only et0Mm, rhMeanPct, soilMoisture0to7, leafWetnessPct and vpdMaxKpa are
+   * filled; the rest stay null.
+   */
+  agro?: DailyWeatherAgro;
   /** Source/dataset identifier (also used as ET0 source label). */
   sourceId: string;
+}
+
+/** Same keys as `WeatherAgro` in @harvest/contracts, without the `basis` literal (added at the API boundary). */
+export interface DailyWeatherAgro {
+  et0Mm: number | null;
+  rhMeanPct: number | null;
+  rhMinPct: number | null;
+  rhMaxPct: number | null;
+  dewPointC: number | null;
+  vpdMaxKpa: number | null;
+  windMaxKmh: number | null;
+  gustMaxKmh: number | null;
+  /** m³/m³, the land-surface model's 0 to 7 cm value for the grid cell; not calibrated to the farm's soil. */
+  soilMoisture0to7: number | null;
+  soilTemp0to7C: number | null;
+  leafWetnessPct: number | null;
+  /** Hours (the provider reports seconds; converted when parsed). */
+  sunshineHours: number | null;
+  rainHours: number | null;
+  rainProbabilityPct: number | null;
 }
 
 export interface ForecastBundle {
@@ -38,6 +65,12 @@ export interface ClimatologyBundle {
   years: { from: number; to: number };
   /** Calendar years that actually met the row threshold, ascending; `years` spans only these (first..last). */
   qualifyingYears?: number[];
+  /**
+   * Years behind each deeper typical value (humidity, soil moisture, leaf wetness, VPD), ascending. A field appears only
+   * when at least MIN_CLIMATOLOGY_YEARS years carry it (its typical value is null otherwise); the years can be fewer than
+   * `qualifyingYears` while stored years are still being refetched with the deeper variables.
+   */
+  agroYears?: Partial<Record<"rhMeanPct" | "soilMoisture0to7" | "leafWetnessPct" | "vpdMaxKpa", number[]>>;
   sourceId: string;
   /** Normals mapped onto the requested calendar dates. */
   days: DailyWeather[];

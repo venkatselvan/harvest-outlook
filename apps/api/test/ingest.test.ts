@@ -276,6 +276,30 @@ describe("ingest job handlers", () => {
     expect(run.detail.units.precipitation_sum).toBe("mm");
   });
 
+  ifDb("weather_archive: a fresh run made with another variable set (a stale worker) is not reused, and the run records the requested variables", async () => {
+    const { payloadHash, startRun, finishRun } = await import("../src/ingest/runs");
+    const { ARCHIVE_DAILY_VARIABLES, variableSetId } = await import("../src/providers/openmeteo/client");
+    await pool.query("DELETE FROM weather_observations WHERE NOT is_synthetic");
+    const payload = { lat: 13, lon: 76.1, start: "2026-10-14", end: "2026-10-20" }; // a window no earlier test in this file ran
+    // what a worker started before the variable change left behind: succeeded, finished moments ago, hash of the bare payload
+    const old = await startRun(pool, { jobId: null, jobType: "ingest.weather_archive", hash: payloadHash(payload), provider: "open-meteo", mode: "live" });
+    await finishRun(pool, old, "succeeded", { rows: 7, inserted: 0 }, { units: { precipitation_sum: "mm" } });
+    let calls = 0;
+    const h = createIngestHandlers({ config: loadProviderConfig({}), fetchImpl: async () => (calls++, jsonRes(archiveFx.body)), now: () => new Date("2026-10-29T20:00:00Z") })["ingest.weather_archive"]!;
+    const a = await mkCtx("ingest.weather_archive", payload);
+    const r: any = await h(a.job, a.ctx);
+    expect(r.reused).toBe(false);
+    expect(calls).toBe(1);
+    const run = (await pool.query("SELECT detail FROM ingest_runs WHERE id=$1", [r.ingestRunId])).rows[0];
+    expect(run.detail.requestedVariables).toEqual([...ARCHIVE_DAILY_VARIABLES]);
+    expect(run.detail.requestedVariables).toContain("relative_humidity_2m_mean");
+    expect(run.detail.variableSet).toBe(variableSetId(ARCHIVE_DAILY_VARIABLES));
+    // the next job of the same current set is reused as before
+    const b = await mkCtx("ingest.weather_archive", payload);
+    expect(((await h(b.job, b.ctx)) as any).reused).toBe(true);
+    expect(calls).toBe(1);
+  });
+
   ifDb("provider failure fails the job with a typed, retryable-classified error and writes no rows", async () => {
     await pool.query("DELETE FROM weather_forecasts WHERE NOT is_synthetic");
     const h = createIngestHandlers({ config: loadProviderConfig({ PROVIDER_MAX_RETRIES: "0" }), fetchImpl: async () => { throw new Error("offline"); }, sleep: async () => undefined })["ingest.weather_forecast"]!;

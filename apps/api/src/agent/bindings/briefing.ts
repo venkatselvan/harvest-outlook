@@ -13,6 +13,7 @@ import { currentCycle, todayView, type TodayViewDeps } from "../../services/toda
 import { fieldOf, fieldView, getWorkspace } from "../../services/workspace";
 import { cropDisplayName } from "../../services/year-plan/data";
 import { readYearPlan } from "../../services/year-plan/service";
+import { briefingLines, scoutingState } from "../../services/scouting/issues";
 import type { ToolContext, ToolHandler } from "../tools/registry";
 
 /**
@@ -193,6 +194,9 @@ export async function farmBriefing(deps: BriefingDeps, farmId: string, ctx: Tool
     section("workspace", async () => fieldView(stored, fid ?? null)),
     section("cropFit", () => storedCropFit(ro, ctx.ownerId, farmId, ctx.mode, fid ?? null)),
     section("journal", () => listEntries(ro, ctx.ownerId, farmId, 60)),
+    // Field operations (FIELD_OPERATIONS_SPEC.md 5.3): open issues and the next field check per field, plain reads; no model
+    // is asked to interpret an issue.
+    section("scouting", async () => briefingLines(stored, await scoutingState(ro, ctx.ownerId, farmId, ctx.mode, stored, istDate(ctx.asOf)))),
   ];
   let timer: NodeJS.Timeout | undefined;
   let onAbort: (() => void) | undefined;
@@ -210,7 +214,7 @@ export async function farmBriefing(deps: BriefingDeps, farmId: string, ctx: Tool
   if (onAbort && ctx.signal) ctx.signal.removeEventListener("abort", onAbort);
 
   const limitations: string[] = [];
-  const LABEL: Record<string, string> = { today: "The Today view (crop stage, weather, satellite, alerts, steps, prices, expected returns)", soilMarkers: "The soil report readings", soilReview: "The soil ratings", yearPlan: "The year plan", workspace: "The saved seasons and previous harvest", cropFit: "The stored crop-fit review", journal: "The farm journal" };
+  const LABEL: Record<string, string> = { today: "The Today view (crop stage, weather, satellite, alerts, steps, prices, expected returns)", soilMarkers: "The soil report readings", soilReview: "The soil ratings", yearPlan: "The year plan", workspace: "The saved seasons and previous harvest", cropFit: "The stored crop-fit review", journal: "The farm journal", scouting: "The field checks and issues" };
   for (const name of Object.keys(LABEL)) {
     if (failed.has(name)) limitations.push(`${LABEL[name]} could not be included: ${failed.get(name)}.`);
     else if (!done.has(name)) limitations.push(`${LABEL[name]} did not finish within ${Math.round((deps.timeoutMs ?? BRIEFING_TIMEOUT_MS) / 1000)} s${ended === "aborted" ? " (the request was cancelled)" : ""} and is not included.`);
@@ -265,6 +269,10 @@ export async function farmBriefing(deps: BriefingDeps, farmId: string, ctx: Tool
           : `This answer is about field ${field.name}; ${n}.`,
     );
   }
+  // Field operations (5.3): one line per field (the farm without fields) with open issues and the next check, after the field
+  // line, in the briefing's own `scouting` list (absent when there is nothing to say).
+  const scoutingLines = ((done.get("scouting") as string[] | undefined) ?? []).map((l) => cut(l, 300)!).slice(0, 10);
+  if (scoutingLines.length) briefing.scouting = scoutingLines;
   // Review fix 4: when the Today view's outlook note is missing or pending (ensureOutlookNote needs a transaction the read-only
   // pool refuses, or its job is still writing), the latest stored ready note for the same farm, mode and product is read
   // directly with a plain SELECT, so a ready note is never lost to the read-only wrapper.
@@ -361,6 +369,7 @@ async function storedOutlookNote(pool: Pool, ownerId: string, farmId: string, mo
 export function fitSize(b: Briefing): Briefing {
   const size = () => JSON.stringify(b).length;
   while (size() > BRIEFING_TARGET_CHARS && b.limitations.length > 6) b.limitations.pop();
+  if (size() > BRIEFING_TARGET_CHARS && b.scouting && b.scouting.length > 3) b.scouting.length = 3;
   if (size() > BRIEFING_TARGET_CHARS) {
     b.alerts = b.alerts.map((a) => ({ ...a, detail: cut(a.detail, 140)!, suggestedStep: cut(a.suggestedStep, 120) }));
     b.steps.upcoming = b.steps.upcoming.map((s) => ({ ...s, detail: cut(s.detail, 100) }));

@@ -104,6 +104,43 @@ export function weatherBasis(point: WeatherPoint | null): string {
   }
   return `Recorded · ${point.basis.source}`;
 }
+/**
+ * Deeper weather values (WEATHER_DEPTH_SPEC.md D-W4 and section 7). They are Open-Meteo model estimates for the grid
+ * cell around the field, never field readings, and every surface that shows one carries this wording.
+ */
+export const AGRO_LABEL = "Open-Meteo model estimate for the grid cell, not a field reading";
+const AGRO_ATTRIBUTION = "Weather data by Open-Meteo.com";
+
+export interface AgroFact {
+  id: "et0" | "humidity" | "gust" | "rain_chance";
+  /** Visible short form, for example "humidity 78%". */
+  short: string;
+  /** Spoken long form for screen readers. */
+  spoken: string;
+}
+
+/** Which kind of estimate a point is, for hover/aria text: typical days are climatology, never a forecast. */
+export function agroKindNote(point: WeatherPoint): string {
+  if (point.kind === "typical") return "typical (climatology), not a forecast";
+  if (point.kind === "forecast") return `forecast${point.basis.issuedAt ? ` issued ${formatDay(point.basis.issuedAt.slice(0, 10), false)}` : ""}`;
+  return "reanalysis of the day";
+}
+
+/**
+ * Water demand (ET0), mean humidity, gust maximum and rain chance of a weather point. Empty when the point has no `agro`
+ * block or is unavailable; a null value is simply left out, never drawn as zero.
+ */
+export function weatherAgroFacts(point: WeatherPoint | null): AgroFact[] {
+  const agro = point && point.kind !== "unavailable" ? point.agro : undefined;
+  if (!agro) return [];
+  const out: AgroFact[] = [];
+  if (agro.et0Mm != null) out.push({ id: "et0", short: `water demand ${agro.et0Mm.toFixed(1)} mm`, spoken: `Water demand (reference evapotranspiration) ${agro.et0Mm.toFixed(1)} millimetres` });
+  if (agro.rhMeanPct != null) out.push({ id: "humidity", short: `humidity ${Math.round(agro.rhMeanPct)}%`, spoken: `Average humidity ${Math.round(agro.rhMeanPct)} percent` });
+  if (agro.gustMaxKmh != null) out.push({ id: "gust", short: `gusts ${Math.round(agro.gustMaxKmh)} km/h`, spoken: `Strongest gusts ${Math.round(agro.gustMaxKmh)} kilometres per hour` });
+  if (agro.rainProbabilityPct != null) out.push({ id: "rain_chance", short: `${Math.round(agro.rainProbabilityPct)}% rain chance`, spoken: `${Math.round(agro.rainProbabilityPct)} percent chance of rain` });
+  return out;
+}
+
 export function trendText(trend: PriceTrend): string {
   const since = formatDay(trend.since).replace(/^\d+ /, "");
   return trend.direction === "flat"
@@ -280,6 +317,18 @@ export function WeatherCard(props: { date: string; weather: WeatherPoint | null;
         </Show>
         <span class={`today-chip ${point()?.kind ?? "unavailable"}`}>{weatherKindLabel[point()?.kind ?? "unavailable"]}</span>
       </p>
+      <Show when={weatherAgroFacts(point()).length}>
+        <ul class="today-agro" data-testid="today-agro" aria-label={`More weather for this day. ${AGRO_LABEL}.`}>
+          <For each={weatherAgroFacts(point())}>
+            {(fact) => (
+              <li class={fact.id === "rain_chance" ? "today-chip agro" : "today-agro-item"} data-agro={fact.id} title={`${fact.spoken}. ${AGRO_LABEL} (${agroKindNote(point()!)}). ${AGRO_ATTRIBUTION}.`}>
+                <span aria-hidden="true">{fact.short}</span>
+                <span class="today-sr">{`${fact.spoken}. ${AGRO_LABEL}; ${agroKindNote(point()!)}.`}</span>
+              </li>
+            )}
+          </For>
+        </ul>
+      </Show>
       <p class="today-card-basis">{weatherBasis(point())}</p>
     </Card>
   );

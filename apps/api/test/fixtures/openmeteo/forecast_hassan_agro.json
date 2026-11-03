@@ -1,0 +1,133 @@
+{
+ "recorded": false,
+ "note": "CONSTRUCTED parsing fixture, not a recorded response: the recorded forecast_hassan.json body plus the deeper daily keys with plausible values (units as Open-Meteo reports them, sunshine_duration in seconds). Do not read the values as weather. Open-Meteo response shape, CC BY 4.0.",
+ "url": "https://api.open-meteo.com/v1/forecast?latitude=13.0033&longitude=76.1004&forecast_days=3&daily=precipitation_sum,temperature_2m_max,temperature_2m_min,et0_fao_evapotranspiration,shortwave_radiation_sum,relative_humidity_2m_mean,relative_humidity_2m_max,relative_humidity_2m_min,dew_point_2m_mean,vapour_pressure_deficit_max,wind_speed_10m_max,wind_gusts_10m_max,soil_moisture_0_to_7cm_mean,soil_temperature_0_to_7cm_mean,leaf_wetness_probability_mean,sunshine_duration,precipitation_hours,precipitation_probability_max&timezone=Asia%2FKolkata",
+ "fetchedAt": "2026-10-29T19:55:44Z",
+ "body": {
+  "latitude": 12.970123,
+  "longitude": 76.090904,
+  "generationtime_ms": 1.0211467742919922,
+  "utc_offset_seconds": 19800,
+  "timezone": "Asia/Kolkata",
+  "timezone_abbreviation": "GMT+5:30",
+  "elevation": 944.0,
+  "daily_units": {
+   "time": "iso8601",
+   "precipitation_sum": "mm",
+   "temperature_2m_max": "°C",
+   "temperature_2m_min": "°C",
+   "et0_fao_evapotranspiration": "mm",
+   "shortwave_radiation_sum": "MJ/m²",
+   "precipitation_probability_max": "%",
+   "relative_humidity_2m_mean": "%",
+   "relative_humidity_2m_max": "%",
+   "relative_humidity_2m_min": "%",
+   "dew_point_2m_mean": "°C",
+   "vapour_pressure_deficit_max": "kPa",
+   "wind_speed_10m_max": "km/h",
+   "wind_gusts_10m_max": "km/h",
+   "soil_moisture_0_to_7cm_mean": "m³/m³",
+   "soil_temperature_0_to_7cm_mean": "°C",
+   "leaf_wetness_probability_mean": "%",
+   "sunshine_duration": "s",
+   "precipitation_hours": "h"
+  },
+  "daily": {
+   "time": [
+    "2026-10-30",
+    "2026-10-31",
+    "2026-11-01"
+   ],
+   "precipitation_sum": [
+    1.2,
+    0.0,
+    1.3
+   ],
+   "temperature_2m_max": [
+    26.9,
+    28.1,
+    27.7
+   ],
+   "temperature_2m_min": [
+    18.2,
+    17.6,
+    18.3
+   ],
+   "et0_fao_evapotranspiration": [
+    4.0,
+    4.51,
+    4.17
+   ],
+   "shortwave_radiation_sum": [
+    20.31,
+    22.62,
+    21.04
+   ],
+   "precipitation_probability_max": [
+    16,
+    2,
+    47
+   ],
+   "relative_humidity_2m_mean": [
+    78,
+    74,
+    81
+   ],
+   "relative_humidity_2m_max": [
+    95,
+    93,
+    96
+   ],
+   "relative_humidity_2m_min": [
+    52,
+    49,
+    58
+   ],
+   "dew_point_2m_mean": [
+    19.4,
+    18.7,
+    19.9
+   ],
+   "vapour_pressure_deficit_max": [
+    1.21,
+    1.34,
+    1.05
+   ],
+   "wind_speed_10m_max": [
+    14.8,
+    16.2,
+    12.1
+   ],
+   "wind_gusts_10m_max": [
+    31.3,
+    36.7,
+    28.4
+   ],
+   "soil_moisture_0_to_7cm_mean": [
+    0.318,
+    0.304,
+    0.329
+   ],
+   "soil_temperature_0_to_7cm_mean": [
+    23.6,
+    24.1,
+    23.8
+   ],
+   "leaf_wetness_probability_mean": [
+    61,
+    54,
+    68
+   ],
+   "sunshine_duration": [
+    25560,
+    28800,
+    22140
+   ],
+   "precipitation_hours": [
+    3,
+    0,
+    4
+   ]
+  }
+ }
+}

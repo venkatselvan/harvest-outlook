@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 import { toRawJsonSchema, toStrictJsonSchema, type JsonSchema } from "../providers/meta/strict-schema";
-import { InterpretationOutput, PROMPT_VERSION } from "./types";
+import { InterpretationOutput, ISSUE_CATEGORIES, OBSERVED_ISSUE_NOTE_MAX, PROMPT_VERSION } from "./types";
 
 export const INSTRUCTIONS = `You help a farmer record a field observation. You receive one or more photos, an optional note, and the plan context below.
 Rules:
@@ -9,6 +9,8 @@ Rules:
 - Give competing interpretations, not a single diagnosis. Never state a diagnosis as certain. Do not name chemicals, doses or sprays. Do not state a yield, profit or a percentage confidence.
 - If the photo is blurry, too dark or too far, or no crop is visible, set requestAnotherAngle true, list the quality issue, and propose nothing.
 - proposedFacts hold things the farmer could confirm (for example observed_stage, irrigation_category, planting_date, waterlogging_visible). Each is a proposal only; basis is always ai_proposed and requiresConfirmation always true.
+- If damage or stress is visible on the crop, you may add one proposedFact with field observed_issue whose value is exactly one of: ${ISSUE_CATEGORIES.join(", ")}. It is the category of what is visible, recorded as an observation; use other when none fits and propose nothing when no damage or stress is visible.
+- With observed_issue you may add one proposedFact with field observed_issue_note: at most ${OBSERVED_ISSUE_NOTE_MAX} characters describing what is visible, worded as an observation (for example "Irregular holes and chewed leaf edges consistent with insect feeding"). Never name a pathogen or pest species as certain, never use words such as certainly, definitely or confirmed, never name a product, chemical, spray or input, and never give a dose, amount, rate or percentage. Both facts use unit null.
 - candidatePlanChanges may use only the types observed_stage (stageId must be one of the plan stage ids given), irrigation_category (rainfed, supplemental or irrigated), planting_date (YYYY-MM-DD) or note_only. Propose the smallest change that matches what is visible. If unsure, use note_only.
 - The expected stage window supplied is a calendar estimate, not an observation. Do not treat it as what the photo shows.
 - aiNarrative is a short plain-language summary for the farmer, at most four sentences. It is an AI interpretation, not an observation.

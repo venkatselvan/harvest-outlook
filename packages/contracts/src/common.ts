@@ -210,6 +210,13 @@ export const ApiErrorCode = z.enum([
   'field_required',
   // 2026-11-03: a predicted-look request on a farm with fields must name the crop cycle (400).
   'cycle_required',
+  // 2026-11-03 field operations (FIELD_OPERATIONS_SPEC.md 4.5, 5.1): a client entry id reused for different data (409; also
+  // raised by the command center, which earlier surfaced as bad_request with originalCode); an issue location outside the
+  // farm or field polygon (400).
+  'idempotency_conflict',
+  'location_outside_boundary',
+  // 2026-11-03 season report (FIELD_OPERATIONS_SPEC.md 8.1): the named crop cycle is not on this farm, or the farm has no crop to report (404).
+  'cycle_not_found',
 ]);
 export type ApiErrorCode = z.infer<typeof ApiErrorCode>;
 

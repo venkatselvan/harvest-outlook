@@ -90,8 +90,11 @@ export async function putWorkspace(pool: Pool, ownerId: string, farmId: string, 
     // A PUT without `fields` keeps the stored fields (2026-11-03): writers built before fields existed (the year-plan apply,
     // older web saves) must not delete them. The merged state is validated as a whole (fields inside the boundary, no
     // overlap, every cycle and plan fieldId naming a field), so deleting a field a cycle still names is refused here.
-    const storedFields = current.rows[0] ? FarmWorkspaceState.parse(current.rows[0].state).fields : [];
-    const parsed = FarmWorkspaceState.safeParse({ ...rawState, fields: rawState.fields ?? storedFields });
+    // The farm-wide `checkIntervalDays` is kept the same way (the year-plan apply and older saves do not send it).
+    const stored = current.rows[0] ? FarmWorkspaceState.parse(current.rows[0].state) : undefined;
+    const storedFields = stored?.fields ?? [];
+    const storedInterval = stored?.checkIntervalDays;
+    const parsed = FarmWorkspaceState.safeParse({ ...rawState, fields: rawState.fields ?? storedFields, ...(rawState.checkIntervalDays === undefined && storedInterval !== undefined ? { checkIntervalDays: storedInterval } : {}) });
     if (!parsed.success) {
       const issue = parsed.error.issues[0]!;
       throw new ApiError(400, 'validation_error', issue.message, { field: issue.path.join('.') });

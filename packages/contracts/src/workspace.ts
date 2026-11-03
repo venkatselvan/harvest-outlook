@@ -179,12 +179,16 @@ export const WorkspaceCompanion = z.object({
 }).strict();
 export type WorkspaceCompanion = z.infer<typeof WorkspaceCompanion>;
 
+/** The farmer's own field check interval, whole days (FIELD_OPERATIONS_SPEC.md 2: default 7, 3 to 30). Not an agronomic claim. */
+export const CheckIntervalDays = z.number().int().min(3).max(30);
 /** A named field inside the farm (2026-11-03, FIELDS_MULTICROP_SOIL_SPEC.md section 2.1). */
 export const FarmField = z.object({
   id: FieldId,
   name: z.string().trim().min(1).max(80),
   boundary: GeographicBoundary,
   notes: z.string().trim().max(500).optional(),
+  /** 2026-11-03 (FIELD_OPERATIONS_SPEC.md 3): the farmer's own field check interval in days ("Your check interval"); absent = the farm's, else 7. */
+  checkIntervalDays: CheckIntervalDays.optional(),
 }).strict();
 export type FarmField = z.infer<typeof FarmField>;
 
@@ -266,6 +270,8 @@ const stateShape = {
   rotationPlans: z.array(RotationPlan).max(100),
   /** 2026-11-03: fields inside the farm, in drawn order. Old rows without the key read back as []. */
   fields: z.array(FarmField).max(50).default([]),
+  /** 2026-11-03 (FIELD_OPERATIONS_SPEC.md 3): the farm-wide check interval (a farm without fields, and fields without their own); absent = 7. */
+  checkIntervalDays: CheckIntervalDays.optional(),
 };
 const refineState = (w: StateShape, ctx: Ctx) => {
   for (const key of ['cycles', 'rotationPlans'] as const) {

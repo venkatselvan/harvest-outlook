@@ -4,12 +4,27 @@ import { IsoDate, Sha256Hex } from "@harvest/contracts";
 export const JOURNAL_JOB_TYPE = "journal.analysis";
 export const AI_PROPOSAL_LABEL = "AI proposal — confirm before it changes your plan";
 export const PROMPT_NAME = "harvest-journal-observation";
-export const PROMPT_VERSION = "1";
+/** 2 (2026-11-03): adds the observed_issue / observed_issue_note category suggestion (FIELD_OPERATIONS_SPEC 5.5). */
+export const PROMPT_VERSION = "2";
 
 /** Fields that map to a typed plan change. Anything else is stored and shown but never changes a plan. */
 export const PLAN_FIELDS = ["observed_stage", "irrigation_category", "planting_date"] as const;
 export type PlanField = (typeof PLAN_FIELDS)[number];
 export const isPlanField = (f: string): f is PlanField => (PLAN_FIELDS as readonly string[]).includes(f);
+
+/**
+ * AI category suggestion for visible damage or stress (FIELD_OPERATIONS_SPEC 5.5). The values are kept identical to
+ * `IssueCategory` in packages/contracts/src/scouting.ts; they are repeated here (not imported) so the journal does not
+ * depend on the scouting contract. Both facts are proposals only and never map to a plan change.
+ */
+export const ISSUE_CATEGORIES = ["pest", "disease", "weed", "water_stress", "nutrient", "weather_damage", "animal_damage", "other"] as const;
+export type IssueCategoryValue = (typeof ISSUE_CATEGORIES)[number];
+export const isIssueCategory = (v: unknown): v is IssueCategoryValue => typeof v === "string" && (ISSUE_CATEGORIES as readonly string[]).includes(v);
+export const OBSERVED_ISSUE_FIELD = "observed_issue";
+export const OBSERVED_ISSUE_NOTE_FIELD = "observed_issue_note";
+export const OBSERVED_ISSUE_NOTE_MAX = 200;
+export const ISSUE_FIELDS = [OBSERVED_ISSUE_FIELD, OBSERVED_ISSUE_NOTE_FIELD] as const;
+export const isIssueField = (f: string): boolean => (ISSUE_FIELDS as readonly string[]).includes(f);
 
 export const ACTIVITIES = ["planting", "irrigation", "weeding", "fertilizer", "pest_check", "harvest", "sale", "expense", "other", "observation"] as const;
 export const QUANTITY_UNITS = ["kg", "L", "m3", "mm", "ha", "acre", "days", "g", "t", "quintal"] as const;

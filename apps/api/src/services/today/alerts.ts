@@ -59,7 +59,9 @@ export const PRICE_THRESHOLDS = { dropPct: -20, spikePct: 25, windowDays: 30, mi
 export const OPEN_METEO_SOURCE_URL = 'https://open-meteo.com/';
 const FORECAST_CAVEAT = 'Gridded model forecast for the field point, not an IMD warning.';
 
+/** `gustMaxKmh` is the snapshot's field (Open-Meteo `wind_gusts_10m_max`); `windGustKmh` is the older name kept for callers that still pass it. */
 type ForecastDay = MonitoringSnapshot['weather']['days'][number] & { windGustKmh?: number | null };
+const gustOf = (d: ForecastDay): number | null => (typeof d.gustMaxKmh === 'number' ? d.gustMaxKmh : typeof d.windGustKmh === 'number' ? d.windGustKmh : null);
 
 function runs<T extends { date: string }>(days: T[], pred: (d: T) => boolean): T[][] {
   const out: T[][] = [];
@@ -154,11 +156,11 @@ export function structuredAlerts(snapshot: MonitoringSnapshot, workspace: FarmWo
         detail: `Minimum ${fmt(low.tMinC!)} °C forecast on ${low.date}${run.length > 1 ? `; ${run.length} nights at or below ${T.tMinC} °C (${span(run)})` : ''}. ${FORECAST_CAVEAT}`,
         source, validFrom: run[0]!.date, validTo: run[run.length - 1]!.date, suggestedStep: 'Check young plants and nursery beds for cold stress.' });
     }
-    if (!days.some((d) => typeof d.windGustKmh === 'number')) notes.push('wind_gust_check_skipped:variable_not_in_stored_forecast');
-    else for (const run of runs(days, (d) => typeof d.windGustKmh === 'number' && d.windGustKmh >= T.windGustKmh)) {
-      const peak = run.reduce((a, b) => ((b.windGustKmh ?? 0) > (a.windGustKmh ?? 0) ? b : a));
+    if (!days.some((d) => gustOf(d) !== null)) notes.push('wind_gust_check_skipped:variable_not_in_stored_forecast');
+    else for (const run of runs(days, (d) => (gustOf(d) ?? -1) >= T.windGustKmh)) {
+      const peak = run.reduce((a, b) => ((gustOf(b) ?? 0) > (gustOf(a) ?? 0) ? b : a));
       alerts.push({ type: 'weather', severity: 'watch', origin: 'rule', title: 'Strong wind gusts in the forecast',
-        detail: `Gusts up to ${fmt(peak.windGustKmh!)} km/h forecast on ${peak.date}. ${FORECAST_CAVEAT}`,
+        detail: `Gusts up to ${fmt(gustOf(peak)!)} km/h forecast on ${peak.date}${run.length > 1 ? `; ${run.length} days at or above ${T.windGustKmh} km/h (${span(run)})` : ''}. ${FORECAST_CAVEAT}`,
         source, validFrom: run[0]!.date, validTo: run[run.length - 1]!.date, suggestedStep: 'Check supports, shade nets and loose structures before these days.' });
     }
   }
@@ -677,7 +679,7 @@ const toAlert = (r: AlertRow): FarmAlert => ({ id: r.id, farmId: r.farm_id, type
 
 export const ALERT_LIMITATIONS = [
   'Direct IMD feed not connected (needs a key); official warnings are searched daily.',
-  'Wind gusts are not in the stored forecast, so no wind alert is produced.',
+  'Wind-gust alerts need the gust value in the stored forecast; forecasts stored before 2026-11-03 do not carry it, so no wind alert is produced for them.',
   'News alerts are classified by Meta muse-spark-1.3 from its own web search. Each links to a source that search returned; the publication date is model-reported and only checked for recency.',
   'Price alerts compare medians of stored state mandi quotes. They are wholesale references, not farm-gate prices or forecasts.',
 ];

@@ -18,7 +18,22 @@ import {
   type FieldPlanLike,
   type Polygon,
 } from "./fieldsModel";
+import { DEFAULT_INTERVAL_DAYS, MAX_INTERVAL_DAYS, MIN_INTERVAL_DAYS, parseInterval } from "../scouting/scoutingModel";
 import "./fields.css";
+
+/** A field with the farmer's own check interval (contracts `FarmField.checkIntervalDays`, FIELD_OPERATIONS_SPEC.md 3). */
+type IntervalField = FieldLike & { checkIntervalDays?: number };
+/** The field with its own interval set (a number) or removed (null: the farm's interval applies). */
+export function withCheckInterval(field: IntervalField, days: number | null): IntervalField {
+  const { checkIntervalDays: _previous, ...rest } = field;
+  return days === null ? rest : { ...rest, checkIntervalDays: days };
+}
+/** "every 7 days (your setting for this field)" / "(the farm's)" / "(default)". */
+export function intervalText(field: IntervalField, farmDays: number | undefined): string {
+  const own = field.checkIntervalDays;
+  const days = own ?? farmDays ?? DEFAULT_INTERVAL_DAYS;
+  return `every ${days} days ${own !== undefined ? "(your setting for this field)" : farmDays !== undefined ? "(the farm's)" : "(default)"}`;
+}
 
 export interface FieldsPanelProps {
   /** The farm's fields in drawn order. */
@@ -43,6 +58,10 @@ export interface FieldsPanelProps {
   onEndDraw: () => void;
   /** Link to Today with this field selected. */
   todayHref: (fieldId: string) => string;
+  /** 2026-11-03 (FIELD_OPERATIONS_SPEC.md 3): the farm-wide check interval in days (absent = 7). */
+  farmCheckIntervalDays?: number | undefined;
+  /** Saves the farm-wide check interval (workspace PUT with the expected version). Without it the farm-wide setting is not shown. */
+  onSaveFarmInterval?: ((days: number) => Promise<void>) | undefined;
 }
 
 /**
@@ -62,6 +81,11 @@ export function FieldsPanel(props: FieldsPanelProps) {
   const [stripCount, setStripCount] = createSignal(4);
   const [error, setError] = createSignal("");
   const [busy, setBusy] = createSignal(false);
+  /** The field whose check interval is being edited, and the text typed. */
+  const [intervalFor, setIntervalFor] = createSignal<string | null>(null);
+  const [intervalText_, setIntervalText] = createSignal("");
+  const [farmInterval, setFarmInterval] = createSignal("");
+  const [farmIntervalOpen, setFarmIntervalOpen] = createSignal(false);
   const locked = () => busy() || props.saving || !!props.disabled;
   const hasFarm = () => (props.farmBoundary?.coordinates[0]?.length ?? 0) >= 4;
 
@@ -146,6 +170,38 @@ export function FieldsPanel(props: FieldsPanelProps) {
     if (await save(props.fields.filter((f) => f.id !== field.id), `${field.name} deleted.`)) setConfirmDelete(null);
   }
 
+  async function saveInterval(event: SubmitEvent, field: IntervalField) {
+    event.preventDefault();
+    if (locked()) return;
+    const parsed = parseInterval(intervalText_());
+    if (!parsed.ok) {
+      setError(parsed.message);
+      return;
+    }
+    const notice = parsed.days === null ? `${field.name} now uses the farm's check interval.` : `${field.name}: your check interval is every ${parsed.days} days.`;
+    if (await save(props.fields.map((f) => (f.id === field.id ? withCheckInterval(f as IntervalField, parsed.days) : f)), notice)) setIntervalFor(null);
+  }
+
+  async function saveFarmInterval(event: SubmitEvent) {
+    event.preventDefault();
+    if (locked() || !props.onSaveFarmInterval) return;
+    const parsed = parseInterval(farmInterval());
+    if (!parsed.ok || parsed.days === null) {
+      setError(parsed.ok ? `Enter whole days from ${MIN_INTERVAL_DAYS} to ${MAX_INTERVAL_DAYS}.` : parsed.message);
+      return;
+    }
+    setBusy(true);
+    setError("");
+    try {
+      await props.onSaveFarmInterval(parsed.days);
+      setFarmIntervalOpen(false);
+    } catch (issue) {
+      setError((issue as Error).message || "The check interval could not be saved. Try again.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function doSplit(event: SubmitEvent) {
     event.preventDefault();
     if (locked()) return;
@@ -188,6 +244,9 @@ export function FieldsPanel(props: FieldsPanelProps) {
                       <span class="fields-item-meta">
                         {areaText(polygonAreaHa(field.boundary))} · {cropLabel(cycle(), props.cropName)}
                       </span>
+                      <span class="fields-item-meta" data-testid="fields-interval">
+                        Your check interval: {intervalText(field as IntervalField, props.farmCheckIntervalDays)}
+                      </span>
                     </div>
                     <div class="fields-item-actions">
                       <a class="text-link" href={props.todayHref(field.id)}>
@@ -202,11 +261,27 @@ export function FieldsPanel(props: FieldsPanelProps) {
                           setError("");
                           setRefusal(null);
                           setConfirmDelete(null);
+                          setIntervalFor(null);
                           setRenameText(field.name);
                           setRenaming(field.id);
                         }}
                       >
                         Rename
+                      </button>
+                      <button
+                        type="button"
+                        class="text-button"
+                        disabled={locked()}
+                        aria-label={`Check interval for ${field.name}`}
+                        onClick={() => {
+                          setError("");
+                          setRenaming(null);
+                          setConfirmDelete(null);
+                          setIntervalText(String((field as IntervalField).checkIntervalDays ?? ""));
+                          setIntervalFor(field.id);
+                        }}
+                      >
+                        Check interval
                       </button>
                       <button type="button" class="text-button danger" disabled={locked()} aria-label={`Delete ${field.name}`} onClick={() => askDelete(field)}>
                         Delete
@@ -224,6 +299,36 @@ export function FieldsPanel(props: FieldsPanelProps) {
                           {busy() ? "Saving…" : "Save name"}
                         </button>
                         <button type="button" class="text-button" onClick={() => setRenaming(null)}>
+                          Cancel
+                        </button>
+                      </div>
+                    </form>
+                  </Show>
+                  <Show when={intervalFor() === field.id}>
+                    <form class="fields-inline-form" onSubmit={(event) => void saveInterval(event, field as IntervalField)} data-testid="fields-interval-form">
+                      <label>
+                        Your check interval (days)
+                        <input
+                          type="number"
+                          inputmode="numeric"
+                          min={MIN_INTERVAL_DAYS}
+                          max={MAX_INTERVAL_DAYS}
+                          step="1"
+                          value={intervalText_()}
+                          placeholder={String(props.farmCheckIntervalDays ?? DEFAULT_INTERVAL_DAYS)}
+                          aria-describedby={`fields-interval-help-${field.id}`}
+                          onInput={(e) => setIntervalText(e.currentTarget.value)}
+                        />
+                      </label>
+                      <p class="fields-note" id={`fields-interval-help-${field.id}`}>
+                        How often you want a reminder to walk this field: your own routine, not advice. {MIN_INTERVAL_DAYS} to {MAX_INTERVAL_DAYS} days; leave it
+                        blank to use the farm's interval.
+                      </p>
+                      <div class="fields-inline-actions">
+                        <button type="submit" class="btn compact" disabled={locked()}>
+                          {busy() ? "Saving…" : "Save interval"}
+                        </button>
+                        <button type="button" class="text-button" onClick={() => setIntervalFor(null)}>
                           Cancel
                         </button>
                       </div>
@@ -256,6 +361,61 @@ export function FieldsPanel(props: FieldsPanelProps) {
 
       <Show when={!hasFarm()}>
         <p class="fields-note">Draw the farm boundary first. Fields are drawn inside it.</p>
+      </Show>
+
+      <Show when={props.onSaveFarmInterval}>
+        <div class="fields-interval-farm" data-testid="fields-farm-interval">
+          <p class="fields-item-meta">
+            {props.fields.length ? "Farm check interval (fields without their own)" : "Your check interval"}: every{" "}
+            {props.farmCheckIntervalDays ?? DEFAULT_INTERVAL_DAYS} days{props.farmCheckIntervalDays === undefined ? " (default)" : ""}
+          </p>
+          <Show
+            when={farmIntervalOpen()}
+            fallback={
+              <button
+                type="button"
+                class="text-button"
+                disabled={locked()}
+                onClick={() => {
+                  setError("");
+                  setFarmInterval(String(props.farmCheckIntervalDays ?? DEFAULT_INTERVAL_DAYS));
+                  setFarmIntervalOpen(true);
+                }}
+              >
+                Change
+              </button>
+            }
+          >
+            <form class="fields-inline-form" onSubmit={(event) => void saveFarmInterval(event)}>
+              <label>
+                Your check interval (days)
+                <input
+                  type="number"
+                  inputmode="numeric"
+                  min={MIN_INTERVAL_DAYS}
+                  max={MAX_INTERVAL_DAYS}
+                  step="1"
+                  required
+                  value={farmInterval()}
+                  aria-describedby="fields-farm-interval-help"
+                  onInput={(e) => setFarmInterval(e.currentTarget.value)}
+                />
+              </label>
+              <p class="fields-note" id="fields-farm-interval-help">
+                How often Today reminds you to walk the {props.fields.length ? "fields that have no interval of their own" : "farm"}: your own routine, not advice.{" "}
+                {MIN_INTERVAL_DAYS} to {MAX_INTERVAL_DAYS} days.
+              </p>
+              <div class="fields-inline-actions">
+                <button type="submit" class="btn compact" disabled={locked()}>
+                  {busy() ? "Saving…" : "Save interval"}
+                </button>
+                <button type="button" class="text-button" onClick={() => setFarmIntervalOpen(false)}>
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </Show>
+        </div>
       </Show>
 
       <Show when={props.drawing || props.drawn}>

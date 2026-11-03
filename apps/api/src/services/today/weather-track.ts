@@ -12,16 +12,20 @@
  *    has a row for the date, labelled `forecast` with its issue time, instead of `unavailable`.
  */
 import {z} from 'zod';
+import {WeatherAgro} from '@harvest/contracts';
 import type {Mode} from '@harvest/contracts';
 import {addDays} from '@harvest/domain';
 import type {Pool} from '../../db/pool';
 import type {FetchLike} from '../../ingest/http';
 import {createWeatherSource} from '../../plans/adapters/weather-source';
-import type {WeatherScope, WeatherSource} from '../../plans/sources';
+import type {DailyWeather, WeatherScope, WeatherSource} from '../../plans/sources';
 import {composeWeather, daysBetween, eachDate, regionDate, type ComposedWeatherDay} from '../../plans/weather';
 import type {ProviderConfig} from '../../providers/config';
 
 export const MAX_TRACK_DAYS = 800;
+
+/** The day's `agro` block as the API shape (adds the basis literal); `{}` spread leaves the key off when the source day has none. */
+const agroOf = (d: DailyWeather | undefined): {agro?: WeatherAgro} => (d?.agro ? {agro: {...d.agro, basis: 'grid_model_estimate'}} : {});
 
 export const WeatherTrackDay = z.object({
   date: z.iso.date(),
@@ -36,6 +40,12 @@ export const WeatherTrackDay = z.object({
     /** Calendar years behind a typical day; set on typical days only. */
     years: z.array(z.number().int()).nullable(),
   }).strict(),
+  /**
+   * Deeper daily variables (WEATHER_DEPTH_SPEC.md): Open-Meteo model estimates for the grid cell, not field readings.
+   * Absent when the stored row carries none. Typical days carry only the climatology means (ET0, humidity, soil
+   * moisture, leaf wetness, VPD); every other key is null there.
+   */
+  agro: WeatherAgro.optional(),
 }).strict();
 export const WeatherTrack = z.object({
   days: z.array(WeatherTrackDay),
@@ -129,19 +139,23 @@ export async function weatherTrack(deps: WeatherTrackDeps, args: WeatherTrackArg
   const composed = composeWeather({from, to, asOfDate, mode, cutoff: mode === 'replay' ? asOf : null, observations, forecast, climatology});
   const years = composed.climatology ? (composed.climatology.qualifyingYears ?? Array.from({length: composed.climatology.years.to - composed.climatology.years.from + 1}, (_, i) => composed.climatology!.years.from + i)) : null;
   const forecastByDate = new Map((forecast?.days ?? []).map((d) => [d.date, d]));
+  // composeWeather does not carry the deeper variables; they are attached here from the same source day by date.
+  const observedByDate = new Map(observations.map((d) => [d.date, d]));
+  const typicalByDate = new Map((climatology?.days ?? []).map((d) => [d.date, d]));
 
   let filledFromForecast = 0;
   const days: WeatherTrackDay[] = composed.days.map((d: ComposedWeatherDay): WeatherTrackDay => {
     if (d.state === 'unavailable' && d.date < asOfDate && forecast && forecastByDate.has(d.date)) {
       const f = forecastByDate.get(d.date)!;
       filledFromForecast += 1;
-      return {date: d.date, kind: 'forecast', rainMm: f.rainMm, tMinC: f.tMinC, tMaxC: f.tMaxC, basis: {source: forecast.sourceId, issuedAt: forecast.issuedAt, years: null}};
+      return {date: d.date, kind: 'forecast', rainMm: f.rainMm, tMinC: f.tMinC, tMaxC: f.tMaxC, basis: {source: forecast.sourceId, issuedAt: forecast.issuedAt, years: null}, ...agroOf(f)};
     }
     // composeWeather's `scenario` (climatology beyond the forecast horizon) is the Today view's `typical`.
     const kind = d.state === 'scenario' ? 'typical' : d.state;
     return {
       date: d.date, kind, rainMm: d.rainMm, tMinC: d.tMinC, tMaxC: d.tMaxC,
       basis: {source: d.sourceId, issuedAt: kind === 'forecast' ? d.issuedAt : null, years: kind === 'typical' ? years : null},
+      ...agroOf(kind === 'observed' ? observedByDate.get(d.date) : kind === 'forecast' ? forecastByDate.get(d.date) : kind === 'typical' ? typicalByDate.get(d.date) : undefined),
     };
   });
 
@@ -155,6 +169,18 @@ export async function weatherTrack(deps: WeatherTrackDeps, args: WeatherTrackArg
   if (count('observed') > 0) limitations.push('Observed days are Open-Meteo archive reanalysis (a gridded model estimate), not station measurements.');
   if (filledFromForecast > 0) limitations.push(`${filledFromForecast} recent past day${filledFromForecast > 1 ? 's are' : ' is'} not in the archive yet and shown from the stored forecast issued ${forecast!.issuedAt}.`);
   if (count('typical') > 0 && years && years.length) limitations.push(`Typical days are the mean of a 7-day window around each calendar date over ${years.length} years (${years[0]} to ${years.at(-1)}); they describe a normal year, not a forecast.`);
+  if (days.some((d) => d.agro)) limitations.push('Humidity, wind, soil moisture, leaf wetness, sunshine and the other deeper values are Open-Meteo model estimates for the grid cell around the field (about 9 to 11 km), not field readings. Typical days carry only the climatology means of ET0, humidity, soil moisture, leaf wetness and vapour pressure deficit.');
+  if (count('typical') > 0 && climatology?.agroYears && years) {
+    // The deeper normals can rest on fewer years than rain and temperature while stored years are refetched with the new variables.
+    const span = (ys: number[]) => (ys.length === ys[ys.length - 1]! - ys[0]! + 1 ? `${ys[0]} to ${ys.at(-1)}` : ys.join(', '));
+    const names: Record<string, string> = {rhMeanPct: 'humidity', soilMoisture0to7: 'soil moisture', leafWetnessPct: 'leaf wetness', vpdMaxKpa: 'vapour pressure deficit'};
+    const groups = new Map<string, string[]>();
+    for (const [k, ys] of Object.entries(climatology.agroYears)) {
+      if (!ys?.length || (ys.length === years.length && ys.every((y, i) => y === years[i]))) continue;
+      groups.set(span(ys), [...(groups.get(span(ys)) ?? []), names[k]!]);
+    }
+    for (const [ys, ns] of groups) limitations.push(`Typical ${ns.join(', ')} ${ns.length > 1 ? 'are' : 'is'} the mean over ${ys} only, fewer years than the rain and temperature normals; the other years have no ${ns.length > 1 ? 'such values' : 'such value'} stored yet.`);
+  }
   const missingFuture = days.filter((d) => d.kind === 'unavailable' && d.date >= asOfDate).length;
   if (missingFuture > 0 && !climatology) {
     limitations.push(`${missingFuture} future day${missingFuture > 1 ? 's have' : ' has'} no typical values: fewer than 5 complete archive years are stored near this field.${deps.autoIngest && mode === 'live' ? ' An archive download is requested when none is stored.' : ''}`);

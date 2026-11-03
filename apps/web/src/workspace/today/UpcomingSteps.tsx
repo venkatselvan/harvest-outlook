@@ -2,6 +2,7 @@ import { createSignal, For, Show } from "solid-js";
 import type { FarmCommandCenter, UpcomingStep } from "@harvest/contracts";
 import { Icon } from "../icons";
 import { nextActionWhen, pickNextStep, windowLabel } from "./model";
+import { FieldCheckActions, FieldCheckDetails } from "../scouting/ChecksSteps";
 
 export interface UpcomingStepsProps {
   steps: UpcomingStep[];
@@ -18,6 +19,10 @@ export interface UpcomingStepsProps {
   sources?: FarmCommandCenter["sources"] | undefined;
   /** Caption under the heading, for example when steps come from the care schedule because the Today view failed. */
   note?: string | undefined;
+  /** 2026-11-03 (FIELD_OPERATIONS_SPEC.md 4.2): Done on a field check opens the completion sheet. Without it no Done shows. */
+  onCheck?: ((step: UpcomingStep) => void) | undefined;
+  /** Opens the issue a recheck step looks at again. */
+  onOpenIssue?: ((issueId: string) => void) | undefined;
 }
 
 /** DOM id for a step, so an alert's suggested step can scroll to it. */
@@ -34,6 +39,7 @@ const kindIcon: Record<UpcomingStep["kind"], string> = {
   stage_transition: "calendar",
   alert_step: "info",
   stage_check: "calendar",
+  field_check: "leaf",
 };
 const VISIBLE = 5;
 
@@ -128,10 +134,14 @@ export function UpcomingSteps(props: UpcomingStepsProps) {
                 <span class="today-chip step completed">Done</span>
               </Show>
             </p>
-            <Show when={step().careTask?.action ?? step().detail}>
+            <Show when={step().kind !== "field_check" && (step().careTask?.action ?? step().detail)}>
               {(action) => <p class="today-next-action">{action()}</p>}
             </Show>
             <StepSources step={step()} sources={props.sources} />
+            <Show when={step().kind === "field_check"}>
+              <FieldCheckDetails step={step()} />
+              <FieldCheckActions step={step()} busyId={props.busyId} onCheck={props.onCheck} onOpenIssue={props.onOpenIssue} />
+            </Show>
             <Show when={canComplete(step())}>
               <DoneButton step={step()} busyId={props.busyId} onDone={props.onDone} />
             </Show>
@@ -159,12 +169,18 @@ export function UpcomingSteps(props: UpcomingStepsProps) {
                       </Show>
                     </p>
                     <StepSources step={step} sources={props.sources} />
-                    <Show when={!step.careTask && step.detail}>
+                    <Show when={step.kind !== "field_check" && !step.careTask && step.detail}>
                       <p class="today-step-detail">{step.detail}</p>
+                    </Show>
+                    <Show when={step.kind === "field_check"}>
+                      <FieldCheckDetails step={step} />
                     </Show>
                   </div>
                   <Show when={canComplete(step)}>
                     <DoneButton step={step} busyId={props.busyId} onDone={props.onDone} />
+                  </Show>
+                  <Show when={step.kind === "field_check"}>
+                    <FieldCheckActions step={step} busyId={props.busyId} onCheck={props.onCheck} onOpenIssue={props.onOpenIssue} />
                   </Show>
                 </li>
               )}

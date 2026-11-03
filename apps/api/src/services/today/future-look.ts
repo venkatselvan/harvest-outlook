@@ -67,7 +67,7 @@ import {enqueue} from '../jobs';
 import {stageAt, stageTimeline, type StageTimelineInput} from './stage-timeline';
 import {buildPredictionGuidance, phaseForTarget, type PredictionGuidance} from './prediction-guidance';
 import {readIndexStage} from './index-stage';
-import {fieldConditions} from './conditions';
+import {fieldConditions, soilTextureOf} from './conditions';
 import {weatherTrack} from './weather-track';
 import {irrigationCategoryOf} from './footprint';
 
@@ -436,11 +436,11 @@ export async function storedPredictionContext(pool: Pool, a: {
     const lon = a.ring.slice(0, n).reduce((x, p) => x + p[0], 0) / n, lat = a.ring.slice(0, n).reduce((x, p) => x + p[1], 0) / n;
     const from = addDays(a.targetDate, -4);
     const track = await weatherTrack({pool, autoIngest: false, now: a.now}, {point: {lat, lon}, from, to: a.targetDate, asOf: a.now().toISOString(), mode: 'live', farmId: a.farmId});
-    const weather = track.days.map((d) => ({date: d.date, kind: d.kind, rainMm: d.rainMm, tMinC: d.tMinC, tMaxC: d.tMaxC, basis: {source: (d.basis.source ?? 'none').slice(0, 120), issuedAt: null, years: null}}));
+    const weather = track.days.map((d) => ({date: d.date, kind: d.kind, rainMm: d.rainMm, tMinC: d.tMinC, tMaxC: d.tMaxC, basis: {source: (d.basis.source ?? 'none').slice(0, 120), issuedAt: null, years: null}, ...(d.agro ? {agro: d.agro} : {})}));
     const anchor = a.cycle.establishmentDate ?? a.cycle.sowingDate;
     const cond = fieldConditions({
       cropId: a.cycle.cropId, establishmentMethod: a.cycle.establishmentMethod ?? null, anchorDate: anchor, window: {from: a.targetDate, to: a.targetDate},
-      timeline: a.timeline, weather, alerts: [], irrigationCategory: irrigationCategoryOf(a.facts as never), readings: [],
+      timeline: a.timeline, weather, alerts: [], irrigationCategory: irrigationCategoryOf(a.facts as never), soilTexture: soilTextureOf(a.facts as never), readings: [],
     });
     point = cond.points.find((p) => p.date === a.targetDate) ?? null;
   } catch { point = null; }

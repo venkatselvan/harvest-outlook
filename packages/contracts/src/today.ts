@@ -5,6 +5,7 @@ import {CareTask} from './command-center';
 import {CropCycle, GeographicBoundary} from './workspace';
 import {StageTimeline, NumberRange, BasisRef, CostEstimate, HarvestWindow, NumberEstimate} from './year-plan';
 import {ModelInvocation} from './common';
+import {FieldCheck, FieldIssue} from './scouting';
 
 /**
  * Today view contract (Stream B). One stage slider drives the illustration and the satellite view;
@@ -55,6 +56,24 @@ export const PricePoint = z.object({
  unit: z.literal('INR/kg'),
 }).strict();
 
+export const WeatherAgro = z.object({
+ et0Mm: z.number().nullable(),
+ rhMeanPct: z.number().nullable(),
+ rhMinPct: z.number().nullable(),
+ rhMaxPct: z.number().nullable(),
+ dewPointC: z.number().nullable(),
+ vpdMaxKpa: z.number().nullable(),
+ windMaxKmh: z.number().nullable(),
+ gustMaxKmh: z.number().nullable(),
+ soilMoisture0to7: z.number().nullable(),
+ soilTemp0to7C: z.number().nullable(),
+ leafWetnessPct: z.number().nullable(),
+ sunshineHours: z.number().nullable(),
+ rainHours: z.number().nullable(),
+ rainProbabilityPct: z.number().nullable(),
+ basis: z.literal('grid_model_estimate'),
+}).strict();
+
 export const WeatherPoint = z.object({
  date: isoDate,
  kind: z.enum(['observed', 'forecast', 'typical', 'unavailable']),
@@ -62,12 +81,21 @@ export const WeatherPoint = z.object({
  tMinC: z.number().nullable(),
  tMaxC: z.number().nullable(),
  basis: z.object({source: z.string().max(120), issuedAt: z.iso.datetime().nullable(), years: z.array(z.number().int()).nullable()}).strict(),
+ /**
+  * Deeper daily variables (WEATHER_DEPTH_SPEC.md section 4): Open-Meteo model estimates for the ~9 to 11 km grid cell
+  * around the field, never a field reading. Absent when the producer has no such row; null when the provider gave none.
+  * soilMoisture0to7 is the land-surface model's 0 to 7 cm value in m³/m³, uncalibrated to the farm's soil.
+  */
+ agro: WeatherAgro.optional(),
 }).strict();
 
 export const UpcomingStep = z.object({
  id: z.string().max(160),
- /** Round 2: 'stage_check' = sourced stage guidance dated from the stage timeline (ROUND2_SPEC.md 2.1). */
- kind: z.enum(['care_task', 'stage_transition', 'alert_step', 'stage_check']),
+ /**
+  * Round 2: 'stage_check' = sourced stage guidance dated from the stage timeline (ROUND2_SPEC.md 2.1). 2026-11-03:
+  * 'field_check' = the farmer's own recurring field walk or an issue recheck (FIELD_OPERATIONS_SPEC.md 4.2).
+  */
+ kind: z.enum(['care_task', 'stage_transition', 'alert_step', 'stage_check', 'field_check']),
  title: z.string().max(160),
  detail: text.nullable(),
  dueFrom: isoDate,
@@ -75,6 +103,10 @@ export const UpcomingStep = z.object({
  status: z.enum(['upcoming', 'due', 'overdue', 'completed']),
  careTask: CareTask.nullable(),
  alertId: z.uuid().nullable(),
+ /** 2026-11-03: set for kind 'field_check' (the check with its checklist). */
+ fieldCheck: FieldCheck.nullable().optional(),
+ /** 2026-11-03: the issue a recheck step looks at again. */
+ issueId: z.uuid().nullable().optional(),
 }).strict();
 
 export const OutlookNote = z.object({
@@ -308,8 +340,26 @@ export const FieldConditionPoint = z.object({
  kind: z.enum(['observed', 'forecast', 'typical', 'unavailable']),
  rain: z.object({mm: z.number().nullable(), class: RainClass}).strict(),
  /** flooded: the crop practice keeps standing water in this stage (paddy); ponded: a rain rule; moist: recent rain; dry otherwise. */
- water: z.object({state: WaterState, basis: z.enum(['crop_practice', 'rain_rule', 'none'])}).strict(),
+ water: z.object({
+  state: WaterState,
+  /** model_soil_moisture: moist/dry from the grid cell's modelled 0 to 7 cm soil moisture (WEATHER_DEPTH_SPEC.md 6.2); never ponded or flooded. */
+  basis: z.enum(['crop_practice', 'rain_rule', 'model_soil_moisture', 'none']),
+  /** The cell's modelled 0 to 7 cm soil moisture (m³/m³) behind the day, when it was available. */
+  soilMoisture0to7: z.number().nullable().optional(),
+ }).strict(),
  heat: z.object({tMaxC: z.number().nullable(), stress: z.boolean(), thresholdC: z.number().nullable()}).strict(),
+ /**
+  * Wetness and wind context from the grid-cell model estimates (WEATHER_DEPTH_SPEC.md 6.2): conditions that favour or
+  * discourage fungal spread, and gusts; a context, never a diagnosis. Absent until the producer fills it.
+  */
+ pressure: z.object({
+  wetness: z.enum(['high', 'moderate', 'low', 'unknown']),
+  leafWetnessPct: z.number().nullable(),
+  rhMeanPct: z.number().nullable(),
+  vpdMaxKpa: z.number().nullable(),
+  gustMaxKmh: z.number().nullable(),
+  basis: z.enum(['sourced_threshold', 'engine_assumption', 'none']),
+ }).strict().optional(),
  /** Latest usable satellite reading on or before the date, held until the next one; null before the first. */
  greenness: z.object({ndvi: z.number().nullable(), verdict: z.enum(['above_typical', 'near_typical', 'below_typical', 'no_reference']).nullable(), observedOn: isoDate.nullable(), daysSince: z.number().int().nullable()}).strict(),
  /** Alerts whose validity covers the date. */
@@ -399,6 +449,15 @@ export const TodayView = z.object({
   * live mode and without a current cycle.
   */
  predictions: z.object({autoRequested: z.boolean(), pending: z.number().int().min(0), reason: z.string().max(80).nullable()}).strict().nullable().optional(),
+ /**
+  * 2026-11-03 (FIELD_OPERATIONS_SPEC.md 5.2): farmer-reported issues of the described field plus farm-wide ones (the whole farm
+  * without fields): open and treating counts and the newest open or treating issues. Absent when no issue is logged there.
+  */
+ issues: z.object({
+  open: z.number().int(),
+  treating: z.number().int(),
+  latest: z.array(FieldIssue.pick({id: true, category: true, severity: true, status: true, title: true, observedOn: true, fieldId: true})).max(5),
+ }).strict().optional(),
  limitations: z.array(text),
 }).strict();
 
@@ -406,6 +465,7 @@ export type SceneRef = z.infer<typeof SceneRef>;
 export type HealthReading = z.infer<typeof HealthReading>;
 export type PricePoint = z.infer<typeof PricePoint>;
 export type WeatherPoint = z.infer<typeof WeatherPoint>;
+export type WeatherAgro = z.infer<typeof WeatherAgro>;
 export type UpcomingStep = z.infer<typeof UpcomingStep>;
 export type OutlookNote = z.infer<typeof OutlookNote>;
 export type IndexStagePhase = z.infer<typeof IndexStagePhase>;

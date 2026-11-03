@@ -7,9 +7,9 @@ import { storeArchive, storeForecast } from "../../ingest/weather-store";
 import { enqueue } from "../../services/jobs";
 import { normalizeIngestPayload } from "../../worker/handlers/ingest";
 import { loadProviderConfig, type ProviderConfig } from "../../providers/config";
-import { fetchDailyArchive, fetchForecast, OPENMETEO_ATTRIBUTION, roundCoord } from "../../providers/openmeteo/client";
+import { ARCHIVE_DAILY_VARIABLES, fetchDailyArchive, fetchForecast, OPENMETEO_ATTRIBUTION, roundCoord, variableSetId } from "../../providers/openmeteo/client";
 import type { FetchLike } from "../../ingest/http";
-import type { ClimatologyBundle, DailyWeather, ForecastBundle, WeatherScope, WeatherSource } from "../sources";
+import type { ClimatologyBundle, DailyWeather, DailyWeatherAgro, ForecastBundle, WeatherScope, WeatherSource } from "../sources";
 import { eachDate, regionDate } from "../weather";
 
 /** Farm-to-grid-cell tolerance. Provider grids are 0.1-0.25 degree, so a stored cell is within ~0.18 degree of any farm in it. */
@@ -46,13 +46,42 @@ const num = (v: unknown): number | null => (typeof v === "number" && Number.isFi
 const dateStr = (v: unknown): string =>
   v instanceof Date ? `${String(v.getFullYear()).padStart(4, "0")}-${String(v.getMonth() + 1).padStart(2, "0")}-${String(v.getDate()).padStart(2, "0")}` : String(v).slice(0, 10);
 
+/** Stored `variables` key behind each `DailyWeatherAgro` field. `sunshine_duration` is already stored in hours (client converts). */
+const AGRO_KEYS: Record<keyof DailyWeatherAgro, string> = {
+  et0Mm: "et0_fao_evapotranspiration",
+  rhMeanPct: "relative_humidity_2m_mean",
+  rhMinPct: "relative_humidity_2m_min",
+  rhMaxPct: "relative_humidity_2m_max",
+  dewPointC: "dew_point_2m_mean",
+  vpdMaxKpa: "vapour_pressure_deficit_max",
+  windMaxKmh: "wind_speed_10m_max",
+  gustMaxKmh: "wind_gusts_10m_max",
+  soilMoisture0to7: "soil_moisture_0_to_7cm_mean",
+  soilTemp0to7C: "soil_temperature_0_to_7cm_mean",
+  leafWetnessPct: "leaf_wetness_probability_mean",
+  sunshineHours: "sunshine_duration",
+  rainHours: "precipitation_hours",
+  rainProbabilityPct: "precipitation_probability_max",
+};
+
+/**
+ * `agro` is present only when the stored row carries at least one deeper variable besides ET0 (rows stored before the
+ * weather-depth request have none, and stay exactly as they were). Missing keys are null, never filled.
+ */
+function agroOf(vars: Record<string, unknown>): DailyWeatherAgro | undefined {
+  const agro = Object.fromEntries(Object.entries(AGRO_KEYS).map(([field, key]) => [field, num(vars[key])])) as unknown as DailyWeatherAgro;
+  return Object.entries(agro).some(([field, v]) => field !== "et0Mm" && v !== null) ? agro : undefined;
+}
+
 function toDaily(date: string, vars: Record<string, unknown>, sourceId: string): DailyWeather {
+  const agro = agroOf(vars);
   return {
     date,
     rainMm: num(vars.precipitation_sum),
     et0Mm: num(vars.et0_fao_evapotranspiration),
     tMaxC: num(vars.temperature_2m_max),
     tMinC: num(vars.temperature_2m_min),
+    ...(agro ? { agro } : {}),
     sourceId,
   };
 }
@@ -63,7 +92,25 @@ function ordinal(date: string): number {
   return Math.round((Date.UTC(2001, m - 1, m === 2 && d === 29 ? 28 : d) - Date.UTC(2001, 0, 1)) / 86_400_000);
 }
 
-const mean = (xs: number[]): number | null => (xs.length >= MIN_SAMPLES_PER_DAY ? Math.round((xs.reduce((a, b) => a + b, 0) / xs.length) * 100) / 100 : null);
+/** Mean over a window; null below MIN_SAMPLES_PER_DAY samples. `decimals` 3 keeps soil moisture (m³/m³) shown to 0.1 %. */
+/**
+ * Idempotency key of one climatology archive job: `clim:<variable-set id>:<lat>,<lon>:<year>`. The id is derived from the
+ * variables the archive request asks for, so adding a variable re-triggers the (bounded, once per key) backfill by itself.
+ * A hand-bumped version would let a stale worker spend the one-shot keys with an older request (2026-11-03 incident).
+ */
+export function climatologyJobKey(lat: number, lon: number, year: number, variables: readonly string[] = ARCHIVE_DAILY_VARIABLES): string {
+  return `clim:${variableSetId(variables)}:${roundCoord(lat)},${roundCoord(lon)}:${year}`;
+}
+
+const mean = (xs: number[], decimals = 2): number | null => {
+  if (xs.length < MIN_SAMPLES_PER_DAY) return null;
+  const f = 10 ** decimals;
+  return Math.round((xs.reduce((a, b) => a + b, 0) / xs.length) * f) / f;
+};
+
+/** Deeper daily variables with a typical-day mean (others stay null on typical days). */
+const TYPICAL_AGRO = ["rhMeanPct", "soilMoisture0to7", "leafWetnessPct", "vpdMaxKpa"] as const;
+type TypicalAgroKey = (typeof TYPICAL_AGRO)[number];
 
 /** WeatherSource over the T05a stores. Never fabricates: a missing day stays missing. */
 export function createWeatherSource(o: WeatherSourceAdapterOptions): AttributedWeatherSource {
@@ -180,13 +227,18 @@ export function createWeatherSource(o: WeatherSourceAdapterOptions): AttributedW
     return q.weatherObservations(pool, { locationKey: key, from: `${years.from}-01-01`, to: `${years.to}-12-31`, ...(mode === "replay" ? { availableBy: new Date(availableBy ?? `${range.start}T00:00:00Z`) } : {}) });
   }
 
-  /** Queues one archive job per missing year (bounded, deduplicated by key) so normals appear on a later read. */
-  async function queueClimatologyBackfill(scope: WeatherScope, years: { from: number; to: number }) {
-    if (!auto || !scope.point) return;
+  /**
+   * Queues one archive job per missing year (bounded, deduplicated by key) so normals appear on a later read.
+   * `depth` is the weather-depth re-fetch for a cell whose stored years predate the deeper variables (same attempt rule,
+   * its own 15-minute slot). Jobs are deduplicated for good by the idempotency key (a finished job keeps its key), so the
+   * key carries the requested variable set (`climatologyJobKey`): once per point, year and variable set.
+   */
+  async function queueClimatologyBackfill(scope: WeatherScope, years: number[], depth = false) {
+    if (!auto || !scope.point || years.length === 0) return;
     const p = scope.point;
-    await bounded("climatology", p, async () => {
-      for (let y = years.from; y <= years.to; y++) {
-        await enqueue(pool, "ingest.weather_archive", normalizeIngestPayload("ingest.weather_archive", { lat: p.lat, lon: p.lon, start: `${y}-01-01`, end: `${y}-12-31` }), null, `clim:${roundCoord(p.lat)},${roundCoord(p.lon)}:${y}`).catch(() => undefined);
+    await bounded(depth ? "climatology_depth" : "climatology", p, async () => {
+      for (const y of years) {
+        await enqueue(pool, "ingest.weather_archive", normalizeIngestPayload("ingest.weather_archive", { lat: p.lat, lon: p.lon, start: `${y}-01-01`, end: `${y}-12-31` }), null, climatologyJobKey(p.lat, p.lon, y)).catch(() => undefined);
       }
     });
   }
@@ -222,38 +274,68 @@ export function createWeatherSource(o: WeatherSourceAdapterOptions): AttributedW
       for (const r of rows) perYear.set(Number(dateStr(r.observed_on).slice(0, 4)), (perYear.get(Number(dateStr(r.observed_on).slice(0, 4))) ?? 0) + 1);
       const qualifying = [...perYear.entries()].filter(([, n]) => n >= MIN_ROWS_PER_CLIMATOLOGY_YEAR).map(([y]) => y).sort((a, b) => a - b);
       if (qualifying.length < MIN_CLIMATOLOGY_YEARS) {
-        if (rows.length === 0) await queueClimatologyBackfill(scope, years);
+        if (rows.length === 0) await queueClimatologyBackfill(scope, Array.from({ length: years.to - years.from + 1 }, (_, i) => years.from + i));
         return null; // scenario unavailable; never substituted
       }
-      const byOrdinal = new Map<number, { rain: number[]; et0: number[]; tmax: number[]; tmin: number[] }>();
-      let sourceId = "";
+      type Slot = { rain: number[]; et0: number[]; tmax: number[]; tmin: number[] } & Record<TypicalAgroKey, number[]>;
+      const newSlot = (): Slot => ({ rain: [], et0: [], tmax: [], tmin: [], rhMeanPct: [], soilMoisture0to7: [], leafWetnessPct: [], vpdMaxKpa: [] });
+      // A year "carries" a deeper field when MIN_ROWS_PER_CLIMATOLOGY_YEAR of its rows have it, like a qualifying year.
       const qset = new Set(qualifying);
+      const carried: Record<TypicalAgroKey, Map<number, number>> = { rhMeanPct: new Map(), soilMoisture0to7: new Map(), leafWetnessPct: new Map(), vpdMaxKpa: new Map() };
+      for (const r of rows) {
+        const y = Number(dateStr(r.observed_on).slice(0, 4));
+        if (!qset.has(y)) continue;
+        const a = agroOf((r.variables ?? {}) as Record<string, unknown>);
+        for (const k of TYPICAL_AGRO) if (a && a[k] !== null) carried[k].set(y, (carried[k].get(y) ?? 0) + 1);
+      }
+      const yearsWith = (k: TypicalAgroKey) => qualifying.filter((y) => (carried[k].get(y) ?? 0) >= MIN_ROWS_PER_CLIMATOLOGY_YEAR);
+      // Per field: a typical value needs MIN_CLIMATOLOGY_YEARS years that carry it; fewer is no normal (null), never a one-year "typical".
+      const agroYears: NonNullable<ClimatologyBundle["agroYears"]> = {};
+      for (const k of TYPICAL_AGRO) {
+        const ys = yearsWith(k);
+        if (ys.length >= MIN_CLIMATOLOGY_YEARS) agroYears[k] = ys;
+      }
+      // Live cell: every qualifying year that lacks the humidity series is refetched once per variable set (per year, so a
+      // failed or stale year is retried when the set changes, and an older complete year is not refetched for nothing).
+      const lacking = qualifying.filter((y) => !yearsWith("rhMeanPct").includes(y));
+      if (lacking.length) await queueClimatologyBackfill(scope, lacking, true);
+      const byOrdinal = new Map<number, Slot>();
+      let sourceId = "";
       for (const r of rows) {
         if (!qset.has(Number(dateStr(r.observed_on).slice(0, 4)))) continue; // partial years are neither used nor named
         const v = (r.variables ?? {}) as Record<string, unknown>;
         const o2 = ordinal(dateStr(r.observed_on));
-        const slot = byOrdinal.get(o2) ?? { rain: [], et0: [], tmax: [], tmin: [] };
+        const slot = byOrdinal.get(o2) ?? newSlot();
         const d = toDaily(dateStr(r.observed_on), v, "");
         if (d.rainMm !== null) slot.rain.push(d.rainMm);
         if (d.et0Mm !== null) slot.et0.push(d.et0Mm);
         if (d.tMaxC !== null) slot.tmax.push(d.tMaxC);
         if (d.tMinC !== null) slot.tmin.push(d.tMinC);
+        for (const k of TYPICAL_AGRO) if (d.agro && d.agro[k] !== null && agroYears[k]?.includes(Number(dateStr(r.observed_on).slice(0, 4)))) slot[k].push(d.agro[k]!); // only the years that carry the field
         byOrdinal.set(o2, slot);
         sourceId = String(r.source_id);
       }
-      const window = (ord: number, pick: "rain" | "et0" | "tmax" | "tmin") => {
+      const window = (ord: number, pick: "rain" | "et0" | "tmax" | "tmin" | TypicalAgroKey) => {
         const xs: number[] = [];
         for (let k = -3; k <= 3; k++) xs.push(...(byOrdinal.get((ord + k + 365) % 365)?.[pick] ?? []));
-        return mean(xs);
+        return mean(xs, pick === "soilMoisture0to7" ? 3 : 2);
       };
       const days: DailyWeather[] = [];
       const src = await label(sourceId);
       for (const date of eachDate(range.start, range.end)) {
         const ord = ordinal(date);
         const d: DailyWeather = { date, rainMm: window(ord, "rain"), et0Mm: window(ord, "et0"), tMaxC: window(ord, "tmax"), tMinC: window(ord, "tmin"), sourceId: src };
+        // Same MIN_SAMPLES_PER_DAY rule per field; agro is attached only when a deeper normal exists.
+        const typical = Object.fromEntries(TYPICAL_AGRO.map((k) => [k, window(ord, k)])) as Record<TypicalAgroKey, number | null>;
+        if (TYPICAL_AGRO.some((k) => typical[k] !== null)) {
+          d.agro = {
+            et0Mm: d.et0Mm, rhMeanPct: typical.rhMeanPct, rhMinPct: null, rhMaxPct: null, dewPointC: null, vpdMaxKpa: typical.vpdMaxKpa, windMaxKmh: null, gustMaxKmh: null,
+            soilMoisture0to7: typical.soilMoisture0to7, soilTemp0to7C: null, leafWetnessPct: typical.leafWetnessPct, sunshineHours: null, rainHours: null, rainProbabilityPct: null,
+          };
+        }
         if (d.rainMm !== null || d.et0Mm !== null || d.tMaxC !== null || d.tMinC !== null) days.push(d);
       }
-      return { years: { from: qualifying[0]!, to: qualifying[qualifying.length - 1]! }, qualifyingYears: qualifying, sourceId: src, days };
+      return { years: { from: qualifying[0]!, to: qualifying[qualifying.length - 1]! }, qualifyingYears: qualifying, ...(Object.keys(agroYears).length ? { agroYears } : {}), sourceId: src, days };
     },
 
     /** Cheap token: counts and newest availability of what the reads above would see. No network, no ingest. */

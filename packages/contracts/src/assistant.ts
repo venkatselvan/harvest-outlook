@@ -212,6 +212,8 @@ export const FarmBriefing = z
       .nullable(),
     /** 2026-11-03: fields inside the farm; viewedField names the field the briefing describes (12.5: the selected field, else the first field with a current crop), null when it describes the whole farm. */
     fields: z.object({ count: z.number().int().nonnegative(), viewedField: bText(80).nullable() }).strict().optional(),
+    /** 2026-11-03: one code-written line per field (the farm without fields) with open issues and the next field check; absent when there is nothing to say. */
+    scouting: z.array(bText(300)).max(10).optional(),
     limitations: z.array(bText(300)).max(30),
   })
   .strict();

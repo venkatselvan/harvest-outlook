@@ -4,12 +4,14 @@ import { WorkspaceShell } from "./workspace/Shell";
 import { FarmWorkspace } from "./workspace/FarmPage";
 import { FarmHome, FarmSetup } from "./workspace/FarmCommandCenter";
 import { Farm, Journal, Plan } from "./routes/pages";
+import { SeasonReportPage } from "./workspace/report/SeasonReportPage";
 export function App() {
   return (
     <Router root={WorkspaceShell}>
       <Route path="/" component={() => <Navigate href="/farm" />} />
       <Route path="/farm" component={FarmHome} />
       <Route path="/farm/setup" component={FarmSetup} />
+      <Route path="/farm/report" component={SeasonReportPage} />
       <Route path="/farm/manage" component={FarmWorkspace} />
       <Route path="/farm/details" component={Farm} />
       <Route path="/farm/settings" component={FarmHome} />

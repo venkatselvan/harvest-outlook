@@ -1195,3 +1195,110 @@ export function todayPredictedFixture(farmId = FIXTURE_FARM_ID, predictions: Tod
   view.predictions = predictions;
   return view;
 }
+
+// ---------------------------------------------------------------- field operations (FIELD_OPERATIONS_SPEC.md 4, 5; 2026-11-03)
+
+export const FIXTURE_ISSUE_IDS = {
+  leaf: "7a1d3c2e-0b4f-4d6a-9e8c-000000000001",
+  weeds: "7a1d3c2e-0b4f-4d6a-9e8c-000000000002",
+} as const;
+/** An interval field check with one invented risk-window item (example.org source) and the eight general prompts. */
+export function fieldCheckStepFixture(over: { missedCount?: number; status?: UpcomingStep["status"] } = {}): UpcomingStep {
+  const general = [
+    "New leaf damage or holes",
+    "Discoloured or wilting plants",
+    "Insects on leaves, stems or the soil surface",
+    "Weeds taller than the crop between rows",
+    "Standing water or dry cracked soil",
+    "Animal tracks or grazing damage",
+    "Anything different from last week",
+    "Take a photo of anything unusual",
+  ];
+  const status = over.status ?? "due";
+  return {
+    id: "check:maize-cycle:2026-11-01",
+    kind: "field_check",
+    title: "Walk the field: Maize on North strip",
+    detail: "Your check interval: every 7 days (your own setting).",
+    dueFrom: "2026-11-01",
+    dueTo: "2026-11-03",
+    status,
+    careTask: null,
+    alertId: null,
+    issueId: null,
+    fieldCheck: {
+      id: "check:maize-cycle:2026-11-01",
+      kind: "interval",
+      fieldId: "north",
+      cycleId: "maize-cycle",
+      issueId: null,
+      cropName: "Maize",
+      dueFrom: "2026-11-01",
+      dueTo: "2026-11-03",
+      status,
+      intervalDays: 7,
+      checklist: [
+        {
+          text: "Fixture risk window: look for fresh feeding on young leaves",
+          kind: "risk_window",
+          sourceName: "Example crop protection bulletin (fixture)",
+          sourceUrl: "https://example.org/bulletin",
+          sourceDate: "2026-10-20",
+          alertId: FIXTURE_ALERT_IDS.threat,
+        },
+        ...general.map((text) => ({ text, kind: "general" as const, sourceName: null, sourceUrl: null, sourceDate: null, alertId: null })),
+      ],
+      completedOn: null,
+      journalEntryId: null,
+      scope: "field",
+      ...(over.missedCount ? { missedCount: over.missedCount } : {}),
+    },
+  };
+}
+/** A recheck of an open issue the farmer set when recording a response. */
+export function recheckStepFixture(): UpcomingStep {
+  return {
+    id: `recheck:${FIXTURE_ISSUE_IDS.leaf}:2026-11-04`,
+    kind: "field_check",
+    title: "Recheck: Holes in young leaves",
+    detail: "The recheck date you set when you recorded what you did.",
+    dueFrom: "2026-11-04",
+    dueTo: "2026-11-04",
+    status: "upcoming",
+    careTask: null,
+    alertId: null,
+    issueId: FIXTURE_ISSUE_IDS.leaf,
+    fieldCheck: {
+      id: `recheck:${FIXTURE_ISSUE_IDS.leaf}:2026-11-04`,
+      kind: "recheck",
+      fieldId: "north",
+      cycleId: "maize-cycle",
+      issueId: FIXTURE_ISSUE_IDS.leaf,
+      cropName: "Maize",
+      dueFrom: "2026-11-04",
+      dueTo: "2026-11-04",
+      status: "upcoming",
+      intervalDays: null,
+      checklist: [],
+      completedOn: null,
+      journalEntryId: null,
+      scope: "field",
+    },
+  };
+}
+/** The maize view with a field check and a recheck in the upcoming steps and an `issues` block (all invented). */
+export function todayChecksFixture(farmId = FIXTURE_FARM_ID): TodayView {
+  const base = todayFixture(farmId);
+  return {
+    ...base,
+    upcoming: [...base.upcoming, fieldCheckStepFixture(), recheckStepFixture()],
+    issues: {
+      open: 2,
+      treating: 1,
+      latest: [
+        { id: FIXTURE_ISSUE_IDS.leaf, category: "pest", severity: "medium", status: "open", title: "Holes in young leaves", observedOn: "2026-10-28", fieldId: "north" },
+        { id: FIXTURE_ISSUE_IDS.weeds, category: "weed", severity: "low", status: "treating", title: "Weeds between rows", observedOn: "2026-10-20", fieldId: "north" },
+      ],
+    },
+  };
+}

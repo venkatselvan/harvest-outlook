@@ -78,6 +78,16 @@
  *   in any 24 hours, the per-cycle cap of 10), with its own index phase, latest NDVI and conditions as the guidance inputs.
  *   It runs under the guard after the conditions block, is a database write plus a queued job (no provider call here), and
  *   never runs in synthetic or replay mode or with the option `predictions: 'off'` (read-only callers such as the farm briefing; `predictions` is then null); `predictions` reports whether one was queued, how many are pending and why not.
+ * - field checks and issues (FIELD_OPERATIONS_SPEC.md 4.2 and 5.2, 2026-11-03), plain reads under their own guard: the
+ *   interval check of the described cycle and the rechecks of open issues of the described field (plus farm-wide ones; the
+ *   whole farm without fields) become `field_check` steps through the same 14-day horizon and lookback as the other dated
+ *   steps (a check completed today stays listed, older completions do not). An overdue check sorts by status and date like
+ *   a care task, but `nextAction` keeps preferring sourced care tasks and alert steps over field checks as a tier (a field
+ *   check is the farmer's own routine, not a sourced action). An interval check overdue by more than one interval rolls
+ *   forward to the latest slot (schedule.ts), so it sits inside the lookback unless the farmer's interval exceeds 16 days;
+ *   an overdue recheck, or such a long-interval check, older than the lookback is not listed: a limitation says so and the
+ *   overview still counts it. `issues` (open and treating counts, the newest five) is set only
+ *   when an issue is logged in that scope, so a view without checks or issues keeps its earlier shape.
  */
 import type {Config} from '../../config';
 import type {Pool} from '../../db/pool';
@@ -87,7 +97,7 @@ import type {ProviderConfig} from '../../providers/config';
 import type {Sentinel2Fetch} from '../../providers/sentinel2';
 import type {WeatherSource} from '../../plans/sources';
 import {isoWeek} from '../../plans/adapters/market-outlook';
-import type {CarbonFootprint, CareTask, EnergyFootprint, FarmAlert, FarmField, FarmWorkspace, FieldSummary, HarvestEconomics, HealthReading, NdviReading, NdviSeries, OutlookNote, PricePoint, ResidueIncome, SceneRef, StageTimeline, TodayOverview, TodayView, UpcomingStep, WeatherPoint} from '@harvest/contracts';
+import type {CarbonFootprint, CareTask, EnergyFootprint, FarmAlert, FarmField, FarmWorkspace, FieldCheck, FieldIssue, FieldSummary, HarvestEconomics, HealthReading, NdviReading, NdviSeries, OutlookNote, PricePoint, ResidueIncome, SceneRef, StageTimeline, TodayOverview, TodayView, UpcomingStep, WeatherPoint} from '@harvest/contracts';
 import {ApiError, notFound} from '../errors';
 import {getFarm} from '../farms';
 import {boundaryMetrics, fieldOf, getWorkspace} from '../workspace';
@@ -107,7 +117,7 @@ const TODAY_ALERT_LIMIT = 200;
 const TODAY_ALERT_MAX = 50;
 import {listReadyFutureLooks, pendingGapLooks, requestFutureLook, weekStart, type PredictionContext} from './future-look';
 import {boundaryPolygonHash, fieldImageBbox, fieldScenePaths, latestStoredReading, ndviSeries, wideScenePaths} from './ndvi';
-import {fieldConditions} from './conditions';
+import {fieldConditions, soilTextureOf} from './conditions';
 import {STAGE_READER_ASSUMPTIONS, readIndexStage} from './index-stage';
 import {stageAt, stageTimeline, timelineSpan} from './stage-timeline';
 import {unavailableTrack, weatherTrack, type WeatherTrack} from './weather-track';
@@ -115,6 +125,7 @@ import {harvestEconomics as harvestEconomicsOf} from './economics';
 import {carbonFootprint as carbonFootprintOf, energyFootprint as energyFootprintOf, irrigationCategoryOf, residueIncome as residueIncomeOf, type FootprintInput} from './footprint';
 import {cropDisplayName} from '../year-plan/data';
 import {ensureTodayOverview, overviewFacts} from './overview';
+import {scoutingState, todayIssuesBlock, viewChecks, viewScope} from '../scouting/issues';
 
 // ------------------------------------------------------------------ constants (design choices, see the header)
 
@@ -529,6 +540,7 @@ async function priceSection(i: PriceInputs): Promise<PriceSection> {
 const toWeatherPoint = (d: WeatherTrack['days'][number]): WeatherPoint => ({
   date: d.date, kind: d.kind, rainMm: d.rainMm, tMinC: d.tMinC, tMaxC: d.tMaxC,
   basis: {source: cap(d.basis.source ?? 'none', 120), issuedAt: d.basis.issuedAt ? new Date(d.basis.issuedAt).toISOString() : null, years: d.basis.years},
+  ...(d.agro ? {agro: d.agro} : {}),
 });
 
 // ------------------------------------------------------------------ upcoming steps
@@ -563,6 +575,36 @@ const alertSteps = (alerts: FarmAlert[], today: string): UpcomingStep[] => alert
   id: `alert:${a.id}`, kind: 'alert_step', title: cap(a.title, 160), detail: cap(a.suggestedStep!, 1000), dueFrom: a.validFrom, dueTo: a.validTo,
   status: a.validFrom > today ? 'upcoming' : 'due', careTask: null, alertId: a.id,
 }));
+
+/**
+ * Field checks as upcoming steps (FIELD_OPERATIONS_SPEC.md 4.2). Completed checks only when completed today (the care task
+ * rule). Titles: "Walk the field: <crop> on <field>" and "Recheck: <issue title>".
+ */
+export function fieldCheckSteps(checks: readonly FieldCheck[], issues: readonly Pick<FieldIssue, 'id' | 'title'>[], fields: readonly Pick<FarmField, 'id' | 'name'>[], today: string): UpcomingStep[] {
+  const steps: UpcomingStep[] = [];
+  for (const c of checks) {
+    if (c.status === 'completed' && c.completedOn !== today) continue;
+    const risks = c.checklist.filter((i) => i.kind === 'risk_window').length;
+    const general = 'The general prompts are not crop-specific advice.';
+    const riskText = risks ? ` ${risks} sourced seasonal risk window${risks > 1 ? 's are' : ' is'} on the checklist.` : '';
+    if (c.kind === 'interval') {
+      const field = c.fieldId ? fields.find((f) => f.id === c.fieldId)?.name ?? null : null;
+      steps.push({
+        id: cap(c.id, 160), kind: 'field_check', title: cap(`Walk the field: ${c.cropName ?? 'your crop'}${field ? ` on ${field}` : ''}`, 160),
+        detail: cap(`Your check interval: every ${c.intervalDays ?? 7} days (your own setting).${riskText} ${general}`, 1000),
+        dueFrom: c.dueFrom, dueTo: c.dueTo, status: c.status, careTask: null, alertId: null, fieldCheck: c,
+      });
+    } else {
+      const title = issues.find((i) => i.id === c.issueId)?.title ?? 'an issue you logged';
+      steps.push({
+        id: cap(c.id, 160), kind: 'field_check', title: cap(`Recheck: ${title}`, 160),
+        detail: cap(`The recheck date you set when you recorded what you did.${riskText} ${general}`, 1000),
+        dueFrom: c.dueFrom, dueTo: c.dueTo, status: c.status, careTask: null, alertId: null, fieldCheck: c, issueId: c.issueId,
+      });
+    }
+  }
+  return steps;
+}
 
 // ------------------------------------------------------------------ upcoming steps v2 (ROUND2_SPEC.md 2.1)
 
@@ -871,7 +913,8 @@ export async function todayView(deps: TodayViewDeps, ownerId: string, farmId: st
     return {schedule: careSchedule(cycle, crop, today, completed.rows, {stateId: farm.location.stateCode, districtId: farm.location.districtId}), crop, sources: research.sources};
   }, null) : Promise.resolve(null);
   const monitorTask = guard('Monitoring status', () => readMonitorSettings(deps.pool, ownerId, farmId, mode), null);
-  const [ndvi, looks, price, weather, alertsRead, care, monitor] = await Promise.all([ndviTask, looksTask, priceTask, weatherTask, alertsTask, careTask, monitorTask]);
+  const scoutingTask = guard('Field checks and issues', () => scoutingState(deps.pool, ownerId, farmId, mode, workspace, today), null);
+  const [ndvi, looks, price, weather, alertsRead, care, monitor, scouting] = await Promise.all([ndviTask, looksTask, priceTask, weatherTask, alertsTask, careTask, monitorTask, scoutingTask]);
   // A request that NAMED a field lists the alerts naming it plus the farm-wide ones. Without a fieldId (the "All fields"
   // overview) every alert is returned, each carrying fieldId/scope for labelling; the per-field counts use all of them.
   // The contract lists at most 50: a named field's own alerts come first, then the newest farm-wide ones.
@@ -920,8 +963,14 @@ export async function todayView(deps: TodayViewDeps, ownerId: string, farmId: st
   if (checks.undated) careNotes.push(`${checks.undated} stage check${checks.undated > 1 ? 's are' : ' is'} not listed because this crop has no stage timeline to date ${checks.undated > 1 ? 'them' : 'it'} from.`);
   if (extra.older) careNotes.push(`${extra.older} dated guidance step${extra.older > 1 ? 's' : ''} that ended more than ${OVERDUE_LOOKBACK_DAYS} days ago ${extra.older > 1 ? 'are' : 'is'} not listed.`);
   if (extra.later) careNotes.push(`${extra.later} later guidance step${extra.later > 1 ? 's appear' : ' appears'} when ${extra.later > 1 ? 'their' : 'its'} window is within ${UPCOMING_HORIZON_DAYS} days.`);
+  // Field checks (FIELD_OPERATIONS_SPEC.md 4.2): the described cycle's interval check and in-scope rechecks.
+  const scope = viewScope(workspace, selected?.id ?? null);
+  const fieldChecks = scouting ? viewChecks(scouting.checks, scope, cycle?.id ?? null) : [];
+  const checks14 = horizonFilter(fieldCheckSteps(fieldChecks, scouting?.issues ?? [], fields, today), today);
+  if (checks14.older) careNotes.push(`${checks14.older} field check${checks14.older > 1 ? 's' : ''} overdue by more than ${OVERDUE_LOOKBACK_DAYS} days ${checks14.older > 1 ? 'are' : 'is'} not listed under upcoming steps; ${checks14.older > 1 ? 'they are' : 'it is'} in the field checks list.`);
+  if (checks14.later) careNotes.push(`The next field check is due more than ${UPCOMING_HORIZON_DAYS} days ahead (your check interval) and appears when it is closer.`);
   const transition = cycle ? stageStep(cycle, timeline, today) : null;
-  const ordered = orderSteps([...alertSteps(alerts?.alerts ?? [], today), ...(transition ? [transition] : []), ...care14.steps, ...extra.kept]);
+  const ordered = orderSteps([...alertSteps(alerts?.alerts ?? [], today), ...(transition ? [transition] : []), ...care14.steps, ...extra.kept, ...checks14.kept]);
   const nextAction = pickNextAction(ordered);
   // Truncation keeps the next action and the stage transition in the list.
   const pinned = new Set([nextAction, transition].filter((x): x is UpcomingStep => !!x));
@@ -992,11 +1041,15 @@ export async function todayView(deps: TodayViewDeps, ownerId: string, farmId: st
     }), []);
   }
 
+  // ---- farmer-reported issues of the described field (plus farm-wide ones); absent when none is logged there
+  const issuesBlock = scouting ? todayIssuesBlock(scouting.issues, scope) : undefined;
+  if (issuesBlock) composed.issues = issuesBlock;
+
   // ---- daily field conditions along the slider (spec section 10.1 item 4): pure, over the blocks above
   if (slider && cycle && anchor) {
     composed.conditions = await guard('The field conditions', async () => fieldConditions({
       cropId: cycle.cropId, establishmentMethod: cycle.establishmentMethod ?? null, anchorDate: anchor, window: {from: weatherWindow.from, to: weatherWindow.to},
-      timeline, irrigationCategory: irrigationCategoryOf(farm.facts), weather: composed.weatherTrack, alerts: composed.alerts,
+      timeline, irrigationCategory: irrigationCategoryOf(farm.facts), soilTexture: soilTextureOf(farm.facts), weather: composed.weatherTrack, alerts: composed.alerts,
       readings: (ndvi?.readings ?? []).filter((r) => r.usable && r.field.mean !== null).map((r) => ({date: r.date, ndvi: r.field.mean, verdict: readingVerdict(r, ndvi?.smallField ?? false).verdict})),
     }), null);
   } else composed.conditions = null;
@@ -1044,7 +1097,7 @@ export async function todayView(deps: TodayViewDeps, ownerId: string, farmId: st
   const overviewNotes: string[] = [];
   if (cycle) {
     overview = await guard('The Today overview', async () => {
-      const set = overviewFacts(composed);
+      const set = overviewFacts(composed, {overdueChecks: fieldChecks.filter((c) => c.status === 'overdue')});
       if (!set) return null;
       return ensureTodayOverview({pool: deps.pool, config: deps.config, now}, {ownerId, farmId, set, districtName: farm.location.districtName, stateName: resolveStateName(farm.location.stateCode)});
     }, null);

@@ -3,15 +3,20 @@ import { ApiError } from "../../lib/api";
 import { confirmFacts, previewRevision, type ConfirmResult, type JournalEntry, type JournalFact, type Preview, type Timeline } from "./api";
 import { canConfirmPlanChange, isFinalProposal, proposalReducer, type ProposalState, type ProposalStatus } from "./model";
 import { WhyChanged } from "./WhyChanged";
+import { issueValueLabel, proposalLabel } from "./issueFromFacts";
 
 const FIELD_LABEL: Record<string, string> = {
   observed_stage: "Growth stage",
   irrigation_category: "Water source",
   planting_date: "Planting date",
   waterlogging_visible: "Standing water visible",
+  observed_issue: "Issue seen",
+  observed_issue_note: "What is visible",
 };
 export const fieldLabel = (f: string): string => FIELD_LABEL[f] ?? f.replace(/_/g, " ");
 export const valueLabel = (f: JournalFact, stageNames: Record<string, string>): string => {
+  const issue = issueValueLabel(f);
+  if (issue !== null) return issue;
   const v = f.field === "observed_stage" && typeof f.value === "string" ? (stageNames[f.value] ?? f.value) : String(f.value);
   return f.unit ? `${v} ${f.unit}` : v;
 };
@@ -75,7 +80,7 @@ export function ProposalItem(props: {
 
   return (
     <li class="jr-proposal" data-testid="proposal" data-field={props.fact.field} data-status={state().status}>
-      <p class="jr-ai-label">{props.fact.label ?? "AI proposal — confirm before it changes your plan"}</p>
+      <p class="jr-ai-label">{proposalLabel(props.fact)}</p>
       <p class="jr-proposal-main">
         <strong>{fieldLabel(props.fact.field)}:</strong> {valueLabel(props.fact, props.stageNames)}
         <Show when={props.fact.planMapped}>

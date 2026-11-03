@@ -5,6 +5,7 @@ import { conditionLayers, normalizeWithin, rainStreaks, type ConditionEvent, typ
 import { Icon } from "../icons";
 import { AiSpark, AiSparkIcon } from "../ui/AiSpark";
 import {
+  conditionAriaCaption,
   conditionCaption,
   conditionKindChip,
   cropColor,
@@ -26,6 +27,7 @@ import {
   type SatelliteImage,
   type ScenePick,
   type StageAt,
+  wetnessBadge,
 } from "./model";
 import { sceneImageUrl } from "./todayApi";
 
@@ -516,13 +518,18 @@ export function NdviLegend() {
 }
 
 const EVENT_ICON: Record<string, string> = { weather: "rain", price: "trend", market_event: "trend", crop_threat: "leaf", satellite: "layers" };
-/** The day's alerts as badges over the scene (both modes): severity colour, icon and title; at most two, then a count. */
-export function EventBadges(props: { events: ConditionEvent[] }) {
+/**
+ * The day's alerts as badges over the scene (both modes): severity colour, icon and title; at most two, then a count.
+ * 2026-11-03 (WEATHER_DEPTH_SPEC.md 6.4): with `condition`, a wetness badge follows the alerts when the day's modelled
+ * wetness is high or moderate; it is context from the grid-cell model estimate, not an alert and never a diagnosis.
+ */
+export function EventBadges(props: { events: ConditionEvent[]; condition?: FieldConditionPoint | null | undefined }) {
   const shown = () => props.events.slice(0, 2);
   const more = () => Math.max(0, props.events.length - 2);
+  const wetness = () => wetnessBadge(props.condition ?? null);
   return (
-    <Show when={props.events.length}>
-      <ul class="today-events" aria-label="Alerts on this date" data-testid="today-events">
+    <Show when={props.events.length || wetness()}>
+      <ul class="today-events" aria-label={wetness() ? "Alerts and conditions on this date" : "Alerts on this date"} data-testid="today-events">
         <For each={shown()}>
           {(event) => (
             <li class={`today-event severity ${event.severity}`} title={event.title} data-alert-id={event.alertId}>
@@ -534,6 +541,20 @@ export function EventBadges(props: { events: ConditionEvent[] }) {
         <Show when={more()}>
           <li class="today-event more">+{more()} more</li>
         </Show>
+        <Show when={wetness()}>
+          {(badge) => (
+            <li
+              class={`today-event today-wetness ${badge().wetness === "high" ? "severity info" : "more"}`}
+              title={badge().description}
+              aria-label={badge().description}
+              data-testid="today-wetness"
+              data-wetness={badge().wetness}
+            >
+              <Icon name="leaf" size={13} />
+              <span>{badge().label}</span>
+            </li>
+          )}
+        </Show>
       </ul>
     </Show>
   );
@@ -544,7 +565,13 @@ export function ConditionsLine(props: { point: FieldConditionPoint | null; date:
   const chip = () => conditionKindChip(props.point);
   return (
     <p class="today-conditions" data-testid="today-conditions" data-kind={props.point?.kind ?? "none"}>
-      <Show when={chip()}>{(c) => <span class={`today-chip ${c().tone}`}>{c().label}</span>}</Show>
+      <Show when={chip()}>
+        {(c) => (
+          <span class={`today-chip ${c().tone}`} title={c().note} aria-label={c().note}>
+            {c().label}
+          </span>
+        )}
+      </Show>
       <span>{conditionCaption(props.point, props.date)}</span>
     </p>
   );
@@ -677,7 +704,8 @@ export function TodayHero(props: TodayHeroProps) {
   const satellite = () => props.mode === "satellite";
   const point = () => (props.hasConditions ? props.condition ?? null : null);
   const layers = createMemo(() => conditionLayers(point()));
-  const caption = () => (props.hasConditions ? conditionCaption(point(), props.date) : null);
+  // The canvas label carries the grid-cell label when the day used the deeper model values (section 7).
+  const caption = () => (props.hasConditions ? conditionAriaCaption(point(), props.date) : null);
   // Satellite image choices persist while the farmer moves the slider: field close-up by default, Wider view and Greenness on demand.
   const [wide, setWide] = createSignal(false);
   const [greenness, setGreenness] = createSignal(false);
@@ -772,7 +800,7 @@ export function TodayHero(props: TodayHeroProps) {
           </span>
         </div>
         <div class="today-hero-second" classList={{ "has-tools": satellite() && ((image().fieldAvailable && !farm()) || image().ndviAvailable) }}>
-          <EventBadges events={layers().events} />
+          <EventBadges events={layers().events} condition={point()} />
           <Show when={satellite() && ((image().fieldAvailable && !farm()) || image().ndviAvailable)}>
             <div class="today-sat-tools" role="group" aria-label="Satellite image options">
               <Show when={image().ndviAvailable}>

@@ -44,14 +44,21 @@ export async function updateMonitorSettings(pool: Pool, ownerId: string, farmId:
   return readMonitorSettings(pool, ownerId, farmId, mode);
 }
 
+/**
+ * The forecast values a "weather changed" event is about. The deeper model estimates (gust, humidity, soil moisture)
+ * move with every refresh and are left out so they alone never raise the event; the gust alert has its own path.
+ * The projection keeps the five original fields, so fingerprints of snapshots stored earlier are unchanged.
+ */
+const comparableDays = (days: MonitoringSnapshot['weather']['days']) => days.map((d) => ({ date: d.date, rainMm: d.rainMm, tMinC: d.tMinC, tMaxC: d.tMaxC, et0Mm: d.et0Mm }));
+
 /** Values and availability states only; a new retrieval timestamp alone is never a change. */
 export function monitorFingerprint(s: MonitoringSnapshot) {
-  return payloadHash({ mode: s.mode, weather: { status: s.weather.status, days: s.weather.days }, market: s.market });
+  return payloadHash({ mode: s.mode, weather: { status: s.weather.status, days: comparableDays(s.weather.days) }, market: s.market });
 }
 export function monitorChanges(previous: MonitoringSnapshot | null, next: MonitoringSnapshot) {
   if (!previous || previous.mode !== next.mode) return [{ at: next.checkedAt, kind: 'monitor_started', message: 'Initial weather and mandi check recorded.' }];
   const changes: { at: string; kind: string; message: string }[] = [];
-  if (payloadHash({ status: previous.weather.status, days: previous.weather.days }) !== payloadHash({ status: next.weather.status, days: next.weather.days })) changes.push({ at: next.checkedAt, kind: 'weather_changed', message: 'Forecast or weather availability changed. Review the dated forecast.' });
+  if (payloadHash({ status: previous.weather.status, days: comparableDays(previous.weather.days) }) !== payloadHash({ status: next.weather.status, days: comparableDays(next.weather.days) })) changes.push({ at: next.checkedAt, kind: 'weather_changed', message: 'Forecast or weather availability changed. Review the dated forecast.' });
   if (payloadHash(previous.market) !== payloadHash(next.market)) changes.push({ at: next.checkedAt, kind: 'market_changed', message: 'Stored wholesale mandi references or their availability changed.' });
   return changes;
 }

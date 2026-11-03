@@ -42,6 +42,19 @@ describe('structured alerts: weather thresholds (code only)', () => {
     expect(notes).toContain('wind_gust_check_skipped:variable_not_in_stored_forecast');
   });
 
+  it('gust alert fires from gustMaxKmh (stored Open-Meteo wind_gusts_10m_max) at >= 60 km/h, merges runs, and is skipped only when no day carries a value', () => {
+    const s = snapshot([day('2026-11-01', { gustMaxKmh: 59.9 }), day('2026-11-02', { gustMaxKmh: 60 }), day('2026-11-03', { gustMaxKmh: 72.4 }), day('2026-11-04', { gustMaxKmh: null }), day('2026-11-05', { gustMaxKmh: 61 })]);
+    const { alerts, notes } = structuredAlerts(s, workspace(), [], ASOF);
+    const wind = alerts.filter((a) => a.title === 'Strong wind gusts in the forecast');
+    expect(wind.map((a) => [a.validFrom, a.validTo])).toEqual([['2026-11-02', '2026-11-03'], ['2026-11-05', '2026-11-05']]);
+    expect(wind[0]!.detail).toContain('Gusts up to 72.4 km/h forecast on 2026-11-03');
+    expect(wind[0]!.detail).toContain('not an IMD warning');
+    expect(notes.some((n) => n.startsWith('wind_gust_check_skipped'))).toBe(false);
+    const none = structuredAlerts(snapshot([day('2026-11-02', { gustMaxKmh: null }), day('2026-11-03')]), workspace(), [], ASOF);
+    expect(none.alerts.some((a) => a.title.startsWith('Strong wind'))).toBe(false);
+    expect(none.notes).toContain('wind_gust_check_skipped:variable_not_in_stored_forecast');
+  });
+
   it('three-day totals need three consecutive known days and merge overlapping windows', () => {
     const s = snapshot([day('2026-11-01', { rainMm: 30 }), day('2026-11-02', { rainMm: 40 }), day('2026-11-03', { rainMm: 35 }), day('2026-11-04', { rainMm: 30 }), day('2026-11-05', { rainMm: 0 }), day('2026-11-06', { rainMm: 0 }),
       day('2026-11-08', { rainMm: 49 }), day('2026-11-09', { rainMm: 49 }), day('2026-11-11', { rainMm: 49 })]);

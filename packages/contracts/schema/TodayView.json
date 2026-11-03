@@ -3707,6 +3707,117 @@
               "years"
             ],
             "additionalProperties": false
+          },
+          "agro": {
+            "type": "object",
+            "properties": {
+              "et0Mm": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "rhMeanPct": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "rhMinPct": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "rhMaxPct": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "dewPointC": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "vpdMaxKpa": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "windMaxKmh": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "gustMaxKmh": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "soilMoisture0to7": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "soilTemp0to7C": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "leafWetnessPct": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "sunshineHours": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "rainHours": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "rainProbabilityPct": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "basis": {
+                "type": "string",
+                "const": "grid_model_estimate"
+              }
+            },
+            "required": [
+              "et0Mm",
+              "rhMeanPct",
+              "rhMinPct",
+              "rhMaxPct",
+              "dewPointC",
+              "vpdMaxKpa",
+              "windMaxKmh",
+              "gustMaxKmh",
+              "soilMoisture0to7",
+              "soilTemp0to7C",
+              "leafWetnessPct",
+              "sunshineHours",
+              "rainHours",
+              "rainProbabilityPct",
+              "basis"
+            ],
+            "additionalProperties": false
           }
         },
         "required": [
@@ -3917,7 +4028,8 @@
               "care_task",
               "stage_transition",
               "alert_step",
-              "stage_check"
+              "stage_check",
+              "field_check"
             ]
           },
           "title": {
@@ -4094,6 +4206,225 @@
                 "type": "null"
               }
             ]
+          },
+          "fieldCheck": {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "maxLength": 160
+                  },
+                  "kind": {
+                    "type": "string",
+                    "enum": [
+                      "interval",
+                      "recheck"
+                    ]
+                  },
+                  "fieldId": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "cycleId": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "issueId": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "format": "uuid",
+                        "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "cropName": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "dueFrom": {
+                    "type": "string",
+                    "format": "date",
+                    "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+                  },
+                  "dueTo": {
+                    "type": "string",
+                    "format": "date",
+                    "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+                  },
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "upcoming",
+                      "due",
+                      "overdue",
+                      "completed"
+                    ]
+                  },
+                  "intervalDays": {
+                    "anyOf": [
+                      {
+                        "type": "integer",
+                        "minimum": -9007199254740991,
+                        "maximum": 9007199254740991
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "checklist": {
+                    "maxItems": 20,
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "text": {
+                          "type": "string",
+                          "maxLength": 300
+                        },
+                        "kind": {
+                          "type": "string",
+                          "enum": [
+                            "risk_window",
+                            "general"
+                          ]
+                        },
+                        "sourceName": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "maxLength": 200
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "sourceUrl": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "sourceDate": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "format": "date",
+                              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "alertId": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "format": "uuid",
+                              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        }
+                      },
+                      "required": [
+                        "text",
+                        "kind",
+                        "sourceName",
+                        "sourceUrl",
+                        "sourceDate",
+                        "alertId"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "completedOn": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "format": "date",
+                        "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "journalEntryId": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "format": "uuid",
+                        "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "scope": {
+                    "type": "string",
+                    "enum": [
+                      "field",
+                      "farm"
+                    ]
+                  },
+                  "missedCount": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 9007199254740991
+                  }
+                },
+                "required": [
+                  "id",
+                  "kind",
+                  "fieldId",
+                  "cycleId",
+                  "issueId",
+                  "cropName",
+                  "dueFrom",
+                  "dueTo",
+                  "status",
+                  "intervalDays",
+                  "checklist",
+                  "completedOn",
+                  "journalEntryId",
+                  "scope"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "issueId": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "required": [
@@ -4125,7 +4456,8 @@
                 "care_task",
                 "stage_transition",
                 "alert_step",
-                "stage_check"
+                "stage_check",
+                "field_check"
               ]
             },
             "title": {
@@ -4292,6 +4624,225 @@
               ]
             },
             "alertId": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid",
+                  "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "fieldCheck": {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "maxLength": 160
+                    },
+                    "kind": {
+                      "type": "string",
+                      "enum": [
+                        "interval",
+                        "recheck"
+                      ]
+                    },
+                    "fieldId": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "cycleId": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "issueId": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "format": "uuid",
+                          "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "cropName": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "dueFrom": {
+                      "type": "string",
+                      "format": "date",
+                      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+                    },
+                    "dueTo": {
+                      "type": "string",
+                      "format": "date",
+                      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+                    },
+                    "status": {
+                      "type": "string",
+                      "enum": [
+                        "upcoming",
+                        "due",
+                        "overdue",
+                        "completed"
+                      ]
+                    },
+                    "intervalDays": {
+                      "anyOf": [
+                        {
+                          "type": "integer",
+                          "minimum": -9007199254740991,
+                          "maximum": 9007199254740991
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "checklist": {
+                      "maxItems": 20,
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "text": {
+                            "type": "string",
+                            "maxLength": 300
+                          },
+                          "kind": {
+                            "type": "string",
+                            "enum": [
+                              "risk_window",
+                              "general"
+                            ]
+                          },
+                          "sourceName": {
+                            "anyOf": [
+                              {
+                                "type": "string",
+                                "maxLength": 200
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
+                          "sourceUrl": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "sourceDate": {
+                            "anyOf": [
+                              {
+                                "type": "string",
+                                "format": "date",
+                                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
+                          "alertId": {
+                            "anyOf": [
+                              {
+                                "type": "string",
+                                "format": "uuid",
+                                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          }
+                        },
+                        "required": [
+                          "text",
+                          "kind",
+                          "sourceName",
+                          "sourceUrl",
+                          "sourceDate",
+                          "alertId"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "completedOn": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "format": "date",
+                          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "journalEntryId": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "format": "uuid",
+                          "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "scope": {
+                      "type": "string",
+                      "enum": [
+                        "field",
+                        "farm"
+                      ]
+                    },
+                    "missedCount": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 9007199254740991
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "kind",
+                    "fieldId",
+                    "cycleId",
+                    "issueId",
+                    "cropName",
+                    "dueFrom",
+                    "dueTo",
+                    "status",
+                    "intervalDays",
+                    "checklist",
+                    "completedOn",
+                    "journalEntryId",
+                    "scope"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "issueId": {
               "anyOf": [
                 {
                   "type": "string",
@@ -6923,7 +7474,14 @@
                         "enum": [
                           "crop_practice",
                           "rain_rule",
+                          "model_soil_moisture",
                           "none"
+                        ]
+                      },
+                      "soilMoisture0to7": {
+                        "type": [
+                          "number",
+                          "null"
                         ]
                       }
                     },
@@ -6956,6 +7514,61 @@
                       "tMaxC",
                       "stress",
                       "thresholdC"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "pressure": {
+                    "type": "object",
+                    "properties": {
+                      "wetness": {
+                        "type": "string",
+                        "enum": [
+                          "high",
+                          "moderate",
+                          "low",
+                          "unknown"
+                        ]
+                      },
+                      "leafWetnessPct": {
+                        "type": [
+                          "number",
+                          "null"
+                        ]
+                      },
+                      "rhMeanPct": {
+                        "type": [
+                          "number",
+                          "null"
+                        ]
+                      },
+                      "vpdMaxKpa": {
+                        "type": [
+                          "number",
+                          "null"
+                        ]
+                      },
+                      "gustMaxKmh": {
+                        "type": [
+                          "number",
+                          "null"
+                        ]
+                      },
+                      "basis": {
+                        "type": "string",
+                        "enum": [
+                          "sourced_threshold",
+                          "engine_assumption",
+                          "none"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "wetness",
+                      "leafWetnessPct",
+                      "rhMeanPct",
+                      "vpdMaxKpa",
+                      "gustMaxKmh",
+                      "basis"
                     ],
                     "additionalProperties": false
                   },
@@ -7620,6 +8233,96 @@
           "type": "null"
         }
       ]
+    },
+    "issues": {
+      "type": "object",
+      "properties": {
+        "open": {
+          "type": "integer",
+          "minimum": -9007199254740991,
+          "maximum": 9007199254740991
+        },
+        "treating": {
+          "type": "integer",
+          "minimum": -9007199254740991,
+          "maximum": 9007199254740991
+        },
+        "latest": {
+          "maxItems": 5,
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              },
+              "category": {
+                "type": "string",
+                "enum": [
+                  "pest",
+                  "disease",
+                  "weed",
+                  "water_stress",
+                  "nutrient",
+                  "weather_damage",
+                  "animal_damage",
+                  "other"
+                ]
+              },
+              "severity": {
+                "type": "string",
+                "enum": [
+                  "low",
+                  "medium",
+                  "high"
+                ]
+              },
+              "status": {
+                "type": "string",
+                "enum": [
+                  "open",
+                  "treating",
+                  "resolved",
+                  "dismissed"
+                ]
+              },
+              "title": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 120
+              },
+              "observedOn": {
+                "type": "string",
+                "format": "date",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+              },
+              "fieldId": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 120,
+                "pattern": "^[A-Za-z0-9_.-]+$"
+              }
+            },
+            "required": [
+              "id",
+              "category",
+              "severity",
+              "status",
+              "title",
+              "observedOn"
+            ],
+            "additionalProperties": false
+          }
+        }
+      },
+      "required": [
+        "open",
+        "treating",
+        "latest"
+      ],
+      "additionalProperties": false
     },
     "limitations": {
       "type": "array",

@@ -12,6 +12,15 @@ import { getFarm } from './farms';
 import { getWorkspace } from './workspace';
 import { notFound } from './errors';
 
+/**
+ * One forecast day. The optional deeper fields are Open-Meteo model estimates for the grid cell, never field readings;
+ * absent or null means the stored forecast did not carry them (the gust alert then notes `wind_gust_check_skipped`).
+ */
+export interface MonitoringWeatherDay {
+  date: string; rainMm: number | null; tMinC: number | null; tMaxC: number | null; et0Mm: number | null;
+  gustMaxKmh?: number | null; rhMeanPct?: number | null; soilMoisture0to7?: number | null;
+}
+
 export interface MonitoringSnapshot {
   mode: Config['RUNTIME_MODE'];
   farmId: string; checkedAt: string;
@@ -19,7 +28,7 @@ export interface MonitoringSnapshot {
     status: 'fresh' | 'stale' | 'unavailable'; reason: string | null; issuedAt: string | null; attribution: string;
     point: { lat: number; lon: number } | null;
     coordinateBasis: 'farm_location' | 'boundary_center' | 'missing';
-    days: { date: string; rainMm: number | null; tMinC: number | null; tMaxC: number | null; et0Mm: number | null }[];
+    days: MonitoringWeatherDay[];
   };
   market: { currentQuotes?:CurrentMandiQuotes;status: 'available' | 'stale' | 'unavailable'; reason: string | null; products: { productId: string; reference: PriceReferenceBlock }[] };
   meta: { status: 'available' | 'unavailable'; reason: string | null; automatic: false };
@@ -73,14 +82,14 @@ export async function monitoringSnapshot(deps: MonitoringDeps, ownerId: string, 
       weather.status = forecast.data.stale ? 'stale' : 'fresh';
       weather.reason = forecast.data.stale ? 'provider_refresh_failed_using_cached_forecast' : null;
       weather.issuedAt = forecast.data.fetchedAt;
-      weather.days = forecast.data.rows.filter((r) => r.validDate >= today).map((r) => ({ date: r.validDate, rainMm: r.values.precipitation_sum ?? null, tMinC: r.values.temperature_2m_min ?? null, tMaxC: r.values.temperature_2m_max ?? null, et0Mm: r.values.et0_fao_evapotranspiration ?? null }));
+      weather.days = forecast.data.rows.filter((r) => r.validDate >= today).map((r) => ({ date: r.validDate, rainMm: r.values.precipitation_sum ?? null, tMinC: r.values.temperature_2m_min ?? null, tMaxC: r.values.temperature_2m_max ?? null, et0Mm: r.values.et0_fao_evapotranspiration ?? null, gustMaxKmh: r.values.wind_gusts_10m_max ?? null, rhMeanPct: r.values.relative_humidity_2m_mean ?? null, soilMoisture0to7: r.values.soil_moisture_0_to_7cm_mean ?? null }));
       await storeForecast(pool, forecast.data);
     } else {
       weather.reason = forecast.reason;
       // A prior successful forecast is still useful, but never reported as a current refresh.
       const stored = await createWeatherSource({ pool, mode: 'live', autoIngest: false }).getForecast({ farmId, districtId: farm.location.districtId, stateId: farm.location.stateCode, point }, { issuedAtOrBefore: checkedAt });
       if (stored) {
-        weather.days = stored.days.filter((d) => d.date >= today);
+        weather.days = stored.days.filter((d) => d.date >= today).map((d) => ({ date: d.date, rainMm: d.rainMm, tMinC: d.tMinC, tMaxC: d.tMaxC, et0Mm: d.et0Mm, gustMaxKmh: d.agro?.gustMaxKmh ?? null, rhMeanPct: d.agro?.rhMeanPct ?? null, soilMoisture0to7: d.agro?.soilMoisture0to7 ?? null }));
         weather.issuedAt = stored.issuedAt;
         if (weather.days.length) weather.status = 'stale';
       }

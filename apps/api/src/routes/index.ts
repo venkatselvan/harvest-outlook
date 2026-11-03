@@ -42,6 +42,8 @@ import {marketTimelineRoutes} from './market-timeline';
 import {cropFitRoutes} from './crop-fit';
 import {soilReviewRoutes} from './soil-review';
 import {seasonPreviewRoutes} from './season-preview';
+import {scoutingRoutes} from './scouting';
+import {seasonReportRoutes} from './season-report';
 
 export interface RouteDeps {
   config: Config;
@@ -103,6 +105,8 @@ export async function registerRoutes(app: FastifyInstance, deps: RouteDeps): Pro
   await app.register(cropFitRoutes,{config,pool,budget:deps.budget,...(deps.weatherFetch?{fetchImpl:deps.weatherFetch as unknown as typeof fetch}:{})});
   await app.register(soilReviewRoutes,{config,pool,budget:deps.budget,...(deps.weatherFetch?{fetchImpl:deps.weatherFetch as unknown as typeof fetch}:{})});
   await app.register(seasonPreviewRoutes,{config,pool,...(deps.weatherFetch?{weatherFetch:deps.weatherFetch}:{})});
+  await app.register(scoutingRoutes,{config,pool});
+  await app.register(seasonReportRoutes,{config,pool});
 
   await registerPlanRoutes(app, {
     config,

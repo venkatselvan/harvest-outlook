@@ -490,6 +490,29 @@
   font-weight: 650;
   cursor: pointer;
 }
+/* Deeper weather values under the weather card (WEATHER_DEPTH_SPEC.md): small, quiet, one line each way. */
+.today-agro {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 11.5px;
+  line-height: 1.4;
+  color: var(--text-secondary);
+}
+.today-agro-item {
+  cursor: help;
+  white-space: nowrap;
+}
+.today-chip.agro {
+  cursor: help;
+  background: var(--info-soft);
+  color: var(--info);
+  border-color: transparent;
+}
 .today-weather-row {
   display: flex;
   align-items: center;
@@ -1512,6 +1535,24 @@
   background: var(--surface-glass);
   border-color: var(--border);
   color: var(--text-secondary);
+}
+/*
+ * Wetness context badge (WEATHER_DEPTH_SPEC.md 6.4): a grid-cell model estimate, not an alert. Muted glass chip with a dashed
+ * border (the same "estimate, not a reading" cue as the Typical chip), not the blue/amber/red of an alert. The doubled
+ * selectors beat `.today-event.severity.info` and `.today-event.more`, which the badge markup also carries. Theme variables
+ * switch with the theme, so light and dark both read as quiet text on glass.
+ */
+.today-event.today-wetness,
+.today-event.today-wetness.severity.info,
+.today-event.today-wetness.more {
+  background: var(--surface-glass);
+  border: 1px dashed var(--border-strong);
+  color: var(--text-secondary);
+  box-shadow: none;
+}
+.today-event.today-wetness[data-wetness="high"] {
+  color: var(--text);
+  border-style: solid;
 }
 .today-sat-tools {
   display: inline-flex;

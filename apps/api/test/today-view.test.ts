@@ -265,7 +265,11 @@ describe('todayView: Hassan farm with a maize cycle (live, injected providers)',
     expect(view.upcoming.map((s) => rank[s.status])).toEqual([...view.upcoming.map((s) => rank[s.status])].sort());
     // Next action: care tasks and alert steps first, then due before upcoming, then the earlier start (the alert step).
     expect(view.nextAction).toMatchObject({kind: 'alert_step', status: 'due', dueFrom: '2026-10-28'});
-    expect(view.upcoming[0]).toEqual(view.nextAction);
+    expect(view.upcoming.find((s) => s.id === view.nextAction!.id)).toEqual(view.nextAction);
+    // The long-overdue interval check rolled to the latest slot, so it is inside the lookback and listed first by status, yet
+    // it does not become the next action (field checks rank below care tasks and alert steps).
+    expect(view.upcoming[0]).toMatchObject({kind: 'field_check', status: 'overdue', fieldCheck: {kind: 'interval', dueFrom: '2026-10-27', missedCount: 7}});
+    expect(view.nextAction!.kind).not.toBe('field_check');
     // Outlook note: live mode queues the job for these facts; the facts carry the card's range.
     expect(view.outlookNote).toMatchObject({status: 'pending', text: null, origin: null});
     expect(view.outlookNote!.facts[1]).toBe(`Likely price in the harvest weeks: ₹${refP50(mid) - 4} to ₹${refP50(mid) + 5} per kg (middle half of past years), typical ₹${refP50(mid)} per kg`);
@@ -280,6 +284,25 @@ describe('todayView: Hassan farm with a maize cycle (live, injected providers)',
     expect(view.limitations.join(' ')).toMatch(/never marked reached by an observation/);
     expect(deps.fake.calls.length).toBeGreaterThan(0);
     expect(spy).not.toHaveBeenCalled();
+  });
+
+  it('weather depth: a track day whose source day has agro carries it into TodayView.weatherTrack (contract-valid); a day without stays without the key', async () => {
+    fetchSpy();
+    const agro = {et0Mm: 3.4, rhMeanPct: 81, rhMinPct: 55, rhMaxPct: 96, dewPointC: 19.5, vpdMaxKpa: 1.1, windMaxKmh: 15, gustMaxKmh: 33, soilMoisture0to7: 0.31, soilTemp0to7C: 24, leafWetnessPct: 58, sunshineHours: 7.2, rainHours: 2, rainProbabilityPct: 40};
+    const base = fakeWeather();
+    const weatherSource: WeatherSource = {
+      ...base,
+      getForecast: async (...args) => {
+        const f = (await base.getForecast(...args))!;
+        return {...f, days: f.days.map((d) => (d.date === TODAY ? {...d, agro} : d))};
+      },
+    };
+    const view = TodayView.parse(await todayView(liveDeps({providers: {weatherSource}}), ownerId, farmId));
+    expect(view.weatherTrack.find((d) => d.date === TODAY)!.agro).toEqual({...agro, basis: 'grid_model_estimate'});
+    const next = view.weatherTrack.find((d) => d.date === plus(TODAY, 1))!;
+    expect(next.kind).toBe('forecast');
+    expect('agro' in next).toBe(false);
+    expect(view.weatherTrack.filter((d) => d.agro).map((d) => d.date)).toEqual([TODAY]);
   });
 
   it('a provider failure degrades only its section and says so; a vanished farm is still a 404', async () => {

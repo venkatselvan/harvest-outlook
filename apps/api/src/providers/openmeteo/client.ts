@@ -4,6 +4,20 @@ import { getJson, type FetchLike } from "../../ingest/http";
 import type { CacheStore } from "../../ingest/cache";
 import { loadProviderConfig, type ProviderConfig } from "../config";
 
+/**
+ * Weather depth (docs/research/WEATHER_DEPTH_SPEC.md): besides rain and temperature the client requests the daily
+ * agronomic variables in OPTIONAL_DAILY_VARIABLES on both endpoints. They are optional so a response (or a recorded
+ * fixture) that lacks one still parses; REQUIRED_DAILY_VARIABLES is unchanged. Every such value is an Open-Meteo model
+ * estimate for the ~9 to 11 km grid cell, not a field reading.
+ *
+ * Unit conversion: `sunshine_duration` arrives in seconds (`daily_units` says "s"). It is converted to hours at parse
+ * time (seconds / 3600, rounded to 2 decimals) and the stored unit is recorded as "h". Every other unit is stored as
+ * reported. A unit not listed in ACCEPTED_UNITS on a REQUIRED variable makes the response `unexpected_unit` (nothing is
+ * guessed). On an OPTIONAL variable the key is left out as not provided and the parse result's `notes` carries
+ * `unexpected_unit:<key>:<unit>`, so one surprising deeper unit never drops rain and temperature. An optional series whose
+ * length differs from the time axis is left out the same way (`length_mismatch:<key>`).
+ */
+
 export const OPENMETEO_ATTRIBUTION = "Weather data by Open-Meteo.com (https://open-meteo.com/), CC BY 4.0";
 export const OPENMETEO_PROVIDER = "open-meteo";
 
@@ -16,6 +30,34 @@ export const REQUIRED_DAILY_VARIABLES = [
   "shortwave_radiation_sum",
 ] as const;
 export const OPTIONAL_FORECAST_VARIABLES = ["precipitation_probability_max"] as const;
+/** Deeper daily variables requested on forecast and archive. `precipitation_probability_max` is forecast only (see above). */
+export const OPTIONAL_DAILY_VARIABLES = [
+  "relative_humidity_2m_mean",
+  "relative_humidity_2m_max",
+  "relative_humidity_2m_min",
+  "dew_point_2m_mean",
+  "vapour_pressure_deficit_max",
+  "wind_speed_10m_max",
+  "wind_gusts_10m_max",
+  "soil_moisture_0_to_7cm_mean",
+  "soil_temperature_0_to_7cm_mean",
+  "leaf_wetness_probability_mean",
+  "sunshine_duration",
+  "precipitation_hours",
+] as const;
+/** Everything the archive request asks for (forecast-only `precipitation_probability_max` excluded). */
+export const ARCHIVE_DAILY_VARIABLES = [...REQUIRED_DAILY_VARIABLES, ...OPTIONAL_DAILY_VARIABLES] as const;
+
+/**
+ * 8 hex characters identifying a requested variable set (sha256 of the sorted names). A job key or a run record carrying
+ * it changes by itself when a variable is added or removed, so work done with an older set is never taken for current.
+ */
+export function variableSetId(variables: readonly string[]): string {
+  return createHash("sha256").update([...variables].sort().join(",")).digest("hex").slice(0, 8);
+}
+
+/** Variable whose response unit is seconds and whose stored value is hours. */
+const SECONDS_TO_HOURS_VARIABLE = "sunshine_duration";
 
 /** Units this pipeline knows how to interpret per variable. Anything else is reported unavailable, not guessed. */
 const ACCEPTED_UNITS: Record<string, string[]> = {
@@ -25,6 +67,18 @@ const ACCEPTED_UNITS: Record<string, string[]> = {
   et0_fao_evapotranspiration: ["mm"],
   shortwave_radiation_sum: ["MJ/m²"],
   precipitation_probability_max: ["%"],
+  relative_humidity_2m_mean: ["%"],
+  relative_humidity_2m_max: ["%"],
+  relative_humidity_2m_min: ["%"],
+  dew_point_2m_mean: ["°C"],
+  vapour_pressure_deficit_max: ["kPa"],
+  wind_speed_10m_max: ["km/h"],
+  wind_gusts_10m_max: ["km/h"],
+  soil_moisture_0_to_7cm_mean: ["m³/m³"],
+  soil_temperature_0_to_7cm_mean: ["°C"],
+  leaf_wetness_probability_mean: ["%"],
+  sunshine_duration: ["s"], // converted to hours when parsed, stored unit "h"
+  precipitation_hours: ["h"],
 };
 
 const responseSchema = z.object({
@@ -71,9 +125,14 @@ export interface WeatherDayRow {
   attribution: string;
 }
 
+/** Successful parse: the rows plus the optional keys that were left out (for example `unexpected_unit:wind_gusts_10m_max:m/s`). */
+export type ParsedDaily = { status: "ok"; data: WeatherDayRow[]; notes: string[] };
+
 export interface WeatherSeries {
   endpoint: OpenMeteoEndpoint;
   rows: WeatherDayRow[];
+  /** Optional keys omitted from the rows and why; empty when everything requested was usable. */
+  notes?: string[];
   fetchedAt: string;
   cached: boolean;
   /** True when a failed refresh fell back to an expired cache entry. */
@@ -154,12 +213,13 @@ export function parseOpenMeteoDaily(args: {
   fetchedAt: string;
   horizonDays: number | null;
   requested: readonly string[];
-}): FetchResult<WeatherDayRow[]> {
+}): ParsedDaily | Unavailable {
   const parsed = responseSchema.safeParse(args.body);
   if (!parsed.success) return unavailable("schema_mismatch", "response did not match the expected Open-Meteo daily shape");
   const r = parsed.data;
   const times = r.daily.time;
   const present: string[] = [];
+  const notes: string[] = [];
   for (const v of args.requested) {
     const required = (REQUIRED_DAILY_VARIABLES as readonly string[]).includes(v);
     const unit = r.daily_units[v];
@@ -168,9 +228,17 @@ export function parseOpenMeteoDaily(args: {
       if (required) return unavailable("schema_mismatch", `response lacks required variable ${v}`);
       continue;
     }
-    if (series.length !== times.length) return unavailable("schema_mismatch", `variable ${v} length differs from time axis`);
+    if (series.length !== times.length) {
+      if (required) return unavailable("schema_mismatch", `variable ${v} length differs from time axis`);
+      notes.push(`length_mismatch:${v}`); // optional key: left out like an unexpected unit, the response still parses
+      continue;
+    }
     const accepted = ACCEPTED_UNITS[v];
-    if (!accepted || !accepted.includes(unit)) return unavailable("unexpected_unit", `variable ${v} reported unit "${unit}", not interpreted`);
+    if (!accepted || !accepted.includes(unit)) {
+      if (required) return unavailable("unexpected_unit", `variable ${v} reported unit "${unit}", not interpreted`);
+      notes.push(`unexpected_unit:${v}:${unit}`); // optional key: treated as not provided, never guessed
+      continue;
+    }
     present.push(v);
   }
   const utcOffset = r.utc_offset_seconds ?? 0;
@@ -181,11 +249,19 @@ export function parseOpenMeteoDaily(args: {
     const values: Record<string, number | null> = {};
     const units: Record<string, string> = {};
     for (const v of present) {
-      values[v] = r.daily[v]![i] ?? null;
-      units[v] = r.daily_units[v]!;
+      const raw = r.daily[v]![i] ?? null;
+      if (v === SECONDS_TO_HOURS_VARIABLE) {
+        values[v] = raw === null ? null : Math.round((raw / 3600) * 100) / 100;
+        units[v] = "h";
+      } else {
+        values[v] = raw;
+        units[v] = r.daily_units[v]!;
+      }
     }
-    // A day where every variable is null carries no information (e.g. archive days not yet produced).
-    if (Object.values(values).every((x) => x === null)) return;
+    // A day where every REQUIRED variable is null carries no information (e.g. archive days not yet produced), whatever the
+    // optional keys hold: a deeper value alone never makes a weather day.
+    const requiredPresent = present.filter((v) => (REQUIRED_DAILY_VARIABLES as readonly string[]).includes(v));
+    if ((requiredPresent.length ? requiredPresent : present).every((v) => values[v] === null)) return;
     rows.push({
       provider: OPENMETEO_PROVIDER,
       endpoint: args.endpoint,
@@ -212,7 +288,7 @@ export function parseOpenMeteoDaily(args: {
     });
   });
   if (rows.length === 0) return unavailable("no_data", "response contained no non-null daily values");
-  return { status: "ok", data: rows };
+  return { status: "ok", data: rows, notes };
 }
 
 async function run(
@@ -237,7 +313,7 @@ async function run(
       requested: req.requested,
     });
     if (rows.status !== "ok") return rows;
-    return { status: "ok", data: { endpoint, rows: rows.data, fetchedAt: payload.fetchedAt, cached: isCached, stale, sourceUrl: url } };
+    return { status: "ok", data: { endpoint, rows: rows.data, notes: rows.notes, fetchedAt: payload.fetchedAt, cached: isCached, stale, sourceUrl: url } };
   };
   if (cached && cached.expiresAt.getTime() > now().getTime()) {
     return build(cached.payload as CachedPayload, true, false);
@@ -275,6 +351,7 @@ export async function fetchDailyArchive(req: ArchiveRequest, deps: OpenMeteoDeps
   if (!validIsoDate(req.start) || !validIsoDate(req.end) || req.start > req.end) return unavailable("invalid_request", "start/end must be ISO dates with start <= end");
   if (daysBetween(req.start, req.end) > 366) return unavailable("invalid_request", "archive window is limited to 367 days per call");
   const config = deps.config ?? loadProviderConfig();
+  const requested = ARCHIVE_DAILY_VARIABLES;
   const lat = roundCoord(req.lat);
   const lon = roundCoord(req.lon);
   const p = new URLSearchParams({
@@ -282,10 +359,10 @@ export async function fetchDailyArchive(req: ArchiveRequest, deps: OpenMeteoDeps
     longitude: String(lon),
     start_date: req.start,
     end_date: req.end,
-    daily: REQUIRED_DAILY_VARIABLES.join(","),
+    daily: requested.join(","),
     timezone: req.timezone ?? "Asia/Kolkata",
   });
-  return run("archive", `${config.OPENMETEO_ARCHIVE_URL}?${p}`, config.OPENMETEO_ARCHIVE_TTL_SECONDS, { lat, lon, horizonDays: null, requested: REQUIRED_DAILY_VARIABLES }, deps, config);
+  return run("archive", `${config.OPENMETEO_ARCHIVE_URL}?${p}`, config.OPENMETEO_ARCHIVE_TTL_SECONDS, { lat, lon, horizonDays: null, requested }, deps, config);
 }
 
 export interface ForecastRequest {
@@ -300,7 +377,7 @@ export async function fetchForecast(req: ForecastRequest, deps: OpenMeteoDeps = 
   if (!validCoord(req.lat, req.lon)) return unavailable("invalid_request", "latitude/longitude out of range");
   if (!Number.isInteger(req.days) || req.days < 1 || req.days > 16) return unavailable("invalid_request", "forecast days must be an integer 1..16");
   const config = deps.config ?? loadProviderConfig();
-  const requested = [...REQUIRED_DAILY_VARIABLES, ...OPTIONAL_FORECAST_VARIABLES];
+  const requested = [...REQUIRED_DAILY_VARIABLES, ...OPTIONAL_DAILY_VARIABLES, ...OPTIONAL_FORECAST_VARIABLES];
   const lat = roundCoord(req.lat);
   const lon = roundCoord(req.lon);
   const p = new URLSearchParams({

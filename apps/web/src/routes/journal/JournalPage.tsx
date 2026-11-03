@@ -9,6 +9,11 @@ import { getOwnerScope } from "../../features/offline/scope";
 import { scopedStore } from "../../features/journal/model";
 import { createIdbStore } from "../../features/journal/idbStore";
 import { JournalForm } from "../../features/journal/JournalForm";
+import { issueHref } from "../../features/journal/issueFromFacts";
+import { useWorkspace, today, type Boundary } from "../../workspace/state";
+import { Sheet } from "../../workspace/ui/Sheet";
+import { IssueForm, type FieldOption } from "../../workspace/scouting/IssueForm";
+import type { IssuePrefill } from "../../workspace/scouting/scoutingModel";
 
 const SELECTED_KEY = "ho.selectedFarm";
 interface FarmLite {
@@ -42,6 +47,19 @@ export function JournalPage() {
   );
   const [notice, setNotice] = createSignal<string | null>(null);
   const [lastSaved, setLastSaved] = createSignal<string | null>(null);
+  const ws = useWorkspace();
+  /** "Log as an issue": the entry's prefill while the sheet is open, and the issue each confirmed fact was logged as (this visit). */
+  const [logging, setLogging] = createSignal<{ farmId: string; prefill: IssuePrefill } | null>(null);
+  const [logged, setLogged] = createSignal<Record<string, string>>({});
+  const [issueNotice, setIssueNotice] = createSignal<string | null>(null);
+  const fieldOptions = (farmId: string): FieldOption[] => {
+    const w = ws.workspace();
+    return w && w.farmId === farmId ? (w.fields ?? []).map((x) => ({ id: x.id, name: x.name, boundary: x.boundary })) : [];
+  };
+  const farmBoundary = (farmId: string): Boundary | null => {
+    const w = ws.workspace();
+    return w && w.farmId === farmId ? w.boundary : null;
+  };
 
   const stageNames = createMemo(() => Object.fromEntries((timeline()?.currentPlan?.stages ?? []).map((s) => [s.stageId, s.name])));
   const patchEntry = (e: JournalEntry) => mutate((t: Timeline | undefined) => (t ? { ...t, entries: t.entries.map((x) => (x.id === e.id ? e : x)) } : t));
@@ -81,6 +99,31 @@ export function JournalPage() {
               <Show when={notice()}>
                 <p class="jr-note" role="status" data-testid="journal-notice">{notice()}</p>
               </Show>
+              <Show when={issueNotice()}>
+                <p class="jr-note" role="status" data-testid="issue-notice">
+                  Issue logged. <a href={issueHref(issueNotice()!)}>View it on Today</a>
+                </p>
+              </Show>
+              <Show when={logging()}>
+                {(open) => (
+                  <Sheet title="Log an issue" subtitle="From your confirmed journal entry" closeLabel="Close new issue" class="sc-sheet" onClose={() => setLogging(null)}>
+                    <IssueForm
+                      farmId={open().farmId}
+                      fields={fieldOptions(open().farmId)}
+                      farmBoundary={farmBoundary(open().farmId)}
+                      today={today()}
+                      prefill={open().prefill}
+                      onCreated={(issue) => {
+                        const factId = open().prefill.fromFactId;
+                        if (factId) setLogged((m) => ({ ...m, [factId]: issue.id }));
+                        setIssueNotice(issue.id);
+                        setLogging(null);
+                      }}
+                      onCancel={() => setLogging(null)}
+                    />
+                  </Sheet>
+                )}
+              </Show>
               <JournalForm farmId={f().id} stages={timeline()?.currentPlan?.stages ?? []} store={store} onSaved={onSaved} />
               <section class="jr-timeline" aria-labelledby="jr-timeline-title">
                 <h2 id="jr-timeline-title">Season timeline</h2>
@@ -108,6 +151,11 @@ export function JournalPage() {
                                 onEntry={patchEntry}
                                 onResult={onResult}
                                 onReload={() => void refetch()}
+                                onLogIssue={(_entry, prefill) => {
+                                  setIssueNotice(null);
+                                  setLogging({ farmId: f().id, prefill });
+                                }}
+                                loggedIssueId={(factId) => logged()[factId]}
                               />
                             </div>
                           )}

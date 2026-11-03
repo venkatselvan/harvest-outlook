@@ -84,9 +84,9 @@ describe('fieldAreaHa, requireField, legacyCycles', () => {
 describe('assistant turn fieldId (12.5)', () => {
   let h: Harness, client: Client, created: number, app: Awaited<ReturnType<Harness['make']>>;
   const HASSAN = { districtId: 'IN-KA-hassan', stateId: 'IN-KA', lat: 13.25, lon: 76.25, precision: 'approximate' };
-  const farmWith = async (fields: unknown[]) => {
+  const farmWith = async (fields: unknown[], checkIntervalDays?: number) => {
     const id = (await client.call('POST', '/api/v1/farms', { payload: farmBody({ name: 'Strips', location: HASSAN, facts: {} }) })).json().data.id as string;
-    const put = await client.call('PUT', `/api/v1/farms/${id}/workspace`, { payload: { expectedVersion: 0, boundary: FARM, previousHarvest: { status: 'unknown' }, cycles: [], rotationPlans: [], fields } });
+    const put = await client.call('PUT', `/api/v1/farms/${id}/workspace`, { payload: { expectedVersion: 0, boundary: FARM, previousHarvest: { status: 'unknown' }, cycles: [], rotationPlans: [], fields, ...(checkIntervalDays ? { checkIntervalDays } : {}) } });
     expect(put.statusCode, put.body).toBe(200);
     return id;
   };
@@ -125,6 +125,24 @@ describe('assistant turn fieldId (12.5)', () => {
     expect(res.statusCode).toBe(404);
     expect(res.json().error.code).toBe('not_found');
     expect(created).toBe(0);
+  });
+
+  it('a workspace PUT without checkIntervalDays keeps the stored farm interval (as for fields); one that sends it replaces it', async () => {
+    const id = await farmWith(FIELDS, 9);
+    const wsUrl = `/api/v1/farms/${id}/workspace`;
+    const base = { boundary: FARM, previousHarvest: { status: 'unknown' }, cycles: [], rotationPlans: [] };
+    expect((await client.call('GET', wsUrl)).json().data.checkIntervalDays).toBe(9);
+    const omitted = await client.call('PUT', wsUrl, { payload: { ...base, expectedVersion: 1 } });
+    expect(omitted.statusCode, omitted.body).toBe(200);
+    expect(omitted.json().data).toMatchObject({ checkIntervalDays: 9, version: 2 });
+    expect(omitted.json().data.fields.map((f: { id: string }) => f.id)).toEqual(['west', 'east']);
+    expect((await client.call('GET', wsUrl)).json().data.checkIntervalDays).toBe(9);
+    const replaced = await client.call('PUT', wsUrl, { payload: { ...base, expectedVersion: 2, checkIntervalDays: 14 } });
+    expect(replaced.json().data.checkIntervalDays).toBe(14);
+    // A farm that never set one stays without one.
+    const plain = await farmWith(FIELDS);
+    const kept = await client.call('PUT', `/api/v1/farms/${plain}/workspace`, { payload: { ...base, expectedVersion: 1 } });
+    expect(kept.json().data.checkIntervalDays).toBeUndefined();
   });
 
   it('a field of the farm is accepted and the turn runs', async () => {

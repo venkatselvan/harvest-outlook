@@ -334,6 +334,74 @@ describe("hero: conditions in both modes", () => {
     for (const mode of ["illustration", "satellite"] as const) expect(hero(FIXTURE_TODAY, mode)).toContain('data-testid="today-events"');
     expect(hero("2026-09-28")).not.toContain('data-testid="today-events"');
   });
+  it("weather depth (WEATHER_DEPTH_SPEC.md 6.4): a wetness badge beside the alerts when high or moderate, with the grid-cell label; caption and chip name the class and the soil-moisture basis", () => {
+    // SYNTHETIC pressure and soil-moisture values on the minimal point.
+    const pressure = (wetness: "high" | "moderate" | "low" | "unknown") =>
+      ({
+        wetness,
+        leafWetnessPct: wetness === "high" ? 62 : wetness === "moderate" ? 30 : wetness === "low" ? 10 : null,
+        rhMeanPct: wetness === "low" ? 60 : wetness === "unknown" ? null : 88.4,
+        vpdMaxKpa: 0.42,
+        gustMaxKmh: 31,
+        basis: wetness === "unknown" ? "none" : "engine_assumption",
+      }) as const;
+    const wet = point({ water: { state: "moist", basis: "model_soil_moisture", soilMoisture0to7: 0.312 }, pressure: pressure("high") });
+    const badges = renderToString(() => <EventBadges events={[]} condition={wet} />);
+    expect(badges).toContain('aria-label="Alerts and conditions on this date"');
+    expect(badges).toContain('data-wetness="high"');
+    expect(text(badges)).toBe("Wet leaves likely");
+    expect(badges).toContain(
+      'title="High leaf wetness: conditions favour fungal spread (leaf wetness probability 62%, mean humidity 88%). Open-Meteo model estimate for the grid cell, not a field reading. Weather data by Open-Meteo.com."',
+    );
+    expect(badges).not.toMatch(/blast|blight|mildew|disease/i);
+    // Beside the alerts, after them; moderate on a typical day says it is climatology.
+    const moderate = renderToString(() => (
+      <EventBadges events={at(FIXTURE_TODAY).events} condition={point({ kind: "typical", pressure: pressure("moderate") })} />
+    ));
+    expect(text(moderate)).toBe("Leaf-feeding pest window for vegetative maize Heavy rain expected on 4 Nov +1 more Leaves wet at times");
+    expect(moderate).toContain('data-wetness="moderate"');
+    expect(moderate).toContain("Typical (climatology), not a forecast.");
+    // Low, unknown and absent pressure draw nothing.
+    for (const p of [point({ pressure: pressure("low") }), point({ pressure: pressure("unknown") }), point()])
+      expect(renderToString(() => <EventBadges events={[]} condition={p} />)).toBe("");
+    // The hero passes the day's point through.
+    const view = { ...fixture, conditions: { ...fixture.conditions!, points: fixture.conditions!.points.map((p) => (p.date === "2026-09-28" ? { ...p, pressure: pressure("high") } : p)) } };
+    expect(hero("2026-09-28", "satellite", view)).toContain('data-testid="today-wetness"');
+    expect(hero("2026-09-28", "satellite")).not.toContain('data-testid="today-wetness"');
+    // Caption and chip: the class in words and the soil-moisture basis; the chip note carries the label (one decimal, % of volume).
+    expect(conditionCaption(wet)).toBe(
+      "19 Sept: no rain, soil moist (model soil moisture), high leaf wetness (model estimate), conditions favour fungal spread, canopy near typical",
+    );
+    expect(conditionCaption(point({ water: { state: "dry", basis: "model_soil_moisture", soilMoisture0to7: 0.05 }, pressure: pressure("low") }))).toBe(
+      "19 Sept: no rain, soil dry (model soil moisture), low leaf wetness (model estimate), canopy near typical",
+    );
+    expect(conditionKindChip(wet)).toEqual({
+      label: "Observed",
+      tone: "observed",
+      note: "Observed: water: moist (model soil moisture 31.2% by volume), leaf wetness: high. Open-Meteo model estimate for the grid cell, not a field reading. Weather data by Open-Meteo.com.",
+    });
+    expect(conditionKindChip(point())).toEqual({ label: "Observed", tone: "observed" });
+    expect(renderToString(() => <ConditionsLine point={wet} date="2026-09-19" />)).toContain('aria-label="Observed: water: moist (model soil moisture 31.2% by volume)');
+    // Review L2: when mean humidity, not leaf wetness, set the class, the words say humidity.
+    const humid = (over: Partial<NonNullable<FieldConditionPoint["pressure"]>>) =>
+      point({ pressure: { ...pressure("high"), leafWetnessPct: null, rhMeanPct: 92, ...over } });
+    expect(text(renderToString(() => <EventBadges events={[]} condition={humid({})} />))).toBe("Humid, leaves may stay wet");
+    expect(renderToString(() => <EventBadges events={[]} condition={humid({})} />)).toContain('title="High humidity: conditions favour fungal spread (mean humidity 92%).');
+    expect(conditionCaption(humid({}))).toBe("19 Sept: no rain, soil dry, high humidity (model estimate), conditions favour fungal spread, canopy near typical");
+    expect(conditionKindChip(humid({}))?.note).toMatch(/^Observed: humidity: high\./);
+    // Both inputs, leaf wetness low (10%) and humidity high (92%): humidity drove the class.
+    expect(conditionCaption(humid({ leafWetnessPct: 10 }))).toContain("high humidity (model estimate)");
+    expect(text(renderToString(() => <EventBadges events={[]} condition={humid({ leafWetnessPct: 10, wetness: "moderate", rhMeanPct: 84 })} />))).toBe("Humid at times");
+    // Both inputs with leaf wetness at the class: leaf wetness is named; sourced thresholds the web cannot attribute: both named.
+    expect(conditionCaption(humid({ leafWetnessPct: 70 }))).toContain("high leaf wetness (model estimate)");
+    expect(conditionCaption(humid({ leafWetnessPct: 10, basis: "sourced_threshold" }))).toContain("high leaf wetness or humidity (model estimate)");
+    // Review L3: the illustration canvas label carries the grid-cell label and attribution on such days only.
+    const wetView = { ...fixture, conditions: { ...fixture.conditions!, points: fixture.conditions!.points.map((p) => (p.date === "2026-09-28" ? { ...p, pressure: pressure("high") } : p)) } };
+    expect(hero("2026-09-28", "illustration", wetView)).toContain(
+      "conditions favour fungal spread, greenness 0.21 as of 12 Sept. Open-Meteo model estimate for the grid cell, not a field reading. Weather data by Open-Meteo.com. Drawn from weather records",
+    );
+    expect(hero("2026-09-28", "illustration")).not.toContain("Open-Meteo model estimate");
+  });
   it("the satellite overlay draws rain by class and a water tint over the field polygon, labelled as an overlay", () => {
     const html = hero("2026-10-14");
     expect(html).toContain('class="today-sat-conditions"');

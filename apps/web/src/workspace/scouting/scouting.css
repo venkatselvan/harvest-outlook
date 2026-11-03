@@ -1,0 +1,552 @@
+/* Field checks and the issue log (FIELD_OPERATIONS_SPEC.md 4 to 6). Theme tokens only; dark mode comes from theme.css. */
+
+/* ---------------------------------------------------------------- check steps */
+.sc-check {
+  display: grid;
+  gap: 4px;
+  margin-top: 4px;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+.sc-check-caption,
+.sc-check-missed {
+  margin: 0;
+}
+.sc-check-missed {
+  color: var(--danger);
+  font-weight: 600;
+}
+.sc-checklist-head {
+  margin: 8px 0 2px;
+  font-weight: 650;
+  color: var(--text);
+}
+.sc-checklist-list {
+  margin: 0;
+  padding-left: 18px;
+  display: grid;
+  gap: 4px;
+}
+.sc-checklist-list li {
+  overflow-wrap: anywhere;
+}
+.sc-source {
+  display: block;
+  font-size: 11px;
+}
+.today-step-details.sc-checklist .sc-source a {
+  display: inline;
+  margin: 0;
+}
+.sc-step-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 6px;
+}
+.sc-step-actions .btn,
+.sc-actions .btn,
+.sc-new {
+  min-height: 44px;
+}
+
+/* ---------------------------------------------------------------- Today line and list */
+.sc-issues-line {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 44px;
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+  overflow-wrap: anywhere;
+}
+.sc-issues-line:hover {
+  background: var(--surface-hover);
+}
+.sc-issues-dot {
+  flex: none;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--danger);
+}
+.sc-issues {
+  scroll-margin-top: 72px;
+}
+.sc-issues:focus {
+  outline: none;
+}
+.sc-issues:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+.sc-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+.sc-filter {
+  min-height: 44px;
+  padding: 6px 12px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface-soft);
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.sc-filter[aria-pressed="true"] {
+  background: var(--accent-soft);
+  border-color: var(--accent-border);
+  color: var(--accent);
+}
+.sc-filter-count {
+  margin-left: 4px;
+  font-variant-numeric: tabular-nums;
+}
+.sc-issue-list {
+  display: grid;
+  gap: 8px;
+  margin: 0 0 10px;
+  padding: 0;
+  list-style: none;
+}
+.sc-issue-row {
+  display: grid;
+  gap: 4px;
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+}
+.sc-issue-row:hover {
+  background: var(--surface-hover);
+}
+.sc-issue-title {
+  font-size: 14px;
+  font-weight: 650;
+  overflow-wrap: anywhere;
+}
+.sc-issue-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 10px;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+.sc-seen {
+  font-weight: 600;
+}
+.sc-error-line {
+  display: grid;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--danger);
+}
+
+/* ---------------------------------------------------------------- chips and category badges */
+.sc-cat {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 650;
+  color: var(--text-secondary);
+}
+.sc-cat-mark {
+  display: inline-grid;
+  place-items: center;
+  min-width: 24px;
+  height: 24px;
+  padding: 0 4px;
+  border-radius: 6px;
+  background: var(--surface-soft);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-size: 10px;
+  font-weight: 700;
+}
+.sc-cat.cat-pest .sc-cat-mark,
+.sc-cat.cat-disease .sc-cat-mark,
+.sc-cat.cat-animal_damage .sc-cat-mark {
+  background: var(--danger-soft);
+  color: var(--danger);
+  border-color: transparent;
+}
+.sc-cat.cat-water_stress .sc-cat-mark,
+.sc-cat.cat-weather_damage .sc-cat-mark {
+  background: var(--info-soft);
+  color: var(--info);
+  border-color: transparent;
+}
+.sc-cat.cat-weed .sc-cat-mark,
+.sc-cat.cat-nutrient .sc-cat-mark {
+  background: var(--accent-soft);
+  color: var(--accent);
+  border-color: transparent;
+}
+.sc-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--surface-soft);
+  color: var(--text-secondary);
+  font-size: 11px;
+  font-weight: 650;
+  line-height: 1.5;
+  white-space: nowrap;
+}
+.sc-chip.severity-high,
+.sc-chip.status-open {
+  background: var(--danger-soft);
+  color: var(--danger);
+  border-color: transparent;
+}
+.sc-chip.severity-medium,
+.sc-chip.status-treating {
+  background: var(--info-soft);
+  color: var(--info);
+  border-color: transparent;
+}
+.sc-chip.status-resolved {
+  background: var(--accent-soft);
+  color: var(--accent);
+  border-color: var(--accent-border);
+}
+
+/* ---------------------------------------------------------------- sheets and forms */
+.sc-sheet .ui-sheet-body {
+  overflow-x: hidden;
+}
+.sc-form {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+.sc-form label,
+.sc-label,
+.sc-form legend {
+  font-size: 13px;
+  font-weight: 650;
+  color: var(--text);
+}
+.sc-form input:not([type="radio"]):not([type="checkbox"]):not([type="file"]),
+.sc-form select,
+.sc-form textarea {
+  width: 100%;
+  min-width: 0;
+  min-height: 44px;
+  box-sizing: border-box;
+  padding: 8px 10px;
+  border: 1px solid var(--border-strong);
+  border-radius: 8px;
+  font: inherit;
+}
+.sc-form fieldset {
+  margin: 4px 0;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  min-width: 0;
+}
+.sc-radios {
+  display: grid;
+  gap: 2px;
+}
+.sc-radio {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  font-weight: 500 !important;
+}
+.sc-radio input {
+  width: 20px;
+  height: 20px;
+}
+.sc-row-fields {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 4px 8px;
+  align-items: center;
+}
+.sc-small {
+  margin: 0;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+.sc-note {
+  margin: 0;
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: var(--info-soft);
+  color: var(--info);
+  font-size: 12px;
+}
+.sc-field-error {
+  margin: 0;
+  font-size: 12px;
+  color: var(--danger);
+}
+.sc-problems {
+  margin: 4px 0;
+  padding: 8px 10px 8px 26px;
+  border-radius: 8px;
+  background: var(--danger-soft);
+  color: var(--danger);
+  font-size: 13px;
+}
+.sc-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 6px;
+}
+.sc-voice {
+  font-size: 13px;
+}
+.sc-voice summary {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  color: var(--accent);
+  font-weight: 600;
+}
+.sc-photos {
+  display: grid;
+  gap: 8px;
+}
+.sc-photo-item {
+  display: grid;
+  gap: 6px;
+  padding: 8px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+/* The shared uploader's heading and help speak of a planting area; the form gives its own line above it. */
+.sc-uploader .pr-upload > h2,
+.sc-uploader .pr-upload > .pr-help:first-of-type {
+  display: none;
+}
+.sc-location-line {
+  margin: 0;
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+.sc-locate-map {
+  position: relative;
+  height: 280px;
+  margin-top: 8px;
+  border-radius: 10px;
+  overflow: hidden;
+}
+.sc-locate-map .farm-map {
+  height: 100%;
+  min-height: 0;
+}
+.map-locate-hint {
+  position: absolute;
+  left: 50%;
+  bottom: 12px;
+  transform: translateX(-50%);
+  z-index: 500;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: var(--surface-glass);
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.sc-check-issues,
+.sc-inline-issue {
+  display: grid;
+  gap: 6px;
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+.sc-check-issues h3,
+.sc-inline-issue h3,
+.sc-timeline h3 {
+  margin: 0;
+  font-size: 14px;
+}
+.sc-check-issue-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 4px;
+}
+.sc-check-issue-list li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px 8px;
+  overflow-wrap: anywhere;
+}
+.sc-check-issue-list .text-button {
+  min-height: 44px;
+}
+
+/* ---------------------------------------------------------------- photos and marks */
+.sc-photo {
+  margin: 0;
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+.sc-photo-frame {
+  position: relative;
+  max-width: 100%;
+  line-height: 0;
+}
+.sc-photo-frame img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 8px;
+}
+.sc-photo-tap {
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: crosshair;
+}
+.sc-mark {
+  position: absolute;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  margin: -14px 0 0 -14px;
+  padding: 0;
+  border: 2px solid #ffffff;
+  border-radius: 50%;
+  background: #d9622b;
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1;
+  box-shadow: 0 1px 4px var(--shadow-color);
+}
+button.sc-mark {
+  cursor: pointer;
+}
+/* A 44 px hit area around the 28 px dot. */
+button.sc-mark::after {
+  content: "";
+  position: absolute;
+  inset: -8px;
+}
+.sc-mark-list {
+  margin: 0;
+  padding-left: 20px;
+  display: grid;
+  gap: 4px;
+  font-size: 12px;
+}
+.sc-mark-label {
+  font-weight: 600;
+  font-size: 12px;
+}
+.sc-mark-row {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+.sc-mark-row input {
+  flex: 1;
+  min-width: 0;
+  min-height: 44px;
+  padding: 6px 8px;
+  border: 1px solid var(--border-strong);
+  border-radius: 8px;
+}
+.sc-photo-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 8px;
+}
+
+/* ---------------------------------------------------------------- issue sheet */
+.sc-issue {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+}
+.sc-issue-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 8px;
+}
+.sc-meta,
+.sc-detail {
+  margin: 0;
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+.sc-facts {
+  margin: 0;
+  padding-left: 18px;
+  display: grid;
+  gap: 4px;
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+.sc-timeline ol {
+  margin: 6px 0 0;
+  padding: 0 0 0 14px;
+  border-left: 2px solid var(--border);
+  list-style: none;
+  display: grid;
+  gap: 8px;
+}
+.sc-event-head,
+.sc-event-line {
+  margin: 0;
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+.sc-event-line {
+  color: var(--text-secondary);
+}
+
+@media (max-width: 480px) {
+  .sc-row-fields {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .sc-actions .btn {
+    flex: 1 1 auto;
+  }
+  .map-locate-hint {
+    white-space: normal;
+    width: max-content;
+    max-width: calc(100% - 24px);
+    text-align: center;
+  }
+}

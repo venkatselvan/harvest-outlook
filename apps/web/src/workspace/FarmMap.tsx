@@ -1,4 +1,4 @@
-import { GeographicBoundary } from "@harvest/contracts";
+import { GeographicBoundary, pointInRing } from "@harvest/contracts";
 import {
   createEffect,
   createSignal,
@@ -18,6 +18,17 @@ export interface MapField {
   boundary: Boundary;
   color: string;
 }
+/** A picked point (degrees). */
+export interface MapPoint {
+  lat: number;
+  lon: number;
+}
+export interface LocateMode {
+  onPick: (point: MapPoint) => void;
+  within?: Boundary | null | undefined;
+  point?: MapPoint | null | undefined;
+  outsideText?: string | undefined;
+}
 export function FarmMap(props: {
   boundary: Boundary | null;
   center?: [number, number];
@@ -36,6 +47,12 @@ export function FarmMap(props: {
   subject?: "farm" | "field";
   /** 2026-11-03: fit the view to this outline instead of `boundary` (drawing a field keeps the whole farm in view). */
   fitTo?: Boundary | null;
+  /**
+   * 2026-11-03 (FIELD_OPERATIONS_SPEC.md 5.1): tap-to-locate, additive. While set and not drawing, a tap inside `within`
+   * (when given) calls `onPick` with the point; a tap outside shows `outsideText` and picks nothing. `point` is drawn as a
+   * dot. Without this prop the map behaves exactly as before.
+   */
+  locate?: LocateMode | undefined;
 }) {
   let container!: HTMLDivElement;
   let map: L.Map | undefined;
@@ -43,6 +60,7 @@ export function FarmMap(props: {
   let line: L.Polyline | undefined;
   let contextShape: L.Polygon | undefined;
   const fieldShapes: L.Polygon[] = [];
+  let pickMarker: L.CircleMarker | undefined;
   const dots: L.CircleMarker[] = [];
   const field = () => props.subject === "field";
   const latLngs = (b: Boundary | null | undefined) =>
@@ -163,6 +181,7 @@ export function FarmMap(props: {
     map.on("click", (e: L.LeafletMouseEvent) => {
       if (props.editing && !props.saving)
         setVertices([...vertices(), e.latlng]);
+      else if (props.locate && !props.editing) pick(e.latlng);
     });
     const fit = props.fitTo ?? props.boundary;
     if (fit)
@@ -216,6 +235,33 @@ export function FarmMap(props: {
         padding: [70, 70],
         maxZoom: 18,
       });
+  });
+  /** Tap-to-locate: a point inside `locate.within` (when given) is handed to `onPick`; outside shows a message. */
+  function pick(latlng: L.LatLng) {
+    const mode = props.locate;
+    if (!mode) return;
+    const point = { lat: latlng.lat, lon: latlng.lng };
+    const ring = mode.within?.coordinates[0];
+    if (ring && ring.length >= 4 && !pointInRing([point.lon, point.lat], ring as [number, number][])) {
+      setValidationError(mode.outsideText ?? "That spot is outside the field. Tap inside it.");
+      return;
+    }
+    setValidationError("");
+    mode.onPick(point);
+  }
+  createEffect(() => {
+    const point = props.locate?.point;
+    pickMarker?.remove();
+    pickMarker = undefined;
+    if (map && point)
+      pickMarker = L.circleMarker([point.lat, point.lon], {
+        radius: 8,
+        color: "#ffffff",
+        weight: 3,
+        fillColor: "#d9622b",
+        fillOpacity: 1,
+        interactive: false,
+      }).addTo(map);
   });
   function locate() {
     setLocationError("");
@@ -359,6 +405,11 @@ export function FarmMap(props: {
           <Show when={props.onEdit}>
             <button onClick={() => props.onEdit?.()}>Edit</button>
           </Show>
+        </div>
+      </Show>
+      <Show when={props.locate && !props.editing}>
+        <div class="map-locate-hint" role="status">
+          {props.locate?.point ? "Spot marked. Tap again to move it." : "Tap the spot on the map."}
         </div>
       </Show>
       <Show when={validationError()}>

@@ -305,6 +305,37 @@ describe("season totals", () => {
     expect(rows.reduce((n, r) => n + r.entries, 0)).toBe(3);
   });
 
+  describe("an entry that names its cycle", () => {
+    const fact = (value: unknown, over: Record<string, string> = {}) => ({ field: "cycle_id", kind: "original", source: "farmer", value, ...over });
+    const early = cycle({ id: "early", cropId: "maize", sowingDate: "2026-03-01" });
+    const late = cycle({ id: "late", cropId: "beans", sowingDate: "2026-06-01" });
+
+    it("goes to the named cycle even when two windows contain its date, and is not counted as overlapping", () => {
+      const rows = only([entry("2026-07-01", { expense: { amountInr: "10" }, facts: [fact("early")] }), entry("2026-07-02", { expense: { amountInr: "20" } })], [early, late]);
+      const byId = Object.fromEntries(rows.map((r) => [r.cycleId, r]));
+      expect(byId.early).toMatchObject({ entries: 1, expenseInr: 10, overlapping: 0 });
+      // the unnamed entry still follows the date rule and is the only overlap
+      expect(byId.late).toMatchObject({ entries: 1, expenseInr: 20, overlapping: 1 });
+    });
+
+    it("goes to the named cycle whatever its date, so it is not outside every window", () => {
+      const harvested = cycle({ id: "h", sowingDate: "2026-01-01", harvestDate: "2026-03-01", stage: "harvested" });
+      const e1 = entry("2026-09-01", { expense: { amountInr: "5" }, facts: [fact("h")] });
+      const rows = only([e1], [harvested, late]);
+      expect(rows.find((r) => r.cycleId === "h")).toMatchObject({ entries: 1, expenseInr: 5, overlapping: 0 });
+      expect(amountsOutsideCycles([e1], [harvested, late], TODAY2)).toBe(0);
+    });
+
+    it("falls back to the date rule for an unknown cycle, a non-string value, or a fact that is not the farmer's original", () => {
+      for (const facts of [[fact("gone")], [fact(42)], [fact("early", { source: "ai", kind: "proposed" })], [{ ...fact("early"), field: "field_id" }]]) {
+        const rows = only([entry("2026-07-01", { facts })], [early, late]);
+        const byId = Object.fromEntries(rows.map((r) => [r.cycleId, r]));
+        expect(byId.early!.entries).toBe(0);
+        expect(byId.late).toMatchObject({ entries: 1, overlapping: 1 });
+      }
+    });
+  });
+
   it("on identical start dates the first listed cycle takes the entry, deterministically", () => {
     const a = cycle({ id: "a" });
     const b = cycle({ id: "b" });

@@ -1,6 +1,6 @@
 {
   "generatedAt": "2026-11-02",
-  "purpose": "Thresholds for the Today view's daily field conditions (TODAY_ECONOMICS_FOOTPRINT_SPEC.md section 10.1 item 4): IMD daily rainfall classes, crop standing-water practice windows and crop heat-stress thresholds. Read by apps/api/src/services/today/conditions.ts.",
+  "purpose": "Thresholds for the Today view's daily field conditions (TODAY_ECONOMICS_FOOTPRINT_SPEC.md section 10.1 item 4): IMD daily rainfall classes, crop standing-water practice windows and crop heat-stress thresholds; since 2026-11-03 (WEATHER_DEPTH_SPEC.md section 6, packet B) also the soil-moisture classes, the wetness thresholds and the gust threshold. Read by apps/api/src/services/today/conditions.ts.",
   "status": "research_candidate_unreviewed",
   "conventions": {
     "units": "Rain in mm per 24 hours (IMD 0830 to 0830 IST day); temperatures in degrees C (daily maximum).",
@@ -47,6 +47,41 @@
     }
   ],
   "heatThresholdsNotSearched": ["maize", "finger-millet", "sorghum", "groundnut", "soybean", "chickpea", "green-gram", "black-gram", "pigeon-pea", "sesame", "sunflower", "cotton", "potato", "onion", "tomato", "chilli", "ginger", "turmeric"],
+  "soilMoistureClasses": {
+    "addedAt": "2026-11-03",
+    "sourceId": "FAO-56-CH7-TABLE-19",
+    "locator": "Chapter 7, Evaporation component: Table 19 (Typical soil water characteristics for different soil types); 'Stage 1: energy limiting stage' and 'Stage 2: falling rate stage'",
+    "note": "Table 19 gives, per USDA texture class, ranges of field capacity (fc), wilting point (wp) and readily evaporable water (REW, the depth evaporated from the topsoil in stage 1, while the surface stays wet). FAO 56 says that once stage 1 ends 'the soil surface is visibly dry'. The engine compares the grid cell's modelled 0 to 7 cm soil moisture (m3/m3) with the end of stage 1 over the evaporation layer: wet end = fcHigh - rewLowMm / (1000 x evaporationLayerM), dry end = fcLow - rewHighMm / (1000 x evaporationLayerM). At or above the wet end the topsoil is moist for any soil of that texture in the table's ranges; below the dry end it is past stage 1 (dry surface) for any of them; in between the table cannot tell and the rain rule decides. evaporationLayerM 0.10 is the layer depth Table 19 uses for its TEW column (FAO recommends 0.10 to 0.15 m where unknown); the model layer is 0 to 7 cm. The model's own soil texture and hydraulic parameters are not this field's; this is an uncalibrated comparison. The HTML prints silty clay field capacity as '0-30 - 0.42'; read as 0.30 to 0.42. Wilting points are kept for reference; the rule does not use them.",
+    "evaporationLayerM": 0.10,
+    "textures": [
+      {"texture": "sand", "faoLabel": "Sand", "fcLow": 0.07, "fcHigh": 0.17, "wpLow": 0.02, "wpHigh": 0.07, "rewLowMm": 2, "rewHighMm": 7},
+      {"texture": "loamy_sand", "faoLabel": "Loamy sand", "fcLow": 0.11, "fcHigh": 0.19, "wpLow": 0.03, "wpHigh": 0.10, "rewLowMm": 4, "rewHighMm": 8},
+      {"texture": "sandy_loam", "faoLabel": "Sandy loam", "fcLow": 0.18, "fcHigh": 0.28, "wpLow": 0.06, "wpHigh": 0.16, "rewLowMm": 6, "rewHighMm": 10},
+      {"texture": "loam", "faoLabel": "Loam", "fcLow": 0.20, "fcHigh": 0.30, "wpLow": 0.07, "wpHigh": 0.17, "rewLowMm": 8, "rewHighMm": 10},
+      {"texture": "silt_loam", "faoLabel": "Silt loam", "fcLow": 0.22, "fcHigh": 0.36, "wpLow": 0.09, "wpHigh": 0.21, "rewLowMm": 8, "rewHighMm": 11},
+      {"texture": "silt", "faoLabel": "Silt", "fcLow": 0.28, "fcHigh": 0.36, "wpLow": 0.12, "wpHigh": 0.22, "rewLowMm": 8, "rewHighMm": 11},
+      {"texture": "silty_clay_loam", "faoLabel": "Silt clay loam", "fcLow": 0.30, "fcHigh": 0.37, "wpLow": 0.17, "wpHigh": 0.24, "rewLowMm": 8, "rewHighMm": 11},
+      {"texture": "silty_clay", "faoLabel": "Silty clay", "fcLow": 0.30, "fcHigh": 0.42, "wpLow": 0.17, "wpHigh": 0.29, "rewLowMm": 8, "rewHighMm": 12},
+      {"texture": "clay", "faoLabel": "Clay", "fcLow": 0.32, "fcHigh": 0.40, "wpLow": 0.20, "wpHigh": 0.24, "rewLowMm": 8, "rewHighMm": 12}
+    ],
+    "texturesNotInSource": ["clay_loam", "sandy_clay_loam", "sandy_clay"]
+  },
+  "wetnessThresholds": {
+    "addedAt": "2026-11-03",
+    "sourceId": null,
+    "locator": null,
+    "leafWetnessPct": null,
+    "rhMeanPct": null,
+    "contextSourceIds": ["TNAU-IMD-AAS-THOOTHUKUDI-2022-104", "HAMADA-2008-LWD-RH90", "METEOBLUE-LEAF-WETNESS"],
+    "note": "No Indian agromet (IMD GKMS district bulletins from TNAU and KAU, searched 2026-11-03) or FAO document found in this pass states a crop-independent daily leaf-wetness or humidity figure for fungal spread: the bulletins say high humidity, dew or high morning humidity without rain favour disease, and give numbers only for named diseases. Hourly RH of 90% or more is a common leaf-wetness proxy in the literature (Hamada et al. 2008, Brazil), but the pipeline stores daily means only. The thresholds are therefore engine assumptions (conditions.ts CONDITION_ASSUMPTIONS.wetness) and pressure.basis is engine_assumption. A later pass can put sourced {high, moderate} figures here with a sourceId; the engine then uses them and marks the basis sourced_threshold."
+  },
+  "lodgingGust": {
+    "addedAt": "2026-11-03",
+    "sourceId": null,
+    "locator": null,
+    "gustKmh": null,
+    "note": "No crop-independent gust threshold for lodging was found: IMD and OUAT/KAU agromet bulletins and IMD cyclone bulletins advise propping or bund care when strong wind is forecast and list lodging as an impact without a figure; laboratory critical wind speeds are cultivar-specific (maize stalk-breaking studies). The engine reuses the project's 60 km/h gust alert threshold (alerts.ts WEATHER_THRESHOLDS.windGustKmh), flagged as an alert threshold, not a lodging figure (CONDITION_ASSUMPTIONS.lodgingGust)."
+  },
   "sources": {
     "IMD-MC-AGARTALA-DAILY-RAINFALL": {
       "url": "https://mausam.imd.gov.in/agartala/mcdata/Daily%20Rainfall.pdf",
@@ -79,12 +114,49 @@
       "retrievedAt": "2026-11-02",
       "locator": "Mechanisms, paragraph on anthesis timing",
       "excerpt": "Anthesis usually occurs between 1000 hours and 1200 hours, with temperature rising in the morning and exceeding the critical temperature (35oC) by 1000 hours in high temperature areas."
+    },
+    "FAO-56-CH7-TABLE-19": {
+      "url": "https://www.fao.org/4/x0490e/x0490e0c.htm",
+      "title": "Crop evapotranspiration, FAO Irrigation and Drainage Paper 56, Chapter 7: ETc, dual crop coefficient (Table 19)",
+      "publisher": "Food and Agriculture Organization of the United Nations (Allen, Pereira, Raes and Smith, 1998)",
+      "retrievedAt": "2026-11-03",
+      "locator": "Evaporation component: Table 19; Stage 2: falling rate stage",
+      "excerpt": "Table 19 rows for sand to clay (theta FC, theta WP, REW, TEW). Stage 2: 'At this point, the soil surface is visibly dry'."
+    },
+    "TNAU-IMD-AAS-THOOTHUKUDI-2022-104": {
+      "url": "https://agritech.tnau.ac.in/agrometeorologicaladvisory/pdf/tnau_acrc/2022/dec/English%20Bulletin%20on%2030.12.2022%20Thoothukudi.pdf",
+      "title": "Agromet Advisory Bulletin for the Thoothukudi district, No. 104/2022, 30 December 2022",
+      "publisher": "Tamil Nadu Agricultural University (AMFU Kovilpatti) and India Meteorological Department",
+      "retrievedAt": "2026-11-03",
+      "locator": "Agromet Advisory, Rainfed / Horticultural crop, Spraying; Rice, Panicle initiation stage",
+      "excerpt": "If the weather with high morning relative humidity continues without rainfall, it favors for disease occurrence. (Context only: no crop-independent number; the 93% figure in the same bulletin is for one named disease.)"
+    },
+    "HAMADA-2008-LWD-RH90": {
+      "url": "https://www.alice.cnptia.embrapa.br/alice/bitstream/doc/31799/1/2008AP30.pdf",
+      "title": "Spatial and temporal variability of leaf wetness duration in the State of Sao Paulo, Brazil (Scientia Agricola, 2008)",
+      "publisher": "Hamada, Ghini, Fernandes, Pedro Junior and Rossi; Embrapa",
+      "retrievedAt": "2026-11-03",
+      "locator": "Abstract",
+      "excerpt": "Leaf wetness duration estimated from the number of hours with relative humidity equal to or higher than 90%. (Context only: an hourly proxy calibrated in Brazil; not used as a daily threshold.)"
+    },
+    "METEOBLUE-LEAF-WETNESS": {
+      "url": "https://content.meteoblue.com/en/research-education/specifications/weather-variables/leaf-wetness/",
+      "title": "Leaf wetness (weather variable specification)",
+      "publisher": "meteoblue AG",
+      "retrievedAt": "2026-11-03",
+      "locator": "Leaf wetness probability",
+      "excerpt": "Leaf wetness probability: probability of leaf wetness appearance in percent; built from rain, dew and evaporation; no disease thresholds given. (Context: the Open-Meteo docs list 'Mean Leaf Wetness Probability' without a definition; that it is the same quantity is an inference.)"
     }
   },
   "failedSources": [
     {"url": "http://www.knowledgebank.irri.org/training/fact-sheets/crop-damage/abiotic-disorders/item/heat-stress", "reason": "HTTP 404; the https variant timed out. IRRI's own heat-stress fact sheet was not retrieved."},
     {"url": "https://www.moes.gov.in/sites/default/files/RS-in-25-27-07-2023.pdf", "reason": "HTTP 404 (search result listed a Rajya Sabha reply with the full IMD rainfall category table); not retrieved."},
     {"url": "https://mausam.imd.gov.in/imd_latest/contents/faq.php", "reason": "Retrieved; it does not print the rainfall intensity bands."},
-    {"url": "https://www.jircas.go.jp/sites/default/files/publication/jarq/jarq11-2_127-128.pdf", "reason": "Retrieved (IRRI phytotron study at 35, 38 and 41 C); it reports treatment effects, not a threshold, so it is not used as the threshold source."}
+    {"url": "https://www.jircas.go.jp/sites/default/files/publication/jarq/jarq11-2_127-128.pdf", "reason": "Retrieved (IRRI phytotron study at 35, 38 and 41 C); it reports treatment effects, not a threshold, so it is not used as the threshold source."},
+    {"url": "https://www.fao.org/4/x0490e/x0490e0e.htm", "reason": "2026-11-03, weather depth: FAO 56 Chapter 8 refers to Table 19 for field capacity and wilting point but the table is printed in Chapter 7 (x0490e0c.htm), which is the page used."},
+    {"url": "https://ouat.ac.in/wp-content/uploads/2025/10/Gajapati_IAAS_English_31.10.2025_44_87.pdf", "reason": "2026-11-03, weather depth: a search summary said this GKMS bulletin lists lodging as a strong-wind impact; the retrieved text holds the forecast table only, with no wind threshold for lodging."},
+    {"url": "https://www.kau.in/sites/default/files/aasreports/kan_e_24102023.pdf", "reason": "2026-11-03, weather depth: KAU GKMS district bulletins (search summaries) link high humidity to fungal diseases without a stated threshold; not retrieved in full, not used."},
+    {"url": "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC7641793/", "reason": "2026-11-03, weather depth: maize critical wind speed of stalk breaking is cultivar-specific (search summary); a second-hand 10.8 m/s daily-maximum figure for maize lodging was seen only in a snippet. Not retrieved, not used."},
+    {"url": "https://open-meteo.com/en/docs", "reason": "2026-11-03, weather depth: retrieved; lists 'Mean Leaf Wetness Probability' and 'Mean Relative Humidity (2 m)' as daily variables without definitions or thresholds."}
   ]
 }

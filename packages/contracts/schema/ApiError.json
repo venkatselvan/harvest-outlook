@@ -63,7 +63,10 @@
         "unpriced_model",
         "field_not_found",
         "field_required",
-        "cycle_required"
+        "cycle_required",
+        "idempotency_conflict",
+        "location_outside_boundary",
+        "cycle_not_found"
       ]
     },
     "message": {

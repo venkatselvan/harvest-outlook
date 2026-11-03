@@ -10,7 +10,7 @@ import { storeArchive, storeForecast } from "../../ingest/weather-store";
 import { fetchMandiPrices } from "../../providers/datagovin/client";
 import { normalizeMandiRecords } from "../../providers/datagovin/normalize";
 import { loadProviderConfig, type ProviderConfig } from "../../providers/config";
-import { fetchDailyArchive, fetchForecast, roundCoord, type Unavailable } from "../../providers/openmeteo/client";
+import { ARCHIVE_DAILY_VARIABLES, fetchDailyArchive, fetchForecast, roundCoord, variableSetId, type Unavailable } from "../../providers/openmeteo/client";
 import type { JobRow } from "../main";
 
 /** Context supplied by runJob (see worker/main.ts). */
@@ -98,13 +98,15 @@ export function createIngestHandlers(deps: IngestDeps = {}): Record<string, Inge
     type: string,
     provider: string,
     body: (runId: string, config: ProviderConfig, payload: Record<string, unknown>) => Promise<{ counts: unknown; detail: unknown; status?: "succeeded" | "cancelled" }>,
+    /** Folded into the run hash so a run made with another request shape (for example another variable set) is not reused. */
+    runExtra?: unknown,
   ) => {
     const config = cfg();
     const mode = guardMode(config);
     const payload = normalizeIngestPayload(type, job.payload);
     // Scrub the stored payload (raw coordinates, farmId) before any provider call or run record.
     await ctx.pool.query("UPDATE jobs SET payload = $2::jsonb WHERE id = $1 AND payload IS DISTINCT FROM $2::jsonb", [job.id, JSON.stringify(payload)]);
-    const hash = payloadHash(payload);
+    const hash = payloadHash(runExtra === undefined ? payload : { ...payload, runExtra });
     const reused = await reuse(ctx, type, hash);
     if (reused) return reused;
     const runId = await startRun(ctx.pool, { jobId: job.id, jobType: type, hash, provider, mode });
@@ -131,8 +133,9 @@ export function createIngestHandlers(deps: IngestDeps = {}): Record<string, Inge
         const counts = await storeArchive(ctx.pool, res.data);
         const first = res.data.rows[0]!;
         // farmId and exact coordinates are deliberately not persisted in shared ingest records.
-        return { counts, detail: { units: first.units, measurementKind: first.measurementKind, cached: res.data.cached, stale: res.data.stale, fetchedAt: res.data.fetchedAt, window: { start: p.start, end: p.end } } };
-      }),
+        // requestedVariables / variableSet make a stale worker visible: a worker started before a client change records the old list.
+        return { counts, detail: { units: first.units, measurementKind: first.measurementKind, cached: res.data.cached, stale: res.data.stale, fetchedAt: res.data.fetchedAt, window: { start: p.start, end: p.end }, requestedVariables: ARCHIVE_DAILY_VARIABLES, variableSet: variableSetId(ARCHIVE_DAILY_VARIABLES), ...(res.data.notes?.length ? { notes: res.data.notes } : {}) } };
+      }, { variableSet: variableSetId(ARCHIVE_DAILY_VARIABLES) }),
 
     "ingest.weather_forecast": (job, ctx) =>
       wrap(job, ctx, "ingest.weather_forecast", "open-meteo", async (runId, config, payload) => {

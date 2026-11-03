@@ -294,6 +294,18 @@ export interface SeasonEntry {
   quantity?: { value: number; unit: string } | null;
   expense?: { amountInr: string } | null;
   sale?: { amountInr: string } | null;
+  /** The entry's facts (the API `JournalEntry.facts` fit this). Only the farmer's original `cycle_id` fact is read, see `attributeEntries`. */
+  facts?: readonly { field: string; kind: string; source: string; value: unknown }[];
+}
+
+/**
+ * The crop cycle an entry names itself: its original farmer `cycle_id` fact (written by scouting issues, issue events, checks and
+ * care completions), when it is a non-empty string and that cycle is in `cycleIds`. Anything else (no fact, an AI-proposed fact,
+ * an unknown cycle) is null and the date window decides.
+ */
+function namedCycle(entry: { facts?: SeasonEntry["facts"] }, cycleIds: ReadonlySet<string>): string | null {
+  const f = entry.facts?.find((x) => x.field === "cycle_id" && x.kind === "original" && x.source === "farmer");
+  return typeof f?.value === "string" && cycleIds.has(f.value) ? f.value : null;
 }
 
 export interface SeasonTotalsRow {
@@ -374,8 +386,13 @@ export function toPaise(amount: string | null | undefined): bigint | null {
 const rupees = (paise: bigint): number => Number(paise) / 100;
 
 /** Kilogram multiplier of each unit that converts exactly. Other units are not converted. */
-const KG_PER_UNIT: Readonly<Record<string, bigint>> = { kg: 1n, quintal: 100n, t: 1000n };
-const QUANTITY_SCALE = 10_000; // quantities are stored with 4 decimals
+export const KG_PER_UNIT: Readonly<Record<string, bigint>> = { kg: 1n, quintal: 100n, t: 1000n };
+/** Quantities are stored with 4 decimals; every exact sum here is a bigint count of 1/QUANTITY_SCALE units. */
+export const QUANTITY_SCALE = 10_000;
+/** A quantity value as an exact count of 1/QUANTITY_SCALE units; null when it is not a finite number above zero (such a value is never added). */
+export function scaledQuantity(value: number): bigint | null {
+  return Number.isFinite(value) && value > 0 ? BigInt(Math.round(value * QUANTITY_SCALE)) : null;
+}
 
 /** ₹4,200 · −₹1,250.50. Indian digit grouping; paise shown only when there are any. */
 export function formatRupees(n: number): string {
@@ -384,20 +401,38 @@ export function formatRupees(n: number): string {
 }
 export const formatKg = (kg: number): string => `${kg.toLocaleString("en-IN", { maximumFractionDigits: 4 })} kg`;
 
-/**
- * One row per crop cycle: what the farmer wrote down while the crop was in the field and, for a harvested crop, in the
- * window after harvest (see windowsOf), added in code. An entry belongs to the cycle whose window contains its observation date
- * (inclusive). If several contain it, it goes to the cycle with the latest `from` (ties: the cycle listed first) and is counted in
- * that row's `overlapping`. Sorted: crops still in the field first, then by sowing date, newest first.
- */
-export function seasonTotals(entries: readonly SeasonEntry[], cycles: readonly SeasonCycle[], today: string): SeasonTotalsRow[] {
-  const day = (d: string) => d.slice(0, 10);
-  const active = (c: SeasonCycle) => (c.stage !== undefined ? c.stage !== "harvested" : !c.harvestDate);
-  const ordered = [...cycles].sort((a, b) => Number(active(b)) - Number(active(a)) || day(b.sowingDate).localeCompare(day(a.sowingDate)) || a.id.localeCompare(b.id));
-  const ranges = windowsOf(ordered, today);
+/** One crop cycle with the entries attributed to it (see seasonTotals for the rule). */
+export interface AttributedCycle<C extends SeasonCycle, E extends { observedOn: string }> {
+  c: C;
+  from: string;
+  to: string;
+  windowTo: string;
+  active: boolean;
+  entries: E[];
+  /** Entries counted here that also fall inside another crop's dates. */
+  overlapping: number;
+}
 
-  const acc = ranges.map(() => ({ entries: 0, expense: 0n, sale: 0n, harvest: 0n, haveHarvest: false, skipped: 0, overlapping: 0 }));
+/**
+ * The attribution rule shared by the season totals and the records: cycles sorted (crops still in the field first, then newest
+ * sowing first), each with the entries whose observation date lies in its window (see windowsOf), an entry that several windows
+ * contain going to the cycle with the latest `from` (ties: the first listed). Entries in no window are dropped. An entry that names
+ * an existing cycle in its original farmer `cycle_id` fact goes to that cycle whatever its date and is never counted as overlapping.
+ */
+export function attributeEntries<C extends SeasonCycle, E extends { observedOn: string; facts?: SeasonEntry["facts"] }>(entries: readonly E[], cycles: readonly C[], today: string): AttributedCycle<C, E>[] {
+  const day = (d: string) => d.slice(0, 10);
+  const isActive = (c: SeasonCycle) => (c.stage !== undefined ? c.stage !== "harvested" : !c.harvestDate);
+  const ordered = [...cycles].sort((a, b) => Number(isActive(b)) - Number(isActive(a)) || day(b.sowingDate).localeCompare(day(a.sowingDate)) || a.id.localeCompare(b.id));
+  const ranges = windowsOf(ordered, today);
+  const out: AttributedCycle<C, E>[] = ranges.map((r) => ({ ...r, active: isActive(r.c), entries: [], overlapping: 0 }));
+  const ids = new Set(ordered.map((c) => c.id));
   for (const e of entries) {
+    const named = namedCycle(e, ids);
+    if (named !== null) {
+      // The entry says which crop it belongs to: that wins over the dates, and it is not an overlap guess.
+      out[ordered.findIndex((c) => c.id === named)]!.entries.push(e);
+      continue;
+    }
     const when = day(e.observedOn);
     let home = -1;
     let containing = 0;
@@ -407,20 +442,41 @@ export function seasonTotals(entries: readonly SeasonEntry[], cycles: readonly S
       if (home === -1 || r.from > ranges[home]!.from) home = i;
     });
     if (home === -1) continue;
-    const a = acc[home]!;
-    a.entries += 1;
-    if (containing > 1) a.overlapping += 1;
-    a.expense += toPaise(e.expense?.amountInr) ?? 0n;
-    a.sale += toPaise(e.sale?.amountInr) ?? 0n;
-    if (e.activity === "harvest" && e.quantity) {
-      const factor = KG_PER_UNIT[e.quantity.unit];
-      if (factor === undefined) a.skipped += 1;
-      else if (Number.isFinite(e.quantity.value) && e.quantity.value > 0) {
-        a.harvest += BigInt(Math.round(e.quantity.value * QUANTITY_SCALE)) * factor;
-        a.haveHarvest = true;
+    out[home]!.entries.push(e);
+    if (containing > 1) out[home]!.overlapping += 1;
+  }
+  return out;
+}
+
+/**
+ * One row per crop cycle: what the farmer wrote down while the crop was in the field and, for a harvested crop, in the
+ * window after harvest (see windowsOf), added in code. An entry belongs to the cycle whose window contains its observation date
+ * (inclusive), unless its original farmer `cycle_id` fact names an existing cycle, which wins. If several contain it, it goes to the cycle with the latest `from` (ties: the cycle listed first) and is counted in
+ * that row's `overlapping`. Sorted: crops still in the field first, then by sowing date, newest first.
+ */
+export function seasonTotals(entries: readonly SeasonEntry[], cycles: readonly SeasonCycle[], today: string): SeasonTotalsRow[] {
+  const day = (d: string) => d.slice(0, 10);
+  const ranges = attributeEntries(entries, cycles, today);
+
+  const acc = ranges.map((r) => {
+    const a = { entries: r.entries.length, expense: 0n, sale: 0n, harvest: 0n, haveHarvest: false, skipped: 0, overlapping: r.overlapping };
+    for (const e of r.entries) {
+      a.expense += toPaise(e.expense?.amountInr) ?? 0n;
+      a.sale += toPaise(e.sale?.amountInr) ?? 0n;
+      if (e.activity === "harvest" && e.quantity) {
+        const factor = KG_PER_UNIT[e.quantity.unit];
+        if (factor === undefined) a.skipped += 1;
+        else {
+          const q = scaledQuantity(e.quantity.value);
+          if (q !== null) {
+            a.harvest += q * factor;
+            a.haveHarvest = true;
+          }
+        }
       }
     }
-  }
+    return a;
+  });
 
   return ranges.map((r, i) => {
     const a = acc[i]!;
@@ -433,7 +489,7 @@ export function seasonTotals(entries: readonly SeasonEntry[], cycles: readonly S
       to: r.to,
       windowTo: r.windowTo,
       ongoing: !r.c.harvestDate,
-      active: active(r.c),
+      active: r.active,
       entries: a.entries,
       expenseInr: rupees(a.expense),
       saleInr: rupees(a.sale),
@@ -448,7 +504,9 @@ export function seasonTotals(entries: readonly SeasonEntry[], cycles: readonly S
 /** Entries that carry an expense or sale amount but fall inside no crop's window (for example seed bought before sowing or a sale long after the harvest). They are not in any row. */
 export function amountsOutsideCycles(entries: readonly SeasonEntry[], cycles: readonly SeasonCycle[], today: string): number {
   const windows = windowsOf(cycles, today);
+  const ids = new Set(cycles.map((c) => c.id));
   return entries.filter((e) => {
+    if (namedCycle(e, ids) !== null) return false;
     if (toPaise(e.expense?.amountInr) === null && toPaise(e.sale?.amountInr) === null) return false;
     const when = e.observedOn.slice(0, 10);
     return !windows.some((w) => when >= w.from && when <= w.windowTo);

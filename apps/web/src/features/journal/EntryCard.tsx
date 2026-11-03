@@ -5,6 +5,8 @@ import { ACTIVITIES } from "./model";
 import { fieldLabel, ProposalItem, valueLabel } from "./ProposalItem";
 import { WhyChanged } from "./WhyChanged";
 import { AiSparkInline } from "../../workspace/ui/AiSpark";
+import { issueFromFacts, issueHref } from "./issueFromFacts";
+import type { IssuePrefill } from "../../workspace/scouting/scoutingModel";
 
 const QUALITY_TEXT: Record<string, string> = {
   blur: "may be blurry",
@@ -108,8 +110,13 @@ export function EntryCard(props: {
   onEntry: (e: JournalEntry) => void;
   onResult: (r: ConfirmResult) => void;
   onReload: () => void;
+  /** Opens the issue form with this prefill ("Log as an issue"). Without it the button is not shown; the card stays presentational. */
+  onLogIssue?: ((entry: JournalEntry, prefill: IssuePrefill) => void) | undefined;
+  /** The issue already logged from a confirmed fact in this session, if any (shown instead of the button). */
+  loggedIssueId?: ((factId: string) => string | undefined) | undefined;
 }) {
   const e = () => props.entry;
+  const issuePrefill = () => (props.onLogIssue ? issueFromFacts(e()) : null);
   const activity = () => ACTIVITIES.find((a) => a.value === e().activity)?.label ?? "Entry";
   const confirmed = () => e().facts.filter((f) => f.kind === "confirmed");
   return (
@@ -138,6 +145,24 @@ export function EntryCard(props: {
         <div data-testid="confirmed-facts">
           <h4>Confirmed by you</h4>
           <ul><For each={confirmed()}>{(f) => <li>{fieldLabel(f.field)}: {valueLabel(f, props.stageNames)}</li>}</For></ul>
+          <Show when={issuePrefill()}>
+            {(prefill) => (
+              <Show
+                when={props.loggedIssueId?.(prefill().fromFactId!)}
+                fallback={
+                  <button type="button" class="btn secondary" data-testid="log-as-issue" onClick={() => props.onLogIssue?.(e(), prefill())}>
+                    Log as an issue
+                  </button>
+                }
+              >
+                {(issueId) => (
+                  <p class="jr-small" role="status" data-testid="logged-as-issue">
+                    Logged as an issue. <a href={issueHref(issueId())}>View it on Today</a>
+                  </p>
+                )}
+              </Show>
+            )}
+          </Show>
         </div>
       </Show>
       <Analysis entry={e()} plan={props.plan} stageNames={props.stageNames} onEntry={props.onEntry} onResult={props.onResult} onReload={props.onReload} />

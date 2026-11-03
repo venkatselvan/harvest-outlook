@@ -4,11 +4,12 @@ import { describe, expect, it, vi } from "vitest";
 import { memoryCache } from "../src/ingest/cache";
 import type { FetchLike } from "../src/ingest/http";
 import { loadProviderConfig } from "../src/providers/config";
-import { fetchDailyArchive, fetchForecast, OPENMETEO_ATTRIBUTION, parseOpenMeteoDaily, REQUIRED_DAILY_VARIABLES } from "../src/providers/openmeteo/client";
+import { fetchDailyArchive, fetchForecast, OPENMETEO_ATTRIBUTION, OPTIONAL_DAILY_VARIABLES, parseOpenMeteoDaily, REQUIRED_DAILY_VARIABLES } from "../src/providers/openmeteo/client";
 
 const fx = (n: string) => JSON.parse(readFileSync(resolve(__dirname, "fixtures/openmeteo", n), "utf8")) as { url: string; fetchedAt: string; body: any };
 const archive = fx("archive_hassan.json");
 const forecast = fx("forecast_hassan.json");
+const forecastAgro = fx("forecast_hassan_agro.json");
 const config = loadProviderConfig({ PROVIDER_TIMEOUT_MS: "200", PROVIDER_MAX_RETRIES: "2" });
 const noSleep = async () => undefined;
 
@@ -183,5 +184,101 @@ describe("Open-Meteo fetch behaviour", () => {
     t += 5 * 3600 * 1000;
     await fetchDailyArchive(req, deps);
     expect(calls).toBe(2);
+  });
+});
+
+describe("Open-Meteo weather depth (constructed fixture forecast_hassan_agro.json, not a recorded response)", () => {
+  const requested = [...REQUIRED_DAILY_VARIABLES, ...OPTIONAL_DAILY_VARIABLES, "precipitation_probability_max"];
+  const parse = (body: unknown) => parseOpenMeteoDaily({ endpoint: "forecast", body, requestedLat: 13, requestedLon: 76.1, fetchedAt: forecastAgro.fetchedAt, horizonDays: 3, requested });
+
+  it("parses the deeper keys; sunshine_duration seconds are stored as hours with unit h; other units are kept as reported", () => {
+    const r = parse(forecastAgro.body);
+    if (r.status !== "ok") throw new Error("expected ok");
+    const d0 = r.data[0]!;
+    expect(d0.values.wind_gusts_10m_max).toBe(31.3);
+    expect(d0.values.soil_moisture_0_to_7cm_mean).toBe(0.318);
+    expect(d0.values.sunshine_duration).toBe(7.1); // 25560 s / 3600
+    expect(d0.units.sunshine_duration).toBe("h");
+    expect(d0.units.soil_moisture_0_to_7cm_mean).toBe("m³/m³");
+    expect(d0.units.vapour_pressure_deficit_max).toBe("kPa");
+    expect(r.data[1]!.values.sunshine_duration).toBe(8);
+  });
+
+  it("an unrecognised unit on an OPTIONAL key omits that key and notes it; rain and temperature still parse; required keys keep their strict behaviour", () => {
+    const body = structuredClone(forecastAgro.body);
+    body.daily_units.wind_gusts_10m_max = "m/s"; // would otherwise be read as km/h and trip the 60 km/h alert
+    const r = parse(body);
+    if (r.status !== "ok") throw new Error("expected ok");
+    expect(r.notes).toEqual(["unexpected_unit:wind_gusts_10m_max:m/s"]);
+    expect("wind_gusts_10m_max" in r.data[0]!.values).toBe(false);
+    expect("wind_gusts_10m_max" in r.data[0]!.units).toBe(false);
+    expect(r.data[0]!.values).toMatchObject({ precipitation_sum: 1.2, temperature_2m_max: 26.9, wind_speed_10m_max: 14.8 });
+    // sunshine already in hours: dividing by 3600 again would be wrong, so it is omitted too
+    const sun = structuredClone(forecastAgro.body);
+    sun.daily_units.sunshine_duration = "h";
+    const s2 = parse(sun);
+    expect(s2.status === "ok" && s2.notes).toEqual(["unexpected_unit:sunshine_duration:h"]);
+    expect(s2.status === "ok" && "sunshine_duration" in s2.data[0]!.values).toBe(false);
+    // the optional rain probability follows the same rule; a clean response has no notes
+    const prob = structuredClone(forecastAgro.body);
+    prob.daily_units.precipitation_probability_max = "fraction";
+    expect(parse(prob)).toMatchObject({ status: "ok", notes: ["unexpected_unit:precipitation_probability_max:fraction"] });
+    expect(parse(forecastAgro.body)).toMatchObject({ status: "ok", notes: [] });
+    // a REQUIRED key is unchanged: the whole response is unavailable
+    const rain = structuredClone(forecastAgro.body);
+    rain.daily_units.precipitation_sum = "inch";
+    expect(parse(rain)).toMatchObject({ status: "unavailable", reason: "unexpected_unit" });
+  });
+
+  it("the fetch result carries the notes", async () => {
+    const body = structuredClone(forecastAgro.body);
+    body.daily_units.wind_speed_10m_max = "mp/h";
+    const f: FetchLike = async () => ok(body);
+    const r = await fetchForecast({ lat: 13, lon: 76.1, days: 3 }, { config, fetchImpl: f });
+    expect(r.status === "ok" && r.data.notes).toEqual(["unexpected_unit:wind_speed_10m_max:mp/h"]);
+    expect(r.status === "ok" && r.data.rows[0]!.values.wind_gusts_10m_max).toBe(31.3);
+  });
+
+  it("a day is dropped when every REQUIRED key is null, even if an optional key holds a value; an optional series of the wrong length is omitted with a note", () => {
+    const body = structuredClone(forecastAgro.body);
+    for (const v of REQUIRED_DAILY_VARIABLES) body.daily[v][1] = null; // rain, temperatures, ET0, radiation all null on day 2
+    const r = parse(body);
+    if (r.status !== "ok") throw new Error("expected ok");
+    expect(body.daily.relative_humidity_2m_mean[1]).toBe(74); // the deeper value is there...
+    expect(r.data.map((x) => x.validDate)).toEqual(["2026-10-30", "2026-11-01"]); // ...and does not keep the day
+    for (const v of Object.keys(body.daily_units)) if (v !== "time" && (REQUIRED_DAILY_VARIABLES as readonly string[]).includes(v)) body.daily[v] = body.daily[v].map(() => null);
+    expect(parse(body)).toMatchObject({ status: "unavailable", reason: "no_data" });
+
+    const short = structuredClone(forecastAgro.body);
+    short.daily.wind_gusts_10m_max.pop();
+    const s2 = parse(short);
+    expect(s2.status === "ok" && s2.notes).toEqual(["length_mismatch:wind_gusts_10m_max"]);
+    expect(s2.status === "ok" && "wind_gusts_10m_max" in s2.data[0]!.values).toBe(false);
+    expect(s2.status === "ok" && s2.data[0]!.values.wind_speed_10m_max).toBe(14.8);
+    const req = structuredClone(forecastAgro.body);
+    req.daily.precipitation_sum.pop(); // a REQUIRED series of the wrong length still fails the response
+    expect(parse(req)).toMatchObject({ status: "unavailable", reason: "schema_mismatch" });
+  });
+
+  it("a response without the deeper keys (the two recorded fixtures) still parses unchanged; null sunshine stays null", () => {
+    const old = parse(forecast.body);
+    expect(old.status === "ok" && Object.keys(old.data[0]!.values).sort()).toEqual([...REQUIRED_DAILY_VARIABLES, "precipitation_probability_max"].sort());
+    const body = structuredClone(forecastAgro.body);
+    body.daily.sunshine_duration[1] = null;
+    const r = parse(body);
+    expect(r.status === "ok" && r.data[1]!.values.sunshine_duration).toBeNull();
+  });
+
+  it("both endpoints request the deeper keys; the archive does not ask for the forecast-only rain probability", async () => {
+    const seen: string[] = [];
+    const f: FetchLike = async (u) => {
+      seen.push(decodeURIComponent(u));
+      return ok(u.includes("archive") || u.includes("start_date") ? archive.body : forecast.body);
+    };
+    await fetchForecast({ lat: 13, lon: 76.1, days: 3 }, { config, fetchImpl: f });
+    await fetchDailyArchive({ lat: 13, lon: 76.1, start: "2026-10-15", end: "2026-10-21" }, { config, fetchImpl: f });
+    for (const k of OPTIONAL_DAILY_VARIABLES) for (const u of seen) expect(u).toContain(k);
+    expect(seen[0]).toContain("precipitation_probability_max");
+    expect(seen[1]).not.toContain("precipitation_probability_max");
   });
 });

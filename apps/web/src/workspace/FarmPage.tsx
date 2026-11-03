@@ -857,6 +857,11 @@ export function FarmWorkspace(
                 }}
                 onEndDraw={endFieldDraw}
                 todayHref={(id) => farmHref("today", undefined, id)}
+                farmCheckIntervalDays={currentWorkspace()?.checkIntervalDays}
+                onSaveFarmInterval={async (checkIntervalDays) => {
+                  await s.saveWorkspace({ checkIntervalDays });
+                  s.setNotice(`Your field check interval is now every ${checkIntervalDays} days.`);
+                }}
               />
             </Show>
           </section>

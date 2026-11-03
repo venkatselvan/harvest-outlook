@@ -90,6 +90,8 @@ export interface Workspace {
   rotationPlans: Rotation[];
   /** 2026-11-03: fields inside the farm in drawn order; older servers omit it (read as none). */
   fields?: Field[];
+  /** 2026-11-03: the farmer's farm-wide field check interval in days (3 to 30); absent = the default. */
+  checkIntervalDays?: number;
 }
 export interface Monitor {
   checkedAt: string;
@@ -327,7 +329,12 @@ function model() {
     patch: Partial<
       Pick<
         Workspace,
-        "boundary" | "previousHarvest" | "cycles" | "rotationPlans" | "fields"
+        | "boundary"
+        | "previousHarvest"
+        | "cycles"
+        | "rotationPlans"
+        | "fields"
+        | "checkIntervalDays"
       >
     >,
   ) {

@@ -5,11 +5,13 @@ import { FarmProfile, ValueRecord } from '@harvest/contracts';
 import { setupHarness, login, farmBody, type Harness, type Client } from './helpers';
 import { createMonitorHandler } from '../src/worker/handlers/monitoring';
 import { monitoringAt, monitoringSnapshot, monitoringReferences, workspaceMarketProducts } from '../src/services/monitoring';
-import { enqueueDueMonitors, monitorChanges, readMonitorSettings, saveMonitorSnapshot } from '../src/services/monitor-schedule';
+import { enqueueDueMonitors, monitorChanges, monitorFingerprint, readMonitorSettings, saveMonitorSnapshot } from '../src/services/monitor-schedule';
 import { getFarmContextHandler } from '../src/agent/tools/handlers';
 import { unitAtPointer } from '../src/agent/tool-units';
 import { Budget } from '../src/services/budget';
 import { enqueue } from '../src/services/jobs';
+import { structuredAlerts } from '../src/services/today/alerts';
+import { ensureSource, OPENMETEO_SOURCES } from '../src/ingest/sources';
 
 let h: Harness, owner: Client, stranger: Client;
 const body = { expectedVersion: 0, boundary: { type: 'Polygon', coordinates: [[[76, 13], [76.01, 13], [76.01, 13.01], [76, 13.01], [76, 13]]] }, previousHarvest: { status: 'known', cropId: 'rice', harvestDate: '2026-04-02' }, cycles: [{ id: 'c1', cropId: 'ginger', sowingDate: '2026-05-01', stage: 'growing' }], rotationPlans: [{ id: 'r1', cropId: 'rice', year: 2027, season: 'Kharif' }] };
@@ -125,6 +127,60 @@ describe('honest recurring monitoring', () => {
     const synthetic = await getFarmContextHandler({ farmId: id }, { ownerId, pool: h.pool, mode: 'synthetic', requestId: randomUUID(), agentRunId: randomUUID(), asOf: snap.checkedAt });
     expect(synthetic.farm.monitoring).toBeUndefined();
     expect(monitoringAt(snap, '2026-11-30T03:00:00Z').weather).toMatchObject({ status: 'unavailable', days: [] });
+  });
+  it('stored forecast row (jsonb) carrying wind_gusts_10m_max reaches the monitoring day and fires the gust alert when the refresh fails; without the key the check is noted as skipped', async () => {
+    const id = await create();
+    await owner.call('PUT', `/api/v1/farms/${id}/workspace`, { payload: body });
+    const ownerId = (await h.pool.query('SELECT owner_id FROM farms WHERE id=$1', [id])).rows[0].owner_id;
+    const sourceId = await ensureSource(h.pool, OPENMETEO_SOURCES.forecast.manifestId, OPENMETEO_SOURCES.forecast.fallback);
+    const locationKey = 'open-meteo:13.005,76.005';
+    const gusts = [66, 40, 71];
+    for (const [i, gust] of gusts.entries()) {
+      const variables = { precipitation_sum: 0, temperature_2m_max: 30, temperature_2m_min: 20, et0_fao_evapotranspiration: 4, wind_gusts_10m_max: gust };
+      await h.pool.query(
+        `INSERT INTO weather_forecasts (location_key, lon, lat, issued_at, valid_on, variables, source_id, is_synthetic, mode, available_at, horizon_days)
+         VALUES ($1, 76.005, 13.005, '2026-10-29T20:00:00Z', $2::date, $3::jsonb, $4, false, 'live', '2026-10-29T20:00:00Z', 3)`,
+        [locationKey, ['2026-10-30', '2026-10-31', '2026-11-01'][i], JSON.stringify(variables), sourceId],
+      );
+    }
+    try {
+      await h.pool.query("DELETE FROM provider_cache WHERE key LIKE 'open-meteo:%'"); // force the stored-forecast path, not a cached refresh
+      const down = vi.fn(async () => { throw new Error('provider down'); });
+      const config = { ...h.config, RUNTIME_MODE: 'live' as const };
+      const now = () => new Date('2026-10-30T02:00:00Z');
+      const snap = await monitoringSnapshot({ config, pool: h.pool, fetchImpl: down, now }, ownerId, id);
+      expect(snap.weather.status).toBe('stale');
+      expect(snap.weather.days.map((d) => d.gustMaxKmh)).toEqual(gusts);
+      const ws = { farmId: id, version: 1, updatedAt: null, boundary: null, previousHarvest: { status: 'unknown' }, cycles: [], rotationPlans: [], fields: [] } as never;
+      const { alerts, notes } = structuredAlerts(snap, ws, [], '2026-10-30T02:00:00Z');
+      const wind = alerts.filter((a) => a.title === 'Strong wind gusts in the forecast');
+      expect(wind.map((a) => [a.validFrom, a.validTo])).toEqual([['2026-10-30', '2026-10-30'], ['2026-11-01', '2026-11-01']]);
+      expect(wind[1]!.detail).toContain('Gusts up to 71 km/h');
+      expect(notes.some((n) => n.startsWith('wind_gust_check_skipped'))).toBe(false);
+
+      // A row stored before the gust variable was requested: the check is skipped and says why.
+      await h.pool.query("UPDATE weather_forecasts SET variables = variables - 'wind_gusts_10m_max' WHERE location_key=$1", [locationKey]);
+      const old = await monitoringSnapshot({ config, pool: h.pool, fetchImpl: down, now }, ownerId, id);
+      expect(old.weather.days.every((d) => d.gustMaxKmh === null)).toBe(true);
+      const skipped = structuredAlerts(old, ws, [], '2026-10-30T02:00:00Z');
+      expect(skipped.alerts.some((a) => a.title.startsWith('Strong wind'))).toBe(false);
+      expect(skipped.notes).toContain('wind_gust_check_skipped:variable_not_in_stored_forecast');
+    } finally {
+      await h.pool.query('DELETE FROM weather_forecasts WHERE location_key=$1', [locationKey]);
+    }
+  });
+  it('humidity, gust or soil-moisture movement alone does not raise weather_changed or change the fingerprint; a rain or temperature change still does', () => {
+    const day = (over: Record<string, number | null> = {}) => ({ date: '2026-10-31', rainMm: 1.2, tMinC: 18, tMaxC: 27, et0Mm: 4, gustMaxKmh: 30, rhMeanPct: 78, soilMoisture0to7: 0.31, ...over });
+    const snap = (days: ReturnType<typeof day>[]) => ({ mode: 'live', farmId: 'f', checkedAt: '2026-10-30T02:00:00Z',
+      weather: { status: 'fresh', reason: null, issuedAt: '2026-10-30T01:00:00Z', attribution: 'Open-Meteo', point: { lat: 13, lon: 76 }, coordinateBasis: 'farm_location', days },
+      market: { status: 'unavailable', reason: null, products: [] }, meta: { status: 'unavailable', reason: null, automatic: false } }) as never;
+    const before = snap([day()]);
+    const moved = snap([day({ gustMaxKmh: 66, rhMeanPct: 91, soilMoisture0to7: 0.42 })]);
+    expect(monitorChanges(before, moved)).toEqual([]);
+    expect(monitorFingerprint(before)).toBe(monitorFingerprint(moved));
+    expect(monitorFingerprint(snap([{ date: '2026-10-31', rainMm: 1.2, tMinC: 18, tMaxC: 27, et0Mm: 4 } as never]))).toBe(monitorFingerprint(before)); // earlier snapshots keep their fingerprint
+    expect(monitorChanges(before, snap([day({ rainMm: 9 })])).map((c) => c.kind)).toEqual(['weather_changed']);
+    expect(monitorChanges(before, snap([day({ tMaxC: 31 })])).map((c) => c.kind)).toEqual(['weather_changed']);
   });
   it('stops provider spending after disable and does not run Meta in synthetic mode', async () => {
     const id = await create();

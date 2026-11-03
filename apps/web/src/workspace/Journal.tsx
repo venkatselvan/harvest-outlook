@@ -27,6 +27,10 @@ import {
   seasonTotals,
 } from "../features/journal/model";
 import "../features/journal/season-totals.css";
+import { cycleRecords } from "../features/journal/records";
+import { RecordsSection } from "../features/journal/RecordsSection";
+import { ReportLauncher } from "./report/ReportLauncher";
+import { polygonAreaHa } from "./fields/fieldsModel";
 import {
   apiRequest,
   jsonInit,
@@ -197,6 +201,20 @@ export function JournalWorkspace() {
     const entries = loadedEntries();
     return entries ? seasonTotals(entries, cycles(), today()) : [];
   });
+  // Harvest and inputs: the same loaded-journal guard and attribution as the season totals. A cycle on a field gets that
+  // field's drawn area (hectares) so irrigation in mm can also be shown as m3; a farm-wide cycle gets none.
+  const records = createMemo(() => {
+    const entries = loadedEntries();
+    if (!entries) return [];
+    const fields = s.workspace()?.fields ?? [];
+    const areaHaByCycle: Record<string, number> = {};
+    for (const c of cycles()) {
+      const f = c.fieldId ? fields.find((x) => x.id === c.fieldId) : undefined;
+      const ha = f ? polygonAreaHa(f.boundary) : 0;
+      if (ha > 0) areaHaByCycle[c.id] = ha;
+    }
+    return cycleRecords(entries, cycles(), today(), { areaHaByCycle });
+  });
   const outsideAmounts = createMemo(() => {
     const entries = loadedEntries();
     return entries ? amountsOutsideCycles(entries, cycles(), today()) : 0;
@@ -358,6 +376,13 @@ export function JournalWorkspace() {
               </p>
             </Show>
           </section>
+        </Show>
+        {/* No Today view is loaded on this tab, so no regional yield band is passed (yieldBands is left unset). */}
+        <Show when={records().length > 0}>
+          <RecordsSection records={records()} dateLabel={dateLabel} cropName={s.cropName} />
+        </Show>
+        <Show when={cycles().length > 0}>
+          <ReportLauncher cycles={cycles()} cropName={s.cropName} dateLabel={dateLabel} fieldName={(id) => s.workspace()?.fields?.find((f) => f.id === id)?.name} />
         </Show>
         <section class="crop-progress-section">
           <div class="section-heading">

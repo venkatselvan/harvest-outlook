@@ -1,8 +1,10 @@
-import { For } from "solid-js";
+import { For, Show } from "solid-js";
+import { useNavigate } from "@solidjs/router";
 import { Icon } from "../icons";
 import { cropColor } from "../today/model";
 import { cropLabel, fieldCropOf, type FieldCycleLike } from "../fields/fieldsModel";
 import { monthYear } from "./format";
+import { reportHref } from "../report/reportApi";
 
 /**
  * "Plans by field" (FIELDS_MULTICROP_SOIL_SPEC.md 12.6): the Plan tab's "All fields" view on a farm with fields. Each field
@@ -81,7 +83,17 @@ export function plansByField(
   });
 }
 
+/** The router's navigate, or undefined when rendered without one (static markup in tests): the link then works as a plain anchor. */
+function routerNavigate(): ((to: string) => void) | undefined {
+  try {
+    return useNavigate();
+  } catch {
+    return undefined;
+  }
+}
+
 export function PlansByField(props: { rows: readonly FieldPlanRow[]; onOpen: (fieldId: string) => void }) {
+  const navigate = routerNavigate();
   return (
     <div class="yp-by-field" data-testid="yp-plans-by-field">
       <h3 class="yp-by-field-title">Plans by field</h3>
@@ -109,6 +121,21 @@ export function PlansByField(props: { rows: readonly FieldPlanRow[]; onOpen: (fi
               >
                 Open plan <Icon name="arrow" size={14} />
               </button>
+              <Show when={row.cropId !== null}>
+                <a
+                  class="btn compact secondary"
+                  href={reportHref({ fieldId: row.id })}
+                  aria-label={`Open the season report for ${row.name}`}
+                  data-open-field-report={row.id}
+                  onClick={(event) => {
+                    if (!navigate || event.metaKey || event.ctrlKey || event.shiftKey || event.button !== 0) return;
+                    event.preventDefault();
+                    navigate(reportHref({ fieldId: row.id }));
+                  }}
+                >
+                  Open report
+                </a>
+              </Show>
             </li>
           )}
         </For>

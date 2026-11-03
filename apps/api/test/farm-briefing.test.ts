@@ -228,6 +228,10 @@ describe("get_farm_briefing: composition on seeded farms (test DB, synthetic mod
     expect(out.journal!.entries.length).toBeGreaterThan(0);
     expect(out.journal!.entries.length).toBeLessThanOrEqual(8);
     expect(out.journal!.totalsSinceSowing).not.toBeNull();
+    // Field operations lines travel in their own `scouting` list (one line per field or the farm, <= 300 chars), not in limitations.
+    expect(out.scouting?.length).toBeGreaterThan(0);
+    expect(out.scouting!.every((l) => l.length <= 300 && /next field check due \d{4}-\d{2}-\d{2}/.test(l))).toBe(true);
+    expect(out.limitations.some((l) => /next field check due/.test(l))).toBe(false);
     assertUnitRecordsReferenceable(out);
     const json = JSON.stringify(out);
     expect(json.length).toBeLessThan(BRIEFING_MAX_CHARS);

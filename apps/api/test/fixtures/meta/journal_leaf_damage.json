@@ -1,0 +1,43 @@
+{
+  "synthetic": true,
+  "scenario": "journal_leaf_damage",
+  "description": "SYNTHETIC fixture, not a model output and not a real observation. Leaf damage visible; proposes the issue category 'pest' (observed_issue) with an observation-worded note (observed_issue_note) and a note_only check. Neither fact maps to a plan change (FIELD_OPERATIONS_SPEC 5.5).",
+  "steps": [
+    {
+      "pass": "interpretation",
+      "response": {
+        "id": "resp_syn_journal_leaf_damage",
+        "object": "response",
+        "created_at": 1762128000,
+        "status": "completed",
+        "model": "muse-spark-1.3",
+        "metadata": {
+          "synthetic": "true"
+        },
+        "output": [
+          {
+            "type": "message",
+            "id": "msg_resp_syn_journal_leaf_damage",
+            "role": "assistant",
+            "status": "completed",
+            "content": [
+              {
+                "type": "output_text",
+                "text": "{\"visibleObservations\": [\"Several leaves in the centre of the photo have irregular holes and chewed edges.\", \"The damaged leaves are still green; no yellowing or spots are visible around the holes.\", \"No insects, larvae or droppings are visible in the photo.\"], \"competingInterpretations\": [{\"label\": \"Insect feeding\", \"rationale\": \"Irregular holes and ragged leaf edges often come from chewing insects such as caterpillars or beetles; none are visible, so this cannot be told from the photo alone.\"}, {\"label\": \"Physical or animal damage\", \"rationale\": \"Wind, hail or grazing animals can also tear leaves; torn edges usually look cleaner than chewed ones, and a closer look in the field would help tell.\"}], \"missingContext\": [\"Are insects or larvae visible on the underside of the leaves or at dusk?\", \"Is the damage spreading to new leaves since the last visit?\"], \"proposedFacts\": [{\"field\": \"observed_issue\", \"value\": \"pest\", \"unit\": null, \"basis\": \"ai_proposed\", \"requiresConfirmation\": true}, {\"field\": \"observed_issue_note\", \"value\": \"Irregular holes and chewed leaf edges consistent with insect feeding; no insects visible in the photo\", \"unit\": null, \"basis\": \"ai_proposed\", \"requiresConfirmation\": true}], \"candidatePlanChanges\": [{\"type\": \"note_only\", \"stageId\": null, \"category\": null, \"date\": null, \"note\": \"Look at the underside of nearby leaves for insects or eggs on the next field visit.\", \"rationale\": \"Chewed leaves are visible but no insects are.\"}], \"imageQualityIssues\": [], \"requestAnotherAngle\": false, \"aiNarrative\": \"Some leaves have holes and chewed edges that may come from insect feeding. No insects are visible in this photo. This is an AI reading of one photo; confirm the category only if it matches what you see in the field.\"}",
+                "annotations": []
+              }
+            ]
+          }
+        ],
+        "usage": {
+          "input_tokens": 2100,
+          "input_tokens_details": {
+            "cached_tokens": 0
+          },
+          "output_tokens": 460,
+          "total_tokens": 2560
+        }
+      }
+    }
+  ]
+}

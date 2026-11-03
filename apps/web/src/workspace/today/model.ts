@@ -386,18 +386,61 @@ function rainPart(point: FieldConditionPoint): string {
   return `${formatRain(mm)} (${RAIN_WORDS[rainClass]})`;
 }
 function waterPart(point: FieldConditionPoint): string | null {
+  // Weather depth (WEATHER_DEPTH_SPEC.md 6.4): a state set by the grid cell's modelled soil moisture says so.
+  const model = point.water.basis === "model_soil_moisture" ? " (model soil moisture)" : "";
   switch (point.water.state) {
     case "flooded":
       return point.water.basis === "crop_practice" ? "standing water kept by crop practice" : "field flooded";
     case "ponded":
       return "field ponded";
     case "moist":
-      return "soil moist";
+      return `soil moist${model}`;
     case "dry":
-      return "soil dry";
+      return `soil dry${model}`;
     default:
       return null;
   }
+}
+
+/** D-W4 and section 7 wording for every value from the deeper Open-Meteo variables. */
+export const MODEL_ESTIMATE_LABEL = "Open-Meteo model estimate for the grid cell, not a field reading";
+export const OPEN_METEO_ATTRIBUTION = "Weather data by Open-Meteo.com";
+type Pressure = NonNullable<FieldConditionPoint["pressure"]>;
+type Wetness = Pressure["wetness"];
+/**
+ * Mirror of the API's engine assumption (conditions.ts CONDITION_ASSUMPTIONS.wetness), used only to word which input set
+ * the class: the API takes the higher class of the two, and the contract carries both values but not the driver.
+ */
+const WETNESS_ASSUMPTION = { leafWetnessPct: { high: 50, moderate: 25 }, rhMeanPct: { high: 90, moderate: 80 } } as const;
+const classOf = (value: number | null, pair: { high: number; moderate: number }): Wetness =>
+  value == null ? "unknown" : value >= pair.high ? "high" : value >= pair.moderate ? "moderate" : "low";
+/**
+ * Which input set the day's wetness class: "leaf" (leaf-wetness probability), "humidity" (mean humidity) or "either" when
+ * both are there and the class cannot be attributed (sourced thresholds the web does not know). With both values under the
+ * engine assumption, leaf wetness is named when its own class equals the day's class, humidity otherwise.
+ */
+export function wetnessDriver(pressure: Pressure): "leaf" | "humidity" | "either" {
+  if (pressure.leafWetnessPct == null) return pressure.rhMeanPct == null ? "leaf" : "humidity";
+  if (pressure.rhMeanPct == null) return "leaf";
+  if (pressure.basis !== "engine_assumption") return "either";
+  return classOf(pressure.leafWetnessPct, WETNESS_ASSUMPTION.leafWetnessPct) === pressure.wetness ? "leaf" : "humidity";
+}
+const DRIVER_NOUN = { leaf: "leaf wetness", humidity: "humidity", either: "leaf wetness or humidity" } as const;
+/** The wetness class in words; nothing when the point has no pressure block or the class is unknown. Never a disease name. */
+function wetnessPart(point: FieldConditionPoint): string | null {
+  const pressure = point.pressure;
+  if (!pressure || pressure.wetness === "unknown") return null;
+  const words = `${pressure.wetness} ${DRIVER_NOUN[wetnessDriver(pressure)]} (model estimate)`;
+  return pressure.wetness === "high" ? `${words}, conditions favour fungal spread` : words;
+}
+/**
+ * The caption for an accessible name (the illustration canvas): the same sentence plus, when the day used the deeper
+ * model values, the grid-cell label and the attribution (WEATHER_DEPTH_SPEC.md section 7). No trailing full stop.
+ */
+export function conditionAriaCaption(point: FieldConditionPoint | null, date?: string): string {
+  const caption = conditionCaption(point, date);
+  const usesModel = !!point && (point.water.basis === "model_soil_moisture" || !!wetnessPart(point));
+  return usesModel ? `${caption}. ${MODEL_ESTIMATE_LABEL}. ${OPEN_METEO_ATTRIBUTION}` : caption;
 }
 function canopyPart(point: FieldConditionPoint): string {
   const g = point.greenness;
@@ -429,19 +472,70 @@ export function conditionCaption(point: FieldConditionPoint | null, date?: strin
       parts.push(`heat stress (${formatTemp(point.heat.tMaxC)}${point.heat.thresholdC != null ? `, threshold ${formatTemp(point.heat.thresholdC)}` : ""})`);
     const water = waterPart(point);
     if (water) parts.push(water);
+    const wetness = wetnessPart(point);
+    if (wetness) parts.push(wetness);
   }
   parts.push(canopyPart(point));
   if (point.events.length === 1) parts.push(`alert: ${point.events[0]!.title}`);
   else if (point.events.length > 1) parts.push(`alerts: ${point.events.map((event) => event.title).join("; ")}`);
   return `${head}: ${parts.join(", ")}`;
 }
-/** Chip for the weather basis of the day: Observed, Forecast or Typical; none without a weather record. */
-export function conditionKindChip(point: FieldConditionPoint | null): { label: string; tone: "observed" | "forecast" | "typical" } | null {
+/**
+ * Chip for the weather basis of the day: Observed, Forecast or Typical; none without a weather record. `note` (title and
+ * accessible name) appears only when the day used the deeper model values: the soil-moisture water basis and the wetness
+ * class, with the grid-cell label (WEATHER_DEPTH_SPEC.md 6.4 and section 7).
+ */
+export function conditionKindChip(
+  point: FieldConditionPoint | null,
+): { label: string; tone: "observed" | "forecast" | "typical"; note?: string } | null {
   if (!point) return null;
-  if (point.kind === "observed") return { label: "Observed", tone: "observed" };
-  if (point.kind === "forecast") return { label: "Forecast", tone: "forecast" };
-  if (point.kind === "typical") return { label: "Typical", tone: "typical" };
-  return null;
+  const chip =
+    point.kind === "observed"
+      ? { label: "Observed", tone: "observed" as const }
+      : point.kind === "forecast"
+        ? { label: "Forecast", tone: "forecast" as const }
+        : point.kind === "typical"
+          ? { label: "Typical", tone: "typical" as const }
+          : null;
+  if (!chip) return null;
+  const notes: string[] = [];
+  if (point.water.basis === "model_soil_moisture")
+    notes.push(`water: ${point.water.state} (model soil moisture${point.water.soilMoisture0to7 != null ? ` ${formatSoilMoisture(point.water.soilMoisture0to7)}` : ""})`);
+  const pressure = point.pressure;
+  if (pressure && pressure.wetness !== "unknown") notes.push(`${DRIVER_NOUN[wetnessDriver(pressure)]}: ${pressure.wetness}`);
+  if (!notes.length) return chip;
+  const typical = point.kind === "typical" ? "; typical (climatology), not a forecast" : "";
+  return { ...chip, note: `${chip.label}: ${notes.join(", ")}. ${MODEL_ESTIMATE_LABEL}${typical}. ${OPEN_METEO_ATTRIBUTION}.` };
+}
+/** Soil moisture as a percentage of volume with one decimal (section 7): 0.312 m³/m³ -> "31.2% by volume". */
+export function formatSoilMoisture(value: number): string {
+  return `${(value * 100).toFixed(1)}% by volume`;
+}
+/**
+ * The hero's wetness badge (WEATHER_DEPTH_SPEC.md 6.4): only when the day's wetness is high or moderate. The label is
+ * short; the title and accessible name carry the D-W4 label and the attribution. Context, never a diagnosis.
+ */
+export function wetnessBadge(point: FieldConditionPoint | null): { wetness: "high" | "moderate"; label: string; description: string } | null {
+  const pressure = point?.pressure;
+  if (!point || !pressure || (pressure.wetness !== "high" && pressure.wetness !== "moderate")) return null;
+  const values = [
+    pressure.leafWetnessPct != null ? `leaf wetness probability ${Math.round(pressure.leafWetnessPct)}%` : null,
+    pressure.rhMeanPct != null ? `mean humidity ${Math.round(pressure.rhMeanPct)}%` : null,
+  ].filter((v): v is string => !!v);
+  const driver = wetnessDriver(pressure);
+  const noun = DRIVER_NOUN[driver];
+  const what = pressure.wetness === "high" ? `High ${noun}: conditions favour fungal spread` : `Moderate ${noun}`;
+  const typical = point.kind === "typical" ? " Typical (climatology), not a forecast." : point.kind === "forecast" ? " Forecast." : "";
+  const LABELS = {
+    leaf: { high: "Wet leaves likely", moderate: "Leaves wet at times" },
+    humidity: { high: "Humid, leaves may stay wet", moderate: "Humid at times" },
+    either: { high: "Wet leaves likely", moderate: "Leaves wet at times" },
+  } as const;
+  return {
+    wetness: pressure.wetness,
+    label: LABELS[driver][pressure.wetness],
+    description: `${what}${values.length ? ` (${values.join(", ")})` : ""}. ${MODEL_ESTIMATE_LABEL}.${typical} ${OPEN_METEO_ATTRIBUTION}.`,
+  };
 }
 
 export interface SceneMark {

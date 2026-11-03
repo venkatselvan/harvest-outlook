@@ -28,6 +28,8 @@ function metaOf(r: WeatherDayRow, series: WeatherSeries) {
     attribution: r.attribution,
     cached: series.cached,
     stale: series.stale,
+    // optional keys left out of the rows (for example an unexpected unit), so the gap is explained in the stored row's meta
+    ...(series.notes?.length ? { notes: series.notes } : {}),
   };
 }
 

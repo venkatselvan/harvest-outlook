@@ -557,6 +557,11 @@
               "notes": {
                 "type": "string",
                 "maxLength": 500
+              },
+              "checkIntervalDays": {
+                "type": "integer",
+                "minimum": 3,
+                "maximum": 30
               }
             },
             "required": [
@@ -566,6 +571,11 @@
             ],
             "additionalProperties": false
           }
+        },
+        "checkIntervalDays": {
+          "type": "integer",
+          "minimum": 3,
+          "maximum": 30
         },
         "farmId": {
           "type": "string",

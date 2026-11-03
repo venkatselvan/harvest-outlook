@@ -26,10 +26,14 @@
  * - the price "trend" is the latest observed weekly median since sowing beside the harvest-week reference (the view holds
  *   no year-on-year figure);
  * - "the next three days" are today + 1 to today + 3, forecast points only;
- * - alerts are ranked warning > watch > info, then the earlier start, then the id.
+ * - alerts are ranked warning > watch > info, then the earlier start, then the id;
+ * - field operations (FIELD_OPERATIONS_SPEC.md 4.2, 2026-11-03): `checks_overdue` counts the overdue field checks of the
+ *   view's scope, including one older than the upcoming-steps lookback (passed in by the view, since the view does not list
+ *   it); `issues_open` counts the open and treating farmer-reported issues (counts only: no issue title, which is farmer text,
+ *   reaches the prompt). Both are absent when zero, so a view without checks or issues keeps its earlier facts.
  */
 import {z} from 'zod';
-import {OverviewPointKind, type ModelInvocation, type OverviewFact, type OverviewPoint, type OverviewRef, type TodayOverview, type TodayView, type UpcomingStep} from '@harvest/contracts';
+import {OverviewPointKind, type FieldCheck, type ModelInvocation, type OverviewFact, type OverviewPoint, type OverviewRef, type TodayOverview, type TodayView, type UpcomingStep} from '@harvest/contracts';
 import type {Config} from '../../config';
 import type {Pool} from '../../db/pool';
 import type {Budget} from '../budget';
@@ -98,8 +102,19 @@ export interface OverviewFactSet {
   };
 }
 
+/**
+ * The step title that may reach the model prompt or the code-written points. A field-check step's title can carry text the
+ * farmer typed (a recheck is titled with the issue's title; an interval check names the field), so it is replaced by code-only
+ * wording: the crop's name for a walk, "an issue you logged" for a recheck. Every other step title is code-written.
+ */
+export function modelSafeStepTitle(step: Pick<UpcomingStep, 'kind' | 'title' | 'fieldCheck'>, fallbackCrop: string | null = null): string {
+  if (step.kind !== 'field_check') return step.title;
+  if (step.fieldCheck?.kind === 'recheck') return 'Recheck an issue you logged';
+  return `Walk the field: ${step.fieldCheck?.cropName ?? fallbackCrop ?? 'your crop'}`;
+}
+
 /** Code facts of the Today view, at most 16, in the spec's order; null without a current cycle. */
-export function overviewFacts(view: TodayView): OverviewFactSet | null {
+export function overviewFacts(view: TodayView, extra: {overdueChecks?: readonly FieldCheck[] | undefined} = {}): OverviewFactSet | null {
   if (!view.cycle) return null;
   const today = view.today;
   const cropName = view.product?.cropName ?? view.cycle.cropName ?? view.cycle.cropId.replace(/[-_]+/g, ' ');
@@ -132,11 +147,18 @@ export function overviewFacts(view: TodayView): OverviewFactSet | null {
   const next = view.nextAction ?? null;
   if (next) {
     const window = windowText(next.dueFrom, next.dueTo);
-    parts.next = {title: next.title, window, status: next.status};
-    add('next', `Next step: ${next.title}, due ${window} (${STATUS_WORD[next.status]})`, {kind: 'step', id: next.id});
+    const title = modelSafeStepTitle(next, cropName);
+    parts.next = {title, window, status: next.status};
+    add('next', `Next step: ${title}, due ${window} (${STATUS_WORD[next.status]})`, {kind: 'step', id: next.id});
   }
   const overdue = view.upcoming.filter((s) => s.status === 'overdue');
   if (overdue.length) add('overdue', `${plural(overdue.length, 'step is', 'steps are')} overdue`, {kind: 'step', id: overdue[0]!.id});
+  // Overdue field checks (the farmer's own interval), including any older than the steps' lookback.
+  const lateChecks = [...(extra.overdueChecks ?? [])].sort((a, b) => a.dueTo.localeCompare(b.dueTo) || a.id.localeCompare(b.id));
+  if (lateChecks.length) {
+    const listed = lateChecks.find((c) => view.upcoming.some((s) => s.id === c.id));
+    add('checks_overdue', `${plural(lateChecks.length, 'field check is', 'field checks are')} overdue at your own check interval; the oldest was due by ${dayMonth(lateChecks[0]!.dueTo)}`, listed ? {kind: 'step', id: listed.id} : null);
+  }
   // Next stage transition within the horizon (for the "later" point), when it is not already the next action.
   const transition = view.upcoming.find((s) => s.kind === 'stage_transition' && s.status === 'upcoming' && s.dueFrom <= addDays(today, HORIZON_DAYS));
   if (transition && transition.id !== next?.id) {
@@ -150,6 +172,12 @@ export function overviewFacts(view: TodayView): OverviewFactSet | null {
     if (i === 0) parts.alert1 = {title: a.title, step: a.suggestedStep};
     add(`alert${i + 1}`, `Alert (${a.severity}): ${a.title}, ${windowText(a.validFrom, a.validTo)}${a.suggestedStep ? `; suggested: ${a.suggestedStep}` : ''}`, {kind: 'alert', id: a.id});
   });
+  // Farmer-reported issues still open (counts only).
+  const iss = view.issues;
+  if (iss && iss.open + iss.treating > 0) {
+    const n = iss.open + iss.treating;
+    add('issues_open', `${plural(n, 'issue')} you logged ${n === 1 ? 'is' : 'are'} still open${iss.treating ? `, ${iss.treating} being treated` : ''} (farmer-reported)`, null);
+  }
   // Weather: the next three days of forecast points.
   const fc = view.weatherTrack.filter((d) => d.kind === 'forecast' && d.date > today && d.date <= addDays(today, 3));
   if (fc.length) {
@@ -226,9 +254,11 @@ export function deterministicOverview(set: OverviewFactSet): OverviewText {
   const points: OverviewPoint[] = [];
   const point = (kind: OverviewPoint['kind'], text: string, id: string) => points.push({kind, text: capWords(sentence(text), MAX_POINT_CHARS), factIds: [id], ref: fact(id).ref});
   if (p.next && has('next')) point('do_now', `Do next: ${p.next.title}, due ${p.next.window}`, 'next');
+  if (has('checks_overdue') && (!has('next') || fact('next').ref?.id !== fact('checks_overdue').ref?.id)) point('do_now', `Walk the field: ${fact('checks_overdue').text}`, 'checks_overdue');
   // From the fact text itself, so a capped fact never leaves a digit in the point that the fact lacks.
   if (p.alert1 && has('alert1')) point('watch', `Watch: ${fact('alert1').text.replace(/^Alert \(\w+\): /, '')}`, 'alert1');
   else if (has('weather3')) point('watch', `Weather: ${fact('weather3').text}`, 'weather3');
+  if (has('issues_open')) point('watch', `Watch: ${fact('issues_open').text}`, 'issues_open');
   if (has('profit')) point('money', fact('profit').text, 'profit');
   else if (has('price')) point('money', fact('price').text, 'price');
   if (p.stageNext && has('stage_next')) point('later', `Later: ${p.stageNext.name} is expected to start on ${p.stageNext.date}`, 'stage_next');

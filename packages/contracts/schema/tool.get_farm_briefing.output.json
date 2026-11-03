@@ -4068,6 +4068,14 @@
       ],
       "additionalProperties": false
     },
+    "scouting": {
+      "maxItems": 10,
+      "type": "array",
+      "items": {
+        "type": "string",
+        "maxLength": 300
+      }
+    },
     "limitations": {
       "maxItems": 30,
       "type": "array",
