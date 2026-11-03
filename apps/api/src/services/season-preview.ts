@@ -1,4 +1,4 @@
-import type {BasisRef, Mode, SeasonPreview, SeasonPreviewQuery, SoilCheck, StageTimeline} from '@harvest/contracts';
+import type {BasisRef, FarmWorkspace, Mode, SeasonPreview, SeasonPreviewQuery, SoilCheck, StageTimeline} from '@harvest/contracts';
 import type {Config} from '../config';
 import type {Pool} from '../db/pool';
 import type {FetchLike} from '../ingest/http';
@@ -16,7 +16,7 @@ import {harvestPriceOutlook, isoWeekMonday, seasonalReferenceByWeek, type Harves
 import {farmSoilMarkers} from './soil-reports';
 import {geographyNames} from './today/view';
 import {stageTimeline} from './today/stage-timeline';
-import {boundaryMetrics, getWorkspace} from './workspace';
+import {boundaryMetrics, fieldAreaHa, fieldView, getWorkspace} from './workspace';
 import * as candidates from './year-plan/candidates';
 import {evaluateSlot, slotCompanion, type EvaluatedSlot, type ScoringNorm} from './year-plan/assemble';
 import * as data from './year-plan/data';
@@ -57,7 +57,7 @@ export interface SeasonPreviewDeps {
     seasonal?: ((args: SeasonalReferenceByWeekArgs) => Promise<SeasonalReferenceByWeek>) | undefined;
     marketNow?: ((args: MarketNowArgs) => Promise<SeasonPreview['marketNow']>) | undefined;
     /** Test stub for storedEngineInputs; `sowing` is the season's sowing date (it selects the plan horizon). */
-    engine?: ((ownerId: string, farmId: string, sowing: string) => Promise<StoredEngine | null>) | undefined;
+    engine?: ((ownerId: string, farmId: string, sowing: string, fieldId?: string | null) => Promise<StoredEngine | null>) | undefined;
     focused?: (() => Promise<FocusedResearch>) | undefined;
   } | undefined;
   rateMarker?: RateMarkerFn | null | undefined;
@@ -91,9 +91,9 @@ interface Slot {
 }
 
 /** Saved season from the workspace, or the query's slot. */
-async function resolveSlot(pool: Pool, ownerId: string, farmId: string, q: SeasonPreviewQuery): Promise<Slot> {
+async function resolveSlot(ws: Pick<FarmWorkspace, 'rotationPlans'>, q: SeasonPreviewQuery): Promise<Slot> {
   if (q.planId) {
-    const ws = await getWorkspace(pool, ownerId, farmId);
+    // 12.3: with a field, only that field's saved seasons (and farm-wide ones) can be previewed.
     const p = ws.rotationPlans.find((r) => r.id === q.planId);
     if (!p) throw notFound('Saved season');
     if (!p.plannedSowingDate) throw validationError('This saved season has no planned sowing date; add one to preview it.');
@@ -239,8 +239,12 @@ export async function seasonPreview(deps: SeasonPreviewDeps, ownerId: string, fa
   const mode: Mode = deps.config.RUNTIME_MODE;
   const now = (deps.now ?? (() => new Date()))();
   const today = todayIst(now);
-  const slot = await resolveSlot(deps.pool, ownerId, farmId, q);
-  const workspace = await getWorkspace(deps.pool, ownerId, farmId);
+  // 12.3: the field view (its cycles and saved seasons plus farm-wide legacy ones, its polygon; 404 field_not_found when
+  // unknown) and its area. Without fieldId the whole farm, as before.
+  const fieldId = q.fieldId ?? null;
+  const stored = await getWorkspace(deps.pool, ownerId, farmId);
+  const workspace = fieldView(stored, fieldId);
+  const slot = await resolveSlot(workspace, q);
   const limitations: string[] = [REFERENCE_LIMITATION];
   const basis: BasisRef[] = [];
   const stateName = farm.location.stateCode;
@@ -329,7 +333,7 @@ export async function seasonPreview(deps: SeasonPreviewDeps, ownerId: string, fa
   // ---- 5 engine scoring on the stored inputs of the ready review of the plan year the season is sown in (review MEDIUM-4:
   // a season sown in a later year is scored in that year's horizon, with that year's previous crop)
   let engine: StoredEngine | null = null;
-  try { engine = deps.sources?.engine ? await deps.sources.engine(ownerId, farmId, slot.sowing) : await storedEngineInputs({pool: deps.pool, config: deps.config, now: () => now} as unknown as YearPlanDeps, ownerId, farmId, null, {forDate: slot.sowing}); }
+  try { engine = deps.sources?.engine ? await deps.sources.engine(ownerId, farmId, slot.sowing, fieldId) : await storedEngineInputs({pool: deps.pool, config: deps.config, now: () => now} as unknown as YearPlanDeps, ownerId, farmId, null, {forDate: slot.sowing, fieldId}); }
   catch { engine = null; }
   let ev: EvaluatedSlot | null = null;
   let companion: SeasonPreview['companion'] = null;
@@ -397,7 +401,8 @@ export async function seasonPreview(deps: SeasonPreviewDeps, ownerId: string, fa
   try { research = await (deps.sources?.focused ?? focusedResearch)(); } catch { research = null; }
   const stepList = steps({research, slot, productId, method: slot.method, timeline, harvest, farm, today, limitations});
 
-  const area = farm.areaHectares !== null && Number.isFinite(farm.areaHectares) && farm.areaHectares > 0 ? farm.areaHectares : null;
+  const areaSource = fieldId ? fieldAreaHa(stored, fieldId) : farm.areaHectares;
+  const area = areaSource !== null && Number.isFinite(areaSource) && areaSource > 0 ? areaSource : null;
   const yieldRange = ev?.yieldRange ?? null;
   const water: SeasonPreview['water'] = ev ? {fit: round4(clip(ev.water.value, 0, 1)), needMm: ev.water.needMm === null ? null : Math.round(ev.water.needMm), rainMm: ev.water.rainMm === null ? null : Math.round(ev.water.rainMm), verdict: cap(waterVerdict(ev), 160)} : null;
   return {
@@ -407,6 +412,7 @@ export async function seasonPreview(deps: SeasonPreviewDeps, ownerId: string, fa
     cost: ev?.cost?.estimate ?? null, profitPerHa: ev?.estimate.profitPerHa ?? null, profitForField: ev?.estimate.profitForField ?? null,
     score, components, reasonCodes: codes, steps: stepList, soil, basis: dedupeBasis(basis),
     limitations: [...new Set(limitations)].map((l) => cap(l, 600)),
+    ...(fieldId ? {fieldId} : {}),
   };
 }
 

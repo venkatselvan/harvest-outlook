@@ -17,7 +17,8 @@ export interface SeasonPreviewRouteDeps extends Omit<SeasonPreviewDeps, 'config'
  * (stage calendar, climatology normals, historical seasonal prices, the year-plan slot scoring on the stored inputs).
  * Owner-private: the farm is resolved for the session owner first, so a foreign or deleted farm is 404. A cold read in
  * live mode can reach Open-Meteo through the weather source's bounded climatology ingest, so the rate limit is low and
- * the response is not cached by intermediaries. Registered in routes/index.ts by the orchestrator.
+ * the response is not cached by intermediaries. Registered in routes/index.ts by the orchestrator. `fieldId` (2026-11-03, 12.3): preview
+ * on that field (its cycles, saved seasons, year plan and area; 404 field_not_found when unknown); absent = the whole farm.
  */
 export async function seasonPreviewRoutes(app: FastifyInstance, deps: SeasonPreviewRouteDeps): Promise<void> {
   const {config, pool} = deps;

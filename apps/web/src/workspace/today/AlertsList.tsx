@@ -15,6 +15,11 @@ export interface AlertsListProps {
   onSuggested: (alert: FarmAlert) => void;
   /** Error from the last dismiss, shown above the list. */
   error: string;
+  /**
+   * 2026-11-03 (FIELDS_MULTICROP_SOIL_SPEC.md 12.4, 12.6): the list belongs to one field of a farm with fields, so alerts that
+   * cover the whole farm (weather, price, news) get a small "Farm-wide" chip. Omitted on a farm without fields.
+   */
+  fieldView?: boolean;
 }
 
 /** DOM id of an alert card, so the Today overview can scroll to it. */
@@ -54,6 +59,10 @@ export function newsReviewText(status: FarmNewsReviewStatus | null, today: strin
   }
 }
 
+/** An alert that is not tied to one field: `scope: 'farm'`, or (older servers without scope) no fieldId. */
+export const isFarmWide = (alert: Pick<FarmAlert, "scope" | "fieldId">): boolean =>
+  alert.scope ? alert.scope === "farm" : !alert.fieldId;
+
 export function sortAlerts(alerts: readonly FarmAlert[]): FarmAlert[] {
   return [...alerts].sort((a, b) => severityOrder[a.severity] - severityOrder[b.severity]);
 }
@@ -88,6 +97,11 @@ export function AlertsList(props: AlertsListProps) {
                     <span class={`today-chip severity ${alert.severity}`}>{severityLabel[alert.severity]}</span>
                     <span>{typeLabel[alert.type]}</span>
                     <span>· until {formatDay(alert.validTo, false)}</span>
+                    <Show when={props.fieldView && isFarmWide(alert)}>
+                      <span class="today-chip today-alert-scope" data-testid="alert-farm-wide" title="This alert covers the whole farm, not only this field">
+                        Farm-wide
+                      </span>
+                    </Show>
                   </p>
                   <h3>{alert.title}</h3>
                   <p class="today-alert-detail">{alert.detail}</p>

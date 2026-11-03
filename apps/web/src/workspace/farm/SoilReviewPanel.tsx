@@ -151,7 +151,15 @@ type Phase = { kind: "loading" } | { kind: "ready" } | { kind: "failed"; message
 const failureText = (error: unknown): string =>
   error instanceof SoilReviewContractError ? error.message : "The soil review could not be loaded. Check your connection and try again.";
 
-export default function SoilReviewPanel(props: { farmId: string }) {
+export default function SoilReviewPanel(props: {
+  farmId: string;
+  /**
+   * 2026-11-03 (FIELDS_MULTICROP_SOIL_SPEC.md 12.3, 12.6): the field whose current and next crop frame the review
+   * (`?fieldId=`); the soil values stay farm-level and the server says so in a limitation line. Null or omitted = the whole farm.
+   */
+  fieldId?: string | null | undefined;
+}) {
+  const field = () => props.fieldId ?? null;
   const [review, setReview] = createSignal<SoilReview | null>(null);
   const [phase, setPhase] = createSignal<Phase>({ kind: "loading" });
   const [refreshing, setRefreshing] = createSignal(false);
@@ -165,7 +173,8 @@ export default function SoilReviewPanel(props: { farmId: string }) {
     const ctrl = new AbortController();
     controller = ctrl;
     const gen = generation;
-    const ok = () => !ctrl.signal.aborted && gen === generation && props.farmId === id;
+    const fieldId = field();
+    const ok = () => !ctrl.signal.aborted && gen === generation && props.farmId === id && field() === fieldId;
     const show = (next: SoilReview) => {
       if (!ok()) return;
       batch(() => {
@@ -173,13 +182,13 @@ export default function SoilReviewPanel(props: { farmId: string }) {
         setPhase({ kind: "ready" });
       });
     };
-    const opts = { signal: ctrl.signal, onUpdate: show };
+    const opts = { signal: ctrl.signal, onUpdate: show, fieldId };
     try {
       if (force) {
         show(await refreshAndPoll(id, opts));
         return;
       }
-      const current = await loadSoilReview(id, { signal: ctrl.signal });
+      const current = await loadSoilReview(id, { signal: ctrl.signal, fieldId });
       show(current);
       if (isActive(current)) show(await pollSoilReview(id, current, opts));
     } catch (error) {
@@ -196,8 +205,8 @@ export default function SoilReviewPanel(props: { farmId: string }) {
 
   createEffect(
     on(
-      () => props.farmId,
-      (id) => {
+      () => [props.farmId, field()] as const,
+      ([id]) => {
         generation++;
         controller?.abort();
         batch(() => {

@@ -36,8 +36,13 @@ export const FarmAlert = z.object({
   validTo: z.iso.date(),
   suggestedStep: z.string().max(300).nullable(),
   createdAt: z.iso.datetime(),
-  /** 2026-11-03: the field whose cycle raised the alert; absent = farm-wide (weather, price, and every alert the monitor raises today). */
+  /**
+   * 2026-11-03: the field whose cycle raised the alert (crop-threat windows of a field's cycle, the satellite drop on a
+   * field's polygon); absent = farm-wide (weather, price, news review, and crop threats of a cycle recorded without a field).
+   */
   fieldId: z.string().trim().min(1).max(120).optional(),
+  /** 2026-11-03: derived for the web: 'field' when fieldId is set, else 'farm' (shown as "Farm-wide" in a field view). */
+  scope: z.enum(['field', 'farm']).optional(),
 }).strict();
 
 /** State of the once-per-farm-per-day grounded news review. `paused` = global daily spend cap reached. */

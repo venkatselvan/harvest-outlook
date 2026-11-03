@@ -1,6 +1,7 @@
 import {z} from 'zod';
 import {ModelInvocation} from './common';
 import {NutrientNeed, SoilRating} from './crop-fit';
+import {FieldId} from './workspace';
 
 /**
  * Soil review (ROUND2_SPEC.md section 5): confirmed soil markers rated against cited soil-test bands (code), drawn as
@@ -71,6 +72,11 @@ export const SoilReview = z.object({
  narrativeOrigin: z.enum(['model', 'deterministic']).nullable(),
  ratingsVersion: z.string().max(40),
  limitations: z.array(text),
+ /**
+  * 2026-11-03 (FIELDS_MULTICROP_SOIL_SPEC.md 12.3): the field whose crops give currentCrop and nextCrop (`?fieldId=`).
+  * The readings stay farm-level. Absent = the whole farm.
+  */
+ fieldId: FieldId.optional(),
 }).strict();
 
 export type SoilRatingBand = z.infer<typeof SoilRatingBand>;

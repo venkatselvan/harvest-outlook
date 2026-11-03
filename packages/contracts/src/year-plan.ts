@@ -1,6 +1,6 @@
 import {z} from 'zod';
 import {ModelInvocation} from './common';
-import {FarmWorkspace} from './workspace';
+import {FarmWorkspace, FieldId} from './workspace';
 
 /**
  * Year plan contracts (Stream A). Three scored 12-month crop sequences for a field, editable and
@@ -258,6 +258,12 @@ export const YearPlanReview = z.object({
  summary: text,
  limitations: z.array(text),
  appliedOptionIds: z.array(z.string()),
+ /**
+  * 2026-11-03 (FIELDS_MULTICROP_SOIL_SPEC.md 12.2): the field this review plans (`?fieldId=`) and its spherical area in
+  * hectares. Present only on a farm with fields; a farm without fields returns neither (its review is farm-wide).
+  */
+ fieldId: FieldId.nullable().optional(),
+ fieldAreaHa: z.number().nonnegative().nullable().optional(),
 }).strict();
 
 /** Farmer edit: same option with changed slots; code re-scores without a model call. */
@@ -275,16 +281,22 @@ export const RescoreYearPlan = z.object({
   sowing: isoDate,
   harvestLatest: isoDate.optional(),
  }).strict()).min(1).max(6),
+ /** 2026-11-03: the field whose review is re-scored; required (400 field_required) when the farm has fields. */
+ fieldId: FieldId.optional(),
 }).strict();
 
 /** Round 3: GET /year-plan?from= and POST body `from` select a later 12-month horizon (ROUND3_SPEC.md section 1). */
-export const YearPlanHorizonQuery = z.object({from: isoDate.optional()}).strict();
+export const YearPlanHorizonQuery = z.object({from: isoDate.optional(), fieldId: FieldId.optional()}).strict();
+/** 2026-11-03: POST /year-plan takes the field as a query parameter (`?fieldId=`), like GET. */
+export const YearPlanFieldQuery = z.object({fieldId: FieldId.optional()}).strict();
 
 export const ApplyYearPlan = z.object({
  reviewId: z.uuid(),
  optionId: z.string().max(120),
  slotIds: z.array(z.string().max(120)).max(6).optional(),
  expectedWorkspaceVersion: z.number().int().nonnegative(),
+ /** 2026-11-03: the field whose review is applied; its saved seasons carry this fieldId. Required (400 field_required) when the farm has fields. */
+ fieldId: FieldId.optional(),
 }).strict();
 export const ApplyYearPlanResult = z.object({workspace: FarmWorkspace, review: YearPlanReview}).strict();
 
@@ -300,6 +312,7 @@ export type IntercropCompanion = z.infer<typeof IntercropCompanion>;
 export type YearPlanOccupant = z.infer<typeof YearPlanOccupant>;
 export type YearPlanSelection = z.infer<typeof YearPlanSelection>;
 export type YearPlanHorizonQuery = z.infer<typeof YearPlanHorizonQuery>;
+export type YearPlanFieldQuery = z.infer<typeof YearPlanFieldQuery>;
 export type YearPlanSlot = z.infer<typeof YearPlanSlot>;
 export type YearPlanOption = z.infer<typeof YearPlanOption>;
 export type YearPlanScenario = z.infer<typeof YearPlanScenario>;

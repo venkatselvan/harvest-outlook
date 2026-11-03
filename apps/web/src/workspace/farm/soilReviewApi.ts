@@ -14,6 +14,11 @@ export const SOIL_REVIEW_MAX_POLLS = 120;
 export interface RequestOptions {
   signal?: AbortSignal;
   fetchImpl?: typeof fetch;
+  /**
+   * 2026-11-03 (FIELDS_MULTICROP_SOIL_SPEC.md 12.3): the field whose current and next crop frame the review (`?fieldId=`).
+   * The soil values stay farm-level. Null or omitted = the whole farm (the Today soil card).
+   */
+  fieldId?: string | null | undefined;
 }
 
 export class SoilReviewContractError extends Error {
@@ -23,7 +28,8 @@ export class SoilReviewContractError extends Error {
   }
 }
 
-const path = (farmId: string) => `/api/v1/farms/${encodeURIComponent(farmId)}/soil-review`;
+export const soilReviewPath = (farmId: string, fieldId?: string | null) =>
+  `/api/v1/farms/${encodeURIComponent(farmId)}/soil-review${fieldId ? `?fieldId=${encodeURIComponent(fieldId)}` : ""}`;
 const withSignal = (init: RequestInit | undefined, signal?: AbortSignal): RequestInit | undefined =>
   signal ? { ...(init ?? {}), signal } : init;
 
@@ -34,13 +40,13 @@ function parse(data: unknown): SoilReview {
 }
 
 export async function loadSoilReview(farmId: string, opts: RequestOptions = {}): Promise<SoilReview> {
-  const env = await apiRequest<unknown>(path(farmId), withSignal(undefined, opts.signal), opts.fetchImpl);
+  const env = await apiRequest<unknown>(soilReviewPath(farmId, opts.fieldId), withSignal(undefined, opts.signal), opts.fetchImpl);
   return parse(env.data);
 }
 
 /** Refresh: a finished review is rebuilt (a pending one is returned as it is). */
 export async function refreshSoilReview(farmId: string, opts: RequestOptions = {}): Promise<SoilReview> {
-  const env = await apiRequest<unknown>(path(farmId), withSignal(jsonInit("POST", {}), opts.signal), opts.fetchImpl);
+  const env = await apiRequest<unknown>(soilReviewPath(farmId, opts.fieldId), withSignal(jsonInit("POST", {}), opts.signal), opts.fetchImpl);
   return parse(env.data);
 }
 

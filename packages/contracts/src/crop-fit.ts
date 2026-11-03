@@ -1,5 +1,6 @@
 import {z} from 'zod';
 import {ModelInvocation} from './common';
+import {FieldId} from './workspace';
 import {BasisRef, CostEstimate, DateWindow, HarvestWindow, IntercropCompanion, NumberEstimate, NumberRange, PriceEstimate, ScoreComponents, ScoreWeights, YearPlanReason} from './year-plan';
 
 /**
@@ -128,6 +129,8 @@ export const CropFitReview = z.object({
  soilReportStatus: z.enum(['none', 'unconfirmed', 'confirmed']),
  summary: text,
  limitations: z.array(text),
+ /** 2026-11-03 (FIELDS_MULTICROP_SOIL_SPEC.md 12.3): the field the review ranks for (`?fieldId=`); absent = the whole farm. fieldAreaHa is then that field's area. */
+ fieldId: FieldId.optional(),
 }).strict();
 
 export type CropFitMode = z.infer<typeof CropFitMode>;

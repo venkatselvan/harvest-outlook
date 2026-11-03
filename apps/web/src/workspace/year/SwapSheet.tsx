@@ -7,6 +7,8 @@ import type { CropFitCandidate } from "@harvest/contracts";
 
 export interface SwapPickerProps {
   farmId: string;
+  /** The field the plan is for (area and rotation are the field's); null or omitted = the whole farm. */
+  fieldId?: string | null | undefined;
   context: PickerContext;
   current: {
     cropId: string;
@@ -47,6 +49,7 @@ export function SwapPicker(props: SwapPickerProps) {
       <div class="yp-swap-body" aria-busy={props.busy === true}>
         <CropFitPicker
           farmId={props.farmId}
+          fieldId={props.fieldId}
           sowing={props.context.sowing}
           after={props.context.after}
           current={props.current}

@@ -153,7 +153,14 @@ type Phase = { kind: "loading" } | { kind: "ready" } | { kind: "failed"; failure
  * a crop is growing, today on a fresh field); the controls then follow the review. Changing a control GETs that
  * request (cached on the server by context hash); pending and running reviews are polled like the year plan.
  */
-export default function CropFitView(props: { farmId: string }) {
+export default function CropFitView(props: {
+  farmId: string;
+  /** 2026-11-03 (FIELDS_MULTICROP_SOIL_SPEC.md 12.3, 12.6): rank for this field (`?fieldId=`); null or omitted = the whole farm. */
+  fieldId?: string | null | undefined;
+  /** The field's name for the heading ("Strip 2"). */
+  fieldName?: string | null | undefined;
+}) {
+  const field = () => props.fieldId ?? null;
   const todayIso = localToday();
   const [controls, setControls] = createSignal<ControlsState>(defaultControls(todayIso));
   const [review, setReview] = createSignal<CropFitReview>();
@@ -170,7 +177,8 @@ export default function CropFitView(props: { farmId: string }) {
     const ctrl = new AbortController();
     controller = ctrl;
     const gen = generation;
-    const ok = () => !ctrl.signal.aborted && gen === generation && props.farmId === farmId;
+    const fieldId = field();
+    const ok = () => !ctrl.signal.aborted && gen === generation && props.farmId === farmId && field() === fieldId;
     const show = (next: CropFitReview) => {
       if (!ok()) return;
       batch(() => {
@@ -180,9 +188,10 @@ export default function CropFitView(props: { farmId: string }) {
       });
     };
     try {
-      const first = force ? await refreshCropFit(farmId, request, { signal: ctrl.signal }) : await loadCropFit(farmId, request, { signal: ctrl.signal });
+      const opts = { signal: ctrl.signal, fieldId };
+      const first = force ? await refreshCropFit(farmId, request, opts) : await loadCropFit(farmId, request, opts);
       show(first);
-      if (ok() && isActive(first)) show(await pollCropFit(farmId, request ?? controlsFromReview(first, controls()), first, { signal: ctrl.signal, onUpdate: show }));
+      if (ok() && isActive(first)) show(await pollCropFit(farmId, request ?? controlsFromReview(first, controls()), first, { ...opts, onUpdate: show }));
     } catch (error) {
       if (!ok()) return;
       setPhase({ kind: "failed", failure: classifyCropFitError(error) });
@@ -196,8 +205,8 @@ export default function CropFitView(props: { farmId: string }) {
 
   createEffect(
     on(
-      () => props.farmId,
-      (farmId) => {
+      () => [props.farmId, field()] as const,
+      ([farmId]) => {
         generation++;
         controller?.abort();
         batch(() => {
@@ -249,7 +258,7 @@ export default function CropFitView(props: { farmId: string }) {
   return (
     <section class="cf-view" aria-labelledby="cf-heading" aria-busy={phase().kind === "loading" || (!!review() && isActive(review()!))}>
       <div class="cf-head">
-        <p class="eyebrow">YOUR FIELD · CROP FIT</p>
+        <p class="eyebrow">{props.fieldName ? `${props.fieldName.toUpperCase()} · CROP FIT` : "YOUR FIELD · CROP FIT"}</p>
         <h2 id="cf-heading">Which crop fits next?</h2>
         <p class="cf-muted">Every crop is scored by code on price at harvest, yield, soil and rotation, water and data confidence.</p>
       </div>

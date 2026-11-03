@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { StructuredAssistantOutput } from "@harvest/contracts";
+import { FieldId, StructuredAssistantOutput } from "@harvest/contracts";
 
 const dateRe = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -10,12 +10,15 @@ export const turnBody = z
     confirmedTranscript: z.string().trim().min(1).max(2000).optional(),
     language: z.enum(["en", "ta", "hi"]),
     farmId: z.uuid().optional(),
+    /** 2026-11-03 (FIELDS_MULTICROP_SOIL_SPEC.md 12.5): the field selected in the shell; needs farmId and must name a field of that farm (404 field_not_found). */
+    fieldId: FieldId.optional(),
     planId: z.uuid().optional(),
     selectedDate: z.string().regex(dateRe).optional(),
     scenarioId: z.string().min(1).max(200).regex(/^[A-Za-z0-9][A-Za-z0-9._:\/-]*$/).optional(),
   })
   .strict()
-  .refine((b) => (b.text === undefined) !== (b.confirmedTranscript === undefined), { message: "provide exactly one of text or confirmedTranscript" });
+  .refine((b) => (b.text === undefined) !== (b.confirmedTranscript === undefined), { message: "provide exactly one of text or confirmedTranscript" })
+  .refine((b) => b.fieldId === undefined || b.farmId !== undefined, { message: "fieldId needs farmId", path: ["fieldId"] });
 export type TurnBody = z.infer<typeof turnBody>;
 
 const shape = StructuredAssistantOutput.shape;

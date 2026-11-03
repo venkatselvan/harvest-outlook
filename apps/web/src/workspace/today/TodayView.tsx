@@ -42,8 +42,8 @@ import { UpcomingSteps, stepDomId } from "./UpcomingSteps";
 import { TodayEmpty } from "./TodayEmpty";
 import { TodaySheet, type SheetKind } from "./TodaySheet";
 import TodaySoil, { createSoilCardController, SoilCardContext } from "./TodaySoil";
-import { chipItemOf, FieldChips, FieldsLegend, FieldsTable, type FieldChipItem } from "../fields/FieldsToday";
-import { boundsPolygon, cropLabel, currentCycleOf, defaultPlantField, type FieldCycleLike } from "../fields/fieldsModel";
+import { FieldChips, FieldsLegend, FieldsTable, type FieldChipItem } from "../fields/FieldsToday";
+import { boundsPolygon, defaultPlantField, type FieldCycleLike } from "../fields/fieldsModel";
 import "./today.css";
 
 /** `fieldId` is the field the request asked for (null: no field, the farm view or the "All fields" overview). */
@@ -320,13 +320,6 @@ export function TodayView(props: TodayViewProps) {
   const hasFields = () => layout() !== "none";
   const selectedId = () => (layout() === "field" ? (fieldKey() ?? null) : null);
   const overview = () => layout() === "all";
-  const chipItems = (): FieldChipItem[] =>
-    summaries().length
-      ? summaries().map(chipItemOf)
-      : workspaceFields().map((field) => {
-          const cycle = currentCycleOf<FieldCycleLike>(field.id, (props.workspace()?.cycles ?? []) as FieldCycleLike[]);
-          return { id: field.id, name: field.name, crop: cropLabel(cycle, s.cropName), cropId: cycle?.cropId ?? null };
-        });
   const fieldNamed = (id: string | null | undefined) =>
     id ? (summaries().find((f) => f.id === id)?.name ?? workspaceFields().find((f) => f.id === id)?.name ?? null) : null;
   /** The field the loaded view describes (its name labels the hero, the overlay and the empty state). */
@@ -353,7 +346,8 @@ export function TodayView(props: TodayViewProps) {
   const plantFieldName = () => fieldName() ?? fieldNamed(defaultPlantField(workspaceFields(), (props.workspace()?.cycles ?? []) as FieldCycleLike[], null));
   // One soil load per farm and epoch, owned by the view root: the card under the loading branches reads it, so a field
   // switch or a reload does not repeat GET /soil-review.
-  const soilCard = createSoilCardController(farmId, () => s.sessionEpoch());
+  // It follows the selected field (the review the Farm tab shows for it); "All fields" keeps the farm-wide review.
+  const soilCard = createSoilCardController(farmId, () => s.sessionEpoch(), undefined, fieldKey);
   const soilProps = () => ({ onUpload: () => props.showTool("soil"), onRecords: () => props.openSoilRecords() });
   const cropName = () => {
     const current = view();
@@ -520,6 +514,7 @@ export function TodayView(props: TodayViewProps) {
         onDismiss={(alert) => void dismiss(alert)}
         onSuggested={showStep}
         error={alertError()}
+        fieldView={hasFields()}
       />
       <Show when={current.cycle}>
         <UpcomingSteps
@@ -551,7 +546,7 @@ export function TodayView(props: TodayViewProps) {
   return (
     <SoilCardContext.Provider value={soilCard}>
     <div class="today-view" aria-busy={state().status === "loading"} data-fields={hasFields() ? (overview() ? "all" : "field") : undefined}>
-      <TodayFieldChips mode={layout()} items={chipItems()} selected={selectedId()} onSelect={(id) => props.selectField(id)} />
+      {/* The field chips row lives in the shell under the tab bar since 12.6 (FIELDS_MULTICROP_SOIL_SPEC.md); not repeated here. */}
       <Switch>
         <Match when={state().status === "idle" || state().status === "loading"}>
           <div class="today-layout" role="status" aria-label="Loading today's field view">

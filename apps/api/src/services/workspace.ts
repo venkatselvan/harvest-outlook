@@ -26,6 +26,44 @@ export function fieldOf(workspace: Pick<FarmWorkspace, 'fields'>, fieldId: strin
   if (!field) throw new ApiError(404, 'field_not_found', 'Field not found on this farm');
   return field;
 }
+
+/**
+ * Field-scoped workspace (FIELDS_MULTICROP_SOIL_SPEC.md 12.1, 2026-11-03). With `fieldId` on a farm: the cycles and saved
+ * seasons naming that field PLUS the farm-wide (legacy) records without a fieldId, because a cycle recorded before the fields
+ * were drawn occupies the whole farm until harvested; `boundary` is the field's polygon; `fields` and every other key are
+ * kept. Without `fieldId` (null or undefined) the workspace is returned unchanged, so a farm without fields behaves exactly as
+ * before. An unknown `fieldId` (including any fieldId on a farm without fields) is 404 field_not_found.
+ */
+export function fieldView<W extends Pick<FarmWorkspace, 'fields' | 'boundary' | 'cycles' | 'rotationPlans'>>(workspace: W, fieldId?: string | null): W {
+  if (fieldId === undefined || fieldId === null) return workspace;
+  const field = fieldOf(workspace, fieldId);
+  const onField = (r: { fieldId?: string | undefined }) => r.fieldId === undefined || r.fieldId === field.id;
+  return { ...workspace, boundary: field.boundary, cycles: workspace.cycles.filter(onField), rotationPlans: workspace.rotationPlans.filter(onField) };
+}
+
+/** The field's spherical area in hectares (boundaryMetrics of its drawn polygon; not a survey). 404 field_not_found when unknown. */
+export function fieldAreaHa(workspace: Pick<FarmWorkspace, 'fields'>, fieldId: string): number {
+  return boundaryMetrics(fieldOf(workspace, fieldId).boundary).areaHectares;
+}
+
+/**
+ * The field a per-field call works on (12.2): null on a farm without fields when none is named; 400 field_required when the
+ * farm has fields and none is named; 404 field_not_found for an unknown one.
+ */
+export function requireField(workspace: Pick<FarmWorkspace, 'fields'>, fieldId: string | null | undefined): FarmField | null {
+  if (fieldId === undefined || fieldId === null) {
+    if (workspace.fields.length) throw new ApiError(400, 'field_required', 'This farm has fields; choose the field (fieldId)');
+    return null;
+  }
+  return fieldOf(workspace, fieldId);
+}
+
+/** Unharvested cycles of a field view that were recorded for the whole farm before fields were drawn (no fieldId). */
+export function legacyCycles(view: Pick<FarmWorkspace, 'cycles'>): FarmWorkspace['cycles'] {
+  return view.cycles.filter((c) => c.fieldId === undefined && c.stage !== 'harvested');
+}
+export const LEGACY_CYCLE_NOTE = 'recorded for the whole farm before fields were drawn';
+
 const assemble = (farmId: string, row?: WorkspaceRow): FarmWorkspace => ({
   ...(row ? FarmWorkspaceState.parse(row.state) : emptyState()),
   farmId, version: row?.version ?? 0, updatedAt: row?.updated_at.toISOString() ?? null,

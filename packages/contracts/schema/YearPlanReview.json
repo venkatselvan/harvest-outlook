@@ -2240,6 +2240,30 @@
       "items": {
         "type": "string"
       }
+    },
+    "fieldId": {
+      "anyOf": [
+        {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 120,
+          "pattern": "^[A-Za-z0-9_.-]+$"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "fieldAreaHa": {
+      "anyOf": [
+        {
+          "type": "number",
+          "minimum": 0
+        },
+        {
+          "type": "null"
+        }
+      ]
     }
   },
   "required": [

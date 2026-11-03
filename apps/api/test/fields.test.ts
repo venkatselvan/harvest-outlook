@@ -180,14 +180,18 @@ describe('plant crop on a field', () => {
 });
 
 describe('briefing on a farm with fields', () => {
-  it('fills fields.count, viewedField null, and names the field of the farm-level current cycle', async () => {
+  it('without fieldId briefs the first field with a current crop (12.5) and says so; with fieldId names that field', async () => {
     const budget = new Budget(h.pool, {totalUsd: 100, devAllocationUsd: 50, demoReserveUsd: 1, perSessionUsd: 40, perOwnerDayUsd: 40});
     await budget.init();
     const run = (await h.pool.query<{id: string}>("INSERT INTO agent_runs (owner_id, mode, purpose, status) VALUES ($1,'synthetic','test','running') RETURNING id", [ownerId])).rows[0]!.id;
     const out = await farmBriefing({config: h.config, budget}, farmId, {ownerId, mode: 'synthetic', requestId: 'req-fields', pool: h.pool, agentRunId: run, asOf: new Date().toISOString()});
-    expect(out.fields).toEqual({count: 2, viewedField: null});
-    expect(out.cycle?.cropId).toBe('maize');
-    expect(out.limitations).toContain('This farm has 2 fields; the figures describe East strip.');
+    expect(out.fields).toEqual({count: 2, viewedField: 'West strip'});
+    expect(out.cycle?.cropId).toBe('paddy');
+    expect(out.limitations).toContain('No field was selected, so this answer is about field West strip, the first field with a current crop; the farm has 2 fields.');
+    const east = await farmBriefing({config: h.config, budget}, farmId, {ownerId, mode: 'synthetic', requestId: 'req-fields-2', pool: h.pool, agentRunId: run, asOf: new Date().toISOString()}, 'east');
+    expect(east.fields).toEqual({count: 2, viewedField: 'East strip'});
+    expect(east.cycle?.cropId).toBe('maize');
+    expect(east.limitations).toContain('This answer is about field East strip; the farm has 2 fields.');
   });
 });
 

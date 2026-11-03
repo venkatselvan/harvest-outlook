@@ -4,6 +4,8 @@ import type { CropFitCandidate, YearPlanOccupant, YearPlanReview, YearPlanSlot }
 import { newEntryId } from "../../features/photo-region/http";
 import { Planner } from "../Planner";
 import { today, useWorkspace } from "../state";
+import type { FieldCycleLike } from "../fields/fieldsModel";
+import { PlansByField, plansByField, type PlanFieldLike, type PlanSeasonLike } from "./PlansByField";
 import { ApplyConfirm } from "./ApplyConfirm";
 import { addYearsIso } from "./format";
 import { HorizonPager } from "./HorizonPager";
@@ -38,6 +40,7 @@ import {
   pollYearPlan,
   priceTrend,
   rescore,
+  withFieldId,
   type YearPlanFailure,
 } from "./yearPlanApi";
 import "./year-plan.css";
@@ -47,7 +50,27 @@ type Phase =
   | { kind: "loading" }
   | { kind: "needs_location" }
   | { kind: "ready" }
+  | { kind: "by_field" }
   | { kind: "failed"; failure: YearPlanFailure };
+
+/**
+ * What the shell tells the Plan tab about fields (FIELDS_MULTICROP_SOIL_SPEC.md 12.6). Both omitted on a farm without
+ * fields (and in older callers): the plan is farm-wide as before.
+ */
+export interface YearPlanViewProps {
+  /** The field selected in the shell (`?field=`); null for "All fields" or a farm without fields. */
+  fieldId?: string | null | undefined;
+  /** The shell's workspace for the selected farm (the newer of the stored and command-center copies): fields, cycles, saved seasons. */
+  workspace?:
+    | {
+        fields?: readonly PlanFieldLike[] | undefined;
+        cycles: readonly FieldCycleLike[];
+        rotationPlans: readonly PlanSeasonLike[];
+      }
+    | undefined;
+  /** "Open plan" on a "Plans by field" row: select that field and stay on the Plan tab. */
+  onOpenField?: (fieldId: string) => void;
+}
 
 /**
  * Year plan tab (UI_BRIEF 3.2, rounds 2 and 3): up to five scored 12-month crop sequences on a month calendar (three
@@ -61,8 +84,26 @@ type Phase =
  * below keep working in every case. All requests are tied to the selected farm and session and are dropped when the
  * farm changes or the view unmounts.
  */
-export function YearPlanView() {
+export function YearPlanView(props: YearPlanViewProps = {}) {
   const s = useWorkspace();
+  /** The farm's fields as the shell knows them; an empty list is a farm without fields. */
+  const farmFields = () => props.workspace?.fields ?? [];
+  /** The field every request names: the selected field on a farm with fields, else null (farm-wide plan). */
+  const planField = () => (farmFields().length && props.fieldId ? props.fieldId : null);
+  /** "All fields" on a farm with fields: no farm-level plan, the per-field rows instead. */
+  const byField = () => farmFields().length > 0 && !planField();
+  const fieldRows = createMemo(() =>
+    byField()
+      ? plansByField(
+          farmFields(),
+          props.workspace?.cycles ?? [],
+          props.workspace?.rotationPlans ?? [],
+          today(),
+          s.cropName,
+        )
+      : [],
+  );
+  const fieldName = () => farmFields().find((f) => f.id === planField())?.name ?? null;
   const [phase, setPhase] = createSignal<Phase>({ kind: "loading" });
   const [review, setReview] = createSignal<YearPlanReview>();
   const [refreshing, setRefreshing] = createSignal(false);
@@ -133,6 +174,7 @@ export function YearPlanView() {
    */
   async function load(id: string, force: boolean, from: string | undefined) {
     controller?.abort();
+    const fieldId = planField();
     const ctrl = new AbortController();
     controller = ctrl;
     const gen = generation;
@@ -146,7 +188,7 @@ export function YearPlanView() {
         if (next.navigation) setPendingNav(null);
       });
     };
-    const opts = { signal: ctrl.signal, onUpdate: show, from };
+    const opts = { signal: ctrl.signal, onUpdate: show, from, fieldId };
     try {
       if (force) {
         show(await ensureYearPlan(id, { ...opts, force: true }));
@@ -203,11 +245,14 @@ export function YearPlanView() {
     const f = s.farm();
     return f ? `${f.id}|${f.location.stateCode ?? ""}` : "";
   });
+  /** Each field has its own review and horizon chain: switching fields (or to "All fields") starts over like a farm switch. */
+  const fieldKey = createMemo(() => (byField() ? "*all" : (planField() ?? "")));
   createEffect(
-    on([farmKey, s.sessionEpoch], ([key]) => {
+    on([farmKey, fieldKey, s.sessionEpoch], ([key, field]) => {
       resetForFarm();
       const [id, state] = key.split("|");
       if (!id) return setPhase({ kind: "idle" });
+      if (field === "*all") return setPhase({ kind: "by_field" });
       if (!state) return setPhase({ kind: "needs_location" });
       setPhase({ kind: "loading" });
       void load(id, false, undefined);
@@ -228,7 +273,7 @@ export function YearPlanView() {
         if (version == null || previous == null || version === previous) return;
         if (!id || !current || controller || isActive(current)) return;
         const gen = generation;
-        void loadYearPlan(id, { from: viewFrom() })
+        void loadYearPlan(id, { from: viewFrom(), fieldId: planField() })
           .then((next) => {
             if (live(gen, id) && !controller) setReview(mergeServerReview(review(), next));
           })
@@ -363,7 +408,7 @@ export function YearPlanView() {
       setRescoreError("");
     });
     try {
-      const next = await rescore(id, rescoreBody(current.reviewId, option.optionId, drafts));
+      const next = await rescore(id, withFieldId(rescoreBody(current.reviewId, option.optionId, drafts), planField()));
       if (!live(gen, id) || review()?.reviewId !== current.reviewId) return;
       const previousSlot = open()?.slotId ?? null;
       // Stay on the same crop: its slot id when it survived, else the slot in the same position (a swapped crop gets a new id).
@@ -455,12 +500,15 @@ export function YearPlanView() {
       const before = workspace.rotationPlans.length;
       const result = await apply(
         id,
-        {
-          reviewId: current.reviewId,
-          optionId,
-          slotIds: slotsToApply(option).map((x) => x.slotId),
-          expectedWorkspaceVersion: workspace.version,
-        },
+        withFieldId(
+          {
+            reviewId: current.reviewId,
+            optionId,
+            slotIds: slotsToApply(option).map((x) => x.slotId),
+            expectedWorkspaceVersion: workspace.version,
+          },
+          planField(),
+        ),
         { idempotencyKey: key },
       );
       if (!live(gen, id)) return;
@@ -499,8 +547,12 @@ export function YearPlanView() {
       <section class="yp-panel" aria-labelledby="yp-heading" aria-busy={phase().kind === "loading"}>
         <h2 id="yp-heading" class="yp-title">
           Year plan
+          <Show when={fieldName()}>{(name) => <span class="yp-title-field"> · {name()}</span>}</Show>
         </h2>
         <Switch>
+          <Match when={phase().kind === "by_field"}>
+            <PlansByField rows={fieldRows()} onOpen={(id) => props.onOpenField?.(id)} />
+          </Match>
           <Match when={phase().kind === "idle"}>
             <div class="yp-card">
               <h3>Add a farm first</h3>
@@ -658,12 +710,13 @@ export function YearPlanView() {
         <h2 id="yp-saved-heading" class="yp-title">
           Saved seasons
         </h2>
-        <Planner />
+        <Planner fieldId={planField()} fields={farmFields()} />
       </section>
       <Show when={openOption()} keyed>
         {(option) => (
           <OptionSheet
             farmId={farmId() ?? ""}
+            fieldId={planField()}
             review={review()!}
             option={option}
             slotId={open()?.slotId ?? null}

@@ -27,6 +27,8 @@ export interface AgentTurnInput {
   /** The farmer's message, or the farmer-confirmed transcript. */
   text: string;
   farmId?: string | undefined;
+  /** 2026-11-03 (FIELDS_MULTICROP_SOIL_SPEC.md 12.5): the field selected in the shell; the route checks it names a field of the farm. */
+  fieldId?: string | undefined;
   planId?: string | undefined;
   selectedDate?: string | undefined;
   scenarioId?: string | undefined;
@@ -307,7 +309,7 @@ export async function runAgentTurn(deps: AgentDeps, input: AgentTurnInput): Prom
 
   const contextMessage = (): string => {
     const rc = {
-      runtimeMode: input.mode, farmId: input.farmId ?? null, planId: input.planId ?? null, selectedDate: input.selectedDate ?? null, scenarioId: input.scenarioId ?? null, today: asOf.slice(0, 10),
+      runtimeMode: input.mode, farmId: input.farmId ?? null, ...(input.fieldId ? { fieldId: input.fieldId } : {}), planId: input.planId ?? null, selectedDate: input.selectedDate ?? null, scenarioId: input.scenarioId ?? null, today: asOf.slice(0, 10),
       ...(selectedFarmProvenance ? { selectedFarmProvenance } : {}),
       ...(productResolutions.size > 0 ? { productResolution: [...productResolutions.values()] } : {}),
       ...(briefingToolResultId ? { briefingToolResultId } : {}),
@@ -374,7 +376,8 @@ export async function runAgentTurn(deps: AgentDeps, input: AgentTurnInput): Prom
     if (farmUuid && advertised.some((t) => t.name === "get_farm_briefing")) {
       if (deps.signal?.aborted) throw new Stop("cancelled", "cancelled", "Request cancelled");
       const callId = "server_get_farm_briefing_1";
-      const view = await executeCall("get_farm_briefing", JSON.stringify({ farmId: farmUuid }), callId);
+      // 12.5: the selected field travels to the briefing, which then describes that field.
+      const view = await executeCall("get_farm_briefing", JSON.stringify({ farmId: farmUuid, ...(input.fieldId ? { fieldId: input.fieldId } : {}) }), callId);
       briefingView = view;
       serverInitiated.push("get_farm_briefing");
       briefingToolResultId = toolResultIds[toolResultIds.length - 1] ?? null;
@@ -419,7 +422,7 @@ export async function runAgentTurn(deps: AgentDeps, input: AgentTurnInput): Prom
           if (deps.signal?.aborted) throw new Stop("cancelled", "cancelled", "Request cancelled");
           // Review nit (c), 2026-11-02: a repeat get_farm_briefing call for the selected farm gets the stored server result view
           // (same toolResultId); it is not run again and not counted as a tool call. Another farm id runs normally (owner-checked).
-          if (c.name === "get_farm_briefing" && briefingView !== null && sameFarmArg(c.arguments, farmUuid)) {
+          if (c.name === "get_farm_briefing" && briefingView !== null && sameFarmArg(c.arguments, farmUuid, input.fieldId)) {
             trace.add("tool_call", { pass: "tool_round", detail: { tool: "get_farm_briefing", callId: c.callId, status: "reused", toolResultId: briefingToolResultId } });
             outputs.push({ type: "function_call_output", call_id: c.callId, output: briefingView });
             continue;
@@ -755,11 +758,15 @@ export async function runAgentTurn(deps: AgentDeps, input: AgentTurnInput): Prom
   return result;
 }
 
-/** True when a get_farm_briefing argument string names the given farm (anything unparsable is false). */
-function sameFarmArg(rawArgs: string, farmId: string | null | undefined): boolean {
+/**
+ * True when a get_farm_briefing argument string names the given farm and, when it names a field, the selected field
+ * (12.5: another field is a different briefing and runs). Anything unparsable is false.
+ */
+function sameFarmArg(rawArgs: string, farmId: string | null | undefined, fieldId?: string | undefined): boolean {
   if (!farmId) return false;
   try {
-    return (JSON.parse(rawArgs) as { farmId?: unknown } | null)?.farmId === farmId;
+    const a = JSON.parse(rawArgs) as { farmId?: unknown; fieldId?: unknown } | null;
+    return a?.farmId === farmId && (a.fieldId === undefined || a.fieldId === null || a.fieldId === fieldId);
   } catch {
     return false;
   }

@@ -3826,6 +3826,13 @@
             "type": "string",
             "minLength": 1,
             "maxLength": 120
+          },
+          "scope": {
+            "type": "string",
+            "enum": [
+              "field",
+              "farm"
+            ]
           }
         },
         "required": [

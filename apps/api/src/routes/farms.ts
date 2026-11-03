@@ -18,8 +18,22 @@ import { monitoringSnapshot } from '../services/monitoring';
 import type { PriceDeps } from '../plans/adapters/market-outlook';
 import type { FetchLike } from '../ingest/http';
 import {currentMandiQuotes} from '../services/market-quotes';
+import { currentCycle } from '../services/today/view';
 import { ensureYearPlan, type YearPlanDeps } from '../services/year-plan/service';
 import { MonitorSettings, readMonitorSettings, saveMonitorSnapshot, updateMonitorSettings } from '../services/monitor-schedule';
+
+/**
+ * Which year plan the automatic start after a workspace save covers (FIELDS_MULTICROP_SOIL_SPEC.md 12.2, 2026-11-03). A farm
+ * with fields is planned per field, so the start takes the first field in stored order that has a current cycle of its own;
+ * when none has one there is nothing to plan yet (the Plan tab asks per field) and the start is skipped with a note for the
+ * log. A farm without fields keeps the farm-wide start.
+ */
+export type AutomaticPlanTarget = { kind: 'plan'; fieldId?: string } | { kind: 'skip'; code: string; note: string };
+export function automaticPlanTarget(saved: Pick<FarmWorkspace, 'fields' | 'cycles'>): AutomaticPlanTarget {
+  if (!saved.fields.length) return { kind: 'plan' };
+  const field = saved.fields.find((f) => currentCycle(saved, f.id));
+  return field ? { kind: 'plan', fieldId: field.id } : { kind: 'skip', code: 'year_plan_skipped_no_field_crop', note: 'Workspace saved; automatic year plan skipped because no field has a current crop cycle' };
+}
 
 export async function farmRoutes(app: FastifyInstance, opts: { config: Config; pool: Pool; storage: StorageAdapter; prices?: PriceDeps | undefined; weatherFetch?: FetchLike | undefined; yearPlan?: YearPlanDeps | undefined }) {
   const { config, pool, storage } = opts;
@@ -41,7 +55,12 @@ export async function farmRoutes(app: FastifyInstance, opts: { config: Config; p
     // save never fails because of planning. A workspace saved with unknown harvest history (the farm-setup save, before
     // the history dialog) is not planned here, so setup does not spend a model call on a context about to change; the
     // Plan tab generates one on first open (POST /year-plan) and offers Refresh when the plan shown is stale.
-    if(opts.yearPlan&&saved.previousHarvest.status!=='unknown')await ensureYearPlan(opts.yearPlan,auth,req.params.id).catch(()=>req.log.warn({code:'year_plan_enqueue_unavailable'},'Workspace saved; automatic year-plan enqueue unavailable'));
+    // Fields (FIELDS_MULTICROP_SOIL_SPEC.md 12.2, 2026-11-03): see automaticPlanTarget.
+    if(opts.yearPlan&&saved.previousHarvest.status!=='unknown'){
+      const target=automaticPlanTarget(saved);
+      if(target.kind==='skip')req.log.info({code:target.code},target.note);
+      else await ensureYearPlan(opts.yearPlan,auth,req.params.id,target.fieldId?{fieldId:target.fieldId}:{}).catch(()=>req.log.warn({code:'year_plan_enqueue_unavailable'},'Workspace saved; automatic year-plan enqueue unavailable'));
+    }
     return envelope(req.id,config.RUNTIME_MODE,saved);
   });
 

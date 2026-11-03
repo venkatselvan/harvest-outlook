@@ -6,9 +6,17 @@ import { ApiError } from "../../lib/api";
  * GET /api/v1/farms/:id/season-preview (ROUND3_SPEC.md section 7). Synchronous on the server (no job, no model call).
  * The response is validated against the shared contract and checked to belong to the requested farm.
  */
-export type SeasonPreviewRequest =
+export type SeasonPreviewRequest = (
   | { planId: string }
-  | { cropId: string; productId?: string; sowing: string; harvestLatest?: string; establishmentMethod?: string; systemId?: string };
+  | { cropId: string; productId?: string; sowing: string; harvestLatest?: string; establishmentMethod?: string; systemId?: string }
+) & {
+  /** 2026-11-03 (FIELDS_MULTICROP_SOIL_SPEC.md 12.3): preview on this field (its cycles, saved seasons and area); omitted = the whole farm. */
+  fieldId?: string;
+};
+
+/** The request with the field it is for; unchanged without a field. */
+export const withPreviewField = (q: SeasonPreviewRequest, fieldId: string | null | undefined): SeasonPreviewRequest =>
+  fieldId ? { ...q, fieldId } : q;
 
 export class SeasonPreviewDataError extends Error {
   constructor(message: string) {

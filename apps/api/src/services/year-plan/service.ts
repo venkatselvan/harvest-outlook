@@ -6,7 +6,7 @@ import type { Config } from '../../config';
 import { withTransaction, type Pool } from '../../db/pool';
 import { REPO_ROOT } from '../../catalogue/files';
 import { getFarm } from '../farms';
-import { getWorkspace, putWorkspace } from '../workspace';
+import { fieldAreaHa, fieldView, getWorkspace, LEGACY_CYCLE_NOTE, legacyCycles, putWorkspace, requireField } from '../workspace';
 import { enqueue } from '../jobs';
 import { ApiError, notFound } from '../errors';
 import { payloadHash } from '../hash';
@@ -84,6 +84,9 @@ export interface YearPlanContext {
   chainHash: string;
   /** The previous horizon's first plan this context follows (later horizons only); kept when an apply re-keys the row. */
   assumedInput: AssumedPredecessorInput | null;
+  /** 2026-11-03 (12.2): the field this context plans (null on a farm without fields) and its spherical area. */
+  fieldId: string | null;
+  fieldAreaHa: number | null;
 }
 interface InputsSummary {
   annualMeans: Record<string, number>; climatologyRainByMonth: number[] | null; climatologySource: { sourceId: string; years: { from: number; to: number } } | null;
@@ -97,6 +100,8 @@ interface StoredContext {
   edits?: Record<string, StoredEdit>;
   /** YearPlanContext.chainHash at insert (absent on rows written before 2026-11-01 review fixes). */
   chainHash?: string;
+  /** 2026-11-03: the field the review plans; absent on a farm without fields (rows are matched with IS NOT DISTINCT FROM). */
+  fieldId?: string;
 }
 interface Row {
   id: string; owner_id: string; farm_id: string; mode: string; context_hash: string; input_context: StoredContext; result: YearPlanReview;
@@ -122,16 +127,23 @@ function fileHash(rel: string): string {
 }
 
 type ContextDeps = Pick<YearPlanDeps, 'pool' | 'config'> & { timeline?: TimelineFn | undefined };
-interface ContextBase { farm: Farm; workspace: FarmWorkspace; soil: Awaited<ReturnType<typeof farmSoilMarkers>>; soilPh: number | undefined; soilSummary: string }
-async function loadBase(deps: ContextDeps, ownerId: string, farmId: string): Promise<ContextBase> {
+/**
+ * `workspace` is the field view (12.1) when the farm has fields: the field's cycles and saved seasons plus farm-wide legacy
+ * ones, with the field polygon as the boundary. On a farm without fields it is the stored workspace and fieldId is null.
+ */
+interface ContextBase { farm: Farm; workspace: FarmWorkspace; soil: Awaited<ReturnType<typeof farmSoilMarkers>>; soilPh: number | undefined; soilSummary: string; fieldId: string | null; fieldAreaHa: number | null }
+async function loadBase(deps: ContextDeps, ownerId: string, farmId: string, fieldId: string | null = null): Promise<ContextBase> {
   const farm = await getFarm(deps.pool, ownerId, farmId);
   if (!farm) throw notFound('Farm');
-  const workspace = await getWorkspace(deps.pool, ownerId, farmId);
+  const stored = await getWorkspace(deps.pool, ownerId, farmId);
+  // 400 field_required on a farm with fields without a fieldId; 404 field_not_found for an unknown field.
+  const field = requireField(stored, fieldId);
+  const workspace = field ? fieldView(stored, field.id) : stored;
   const soil = await farmSoilMarkers(deps, ownerId, farmId);
   const soilPh = planningMeasuredPh(soil);
   const n = soil.samples.length;
   const soilSummary = !n ? 'No confirmed soil report for this field.' : soilPh !== undefined ? `Confirmed laboratory soil pH ${soilPh} (${n} confirmed sample${n > 1 ? 's' : ''}).` : `${n} confirmed soil sample${n > 1 ? 's' : ''}; no single compatible laboratory pH.`;
-  return { farm, workspace, soil, soilPh, soilSummary };
+  return { farm, workspace, soil, soilPh, soilSummary, fieldId: field?.id ?? null, fieldAreaHa: field ? fieldAreaHa(stored, field.id) : null };
 }
 /** The soil ratings module's assumed-pool rater when it exists (same choice as crop fit). */
 function rateMarker(): RateMarkerFn {
@@ -184,11 +196,13 @@ export function followsSentence(ctx: EngineContext): string | null {
  * of its first option; the review id and that option's crop signature are hashed, so a changed year-1 plan makes year 2 stale.
  * Throws ApiError 400 validation_error for any other `from`.
  */
-export async function yearPlanContext(deps: ContextDeps, ownerId: string, farmId: string, asOf: string, horizonFrom: string | null = null, opts: { candidates?: boolean; base?: ContextBase; keepAssumed?: AssumedPredecessorInput | null } = {}): Promise<YearPlanContext> {
-  const base = opts.base ?? await loadBase(deps, ownerId, farmId);
-  const { farm, workspace, soil, soilPh, soilSummary } = base;
+export async function yearPlanContext(deps: ContextDeps, ownerId: string, farmId: string, asOf: string, horizonFrom: string | null = null, opts: { candidates?: boolean; base?: ContextBase; keepAssumed?: AssumedPredecessorInput | null; fieldId?: string | null | undefined } = {}): Promise<YearPlanContext> {
+  const base = opts.base ?? await loadBase(deps, ownerId, farmId, opts.fieldId ?? null);
+  const { farm, workspace, soil, soilPh, soilSummary, fieldId } = base;
   const facts = Object.fromEntries(Object.entries(farm.facts).map(([k, f]) => [k, { value: f.value, basis: f.basis, confirmed: f.confirmed }]));
-  const scenarioArgs = { workspace, farm: { location: { stateCode: farm.location.stateCode, districtId: farm.location.districtId }, areaHectares: farm.areaHectares, facts }, asOf, soilSummary, timeline: deps.timeline ?? stageTimeline };
+  // 12.2: a field's plan uses the field's own area (spherical area of its polygon), not the farm fact.
+  const areaHectares = base.fieldAreaHa ?? farm.areaHectares;
+  const scenarioArgs = { workspace, farm: { location: { stateCode: farm.location.stateCode, districtId: farm.location.districtId }, areaHectares, facts }, asOf, soilSummary, timeline: deps.timeline ?? stageTimeline };
   let assumedPredecessor: AssumedPredecessorInput | null = null;
   if (horizonFrom) {
     const current = buildScenario(scenarioArgs);
@@ -203,7 +217,7 @@ export async function yearPlanContext(deps: ContextDeps, ownerId: string, farmId
       const prevFrom = k === 0 ? null : starts.futures[k - 1]!;
       const prev = await yearPlanContext(deps, ownerId, farmId, asOf, prevFrom, { candidates: false, base });
       // Matched on the day-free chain hash (rows written before it existed: the full hash), newest first.
-      const row = (await deps.pool.query<Row>(`SELECT ${COLS} FROM farm_year_plans WHERE farm_id=$1 AND owner_id=$2 AND mode=$3 AND (input_context->>'chainHash'=$6 OR context_hash=$4) AND archived_at IS NULL AND horizon_from IS NOT DISTINCT FROM $5::date AND status IN ('ready','partial') ORDER BY created_at DESC LIMIT 1`, [farmId, ownerId, deps.config.RUNTIME_MODE, prev.hash, prevFrom, prev.chainHash])).rows[0];
+      const row = (await deps.pool.query<Row>(`SELECT ${COLS} FROM farm_year_plans WHERE farm_id=$1 AND owner_id=$2 AND mode=$3 AND (input_context->>'chainHash'=$6 OR context_hash=$4) AND archived_at IS NULL AND horizon_from IS NOT DISTINCT FROM $5::date AND status IN ('ready','partial') AND input_context->>'fieldId' IS NOT DISTINCT FROM $7::text ORDER BY created_at DESC LIMIT 1`, [farmId, ownerId, deps.config.RUNTIME_MODE, prev.hash, prevFrom, prev.chainHash, fieldId])).rows[0];
       const first = row?.result.options[0];
       const last = first ? (first.slots.filter((x) => !x.fixed).at(-1) ?? first.slots.at(-1)) : undefined;
       if (row && first && last) assumedPredecessor = { cropId: last.cropId, cropName: last.cropName, occupancy: { ...last.occupancy }, optionLabel: first.label, horizonFrom: prev.ctx.horizon.from, reviewId: row.id, signature: cropSignature(first) };
@@ -212,6 +226,7 @@ export async function yearPlanContext(deps: ContextDeps, ownerId: string, farmId
   let ctx: EngineContext;
   try { ctx = buildScenario({ ...scenarioArgs, horizonFrom, assumedPredecessor }); }
   catch (e) { if (e instanceof HorizonError) throw new ApiError(400, 'validation_error', e.message, { allowed: e.allowed }); throw e; }
+  if (fieldId) noteLegacyCycles(ctx, workspace);
   const set: CandidateSet = opts.candidates === false ? { candidates: [], skipped: [], notes: [] } : enumerateCandidates(ctx);
   const soilChecks = soilChecksOf(soil);
   // Review MEDIUM-2 (2026-11-01): the workspace part covers what this horizon reads, not the workspace version: every cycle
@@ -223,6 +238,8 @@ export async function yearPlanContext(deps: ContextDeps, ownerId: string, farmId
     farm: { location: farm.location, area: farm.areaHectares, facts: Object.fromEntries(Object.entries(farm.facts).map(([k, f]) => [k, { value: f.value, unit: f.unit, basis: f.basis, confirmed: f.confirmed }])) },
     workspace: { boundary: workspace.boundary, previousHarvest: workspace.previousHarvest, cycles: workspace.cycles, rotationPlans: relevantSeasons(workspace, ctx) },
     soilPh: soilPh ?? null,
+    // 12.2: each field has its own review and horizon chain. Only present with a field, so farm-wide hashes are unchanged.
+    ...(fieldId ? { field: { id: fieldId, areaHa: base.fieldAreaHa } } : {}),
     files: { pool: fileHash(data.DATA_FILES.pool), agronomy: fileHash(data.DATA_FILES.agronomy), yieldCost: fileHash(data.DATA_FILES.yieldCost), greenManure: fileHash(data.DATA_FILES.greenManure), intercropping: fileHashOrAbsent(data.DATA_FILES.intercropping) },
     mode: deps.config.RUNTIME_MODE, model: deps.config.META_TEXT_MODEL, keyAvailable: !!deps.config.MODEL_API_KEY,
   };
@@ -233,8 +250,24 @@ export async function yearPlanContext(deps: ContextDeps, ownerId: string, farmId
   return {
     hash: payloadHash(material), chainHash: payloadHash(stable), asOf, farmId, farmVersion: farm.version, workspaceVersion: workspace.version, ctx, set, farm, soilPh, soilSummary,
     horizonFrom: horizonKey(ctx), soilChecks: soilChecks.fn, assumedInput: ctx.assumed ? assumedPredecessor : null,
+    fieldId, fieldAreaHa: base.fieldAreaHa,
   };
 }
+
+/**
+ * 12.1: a cycle recorded for the whole farm before the fields were drawn is counted on every field until harvested. Its
+ * occupant note and a review limitation say so (the growing crop is the fixed slot, so the limitation covers that case).
+ */
+function noteLegacyCycles(ctx: EngineContext, workspace: FarmWorkspace): void {
+  const legacy = legacyCycles(workspace);
+  if (!legacy.length) return;
+  const ids = new Set(legacy.map((c) => c.id));
+  for (const o of ctx.scenario.occupied ?? []) {
+    if (o.source === 'recorded_cycle' && ids.has(o.id)) o.note = `${capitalise(LEGACY_CYCLE_NOTE)}.${o.note ? ` ${o.note}` : ''}`.slice(0, 1000);
+  }
+  for (const c of legacy) ctx.warnings.push(`${c.cropName ?? data.cropDisplayName(c.cropId)} (sown ${c.sowingDate}) was ${LEGACY_CYCLE_NOTE}; it is counted on this field until it is harvested.`);
+}
+const isLegacyNote = (w: string) => w.includes(LEGACY_CYCLE_NOTE);
 
 /** Saved seasons the horizon reads: occupancy overlapping it (later horizons: from the previous horizon's start); undated ones always (they warn). */
 function relevantSeasons(workspace: FarmWorkspace, ctx: EngineContext): FarmWorkspace['rotationPlans'] {
@@ -245,10 +278,12 @@ function relevantSeasons(workspace: FarmWorkspace, ctx: EngineContext): FarmWork
 }
 
 /** Context of a stored row's horizon; a horizon that no longer exists (the field's dates moved) is a stale review. */
-async function rowContext(deps: ContextDeps, ownerId: string, farmId: string, asOf: string, row: Pick<Row, 'horizon_from_text'>): Promise<YearPlanContext> {
-  try { return await yearPlanContext(deps, ownerId, farmId, asOf, row.horizon_from_text ?? null); }
-  catch (e) { if (e instanceof ApiError && e.code === 'validation_error') throw staleError(); throw e; }
+async function rowContext(deps: ContextDeps, ownerId: string, farmId: string, asOf: string, row: Pick<Row, 'horizon_from_text' | 'input_context'>): Promise<YearPlanContext> {
+  try { return await yearPlanContext(deps, ownerId, farmId, asOf, row.horizon_from_text ?? null, { fieldId: row.input_context.fieldId ?? null }); }
+  catch (e) { if (e instanceof ApiError && ['validation_error', 'field_required', 'field_not_found'].includes(e.code)) throw staleError(); throw e; }
 }
+/** 12.2: the review's field on the response; only on a farm with fields (a farm-wide review keeps its old shape). */
+const fieldPart = (c: Pick<YearPlanContext, 'fieldId' | 'fieldAreaHa'>): Partial<YearPlanReview> => (c.fieldId ? { fieldId: c.fieldId, fieldAreaHa: c.fieldAreaHa } : {});
 
 function blank(c: YearPlanContext): YearPlanReview {
   return {
@@ -256,7 +291,8 @@ function blank(c: YearPlanContext): YearPlanReview {
     generatedAt: null, retryAfter: null, modelInvocation: null, scenario: { ...c.ctx.scenario, soilSummary: c.soilSummary }, weights: { ...WEIGHTS }, options: [], navigation: navigationOf(c.ctx),
     // Saved-season follow-up: null until the worker records how the options were chosen.
     modelSelection: null,
-    candidatesConsidered: c.set.candidates.length, summary: c.horizonFrom ? 'No plan has been made for this year yet.' : 'No year plan has been made for this field yet.', limitations: c.ctx.warnings.filter((w) => w.startsWith('Nothing is recorded or saved')), appliedOptionIds: [],
+    candidatesConsidered: c.set.candidates.length, summary: c.horizonFrom ? 'No plan has been made for this year yet.' : 'No year plan has been made for this field yet.', limitations: c.ctx.warnings.filter((w) => w.startsWith('Nothing is recorded or saved') || isLegacyNote(w)), appliedOptionIds: [],
+    ...fieldPart(c),
   };
 }
 
@@ -295,7 +331,7 @@ function withOccupants(row: Row, c: YearPlanContext): YearPlanScenario {
 }
 
 async function view(deps: Pick<YearPlanDeps, 'pool'>, row: Row, c: YearPlanContext): Promise<YearPlanReview> {
-  const result = YearPlanReview.parse({ ...row.result, scenario: withOccupants(row, c), reviewId: row.id, jobId: row.job_id, contextHash: row.context_hash, status: row.status, stale: row.context_hash !== c.hash, navigation: navigationOf(c.ctx) });
+  const result = YearPlanReview.parse({ ...row.result, scenario: withOccupants(row, c), reviewId: row.id, jobId: row.job_id, contextHash: row.context_hash, status: row.status, stale: row.context_hash !== c.hash, navigation: navigationOf(c.ctx), ...fieldPart(c) });
   result.modelInvocation = (await invocation(deps, row)) ?? result.modelInvocation;
   if ((row.status === 'pending' || row.status === 'running') && row.job_id) {
     const job = (await deps.pool.query<{ state: string }>('SELECT state FROM jobs WHERE id=$1 AND owner_id=$2', [row.job_id, row.owner_id])).rows[0];
@@ -304,10 +340,11 @@ async function view(deps: Pick<YearPlanDeps, 'pool'>, row: Row, c: YearPlanConte
   return result;
 }
 
-export async function readYearPlan(deps: YearPlanDeps, ownerId: string, farmId: string, opts: { from?: string | undefined } = {}): Promise<YearPlanReview> {
-  const c = await yearPlanContext(deps, ownerId, farmId, todayIst(nowOf(deps)), opts.from ?? null);
-  // Rows written before round 3 have horizon_from NULL and count as the current horizon.
-  const row = (await deps.pool.query<Row>(`SELECT ${COLS} FROM farm_year_plans WHERE farm_id=$1 AND owner_id=$2 AND mode=$3 AND archived_at IS NULL AND horizon_from IS NOT DISTINCT FROM $5::date ORDER BY (context_hash=$4) DESC, created_at DESC LIMIT 1`, [farmId, ownerId, deps.config.RUNTIME_MODE, c.hash, c.horizonFrom])).rows[0];
+export async function readYearPlan(deps: YearPlanDeps, ownerId: string, farmId: string, opts: { from?: string | undefined; fieldId?: string | undefined } = {}): Promise<YearPlanReview> {
+  const c = await yearPlanContext(deps, ownerId, farmId, todayIst(nowOf(deps)), opts.from ?? null, { fieldId: opts.fieldId ?? null });
+  // Rows written before round 3 have horizon_from NULL and count as the current horizon. 12.2: only this field's rows
+  // (input_context.fieldId; absent on a farm without fields, so NULL matches NULL).
+  const row = (await deps.pool.query<Row>(`SELECT ${COLS} FROM farm_year_plans WHERE farm_id=$1 AND owner_id=$2 AND mode=$3 AND archived_at IS NULL AND horizon_from IS NOT DISTINCT FROM $5::date AND input_context->>'fieldId' IS NOT DISTINCT FROM $6::text ORDER BY (context_hash=$4) DESC, created_at DESC LIMIT 1`, [farmId, ownerId, deps.config.RUNTIME_MODE, c.hash, c.horizonFrom, c.fieldId])).rows[0];
   return row ? view(deps, row, c) : blank(c);
 }
 
@@ -317,8 +354,8 @@ export async function readYearPlan(deps: YearPlanDeps, ownerId: string, farmId: 
  * finished row when `force` is set (Refresh, Try again), is archived and replaced by a fresh review at once; a plan that
  * is still being built is never replaced.
  */
-export async function ensureYearPlan(deps: YearPlanDeps, auth: { ownerId: string; sessionId: string | null }, farmId: string, opts: { force?: boolean; from?: string | undefined } = {}): Promise<YearPlanReview> {
-  const c = await yearPlanContext(deps, auth.ownerId, farmId, todayIst(nowOf(deps)), opts.from ?? null);
+export async function ensureYearPlan(deps: YearPlanDeps, auth: { ownerId: string; sessionId: string | null }, farmId: string, opts: { force?: boolean; from?: string | undefined; fieldId?: string | undefined } = {}): Promise<YearPlanReview> {
+  const c = await yearPlanContext(deps, auth.ownerId, farmId, todayIst(nowOf(deps)), opts.from ?? null, { fieldId: opts.fieldId ?? null });
   const mode = deps.config.RUNTIME_MODE;
   const id = await withTransaction(deps.pool, async (tx) => {
     const owned = await tx.query('SELECT id FROM farms WHERE id=$1 AND owner_id=$2 AND deleted_at IS NULL FOR UPDATE', [farmId, auth.ownerId]);
@@ -342,7 +379,7 @@ export async function ensureYearPlan(deps: YearPlanDeps, auth: { ownerId: string
     }
     const reviewId = randomUUID();
     const result = { ...blank(c), reviewId, status: 'pending' as const, summary: 'Building crop sequences for this field.' };
-    const stored: StoredContext = { asOf: c.asOf, scenario: result.scenario, candidateIds: [], norm: null, inputs: null, chainHash: c.chainHash };
+    const stored: StoredContext = { asOf: c.asOf, scenario: result.scenario, candidateIds: [], norm: null, inputs: null, chainHash: c.chainHash, ...(c.fieldId ? { fieldId: c.fieldId } : {}) };
     const ins = await tx.query("INSERT INTO farm_year_plans(id,owner_id,farm_id,session_id,mode,context_hash,input_versions,input_context,result,status,horizon_from) VALUES($1,$2,$3,$4,$5,$6,$7::jsonb,$8::jsonb,$9::jsonb,'pending',$10::date) ON CONFLICT (farm_id,mode,context_hash) WHERE archived_at IS NULL DO NOTHING RETURNING id",
       [reviewId, auth.ownerId, farmId, auth.sessionId, mode, c.hash, JSON.stringify(result.inputVersions), JSON.stringify(stored), JSON.stringify(result), c.horizonFrom]);
     if (!ins.rowCount) return (await tx.query<{ id: string }>('SELECT id FROM farm_year_plans WHERE farm_id=$1 AND mode=$2 AND context_hash=$3 AND archived_at IS NULL', [farmId, mode, c.hash])).rows[0]!.id;
@@ -415,9 +452,10 @@ export async function generateYearPlan(deps: YearPlanDeps, reviewId: string, own
   if (row.status !== 'pending') return { status: row.status, reason: 'already_claimed' };
   const now = nowOf(deps);
   let c: YearPlanContext;
-  try { c = await yearPlanContext(deps, ownerId, row.farm_id, todayIst(now), row.horizon_from_text ?? null); }
+  try { c = await yearPlanContext(deps, ownerId, row.farm_id, todayIst(now), row.horizon_from_text ?? null, { fieldId: row.input_context.fieldId ?? null }); }
   catch (e) {
-    if (!(e instanceof ApiError && e.code === 'validation_error')) throw e;
+    // A field drawn or deleted since the row was made (field_required, field_not_found) also means changed inputs.
+    if (!(e instanceof ApiError && ['validation_error', 'field_required', 'field_not_found'].includes(e.code))) throw e;
     // The horizon no longer exists for this field (its dates moved): close the row as changed inputs.
     await deps.pool.query("UPDATE farm_year_plans SET status='error',result=jsonb_set(result,'{summary}',to_jsonb($3::text)),finished_at=now() WHERE id=$1 AND owner_id=$2", [reviewId, ownerId, `${INPUTS_CHANGED_BEFORE_START} Ask for a new plan.`]);
     return { status: 'error', reviewId };
@@ -533,7 +571,7 @@ export async function generateYearPlan(deps: YearPlanDeps, reviewId: string, own
     if (!live || (!deps.config.MODEL_API_KEY && !deps.provider)) { result.modelSelection = { outcome: live ? 'not_configured' : 'not_used', detail: null }; result.limitations.push(live ? 'Meta is not configured; the plans were picked and labelled by code.' : 'Meta is not used in this runtime mode; the plans were picked and labelled by code.'); return finish(); }
     const session = row.session_id ? (await deps.pool.query('SELECT id FROM sessions WHERE id=$1 AND owner_id=$2 AND revoked_at IS NULL AND expires_at>now()', [row.session_id, ownerId])).rows[0] : null;
     if (!session || (await isCancelled())) { result.modelSelection = { outcome: 'cancelled', detail: null }; result.limitations.push('The requesting session expired or the request was cancelled before the model call; the plans were picked by code.'); return finish(); }
-    if ((await yearPlanContext(deps, ownerId, row.farm_id, c.asOf, c.horizonFrom, { candidates: false })).hash !== row.context_hash) { result.status = 'error'; result.stale = true; result.options = []; result.summary = `${INPUTS_CHANGED_WHILE_BUILDING} Ask for a new plan.`; return finish(); }
+    if ((await yearPlanContext(deps, ownerId, row.farm_id, c.asOf, c.horizonFrom, { candidates: false, fieldId: c.fieldId })).hash !== row.context_hash) { result.status = 'error'; result.stale = true; result.options = []; result.summary = `${INPUTS_CHANGED_WHILE_BUILDING} Ask for a new plan.`; return finish(); }
     const sel = await selectWithMeta(deps, { reviewId, ownerId, sessionId: row.session_id, scenario: result.scenario, candidates });
     stored.meta = { failure: sel.failure, dispatched: sel.dispatched, model: sel.model, costUsd: sel.costUsd, usage: sel.usage, labelAdjusted: sel.labelAdjusted };
     result.modelSelection = sel.origin === 'model' ? { outcome: 'model', detail: null } : { outcome: 'failed', detail: (sel.failure ?? 'unknown').slice(0, 200) };
@@ -562,8 +600,9 @@ export async function generateYearPlan(deps: YearPlanDeps, reviewId: string, own
   }
 }
 
-async function loadRow(deps: YearPlanDeps, ownerId: string, farmId: string, reviewId: string): Promise<Row> {
-  const row = (await deps.pool.query<Row>(`SELECT ${COLS} FROM farm_year_plans WHERE id=$1 AND farm_id=$2 AND owner_id=$3 AND mode=$4 AND archived_at IS NULL`, [reviewId, farmId, ownerId, deps.config.RUNTIME_MODE])).rows[0];
+/** 12.2: `fieldId` is the caller's field (validated by requireField); a review of another field (or farm-wide) is not found. */
+async function loadRow(deps: YearPlanDeps, ownerId: string, farmId: string, reviewId: string, fieldId: string | null = null): Promise<Row> {
+  const row = (await deps.pool.query<Row>(`SELECT ${COLS} FROM farm_year_plans WHERE id=$1 AND farm_id=$2 AND owner_id=$3 AND mode=$4 AND archived_at IS NULL AND input_context->>'fieldId' IS NOT DISTINCT FROM $5::text`, [reviewId, farmId, ownerId, deps.config.RUNTIME_MODE, fieldId])).rows[0];
   if (!row) throw notFound('Year plan');
   if (!['ready', 'partial'].includes(row.status)) throw new ApiError(409, 'review_not_ready', 'Wait for the year plan to finish first');
   return row;
@@ -590,14 +629,15 @@ function restoreInputs(sc: StoredContext, asOf: string, ctx: EngineContext, soil
  * ready (or partial) review, for one-off slot evaluations outside the plan (the season preview). The price outlooks are
  * not restored (the caller fetches the keys it needs); null when no finished review matches the current inputs.
  */
-export async function storedEngineInputs(deps: YearPlanDeps, ownerId: string, farmId: string, horizonFrom: string | null = null, opts: { forDate?: string | undefined } = {}): Promise<{ ctx: EngineContext; inputs: Inputs; norm: ScoringNorm | null; reviewId: string; asOf: string; horizonFrom: string | null } | null> {
+export async function storedEngineInputs(deps: YearPlanDeps, ownerId: string, farmId: string, horizonFrom: string | null = null, opts: { forDate?: string | undefined; fieldId?: string | null | undefined } = {}): Promise<{ ctx: EngineContext; inputs: Inputs; norm: ScoringNorm | null; reviewId: string; asOf: string; horizonFrom: string | null } | null> {
   const asOf = todayIst(nowOf(deps));
-  let c = await yearPlanContext(deps, ownerId, farmId, asOf, opts.forDate ? null : horizonFrom, { candidates: false });
+  const fieldId = opts.fieldId ?? null;
+  let c = await yearPlanContext(deps, ownerId, farmId, asOf, opts.forDate ? null : horizonFrom, { candidates: false, fieldId });
   // Review MEDIUM-4 (2026-11-01): `forDate` (a season's sowing date) picks the horizon whose start is at or before it.
-  if (opts.forDate) { const from = horizonStartFor(c.ctx, opts.forDate); if (from) c = await yearPlanContext(deps, ownerId, farmId, asOf, from, { candidates: false }); }
+  if (opts.forDate) { const from = horizonStartFor(c.ctx, opts.forDate); if (from) c = await yearPlanContext(deps, ownerId, farmId, asOf, from, { candidates: false, fieldId }); }
   // Same inputs on an earlier day (chain hash) also count: the stored rain normals, soil pH and price scale do not depend
   // on the day, and the caller looks up the prices it needs as of today.
-  const row = (await deps.pool.query<Row>(`SELECT ${COLS} FROM farm_year_plans WHERE farm_id=$1 AND owner_id=$2 AND mode=$3 AND (context_hash=$4 OR input_context->>'chainHash'=$6) AND archived_at IS NULL AND horizon_from IS NOT DISTINCT FROM $5::date AND status IN ('ready','partial') ORDER BY (context_hash=$4) DESC, created_at DESC LIMIT 1`, [farmId, ownerId, deps.config.RUNTIME_MODE, c.hash, c.horizonFrom, c.chainHash])).rows[0];
+  const row = (await deps.pool.query<Row>(`SELECT ${COLS} FROM farm_year_plans WHERE farm_id=$1 AND owner_id=$2 AND mode=$3 AND (context_hash=$4 OR input_context->>'chainHash'=$6) AND archived_at IS NULL AND horizon_from IS NOT DISTINCT FROM $5::date AND status IN ('ready','partial') AND input_context->>'fieldId' IS NOT DISTINCT FROM $7::text ORDER BY (context_hash=$4) DESC, created_at DESC LIMIT 1`, [farmId, ownerId, deps.config.RUNTIME_MODE, c.hash, c.horizonFrom, c.chainHash, c.fieldId])).rows[0];
   if (!row) return null;
   return { ctx: c.ctx, inputs: restoreInputs(row.input_context, c.asOf, c.ctx, c.soilChecks), norm: row.input_context.norm ?? null, reviewId: row.id, asOf: c.asOf, horizonFrom: c.horizonFrom };
 }
@@ -615,7 +655,8 @@ export function horizonStartFor(ctx: EngineContext, date: string): string | null
 
 /** Farmer edit: code re-scores on the review's stored norm (no model call); returns "<base>:edit" with origin farmer_edit. */
 export async function rescoreYearPlan(deps: YearPlanDeps, ownerId: string, farmId: string, body: RescoreYearPlan): Promise<YearPlanOption> {
-  const row = await loadRow(deps, ownerId, farmId, body.reviewId);
+  const field = requireField(await getWorkspace(deps.pool, ownerId, farmId), body.fieldId);
+  const row = await loadRow(deps, ownerId, farmId, body.reviewId, field?.id ?? null);
   const c = await rowContext(deps, ownerId, farmId, todayIst(nowOf(deps)), row);
   if (c.hash !== row.context_hash) throw staleError();
   const baseId = body.optionId.endsWith(EDIT_SUFFIX) ? body.optionId.slice(0, -EDIT_SUFFIX.length) : body.optionId;
@@ -650,7 +691,9 @@ function occupiedNow(workspace: FarmWorkspace, stateId: string | null, fixed: { 
 
 /** Appends the option's seasons (fixed slot skipped) as yearplan:{reviewId}:{optionId}:{slotId}; idempotent; existing entries untouched. */
 export async function applyYearPlan(deps: YearPlanDeps, ownerId: string, farmId: string, body: ApplyYearPlan): Promise<{ workspace: FarmWorkspace; review: YearPlanReview }> {
-  const row = await loadRow(deps, ownerId, farmId, body.reviewId);
+  const field = requireField(await getWorkspace(deps.pool, ownerId, farmId), body.fieldId);
+  const fieldId = field?.id ?? null;
+  const row = await loadRow(deps, ownerId, farmId, body.reviewId, fieldId);
   const option = body.optionId.endsWith(EDIT_SUFFIX) ? row.input_context.edits?.[body.optionId]?.option : row.result.options.find((o) => o.optionId === body.optionId);
   if (!option) throw notFound('Plan option');
   let slots = option.slots.filter((s) => !s.fixed);
@@ -668,7 +711,8 @@ export async function applyYearPlan(deps: YearPlanDeps, ownerId: string, farmId:
   if (c.hash !== row.context_hash) throw staleError();
   if (workspace.version !== body.expectedWorkspaceVersion) throw new ApiError(409, 'version_conflict', 'Saved seasons changed; reload before applying this plan', { currentVersion: workspace.version });
   const additions = slots.filter((s) => !workspace.rotationPlans.some((p) => p.id === key(s.slotId)));
-  const occupied = occupiedNow(workspace, c.ctx.stateId, c.ctx.fixedSlot ? { cycleId: c.ctx.fixedSlot.cycleId, to: c.ctx.fixedSlot.occupancy.to } : null);
+  // 12.2: only this field's crops and seasons (plus farm-wide legacy ones) can overlap; other fields are separate land.
+  const occupied = occupiedNow(fieldView(workspace, fieldId), c.ctx.stateId, c.ctx.fixedSlot ? { cycleId: c.ctx.fixedSlot.cycleId, to: c.ctx.fixedSlot.occupancy.to } : null);
   for (const [i, s] of additions.entries()) {
     if (s.sowing < asOf) throw new ApiError(409, 'plan_window_passed', `${s.cropName}: the sowing date ${s.sowing} has passed`);
     const hit = occupied.find((o) => overlaps(s.occupancy.from, s.occupancy.to, o.from, o.to));
@@ -699,13 +743,13 @@ export async function applyYearPlan(deps: YearPlanDeps, ownerId: string, farmId:
     const held = addDays(s.occupancy.to, -ASSUMPTIONS.landPrepGapDays.value);
     const harvestLatest = s.kind === 'intercrop' && held > s.harvest.latest ? held : s.harvest.latest;
     const method = s.kind !== 'green_manure' && s.establishmentMethod ? { establishmentMethod: s.establishmentMethod } : {};
-    return { id: key(s.slotId), year: Number(s.sowing.slice(0, 4)), season: capitalise(season), cropId: s.cropId, cropName: s.cropName, ...product, ...kind, ...method, plannedSowingDate: s.sowing, plannedHarvestDate: harvestLatest, notes: notes.slice(0, 2000) };
+    return { id: key(s.slotId), year: Number(s.sowing.slice(0, 4)), season: capitalise(season), cropId: s.cropId, cropName: s.cropName, ...product, ...kind, ...method, plannedSowingDate: s.sowing, plannedHarvestDate: harvestLatest, notes: notes.slice(0, 2000), ...(fieldId ? { fieldId } : {}) };
   });
   let after = c;
   const saved = await putWorkspace(deps.pool, ownerId, farmId, { boundary: workspace.boundary, previousHarvest: workspace.previousHarvest, cycles: workspace.cycles, rotationPlans: [...workspace.rotationPlans, ...entries], expectedVersion: workspace.version }, {
     farmVersion: c.farmVersion,
     afterSave: async (client, savedWs) => {
-      after = await yearPlanContext({ ...deps, pool: client as unknown as Pool }, ownerId, farmId, asOf, c.horizonFrom, c.horizonFrom ? { keepAssumed: c.assumedInput } : {});
+      after = await yearPlanContext({ ...deps, pool: client as unknown as Pool }, ownerId, farmId, asOf, c.horizonFrom, c.horizonFrom ? { keepAssumed: c.assumedInput, fieldId } : { fieldId });
       const mode = deps.config.RUNTIME_MODE;
       await client.query("UPDATE jobs SET cancel_requested=true WHERE id IN (SELECT job_id FROM farm_year_plans WHERE farm_id=$1 AND owner_id=$2 AND mode=$3 AND context_hash=$4 AND id<>$5 AND archived_at IS NULL AND horizon_from IS NOT DISTINCT FROM $6::date) AND state IN ('queued','running')", [farmId, ownerId, mode, after.hash, row.id, c.horizonFrom]);
       await client.query('UPDATE farm_year_plans SET archived_at=now() WHERE farm_id=$1 AND owner_id=$2 AND mode=$3 AND context_hash=$4 AND id<>$5 AND archived_at IS NULL AND horizon_from IS NOT DISTINCT FROM $6::date', [farmId, ownerId, mode, after.hash, row.id, c.horizonFrom]);

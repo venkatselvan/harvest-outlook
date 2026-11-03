@@ -18,7 +18,7 @@ import { harvestPriceOutlook, type HarvestPriceOutlookArgs } from '../price-seri
 import { farmSoilMarkers, planningMeasuredPh } from '../soil-reports';
 import { neighbourhoodSeasonality } from '../today/ndvi';
 import { stageTimeline } from '../today/stage-timeline';
-import { getWorkspace } from '../workspace';
+import { fieldAreaHa, fieldView, getWorkspace } from '../workspace';
 import * as data from '../year-plan/data';
 import { enumerateCandidates, type CandidateSet } from '../year-plan/candidates';
 import { ENGINE_LIMITATIONS, marginNormaliser, runInputKeys, type ScoringNorm } from '../year-plan/assemble';
@@ -71,7 +71,11 @@ export interface CropFitDeps {
   } | undefined;
 }
 
-export interface RawRequest { mode?: CropFitRequest['mode'] | undefined; season?: CropSeason | undefined; sowing?: string | undefined; after?: string | undefined }
+export interface RawRequest {
+  mode?: CropFitRequest['mode'] | undefined; season?: CropSeason | undefined; sowing?: string | undefined; after?: string | undefined;
+  /** 2026-11-03 (12.3): rank for this field (its cycles, saved seasons, year plan and area); not part of CropFitRequest. */
+  fieldId?: string | undefined;
+}
 type Farm = NonNullable<Awaited<ReturnType<typeof getFarm>>>;
 type Soil = Awaited<ReturnType<typeof farmSoilMarkers>>;
 type Workspace = Awaited<ReturnType<typeof getWorkspace>>;
@@ -84,6 +88,9 @@ export interface FitContext {
   history: Pick<Workspace, 'cycles' | 'previousHarvest'>;
   /** buildScenario arguments, to read the next horizon's occupied intervals for the widened season context. */
   scenarioArgs: Parameters<typeof buildScenario>[0];
+  /** 2026-11-03 (12.3): the field ranked for (null = the whole farm) and the area used (the field's, else the farm fact). */
+  fieldId: string | null;
+  areaHa: number | null;
 }
 interface Row {
   id: string; owner_id: string; farm_id: string; mode: string; fit_mode: string; request_key: string; context_hash: string; request: CropFitRequest;
@@ -112,7 +119,8 @@ function fileHash(rel: string): string {
 }
 /** The intercropping file is optional in the year plan (absent: no intercrop candidates); hashed as 'absent' then. */
 function fileHashOrAbsent(rel: string): string { try { return fileHash(rel); } catch { return 'absent'; } }
-export const requestKey = (r: CropFitRequest): string => `${r.mode}:${r.season ?? ''}:${r.sowing ?? ''}${r.after ? `:after=${r.after}` : ''}`;
+/** 12.3: a field's reviews have their own key (`:field=<id>`), so refreshing one field never archives another field's review. */
+export const requestKey = (r: CropFitRequest, fieldId: string | null = null): string => `${r.mode}:${r.season ?? ''}:${r.sowing ?? ''}${r.after ? `:after=${r.after}` : ''}${fieldId ? `:field=${fieldId}` : ''}`;
 
 /**
  * Farm, workspace, confirmed soil, scenario and the normalised request. The hash covers the request, the IST day, the
@@ -125,13 +133,18 @@ export async function fitContext(deps: Pick<CropFitDeps, 'pool' | 'config' | 'no
   const asOf = todayIst(nowOf(deps));
   const farm = await getFarm(deps.pool, ownerId, farmId);
   if (!farm) throw notFound('Farm');
-  const workspace = await getWorkspace(deps.pool, ownerId, farmId);
+  const stored = await getWorkspace(deps.pool, ownerId, farmId);
+  // 12.3: with a field, the field view (its cycles and saved seasons plus farm-wide legacy ones; 404 field_not_found when
+  // unknown) and the field's own area. Without one the whole farm is ranked as before, also on a farm with fields.
+  const fieldId = raw.fieldId ?? null;
+  const workspace = fieldView(stored, fieldId);
+  const areaHa = fieldId ? fieldAreaHa(stored, fieldId) : farm.areaHectares;
   const soil = await farmSoilMarkers(deps, ownerId, farmId);
   const soilPh = planningMeasuredPh(soil);
   const n = soil.samples.length;
   const soilSummary = !n ? 'No confirmed soil report for this field.' : soilPh !== undefined ? `Confirmed laboratory soil pH ${soilPh} (${n} confirmed sample${n > 1 ? 's' : ''}).` : `${n} confirmed soil sample${n > 1 ? 's' : ''}; no single compatible laboratory pH.`;
   const facts = Object.fromEntries(Object.entries(farm.facts).map(([k, f]) => [k, { value: f.value, basis: f.basis, confirmed: f.confirmed }]));
-  const scenarioArgs: Parameters<typeof buildScenario>[0] = { workspace, farm: { location: { stateCode: farm.location.stateCode, districtId: farm.location.districtId }, areaHectares: farm.areaHectares, facts }, asOf, soilSummary, timeline: deps.timeline ?? stageTimeline };
+  const scenarioArgs: Parameters<typeof buildScenario>[0] = { workspace, farm: { location: { stateCode: farm.location.stateCode, districtId: farm.location.districtId }, areaHectares: areaHa, facts }, asOf, soilSummary, timeline: deps.timeline ?? stageTimeline };
   const ctx = buildScenario(scenarioArgs);
   let request: CropFitRequest;
   try { request = normaliseRequest(raw, ctx.fixedSlot !== null, asOf); }
@@ -141,29 +154,34 @@ export async function fitContext(deps: Pick<CropFitDeps, 'pool' | 'config' | 'no
   // Round 3: a newly ready year plan changes the hash, so yearPlanLabels follow the plan (checked for staleness in the job).
   // Only the current horizon (horizon_from NULL) counts: crop fit reads that plan alone, so generating later plan years
   // must not make the review stale.
-  const yearPlans = (await deps.pool.query<{ id: string }>("SELECT id FROM farm_year_plans WHERE farm_id=$1 AND owner_id=$2 AND mode=$3 AND archived_at IS NULL AND horizon_from IS NULL AND status='ready' ORDER BY created_at DESC, id LIMIT 5", [farmId, ownerId, deps.config.RUNTIME_MODE])).rows.map((r) => r.id);
+  // 12.3: only the year plans of the same field (or farm-wide ones when no field is named).
+  const yearPlans = (await deps.pool.query<{ id: string }>("SELECT id FROM farm_year_plans WHERE farm_id=$1 AND owner_id=$2 AND mode=$3 AND archived_at IS NULL AND horizon_from IS NULL AND status='ready' AND input_context->>'fieldId' IS NOT DISTINCT FROM $4::text ORDER BY created_at DESC, id LIMIT 5", [farmId, ownerId, deps.config.RUNTIME_MODE, fieldId])).rows.map((r) => r.id);
   const soilChecks = soilChecksOf(soil);
   const markers = soil.samples.flatMap((s) => s.markers.filter((m) => m.reviewStatus === 'confirmed').map((m) => ({ sample: s.id, id: m.id, parameter: m.parameter, value: m.canonical.value, unit: m.canonical.unit })))
     .sort((a, b) => a.sample.localeCompare(b.sample) || a.id.localeCompare(b.id));
   const material = {
     v: CROP_FIT_ENGINE_VERSION, yearPlan: YEAR_PLAN_ENGINE_VERSION, ratings: deps.ratingsVersion ?? soilRatings.SOIL_RATINGS_VERSION,
     request, day: asOf, workspace: workspace.version, soil: markers, soilChecks: soilChecks.digest, yearPlans,
+    // Only with a field, so a farm-wide review keeps its hash.
+    ...(fieldId ? { field: { id: fieldId, areaHa } } : {}),
     farm: { location: { stateCode: farm.location.stateCode, districtId: farm.location.districtId, districtName: farm.location.districtName ?? null }, area: farm.areaHectares, irrigation: ctx.scenario.irrigationCategory, excluded: ctx.excludedCropIds },
     files: { pool: fileHash(data.DATA_FILES.pool), agronomy: fileHash(data.DATA_FILES.agronomy), yieldCost: fileHash(data.DATA_FILES.yieldCost), greenManure: fileHashOrAbsent(data.DATA_FILES.greenManure), intercropping: fileHashOrAbsent(data.DATA_FILES.intercropping) },
     runtime: { mode: deps.config.RUNTIME_MODE, model: deps.config.META_TEXT_MODEL, keyAvailable: !!deps.config.MODEL_API_KEY },
   };
   return {
-    hash: payloadHash(material), asOf, farmId, request, requestKey: requestKey(request), resolved: resolveMode(ctx, request),
+    hash: payloadHash(material), asOf, farmId, request, requestKey: requestKey(request, fieldId), resolved: resolveMode(ctx, request),
     ctx, farm, workspaceVersion: workspace.version, soil, soilPh, soilReportStatus, soilChecks: soilChecks.fn, history: { cycles: workspace.cycles, previousHarvest: workspace.previousHarvest }, scenarioArgs,
+    fieldId, areaHa,
   };
 }
 
 function blank(c: FitContext): CropFitReview {
   return {
     reviewId: null, jobId: null, contextHash: c.hash, status: 'pending', stale: false, request: c.request,
-    resolvedSowing: c.resolved.target, previousCropId: c.resolved.previousCropId, currentCycleId: c.ctx.scenario.currentCycleId, fieldAreaHa: c.farm.areaHectares,
+    resolvedSowing: c.resolved.target, previousCropId: c.resolved.previousCropId, currentCycleId: c.ctx.scenario.currentCycleId, fieldAreaHa: c.areaHa,
     generatedAt: null, modelInvocation: null, picks: [], pickOrigin: null, candidates: [], yearPlanReviewId: null, weights: { ...WEIGHTS }, soilReportStatus: c.soilReportStatus,
     summary: c.request.mode === 'date' ? 'Scoring every pool crop for this sowing date.' : 'Scoring the year plan\'s crops and sowing weeks for this field.', limitations: [],
+    ...(c.fieldId ? { fieldId: c.fieldId } : {}),
   };
 }
 
@@ -321,9 +339,10 @@ export interface CurrentYearPlan { id: string; options: YearPlanOption[]; norm: 
  * The farm's ready year plan for the current inputs and horizon (its context hash equals the year plan's current hash,
  * so a stale plan is never used), with its options and stored normaliser; null when none. Never throws.
  */
-export async function currentYearPlan(deps: Pick<CropFitDeps, 'pool' | 'config' | 'timeline'>, ownerId: string, farmId: string, asOf: string): Promise<CurrentYearPlan | null> {
+export async function currentYearPlan(deps: Pick<CropFitDeps, 'pool' | 'config' | 'timeline'>, ownerId: string, farmId: string, asOf: string, fieldId: string | null = null): Promise<CurrentYearPlan | null> {
   try {
-    const yp = await yearPlanContext({ pool: deps.pool, config: deps.config, timeline: deps.timeline }, ownerId, farmId, asOf);
+    // 12.3: the field's own plan (its context hash includes the field); a farm with fields has no farm-wide plan (null).
+    const yp = await yearPlanContext({ pool: deps.pool, config: deps.config, timeline: deps.timeline }, ownerId, farmId, asOf, null, { fieldId });
     const row = (await deps.pool.query<{ id: string; result: { options?: unknown }; input_context: { norm?: ScoringNorm | null } | null }>(
       "SELECT id,result,input_context FROM farm_year_plans WHERE farm_id=$1 AND owner_id=$2 AND mode=$3 AND context_hash=$4 AND archived_at IS NULL AND horizon_from IS NULL AND status='ready' ORDER BY created_at DESC LIMIT 1",
       [farmId, ownerId, deps.config.RUNTIME_MODE, yp.hash])).rows[0];
@@ -484,14 +503,21 @@ async function invocationFor(deps: Pick<CropFitDeps, 'pool'>, ownerId: string, f
   return f ? { id: f.id, provider: 'meta', requestedModel: f.requested_model, model: f.model, purpose: `crop_fit/${farmId}`, status: f.status, startedAt: f.started_at.toISOString(), finishedAt: f.finished_at?.toISOString() ?? null, processing: 'standard', requestedStorage: false, responseDeleted } : null;
 }
 
-const rawOf = (r: CropFitRequest): RawRequest => ({ mode: r.mode, season: r.season ?? undefined, sowing: r.sowing ?? undefined, after: r.after ?? undefined });
+const rawOf = (r: CropFitRequest, fieldId?: string | null): RawRequest => ({ mode: r.mode, season: r.season ?? undefined, sowing: r.sowing ?? undefined, after: r.after ?? undefined, ...(fieldId ? { fieldId } : {}) });
 
 /** Worker body: rank -> store the code ranking (running) -> Meta picks (or deterministic) -> ready. Provider problems never throw. */
 export async function generateCropFit(deps: CropFitDeps, reviewId: string, ownerId: string, isCancelled: () => Promise<boolean> = async () => false) {
   const row = (await deps.pool.query<Row>('SELECT * FROM crop_fit_reviews WHERE id=$1 AND owner_id=$2 AND archived_at IS NULL', [reviewId, ownerId])).rows[0];
   if (!row) return { status: 'cancelled', reason: 'review_missing' };
   if (row.status !== 'pending') return { status: row.status, reason: 'already_claimed' };
-  const c = await fitContext(deps, ownerId, row.farm_id, rawOf(row.request));
+  // 12.3: the review's field travels on its stored result (absent = whole farm). A field deleted since is changed inputs.
+  let c: FitContext;
+  try { c = await fitContext(deps, ownerId, row.farm_id, rawOf(row.request, row.result.fieldId)); }
+  catch (e) {
+    if (!(e instanceof ApiError && e.code === 'field_not_found')) throw e;
+    await deps.pool.query("UPDATE crop_fit_reviews SET status='error',result=jsonb_set(jsonb_set(result,'{status}','\"error\"'),'{summary}',to_jsonb($3::text)),finished_at=now() WHERE id=$1 AND owner_id=$2", [reviewId, ownerId, 'The field of this review no longer exists. Ask again for a fresh review.']);
+    return { status: 'error', reviewId };
+  }
   const result: CropFitReview = { ...blank(c), reviewId: row.id, jobId: row.job_id, contextHash: row.context_hash, status: 'error' };
   const stored: Record<string, unknown> = { asOf: c.asOf };
   let invocation: ModelInvocation | null = null;
@@ -514,7 +540,7 @@ export async function generateCropFit(deps: CropFitDeps, reviewId: string, owner
     // (runInputKeys spread to the plan's lookup cap, unlooked sowing weeks left out as the plan does); date keeps the
     // 21-day placement. Every mode scores on the year plan's normaliser (marginNormaliser over that set).
     const mode = c.request.mode;
-    const plan = await currentYearPlan(deps, ownerId, row.farm_id, c.asOf);
+    const plan = await currentYearPlan(deps, ownerId, row.farm_id, c.asOf, c.fieldId);
     // Season covers 12 months from the floor (orchestrator decision): the plan context widened past the plan horizon.
     let ectx: EngineContext = c.ctx;
     if (mode === 'season') {
@@ -620,7 +646,7 @@ export async function generateCropFit(deps: CropFitDeps, reviewId: string, owner
     });
     const seed = `${row.farm_id}|${row.context_hash}`;
     result.candidates = ranked.map((rc, i) => toCandidate(rc, i + 1, {
-      marketNow: nowByProduct.get(rc.plan.productId) ?? null, facts, phRange: ph.get(rc.plan.cropId) ?? null, seed, areaHa: c.farm.areaHectares, soil: c.soil,
+      marketNow: nowByProduct.get(rc.plan.productId) ?? null, facts, phRange: ph.get(rc.plan.cropId) ?? null, seed, areaHa: c.areaHa, soil: c.soil,
       yearPlanLabels: plan ? yearPlanLabelsFor(plan.options, rc.plan.cropId, rc.plan.productId, intercropSystemOf(rc.plan)) : [],
       grownBefore: grownBeforeOf(c.history, rc.plan.cropId),
     }));
@@ -678,7 +704,7 @@ export async function generateCropFit(deps: CropFitDeps, reviewId: string, owner
     if (!deps.config.MODEL_API_KEY && !deps.provider) { result.limitations.push(`${MODEL_UNAVAILABLE}: Meta is not configured on this server; the picks are calculated.`); return finish('ready'); }
     const session = row.session_id ? (await deps.pool.query('SELECT id FROM sessions WHERE id=$1 AND owner_id=$2 AND revoked_at IS NULL AND expires_at>now()', [row.session_id, ownerId])).rows[0] : null;
     if (!session || (await isCancelled())) { result.limitations.push(`${MODEL_UNAVAILABLE}: the requesting session expired before the model call; the picks are calculated.`); return finish('ready'); }
-    if ((await fitContext(deps, ownerId, row.farm_id, rawOf(c.request))).hash !== row.context_hash) {
+    if ((await fitContext(deps, ownerId, row.farm_id, rawOf(c.request, c.fieldId))).hash !== row.context_hash) {
       result.stale = true; result.picks = []; result.candidates = []; result.summary = 'Farm inputs changed while the review was being built. Ask again for a fresh review.';
       return finish('error');
     }

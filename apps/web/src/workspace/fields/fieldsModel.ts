@@ -79,6 +79,18 @@ export function currentCycleOf<C extends FieldCycleLike>(fieldId: string, cycles
   );
 }
 
+/**
+ * A legacy whole-farm cycle: the latest unharvested cycle that names no field. It was planted before fields existed and
+ * occupies every field of the farm, so it is the current crop of each field that has no cycle of its own.
+ */
+export function wholeFarmCycleOf<C extends FieldCycleLike>(cycles: readonly C[]): C | null {
+  return (
+    [...cycles]
+      .filter((c) => c.stage !== "harvested" && !c.fieldId)
+      .sort((a, b) => anchorOf(b).localeCompare(anchorOf(a)))[0] ?? null
+  );
+}
+
 /** "Paddy + black gram", "Maize", or "No crop". */
 export function cropLabel(
   cycle: Pick<FieldCycleLike, "cropId" | "cropName" | "companion"> | null | undefined,
@@ -89,6 +101,21 @@ export function cropLabel(
   if (!cycle.companion) return main;
   const companion = cycle.companion.cropName ?? name(cycle.companion.cropId);
   return `${main} + ${companion.charAt(0).toLowerCase()}${companion.slice(1)}`;
+}
+
+/**
+ * The crop a field shows (chips, Plans by field): its own current cycle, else the legacy whole-farm cycle labelled
+ * "(whole farm)", else "No crop". A field's own cycle always wins.
+ */
+export function fieldCropOf<C extends FieldCycleLike>(
+  fieldId: string,
+  cycles: readonly C[],
+  name: (cropId: string) => string,
+): { cycle: C | null; wholeFarm: boolean; label: string } {
+  const own = currentCycleOf(fieldId, cycles);
+  const cycle = own ?? wholeFarmCycleOf(cycles);
+  const wholeFarm = !own && !!cycle;
+  return { cycle, wholeFarm, label: wholeFarm ? `${cropLabel(cycle, name)} (whole farm)` : cropLabel(cycle, name) };
 }
 
 // ------------------------------------------------------------------ checks before a save

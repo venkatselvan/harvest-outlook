@@ -1,5 +1,6 @@
 import {z} from 'zod';
 import {SoilCheck} from './crop-fit';
+import {FieldId} from './workspace';
 import {BasisRef, CostEstimate, HarvestWindow, IntercropCompanion, NumberEstimate, NumberRange, ScoreComponents, StageTimeline} from './year-plan';
 
 /**
@@ -20,6 +21,8 @@ export const SeasonPreviewQuery = z.object({
  establishmentMethod: z.string().max(80).optional(),
  /** Intercrop system id (intercropping.json) when previewing an intercrop slot. */
  systemId: z.string().max(120).optional(),
+ /** 2026-11-03: preview on this field (its cycles, saved seasons, year plan and area); absent = the whole farm. */
+ fieldId: FieldId.optional(),
 }).strict();
 
 export const SeasonPreviewMonth = z.object({
@@ -93,6 +96,8 @@ export const SeasonPreview = z.object({
  soil: z.object({status: z.enum(['no_report', 'compared']), checks: z.array(SoilCheck).max(12)}).strict().nullable(),
  basis: z.array(BasisRef).max(30),
  limitations: z.array(text),
+ /** 2026-11-03: the field previewed (`?fieldId=`); absent = the whole farm. */
+ fieldId: FieldId.optional(),
 }).strict();
 
 export type SeasonPreviewQuery = z.infer<typeof SeasonPreviewQuery>;

@@ -8,6 +8,7 @@ import { postTurn } from "../features/ask/askApi";
 import {
   ASSISTANT_PROMPTS,
   askErrorMessage,
+  assistantTurnBody,
   assistantWelcomeText,
   provenanceLabel,
   turnAnswerText,
@@ -16,6 +17,7 @@ import {
   wasWithheld,
 } from "../features/ask/model";
 import { newEntryId } from "../features/photo-region/http";
+import { tabField } from "./farmTabs";
 import { VoiceInput } from "../features/speech/VoiceInput";
 import "../features/speech/speech.css";
 interface Message {
@@ -26,6 +28,16 @@ interface Message {
 }
 export function Assistant() {
   const s = useWorkspace();
+  /**
+   * The field selected in the shell (`?field=`, published by the command center; null off the farm tabs). Only a field of
+   * the selected farm's stored workspace counts, so a stale id never reaches the server (12.5).
+   */
+  const selectedField = () => {
+    const id = tabField();
+    const ws = s.workspace();
+    if (!id || !ws || ws.farmId !== s.farm()?.id) return null;
+    return ws.fields?.find((field) => field.id === id) ?? null;
+  };
   const loc = useLocation();
   const [open, setOpen] = createSignal(false);
   const [messages, setMessages] = createSignal<Message[]>([]);
@@ -131,6 +143,7 @@ export function Assistant() {
     const epoch = s.sessionEpoch();
     const key = storageKey();
     const requestLanguage = language();
+    const fieldId = selectedField()?.id;
     const planId = loc.pathname.includes("/farm/plan/")
       ? loc.pathname.split("/").pop()
       : undefined;
@@ -150,16 +163,17 @@ export function Assistant() {
         .map((m) => `${m.role}: ${m.text}`)
         .join("\n");
       const result = await postTurn(
-        {
+        assistantTurnBody({
           text: context
             ? `Recent conversation:\n${context.slice(-1100)}\nCurrent question: ${question}`.slice(
                 -2000,
               )
             : question,
           language: requestLanguage,
-          ...(farmId ? { farmId } : {}),
-          ...(planId ? { planId } : {}),
-        },
+          farmId,
+          fieldId: fieldId ?? null,
+          planId,
+        }),
         newEntryId("chat"),
       );
       if (!active()) return;
@@ -215,7 +229,7 @@ export function Assistant() {
                 <Evara size={61} />
                 <h3>Hi, I'm Evara.</h3>
               </div>
-              <p>{assistantWelcomeText(s.farm()?.name)}</p>
+              <p>{assistantWelcomeText(s.farm()?.name, selectedField()?.name)}</p>
             </div>
             <Show when={!messages().length}>
               <div class="assistant-prompts">

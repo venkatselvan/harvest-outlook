@@ -13,6 +13,7 @@ import { toStrictJsonSchema } from '../../providers/meta/strict-schema';
 import type { Budget } from '../budget';
 import { ApiError, notFound } from '../errors';
 import { getFarm } from '../farms';
+import { fieldOf, getWorkspace } from '../workspace';
 import { establishmentAnchor } from '../focused-crops';
 import { canonicalJson, sha256Hex } from '../hash';
 import { withModelActivity } from '../model-activity';
@@ -28,7 +29,8 @@ import type { MonitoringSnapshot } from '../monitoring';
  * Every stored alert has a source {name, url, date}; anything without one is dropped before persistence.
  */
 
-export type AlertDraft = Pick<FarmAlert, 'type' | 'severity' | 'origin' | 'title' | 'detail' | 'source' | 'validFrom' | 'validTo' | 'suggestedStep'>;
+/** `fieldId` (2026-11-03, 12.4): set on crop-threat alerts of a field's cycle and on a field's satellite alert; absent = farm-wide. */
+export type AlertDraft = Pick<FarmAlert, 'type' | 'severity' | 'origin' | 'title' | 'detail' | 'source' | 'validFrom' | 'validTo' | 'suggestedStep'> & { fieldId?: string | undefined };
 
 const DAY_MS = 86_400_000;
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
@@ -195,7 +197,9 @@ export function structuredAlerts(snapshot: MonitoringSnapshot, workspace: FarmWo
       if (!src || !isDate(date) || !/^https?:\/\//.test(src.url)) continue; // no dated source: dropped
       alerts.push({ type: 'crop_threat', severity: risk.data.severity ?? 'watch', origin: 'rule', title: `${risk.data.title}`.slice(0, 120),
         detail: `${risk.data.detail ?? 'Published seasonal risk window for this crop stage.'} Calendar window from the recorded ${anchor} date (${from} to ${to}), not an observed outbreak.`.slice(0, 600),
-        source: { name: `${src.publisher}: ${src.title}`.slice(0, 200), url: src.url, date }, validFrom: from, validTo: to, suggestedStep: risk.data.suggestedStep ?? null });
+        source: { name: `${src.publisher}: ${src.title}`.slice(0, 200), url: src.url, date }, validFrom: from, validTo: to, suggestedStep: risk.data.suggestedStep ?? null,
+        // 12.4: a field's cycle raises the alert for that field; a cycle recorded without a field stays farm-wide.
+        ...(cycle.fieldId ? { fieldId: cycle.fieldId } : {}) });
     }
   }
   if (!riskData) notes.push('crop_threat_windows_skipped:seasonal_risks_not_in_research');
@@ -617,9 +621,14 @@ export async function groundedReview(deps: GroundedDeps, args: GroundedArgs): Pr
 
 // ---------------------------------------------------------------------------------------------- persistence
 
-/** Stable identity of an alert: type, title, source URL and start of validity. */
-export function alertFingerprint(a: Pick<AlertDraft, 'type' | 'title' | 'validFrom'> & { source: { url: string } }): string {
-  return sha256Hex(canonicalJson([a.type, a.title.trim().toLowerCase(), normalizeUrl(a.source.url) ?? a.source.url, a.validFrom]));
+/**
+ * Stable identity of an alert: type, title, source URL and start of validity; plus the field when the alert names one
+ * (2026-11-03, 12.4), so two fields with the same crop get separate alerts. Farm-wide fingerprints are unchanged.
+ */
+export function alertFingerprint(a: Pick<AlertDraft, 'type' | 'title' | 'validFrom' | 'fieldId'> & { source: { url: string } }): string {
+  const parts: string[] = [a.type, a.title.trim().toLowerCase(), normalizeUrl(a.source.url) ?? a.source.url, a.validFrom];
+  if (a.fieldId) parts.push(`field:${a.fieldId}`);
+  return sha256Hex(canonicalJson(parts));
 }
 
 /** Upserts by (farm, mode, fingerprint). Nothing is expired here: valid_to governs display; a dismissal is kept. */
@@ -627,15 +636,33 @@ export async function persistAlerts(pool: Pool, ownerId: string, farmId: string,
   if (!alerts.length) return { inserted: 0, updated: 0 };
   return withTransaction(pool, async (c) => {
     let inserted = 0, updated = 0;
+    // A farm-wide draft in the same batch (a cycle recorded without a field) is a live alert, not a legacy twin of a field draft.
+    const farmWide = new Set(alerts.filter((a) => !a.fieldId).map((a) => alertFingerprint(a)));
     for (const a of alerts) {
       if (!a.source?.url || !/^https?:\/\//.test(a.source.url) || !isDate(a.source.date) || !a.source.name) continue; // undated or unsourced: dropped
+      const fingerprint = alertFingerprint(a);
+      if (a.fieldId) {
+        // Rows stored before the fingerprint named the field carry field_id NULL and the field-less fingerprint. Migrate one in
+        // place (keeping its dismissal) unless the field row already exists; then retire any that remain, so no duplicate shows.
+        const legacy = alertFingerprint({ ...a, fieldId: undefined });
+        if (legacy !== fingerprint && !farmWide.has(legacy)) {
+          await c.query(
+            `UPDATE farm_alerts SET field_id=$5, fingerprint=$6
+              WHERE id = (SELECT id FROM farm_alerts WHERE farm_id=$1 AND owner_id=$2 AND mode=$3 AND fingerprint=$4 AND field_id IS NULL
+                            AND NOT EXISTS (SELECT 1 FROM farm_alerts n WHERE n.farm_id=$1 AND n.mode=$3 AND n.fingerprint=$6))`,
+            [farmId, ownerId, mode, legacy, a.fieldId, fingerprint]);
+          await c.query(
+            `UPDATE farm_alerts SET dismissed_at = COALESCE(dismissed_at, now())
+              WHERE farm_id=$1 AND owner_id=$2 AND mode=$3 AND fingerprint=$4 AND field_id IS NULL`, [farmId, ownerId, mode, legacy]);
+        }
+      }
       const r = await c.query<{ inserted: boolean }>(
-        `INSERT INTO farm_alerts (owner_id, farm_id, mode, type, severity, origin, title, detail, source, valid_from, valid_to, suggested_step, fingerprint)
-         SELECT f.owner_id, f.id, $3, $4, $5, $6, $7, $8, $9::jsonb, $10::date, $11::date, $12, $13 FROM farms f WHERE f.id=$2 AND f.owner_id=$1 AND f.deleted_at IS NULL
+        `INSERT INTO farm_alerts (owner_id, farm_id, mode, type, severity, origin, title, detail, source, valid_from, valid_to, suggested_step, fingerprint, field_id)
+         SELECT f.owner_id, f.id, $3, $4, $5, $6, $7, $8, $9::jsonb, $10::date, $11::date, $12, $13, $14 FROM farms f WHERE f.id=$2 AND f.owner_id=$1 AND f.deleted_at IS NULL
          ON CONFLICT (farm_id, mode, fingerprint) DO UPDATE SET severity=EXCLUDED.severity, detail=EXCLUDED.detail, source=EXCLUDED.source,
            valid_to=GREATEST(farm_alerts.valid_to, EXCLUDED.valid_to), suggested_step=EXCLUDED.suggested_step
          RETURNING (xmax = 0) AS inserted`,
-        [ownerId, farmId, mode, a.type, a.severity, a.origin, a.title.slice(0, 120), a.detail.slice(0, 600), JSON.stringify({ name: a.source.name.slice(0, 200), url: a.source.url, date: a.source.date }), a.validFrom, a.validTo, a.suggestedStep?.slice(0, 300) ?? null, alertFingerprint(a)]);
+        [ownerId, farmId, mode, a.type, a.severity, a.origin, a.title.slice(0, 120), a.detail.slice(0, 600), JSON.stringify({ name: a.source.name.slice(0, 200), url: a.source.url, date: a.source.date }), a.validFrom, a.validTo, a.suggestedStep?.slice(0, 300) ?? null, fingerprint, a.fieldId ?? null]);
       if (!r.rows[0]) throw notFound('Farm');
       if (r.rows[0].inserted) inserted++; else updated++;
     }
@@ -643,9 +670,10 @@ export async function persistAlerts(pool: Pool, ownerId: string, farmId: string,
   });
 }
 
-interface AlertRow { id: string; farm_id: string; type: FarmAlert['type']; severity: FarmAlert['severity']; origin: FarmAlert['origin']; title: string; detail: string; source: FarmAlert['source']; valid_from: string; valid_to: string; suggested_step: string | null; created_at: Date }
-const ALERT_COLS = `a.id, a.farm_id, a.type, a.severity, a.origin, a.title, a.detail, a.source, to_char(a.valid_from, 'YYYY-MM-DD') AS valid_from, to_char(a.valid_to, 'YYYY-MM-DD') AS valid_to, a.suggested_step, a.created_at`;
-const toAlert = (r: AlertRow): FarmAlert => ({ id: r.id, farmId: r.farm_id, type: r.type, severity: r.severity, origin: r.origin, title: r.title, detail: r.detail, source: { name: r.source.name, url: r.source.url, date: r.source.date }, validFrom: r.valid_from, validTo: r.valid_to, suggestedStep: r.suggested_step, createdAt: r.created_at.toISOString() });
+interface AlertRow { id: string; farm_id: string; type: FarmAlert['type']; severity: FarmAlert['severity']; origin: FarmAlert['origin']; title: string; detail: string; source: FarmAlert['source']; valid_from: string; valid_to: string; suggested_step: string | null; created_at: Date; field_id: string | null }
+const ALERT_COLS = `a.id, a.farm_id, a.type, a.severity, a.origin, a.title, a.detail, a.source, to_char(a.valid_from, 'YYYY-MM-DD') AS valid_from, to_char(a.valid_to, 'YYYY-MM-DD') AS valid_to, a.suggested_step, a.created_at, a.field_id`;
+/** `scope` is derived for the web (12.4): 'field' when the alert names a field, else 'farm'. */
+const toAlert = (r: AlertRow): FarmAlert => ({ id: r.id, farmId: r.farm_id, type: r.type, severity: r.severity, origin: r.origin, title: r.title, detail: r.detail, source: { name: r.source.name, url: r.source.url, date: r.source.date }, validFrom: r.valid_from, validTo: r.valid_to, suggestedStep: r.suggested_step, createdAt: r.created_at.toISOString(), ...(r.field_id ? { fieldId: r.field_id } : {}), scope: r.field_id ? 'field' : 'farm' });
 
 export const ALERT_LIMITATIONS = [
   'Direct IMD feed not connected (needs a key); official warnings are searched daily.',
@@ -664,14 +692,19 @@ function newsReview(row: { enabled: boolean; meta_enabled: boolean; last_meta_at
   return { status: 'unavailable', reason: review.reason ?? review.status ?? null, lastReviewedAt: last };
 }
 
-/** Active alerts (valid_to >= asOf in India, not dismissed), newest first. Owner-scoped through the parent farm. */
-export async function listAlerts(pool: Pool, ownerId: string, farmId: string, mode: Mode, asOf: string): Promise<FarmAlerts> {
+/**
+ * Active alerts (valid_to >= asOf in India, not dismissed), newest first. Owner-scoped through the parent farm. With
+ * `fieldId` (2026-11-03, 12.4): that field's alerts plus the farm-wide ones (no field); 404 field_not_found when unknown.
+ */
+export async function listAlerts(pool: Pool, ownerId: string, farmId: string, mode: Mode, asOf: string, opts: { fieldId?: string | undefined; limit?: number | undefined } = {}): Promise<FarmAlerts> {
   if (!await getFarm(pool, ownerId, farmId)) throw notFound('Farm');
+  if (opts.fieldId !== undefined) fieldOf(await getWorkspace(pool, ownerId, farmId), opts.fieldId);
   const today = istDate(asOf);
   const rows = await pool.query<AlertRow>(
     `SELECT ${ALERT_COLS} FROM farm_alerts a JOIN farms f ON f.id=a.farm_id AND f.owner_id=a.owner_id
       WHERE a.farm_id=$1 AND a.owner_id=$2 AND a.mode=$3 AND a.valid_to >= $4::date AND a.dismissed_at IS NULL AND f.deleted_at IS NULL
-      ORDER BY a.created_at DESC, a.id DESC LIMIT 50`, [farmId, ownerId, mode, today]);
+        AND ($5::text IS NULL OR a.field_id IS NULL OR a.field_id = $5::text)
+      ORDER BY a.created_at DESC, a.id DESC LIMIT $6`, [farmId, ownerId, mode, today, opts.fieldId ?? null, Math.min(Math.max(Math.trunc(opts.limit ?? 50), 1), 500)]);
   const monitor = (await pool.query<{ enabled: boolean; meta_enabled: boolean; last_meta_at: Date | null; meta_review: { mode?: string; kind?: string; status?: string; reason?: string | null } | null }>(
     'SELECT enabled, meta_enabled, last_meta_at, meta_review FROM farm_monitors WHERE farm_id=$1', [farmId])).rows[0];
   // No row yet means the default (enabled) applies until the first check writes one.

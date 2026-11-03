@@ -1,7 +1,7 @@
 import type { FastifyInstance } from 'fastify';
 import type { ZodTypeProvider } from 'fastify-type-provider-zod';
 import { z } from 'zod';
-import { CropFitMode, CropFitReview, CropSeason } from '@harvest/contracts';
+import { CropFitMode, CropFitReview, CropSeason, FieldId } from '@harvest/contracts';
 import { privateRouteGuard } from '../security/guards';
 import { requireAuth } from '../security/session';
 import { envelope } from '../envelope';
@@ -24,11 +24,13 @@ export const CropFitQuery = z.object({
   season: CropSeason.optional(),
   sowing: z.iso.date().optional(),
   after: z.string().max(120).regex(AFTER_PATTERN, 'after must be a crop id').optional(),
+  /** 2026-11-03 (FIELDS_MULTICROP_SOIL_SPEC.md 12.3): rank for this field; 404 field_not_found when unknown; absent = the whole farm. */
+  fieldId: FieldId.optional(),
 }).strict().superRefine((q, ctx) => {
   if (q.mode === 'season' && !q.season) ctx.addIssue({ code: 'custom', path: ['season'], message: 'season is required when mode is season' });
 });
 
-const DESCRIPTION = 'Crop fit v3 (ROUND3_SPEC 5): next and season use the year plan candidates, dates, normaliser and slot scores (next ranks by score less the wait penalty); date scores every pool crop for one sowing date (optional after = previous crop), compared with the confirmed soil markers, and three picks (Meta, or calculated when Meta is unavailable). GET returns the ready review for the current inputs or starts one (status pending) and enqueues farm.crop-fit once; poll GET while pending or running.';
+const DESCRIPTION = 'Crop fit v3 (ROUND3_SPEC 5): next and season use the year plan candidates, dates, normaliser and slot scores (next ranks by score less the wait penalty); date scores every pool crop for one sowing date (optional after = previous crop), compared with the confirmed soil markers, and three picks (Meta, or calculated when Meta is unavailable). GET returns the ready review for the current inputs or starts one (status pending) and enqueues farm.crop-fit once; poll GET while pending or running. fieldId (2026-11-03): rank for that field (its crops, saved seasons, year plan and area; its own cached review); absent = the whole farm.';
 
 /** Owner-private; not registered here (routes/index.ts owns registration). */
 export async function cropFitRoutes(app: FastifyInstance, deps: CropFitDeps) {

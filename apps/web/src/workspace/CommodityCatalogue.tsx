@@ -8,6 +8,7 @@ import {
   For,
   Show,
   createEffect,
+  createMemo,
   createResource,
   createSignal,
   onCleanup,
@@ -22,6 +23,8 @@ import { loadYearPlan } from "./year/yearPlanApi";
 import { loadCropFit, pollCropFit } from "./farm/cropFitApi";
 import { farmCropRows, type LibraryRow } from "./farm/cropFitLibrary";
 import { CropsForYourFarm } from "./farm/CropFitCrops";
+import { CHOOSE_FIELD_TO_RANK, cropFitTarget } from "./farm/cropFitTarget";
+import { tabField } from "./farmTabs";
 const NON_CROP = new Set([
   "livestock",
   "aquaculture",
@@ -189,11 +192,25 @@ export function CommodityBrowser(props: {
   });
   // The year plan and crop fit chips load lazily from the existing endpoints and never block or fail the page: a pending,
   // stale-free-or-not review that is not ready, or any error, simply leaves those chips off.
+  // On a farm with fields both are per field (each request can enqueue a Meta job): the selected field, else the first field
+  // with a current crop; with none to choose the calls are skipped and the page says so.
+  const target = createMemo(
+    () => cropFitTarget(ws.farm()?.id, ws.workspace(), tabField()),
+    undefined,
+    { equals: (a, b) => a.status === b.status && (a.status !== "rank" || (b.status === "rank" && a.fieldId === b.fieldId)) },
+  );
+  const rankKey = () => {
+    const now = target();
+    const farmId = ws.farm()?.id;
+    return now.status === "rank" && farmId ? `${farmId}|${now.fieldId ?? ""}` : false;
+  };
+  const needsField = () => target().status === "choose";
   const [planIds] = createResource(
-    () => ws.farm()?.id ?? false,
-    async (farmId): Promise<ReadonlySet<string> | undefined> => {
+    rankKey,
+    async (key): Promise<ReadonlySet<string> | undefined> => {
+      const [farmId = "", field = ""] = key.split("|");
       try {
-        const plan = await loadYearPlan(farmId, { signal: lazy.signal });
+        const plan = await loadYearPlan(farmId, { signal: lazy.signal, fieldId: field || null });
         if (plan.status !== "ready" && plan.status !== "partial") return undefined;
         const ids = new Set<string>();
         for (const option of plan.options)
@@ -209,11 +226,13 @@ export function CommodityBrowser(props: {
     },
   );
   const [fitRanks] = createResource(
-    () => ws.farm()?.id ?? false,
-    async (farmId): Promise<ReadonlyMap<string, number> | undefined> => {
+    rankKey,
+    async (key): Promise<ReadonlyMap<string, number> | undefined> => {
+      const [farmId = "", field = ""] = key.split("|");
+      const fieldId = field || null;
       try {
-        let review = await loadCropFit(farmId, null, { signal: lazy.signal });
-        if (review.status === "pending" || review.status === "running") review = await pollCropFit(farmId, null, review, { signal: lazy.signal, maxPolls: 20 });
+        let review = await loadCropFit(farmId, null, { signal: lazy.signal, fieldId });
+        if (review.status === "pending" || review.status === "running") review = await pollCropFit(farmId, null, review, { signal: lazy.signal, maxPolls: 20, fieldId });
         if (review.status !== "ready") return undefined;
         const ranks = new Map<string, number>();
         for (const c of review.candidates) if (c.rank < (ranks.get(c.cropId) ?? Infinity)) ranks.set(c.cropId, c.rank);
@@ -338,6 +357,11 @@ export function CommodityBrowser(props: {
           any crop recorded on your farm.
           <Show when={!ws.farm()}> Add a farm to see what is growing and planned.</Show>
         </p>
+        <Show when={needsField()}>
+          <p class="section-description" role="status" data-testid="catalogue-choose-field">
+            {CHOOSE_FIELD_TO_RANK}
+          </p>
+        </Show>
       </Show>
       <input
         class="crop-search"

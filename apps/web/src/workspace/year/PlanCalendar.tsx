@@ -27,6 +27,46 @@ import {
 const COLUMNS = 12;
 
 /**
+ * The saved seasons listed under a field's plan (FIELDS_MULTICROP_SOIL_SPEC.md 12.6): the seasons naming that field plus
+ * legacy seasons without a field (shown as "whole farm"). With no field ("All fields", or a farm without fields) every
+ * season stays listed, as before. Seasons of another field are left out.
+ */
+export function seasonsForField<P extends { fieldId?: string | undefined }>(plans: readonly P[], fieldId: string | null | undefined): P[] {
+  return fieldId ? plans.filter((p) => !p.fieldId || p.fieldId === fieldId) : [...plans];
+}
+/**
+ * The season as the Planner's form saves it. A new season in a field view is saved for that field (`fieldId`); an edited
+ * season keeps the field it has (a legacy whole-farm season stays whole-farm); "All fields" or a farm without fields
+ * adds no field, as before.
+ */
+export function seasonWithField<P extends { id?: string | undefined; fieldId?: string | undefined }>(season: P, fieldId: string | null | undefined): P {
+  if (season.fieldId || season.id || !fieldId) return season;
+  return { ...season, fieldId };
+}
+/**
+ * "All fields" on a farm with fields: a new season cannot be saved here, because a season without a field occupies every
+ * field. The add controls give way to "Choose a field to add a season".
+ */
+export const needsFieldForNewSeason = (farmHasFields: boolean, fieldId: string | null | undefined): boolean => farmHasFields && !fieldId;
+export const CHOOSE_FIELD_TO_ADD = "Choose a field to add a season";
+/**
+ * The field a listed season belongs to, for the "All fields" list on a farm with fields: its name, "Whole farm" for a
+ * legacy season without a field, "Unknown field" when the field is no longer on the farm. Null in a field's own list or
+ * on a farm without fields (the list is then not split by field).
+ */
+export function seasonFieldLabel(
+  p: { fieldId?: string | undefined },
+  fields: readonly { id: string; name: string }[] | undefined,
+  selectedFieldId: string | null | undefined,
+): string | null {
+  if (selectedFieldId || !fields?.length) return null;
+  if (!p.fieldId) return "Whole farm";
+  return fields.find((f) => f.id === p.fieldId)?.name ?? "Unknown field";
+}
+/** True for a legacy season without a field, seen in a field's list: the row says "Whole farm". */
+export const isWholeFarmSeason = (p: { fieldId?: string | undefined }, fieldId: string | null | undefined): boolean => !!fieldId && !p.fieldId;
+
+/**
  * Accessible name of a strip. It starts with the strip's visible text (crop name, then the dates or "Growing now" or the
  * nitrogen credit) so that speech-control users can say what they see (WCAG 2.5.3), then adds the full dates.
  */

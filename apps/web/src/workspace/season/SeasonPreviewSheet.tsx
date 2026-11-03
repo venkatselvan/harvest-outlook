@@ -3,7 +3,7 @@ import type { SeasonPreview } from "@harvest/contracts";
 import { Sheet } from "../ui/Sheet";
 import { Sparkline } from "../ui/Sparkline";
 import { Chip } from "../ui/Chip";
-import { describeSeasonPreviewError, loadSeasonPreview, type SeasonPreviewRequest } from "./seasonPreviewApi";
+import { describeSeasonPreviewError, loadSeasonPreview, withPreviewField, type SeasonPreviewRequest } from "./seasonPreviewApi";
 import {
   STEP_KIND, VERDICT_TEXT, VERDICT_TONE, YIELD_BASIS, dateSpan, inr, inrRange, kgRange, previewTitle, pricePathModel, rainBars, shortDate, stageStrip,
 } from "./seasonPreviewModel";
@@ -22,9 +22,11 @@ export function SeasonPreviewSheet(props: {
   title: string;
   onClose: () => void;
   fetchImpl?: typeof fetch;
+  /** 2026-11-03 (12.3): preview on this field (a saved season's own field); null or omitted = the whole farm. */
+  fieldId?: string | null | undefined;
 }) {
   const [preview, { refetch }] = createResource(
-    () => ({ farmId: props.farmId, request: props.request }),
+    () => ({ farmId: props.farmId, request: withPreviewField(props.request, props.fieldId) }),
     ({ farmId, request }) => loadSeasonPreview(farmId, request, props.fetchImpl),
   );
   const title = () => (preview.state === "ready" ? previewTitle(preview()!, props.title) : props.title);

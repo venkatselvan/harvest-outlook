@@ -9,8 +9,30 @@ export interface TurnRequest {
   text: string;
   language: AskLanguage;
   farmId?: string;
+  /** 2026-11-03 (FIELDS_MULTICROP_SOIL_SPEC.md 12.5): the field selected in the shell; the server needs farmId with it. */
+  fieldId?: string;
   planId?: string;
   selectedDate?: string;
+}
+
+/**
+ * The Evara panel's turn body: the farm, the field selected in the shell (only together with the farm, which the server
+ * requires) and the plan open on screen.
+ */
+export function assistantTurnBody(input: {
+  text: string;
+  language: AskLanguage;
+  farmId?: string | null | undefined;
+  fieldId?: string | null | undefined;
+  planId?: string | null | undefined;
+}): TurnRequest {
+  return {
+    text: input.text,
+    language: input.language,
+    ...(input.farmId ? { farmId: input.farmId } : {}),
+    ...(input.farmId && input.fieldId ? { fieldId: input.fieldId } : {}),
+    ...(input.planId ? { planId: input.planId } : {}),
+  };
 }
 export interface AnswerBlock {
   id: string;
@@ -52,10 +74,11 @@ export function wasWithheld(t: TurnResult): boolean {
 }
 
 /** Welcome paragraph of the Evara panel: with a farm it names the farm and what Evara will check, wherever recorded (a bare farm may have none of it, and in replay mode no briefing is composed). */
-export function assistantWelcomeText(farmName: string | null | undefined): string {
+export function assistantWelcomeText(farmName: string | null | undefined, fieldName?: string | null): string {
   const name = farmName?.trim();
   if (!name) return "Finish your farm boundary and I'll help prefill its location, name, and area. Review my suggestions, then let's plan what comes next.";
-  return `I'm looking at ${name}. I'll check its crop and stage, weather, satellite greenness, alerts, upcoming steps, prices and expected returns, soil report, plans and journal, wherever they are recorded. What would you like to know?`;
+  const field = fieldName?.trim();
+  return `I'm looking at ${name}${field ? `, about ${field}` : ""}. I'll check its crop and stage, weather, satellite greenness, alerts, upcoming steps, prices and expected returns, soil report, plans and journal, wherever they are recorded. What would you like to know?`;
 }
 
 export const ASSISTANT_PROMPTS = [

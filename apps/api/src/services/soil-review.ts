@@ -15,7 +15,7 @@ import { enqueue } from './jobs';
 import { withModelActivity } from './model-activity';
 import { farmSoilMarkers } from './soil-reports';
 import { rateMarkerAssumed, SOIL_RATINGS_VERSION, type AssumedRating, type RatableMarker } from './soil-ratings';
-import { getWorkspace } from './workspace';
+import { fieldOf, fieldView, getWorkspace } from './workspace';
 import { needClass, nutrientUptake, uptakeAt, type Nutrient } from './crop-fit/soil-compare';
 import * as data from './year-plan/data';
 import { monthOf } from './year-plan/dates';
@@ -58,13 +58,22 @@ export interface SoilReviewContext {
   markers: { sample: Sample; marker: RatableMarker }[];
   current: CycleInfo | null;
   next: NextInfo | null;
+  /** 2026-11-03 (12.3): the field whose cycle and saved seasons give the crop context; null = the whole farm. */
+  field: { id: string; name: string } | null;
 }
 
-export async function soilReviewContext(deps: Pick<SoilReviewDeps, 'pool' | 'config' | 'now'>, ownerId: string, farmId: string): Promise<SoilReviewContext> {
+/**
+ * With `fieldId` (2026-11-03, FIELDS_MULTICROP_SOIL_SPEC.md 12.3) the current and next crop come from the field view (its
+ * cycles and saved seasons plus farm-wide legacy ones; 404 field_not_found when unknown) and the hash includes the field, so
+ * each field gets its own narrative. The soil readings stay farm-level. Without `fieldId` the whole farm, as before.
+ */
+export async function soilReviewContext(deps: Pick<SoilReviewDeps, 'pool' | 'config' | 'now'>, ownerId: string, farmId: string, fieldId: string | null = null): Promise<SoilReviewContext> {
   const farm = await getFarm(deps.pool, ownerId, farmId);
   if (!farm) throw notFound('Farm');
   const asOf = todayIst(nowOf(deps));
-  const workspace = await getWorkspace(deps.pool, ownerId, farmId);
+  const stored = await getWorkspace(deps.pool, ownerId, farmId);
+  const field = fieldId ? fieldOf(stored, fieldId) : null;
+  const workspace = fieldView(stored, fieldId);
   const soil = await farmSoilMarkers(deps, ownerId, farmId);
   const markers = soil.samples.flatMap((sample) => sample.markers.filter((m) => m.reviewStatus === 'confirmed').map((marker) => ({ sample, marker })));
   const cycle = [...workspace.cycles].filter((c) => c.stage !== 'harvested').sort((a, b) => b.sowingDate.localeCompare(a.sowingDate))[0] ?? null;
@@ -77,8 +86,11 @@ export async function soilReviewContext(deps: Pick<SoilReviewDeps, 'pool' | 'con
       .sort((a, b) => `${a.s}:${a.m}`.localeCompare(`${b.s}:${b.m}`)),
     cycle: cycle ? { id: cycle.id, cropId: cycle.cropId, productId: cycle.productId ?? null, sowing: cycle.sowingDate, stage: cycle.stage } : null,
     next: next ? { cropId: next.cropId, productId: next.productId, sowing: next.sowing, source: next.source } : null,
+    // Only with a field, so a farm-wide review keeps its hash.
+    // The name is in the limitation line, so a rename must produce a new review.
+    ...(field ? { field: field.id, fieldName: field.name } : {}),
   };
-  return { hash: payloadHash(material), asOf, farmId, stateId: farm.location.stateCode ?? null, markers, current, next };
+  return { hash: payloadHash(material), asOf, farmId, stateId: farm.location.stateCode ?? null, markers, current, next, field: field ? { id: field.id, name: field.name } : null };
 }
 
 // ------------------------------------------------------------------ crop need (uptake x regional yield, spec 4.1)
@@ -374,6 +386,7 @@ export function buildCodeReview(ctx: SoilReviewContext, base: { reviewId: string
   const reasons = rows.filter((r) => r.rated.status !== 'rated' && r.rated.note).slice(0, 6).map((r) => `${r.reading.label}: ${r.rated.note}`.slice(0, 600));
   const unstated = rows.filter((r) => r.rated.status === 'rated' && r.rated.note && /does not state/.test(r.rated.note)).length;
   const limitations = [
+    ...fieldLimitation(ctx),
     'Ratings compare each confirmed value with cited soil-test bands (see each value\'s source). They are not fertilizer doses or crop advice.',
     ...(unstated ? [`${unstated} rated value${unstated > 1 ? 's' : ''} did not print the extraction method; the bands were applied on the method they are defined for.`] : []),
     ...reasons,
@@ -383,10 +396,13 @@ export function buildCodeReview(ctx: SoilReviewContext, base: { reviewId: string
     readings: rows.map((r) => r.reading),
     currentCrop: ctx.current ? { cycleId: ctx.current.cycleId, cropId: ctx.current.cropId, cropName: ctx.current.cropName } : null,
     nextCrop: ctx.next ? { cropId: ctx.next.cropId, cropName: ctx.next.cropName, source: ctx.next.source } : null,
-    facts, narrative: null, narrativeOrigin: null, ratingsVersion: SOIL_RATINGS_VERSION, limitations,
+    facts, narrative: null, narrativeOrigin: null, ratingsVersion: SOIL_RATINGS_VERSION, limitations, ...fieldPart(ctx),
   });
   return { review, rows, current, next, limiting };
 }
+/** 12.3: the readings are the farm's; the crop context is the field's. Nothing on a farm-wide review. */
+const fieldLimitation = (ctx: Pick<SoilReviewContext, 'field'>): string[] => (ctx.field ? [`Soil values are for the whole farm; the crop context is ${ctx.field.name}.`] : []);
+const fieldPart = (ctx: Pick<SoilReviewContext, 'field'>): { fieldId?: string } => (ctx.field ? { fieldId: ctx.field.id } : {});
 
 // ------------------------------------------------------------------ persistence: ensure (GET/POST), view, job
 interface Row {
@@ -400,7 +416,8 @@ function noReport(ctx: SoilReviewContext): SoilReview {
     currentCrop: ctx.current ? { cycleId: ctx.current.cycleId, cropId: ctx.current.cropId, cropName: ctx.current.cropName } : null,
     nextCrop: ctx.next ? { cropId: ctx.next.cropId, cropName: ctx.next.cropName, source: ctx.next.source } : null,
     facts: [], narrative: null, narrativeOrigin: null, ratingsVersion: SOIL_RATINGS_VERSION,
-    limitations: ['No confirmed soil report for this field yet. Upload a report and confirm its values to see them rated.'],
+    limitations: ['No confirmed soil report for this field yet. Upload a report and confirm its values to see them rated.', ...fieldLimitation(ctx)],
+    ...fieldPart(ctx),
   });
 }
 
@@ -427,8 +444,9 @@ async function view(deps: Pick<SoilReviewDeps, 'pool'>, row: Row): Promise<SoilR
  * soilreview:<farm>:<hash>); rows of other hashes are archived and their queued jobs cancelled. A failed row is retried
  * after 5 minutes, at most 3 attempts. POST (`force`): a finished row is archived and rebuilt; a review being built is kept.
  */
-export async function ensureSoilReview(deps: SoilReviewDeps, auth: { ownerId: string; sessionId: string | null }, farmId: string, opts: { force?: boolean } = {}): Promise<SoilReview> {
-  const ctx = await soilReviewContext(deps, auth.ownerId, farmId);
+export async function ensureSoilReview(deps: SoilReviewDeps, auth: { ownerId: string; sessionId: string | null }, farmId: string, opts: { force?: boolean; fieldId?: string | undefined } = {}): Promise<SoilReview> {
+  const ctx = await soilReviewContext(deps, auth.ownerId, farmId, opts.fieldId ?? null);
+  const fieldKey = ctx.field?.id ?? null;
   if (!ctx.markers.length) return noReport(ctx);
   const mode = deps.config.RUNTIME_MODE;
   const id = await withTransaction(deps.pool, async (tx) => {
@@ -450,11 +468,12 @@ export async function ensureSoilReview(deps: SoilReviewDeps, auth: { ownerId: st
       await tx.query("UPDATE soil_reviews SET status='pending',session_id=$2,job_id=$3,attempt=attempt+1,started_at=NULL,finished_at=NULL WHERE id=$1", [existing.id, auth.sessionId, q.job.id]);
       return existing.id;
     }
-    await tx.query("UPDATE jobs SET cancel_requested=true WHERE id IN (SELECT job_id FROM soil_reviews WHERE farm_id=$1 AND mode=$2 AND context_hash<>$3 AND archived_at IS NULL AND job_id IS NOT NULL) AND state IN ('queued','running')", [farmId, mode, ctx.hash]);
-    await tx.query('UPDATE soil_reviews SET archived_at=now() WHERE farm_id=$1 AND mode=$2 AND context_hash<>$3 AND archived_at IS NULL', [farmId, mode, ctx.hash]);
+    // 12.3: only rows of the same field (input_context.fieldId; absent = farm-wide) are replaced, so fields keep their reviews.
+    await tx.query("UPDATE jobs SET cancel_requested=true WHERE id IN (SELECT job_id FROM soil_reviews WHERE farm_id=$1 AND mode=$2 AND context_hash<>$3 AND archived_at IS NULL AND job_id IS NOT NULL AND input_context->>'fieldId' IS NOT DISTINCT FROM $4::text) AND state IN ('queued','running')", [farmId, mode, ctx.hash, fieldKey]);
+    await tx.query("UPDATE soil_reviews SET archived_at=now() WHERE farm_id=$1 AND mode=$2 AND context_hash<>$3 AND archived_at IS NULL AND input_context->>'fieldId' IS NOT DISTINCT FROM $4::text", [farmId, mode, ctx.hash, fieldKey]);
     const reviewId = randomUUID();
     const code = buildCodeReview(ctx, { reviewId, jobId: null, status: 'pending' });
-    const stored = { asOf: ctx.asOf, markers: ctx.markers.map(({ sample, marker }) => `${sample.id}:${marker.id}`), current: ctx.current, next: ctx.next };
+    const stored = { asOf: ctx.asOf, markers: ctx.markers.map(({ sample, marker }) => `${sample.id}:${marker.id}`), current: ctx.current, next: ctx.next, ...(fieldKey ? { fieldId: fieldKey } : {}) };
     const ins = await tx.query("INSERT INTO soil_reviews(id,owner_id,farm_id,session_id,mode,context_hash,ratings_version,input_context,result,status) VALUES($1,$2,$3,$4,$5,$6,$7,$8::jsonb,$9::jsonb,'pending') ON CONFLICT (farm_id,mode,context_hash) WHERE archived_at IS NULL DO NOTHING RETURNING id",
       [reviewId, auth.ownerId, farmId, auth.sessionId, mode, ctx.hash, SOIL_RATINGS_VERSION, JSON.stringify(stored), JSON.stringify(code.review)]);
     if (!ins.rowCount) return (await tx.query<{ id: string }>('SELECT id FROM soil_reviews WHERE farm_id=$1 AND mode=$2 AND context_hash=$3 AND archived_at IS NULL', [farmId, mode, ctx.hash])).rows[0]!.id;
@@ -482,7 +501,8 @@ export async function generateSoilReview(deps: SoilReviewDeps, reviewId: string,
   };
   let result: SoilReview = row.result;
   try {
-    const ctx = await soilReviewContext(deps, ownerId, row.farm_id);
+    const fieldId = (row.input_context as { fieldId?: unknown } | null)?.fieldId;
+    const ctx = await soilReviewContext(deps, ownerId, row.farm_id, typeof fieldId === 'string' ? fieldId : null);
     if (ctx.hash !== row.context_hash) return finish('error', { ...row.result, limitations: [...row.result.limitations, 'The soil values or seasons changed while this review was being made; a new review is built on the next request.'] });
     if (await isCancelled()) return finish('error', { ...row.result, limitations: [...row.result.limitations, 'The review was cancelled.'] });
     const code = buildCodeReview(ctx, { reviewId, jobId: row.job_id, status: 'running' });
@@ -501,8 +521,8 @@ export async function generateSoilReview(deps: SoilReviewDeps, reviewId: string,
 }
 
 /** Read without creating anything (used by tests and callers that must not enqueue). */
-export async function readSoilReview(deps: SoilReviewDeps, ownerId: string, farmId: string): Promise<SoilReview> {
-  const ctx = await soilReviewContext(deps, ownerId, farmId);
+export async function readSoilReview(deps: SoilReviewDeps, ownerId: string, farmId: string, fieldId: string | null = null): Promise<SoilReview> {
+  const ctx = await soilReviewContext(deps, ownerId, farmId, fieldId);
   if (!ctx.markers.length) return noReport(ctx);
   const row = (await deps.pool.query<Row>('SELECT * FROM soil_reviews WHERE farm_id=$1 AND owner_id=$2 AND mode=$3 AND context_hash=$4 AND archived_at IS NULL', [farmId, ownerId, deps.config.RUNTIME_MODE, ctx.hash])).rows[0];
   return row ? view(deps, row) : buildCodeReview(ctx, { reviewId: null, jobId: null, status: 'unavailable' }).review;

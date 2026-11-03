@@ -6,7 +6,7 @@ import type { Budget } from '../../services/budget';
 import { monitoringSnapshot, workspaceMarketProducts, type MonitoringDeps, type MonitoringSnapshot } from '../../services/monitoring';
 import { saveMonitorSnapshot } from '../../services/monitor-schedule';
 import { getFarm } from '../../services/farms';
-import { getWorkspace } from '../../services/workspace';
+import { fieldView, getWorkspace } from '../../services/workspace';
 import { focusedResearch } from '../../services/focused-crops';
 import { PgMarketOutlookSource } from '../../plans/adapters/market-outlook';
 import { createWeatherSource } from '../../plans/adapters/weather-source';
@@ -29,6 +29,12 @@ import { refreshOutlookNote } from './outlook-note';
  * day's scene list is not cached.
  */
 export const SATELLITE_MONITOR_MAX_SCENES = 4;
+/**
+ * 2026-11-03 (FIELDS_MULTICROP_SOIL_SPEC.md 12.4): on a farm with fields the satellite check runs per field that has a
+ * current cycle, in stored order, at most this many fields per run (each with the same bounded fetch as a farm: at most 9
+ * Planetary Computer requests, so at most 90 per farm per day). Later fields are skipped with a note.
+ */
+export const SATELLITE_MONITOR_MAX_FIELDS = 10;
 /** Postgres SQLSTATE of a failure, for a sanitized note (never the message). */
 const pgCode = (e: unknown): string => { const c = (e as { code?: unknown } | null)?.code; return typeof c === 'string' && /^[0-9A-Z]{5}$/.test(c) ? `:${c}` : ''; };
 
@@ -106,25 +112,36 @@ export function createMonitorHandler(deps: MonitorHandlerDeps): JobHandler {
     // SATELLITE_MONITOR_MAX_SCENES new scenes, at most 9 free Planetary Computer requests), read by the index stage reader, then
     // the code rule. Live only; a provider, calendar or storage failure becomes a note, never a failed job.
     if (mode === 'live') {
-      try {
-        const cycle = currentCycle(workspace);
-        if (!cycle) alertSummary.notes.push('satellite_check_skipped:no_current_cycle');
-        else {
+      // A farm without fields: one check on the farm polygon (unchanged). With fields: one check per field that has a current
+      // cycle in its field view (its own cycles plus a cycle recorded for the whole farm before the fields were drawn), on the
+      // field's own polygon, each alert carrying the fieldId. A provider, calendar or storage failure becomes a note.
+      const targets: { fieldId: string | null; cycle: ReturnType<typeof currentCycle> }[] = workspace.fields.length
+        ? workspace.fields.map((f) => ({ fieldId: f.id, cycle: currentCycle(fieldView(workspace, f.id)) }))
+        : [{ fieldId: null, cycle: currentCycle(workspace) }];
+      const withCycle = targets.filter((t) => t.cycle);
+      if (workspace.fields.length && !withCycle.length) alertSummary.notes.push('satellite_check_skipped:no_current_cycle');
+      if (withCycle.length > SATELLITE_MONITOR_MAX_FIELDS) alertSummary.notes.push(`satellite_check_skipped:field_limit:${withCycle.length - SATELLITE_MONITOR_MAX_FIELDS}`);
+      for (const t of workspace.fields.length ? withCycle.slice(0, SATELLITE_MONITOR_MAX_FIELDS) : targets) {
+        const tag = t.fieldId ? `:field=${t.fieldId}` : '';
+        try {
+          const cycle = t.cycle;
+          if (!cycle) { alertSummary.notes.push('satellite_check_skipped:no_current_cycle'); continue; }
           const anchor = cycle.establishmentDate ?? cycle.sowingDate;
           let timeline: StageTimeline | null = null;
           try {
             timeline = stageTimeline({ cropId: cycle.cropId, productId: cycle.productId ?? null, establishmentMethod: cycle.establishmentMethod ?? null, anchorDate: anchor, stateId: farm?.location.stateCode ?? null, districtId: farm?.location.districtId ?? null });
-          } catch { alertSummary.notes.push('satellite_stage_calendar_unavailable'); }
+          } catch { alertSummary.notes.push(`satellite_stage_calendar_unavailable${tag}`); }
           const at = new Date(snapshot.checkedAt);
-          const series = await ndviSeries({ config: deps.config, pool: deps.pool, fetchImpl: deps.fetchImpl, now: () => at }, ownerId, farmId, { from: ndviWindowFrom(anchor, today), to: today, maxScenes: SATELLITE_MONITOR_MAX_SCENES });
+          const series = await ndviSeries({ config: deps.config, pool: deps.pool, fetchImpl: deps.fetchImpl, now: () => at }, ownerId, farmId, { from: ndviWindowFrom(anchor, today), to: today, maxScenes: SATELLITE_MONITOR_MAX_SCENES, ...(t.fieldId ? { fieldId: t.fieldId } : {}) });
           const stage = readIndexStage({ readings: series.readings, today, timeline, cycle, smallField: series.smallField, polygonBasis: series.polygonBasis, series });
           const sat = satelliteAlerts(series, stage, timeline, snapshot.checkedAt);
-          const saved = await persistAlerts(deps.pool, ownerId, farmId, mode, sat.alerts);
-          alertSummary.satellite = saved.inserted + saved.updated;
-          alertSummary.notes.push(...sat.notes);
+          const drafts = t.fieldId ? sat.alerts.map((a) => ({ ...a, fieldId: t.fieldId! })) : sat.alerts;
+          const saved = await persistAlerts(deps.pool, ownerId, farmId, mode, drafts);
+          alertSummary.satellite += saved.inserted + saved.updated;
+          alertSummary.notes.push(...sat.notes.map((n) => `${n}${tag}`));
+        } catch (e) {
+          alertSummary.notes.push(`satellite_alerts_failed${pgCode(e)}${tag}`);
         }
-      } catch (e) {
-        alertSummary.notes.push(`satellite_alerts_failed${pgCode(e)}`);
       }
     } else alertSummary.notes.push('satellite_check_skipped:live_mode_required');
 

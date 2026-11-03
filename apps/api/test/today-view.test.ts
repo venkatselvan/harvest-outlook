@@ -756,6 +756,49 @@ describe('todayView: the Today overview (spec section 9, synthetic mode)', () =>
   });
 });
 
+describe('todayView: alerts across fields', () => {
+  const rect = (x0: number, y0: number, x1: number, y1: number) => ({type: 'Polygon' as const, coordinates: [[[x0, y0], [x1, y0], [x1, y1], [x0, y1], [x0, y0]]] as [number, number][][]});
+  const FIELDS = [{id: 'west', name: 'West strip', boundary: rect(76.249, 13.2495, 76.2498, 13.2505)}, {id: 'east', name: 'East strip', boundary: rect(76.2498, 13.2495, 76.251, 13.2505)}];
+  async function twoFieldFarm(name: string) {
+    const id = await createFarm(owner, name);
+    const put = await owner.call('PUT', `/api/v1/farms/${id}/workspace`, {payload: {expectedVersion: 0, boundary: rect(76.249, 13.2495, 76.251, 13.2505), fields: FIELDS, previousHarvest: {status: 'unknown'}, rotationPlans: [],
+      cycles: [{...maizeCycle, id: 'c-west', fieldId: 'west'}, {...maizeCycle, id: 'c-east', fieldId: 'east'}]}});
+    expect(put.statusCode, put.body).toBe(200);
+    return id;
+  }
+  const deps = (): TodayViewDeps & {fake: ReturnType<typeof fakePlanetary>} => ({...liveDeps({scenes: []}), config: {RUNTIME_MODE: 'synthetic'}});
+
+  it('the All fields overview (no fieldId) lists every field\'s alerts, labelled by fieldId, and the per-field counts match the list', async () => {
+    const id = await twoFieldFarm('Two fields, alerts');
+    await persistAlerts(h.pool, ownerId, id, 'synthetic', [{...alert('Armyworm window, east'), fieldId: 'east'}, alert('Farm-wide note')]);
+    fetchSpy();
+    const all = TodayView.parse(await todayView(deps(), ownerId, id));
+    expect(all.alerts.map((a) => [a.title, a.fieldId ?? null]).sort()).toEqual([['Armyworm window, east', 'east'], ['Farm-wide note', null]]);
+    expect(Object.fromEntries(all.fields!.map((f) => [f.id, f.alertCount]))).toEqual({west: 1, east: 2});
+    // A request naming west lists only farm-wide ones; the counts of the other fields still see their own alert.
+    const west = TodayView.parse(await todayView(deps(), ownerId, id, {fieldId: 'west'}));
+    expect(west.alerts.map((a) => a.title)).toEqual(['Farm-wide note']);
+    expect(Object.fromEntries(west.fields!.map((f) => [f.id, f.alertCount]))).toEqual({west: 1, east: 2});
+    const east = TodayView.parse(await todayView(deps(), ownerId, id, {fieldId: 'east'}));
+    expect(east.alerts.map((a) => a.title).sort()).toEqual(['Armyworm window, east', 'Farm-wide note']);
+  });
+
+  it('60 newer farm-wide alerts do not push a field\'s older alert out of its Today list', async () => {
+    const id = await twoFieldFarm('Two fields, many alerts');
+    await persistAlerts(h.pool, ownerId, id, 'synthetic', [{...alert('Armyworm window, east'), fieldId: 'east'}]);
+    await persistAlerts(h.pool, ownerId, id, 'synthetic', Array.from({length: 60}, (_, i) => alert(`Farm-wide note ${i}`)));
+    fetchSpy();
+    const east = TodayView.parse(await todayView(deps(), ownerId, id, {fieldId: 'east'}));
+    expect(east.alerts).toHaveLength(50); // the contract cap; the field's own alert is listed first
+    expect(east.alerts[0]).toMatchObject({fieldId: 'east'});
+    const all = TodayView.parse(await todayView(deps(), ownerId, id));
+    expect(all.alerts).toHaveLength(50);
+    expect(all.alerts.some((a) => a.fieldId === 'east')).toBe(false); // oldest of 61, beyond the cap: still counted below
+    expect(all.fields!.find((f) => f.id === 'west')!.alertCount).toBe(60);
+    expect(all.fields!.find((f) => f.id === 'east')!.alertCount).toBe(61);
+  });
+});
+
 describe('todayView: daily field conditions and the field-zoom satellite view (spec section 10)', () => {
   it('one contract-valid condition point per slider day; observed scenes carry the field-zoom paths; the bbox follows the boundary', async () => {
     const spy = fetchSpy();

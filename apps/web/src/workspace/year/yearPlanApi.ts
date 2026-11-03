@@ -31,6 +31,15 @@ export interface RequestOptions {
   fetchImpl?: typeof fetch;
 }
 
+/**
+ * The field the plan is for (FIELDS_MULTICROP_SOIL_SPEC.md 12.2). On a farm with fields every year-plan call names it
+ * (`?fieldId=` on GET and POST, `fieldId` in the rescore and apply bodies; the server answers 400 field_required without
+ * it). Null or omitted on a farm without fields, whose plan stays farm-wide.
+ */
+export interface FieldOption {
+  fieldId?: string | null | undefined;
+}
+
 export class YearPlanContractError extends Error {
   constructor(what: string) {
     super(`The server's ${what} does not match this version of the app.`);
@@ -49,7 +58,7 @@ const withSignal = (init: RequestInit | undefined, signal?: AbortSignal): Reques
 
 const planPath = (farmId: string, suffix = "") => `/api/v1/farms/${encodeURIComponent(farmId)}/year-plan${suffix}`;
 
-export interface HorizonOptions extends RequestOptions {
+export interface HorizonOptions extends RequestOptions, FieldOption {
   /**
    * A later 12-month horizon (round 3): one of the server's `navigation` dates (year index 1 to 3). Omitted for the
    * current horizon; the server answers 400 for any other date.
@@ -57,9 +66,18 @@ export interface HorizonOptions extends RequestOptions {
   from?: string | null | undefined;
 }
 
-/** GET the farm's review for one horizon (may be pending, stale, or an empty shell when nothing was generated yet). */
+/** `?from=&fieldId=` for the GET (from omitted on the current horizon), `?fieldId=` for the POST (from rides in its body). */
+export function yearPlanPath(farmId: string, query: { from?: string | null | undefined; fieldId?: string | null | undefined } = {}): string {
+  const q = new URLSearchParams();
+  if (query.from) q.set("from", query.from);
+  if (query.fieldId) q.set("fieldId", query.fieldId);
+  const text = q.toString();
+  return planPath(farmId, text ? `?${text}` : "");
+}
+
+/** GET the farm's (or the field's) review for one horizon (may be pending, stale, or an empty shell when nothing was generated yet). */
 export async function loadYearPlan(farmId: string, opts: HorizonOptions = {}): Promise<YearPlanReview> {
-  const path = opts.from ? planPath(farmId, `?from=${encodeURIComponent(opts.from)}`) : planPath(farmId);
+  const path = yearPlanPath(farmId, { from: opts.from, fieldId: opts.fieldId });
   const env = await apiRequest<unknown>(path, withSignal(undefined, opts.signal), opts.fetchImpl);
   return parse<YearPlanReview>(reviewSchema, env.data, "year plan");
 }
@@ -72,7 +90,7 @@ export interface GenerateOptions extends HorizonOptions {
 /** POST: ask the server to (re)generate the review of one horizon. Returns immediately with a pending or finished review. */
 export async function generateYearPlan(farmId: string, opts: GenerateOptions = {}): Promise<YearPlanReview> {
   const body = { ...(opts.force === true ? { force: true } : {}), ...(opts.from ? { from: opts.from } : {}) };
-  const env = await apiRequest<unknown>(planPath(farmId), withSignal(jsonInit("POST", body), opts.signal), opts.fetchImpl);
+  const env = await apiRequest<unknown>(yearPlanPath(farmId, { fieldId: opts.fieldId }), withSignal(jsonInit("POST", body), opts.signal), opts.fetchImpl);
   return parse<YearPlanReview>(reviewSchema, env.data, "year plan");
 }
 
@@ -119,6 +137,11 @@ export async function ensureYearPlan(farmId: string, opts: PollOptions = {}): Pr
   if (opts.signal?.aborted) return first;
   opts.onUpdate?.(first);
   return pollYearPlan(farmId, first, opts);
+}
+
+/** The rescore or apply body with the field it is for (12.2); unchanged when there is no field (a farm without fields). */
+export function withFieldId<T extends object>(body: T, fieldId: string | null | undefined): T & { fieldId?: string } {
+  return fieldId ? { ...body, fieldId } : body;
 }
 
 /** Farmer edit: code re-scores the changed option without a model call. The body is validated before sending. */

@@ -81,6 +81,8 @@ export function initialSlot(option: YearPlanOption, slotId: string | null): Year
  */
 export function OptionSheet(props: {
   farmId: string;
+  /** The field the plan is for; passed on to the crop pickers of the editor and the swap sheets. */
+  fieldId?: string | null | undefined;
   review: YearPlanReview;
   option: YearPlanOption;
   slotId: string | null;
@@ -203,6 +205,7 @@ export function OptionSheet(props: {
           <SlotEditor
             option={props.option}
             farmId={props.farmId}
+            fieldId={props.fieldId}
             previousCropId={props.review.scenario.previousCropId}
             horizon={props.review.scenario.horizon}
             choices={props.choices}
@@ -368,6 +371,7 @@ export function OptionSheet(props: {
           <SwapSheet
             title={`Swap ${picker().target.cropId ? nameOf(picker().target.cropId) : "this crop"}`}
             farmId={props.farmId}
+            fieldId={props.fieldId}
             context={picker().context}
             current={picker().current}
             onPick={onSwapPick}
@@ -380,6 +384,7 @@ export function OptionSheet(props: {
           <SwapSheet
             title={`Swap ${picker().target.cropName}`}
             farmId={props.farmId}
+            fieldId={props.fieldId}
             context={picker().context}
             current={picker().current}
             note="After you pick, the saved season on your field is changed and the year plan is rebuilt by code, not by AI."

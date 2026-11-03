@@ -20,6 +20,7 @@ import { parseIdempotencyKey, runIdempotent } from "../services/idempotency";
 import { envelopeSchema, errorEnvelopeSchema } from "./schemas/common";
 import { turnBody, turnOut, type TurnOut } from "./schemas/assistant";
 import {withModelActivity} from '../services/model-activity';
+import { fieldOf, getWorkspace } from "../services/workspace";
 
 export interface AssistantRouteDeps {
   config: Config;
@@ -106,6 +107,8 @@ export async function registerAssistantRoutes(app: FastifyInstance, deps: Assist
         const farm = await getFarm(pool, ownerId, body.farmId);
         if (!farm) throw notFound("Farm");
         farmGeography = { districtId: farm.location.districtId, stateCode: farm.location.stateCode };
+        // 12.5: the selected field must be a field of this farm (404 field_not_found) before any provider spend.
+        if (body.fieldId !== undefined) fieldOf(await getWorkspace(pool, ownerId, body.farmId), body.fieldId);
       }
       if (body.planId) {
         const p = await pool.query("SELECT 1 FROM plans WHERE id = $1 AND owner_id = $2 AND NOT EXISTS(SELECT 1 FROM archived_plans a WHERE a.plan_id=plans.id AND a.owner_id=$2)", [body.planId, ownerId]);
@@ -120,7 +123,7 @@ export async function registerAssistantRoutes(app: FastifyInstance, deps: Assist
       const out = await runIdempotent(pool, { ownerId, key, route: "POST /api/v1/assistant/turns", hashInput: body }, async () => {
         const result = await withModelActivity({pool,ownerId,sessionId,mode:config.RUNTIME_MODE,purpose:'assistant'},()=>runAgentTurn(
           { pool, budget, provider: providerFor(config.RUNTIME_MODE), registry, limits, models: { text: config.META_TEXT_MODEL, escalation: config.META_ESCALATION_MODEL }, signal: ac.signal },
-          { ownerId, sessionId, mode: config.RUNTIME_MODE, requestId: req.id, language: body.language, text, farmId: body.farmId, planId: body.planId, selectedDate: body.selectedDate, scenarioId: body.scenarioId, farmGeography },
+          { ownerId, sessionId, mode: config.RUNTIME_MODE, requestId: req.id, language: body.language, text, farmId: body.farmId, fieldId: body.fieldId, planId: body.planId, selectedDate: body.selectedDate, scenarioId: body.scenarioId, farmGeography },
         ));
         if (result.status === "provider_unavailable") {
           return { status: 503, body: errorEnvelope(req.id, config.RUNTIME_MODE, { code: "provider_unavailable", message: "The AI provider is not available. Text exploration without AI remains available.", details: { traceId: result.runId } }) };

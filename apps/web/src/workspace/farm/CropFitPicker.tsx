@@ -34,6 +34,8 @@ import "./crop-fit.css";
  */
 export interface CropFitPickerProps {
   farmId: string;
+  /** 2026-11-03 (FIELDS_MULTICROP_SOIL_SPEC.md 12.6): rank for this field (area and rotation are the field's); null or omitted = the whole farm. */
+  fieldId?: string | null | undefined;
   /** Sowing date the candidates are scored for (YYYY-MM-DD). */
   sowing: string;
   /** Crop before the slot being edited; null uses the field's own history. */
@@ -234,7 +236,34 @@ export function CropFitPickerView(props: {
 }
 
 /**
- * Loads and polls `/crop-fit?mode=date&sowing=&after=` for the slot and renders the picker. A new `farmId`, `sowing` or
+ * One picker request: crop fit in `date` mode for the slot's sowing date and previous crop, for the field when `fieldId`
+ * is given (its area and rotation) and for the whole farm otherwise. GET (or POST when `force`), then poll while the
+ * review is pending or running; every review seen goes to `onUpdate`. Exported so the request itself is testable.
+ */
+export async function requestPickerReview(args: {
+  farmId: string;
+  fieldId: string | null;
+  sowing: string;
+  after: string | null;
+  force: boolean;
+  signal: AbortSignal;
+  onUpdate: (review: CropFitReview) => void;
+  isCurrent: () => boolean;
+  fetchImpl?: typeof fetch | undefined;
+  intervalMs?: number | undefined;
+}): Promise<void> {
+  if (!isIsoDate(args.sowing)) throw Object.assign(new Error("Pick a valid sowing date."), { name: "InvalidSowing" });
+  const controls = pickerControls(args.sowing, args.after);
+  const opts = { signal: args.signal, fieldId: args.fieldId, ...(args.fetchImpl ? { fetchImpl: args.fetchImpl } : {}) };
+  const first = args.force ? await refreshCropFit(args.farmId, controls, opts) : await loadCropFit(args.farmId, controls, opts);
+  args.onUpdate(first);
+  if (args.isCurrent() && isActive(first)) {
+    args.onUpdate(await pollCropFit(args.farmId, controls, first, { ...opts, onUpdate: args.onUpdate, ...(args.intervalMs !== undefined ? { intervalMs: args.intervalMs } : {}) }));
+  }
+}
+
+/**
+ * Loads and polls `/crop-fit?mode=date&sowing=&after=` for the slot and renders the picker. A new `farmId`, `fieldId`, `sowing` or
  * `after` starts a fresh request and drops the old one. Keep calls `onClose` (the crop stays as it is).
  */
 export function CropFitPicker(props: CropFitPickerProps) {
@@ -244,21 +273,17 @@ export function CropFitPicker(props: CropFitPickerProps) {
   let generation = 0;
   let controller: AbortController | undefined;
 
-  async function load(farmId: string, sowing: string, after: string | null, force: boolean) {
+  async function load(farmId: string, fieldId: string | null, sowing: string, after: string | null, force: boolean) {
     controller?.abort();
     const ctrl = new AbortController();
     controller = ctrl;
     const gen = generation;
     const ok = () => !ctrl.signal.aborted && gen === generation;
-    const controls = pickerControls(sowing, after);
     const show = (next: CropFitReview) => {
       if (ok()) batch(() => { setFailure(undefined); setReview(next); });
     };
     try {
-      if (!isIsoDate(sowing)) throw Object.assign(new Error("Pick a valid sowing date."), { name: "InvalidSowing" });
-      const first = force ? await refreshCropFit(farmId, controls, { signal: ctrl.signal }) : await loadCropFit(farmId, controls, { signal: ctrl.signal });
-      show(first);
-      if (ok() && isActive(first)) show(await pollCropFit(farmId, controls, first, { signal: ctrl.signal, onUpdate: show }));
+      await requestPickerReview({ farmId, fieldId, sowing, after, force, signal: ctrl.signal, onUpdate: show, isCurrent: ok });
     } catch (error) {
       if (ok()) setFailure(error instanceof Error && error.name === "InvalidSowing" ? { kind: "invalid", message: error.message } : classifyCropFitError(error));
     } finally {
@@ -271,11 +296,11 @@ export function CropFitPicker(props: CropFitPickerProps) {
 
   createEffect(
     on(
-      () => [props.farmId, props.sowing, props.after] as const,
-      ([farmId, sowing, after]) => {
+      () => [props.farmId, props.fieldId ?? null, props.sowing, props.after] as const,
+      ([farmId, fieldId, sowing, after]) => {
         generation++;
         batch(() => { setReview(undefined); setFailure(undefined); });
-        if (farmId) void load(farmId, sowing, after, false);
+        if (farmId) void load(farmId, fieldId, sowing, after, false);
       },
     ),
   );
@@ -300,7 +325,7 @@ export function CropFitPicker(props: CropFitPickerProps) {
         if (retrying()) return;
         setRetrying(true);
         batch(() => { setFailure(undefined); setReview(undefined); });
-        void load(props.farmId, props.sowing, props.after, true);
+        void load(props.farmId, props.fieldId ?? null, props.sowing, props.after, true);
       }}
     />
   );

@@ -11,7 +11,12 @@ import { isActive, queryFor, type ControlsState } from "./cropFitModel";
 export const CROP_FIT_POLL_MS = 1500;
 export const CROP_FIT_MAX_POLLS = 160;
 
-export interface RequestOptions { signal?: AbortSignal; fetchImpl?: typeof fetch }
+export interface RequestOptions {
+  signal?: AbortSignal;
+  fetchImpl?: typeof fetch;
+  /** 2026-11-03 (FIELDS_MULTICROP_SOIL_SPEC.md 12.3): rank for this field (`?fieldId=`); null or omitted = the whole farm. */
+  fieldId?: string | null | undefined;
+}
 export class CropFitContractError extends Error {
   constructor() {
     super("The server's crop fit review does not match this version of the app.");
@@ -24,16 +29,20 @@ const parse = (data: unknown): CropFitReview => {
   return r.data;
 };
 const withSignal = (init: RequestInit | undefined, signal?: AbortSignal): RequestInit | undefined => (signal ? { ...(init ?? {}), signal } : init);
-export const cropFitPath = (farmId: string, controls: ControlsState | null) => `/api/v1/farms/${encodeURIComponent(farmId)}/crop-fit${queryFor(controls)}`;
+export function cropFitPath(farmId: string, controls: ControlsState | null, fieldId?: string | null): string {
+  const query = queryFor(controls);
+  const field = fieldId ? `fieldId=${encodeURIComponent(fieldId)}` : "";
+  return `/api/v1/farms/${encodeURIComponent(farmId)}/crop-fit${query}${field ? `${query ? "&" : "?"}${field}` : ""}`;
+}
 
 /** GET: the ready review for the current inputs, or a pending one the server has just started. `null` controls = server default mode. */
 export async function loadCropFit(farmId: string, controls: ControlsState | null, opts: RequestOptions = {}): Promise<CropFitReview> {
-  const env = await apiRequest<unknown>(cropFitPath(farmId, controls), withSignal(undefined, opts.signal), opts.fetchImpl);
+  const env = await apiRequest<unknown>(cropFitPath(farmId, controls, opts.fieldId), withSignal(undefined, opts.signal), opts.fetchImpl);
   return parse(env.data);
 }
 /** POST with the same query: replace a finished review now (Refresh). */
 export async function refreshCropFit(farmId: string, controls: ControlsState | null, opts: RequestOptions = {}): Promise<CropFitReview> {
-  const env = await apiRequest<unknown>(cropFitPath(farmId, controls), withSignal(jsonInit("POST", {}), opts.signal), opts.fetchImpl);
+  const env = await apiRequest<unknown>(cropFitPath(farmId, controls, opts.fieldId), withSignal(jsonInit("POST", {}), opts.signal), opts.fetchImpl);
   return parse(env.data);
 }
 

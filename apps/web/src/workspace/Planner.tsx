@@ -21,6 +21,7 @@ import {
   seasonTitle,
   yearHints,
 } from "./season/seasonPreviewModel";
+import { CHOOSE_FIELD_TO_ADD, isWholeFarmSeason, needsFieldForNewSeason, seasonFieldLabel, seasonsForField, seasonWithField } from "./year/PlanCalendar";
 import "./season/season-preview.css";
 const MONTHS = [
   "Jan",
@@ -44,10 +45,14 @@ type Rotation = WorkspaceRotation & {
   kind?: "crop" | "green_manure" | "intercrop";
   companion?: { systemId?: string; cropId: string; cropName?: string; productId?: string; productName?: string; rowRatio: string };
 };
-export function Planner() {
+export function Planner(props: { fieldId?: string | null | undefined; fields?: readonly { id: string; name: string }[] | undefined } = {}) {
   const s = useWorkspace();
+  // "All fields" on a farm with fields: listed seasons name their field and nothing can be added (see PlanCalendar).
+  const chooseField = () => needsFieldForNewSeason((props.fields?.length ?? 0) > 0, props.fieldId);
+  const fieldLabel = (p: Rotation) => seasonFieldLabel(p, props.fields, props.fieldId);
   const navigate = useNavigate();
-  const plans = (): Rotation[] => s.workspace()?.rotationPlans ?? [];
+  // A field's plan lists that field's seasons and legacy whole-farm seasons; "All fields" lists every season.
+  const plans = (): Rotation[] => seasonsForField(s.workspace()?.rotationPlans ?? [], props.fieldId);
   // ROUND3_SPEC 2.1: open on the year of the earliest saved season sown on or after today (else this year) until the
   // farmer picks a year; the pick is kept per farm.
   const [picked, setPicked] = createSignal<{
@@ -153,7 +158,7 @@ export function Planner() {
         delete cleaned.productName;
       }
       const next = {
-        ...cleaned,
+        ...seasonWithField(cleaned, props.fieldId),
         id: p.id ?? newEntryId("rotation"),
         year: Number(p.plannedSowingDate.slice(0, 4)),
         cropName: s.cropName(p.cropId),
@@ -240,10 +245,19 @@ export function Planner() {
           <Icon name="compare" size={17} />
           Compare crops
         </A>
-        <button class="btn" disabled={!s.farm()} onClick={() => add()}>
-          <Icon name="plus" size={17} />
-          Add a season
-        </button>
+        <Show
+          when={!chooseField()}
+          fallback={
+            <p class="subtle-caption" data-testid="planner-choose-field">
+              {CHOOSE_FIELD_TO_ADD}
+            </p>
+          }
+        >
+          <button class="btn" disabled={!s.farm()} onClick={() => add()}>
+            <Icon name="plus" size={17} />
+            Add a season
+          </button>
+        </Show>
       </PageHeading>
       <Show
         when={s.farm()}
@@ -354,9 +368,11 @@ export function Planner() {
                     Add a crop for any season in {year()}, then explore how it
                     might grow.
                   </p>
-                  <button class="btn" onClick={() => add()}>
-                    Plan your first season <Icon name="plus" size={17} />
-                  </button>
+                  <Show when={!chooseField()}>
+                    <button class="btn" onClick={() => add()}>
+                      Plan your first season <Icon name="plus" size={17} />
+                    </button>
+                  </Show>
                 </div>
               }
             >
@@ -418,9 +434,14 @@ export function Planner() {
               </For>
             </Show>
             <div class="rotation-add">
-              <button onClick={() => add()}>
-                <Icon name="plus" size={16} /> Add a crop or cover season
-              </button>
+              <Show
+                when={!chooseField()}
+                fallback={<strong data-testid="planner-choose-field">{CHOOSE_FIELD_TO_ADD}</strong>}
+              >
+                <button onClick={() => add()}>
+                  <Icon name="plus" size={16} /> Add a crop or cover season
+                </button>
+              </Show>
               <span>
                 Bars show saved dates. An open-ended bar means the harvest date
                 is unknown.
@@ -476,6 +497,8 @@ export function Planner() {
                                 : p.kind === "intercrop"
                                   ? " · Intercrop"
                                   : ""}
+                              {isWholeFarmSeason(p, props.fieldId) ? " · Whole farm" : ""}
+                              {fieldLabel(p) ? ` · ${fieldLabel(p)}` : ""}
                               {p.productName ? ` · ${p.productName}` : ""} · Sow{" "}
                               {p.plannedSowingDate
                                 ? dateLabel(p.plannedSowingDate)
@@ -629,6 +652,7 @@ export function Planner() {
           <SeasonPreviewSheet
             farmId={s.farm()!.id}
             request={{ planId: p.id }}
+            fieldId={p.fieldId}
             title={title(p)}
             onClose={() => setPreview(null)}
           />

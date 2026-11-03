@@ -26,6 +26,7 @@ import {
 import { useWorkspace, dateLabel } from "./state";
 import { PageHeading } from "./FarmPage";
 import { Icon } from "./icons";
+import { SoilScopeNote } from "./fields/SoilScopeNote";
 import { Evara } from "./Evara";
 import { AiSpark, AiSparkInline } from "./ui/AiSpark";
 import { SoilMarkerCards, SoilReferenceCards } from "./SoilMarkerCards";
@@ -289,6 +290,7 @@ export function FarmSettings() {
           Back to farm
         </A>
       </PageHeading>
+      <SoilScopeNote fieldCount={s.workspace()?.farmId === s.farm()?.id ? (s.workspace()?.fields?.length ?? 0) : 0} />
       <Show
         when={s.farm()}
         fallback={

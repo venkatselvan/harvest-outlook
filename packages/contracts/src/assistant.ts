@@ -10,6 +10,7 @@ import { ForecastArtifact, JournalFact } from './plans';
 import { RuleEvaluationResult, RuleField, ScreeningOutcome } from './rules';
 import { ToolName } from './tool-names';
 import { WaterBalanceResult } from './water';
+import { FieldId } from './workspace';
 
 export { ToolName };
 
@@ -209,7 +210,7 @@ export const FarmBriefing = z
       })
       .strict()
       .nullable(),
-    /** 2026-11-03: fields inside the farm; viewedField is null because the briefing describes the farm-level current cycle. */
+    /** 2026-11-03: fields inside the farm; viewedField names the field the briefing describes (12.5: the selected field, else the first field with a current crop), null when it describes the whole farm. */
     fields: z.object({ count: z.number().int().nonnegative(), viewedField: bText(80).nullable() }).strict().optional(),
     limitations: z.array(bText(300)).max(30),
   })
@@ -409,7 +410,8 @@ export const ToolSchemas = {
       .strict(),
   },
   get_farm_briefing: {
-    input: z.object({ farmId: Id }).strict(),
+    /** 2026-11-03: fieldId = the field selected in the shell; the briefing then describes that field (12.5). */
+    input: z.object({ farmId: Id, fieldId: FieldId.optional() }).strict(),
     output: FarmBriefing,
   },
 } as const satisfies Record<ToolName, { input: z.ZodType; output: z.ZodType }>;

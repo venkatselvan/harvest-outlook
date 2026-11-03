@@ -46,6 +46,8 @@ function nextSowing(drafts: readonly DraftSlot[], horizon: { from: string; to: s
  */
 export function SlotEditor(props: {
   farmId: string;
+  /** The field the plan is for; passed on to the crop picker. */
+  fieldId?: string | null | undefined;
   /** The crop before the plan's first free row (the scenario's previous crop); null when unknown. */
   previousCropId: string | null;
   option: YearPlanOption;
@@ -322,6 +324,7 @@ export function SlotEditor(props: {
           <SwapSheet
             title={`Swap ${picker().target.cropId ? nameOf(picker().target.cropId) : "this crop"}`}
             farmId={props.farmId}
+            fieldId={props.fieldId}
             context={picker().context}
             current={picker().current}
             onPick={onSwapPick}
@@ -336,6 +339,7 @@ export function SlotEditor(props: {
             <SwapSheet
               title="Suggest the next crop"
               farmId={props.farmId}
+              fieldId={props.fieldId}
               context={n.context}
               current={null}
               onPick={onSuggestPick}

@@ -98,10 +98,11 @@ export type SoilCardState =
   | { kind: "review"; review: SoilReview; polling: boolean }
   | { kind: "failed"; reason: "load" | "review" };
 
+/** `fieldId` is the selected field (`?fieldId=`), null for the whole farm ("All fields" or a farm without fields). */
 export interface SoilCardApi {
-  load: (farmId: string, opts: { signal: AbortSignal }) => Promise<SoilReview>;
-  refresh: (farmId: string, opts: { signal: AbortSignal; onUpdate?: (review: SoilReview) => void }) => Promise<SoilReview>;
-  poll: (farmId: string, initial: SoilReview, opts: { signal: AbortSignal; onUpdate?: (review: SoilReview) => void }) => Promise<SoilReview>;
+  load: (farmId: string, opts: { signal: AbortSignal; fieldId?: string | null }) => Promise<SoilReview>;
+  refresh: (farmId: string, opts: { signal: AbortSignal; fieldId?: string | null; onUpdate?: (review: SoilReview) => void }) => Promise<SoilReview>;
+  poll: (farmId: string, initial: SoilReview, opts: { signal: AbortSignal; fieldId?: string | null; onUpdate?: (review: SoilReview) => void }) => Promise<SoilReview>;
 }
 
 export const summaryFailed = (r: Pick<SoilReview, "status">) => r.status === "error" || r.status === "unavailable";
@@ -111,19 +112,27 @@ const failedReview = (r: SoilReview) => summaryFailed(r) && pickReadings(r.readi
 /**
  * Load the farm's soil review and follow it while it is pending or running. Every emit is guarded by the signal, so a
  * response that arrives after the farm changed or the card unmounted is dropped. `force` is Retry after a review that
- * ended in error (POST, then poll); otherwise it is a plain GET.
+ * ended in error (POST, then poll); otherwise it is a plain GET. `fieldId` goes to every request so the card shares the
+ * review the Farm tab shows for that field (one Meta narrative job per field); null keeps the farm-wide review.
  */
-export async function runSoilCard(farmId: string, api: SoilCardApi, emit: (state: SoilCardState) => void, signal: AbortSignal, force = false): Promise<void> {
+export async function runSoilCard(
+  farmId: string,
+  api: SoilCardApi,
+  emit: (state: SoilCardState) => void,
+  signal: AbortSignal,
+  force = false,
+  fieldId: string | null = null,
+): Promise<void> {
   const show = (review: SoilReview, polling: boolean) => {
     if (signal.aborted) return;
     emit(failedReview(review) ? { kind: "failed", reason: "review" } : { kind: "review", review, polling });
   };
   try {
-    const first = force ? await api.refresh(farmId, { signal, onUpdate: (r) => show(r, isActive(r)) }) : await api.load(farmId, { signal });
+    const first = force ? await api.refresh(farmId, { signal, fieldId, onUpdate: (r) => show(r, isActive(r)) }) : await api.load(farmId, { signal, fieldId });
     if (signal.aborted) return;
     show(first, isActive(first));
     if (!isActive(first)) return;
-    const last = await api.poll(farmId, first, { signal, onUpdate: (r) => show(r, isActive(r)) });
+    const last = await api.poll(farmId, first, { signal, fieldId, onUpdate: (r) => show(r, isActive(r)) });
     if (signal.aborted) return;
     show(last, false);
   } catch {

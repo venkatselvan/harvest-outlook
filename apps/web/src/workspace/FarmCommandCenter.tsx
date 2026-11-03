@@ -1,6 +1,8 @@
 import {
   For,
+  Match,
   Show,
+  Switch,
   createEffect,
   createMemo,
   createResource,
@@ -44,6 +46,7 @@ import {
   FarmTabNav,
   farmHref,
   farmSections,
+  planTabGate,
   selectedSection,
   selectedTab,
   setDueBadge,
@@ -56,6 +59,7 @@ import {
   normalizeRowRatio,
   type FieldCycleLike,
 } from "./fields/fieldsModel";
+import { ShellFieldChips, workspaceChipItems } from "./fields/FieldsToday";
 import "./farm-command.css";
 import "./fields/fields.css";
 
@@ -255,8 +259,22 @@ export function FarmCommandCenter() {
     if (!workspaceKnown()) return s.workspace.error ? null : undefined;
     return farmFields().some((field) => field.id === raw) ? raw : null;
   };
+  const planGate = () => planTabGate(todayField(), workspaceKnown(), !!s.workspace.error);
   const selectField = (fieldId: string | null) =>
     navigate(farmHref("today", undefined, fieldId));
+  /** The shell's chips row (12.6): selecting a field keeps the current tab and Farm section. */
+  const chooseField = (fieldId: string | null) =>
+    navigate(farmHref(tab(), section(), fieldId));
+  const chipItems = createMemo(() =>
+    workspaceChipItems(
+      farmFields(),
+      (workspace()?.cycles ?? []) as FieldCycleLike[],
+      s.cropName,
+    ),
+  );
+  /** The selected field's name, for the Farm tab headings. */
+  const selectedFieldName = () =>
+    farmFields().find((field) => field.id === todayField())?.name ?? null;
   // The tab bars live in the shell: publish the field so their links keep it.
   createEffect(() => setTabField(todayField() ?? null));
   onCleanup(() => setTabField(null));
@@ -536,6 +554,12 @@ export function FarmCommandCenter() {
         </div>
       </header>
       <FarmTabNav variant="top" current={tab} />
+      <ShellFieldChips
+        tab={tab()}
+        items={chipItems()}
+        selected={todayField()}
+        onSelect={chooseField}
+      />
       <Show when={resource.error}>
         <div class="command-data-warning" role="status">
           <Icon name="info" size={15} />
@@ -602,19 +626,51 @@ export function FarmCommandCenter() {
               <Icon name="compare" size={16} /> Compare crops
             </button>
           </div>
-          <Show when={s.farm()?.id}>{(id) => <CropFitView farmId={id()} />}</Show>
+          <Show when={s.farm()?.id && todayField() !== undefined ? s.farm()!.id : undefined}>
+            {(id) => (
+              <CropFitView
+                farmId={id()}
+                fieldId={todayField() ?? null}
+                fieldName={selectedFieldName()}
+              />
+            )}
+          </Show>
         </div>
       </Show>
       <Show when={tab() === "soil" && section() === "records"}>
         <div class="farm-tab-scroll embedded-tool">
-          <Show when={s.farm()?.id}>{(id) => <SoilReviewPanel farmId={id()} />}</Show>
+          <Show when={s.farm()?.id && todayField() !== undefined ? s.farm()!.id : undefined}>
+            {(id) => <SoilReviewPanel farmId={id()} fieldId={todayField() ?? null} />}
+          </Show>
           <div id="soil-report-values">
             <FarmSettings />
           </div>
         </div>
       </Show>
       <Show when={tab() === "year"}>
-        <YearPlanView />
+        {/* The plan waits for the farm's fields: on a farm with fields every year-plan call names one (400 field_required otherwise). */}
+        <Switch>
+          <Match when={planGate() === "ready"}>
+            <YearPlanView
+              fieldId={todayField() ?? null}
+              workspace={workspace()}
+              onOpenField={(id) => navigate(farmHref("year", undefined, id))}
+            />
+          </Match>
+          <Match when={planGate() === "error"}>
+            <div class="command-data-warning" role="alert" data-testid="plan-workspace-error">
+              <p>Your fields could not be loaded, so the year plan cannot be shown yet.</p>
+              <button type="button" class="btn compact secondary" onClick={() => void s.refreshWorkspace()}>
+                Try again
+              </button>
+            </div>
+          </Match>
+          <Match when={true}>
+            <p class="command-loading" role="status">
+              <Evara size={32} /> Loading your fields…
+            </p>
+          </Match>
+        </Switch>
       </Show>
       <Show when={tab() === "harvest"}>
         <div class="farm-tab-scroll embedded-tool market-tab">

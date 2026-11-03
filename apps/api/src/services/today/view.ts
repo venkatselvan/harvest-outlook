@@ -100,6 +100,11 @@ import {stateNameFor} from '../../plans/adapters/market-outlook';
 import type {FocusedCareCrop} from '../focused-crops';
 import {OUTLOOK_TREND_MONTHS, ensureOutlookNote, outlookFacts} from './outlook-note';
 import {listAlerts} from './alerts';
+
+/** Alerts read for the Today composition (listAlerts defaults to 50); a named field is filtered in SQL before this limit. */
+const TODAY_ALERT_LIMIT = 200;
+/** The TodayView contract lists at most this many alerts. */
+const TODAY_ALERT_MAX = 50;
 import {listReadyFutureLooks, pendingGapLooks, requestFutureLook, weekStart, type PredictionContext} from './future-look';
 import {boundaryPolygonHash, fieldImageBbox, fieldScenePaths, latestStoredReading, ndviSeries, wideScenePaths} from './ndvi';
 import {fieldConditions} from './conditions';
@@ -856,7 +861,7 @@ export async function todayView(deps: TodayViewDeps, ownerId: string, farmId: st
       climatologyYears: deps.config.WEATHER_CLIMATOLOGY_YEARS, climatologyEndYear: deps.config.WEATHER_CLIMATOLOGY_END_YEAR,
     }, {point, from: weatherWindow.from, to: weatherWindow.to, asOf, mode, farmId});
   }, unavailableTrack(weatherWindow.from, weatherWindow.to, 'Weather could not be read now.'));
-  const alertsTask = guard('Alerts', () => listAlerts(deps.pool, ownerId, farmId, mode, asOf), null);
+  const alertsTask = guard('Alerts', () => listAlerts(deps.pool, ownerId, farmId, mode, asOf, {limit: TODAY_ALERT_LIMIT}), null);
   const careTask = cycle ? guard('The care schedule', async () => {
     const [research, completed] = await Promise.all([
       p.focusedResearch(),
@@ -867,8 +872,13 @@ export async function todayView(deps: TodayViewDeps, ownerId: string, farmId: st
   }, null) : Promise.resolve(null);
   const monitorTask = guard('Monitoring status', () => readMonitorSettings(deps.pool, ownerId, farmId, mode), null);
   const [ndvi, looks, price, weather, alertsRead, care, monitor] = await Promise.all([ndviTask, looksTask, priceTask, weatherTask, alertsTask, careTask, monitorTask]);
-  // A field view lists the alerts naming that field plus the farm-wide ones (no fieldId).
-  const alerts = alertsRead && selected ? {...alertsRead, alerts: alertsRead.alerts.filter((a) => a.fieldId === undefined || a.fieldId === selected.id)} : alertsRead;
+  // A request that NAMED a field lists the alerts naming it plus the farm-wide ones. Without a fieldId (the "All fields"
+  // overview) every alert is returned, each carrying fieldId/scope for labelling; the per-field counts use all of them.
+  // The contract lists at most 50: a named field's own alerts come first, then the newest farm-wide ones.
+  const named = opts.fieldId !== undefined ? selected : null;
+  const alerts = alertsRead && named
+    ? {...alertsRead, alerts: [...alertsRead.alerts.filter((a) => a.fieldId === named.id), ...alertsRead.alerts.filter((a) => a.fieldId === undefined)].slice(0, TODAY_ALERT_MAX)}
+    : alertsRead ? {...alertsRead, alerts: alertsRead.alerts.slice(0, TODAY_ALERT_MAX)} : alertsRead;
 
   // ---- scenes and health
   const satelliteNotes: string[] = [];

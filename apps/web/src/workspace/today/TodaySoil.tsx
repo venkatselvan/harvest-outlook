@@ -186,32 +186,39 @@ export type SoilCardController = {
 };
 
 /**
- * One soil review load per farm and session epoch. Create it once in a stable owner (the Today view root) and share it
+ * One soil review load per farm, selected field and session epoch (a field selection loads that field's review, the same one
+ * the Farm tab shows; "All fields" and farms without fields load the farm-wide review). Create it once in a stable owner (the Today view root) and share it
  * through `SoilCardContext`; the card itself can then mount and unmount under the view's loading branches without
  * repeating `GET /soil-review`. "Not now" is kept in session storage per farm.
  */
-export function createSoilCardController(farmId: Accessor<string | undefined>, epoch: Accessor<number>, api: SoilCardApi = defaultApi): SoilCardController {
+export function createSoilCardController(
+  farmId: Accessor<string | undefined>,
+  epoch: Accessor<number>,
+  api: SoilCardApi = defaultApi,
+  fieldId: Accessor<string | null | undefined> = () => null,
+): SoilCardController {
   const [state, setState] = createSignal<SoilCardState>({ kind: "loading" });
   const [dismissed, setDismissed] = createSignal(false);
   let controller: AbortController | undefined;
 
-  function start(id: string, force: boolean) {
+  function start(id: string, field: string | null, force: boolean) {
     controller?.abort();
     const ctrl = new AbortController();
     controller = ctrl;
-    void runSoilCard(id, api, (next) => !ctrl.signal.aborted && setState(next), ctrl.signal, force);
+    void runSoilCard(id, api, (next) => !ctrl.signal.aborted && setState(next), ctrl.signal, force, field);
   }
 
-  // The previous farm's review is dropped at once and its late answer is aborted.
+  // The previous farm's or field's review is dropped at once and its late answer is aborted. `undefined` is "the shell
+  // cannot tell the field yet": nothing is requested, so a farm-wide review is never made for a field that is about to be chosen.
   createEffect(
     on(
-      () => [farmId(), epoch()] as const,
-      ([id]) => {
+      () => [farmId(), fieldId(), epoch()] as const,
+      ([id, field]) => {
         batch(() => {
           setState({ kind: "loading" });
           setDismissed(id ? readDismissed(id) : false);
         });
-        if (id) start(id, false);
+        if (id && field !== undefined) start(id, field, false);
         else controller?.abort();
       },
     ),
@@ -223,10 +230,11 @@ export function createSoilCardController(farmId: Accessor<string | undefined>, e
     dismissed,
     retry: () => {
       const id = farmId();
-      if (!id) return;
+      const field = fieldId();
+      if (!id || field === undefined) return;
       const current = state();
       setState({ kind: "loading" });
-      start(id, (current.kind === "failed" && current.reason === "review") || (current.kind === "review" && summaryFailed(current.review)));
+      start(id, field, (current.kind === "failed" && current.reason === "review") || (current.kind === "review" && summaryFailed(current.review)));
     },
     dismiss: () => {
       const id = farmId();

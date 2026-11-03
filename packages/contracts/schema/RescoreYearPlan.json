@@ -64,6 +64,12 @@
         ],
         "additionalProperties": false
       }
+    },
+    "fieldId": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 120,
+      "pattern": "^[A-Za-z0-9_.-]+$"
     }
   },
   "required": [

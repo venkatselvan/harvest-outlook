@@ -101,6 +101,18 @@ export const farmHref = (tab: FarmTab, section?: FarmSection, field?: string | n
  * the same way as the due badge. Null = no field (a farm without fields, or "All fields"). Cleared when the command
  * center unmounts.
  */
+/**
+ * What the Plan tab shows. On a farm with fields every year-plan call must name a field, and whether the farm has fields is
+ * only known from its workspace, so the plan view is not mounted before that: "loading" while the workspace or a `?field=`
+ * link resolves, "error" when the workspace failed to load (an unscoped call would only answer 400 field_required), "ready"
+ * otherwise.
+ */
+export type PlanTabGate = "loading" | "error" | "ready";
+export function planTabGate(field: string | null | undefined, workspaceKnown: boolean, workspaceFailed: boolean): PlanTabGate {
+  if (!workspaceKnown) return workspaceFailed ? "error" : "loading";
+  return field === undefined ? "loading" : "ready";
+}
+
 const [tabField, setTabField] = createSignal<string | null>(null);
 export { tabField, setTabField };
 

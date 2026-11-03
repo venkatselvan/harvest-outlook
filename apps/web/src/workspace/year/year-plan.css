@@ -1045,3 +1045,57 @@ strong.yp-band-val {
     animation: none;
   }
 }
+
+/* "Plans by field" (FIELDS_MULTICROP_SOIL_SPEC.md 12.6): the "All fields" Plan view on a farm with fields. */
+.yp-title-field {
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+.yp-by-field {
+  display: grid;
+  gap: 8px;
+}
+.yp-by-field-title {
+  margin: 0;
+  font-size: 15px;
+}
+.yp-by-field-list {
+  display: grid;
+  gap: 8px;
+  margin: 4px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.yp-by-field-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+}
+.yp-by-field-text {
+  display: grid;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+.yp-by-field-now,
+.yp-by-field-next {
+  color: var(--text-secondary);
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+.yp-by-field-row > .btn {
+  flex: none;
+}
+@media (max-width: 479px) {
+  .yp-by-field-row {
+    flex-wrap: wrap;
+  }
+  .yp-by-field-row > .btn {
+    width: 100%;
+    justify-content: center;
+  }
+}

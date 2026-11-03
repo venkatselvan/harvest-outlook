@@ -2100,3 +2100,29 @@
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+/* ---------------------------------------------------------------- shell field chips (FIELDS_MULTICROP_SOIL_SPEC.md 12.6)
+   The chips row moved from the Today view to the shell, under the tab bar, so it shows on Today, Plan and Farm. The wrapper
+   gives it the shell's side padding; the row scrolls sideways on a phone instead of wrapping. */
+.farm-field-chips {
+  flex-shrink: 0;
+  padding: 10px 26px 0;
+  min-width: 0;
+}
+.farm-field-chips .today-field-chips {
+  max-width: none;
+  margin: 0;
+}
+@media (max-width: 767px) {
+  .farm-field-chips {
+    padding: 8px 16px 0;
+  }
+}
+/* "Farm-wide" on an alert in a field's list: weather, price and news alerts cover every field. */
+.today-alert-scope {
+  font-size: 11px;
+  padding: 1px 7px;
+  background: var(--surface-soft);
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+}

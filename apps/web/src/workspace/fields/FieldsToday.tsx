@@ -3,7 +3,8 @@ import type { FieldSummary } from "@harvest/contracts";
 import { Icon } from "../icons";
 import { cropColor, formatDay, formatIndex, harvestInText } from "../today/model";
 import { verdictLabel } from "../today/TodayCards";
-import { areaText } from "./fieldsModel";
+import type { FarmTab } from "../farmTabs";
+import { areaText, fieldCropOf, type FieldCycleLike } from "./fieldsModel";
 
 /**
  * Today's field controls on a farm with fields (FIELDS_MULTICROP_SOIL_SPEC.md 6.3): the chips row ("All fields" then one
@@ -57,6 +58,45 @@ export function FieldChips(props: { items: readonly FieldChipItem[]; selected: s
         )}
       </For>
     </div>
+  );
+}
+
+/**
+ * The tabs that show the shell's chips row (FIELDS_MULTICROP_SOIL_SPEC.md 12.6): Today, Plan and Farm follow the selected
+ * field. The Market tab is not field-scoped (prices are per district), so it shows no chips rather than a choice that
+ * changes nothing.
+ */
+export const FIELD_CHIP_TABS: readonly FarmTab[] = ["today", "year", "soil"];
+export const fieldChipsShown = (tab: FarmTab, fieldCount: number) => fieldCount > 0 && FIELD_CHIP_TABS.includes(tab);
+
+/** Chip items from the stored workspace (the shell has no Today view to read): each field with its current crop ("(whole farm)" for a legacy cycle), or "No crop". */
+export function workspaceChipItems(
+  fields: readonly { id: string; name: string }[],
+  cycles: readonly FieldCycleLike[],
+  cropName: (cropId: string) => string,
+): FieldChipItem[] {
+  return fields.map((field) => {
+    const { cycle, label } = fieldCropOf(field.id, cycles, cropName);
+    return { id: field.id, name: field.name, crop: label, cropId: cycle?.cropId ?? null };
+  });
+}
+
+/**
+ * The chips row in the shell, under the tab bar (12.6). Shown on Today, Plan and Farm when the farm has fields; selecting a
+ * chip keeps the current tab (the shell's `onSelect` navigates with the same tab and section).
+ */
+export function ShellFieldChips(props: {
+  tab: FarmTab;
+  items: readonly FieldChipItem[];
+  selected: string | null | undefined;
+  onSelect: (fieldId: string | null) => void;
+}) {
+  return (
+    <Show when={fieldChipsShown(props.tab, props.items.length)}>
+      <div class="farm-field-chips" data-testid="shell-field-chips" data-tab={props.tab}>
+        <FieldChips items={props.items} selected={props.selected} onSelect={props.onSelect} />
+      </div>
+    </Show>
   );
 }
 

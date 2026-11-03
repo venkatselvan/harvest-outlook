@@ -1,4 +1,4 @@
-import { CropFitReview, FarmBriefing, Unit, type TodayView, type ToolOutput } from "@harvest/contracts";
+import { CropFitReview, FarmBriefing, Unit, type FarmField, type FarmWorkspace, type TodayView, type ToolOutput } from "@harvest/contracts";
 import type { Config } from "../../config";
 import type { Pool } from "../../db/pool";
 import { listEntries } from "../../journal/repository";
@@ -10,7 +10,7 @@ import { farmSoilMarkers } from "../../services/soil-reports";
 import { readSoilReview } from "../../services/soil-review";
 import { irrigationCategoryOf } from "../../services/today/footprint";
 import { currentCycle, todayView, type TodayViewDeps } from "../../services/today/view";
-import { getWorkspace } from "../../services/workspace";
+import { fieldOf, fieldView, getWorkspace } from "../../services/workspace";
 import { cropDisplayName } from "../../services/year-plan/data";
 import { readYearPlan } from "../../services/year-plan/service";
 import type { ToolContext, ToolHandler } from "../tools/registry";
@@ -139,10 +139,21 @@ export function soilUnit(raw: string | null, parameter: string): Unit | null {
 type Briefing = FarmBriefing;
 
 export function bindFarmBriefing(deps: BriefingDeps): ToolHandler<"get_farm_briefing"> {
-  return (input, ctx) => farmBriefing(deps, input.farmId, ctx);
+  return (input, ctx) => farmBriefing(deps, input.farmId, ctx, input.fieldId);
 }
 
-export async function farmBriefing(deps: BriefingDeps, farmId: string, ctx: ToolContext): Promise<ToolOutput<"get_farm_briefing">> {
+/**
+ * The field the briefing describes (FIELDS_MULTICROP_SOIL_SPEC.md 12.5): the named field (404 field_not_found when unknown);
+ * without one on a farm with fields, the first field in stored order with a current cycle of its own (`picked`), else none
+ * (the whole farm, as the Today view does for a cycle recorded before fields were drawn). A farm without fields: none.
+ */
+export function briefingField(ws: Pick<FarmWorkspace, "fields" | "cycles">, fieldId: string | undefined): { field: FarmField | null; picked: boolean } {
+  if (fieldId !== undefined) return { field: fieldOf(ws, fieldId), picked: false };
+  const field = ws.fields.find((f) => currentCycle(ws, f.id)) ?? null;
+  return { field, picked: field !== null };
+}
+
+export async function farmBriefing(deps: BriefingDeps, farmId: string, ctx: ToolContext, fieldId?: string): Promise<ToolOutput<"get_farm_briefing">> {
   if (!UUID.test(farmId)) throw notFound("Farm");
   const ro = readOnlyPool(ctx.pool);
   const farm = await getFarm(ro, ctx.ownerId, farmId);
@@ -150,6 +161,10 @@ export async function farmBriefing(deps: BriefingDeps, farmId: string, ctx: Tool
   const config: Config = { ...deps.config, RUNTIME_MODE: ctx.mode };
   const now = () => new Date(ctx.asOf);
   const svc = { pool: ro, config, budget: deps.budget, now };
+  // 12.5: the field is resolved once, before the sections, so every section describes the same field.
+  const stored = await getWorkspace(ro, ctx.ownerId, farmId);
+  const { field, picked } = briefingField(stored, fieldId);
+  const fid = field?.id;
 
   // ---- sections in parallel, each guarded; the whole composition is bounded
   const done = new Map<string, unknown>();
@@ -162,22 +177,21 @@ export async function farmBriefing(deps: BriefingDeps, farmId: string, ctx: Tool
       (e: unknown) => void failed.set(name, e instanceof ReadOnlyViolation ? "it would have needed a write" : (e as { code?: unknown })?.code === "not_found" ? "not found" : "it could not be read now"),
     );
   const tasks = [
-    // Fields (2026-11-03): the briefing stays farm-level. Its cycle is currentCycle(workspace) (latest unharvested cycle of
-    // any field), so the Today view is read for that cycle's field; a farm without fields reads exactly as before.
-    section("today", async () => {
-      const fieldId = currentCycle(await getWorkspace(ro, ctx.ownerId, farmId))?.fieldId;
-      return todayView(
+    // Fields (12.5, 2026-11-03): the Today view, year plan, soil review crop context, saved seasons and crop fit are the
+    // field's; soil readings and the journal stay farm-level. A farm without fields (fid undefined) reads exactly as before.
+    section("today", async () =>
+      todayView(
         { config, pool: ro, now, sentinelFetch: noNetwork as never, weatherFetch: noNetwork as never, providers: { readyFutureLooks: async () => [], ...deps.today?.providers }, ...(deps.today?.snapshot ? { snapshot: deps.today.snapshot } : {}) },
         ctx.ownerId,
         farmId,
-        { asOf: ctx.asOf, predictions: "off", ...(fieldId !== undefined ? { fieldId } : {}) },
-      );
-    }),
+        { asOf: ctx.asOf, predictions: "off", ...(fid !== undefined ? { fieldId: fid } : {}) },
+      ),
+    ),
     section("soilMarkers", () => farmSoilMarkers(svc, ctx.ownerId, farmId)),
-    section("soilReview", () => readSoilReview(svc, ctx.ownerId, farmId)),
-    section("yearPlan", () => readYearPlan(svc, ctx.ownerId, farmId)),
-    section("workspace", () => getWorkspace(ro, ctx.ownerId, farmId)),
-    section("cropFit", () => storedCropFit(ro, ctx.ownerId, farmId, ctx.mode)),
+    section("soilReview", () => readSoilReview(svc, ctx.ownerId, farmId, fid ?? null)),
+    section("yearPlan", () => readYearPlan(svc, ctx.ownerId, farmId, fid !== undefined ? { fieldId: fid } : {})),
+    section("workspace", async () => fieldView(stored, fid ?? null)),
+    section("cropFit", () => storedCropFit(ro, ctx.ownerId, farmId, ctx.mode, fid ?? null)),
     section("journal", () => listEntries(ro, ctx.ownerId, farmId, 60)),
   ];
   let timer: NodeJS.Timeout | undefined;
@@ -237,13 +251,19 @@ export async function farmBriefing(deps: BriefingDeps, farmId: string, ctx: Tool
   };
 
   if (view) composeFromToday(briefing, view, today, limitations);
-  // Fields: only on a farm that has them (a farm without fields briefs exactly as before). viewedField is null: the briefing
-  // describes the farm-level current cycle, and the limitation names the field that cycle is on.
-  const fieldCount = (done.get("workspace") as import("@harvest/contracts").FarmWorkspace | undefined)?.fields.length ?? view?.fields?.length ?? 0;
+  // Fields (12.5): only on a farm that has them (a farm without fields briefs exactly as before). viewedField names the field
+  // described; the limitation says which field and, when the turn named none, that the first field with a crop was chosen.
+  const fieldCount = stored.fields.length;
   if (fieldCount > 0) {
-    briefing.fields = { count: fieldCount, viewedField: null };
-    const n = `This farm has ${fieldCount} field${fieldCount > 1 ? "s" : ""}`;
-    limitations.push(view?.field ? `${n}; the figures describe ${view.field.name}.` : `${n}; no field has a current crop cycle, so the figures describe the whole farm.`);
+    briefing.fields = { count: fieldCount, viewedField: field ? cut(field.name, 80) : null };
+    const n = `the farm has ${fieldCount} field${fieldCount > 1 ? "s" : ""}`;
+    limitations.push(
+      !field
+        ? `No field has a current crop cycle, so the figures describe the whole farm; ${n}.`
+        : picked
+          ? `No field was selected, so this answer is about field ${field.name}, the first field with a current crop; ${n}.`
+          : `This answer is about field ${field.name}; ${n}.`,
+    );
   }
   // Review fix 4: when the Today view's outlook note is missing or pending (ensureOutlookNote needs a transaction the read-only
   // pool refuses, or its job is still writing), the latest stored ready note for the same farm, mode and product is read
@@ -599,12 +619,12 @@ function composePlans(b: Briefing, done: Map<string, unknown>, lim: string[]): v
   if ((ws?.rotationPlans.length ?? 0) > 6) lim.push(`${ws!.rotationPlans.length - 6} further saved seasons are not included.`);
 }
 
-/** The latest ready crop-fit review stored for the farm (read only; never ensureCropFit). */
-async function storedCropFit(pool: Pool, ownerId: string, farmId: string, mode: string): Promise<{ review: import("@harvest/contracts").CropFitReview; createdAt: Date } | null> {
+/** The latest ready crop-fit review stored for the farm, or for the field (12.5; read only; never ensureCropFit). */
+async function storedCropFit(pool: Pool, ownerId: string, farmId: string, mode: string, fieldId: string | null = null): Promise<{ review: import("@harvest/contracts").CropFitReview; createdAt: Date } | null> {
   const row = (
     await pool.query<{ result: unknown; created_at: Date }>(
-      "SELECT result, created_at FROM crop_fit_reviews WHERE farm_id=$1 AND owner_id=$2 AND mode=$3 AND archived_at IS NULL AND status='ready' ORDER BY created_at DESC LIMIT 1",
-      [farmId, ownerId, mode],
+      "SELECT result, created_at FROM crop_fit_reviews WHERE farm_id=$1 AND owner_id=$2 AND mode=$3 AND archived_at IS NULL AND status='ready' AND result->>'fieldId' IS NOT DISTINCT FROM $4::text ORDER BY created_at DESC LIMIT 1",
+      [farmId, ownerId, mode, fieldId],
     )
   ).rows[0];
   if (!row) return null;
