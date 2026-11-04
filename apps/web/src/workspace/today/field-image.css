@@ -1,4 +1,6 @@
-.today-hero-frame.field-photo-mode { aspect-ratio: auto; min-height: 360px; padding-top: 72px; background: var(--today-panel, var(--surface)); color: var(--text); }
+.today-hero-frame.field-photo-mode { background: var(--today-panel, var(--surface)); color: var(--text); }
+/* Frames with the season timeline reserve their own tab and timeline space, so no extra top padding or height there. */
+.today-hero-frame.field-photo-mode:not(.has-season-timeline) { aspect-ratio: auto; min-height: 360px; padding-top: 72px; }
 .today-hero-frame.field-photo-mode .today-hero-second, .today-hero-frame.field-photo-mode .today-hero-overlay { display: none; }
 .field-images { padding: 0 16px 18px; }
 .field-images p { line-height: 1.55; }
@@ -34,7 +36,7 @@
 .field-image-dates > div { display: flex; gap: 8px; margin-top: 12px; }
 .field-image-error { font-size: 12px; padding: 10px; border: 1px solid var(--border); border-radius: 8px; }
 @media (max-width: 600px) {
-  .today-hero-frame.field-photo-mode { padding-top: 100px; }
+  .today-hero-frame.field-photo-mode:not(.has-season-timeline) { padding-top: 100px; }
   .today-hero-frame:has(.field-image-tab) .today-hero-top { flex-wrap: wrap; gap: 6px; }
   .field-image-action { align-items: flex-start; flex-direction: column; }
   .field-image-dates label { grid-template-columns: 40px minmax(0, 1fr); }

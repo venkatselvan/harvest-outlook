@@ -427,6 +427,106 @@ describe('routes (registered on a test server)', () => {
   });
 });
 
+describe('requestFutureLook: regenerate a gap look (2026-11-04)', () => {
+  const GAP = {itemId: LATEST, kind: 'gap' as const, targetDate: '2026-11-05'};
+  const makeReady = async (ownerId: string, farmId: string) => {
+    const first = await requestFutureLook(svc(), ownerId, farmId, GAP);
+    const out = await createFutureLookHandler(handlerDeps(editFetch('field')))((await jobOf(first.assetId!)) as never, {...hb, pool: h.pool, isCancelled: async () => false});
+    expect(out).toMatchObject({status: 'ready'});
+    return first.assetId!;
+  };
+
+  it('re-arms the ready look of the week in place: same row, attempt+1, queued, new job, old image deleted, not listed', async () => {
+    const {farmId, ownerId} = await farmWithCycle();
+    const id = await makeReady(ownerId, farmId);
+    const before = await assetRow(id);
+    expect(before).toMatchObject({status: 'ready', attempt: 1, billed: true});
+    const oldKey = before.storage_key as string;
+    expect(await h.storage.exists({ownerId, key: oldKey})).toBe(true);
+    expect(await listReadyFutureLooks(svc(), ownerId, farmId, 'cycle-1')).toHaveLength(1);
+    // Without the flag the ready look is still returned.
+    expect(await requestFutureLook(svc({storage: h.storage}), ownerId, farmId, GAP)).toMatchObject({assetId: id, status: 'ready', deduplicated: true});
+    expect(await requestFutureLook(svc({storage: h.storage}), ownerId, farmId, {...GAP, regenerate: false})).toMatchObject({assetId: id, deduplicated: true});
+
+    const out = await requestFutureLook(svc({storage: h.storage}), ownerId, farmId, {...GAP, regenerate: true});
+    expect(out).toMatchObject({assetId: id, status: 'queued', deduplicated: false, kind: 'gap', targetDate: '2026-11-02'});
+    const row = await assetRow(id);
+    expect(row).toMatchObject({status: 'queued', attempt: 2, failure_reason: null, qa: null, storage_key: null, model: null, provider_request_id: null, response_deleted: null, source_item_id: LATEST, prompt_version: 'future-look-v3', billed: true});
+    expect(row.job_id).not.toBe(before.job_id);
+    expect((await jobOf(id)).idempotency_key).toBe(`fl:${id}:2`);
+    expect(await count("future_look_assets WHERE farm_id=$1", [farmId])).toBe(1);
+    expect(await h.storage.exists({ownerId, key: oldKey})).toBe(false);
+    // The Today view's reads: the old image is not listed, the row counts as pending, the image route 404s until the new one is ready.
+    expect(await listReadyFutureLooks(svc(), ownerId, farmId, 'cycle-1')).toEqual([]);
+    expect(await pendingGapLooks(svc(), ownerId, farmId, 'cycle-1')).toBe(1);
+    expect(await errOf(futureLookImage({...svc(), storage: h.storage}, ownerId, farmId, id))).toMatchObject({status: 404});
+    // Asking again while it is being made is a dedup, with or without the flag.
+    expect(await requestFutureLook(svc({storage: h.storage}), ownerId, farmId, {...GAP, regenerate: true})).toMatchObject({assetId: id, status: 'queued', deduplicated: true});
+    expect(await count("jobs WHERE payload->>'farmId'=$1", [farmId])).toBe(2);
+    // The new job renders and stores a new image under the same asset.
+    expect(await createFutureLookHandler(handlerDeps(editFetch('field')))((await jobOf(id)) as never, {...hb, pool: h.pool, isCancelled: async () => false})).toMatchObject({status: 'ready'});
+    expect(await listReadyFutureLooks(svc(), ownerId, farmId, 'cycle-1')).toHaveLength(1);
+  });
+
+  it('regenerate while queued or running is a dedup and changes nothing', async () => {
+    const {farmId, ownerId} = await farmWithCycle();
+    const first = await requestFutureLook(svc(), ownerId, farmId, GAP);
+    expect(await requestFutureLook(svc(), ownerId, farmId, {...GAP, regenerate: true})).toMatchObject({assetId: first.assetId, status: 'queued', deduplicated: true});
+    await h.pool.query("UPDATE future_look_assets SET status='running' WHERE id=$1", [first.assetId]);
+    expect(await requestFutureLook(svc(), ownerId, farmId, {...GAP, regenerate: true})).toMatchObject({assetId: first.assetId, status: 'running', deduplicated: true});
+    expect(await assetRow(first.assetId!)).toMatchObject({attempt: 1, job_id: (await jobOf(first.assetId!)).id});
+    expect(await count("jobs WHERE payload->>'farmId'=$1", [farmId])).toBe(1);
+  });
+
+  it('respects the per-cycle daily cap and is not blocked by the attempt limit', async () => {
+    const {farmId, ownerId} = await farmWithCycle();
+    const deps = svc({timeline: () => LONG, storage: h.storage});
+    const id = await makeReady(ownerId, farmId); // uses MAIZE for the gap row; stage rows below use LONG
+    // The attempt limit guards failure retries only: a regenerate at attempt 3 still re-arms.
+    await h.pool.query('UPDATE future_look_assets SET attempt=3 WHERE id=$1', [id]);
+    expect(await requestFutureLook(svc({storage: h.storage}), ownerId, farmId, {...GAP, regenerate: true})).toMatchObject({assetId: id, status: 'queued', deduplicated: false});
+    expect((await assetRow(id)).attempt).toBe(4);
+    await h.pool.query("UPDATE future_look_assets SET status='ready', storage_key=$2 WHERE id=$1", [id, `future-look/${farmId}/${id}.png`]);
+    for (let i = 1; i <= 9; i++) await requestFutureLook(deps, ownerId, farmId, {itemId: LATEST, stageId: `s${i}`});
+    expect(await count("future_look_assets WHERE farm_id=$1", [farmId])).toBe(10);
+    const jobs = await count("jobs WHERE payload->>'farmId'=$1", [farmId]);
+    expect(await requestFutureLook(svc({storage: h.storage}), ownerId, farmId, {...GAP, regenerate: true})).toMatchObject({assetId: null, status: 'unavailable', reason: 'daily_limit_reached', kind: 'gap', deduplicated: false});
+    expect(await assetRow(id)).toMatchObject({status: 'ready', attempt: 4});
+    expect(await count("jobs WHERE payload->>'farmId'=$1", [farmId])).toBe(jobs);
+  });
+
+  it('an automatic request ignores the flag; stage requests ignore it too', async () => {
+    const {farmId, ownerId} = await farmWithCycle();
+    const id = await makeReady(ownerId, farmId);
+    const ctx = {sourcePhase: null, latestNdvi: null, conditionsAt: () => null};
+    expect(await requestFutureLook(svc({storage: h.storage}), ownerId, farmId, {...GAP, auto: true, regenerate: true, context: ctx})).toMatchObject({assetId: id, status: 'ready', deduplicated: true});
+    expect(await assetRow(id)).toMatchObject({status: 'ready', attempt: 1});
+    const stage = await requestFutureLook(svc({storage: h.storage}), ownerId, farmId, {itemId: LATEST, stageId: 'mid_season'});
+    expect(await requestFutureLook(svc({storage: h.storage}), ownerId, farmId, {itemId: LATEST, stageId: 'mid_season', regenerate: true})).toMatchObject({assetId: stage.assetId, deduplicated: true});
+  });
+
+  it('route: {kind:gap, targetDate, regenerate:true} re-arms the ready look and returns 202; a queued one is a dedup', async () => {
+    const app = await buildServer(testConfig(LIVE), h.pool, {storage: h.storage, today: {future: {now: NOW, timeline: () => MAIZE}}});
+    try {
+      const {farmId, ownerId} = await farmWithCycle();
+      const id = await makeReady(ownerId, farmId);
+      const post = (payload: object) => app.inject({method: 'POST', url: `/api/v1/farms/${farmId}/ndvi/${LATEST}/future`, headers: {cookie: owner.cookie, origin: ORIGIN, 'x-csrf-token': owner.csrf}, payload});
+      const key = (await assetRow(id)).storage_key as string;
+      const plain = await post({kind: 'gap', targetDate: '2026-11-05'});
+      expect(plain.statusCode, plain.body).toBe(200);
+      expect(plain.json().data).toMatchObject({assetId: id, status: 'ready', deduplicated: true});
+      const regen = await post({kind: 'gap', targetDate: '2026-11-05', regenerate: true});
+      expect(regen.statusCode, regen.body).toBe(202);
+      expect(regen.json().data).toMatchObject({assetId: id, status: 'queued', deduplicated: false, kind: 'gap'});
+      expect(await h.storage.exists({ownerId, key})).toBe(false);
+      const again = await post({kind: 'gap', targetDate: '2026-11-05', regenerate: true});
+      expect(again.statusCode).toBe(202);
+      expect(again.json().data).toMatchObject({assetId: id, deduplicated: true});
+      expect((await post({kind: 'gap', targetDate: '2026-11-05', regenerate: 'yes'})).statusCode).toBe(400);
+    } finally { await app.close(); }
+  });
+});
+
 describe('requestFutureLook: gap (predicted) looks', () => {
   it('validates the target date: required, after the real scene, at most 120 days after today', async () => {
     const {farmId, ownerId} = await farmWithCycle();

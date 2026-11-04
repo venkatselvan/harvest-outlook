@@ -159,6 +159,15 @@ describe("desktop layout has no open centre, pin or zoom buttons", () => {
     const right = html.slice(html.indexOf("today-map-right"));
     for (const n of ["attention", "overview", "week", "gauges", "evara"]) expect(right).toContain(`data-slot="${n}"`);
   });
+  it("keeps the map-layout hero-visual sizing off the field photo gallery so it grows with its content", () => {
+    const css = readFileSync(new URL("./today-layout.css", import.meta.url), "utf8");
+    const rules = css.split("\n").filter((line) => /\.today-map-layout[^{]*\.today-hero-visual\s*\{/.test(line));
+    expect(rules).toHaveLength(3);
+    for (const rule of rules) expect(rule.split("{")[0]).toContain(".has-season-timeline:not(.field-photo-mode)");
+    expect(css).toMatch(/\.today-hero-frame\.has-season-timeline\.field-photo-mode \.today-hero-visual \{ aspect-ratio: auto; min-height: 0; overflow: visible; \}/);
+    const photo = readFileSync(new URL("./field-image.css", import.meta.url), "utf8");
+    expect(photo).toMatch(/field-photo-mode:not\(\.has-season-timeline\) \{[^}]*padding-top: 72px/);
+  });
   it("sets a flexible main column, a 360px right pane, the earlier hero height and stacked field signals in the desktop CSS", () => {
     const css = readFileSync(new URL("./today-layout.css", import.meta.url), "utf8");
     expect(css).toMatch(/\[data-arrangement="wide"\] \{ grid-template-columns: minmax\(0, 1fr\) 360px;/);

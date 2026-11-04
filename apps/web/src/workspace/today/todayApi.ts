@@ -110,7 +110,7 @@ export class PredictionError extends Error {
 export const predictionPath = (farmId: string, itemId: string, cycleId?: string | null) =>
   `${farmPath(farmId)}/ndvi/${encodeURIComponent(itemId)}/future${cycleId ? `?cycleId=${encodeURIComponent(cycleId)}` : ""}`;
 /** The strict request body of a gap look: the slider date (the API stores the start of its week). */
-export const predictionBody = (targetDate: string): FutureLookRequestBody => ({ kind: "gap", targetDate });
+export const predictionBody = (targetDate: string, regenerate?: boolean): FutureLookRequestBody => ({ kind: "gap", targetDate, ...(regenerate ? { regenerate: true } : {}) });
 
 /** The error envelope's `details.reason` of the last non-2xx response seen through this fetch (ApiError drops details). */
 function reasonCapturingFetch(fetchImpl: typeof fetch = fetch) {
@@ -158,11 +158,12 @@ export async function requestPrediction(
   targetDate: string,
   cycleId?: string | null,
   fetchImpl?: typeof fetch,
+  opts: { regenerate?: boolean } = {},
 ): Promise<FutureLookRequestResult> {
   const capture = reasonCapturingFetch(fetchImpl);
   let data: unknown;
   try {
-    data = (await apiRequest<unknown>(predictionPath(farmId, itemId, cycleId), jsonInit("POST", predictionBody(targetDate)), capture.fetch)).data;
+    data = (await apiRequest<unknown>(predictionPath(farmId, itemId, cycleId), jsonInit("POST", predictionBody(targetDate, opts.regenerate)), capture.fetch)).data;
   } catch (error) {
     const reason = predictionErrorReason(error, capture.seen.reason);
     throw new PredictionError(reason, predictionMessage(reason));

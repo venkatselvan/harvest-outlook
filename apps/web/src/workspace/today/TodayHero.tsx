@@ -100,7 +100,7 @@ export interface HeroPrediction {
   /** Short message from the last request that did not produce a look, or null. */
   message: string | null;
   /** Requests a predicted look for the slider date (TodayView keeps one request in flight per farm). */
-  onPredict: (date: string) => void;
+  onPredict: (date: string, opts?: { regenerate?: boolean }) => void;
 }
 
 /** A field outline for the hero: id, name, drawn polygon and crop (for the colour). */
@@ -616,8 +616,11 @@ export function SatelliteNotes(props: { image: SatelliteImage; overlay: boolean;
   );
 }
 
+/** The "Predict again" action: asks for a new look for the date even though one exists (the API re-arms that week's look). */
+export const predictAgain = (prediction: HeroPrediction, date: string) => prediction.onPredict(date, { regenerate: true });
+
 /** Caption chips for the satellite view: kind, which image and how old, and cloud; or the illustration label. */
-function SatelliteCaption(props: { pick: ScenePick; stage: StageAt; date: string }) {
+function SatelliteCaption(props: { pick: ScenePick; stage: StageAt; date: string; prediction?: HeroPrediction | null }) {
   return (
     <Switch>
       <Match when={props.pick.mode === "observed" || props.pick.mode === "latest"}>
@@ -646,6 +649,37 @@ function SatelliteCaption(props: { pick: ScenePick; stage: StageAt; date: string
               <span class="today-chip predicted">Predicted with AI</span>
               <AiSpark use="future_look" size={14} />
               <span class="today-scene-date">{predictedCaption(pick())}</span>
+              <Show when={props.prediction}>
+                {(prediction) => (
+                  <>
+                    <Show
+                      when={prediction().pending}
+                      fallback={
+                        <button
+                          type="button"
+                          class="btn compact secondary today-predict"
+                          data-testid="today-predict-again"
+                          disabled={!!prediction().blocked}
+                          aria-describedby={prediction().blocked ? "today-predict-again-blocked" : undefined}
+                          onClick={() => predictAgain(prediction(), props.date)}
+                        >
+                          <AiSparkIcon size={14} />
+                          <span>Predict again</span>
+                        </button>
+                      }
+                    >
+                      <span class="today-scene-date" role="status" aria-live="polite" data-testid="today-predicting-again">
+                        <AiSparkIcon size={14} class="today-predicting-icon" /> Predicting with AI…
+                      </span>
+                    </Show>
+                    <Show when={prediction().blocked}>
+                      <span id="today-predict-again-blocked" class="today-predict-note">
+                        {prediction().blocked}
+                      </span>
+                    </Show>
+                  </>
+                )}
+              </Show>
             </span>
           );
         })()}
@@ -881,7 +915,7 @@ export function TodayHero(props: TodayHeroProps) {
               </Show>
             }
           >
-            <SatelliteCaption pick={pick()} stage={props.stage} date={props.date} />
+            <SatelliteCaption pick={pick()} stage={props.stage} date={props.date} prediction={props.prediction ?? null} />
           </Show>
         </div>
         </div>

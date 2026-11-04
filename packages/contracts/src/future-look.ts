@@ -27,6 +27,12 @@ export type FutureLookKind = z.infer<typeof FutureLookKind>;
 export const FutureLookRequestBody = z.object({
   kind: FutureLookKind.default('stage'),
   targetDate: z.iso.date().optional(),
+  /**
+   * 2026-11-04: `gap` only. True asks for a new look for a week that already has a queued, running or ready one: the
+   * existing row is re-armed (a new attempt from the latest usable scene; the earlier image is replaced) instead of being
+   * returned as `deduplicated`. The per-cycle daily cap still applies; automatic requests never set it.
+   */
+  regenerate: z.boolean().optional(),
 }).strict();
 export type FutureLookRequestBody = z.infer<typeof FutureLookRequestBody>;
 

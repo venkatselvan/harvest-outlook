@@ -135,7 +135,8 @@
   aspect-ratio: 1.65; min-height: 320px; overflow: hidden;
 }
 .today-hero-frame.has-season-timeline .today-hero-second { top: 12px; }
-.today-hero-frame.has-season-timeline.field-photo-mode .today-hero-visual { aspect-ratio: auto; min-height: 0; }
+/* Field photos: the visual grows with the gallery (toolbar, thumbnails, dates, coverage) at every width; the map-layout sizing rules exclude this mode. */
+.today-hero-frame.has-season-timeline.field-photo-mode .today-hero-visual { aspect-ratio: auto; min-height: 0; overflow: visible; }
 .today-hero-frame.has-season-timeline.satellite:has(.today-sat > .today-hero-message) { padding: 0; min-height: 0; }
 .today-hero-frame.has-season-timeline:has(.today-sat > .today-hero-message) .today-hero-visual { aspect-ratio: auto; padding-top: 48px; }
 @media(max-width:600px) {
@@ -175,7 +176,7 @@
 .today-glance-cta p { margin: 0; font-size: 13px; line-height: 1.5; color: var(--text-secondary); }
 .today-glance-cta .btn { justify-self: start; min-height: 44px; }
 .today-map-layout .today-primary { min-width: 0; }
-.today-map-layout .today-hero-frame.has-season-timeline .today-hero-visual { aspect-ratio: 1.45; min-height: 220px; }
+.today-map-layout .today-hero-frame.has-season-timeline:not(.field-photo-mode) .today-hero-visual { aspect-ratio: 1.45; min-height: 220px; }
 .today-gauge-list, .today-attention-list, .today-week-days, .today-this-week-rows, .today-this-week-rows ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
 .today-gauge { width: 100%; min-height: 64px; display: grid; grid-template-columns: 44px minmax(0, 1fr) auto; align-items: center; gap: 12px; padding: 8px 10px; border-radius: 14px; border: 1px solid var(--today-edge); background: color-mix(in srgb, var(--surface-soft) 55%, transparent); color: var(--text); text-align: left; cursor: pointer; }
 .today-gauge:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
@@ -219,7 +220,7 @@
   .today-map-layout[data-arrangement="wide"] > .today-map-main { grid-column: 1; grid-row: 2; }
   .today-map-layout[data-arrangement="wide"] > .today-map-right { grid-column: 2; grid-row: 1 / span 2; }
   /* The hero frame takes the full main column at its earlier, taller proportions. */
-  .today-map-layout[data-arrangement="wide"] .today-hero-frame.has-season-timeline .today-hero-visual { aspect-ratio: 1.65; min-height: 320px; }
+  .today-map-layout[data-arrangement="wide"] .today-hero-frame.has-season-timeline:not(.field-photo-mode) .today-hero-visual { aspect-ratio: 1.65; min-height: 320px; }
 }
 /* Tablet: two columns (the map stays behind the panels). */
 @media (min-width: 768px) and (max-width: 1023px) {
@@ -232,7 +233,7 @@
   .today-map-sheet { gap: 14px; }
   .today-map-panel { padding: 16px; }
   .today-glance-metrics dd { font-size: 23px; }
-  .today-map-layout .today-hero-frame.has-season-timeline .today-hero-visual { aspect-ratio: 1.1; }
+  .today-map-layout .today-hero-frame.has-season-timeline:not(.field-photo-mode) .today-hero-visual { aspect-ratio: 1.1; }
 }
 @media (prefers-reduced-transparency: reduce) {
   .today-map-panel { background: var(--surface); backdrop-filter: none; -webkit-backdrop-filter: none; }

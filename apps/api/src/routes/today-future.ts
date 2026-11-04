@@ -33,7 +33,7 @@ export async function todayFutureRoutes(app: FastifyInstance, deps: TodayFutureD
         'kind=stage (default; stageId query required): a typical look of a current or future stage, at most once per stage per crop cycle. ' +
         'kind=gap (2026-11-03; targetDate body field required): the AI-predicted look of the field on a date after the latest real scene and at most 120 days after today, ' +
         'at most one per crop cycle per calendar week (stored on the week start). Both are code-guided (calendar stage, satellite curve, conditions) and never observations; ' +
-        'at most 10 per crop cycle. 202 while queued or running, 200 when the existing look is ready, failed or unavailable (synthetic/replay mode, no model key, cycle limit).',
+        'at most 10 per crop cycle. regenerate=true (gap only, 2026-11-04) replaces the existing ready look of that week with a new one from the latest scene (the per-cycle daily cap still applies; a look already queued or running is returned as deduplicated). 202 while queued or running, 200 when the existing look is ready, failed or unavailable (synthetic/replay mode, no model key, cycle limit).',
       params: z.object({id: z.uuid(), itemId: z.string().regex(ITEM_ID_RE)}),
       querystring: z.object({stageId: z.string().min(1).max(80).optional(), cycleId: z.string().min(1).max(120).optional()}).strict(),
       // No body (or an empty one) is a stage request, as before 2026-11-03.
@@ -46,7 +46,7 @@ export async function todayFutureRoutes(app: FastifyInstance, deps: TodayFutureD
     const kind = body.kind ?? 'stage';
     if (kind === 'stage' && !req.query.stageId) throw new ApiError(400, 'validation_error', 'stageId is required for a stage look', {reason: 'stage_id_required'});
     const out = await requestFutureLook(deps, ownerId, req.params.id, {
-      itemId: req.params.itemId, kind, stageId: req.query.stageId, targetDate: body.targetDate, cycleId: req.query.cycleId, sessionId,
+      itemId: req.params.itemId, kind, stageId: req.query.stageId, targetDate: body.targetDate, cycleId: req.query.cycleId, sessionId, regenerate: body.regenerate === true,
     });
     return reply.code(out.status === 'queued' || out.status === 'running' ? 202 : 200).send(envelope(req.id, config.RUNTIME_MODE, out));
   });

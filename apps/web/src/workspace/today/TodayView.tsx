@@ -419,7 +419,7 @@ export function TodayView(props: TodayViewProps) {
    * reloads the view quietly so the new predicted scene arrives through `scenes`. A tap while a request for this farm is in
    * flight does nothing. A changed latest scene reloads the view; every other refusal leaves a short message.
    */
-  async function predict(targetDate: string) {
+  async function predict(targetDate: string, opts: { regenerate?: boolean } = {}) {
     const target = farmId(),
       epoch = s.sessionEpoch(),
       current = view(),
@@ -434,7 +434,7 @@ export function TodayView(props: TodayViewProps) {
     setPredicting({ farmId: target, fieldId: field, busy: true, message: null });
     let reason: string | null = null;
     try {
-      const result = await requestPrediction(target, source.itemId, targetDate, current.cycle.id);
+      const result = await requestPrediction(target, source.itemId, targetDate, current.cycle.id, undefined, opts);
       if (result.status !== "ready" && result.assetId) {
         const outcome = await pollPrediction(target, result.assetId, { cancelled: () => !mine() });
         if (outcome.status === "cancelled") return;
@@ -480,7 +480,7 @@ export function TodayView(props: TodayViewProps) {
       pending: !!mine?.busy || (current.predictions?.pending ?? 0) > 0,
       blocked: predictionBlockedReason(current.predictions?.reason, date(), current.today),
       message: mine?.message ?? null,
-      onPredict: (target) => void predict(target),
+      onPredict: (target, opts) => void predict(target, opts),
     };
   };
 

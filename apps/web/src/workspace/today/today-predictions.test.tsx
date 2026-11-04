@@ -39,7 +39,7 @@ import {
   predictionPath,
   requestPrediction,
 } from "./todayApi";
-import { FutureImageLabel, TodayHero, type FarmHero, type HeroPrediction } from "./TodayHero";
+import { FutureImageLabel, predictAgain, TodayHero, type FarmHero, type HeroPrediction } from "./TodayHero";
 import { StageSlider } from "./StageSlider";
 import { ApiError } from "../../lib/api";
 
@@ -309,6 +309,15 @@ describe("requestPrediction and pollPrediction", () => {
     expect(result).toMatchObject({ assetId, status: "queued" });
     expect(calls).toEqual([{ url: predictionPath(FIXTURE_FARM_ID, LATEST_ITEM_ID, "maize-cycle"), method: "POST", body: { kind: "gap", targetDate: "2026-11-12" } }]);
   });
+  it("adds regenerate to the body only when asked", async () => {
+    expect(predictionBody("2026-11-12", true)).toEqual({ kind: "gap", targetDate: "2026-11-12", regenerate: true });
+    expect(FutureLookRequestBody.safeParse(predictionBody("2026-11-12", true)).success).toBe(true);
+    expect(predictionBody("2026-11-12", false)).toEqual({ kind: "gap", targetDate: "2026-11-12" });
+    expect(predictionBody("2026-11-12", undefined)).not.toHaveProperty("regenerate");
+    const { impl, calls } = fakeFetch([{ status: 202, body: envelope(queued) }]);
+    await requestPrediction(FIXTURE_FARM_ID, LATEST_ITEM_ID, "2026-11-12", "maize-cycle", impl, { regenerate: true });
+    expect(calls[0]?.body).toEqual({ kind: "gap", targetDate: "2026-11-12", regenerate: true });
+  });
   it("maps API refusals to short messages through details.reason", async () => {
     const refuse = async (status: number, code: string, reason?: string) => {
       const { impl } = fakeFetch([{ status, body: envelope(null, { code, message: "refused", ...(reason ? { details: { reason } } : {}) }) }]);
@@ -371,6 +380,40 @@ describe("requestPrediction and pollPrediction", () => {
   });
 });
 
+
+describe("Predict again on a predicted look", () => {
+  it("renders on a predicted pick only with a prediction context", () => {
+    expect(pickAt(FIXTURE_TODAY).mode).toBe("predicted");
+    const live = hero(FIXTURE_TODAY, { prediction: livePrediction() });
+    expect(live).toContain('data-testid="today-predicted-caption"');
+    expect(live).toContain('data-testid="today-predict-again"');
+    expect(text(live)).toContain("Predict again");
+    expect(live).not.toMatch(/data-testid="today-predict-again" disabled/);
+    const offline = hero(FIXTURE_TODAY);
+    expect(offline).toContain('data-testid="today-predicted-caption"');
+    expect(offline).not.toContain("today-predict-again");
+    // A real image or a no-image date keeps its own controls and never shows Predict again.
+    expect(hero("2026-10-20", { prediction: livePrediction() })).not.toContain("today-predict-again");
+    expect(hero("2026-11-10", { prediction: livePrediction() })).not.toContain("today-predict-again");
+  });
+  it("is replaced by Predicting with AI while pending and disabled with the reason when blocked", () => {
+    const pending = hero(FIXTURE_TODAY, { prediction: livePrediction({ pending: true }) });
+    expect(pending).not.toContain('data-testid="today-predict-again"');
+    expect(text(pending)).toContain("Predicting with AI…");
+    expect(pending).toMatch(/data-testid="today-predicting-again"/);
+    const blocked = hero(FIXTURE_TODAY, { prediction: livePrediction({ blocked: "This crop has used all its AI predicted looks for the season." }) });
+    expect(blocked).toMatch(/data-testid="today-predict-again" disabled/);
+    expect(blocked).toContain('aria-describedby="today-predict-again-blocked"');
+    expect(text(blocked)).toContain("This crop has used all its AI predicted looks for the season.");
+  });
+  it("the click asks for the date with regenerate set", () => {
+    const asked: Array<[string, { regenerate?: boolean } | undefined]> = [];
+    const prediction = livePrediction({ onPredict: (d, opts) => asked.push([d, opts]) });
+    predictAgain(prediction, FIXTURE_TODAY);
+    prediction.onPredict("2026-11-12");
+    expect(asked).toEqual([[FIXTURE_TODAY, { regenerate: true }], ["2026-11-12", undefined]]);
+  });
+});
 
 describe("illustration prediction presentation", () => {
   it("exposes the same future-look request control and pending status", () => {

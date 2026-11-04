@@ -113,6 +113,8 @@ export interface FutureLookDeps {
   now?: (() => Date) | undefined;
   /** Test injection; production computes the timeline from the repo's stage sources. */
   timeline?: ((input: StageTimelineInput) => StageTimeline) | undefined;
+  /** Optional here: used only by an explicit regenerate to delete the replaced image object (best effort). */
+  storage?: StorageAdapter | undefined;
 }
 export interface FutureLookImageDeps extends FutureLookDeps { storage: StorageAdapter }
 
@@ -138,6 +140,8 @@ export interface FutureLookRequest {
   targetDate?: string | null | undefined;
   /** Set only by the live Today view: adds the per-farm daily cap and the any-status weekly check. */
   auto?: boolean | undefined;
+  /** 2026-11-04, `gap` only, explicit requests only (ignored when `auto`): re-arm the week's existing look instead of returning it. */
+  regenerate?: boolean | undefined;
   context?: PredictionContext | undefined;
   /** Default: the most recently established cycle that is not harvested (same rule as the stage-timeline route). */
   cycleId?: string | null | undefined;
@@ -154,6 +158,8 @@ export interface FutureLookRow {
   kind: FutureLookKind; target_date: Date | string | null; guidance: string | null; target_week: Date | string | null;
   /** Added by 0046 (crop journey); null on stage and gap rows. */
   journey_id?: string | null;
+  /** Added by 0043; '' for every row except milestone-refresh rows. Present on `SELECT *` rows. */
+  evidence_revision?: string | null;
 }
 
 // ------------------------------------------------------------------ small helpers
@@ -681,17 +687,39 @@ export async function requestFutureLook(deps: FutureLookDeps, ownerId: string, f
         : `SELECT * FROM future_look_assets WHERE owner_id=$1 AND farm_id=$2 AND cycle_id=$3 AND kind='gap' AND target_week=$4::date AND status IN ('queued','running','ready')
            ORDER BY (status='ready') DESC, created_at DESC LIMIT 1`,
       req.milestoneRevision ? [...scope, targetDate, req.milestoneRevision] : [...scope, kind === 'stage' ? stageId : week])).rows[0];
-    if (active) return resultOf(active, true);
-    const same = (await c.query<FutureLookRow>(
+    // Regenerate (2026-11-04): an explicit gap request may replace the week's READY look. A queued or running look is already
+    // being made, so that stays a dedup; automatic requests and milestone revisions never regenerate.
+    const regenerate = kind === 'gap' && req.regenerate === true && !req.auto && !req.milestoneRevision;
+    const rearm = regenerate && active?.status === 'ready' ? active : null;
+    if (active && !rearm) return resultOf(active, true);
+    const same = rearm ?? (await c.query<FutureLookRow>(
       `SELECT * FROM future_look_assets WHERE owner_id=$1 AND farm_id=$2 AND cycle_id=$3 AND kind=$4 AND stage_id=$5 AND target_week IS NOT DISTINCT FROM $6::date
          AND source_item_id=$7 AND prompt_version=$8 AND evidence_revision=$9 AND ($10::date IS NULL OR target_date=$10::date)`,
       [...scope, kind, stageId, week, req.itemId, FUTURE_LOOK_PROMPT_VERSION, req.milestoneRevision ?? '', req.milestoneRevision ? targetDate : null])).rows[0];
-    if (same && (same.billed || same.attempt >= FUTURE_LOOK_MAX_ATTEMPTS)) return resultOf(same, true);
+    // FUTURE_LOOK_MAX_ATTEMPTS (and the billed rule) guard failure retries; a regenerate of a ready look is a new explicit
+    // request, bounded instead by the per-cycle daily cap just below, so it is exempt.
+    if (!rearm && same && (same.billed || same.attempt >= FUTURE_LOOK_MAX_ATTEMPTS)) return resultOf(same, true);
     const counted = (await c.query<{n: number}>(
       `SELECT count(*)::int AS n FROM future_look_assets WHERE owner_id=$1 AND farm_id=$2 AND cycle_id=$3 AND (status IN ('queued','running','ready') OR billed) AND created_at > now() - interval '1 day'`, scope)).rows[0]!.n;
     if (counted >= FUTURE_LOOK_CYCLE_CAP) return unavailable('daily_limit_reached');
 
-    const row = same
+    let replacedKey: string | null = null;
+    if (rearm) {
+      // The re-armed row takes the latest scene, prompt version, stage and target date, which can differ from the ready look's;
+      // a leftover non-pending row already holding exactly that tuple would break the unique key, so it is superseded.
+      await c.query(
+        `DELETE FROM future_look_assets WHERE owner_id=$1 AND farm_id=$2 AND cycle_id=$3 AND id<>$4 AND kind='gap' AND stage_id=$5 AND target_week=$6::date
+           AND source_item_id=$7 AND prompt_version=$8 AND target_date=$9::date AND evidence_revision=$10 AND status NOT IN ('queued','running')`,
+        [...scope, rearm.id, stageId, week, req.itemId, FUTURE_LOOK_PROMPT_VERSION, targetDate, rearm.evidence_revision ?? '']);
+      replacedKey = rearm.storage_key;
+    }
+    const row = rearm
+      ? (await c.query<FutureLookRow>(
+          `UPDATE future_look_assets SET status='queued', attempt=attempt+1, failure_reason=NULL, qa=NULL, storage_key=NULL, model=NULL, provider_request_id=NULL,
+             response_deleted=NULL, stage_id=$2, stage_name=$3, crop_name=$4, source_item_id=$5, source_acquired_at=$6, prompt_version=$7, target_date=$8::date, guidance=$9
+           WHERE id=$1 RETURNING *`,
+          [rearm.id, stageId, stageName, cropName, req.itemId, latest.acquired_at, FUTURE_LOOK_PROMPT_VERSION, targetDate, guidance])).rows[0]!
+      : same
       ? (await c.query<FutureLookRow>(
           `UPDATE future_look_assets SET status='queued', attempt=attempt+1, failure_reason=NULL, qa=NULL, storage_key=NULL, model=NULL, provider_request_id=NULL,
              response_deleted=NULL, stage_name=$2, crop_name=$3, source_acquired_at=$4, target_date=$5::date, guidance=$6 WHERE id=$1 RETURNING *`,
@@ -703,7 +731,15 @@ export async function requestFutureLook(deps: FutureLookDeps, ownerId: string, f
     // One job per arm of the row: fl:{assetId}:{attempt}. farmId in the payload lets deleteFarm's job cleanup find it.
     const q = await enqueue(c, FUTURE_LOOK_JOB_TYPE, {assetId: row.id, farmId, sessionId}, ownerId, `fl:${row.id}:${row.attempt}`);
     await c.query('UPDATE future_look_assets SET job_id=$2 WHERE id=$1', [row.id, q.job.id]);
-    return resultOf(row, false);
+    return {result: resultOf(row, false), replacedKey};
+  }).then(async (out) => {
+    if ('replacedKey' in out) {
+      // After the commit: the replaced image is no longer reachable (the row is queued, so the image route 404s). The storage key is
+      // per asset, so a new image would overwrite it anyway; the delete is hygiene and its failure changes nothing.
+      if (out.replacedKey && deps.storage) await deps.storage.delete({ownerId, key: out.replacedKey}).catch(() => undefined);
+      return out.result;
+    }
+    return out;
   });
 }
 
