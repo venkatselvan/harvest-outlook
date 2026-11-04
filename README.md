@@ -2,7 +2,7 @@
 
 Harvest Outlook is a progressive web app for Indian farmers. It compares crops for a farm's location, plans seasons visually, shows a daily "Today" view for each field, and keeps a farm journal. An assistant called Evara answers questions about the farm using the farm's own records, and accepts voice input.
 
-Live demo: link added after deployment
+Live demo: https://harvest-outlook.venkatselvan.com (API: https://api-harvest-outlook.venkatselvan.com)
 
 ## Features
 
