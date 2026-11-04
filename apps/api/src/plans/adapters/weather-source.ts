@@ -1,7 +1,7 @@
 import type { DateRange, Mode } from "@harvest/contracts";
 import { addDays, contentHash } from "@harvest/domain";
 import type { Pool } from "../../db/pool";
-import { scopedQuery, READABLE_ROW_MODES } from "../../ingest/scope";
+import { scopedQuery, READABLE_ROW_MODES, sharedWeatherQuery } from "../../ingest/scope";
 import { pgCache } from "../../ingest/cache";
 import { storeArchive, storeForecast } from "../../ingest/weather-store";
 import { enqueue } from "../../services/jobs";
@@ -116,6 +116,9 @@ type TypicalAgroKey = (typeof TYPICAL_AGRO)[number];
 export function createWeatherSource(o: WeatherSourceAdapterOptions): AttributedWeatherSource {
   const { pool, mode } = o;
   const q = scopedQuery(mode);
+  // Shared reads (ingest/scope.ts weather memo) in live mode only, the mode the demo runs in. Replay and synthetic keep
+  // reading the database every time (their fixtures are written and rewritten directly).
+  const share = mode === "live";
   const now = o.now ?? (() => new Date());
   const climYears = o.climatologyYears ?? 10;
   const timeoutMs = o.ingestTimeoutMs ?? 20_000;
@@ -134,16 +137,19 @@ export function createWeatherSource(o: WeatherSourceAdapterOptions): AttributedW
 
   /** Nearest stored grid cell for the farm point within tolerance, restricted to this mode's readable rows. */
   async function nearestKey(table: "weather_observations" | "weather_forecasts", p: { lon: number; lat: number }): Promise<string | null> {
-    const r = await pool.query<{ location_key: string }>(
+    // Shared (ingest/scope.ts, exact key): the same point is looked up by every section of every visitor's view.
+    const params = [[...READABLE_ROW_MODES[mode]], mode === "synthetic", p.lat - MAX_GRID_OFFSET_DEG, p.lat + MAX_GRID_OFFSET_DEG, p.lon - MAX_GRID_OFFSET_DEG, p.lon + MAX_GRID_OFFSET_DEG, p.lat, p.lon];
+    const lookup = async () => (await pool.query<{ location_key: string }>(
       `SELECT location_key FROM ${table}
         WHERE mode = ANY($1::text[]) AND is_synthetic = $2
           AND lat BETWEEN $3 AND $4 AND lon BETWEEN $5 AND $6
         GROUP BY location_key, lat, lon
         ORDER BY (lat - $7)^2 + (lon - $8)^2, location_key
         LIMIT 1`,
-      [[...READABLE_ROW_MODES[mode]], mode === "synthetic", p.lat - MAX_GRID_OFFSET_DEG, p.lat + MAX_GRID_OFFSET_DEG, p.lon - MAX_GRID_OFFSET_DEG, p.lon + MAX_GRID_OFFSET_DEG, p.lat, p.lon],
-    );
-    return r.rows[0]?.location_key ?? null;
+      params,
+    )).rows;
+    const rows = share ? await sharedWeatherQuery(pool, `nearestKey:${table}`, params, lookup) : await lookup();
+    return rows[0]?.location_key ?? null;
   }
 
   /** Bounded, at most one attempt per (kind, rounded point) per 15 minutes so a provider outage is not hammered. */
@@ -175,7 +181,7 @@ export function createWeatherSource(o: WeatherSourceAdapterOptions): AttributedW
     if (!scope.point) return [];
     const read = async () => {
       const key = await nearestKey("weather_observations", scope.point!);
-      return key ? q.weatherObservations(pool, { locationKey: key, from: range.start, to: range.end, availableBy }) : [];
+      return key ? q.weatherObservations(pool, { locationKey: key, from: range.start, to: range.end, availableBy, shared: share }) : [];
     };
     let rows = await read();
     if (rows.length === 0 && auto) {
@@ -196,7 +202,7 @@ export function createWeatherSource(o: WeatherSourceAdapterOptions): AttributedW
     const read = async () => {
       const key = await nearestKey("weather_forecasts", scope.point!);
       if (!key) return [];
-      const rows = await q.weatherForecasts(pool, { locationKey: key, from, availableBy: asOf });
+      const rows = await q.weatherForecasts(pool, { locationKey: key, from, availableBy: asOf, shared: share });
       const eligible = rows.filter((r) => (r.issued_at as Date).getTime() <= asOf.getTime());
       if (eligible.length === 0) return [];
       const latest = Math.max(...eligible.map((r) => (r.issued_at as Date).getTime()));
@@ -224,7 +230,7 @@ export function createWeatherSource(o: WeatherSourceAdapterOptions): AttributedW
     if (!scope.point) return [];
     const key = await nearestKey("weather_observations", scope.point);
     if (!key) return [];
-    return q.weatherObservations(pool, { locationKey: key, from: `${years.from}-01-01`, to: `${years.to}-12-31`, ...(mode === "replay" ? { availableBy: new Date(availableBy ?? `${range.start}T00:00:00Z`) } : {}) });
+    return q.weatherObservations(pool, { locationKey: key, from: `${years.from}-01-01`, to: `${years.to}-12-31`, shared: share, ...(mode === "replay" ? { availableBy: new Date(availableBy ?? `${range.start}T00:00:00Z`) } : {}) });
   }
 
   /**

@@ -26,6 +26,8 @@ export interface ScopeFilter {
   to?: string;
   /** Latest vintage available at or before this instant. Required in replay mode. */
   availableBy?: Date | undefined;
+  /** Serve from the shared weather memo (WEATHER_READ_TTL_MS); same key and cutoff rules as MarketFilter.shared. */
+  shared?: boolean | undefined;
 }
 
 export interface MarketFilter {
@@ -71,8 +73,12 @@ export const MARKET_PRICE_COLUMNS: readonly MarketColumn[] = [
   "price_min_inr_per_kg", "price_modal_inr_per_kg", "price_max_inr_per_kg",
 ];
 
-/** How long a shared market read is reused. Rows ingested by another process (the worker) are visible within this. */
-export const MARKET_READ_TTL_MS = 120_000;
+/**
+ * How long a shared market read is reused (15 minutes). Staleness bound: mandi rows ingested by another process (the
+ * worker's daily data.gov.in ingest) become visible to this API process within 15 minutes; an ingest in this process
+ * (storeMarketRows, insertVintage) clears the memo and is visible at once. Mandi data is ingested at most daily.
+ */
+export const MARKET_READ_TTL_MS = 15 * 60_000;
 /** Rows kept in the shared memo across all entries (about 400 bytes each once parsed). */
 const MARKET_READ_MAX_ROWS = 300_000;
 const marketReads = new ReadMemo<Record<string, unknown>>({ ttlMs: MARKET_READ_TTL_MS, maxWeight: MARKET_READ_MAX_ROWS });
@@ -85,8 +91,29 @@ export function clearSharedMarketReads(): void {
  * Another read-only market_observations query served from the same memo (same TTL, cleared by the same ingest hook).
  * `name` and `params` must identify the result completely; never use it for a replay cutoff that is not in `params`.
  */
-export function sharedMarketQuery<T extends Record<string, unknown>>(pool: Pool, name: string, params: readonly unknown[], load: () => Promise<T[]>): Promise<T[]> {
-  return marketReads.get(JSON.stringify([databaseKey(pool), name, params]), load) as Promise<T[]>;
+export function sharedMarketQuery<T extends object>(pool: Pool, name: string, params: readonly unknown[], load: () => Promise<T[]>): Promise<T[]> {
+  return marketReads.get(JSON.stringify([databaseKey(pool), name, params]), load as () => Promise<Record<string, unknown>[]>) as unknown as Promise<T[]>;
+}
+
+/**
+ * Shared weather reads (2026-11-05, second pass): every demo visitor's farm has the same point, so the grid-cell lookup
+ * and the observation/forecast reads are identical across visitors. Staleness bound: rows the worker writes (archive
+ * and climatology backfill jobs) become visible within WEATHER_READ_TTL_MS; an in-process ingest (weather-store.ts via
+ * insertVintage) clears the memo at once.
+ */
+export const WEATHER_READ_TTL_MS = 5 * 60_000;
+const weatherReads = new ReadMemo<Record<string, unknown>>({ ttlMs: WEATHER_READ_TTL_MS, maxWeight: 200_000 });
+export function clearSharedWeatherReads(): void {
+  weatherReads.clear();
+}
+/** A read-only weather query served from the weather memo. `name` and `params` must identify the result completely. */
+export function sharedWeatherQuery<T extends object>(pool: Pool, name: string, params: readonly unknown[], load: () => Promise<T[]>): Promise<T[]> {
+  return weatherReads.get(JSON.stringify([databaseKey(pool), name, params]), load as () => Promise<Record<string, unknown>[]>) as unknown as Promise<T[]>;
+}
+/** Clears the memo that holds reads of `table` (insertVintage calls this after every write). */
+export function clearSharedReadsFor(table: string): void {
+  if (table === "market_observations") marketReads.clear();
+  else if (table === "weather_observations" || table === "weather_forecasts") weatherReads.clear();
 }
 
 /** Hit/miss counters of the shared market memo (tests and diagnostics). */
@@ -151,8 +178,12 @@ export function scopedQuery(mode: Mode): ScopedQuery {
       if (f.to) { params.push(f.to); where.push(`${dateCol} <= $${params.length}`); }
       if (by) { params.push(by); where.push(`available_at <= $${params.length}`); }
       const order = table === "weather_forecasts" ? `${dateCol}, issued_at, location_key` : `${dateCol}, location_key`;
-      const r = await pool.query(latestVintageSql(table, [...IDENTITY[table]], where, order), params);
-      return r.rows as Record<string, unknown>[];
+      const sql = latestVintageSql(table, [...IDENTITY[table]], where, order);
+      const run = async () => (await pool.query(sql, params)).rows as Record<string, unknown>[];
+      if (!f.shared) return run();
+      const exact = mode === "replay" ? by?.toISOString() ?? null : null;
+      const window = mode !== "replay" && by ? by.getTime() : null;
+      return weatherReads.get(JSON.stringify([databaseKey(pool), table, mode, f.locationKey ?? null, f.from ?? null, f.to ?? null, exact, by ? "cutoff" : "latest"]), run, window);
     };
   return {
     mode,

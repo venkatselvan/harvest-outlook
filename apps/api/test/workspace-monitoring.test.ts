@@ -1,3 +1,4 @@
+import { clearSharedWeatherReads } from '../src/ingest/scope';
 import { randomUUID } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
@@ -145,6 +146,7 @@ describe('honest recurring monitoring', () => {
     }
     try {
       await h.pool.query("DELETE FROM provider_cache WHERE key LIKE 'open-meteo:%'"); // force the stored-forecast path, not a cached refresh
+      clearSharedWeatherReads(); // the raw SQL insert above bypasses insertVintage's memo clear
       const down = vi.fn(async () => { throw new Error('provider down'); });
       const config = { ...h.config, RUNTIME_MODE: 'live' as const };
       const now = () => new Date('2026-10-30T02:00:00Z');
@@ -160,6 +162,7 @@ describe('honest recurring monitoring', () => {
 
       // A row stored before the gust variable was requested: the check is skipped and says why.
       await h.pool.query("UPDATE weather_forecasts SET variables = variables - 'wind_gusts_10m_max' WHERE location_key=$1", [locationKey]);
+      clearSharedWeatherReads();
       const old = await monitoringSnapshot({ config, pool: h.pool, fetchImpl: down, now }, ownerId, id);
       expect(old.weather.days.every((d) => d.gustMaxKmh === null)).toBe(true);
       const skipped = structuredAlerts(old, ws, [], '2026-10-30T02:00:00Z');
@@ -167,6 +170,7 @@ describe('honest recurring monitoring', () => {
       expect(skipped.notes).toContain('wind_gust_check_skipped:variable_not_in_stored_forecast');
     } finally {
       await h.pool.query('DELETE FROM weather_forecasts WHERE location_key=$1', [locationKey]);
+      clearSharedWeatherReads();
     }
   });
   it('humidity, gust or soil-moisture movement alone does not raise weather_changed or change the fingerprint; a rain or temperature change still does', () => {

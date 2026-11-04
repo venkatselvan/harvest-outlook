@@ -1,4 +1,5 @@
 import type { Pool } from "../db/pool";
+import { clearSharedReadsFor } from "./scope";
 
 /**
  * Vintage-preserving insert (docs/DATA_PIPELINE.md). Per identity, rows form vintages 1..n:
@@ -47,7 +48,16 @@ async function columnTypes(pool: Pool, table: string): Promise<Record<string, st
   return m;
 }
 
+/** Writes one vintage, then clears the shared in-process read memo of that table (ingest/scope.ts), also on failure. */
 export async function insertVintage(pool: Pool, s: VintageSpec): Promise<VintageOutcome> {
+  try {
+    return await writeVintage(pool, s);
+  } finally {
+    clearSharedReadsFor(s.table);
+  }
+}
+
+async function writeVintage(pool: Pool, s: VintageSpec): Promise<VintageOutcome> {
   const casts = await columnTypes(pool, s.table);
   for (const c of [...Object.keys(s.identity), ...Object.keys(s.values), ...Object.keys(s.other), ...Object.keys(s.curation ?? {})]) {
     if (!casts[c]) throw new Error(`insertVintage: unknown column ${s.table}.${c}`);

@@ -85,6 +85,40 @@ export type Sentinel2Fetch = (url: string, init: {method: 'GET' | 'POST'; header
   Promise<Pick<Response, 'ok' | 'status' | 'headers' | 'arrayBuffer'>>;
 const defaultFetch: Sentinel2Fetch = (url, init) => globalThis.fetch(url, init);
 
+/**
+ * In-process memo of successful Planetary Computer reads made with the default fetch (2026-11-05 latency pass). A
+ * band read is a pure function of (item, polygon, processing baseline) and Sentinel-2 L2A items do not change once
+ * published, so every farm with the same outline (each demo visitor's farm) reuses one read instead of making about
+ * 48 feature.npy requests (about 14 s) per new farm. The key is the request itself, so no farm, owner or stored row is
+ * shared. Scene searches are reused for 10 minutes (staleness bound: a newly published scene appears within that).
+ * Failures are never kept; injected fetches (tests) bypass the memo; every hit returns a deep copy.
+ */
+const BAND_MEMO_TTL_MS = 6 * 3600_000;
+const SEARCH_MEMO_TTL_MS = 10 * 60_000;
+const PROVIDER_MEMO_MAX = 2000;
+const providerMemo = new Map<string, {at: number; ttl: number; value: Promise<unknown>}>();
+async function memoProvider<T extends {status: string}>(key: string, ttl: number, fetchImpl: Sentinel2Fetch, run: () => Promise<T>): Promise<T> {
+  if (fetchImpl !== defaultFetch) return run();
+  const now = Date.now();
+  const hit = providerMemo.get(key);
+  if (hit && now - hit.at <= hit.ttl) return structuredClone(await (hit.value as Promise<T>));
+  const value = run().then((r) => {
+    if (r.status !== 'ok' && providerMemo.get(key)?.value === value) providerMemo.delete(key);
+    return r;
+  }, (e: unknown) => {
+    if (providerMemo.get(key)?.value === value) providerMemo.delete(key);
+    throw e;
+  });
+  providerMemo.delete(key);
+  providerMemo.set(key, {at: now, ttl, value});
+  while (providerMemo.size > PROVIDER_MEMO_MAX) providerMemo.delete(providerMemo.keys().next().value!);
+  return structuredClone(await value);
+}
+/** Forget memoised provider reads (tests). */
+export function clearSentinel2Memo(): void {
+  providerMemo.clear();
+}
+
 const unavailable = (reason: string, transient = false): Unavailable => ({status: 'unavailable', reason, transient});
 
 // ------------------------------------------------------------------ geometry (all coordinates leave rounded to 4 dp)
@@ -452,7 +486,12 @@ export async function listScenes(input: ListScenesInput): Promise<ListScenesResu
     sortby: [{field: 'datetime', direction: 'desc'}], limit,
     fields: {include: ['id', 'properties.datetime', 'properties.eo:cloud_cover', 'properties.s2:processing_baseline', 'properties.s2:mgrs_tile', 'properties.platform'], exclude: ['assets', 'links', 'geometry', 'bbox']},
   });
-  const res = await boundedFetch(input.fetchImpl ?? defaultFetch, STAC_SEARCH_URL, {method: 'POST', body, accept: 'application/geo+json, application/json'}, MAX_STAC_BYTES);
+  const fetchImpl = input.fetchImpl ?? defaultFetch;
+  return memoProvider(`search|${body}`, SEARCH_MEMO_TTL_MS, fetchImpl, () => searchScenes(body, limit, fetchImpl));
+}
+
+async function searchScenes(body: string, limit: number, fetchImpl: Sentinel2Fetch): Promise<ListScenesResult> {
+  const res = await boundedFetch(fetchImpl, STAC_SEARCH_URL, {method: 'POST', body, accept: 'application/geo+json, application/json'}, MAX_STAC_BYTES);
   if (isUnavailable(res)) return res;
   let parsed: z.infer<typeof StacResponse>;
   try {
@@ -482,7 +521,11 @@ export async function listScenes(input: ListScenesInput): Promise<ListScenesResu
 
 export type BandsResult = {status: 'ok'; stats: NdviStats; offset: number; shape: [number, number]; bbox: Bbox} | Unavailable;
 
-async function featureBands(itemId: string, ring: readonly LonLat[], baseline: string | null, fetchImpl: Sentinel2Fetch): Promise<BandsResult> {
+function featureBands(itemId: string, ring: readonly LonLat[], baseline: string | null, fetchImpl: Sentinel2Fetch): Promise<BandsResult> {
+  return memoProvider(`bands|${itemId}|${baseline}|${JSON.stringify(ring)}`, BAND_MEMO_TTL_MS, fetchImpl, () => readFeatureBands(itemId, ring, baseline, fetchImpl));
+}
+
+async function readFeatureBands(itemId: string, ring: readonly LonLat[], baseline: string | null, fetchImpl: Sentinel2Fetch): Promise<BandsResult> {
   if (!ITEM_ID_RE.test(itemId)) return unavailable('invalid_item_id');
   const offset = baselineOffset(baseline);
   if (offset === null) return unavailable('processing_baseline_unknown');

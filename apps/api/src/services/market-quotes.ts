@@ -14,6 +14,7 @@ import {loadProviderConfig} from '../providers/config';
 import {storeMarketRows} from '../ingest/market-store';
 import {ensureSource,MANDI_RESOURCES} from '../ingest/sources';
 import {stateNameFor} from '../plans/adapters/market-outlook';
+import {sharedMarketQuery} from '../ingest/scope';
 export interface QuoteDeps{pool:Pool;config:Config;fetchImpl?:typeof fetch|undefined;now?:()=>Date}
 const RESOURCE='9ef84268-d588-465a-a308-a864a43d0070';
 const SOURCE=`https://www.data.gov.in/resource/${RESOURCE}`;
@@ -34,12 +35,14 @@ async function productsFor(deps:QuoteDeps,ownerId:string,farmId:string,requested
 }
 async function storedQuotes(deps:QuoteDeps,products:string[]):Promise<Stored[]>{
  if(deps.config.RUNTIME_MODE!=='live'||!products.length)return [];
- const rows=await deps.pool.query<Stored>(`SELECT * FROM (SELECT DISTINCT ON(m.product_id,m.market_id,m.observed_on,m.source_id,m.variety_key,m.grade_key)
+ // Shared (ingest/scope.ts market memo, exact key): every demo visitor asks for the same products on the same day. A
+ // refresh above stores rows through storeMarketRows, which clears the memo first.
+ const params=[products,today(deps),badFlags];
+ return sharedMarketQuery(deps.pool,'storedQuotes',params,async()=>(await deps.pool.query<Stored>(`SELECT * FROM (SELECT DISTINCT ON(m.product_id,m.market_id,m.observed_on,m.source_id,m.variety_key,m.grade_key)
    p.slug product_id,COALESCE(m.raw->>'commodity',m.raw->>'Commodity') commodity,m.observed_on::text observed_on,m.market_id,m.market_name,m.state_name,m.district_name,m.variety,m.grade,m.price_min,m.price_modal,m.price_max,m.price_modal_inr_per_kg,m.available_at,m.flags,m.unit,m.validation_status,s.url source_url
    FROM market_observations m JOIN crop_products p ON p.id=m.product_id JOIN source_documents s ON s.id=m.source_id WHERE p.slug=ANY($1::text[]) AND m.mode='live' AND NOT m.is_synthetic AND m.available_at IS NOT NULL AND m.observed_on<=$2::date
    ORDER BY m.product_id,m.market_id,m.observed_on,m.source_id,m.variety_key,m.grade_key,m.available_at DESC NULLS LAST,m.vintage_seq DESC) q
-   WHERE validation_status='valid' AND (price_modal IS NULL OR price_modal>0) AND (price_min IS NULL OR price_min>0) AND (price_max IS NULL OR price_max>0) AND NOT flags ?| $3::text[] ORDER BY observed_on DESC,available_at DESC LIMIT 2000`,[products,today(deps),badFlags]);
- return rows.rows;
+   WHERE validation_status='valid' AND (price_modal IS NULL OR price_modal>0) AND (price_min IS NULL OR price_min>0) AND (price_max IS NULL OR price_max>0) AND NOT flags ?| $3::text[] ORDER BY observed_on DESC,available_at DESC LIMIT 2000`,params)).rows);
 }
 /** Separate latest observations from the eight-trading-day historical-reference qualification. */
 export async function currentMandiQuotes(deps:QuoteDeps,ownerId:string,farmId:string,options:{refresh?:boolean;productIds?:string[]}={}):Promise<CurrentMandiQuotes>{

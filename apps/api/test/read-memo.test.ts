@@ -1,7 +1,51 @@
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import type { Pool } from "../src/db/pool";
 import { ReadMemo } from "../src/ingest/read-memo";
-import { clearSharedMarketReads, MARKET_PRICE_COLUMNS, MARKET_READ_TTL_MS, scopedQuery } from "../src/ingest/scope";
+import { clearSharedMarketReads, clearSharedReadsFor, clearSharedWeatherReads, MARKET_PRICE_COLUMNS, MARKET_READ_TTL_MS, scopedQuery, sharedWeatherQuery } from "../src/ingest/scope";
+import { clearSentinel2Memo, listScenes } from "../src/providers/sentinel2";
+
+describe("shared weather reads and provider memo (second pass)", () => {
+  afterEach(() => { clearSharedWeatherReads(); clearSentinel2Memo(); vi.unstubAllGlobals(); });
+
+  it("shares identical weather reads, keeps replay cutoffs exact and is cleared by clearSharedReadsFor", async () => {
+    let n = 0;
+    const pool = { query: async () => ({ rows: [{ location_key: "k", n: ++n }] }) } as unknown as Pool;
+    const f = { locationKey: "k", from: "2025-01-01", to: "2025-12-31", shared: true };
+    await scopedQuery("live").weatherObservations(pool, f);
+    await scopedQuery("live").weatherObservations(pool, f);
+    expect(n).toBe(1);
+    const c = new Date("2025-06-01T00:00:00Z");
+    await scopedQuery("replay").weatherObservations(pool, { ...f, availableBy: c });
+    await scopedQuery("replay").weatherObservations(pool, { ...f, availableBy: new Date(c.getTime() + 1) });
+    expect(n).toBe(3);
+    await expect(scopedQuery("replay").weatherForecasts(pool, f)).rejects.toThrow();
+    clearSharedReadsFor("weather_observations");
+    await scopedQuery("live").weatherObservations(pool, f);
+    expect(n).toBe(4);
+    await sharedWeatherQuery(pool, "nearestKey", [1, 2], async () => [{ location_key: "x" }]);
+    expect(await sharedWeatherQuery(pool, "nearestKey", [1, 2], async () => [{ location_key: "y" }])).toEqual([{ location_key: "x" }]);
+  });
+
+  it("reuses a successful scene search made with the default fetch, never a failed one, and copies every hit", async () => {
+    const body = JSON.stringify({ features: [{ id: "S2A_MSIL2A_20261027T052231_N0511_R105_T43PFP_20261027T091512", properties: { datetime: "2026-10-27T05:22:31Z", "eo:cloud_cover": 3 } }] });
+    let calls = 0, fail = true;
+    vi.stubGlobal("fetch", async () => { calls++; return fail ? new Response("busy", { status: 503 }) : new Response(body, { status: 200, headers: { "content-type": "application/geo+json" } }); });
+    const input = { bbox: [76.2, 13.2, 76.21, 13.21] as [number, number, number, number], from: "2026-10-01", to: "2026-10-31" };
+    expect((await listScenes(input)).status).not.toBe("ok");
+    fail = false;
+    const a = await listScenes(input);
+    expect(a.status).toBe("ok");
+    const before = calls;
+    const b = await listScenes(input);
+    expect(calls).toBe(before);
+    expect(b).toEqual(a);
+    expect(b).not.toBe(a);
+    // An injected fetch (tests, tools) bypasses the memo.
+    let injected = 0;
+    await listScenes({ ...input, fetchImpl: async () => { injected++; return new Response(body, { status: 200 }); } });
+    expect(injected).toBe(1);
+  });
+});
 
 const deferred = <T>() => {
   let resolve!: (v: T) => void, reject!: (e: unknown) => void;

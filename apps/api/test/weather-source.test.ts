@@ -1,3 +1,4 @@
+import { clearSharedWeatherReads } from "../src/ingest/scope";
 import { readFileSync } from "node:fs";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -125,6 +126,7 @@ describe("weather source adapter", () => {
         soilMoisture0to7: 0.318, soilTemp0to7C: 23.6, leafWetnessPct: 61, sunshineHours: 7.1, rainHours: 3, rainProbabilityPct: 16,
       });
       await h.pool.query("TRUNCATE weather_observations, weather_forecasts, provider_cache");
+      clearSharedWeatherReads(); // a raw SQL write bypasses insertVintage's memo clear
       const plain = createWeatherSource({ pool: h.pool, mode: "live", now: () => NOW, fetchImpl: fetchWith("forecast_hassan.json"), providerConfig: loadProviderConfig({}) });
       const g = await plain.getForecast(scope, { issuedAtOrBefore: NOW.toISOString() });
       expect(g?.days.length).toBeGreaterThan(0);
