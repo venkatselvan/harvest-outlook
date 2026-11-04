@@ -1,4 +1,4 @@
-import { createSignal } from "solid-js";
+import { createSignal, onCleanup } from "solid-js";
 import type { FarmTab } from "./farmTabs";
 
 /**
@@ -105,4 +105,28 @@ export function registerMapController(handler: (command: MapCommand) => void): (
 }
 export function sendMapCommand(command: MapCommand): void {
   controller?.(command);
+}
+
+const [suppressions, setSuppressions] = createSignal(0);
+/**
+ * True while a route draws its own full map (the All farms dashboard). The shell backdrop then removes its Leaflet map, outline,
+ * imagery credit and notes on every width, so nothing of the selected farm shows through a phone's map band or under the panels.
+ * A count, not a flag, so a view mounting before the previous one has cleaned up cannot clear the other's claim.
+ */
+export const backdropSuppressed = () => suppressions() > 0;
+/** Claim the backdrop; the returned release is idempotent. Prefer `suppressBackdrop` inside a component. */
+export function claimBackdrop(): () => void {
+  setSuppressions((n) => n + 1);
+  let released = false;
+  return () => {
+    if (released) return;
+    released = true;
+    setSuppressions((n) => Math.max(0, n - 1));
+  };
+}
+/** Claim the backdrop for the calling component and release it when the component is disposed. */
+export function suppressBackdrop(): () => void {
+  const release = claimBackdrop();
+  onCleanup(release);
+  return release;
 }

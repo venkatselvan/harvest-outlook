@@ -168,9 +168,9 @@ describe("Plans by field (12.6)", () => {
   });
   it("one row per field: current crop and the next season with its sowing month, or season and year when undated", () => {
     expect(rows).toEqual([
-      { id: "strip-1", name: "Strip 1", crop: "Maize", wholeFarm: false, cropId: "maize", next: "Black gram, sowing Feb 2027", nextPlanId: "p-next" },
-      { id: "strip-2", name: "Strip 2", crop: "Paddy + black gram", wholeFarm: false, cropId: "paddy", next: "Groundnut, Kharif 2027", nextPlanId: "p-undated" },
-      { id: "strip-3", name: "Strip 3", crop: "No crop", wholeFarm: false, cropId: null, next: "None planned", nextPlanId: null },
+      { id: "strip-1", name: "Strip 1", crop: "Maize", wholeFarm: false, cropId: "maize", cycleId: "c1", cycleName: "Maize", next: "Black gram, sowing Feb 2027", nextPlanId: "p-next" },
+      { id: "strip-2", name: "Strip 2", crop: "Paddy + black gram", wholeFarm: false, cropId: "paddy", cycleId: "c2", cycleName: "Paddy + black gram", next: "Groundnut, Kharif 2027", nextPlanId: "p-undated" },
+      { id: "strip-3", name: "Strip 3", crop: "No crop", wholeFarm: false, cropId: null, cycleId: null, cycleName: "", next: "None planned", nextPlanId: null },
     ]);
   });
   it("renders the rows with an Open plan button per field", () => {

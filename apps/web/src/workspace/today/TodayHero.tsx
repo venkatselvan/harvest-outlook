@@ -31,6 +31,7 @@ import {
   wetnessBadge,
 } from "./model";
 import { sceneImageUrl } from "./todayApi";
+import { createHeroNotes, HeroNotesButton, HeroNotesPanel } from "./TodayHeroNotes";
 
 export type HeroMode = "illustration" | "satellite" | "field-image";
 
@@ -82,6 +83,12 @@ export interface TodayHeroProps {
    * (null) outside live mode and on the farm overview, which uses the real wide image only.
    */
   prediction?: HeroPrediction | null | undefined;
+  /**
+   * 2026-11-04 (TODAY_REFINEMENT_SPEC.md 2): extra notes for the "About this view" popover, after the hero's own notes
+   * (the automatic milestone previews status), and the action that opens the monitoring and limitations sheet.
+   */
+  notes?: (() => JSX.Element) | undefined;
+  onAbout?: (() => void) | undefined;
 }
 
 /** State of the AI-predicted look for the satellite hero, from the view's `predictions` and the request in flight. */
@@ -734,6 +741,7 @@ export function TodayHero(props: TodayHeroProps) {
   const expectedScene = createMemo(() => actualScene() ? props.scenes.filter(scene => scene.kind === 'predicted' && predictedDate(scene) === props.date && scene.imagePath)
     .sort((a,b) => (a.generatedAt ?? '').localeCompare(b.generatedAt ?? ''))[0] : null);
   const fieldCount = () => farm()?.fields.length ?? 0;
+  const notes = createHeroNotes();
   return (
     <section class="today-hero" aria-label={heroLabel()} data-hero-mode={farm() ? "farm" : "field"}>
       <div class="today-hero-frame" classList={{ satellite: satellite(), "field-photo-mode": props.mode === "field-image", "has-season-timeline": !!props.timeline }}>
@@ -749,12 +757,15 @@ export function TodayHero(props: TodayHeroProps) {
               <button type="button" class="field-image-tab" aria-pressed={props.mode === "field-image"} onClick={() => props.onMode("field-image")}>Field Image</button>
             </Show>
           </div>
-          <span class="today-date-chip" data-testid="today-date-chip">
-            <Show when={isToday()}>
-              <span class="today-date-chip-today">Today</span>
-            </Show>
-            {formatDay(props.date)}
-          </span>
+          <div class="today-hero-corner">
+            <span class="today-date-chip" data-testid="today-date-chip">
+              <Show when={isToday()}>
+                <span class="today-date-chip-today">Today</span>
+              </Show>
+              {formatDay(props.date)}
+            </span>
+            <HeroNotesButton notes={notes} />
+          </div>
         </div>
         <Show when={props.timeline}><div class="today-hero-timeline">{props.timeline?.()}</div></Show>
         <div class="today-hero-visual">
@@ -890,15 +901,19 @@ export function TodayHero(props: TodayHeroProps) {
           </Show>
         </div>
       </Show>
-      <Show when={satellite()}>
-        <SatelliteNotes image={image()} overlay={overlayDrawn()} predicted={pick().mode === "predicted"} />
-      </Show>
-      <Show when={props.hasConditions}>
-        <ConditionsLine point={point()} date={props.date} />
-      </Show>
-      <Show when={!farm()}>
-        <CurveLine reading={props.indexStage} date={props.date} today={props.today} onDetails={props.onCurveDetails} />
-      </Show>
+      {/* The notes that used to sit in strips under the scene, verbatim, behind the corner info button. */}
+      <HeroNotesPanel notes={notes} onAbout={props.onAbout}>
+        <Show when={satellite()}>
+          <SatelliteNotes image={image()} overlay={overlayDrawn()} predicted={pick().mode === "predicted"} />
+        </Show>
+        <Show when={props.hasConditions}>
+          <ConditionsLine point={point()} date={props.date} />
+        </Show>
+        <Show when={!farm()}>
+          <CurveLine reading={props.indexStage} date={props.date} today={props.today} onDetails={props.onCurveDetails} />
+        </Show>
+        {props.notes?.()}
+      </HeroNotesPanel>
     </section>
   );
 }

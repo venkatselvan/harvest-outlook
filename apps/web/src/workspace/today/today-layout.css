@@ -149,8 +149,8 @@
 
 /* ---------------------------------------------------------------- Today full-map layout (TODAY_MAP_LAYOUT_SPEC.md) */
 .today-map-layout { display: grid; gap: 18px; max-width: 1600px; }
-.today-map-left, .today-map-right, .today-map-sheet { display: grid; gap: 18px; align-content: start; min-width: 0; }
-.today-map-layout :is(.today-map-panel, .today-primary, .today-more, .today-map-headline), .today-shared-lists { position: relative; }
+.today-map-main, .today-map-right, .today-map-sheet { display: grid; gap: 18px; align-content: start; min-width: 0; }
+.today-map-layout :is(.today-map-panel, .today-primary, .today-map-headline), .today-shared-lists { position: relative; }
 .today-map-panel {
   background: var(--today-panel); border: 1px solid var(--today-edge); border-radius: var(--today-radius);
   box-shadow: 0 16px 48px rgb(5 22 13 / 9%), inset 0 1px 0 rgb(255 255 255 / 4%);
@@ -206,44 +206,25 @@
 .today-evara-head h2 { margin: 0; font-size: 16px; font-weight: 500; }
 .today-evara-head p { margin: 2px 0 0; font-size: 12px; color: var(--text-secondary); }
 .today-evara-question { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 44px; padding: 10px 12px; border-radius: 14px; border: 1px solid var(--accent-border); background: var(--accent-soft); color: var(--text); font-size: 13px; text-align: left; cursor: pointer; }
-.today-more { grid-column: 1 / -1; }
-.today-more-details { background: var(--today-panel); border: 1px solid var(--today-edge); border-radius: var(--today-radius); backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px); padding: 4px 20px; }
-.today-more-details > summary { display: flex; align-items: center; gap: 10px; min-height: 52px; cursor: pointer; list-style: none; }
-.today-more-details > summary::-webkit-details-marker { display: none; }
-.today-more-title { font-size: 16px; font-weight: 500; }
-.today-more-details > summary small { color: var(--text-secondary); font-size: 12px; margin-left: auto; text-align: right; }
-.today-more-details[open] > summary svg { transform: rotate(180deg); }
-.today-more-details > summary:focus-visible { outline: 2px solid var(--focus); outline-offset: 3px; border-radius: 8px; }
-.today-more-body { display: grid; gap: 18px; padding: 6px 0 20px; min-width: 0; }
-.today-more-body .today-primary:empty { display: none; }
 .today-map-centre { position: relative; min-width: 0; min-height: 0; }
 .today-map-pin { position: fixed; transform: translate(-50%, 0); display: grid; justify-items: center; gap: 4px; padding-top: 2px; text-align: center; text-shadow: 0 1px 12px rgb(0 0 0 / 70%); color: var(--text); }
 .today-map-pin-dot { width: 11px; height: 11px; border-radius: 50%; background: var(--accent); border: 2px solid var(--text); box-shadow: 0 0 0 7px var(--accent-soft); }
 .today-map-pin strong { font-size: 13px; font-weight: 550; }
 .today-map-explore { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 14px; border-radius: 13px; background: var(--glass-navigation); border: 1px solid var(--glass-edge); color: var(--accent); font-size: 13px; text-decoration: none; text-shadow: none; }
-.today-map-controls { position: absolute; right: 10px; bottom: 10px; display: flex; flex-direction: column; border-radius: 14px; overflow: hidden; background: var(--glass-navigation); border: 1px solid var(--glass-edge); box-shadow: var(--glass-shadow); }
-.today-map-controls button { width: 44px; height: 44px; display: grid; place-items: center; background: transparent; border: 0; color: var(--text); font-size: 20px; cursor: pointer; }
-.today-map-controls button + button { border-top: 1px solid var(--glass-edge); }
-.today-map-controls button:focus-visible, .today-map-explore:focus-visible { outline: 2px solid var(--focus); outline-offset: -2px; }
-/* Desktop: three columns over the map with an open centre. */
+.today-map-explore:focus-visible { outline: 2px solid var(--focus); outline-offset: -2px; }
+/* Desktop: two columns over the full-tab map, a main column (about two thirds) and a right pane of 360px; no open centre. */
 @media (min-width: 1024px) {
-  .today-map-layout[data-arrangement="wide"] { grid-template-columns: minmax(300px, 360px) minmax(160px, 1fr) minmax(280px, 340px); column-gap: 24px; align-items: start; }
-  .today-map-layout[data-arrangement="wide"] > .today-map-headline { grid-column: 1 / 3; grid-row: 1; }
-  .today-map-layout[data-arrangement="wide"] > .today-map-left { grid-column: 1; grid-row: 2; }
-  .today-map-layout[data-arrangement="wide"] > .today-map-centre { grid-column: 2; grid-row: 2; align-self: stretch; }
-  .today-map-layout[data-arrangement="wide"] > .today-map-right { grid-column: 3; grid-row: 1 / span 2; }
-  .today-map-layout[data-arrangement="wide"] > .today-more { grid-row: 3; }
-  .today-map-layout[data-arrangement="wide"] .today-map-controls { position: fixed; left: var(--map-controls-x, auto); right: auto; bottom: 46px; }
-  .today-more-body { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .today-more-body > :not(.today-side) { grid-column: 1 / -1; }
-  .today-more-body > .today-side { display: contents; }
-  .today-more-body .today-soil { grid-column: 1 / -1; }
+  .today-map-layout[data-arrangement="wide"] { grid-template-columns: minmax(0, 1fr) 360px; column-gap: 24px; align-items: start; }
+  .today-map-layout[data-arrangement="wide"] > .today-map-headline { grid-column: 1; grid-row: 1; }
+  .today-map-layout[data-arrangement="wide"] > .today-map-main { grid-column: 1; grid-row: 2; }
+  .today-map-layout[data-arrangement="wide"] > .today-map-right { grid-column: 2; grid-row: 1 / span 2; }
+  /* The hero frame takes the full main column at its earlier, taller proportions. */
+  .today-map-layout[data-arrangement="wide"] .today-hero-frame.has-season-timeline .today-hero-visual { aspect-ratio: 1.65; min-height: 320px; }
 }
-/* Tablet: two columns, no open centre (the map stays behind the panels). */
+/* Tablet: two columns (the map stays behind the panels). */
 @media (min-width: 768px) and (max-width: 1023px) {
   .today-map-layout[data-arrangement="wide"] { grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); }
   .today-map-layout[data-arrangement="wide"] > .today-map-headline { grid-column: 1 / -1; }
-  .today-map-layout[data-arrangement="wide"] > .today-map-centre { display: none; }
 }
 /* Phone: the map is a top band with the pin; the panels scroll over it as one sheet. */
 @media (max-width: 767px) {
@@ -251,13 +232,10 @@
   .today-map-sheet { gap: 14px; }
   .today-map-panel { padding: 16px; }
   .today-glance-metrics dd { font-size: 23px; }
-  .today-more-details { padding: 2px 16px; }
-  .today-more-details > summary { flex-wrap: wrap; padding-block: 8px; }
-  .today-more-details > summary small { margin-left: 0; text-align: left; flex-basis: 100%; order: 3; }
   .today-map-layout .today-hero-frame.has-season-timeline .today-hero-visual { aspect-ratio: 1.1; }
 }
 @media (prefers-reduced-transparency: reduce) {
-  .today-map-panel, .today-more-details { background: var(--surface); backdrop-filter: none; -webkit-backdrop-filter: none; }
+  .today-map-panel { background: var(--surface); backdrop-filter: none; -webkit-backdrop-filter: none; }
 }
 /* Actions tab: action cards on the left, "This week" on the right, the map visible between on wide screens. */
 .today-action-card { display: grid; gap: 8px; min-width: 0; }
@@ -275,10 +253,14 @@
 .today-this-week-rows small { display: block; font-size: 12px; color: var(--text-secondary); }
 .today-shared-lists.is-actions { display: grid; gap: 18px; align-items: start; }
 @media (min-width: 1024px) {
-  .today-shared-lists.is-actions { grid-template-columns: minmax(420px, 680px) minmax(280px, 330px); justify-content: space-between; }
+  .today-shared-lists.is-actions { grid-template-columns: minmax(0, 1fr) minmax(280px, 330px); column-gap: 24px; }
+  .today-shared-lists.is-actions > .today-lists { grid-column: 1; grid-row: 1; }
   .today-shared-lists.is-actions > .today-this-week { grid-column: 2; grid-row: 1; position: sticky; top: 16px; }
 }
 @media (max-width: 599px) { .today-action-evidence { grid-template-columns: minmax(0, 1fr); } }
+.today-glance-explore { margin-left: auto; font-size: 12px; }
+/* The phone band's pin already links to Explore fields; the tile's link steps aside while the pin shows. */
+.today-map-layout[data-arrangement="compact"]:has(.today-map-pin) .today-glance-explore { display: none; }
 /* Today map band polish: glance tile value, phone band height, pin and imagery credit kept inside the band. */
 .today-glance-metrics dd small { white-space: nowrap; }
 .today-map-pin { left: var(--pin-vx, 50%); top: var(--pin-vy, 0); }
@@ -286,7 +268,135 @@
 @media (max-width: 767px) {
   .today-map-layout[data-arrangement="compact"] { align-content: start; grid-auto-rows: max-content; }
   .today-map-layout[data-arrangement="compact"] > .today-map-centre { height: max(220px, 38vh); min-height: 220px; max-height: none; box-sizing: border-box; overflow: hidden; align-self: start; }
-  .today-map-layout[data-arrangement="compact"] .today-map-controls { display: none; }
-  .today-map-layout[data-arrangement="compact"] .today-map-pin { position: absolute; left: var(--pin-x, 50%); top: var(--pin-y, 40%); }
+    .today-map-layout[data-arrangement="compact"] .today-map-pin { position: absolute; left: var(--pin-x, 50%); top: var(--pin-y, 40%); }
   .today-map-layout[data-arrangement="compact"] .today-map-credit { display: block; position: absolute; left: 8px; bottom: 8px; max-width: calc(100% - 16px); padding: 3px 8px; border-radius: 8px; background: #172c23; color: #e8f1dd; font-size: 9px; line-height: 1.5; pointer-events: none; z-index: 2; }
+}
+
+/* ---------------------------------------------------------------- Today refinement (TODAY_REFINEMENT_SPEC.md) */
+/* 3, 4: field signals stack in the right pane, one compact row each: glyph, label and value line (with its note), basis chip. */
+.today-gauge-list { grid-template-columns: minmax(0, 1fr); gap: 8px; }
+.today-gauge { grid-template-columns: 36px minmax(0, 1fr) auto; gap: 10px; min-height: 56px; padding: 8px 10px; }
+.today-gauge-ring { width: 36px; height: 36px; }
+.today-gauge-line { display: block; font-size: 12px; line-height: 1.45; color: var(--text-secondary); }
+.today-gauge-line .today-gauge-value { font-size: 15px; color: var(--text); }
+.today-gauge-note { display: block; font-size: 12px; line-height: 1.45; color: var(--text); }
+.today-gauge .today-basis-chip { align-self: start; margin-top: 2px; }
+/* 3: "Today for you" in the 360px right pane: the action moves under the headline. */
+.today-map-right .today-overview { padding: 18px 20px; }
+.today-map-right .today-overview-brief { grid-template-columns: minmax(0, 1fr); gap: 10px; }
+.today-map-right .today-overview-action { grid-column: 1; grid-row: auto; justify-self: start; }
+.today-map-right .today-overview .today-overview-headline { font-size: 15px; }
+.today-map-right .today-overview-more > summary { flex-wrap: wrap; gap: 4px 8px; }
+
+/* 2: the hero's notes behind the corner info button. */
+.today-hero { position: relative; }
+.today-hero-corner { display: inline-flex; align-items: center; gap: 6px; }
+.today-hero-info {
+  display: inline-grid; place-items: center; width: 34px; height: 34px; padding: 0; border-radius: 999px; cursor: pointer;
+  background: var(--surface-glass); border: 1px solid var(--border); color: var(--text); box-shadow: 0 2px 10px var(--shadow-color);
+  backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px);
+}
+.today-hero-info[aria-expanded="true"] { background: var(--accent-soft); border-color: var(--accent-border); color: var(--accent); }
+.today-hero-info:focus-visible, .today-hero-notes-close:focus-visible, .today-hero-notes:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+@media (pointer: coarse) { .today-hero-info { width: 44px; height: 44px; } }
+.today-hero-notes {
+  position: absolute; z-index: 30; top: 56px; right: 10px; width: min(440px, calc(100% - 20px)); max-height: min(70vh, 560px); overflow: auto;
+  box-sizing: border-box; display: grid; gap: 10px; padding: 14px 16px 16px; border-radius: 18px;
+  background: var(--surface); color: var(--text); border: 1px solid var(--today-edge); box-shadow: 0 18px 48px rgb(0 0 0 / 28%);
+  font-size: 13px; line-height: 1.55;
+}
+.today-hero-notes[hidden] { display: none; }
+.today-hero-notes-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.today-hero-notes-title { margin: 0; font-size: 14px; font-weight: 600; }
+.today-hero-notes-close { display: grid; place-items: center; width: 36px; height: 36px; border: 0; border-radius: 10px; background: transparent; color: var(--text-secondary); cursor: pointer; }
+.today-hero-notes-close:hover { background: var(--surface-hover); }
+.today-view .today-hero-notes :is(.today-conditions, .today-sat-notes, .today-curve) { margin: 0; padding: 0 0 10px; border: 0; border-bottom: 1px solid var(--today-edge); border-radius: 0; background: none; backdrop-filter: none; -webkit-backdrop-filter: none; color: var(--text-secondary); }
+.today-hero-notes .today-milestone-status { padding: 0 0 10px; border: 0; border-bottom: 1px solid var(--today-edge); border-radius: 0; background: none; }
+.today-hero-notes .today-milestone-status summary { min-height: 36px; display: list-item; }
+.today-hero-notes-more { justify-self: start; min-height: 44px; display: inline-flex; align-items: center; gap: 6px; }
+
+/* 5: the layered harvest outlook card under the hero. */
+.today-outlook { gap: 0; padding: 0; overflow: visible; }
+.today-outlook > .today-map-panel-head { padding: 16px 20px 12px; }
+.today-outlook-top { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); border-top: 1px solid var(--today-edge); }
+.today-outlook-tiles { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border-top: 1px solid var(--today-edge); }
+.today-outlook.is-soil-only .today-outlook-tiles { grid-template-columns: minmax(0, 1fr); }
+.today-outlook-lead, .today-outlook-tile { display: grid; align-content: start; gap: 6px; min-width: 0; padding: 16px 20px; }
+.today-outlook-top > * + *, .today-outlook-tiles > * + * { border-left: 1px solid var(--today-edge); }
+.today-outlook-lead h3, .today-outlook-tile h3 { margin: 0; font-size: 13px; font-weight: 550; color: var(--text-secondary); }
+.today-outlook-figure { margin: 0; font-size: clamp(30px, 3vw, 40px); font-weight: 500; letter-spacing: -.04em; line-height: 1.15; color: var(--text); font-variant-numeric: tabular-nums; }
+.today-outlook-figure.is-empty { color: var(--text-secondary); }
+.today-outlook-sub { margin: 0; font-size: 12px; line-height: 1.5; color: var(--text-secondary); }
+.today-outlook-value { margin: 0; font-size: 20px; font-weight: 500; letter-spacing: -.02em; color: var(--text); font-variant-numeric: tabular-nums; }
+.today-outlook-value small { font-size: 12px; color: var(--text-secondary); letter-spacing: 0; }
+.today-outlook-line { margin: 0; font-size: 12px; line-height: 1.5; color: var(--text-secondary); }
+.today-outlook-more, .today-outlook-cta, .today-outlook-link { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0; border: 0; background: none; color: var(--accent); font-size: 13px; font-weight: 500; cursor: pointer; justify-self: start; text-align: left; }
+.today-outlook-link { min-height: 0; display: inline; text-decoration: underline; }
+.today-outlook-more:focus-visible, .today-outlook-cta:focus-visible, .today-outlook-link:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; border-radius: 6px; }
+.today-outlook-actions { display: flex; flex-wrap: wrap; gap: 0 16px; }
+.today-outlook-soil { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+.today-outlook-soil li { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; align-items: center; gap: 6px; font-size: 12px; }
+.today-outlook-soil-label { color: var(--text-secondary); overflow-wrap: anywhere; }
+.today-outlook-soil-value { font-weight: 550; color: var(--text); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.today-outlook-soil .ui-chip { font-size: 10px; }
+.today-outlook-pairs { margin: 0; display: grid; gap: 6px; }
+.today-outlook-pairs > div { display: grid; gap: 1px; }
+.today-outlook-pairs dt { font-size: 11px; color: var(--text-secondary); }
+.today-outlook-pairs dd { margin: 0; font-size: 15px; font-weight: 500; color: var(--text); font-variant-numeric: tabular-nums; }
+/* A figure's basis mark and its one-line note: shown on hover, on focus of the mark, or after a tap; Escape hides it. */
+.today-tip { position: relative; display: inline-flex; align-items: baseline; flex-wrap: wrap; gap: 4px 8px; max-width: 100%; }
+.today-tip.is-block { display: grid; grid-template-columns: minmax(0, 1fr); gap: 4px; }
+.today-tip.is-block > .today-basis-mark { justify-self: start; }
+.today-basis-mark {
+  display: inline-flex; align-items: center; min-height: 24px; padding: 2px 8px; border-radius: 999px; cursor: help;
+  font: inherit; font-size: 11px; font-weight: 550; letter-spacing: 0; line-height: 1.2; white-space: nowrap; vertical-align: middle;
+  border: 1px solid var(--today-edge); background: var(--surface-soft); color: var(--text-secondary);
+}
+.today-basis-mark[data-basis="sourced"] { background: var(--accent-soft); border-color: var(--accent-border); color: var(--accent); }
+.today-basis-mark[data-basis="modelled"] { background: var(--info-soft); color: var(--info); }
+.today-basis-mark:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+@media (pointer: coarse) { .today-basis-mark { min-height: 32px; padding-inline: 10px; } }
+.today-tip-pop {
+  display: none; position: absolute; z-index: 40; left: 0; bottom: calc(100% + 4px); width: max-content; max-width: min(300px, calc(100vw - 48px));
+  padding: 7px 10px; border-radius: 10px; background: var(--surface); color: var(--text); border: 1px solid var(--border-strong);
+  box-shadow: 0 10px 28px var(--shadow-color); font-size: 12px; font-weight: 450; letter-spacing: 0; line-height: 1.45; white-space: normal; text-align: left;
+}
+.today-tip:is(:hover, :focus-within, [data-open="true"]):not([data-hushed="true"]) > .today-tip-pop { display: block; }
+
+@media (max-width: 1023px) {
+  .today-outlook-tiles { grid-template-columns: minmax(0, 1fr); }
+  .today-outlook-tiles > * + * { border-left: 0; border-top: 1px solid var(--today-edge); }
+}
+@media (max-width: 599px) {
+  .today-outlook-top { grid-template-columns: minmax(0, 1fr); }
+  .today-outlook-top > * + * { border-left: 0; border-top: 1px solid var(--today-edge); }
+  .today-outlook-lead, .today-outlook-tile { padding: 14px 16px; }
+  .today-outlook > .today-map-panel-head { padding: 14px 16px 10px; }
+  .today-hero-notes { top: 50px; right: 8px; width: calc(100% - 16px); }
+}
+
+/* 1: the Actions board, a masonry of action cards under the heading (two columns from 1024px, one below). */
+.today-actions-board { display: grid; gap: 12px; min-width: 0; }
+.today-actions-board-head { display: flex; flex-wrap: wrap; gap: 4px 16px; justify-content: space-between; }
+.today-actions-board-head .today-section-status { margin: 0; font-size: 12px; color: var(--text-secondary); display: inline-flex; gap: 6px; align-items: center; }
+.today-actions-masonry { list-style: none; margin: 0; padding: 0; column-count: 1; column-gap: 18px; }
+.today-actions-item { break-inside: avoid; page-break-inside: avoid; margin: 0 0 18px; display: block; }
+.today-actions-item > :is(.today-alert, .today-step, .today-next) {
+  background: var(--today-panel); border: 1px solid var(--today-edge); border-radius: var(--today-radius);
+  box-shadow: 0 16px 48px rgb(5 22 13 / 9%), inset 0 1px 0 rgb(255 255 255 / 4%);
+  backdrop-filter: blur(24px) saturate(1.12); -webkit-backdrop-filter: blur(24px) saturate(1.12);
+}
+.today-actions-item > .today-alert { padding: 16px 10px 16px 0; }
+.today-actions-item > :is(.today-step, .today-next) { padding: 18px 20px; }
+.today-actions-item .today-action-evidence { grid-template-columns: minmax(0, 1fr); }
+.today-actions-item > :is(.today-alert, .today-step, .today-next):focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.today-actions-all { justify-self: start; min-height: 44px; }
+.today-shared-lists.is-actions .today-lists { grid-template-columns: minmax(0, 1fr); }
+.today-actions-heading { padding-bottom: 14px; }
+.today-actions-heading h2:focus { outline: none; }
+@media (min-width: 1024px) {
+  .today-actions-masonry { column-count: 2; }
+}
+@media (prefers-reduced-transparency: reduce) {
+  .today-actions-item > :is(.today-alert, .today-step, .today-next) { background: var(--surface); backdrop-filter: none; -webkit-backdrop-filter: none; }
 }

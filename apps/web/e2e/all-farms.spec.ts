@@ -43,7 +43,10 @@ async function mock(page:Page,options:Options={}) {
 const row=(page:Page,name:string)=>page.getByRole('button',{name:new RegExp(`^${name}`)}).filter({has:page.locator('strong')});
 for(const width of [1440,390])test(`real totals and geometry, no overflow at ${width}`,async({page},testInfo)=>{
  await page.setViewportSize({width,height:width===390?844:1000});await page.emulateMedia({colorScheme:'light'});const errors:string[]=[];page.on('pageerror',error=>errors.push(error.message));const state=await mock(page);await page.goto('/farms');
- await expect(page.getByRole('heading',{name:'All farms, one perspective.'})).toBeVisible();await expect(page.locator('.af-totals')).toContainText('all farms');await expect(page.locator('.af-totals')).toContainText('2Saved farms');await expect(page.locator('.af-map svg path.leaflet-interactive')).toHaveCount(1);await expect(page.locator('.af-map')).toContainText('1 of 2 farms located');await expect(page.locator('.af-map .leaflet-control-attribution')).toContainText('Esri');
+ await expect(page.getByRole('heading',{name:'All farms, one perspective.'})).toBeVisible();await expect(page.locator('.af-totals')).toContainText('Active fields');await expect(page.locator('.af-totals')).toContainText('2Farms');await expect(page.locator('.af-map svg path')).toHaveCount(1);await expect(page.locator('.af-map .af-pin')).toHaveText(['01Farm Alpha']);await expect(page.locator('.af-map .af-pin.is-selected')).toHaveCount(1);
+ // Open reviews = stored alerts + due or overdue care tasks across farms: Alpha 1 alert + 1 due task, Beta 1 alert.
+ await expect(page.locator('.af-totals')).toContainText('3Open reviews');await expect(row(page,'Farm Alpha').locator('.af-status')).toHaveText('Review due');await expect(row(page,'Farm Alpha').locator('.af-farm-number')).toHaveText('01');await expect(page.locator('.af-priorities')).toContainText('2 to review');
+ const selectedCard=page.getByRole('region',{name:'Selected farm summary'});await expect(selectedCard.getByRole('link',{name:'Open field map'})).toHaveAttribute('href','/farm?tab=modify');await expect(selectedCard.getByRole('link',{name:'Alerts & actions'})).toHaveAttribute('href','/farm?tab=actions');await expect(page.locator('.af-map')).toContainText('1 of 2 farms located');await expect(page.locator('.af-map .leaflet-control-attribution')).toContainText('Esri');
  await expect(page.locator('.af-priorities')).toContainText('Alpha rain alert');await row(page,'Farm Beta').click();await expect(page.locator('.af-selected')).toContainText('Farm Beta');await expect(page.locator('.af-priorities')).toContainText('Beta rain alert');await expect(page.locator('.af-priorities')).not.toContainText('Alpha rain alert');
  expect(state.requests.some(r=>r.path.endsWith('/today'))).toBe(false);expect(state.requests.filter(r=>r.method!=='GET')).toEqual([]);expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);await expect(page.locator('html')).toHaveAttribute('data-theme','dark');await expect(page.getByRole('button',{name:'Dark mode',exact:true})).toHaveCount(0);await page.evaluate(()=>window.scrollTo(0,0));await page.screenshot({path:testInfo.outputPath(`all-farms-${width}-dark.png`),fullPage:true});expect(errors).toEqual([]);
 });
@@ -51,7 +54,7 @@ test('late priorities from previous farm never replace selected farm',async({pag
  const state=await mock(page,{holdA:true});await page.goto('/farms');await expect.poll(()=>state.held.length).toBe(2);await row(page,'Farm Beta').click();await expect(page.locator('.af-priorities')).toContainText('Beta rain alert');await state.releaseA();await expect(page.locator('.af-priorities')).not.toContainText('Alpha rain alert');await expect(page.locator('.af-priorities')).toContainText('Farm Beta only');
 });
 test('partial workspace failure stays unknown and task link retains field',async({page})=>{
- await mock(page,{failB:true});await page.goto('/farms');await expect(page.locator('.af-load-note')).toContainText('Counts remain partial');await expect(page.locator('.af-totals')).toContainText('1/2 farms loaded');await expect(row(page,'Farm Beta')).toContainText('Fields unavailable');await page.getByRole('button',{name:'Care tasks',exact:true}).click();await page.getByRole('button',{name:/Inspect Alpha field moisture/}).click();await expect(page).toHaveURL(/\/farm\?tab=actions&field=field-a$/);
+ await mock(page,{failB:true});await page.goto('/farms');await expect(page.locator('.af-load-note')).toContainText('Counts remain partial');await expect(page.locator('.af-totals')).toContainText('1/2 farms loaded');await expect(row(page,'Farm Beta')).toContainText('Fields unavailable');await expect(row(page,'Farm Beta').locator('.af-status')).toHaveText('Unavailable');await expect(page.locator('.af-totals')).toContainText('Open reviews · partial');await page.getByRole('button',{name:'Today’s tasks',exact:true}).click();await page.getByRole('button',{name:/Inspect Alpha field moisture/}).click();await expect(page).toHaveURL(/\/farm\?tab=actions&field=field-a$/);
  const tabs=page.getByRole('navigation',{name:'Farm views'});
  await expect(tabs.getByRole('link',{name:'Modify',exact:true})).toHaveAttribute('href','/farm?tab=modify&field=field-a');
  await tabs.getByRole('link',{name:'Modify',exact:true}).click();
@@ -77,9 +80,11 @@ test('session change drops previous owner pending priorities',async({page})=>{
 
 test('farm summaries stay keyed to the farm when an older selection answers late',async({page})=>{
  const state=await mock(page,{holdSummaryA:true});await page.goto('/farms');await expect.poll(()=>state.heldSummaries.length).toBe(1);
- await expect(row(page,'Farm Alpha')).toContainText('Reading farm summary');await row(page,'Farm Beta').click();
- const selected=page.getByRole('region',{name:'Selected farm summary'});await expect(selected).toContainText('Beta has no growing crop recorded.');
- await state.releaseSummaryA();await expect(row(page,'Farm Alpha')).toContainText('Old Alpha AI summary');await expect(selected).not.toContainText('Old Alpha');await expect(selected).toContainText('Farm records');
+ const selected=page.getByRole('region',{name:'Selected farm summary'});await expect(selected).toContainText('Reading this farm’s summary');await row(page,'Farm Beta').click();
+ await expect(selected).toContainText('Beta has no growing crop recorded.');
+ await state.releaseSummaryA();await expect(selected).not.toContainText('Old Alpha');await expect(selected).toContainText('Farm records');
+ // The late Alpha answer is kept under Alpha: it shows once Alpha is selected again.
+ await row(page,'Farm Alpha').click();await expect(selected).toContainText('Old Alpha AI summary');
  expect(state.requests.some(request=>request.path.endsWith('/today'))).toBe(false);
 });
 test('per-farm generation posts once, polls the pending summary and reveals the supporting facts',async({page},testInfo)=>{
@@ -95,7 +100,7 @@ test('summary read failures retry without making unavailable records look like m
  const state=await mock(page,{failSummaryB:true});await page.goto('/farms');await row(page,'Farm Beta').click();const selected=page.getByRole('region',{name:'Selected farm summary'});
  await expect(selected).toContainText('unavailable');await expect(selected).not.toContainText('AI summary');state.recoverSummary();await selected.getByRole('button',{name:'Retry summary'}).click();
  await expect(selected).toContainText('Beta has no growing crop recorded.');await expect(selected).toContainText('Farm records');
- await selected.getByRole('button',{name:'Review farm actions'}).click();await expect(page).toHaveURL(/\/farm\?tab=actions$/);
+ await selected.getByRole('link',{name:'Alerts & actions'}).click();await expect(page).toHaveURL(/\/farm\?tab=actions$/);
 });
 test('session change discards a previous owner summary response',async({page})=>{
  const state=await mock(page,{holdSummaryA:true});await page.goto('/farms');await expect.poll(()=>state.heldSummaries.length).toBe(1);state.changeIdentity();

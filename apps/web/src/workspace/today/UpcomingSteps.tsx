@@ -48,7 +48,7 @@ const kindIcon: Record<UpcomingStep["kind"], string> = {
   stage_check: "calendar",
   field_check: "leaf",
 };
-const VISIBLE = 5;
+export const VISIBLE = 5;
 
 /** Only scheduled care tasks can be completed (the completion endpoint accepts their ids); never stage checks or guidance. */
 const canComplete = (step: UpcomingStep) => step.kind === "care_task" && !!step.careTask && step.status !== "completed";
@@ -99,7 +99,7 @@ const suggestedAction = (step: UpcomingStep): string =>
   step.careTask?.action ?? (step.kind === "field_check" ? FIELD_CHECK_ACTION : step.detail) ?? "No action text was given for this step.";
 
 /** One step as an action card (Actions tab): evidence first, then the suggested action, then the step's existing button. */
-function ActionStepBody(props: {
+export function ActionStepBody(props: {
   step: UpcomingStep;
   when: string;
   titleId?: string | undefined;

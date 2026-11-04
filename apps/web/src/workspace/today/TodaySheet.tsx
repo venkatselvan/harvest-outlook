@@ -47,7 +47,8 @@ import {
   words,
   yieldBasisWords,
 } from "./model";
-import { agroKindNote, AGRO_LABEL, priceGapText, trendText, weatherAgroFacts, weatherBasis, weatherKindLabel, healthHeadline, type CardKind } from "./TodayCards";
+import { AiSpark } from "../ui/AiSpark";
+import { agroKindNote, AGRO_LABEL, OutlookLine, priceGapText, trendText, weatherAgroFacts, weatherBasis, weatherKindLabel, healthHeadline, type CardKind } from "./TodayCards";
 
 export type SheetKind = CardKind | "about" | "curve";
 
@@ -666,12 +667,20 @@ export function TodaySheetBody(props: Omit<TodaySheetProps, "onClose">) {
                 </p>
               </Show>
               <p>{price().scopeLabel}</p>
+              {/* TODAY_REFINEMENT_SPEC.md 5: the outlook line left the card; while it is being written it shows here with its AI mark. */}
+              <Show when={props.view.outlookNote?.status === "pending"}>
+                <OutlookLine note={props.view.outlookNote ?? null} />
+              </Show>
               <Show when={props.view.outlookNote?.status === "ready" && props.view.outlookNote.text ? props.view.outlookNote : null}>
                 {(note) => (
                   <div class="today-sheet-outlook" data-testid="today-sheet-outlook">
                     <p>
                       <strong>{note().origin === "model" ? "Outlook in words (written by Meta from these facts)" : "Outlook in words (written by code)"}</strong>:{" "}
                       {note().text}
+                      <Show when={note().origin === "model"}>
+                        {" "}
+                        <AiSpark use="harvest_outlook_note" size={14} />
+                      </Show>
                     </p>
                     <ul>
                       <For each={note().facts}>{(fact) => <li>{fact}</li>}</For>

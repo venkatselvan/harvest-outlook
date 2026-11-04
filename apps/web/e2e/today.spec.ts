@@ -13,7 +13,7 @@ import {
   todayEmptyFixture,
   todayFixture,
 } from "../src/workspace/today/fixtures";
-import { formatInr, formatTemp, priceAt, weatherAt } from "../src/workspace/today/model";
+import { formatTemp, weatherAt } from "../src/workspace/today/model";
 
 // UI-only route mocks: every /api/v1 request is answered here from the synthetic Today fixture; no provider is called.
 const A = "11111111-1111-4111-8111-111111111111",
@@ -286,7 +286,15 @@ const fixture = todayFixture(A);
 const slider = (page: Page) => page.getByRole("slider", { name: "Move through the season" });
 const chip = (page: Page) => page.getByTestId("today-date-chip");
 const stage = (page: Page) => page.getByTestId("today-stage");
-const card = (page: Page, kind: string) => page.locator(`[data-card="${kind}"]`);
+/** A block of the layered "Harvest outlook" card (TODAY_REFINEMENT_SPEC.md 5): profit, residue, price, soil, footprint. */
+const card = (page: Page, kind: string) => page.locator(`[data-outlook="${kind}"]`);
+/** A field signal in the right pane: greenness, water or stage. */
+const gauge = (page: Page, id: string) => page.getByTestId("today-gauges").locator(`[data-gauge="${id}"]`);
+/** Opens the hero's "About this view" notes (idempotent). */
+async function openNotes(page: Page) {
+  const button = page.getByTestId("today-hero-info").first();
+  if ((await button.getAttribute("aria-expanded")) !== "true") await button.click();
+}
 async function press(page: Page, key: string, times: number) {
   const target = slider(page);
   await target.focus();
@@ -294,17 +302,10 @@ async function press(page: Page, key: string, times: number) {
 }
 /** The page h1 on Today is the headline (TODAY_MAP_LAYOUT_SPEC.md); the fixture farm has no fields. */
 const headline = (page: Page) => page.getByRole("heading", { level: 1, name: "Your farm today." });
-/** The deeper cards sit behind the collapsed "More from Today" disclosure; open it (idempotent). */
-async function openMore(page: Page) {
-  const details = page.getByTestId("today-more").locator("details.today-more-details");
-  await expect(details).toHaveCount(1);
-  if (!(await details.evaluate((el) => (el as HTMLDetailsElement).open))) await details.locator(":scope > summary").click();
-}
 async function openToday(page: Page) {
   await page.goto("/farm");
   await expect(headline(page)).toBeVisible();
   await expect(slider(page)).toBeVisible();
-  await openMore(page);
 }
 
 test.use({ viewport: { width: 390, height: 844 } });
@@ -318,15 +319,12 @@ test("slider opens at today and moves the stage, date, price and weather togethe
   await expect(stage(page)).toContainText("Vegetative");
   await expect(stage(page)).toContainText("8 Nov");
   await expect(stage(page)).toContainText("Growing");
-  const now = priceAt(fixture.priceTrack, "2026-11-01")!;
-  await expect(page.getByTestId("today-price-at-date")).toHaveText(`1 Nov: ${formatInr(now.p50!)}/kg recorded`);
+  // The week ahead replaces the weather card; the stage gauge carries the harvest window; the price tile keeps its range.
   const nowWeather = weatherAt(fixture.weatherTrack, "2026-11-01")!;
-  await expect(card(page, "weather")).toContainText("Weather on 1 Nov");
-  await expect(card(page, "weather")).toContainText("Forecast");
-  await expect(card(page, "weather")).toContainText(`${formatTemp(nowWeather.tMaxC)}/${formatTemp(nowWeather.tMinC)}`);
-  await expect(card(page, "harvest")).toContainText("63–73 days");
+  await expect(page.getByTestId("today-week").locator('[data-date="2026-11-01"]')).toContainText(`${formatTemp(nowWeather.tMaxC)}`);
+  await expect(gauge(page, "stage")).toContainText("Harvest 3 Jan to 13 Jan (estimated)");
   await expect(card(page, "price")).toContainText("₹19–24");
-  await expect(card(page, "price")).toContainText("Historical mandi range");
+  await expect(card(page, "price").locator(".today-tip-pop")).toHaveText("Historical mandi range · not a farm-gate forecast");
   await expect(page.getByRole("button", { name: "Back to today" })).toHaveCount(0);
 
   // 39 days later by keyboard: 10 Dec 2026, inside the grain-filling stage, beyond the forecast horizon.
@@ -335,14 +333,12 @@ test("slider opens at today and moves the stage, date, price and weather togethe
   await expect(chip(page)).toHaveText("10 Dec 2026");
   await expect(stage(page)).toContainText("Grain filling · 29 Nov to 28 Dec");
   await expect(stage(page)).not.toContainText("Growing");
-  const later = priceAt(fixture.priceTrack, "2026-12-10")!;
-  await expect(page.getByTestId("today-price-at-date")).toHaveText(`10 Dec: ${formatInr(later.p50!)}/kg typical`);
-  const laterWeather = weatherAt(fixture.weatherTrack, "2026-12-10")!;
-  await expect(card(page, "weather")).toContainText("Weather on 10 Dec");
-  await expect(card(page, "weather")).toContainText("Typical");
-  await expect(card(page, "weather")).not.toContainText("Forecast");
-  await expect(card(page, "weather")).toContainText(`${formatTemp(laterWeather.tMaxC)}/${formatTemp(laterWeather.tMinC)}`);
-  await expect(card(page, "weather")).toContainText("Seasonal reference, not a forecast");
+  await expect(gauge(page, "stage")).toContainText("Grain filling");
+  // The slider day's weather and price live in their details sheets now (the weather card and the price-at-date line left the page).
+  await page.getByTestId("today-week").getByRole("button", { name: /Details/ }).click();
+  const weatherSheet = page.getByRole("dialog", { name: "Weather on 10 Dec 2026" });
+  await expect(weatherSheet).toContainText("Typical");
+  await page.keyboard.press("Escape");
 
   await page.getByRole("button", { name: "Back to today" }).click();
   await expect(slider(page)).toHaveAttribute("aria-valuetext", "1 Nov 2026");
@@ -479,28 +475,27 @@ test("the next action card shows the window and action; every later step shows i
   await expect(steps).not.toContainText("Expected");
 });
 
-test("Price context discloses the pending or ready outlook and its AI evidence", async ({ page }) => {
+test("the price sheet carries the pending or ready outlook in words and its AI evidence", async ({ page }) => {
   await mock(page);
   let note: TodayView["outlookNote"] = { status: "pending", text: null, facts: [], origin: null, generatedAt: null, modelInvocation: null };
   await page.route("**/api/v1/farms/*/today", (route) => route.fulfill({ json: env(todaySchema.parse({ ...todayFixture(A), outlookNote: note })) }));
   await openToday(page);
-  const card = page.locator('[data-card="price"]');
-  await card.getByText("Price context", { exact: true }).click();
-  await expect(card.getByTestId("today-outlook-note")).toHaveText(/Writing the outlook…/);
+  const openPrice = async () => {
+    await card(page, "price").getByRole("button", { name: /details and sources/ }).click();
+    return page.getByRole("dialog", { name: "Harvest-week price" });
+  };
+  await expect((await openPrice()).getByTestId("today-outlook-note")).toHaveText(/Writing the outlook…/);
+  await page.keyboard.press("Escape");
   note = todayFixture(A).outlookNote!;
   await page.reload();
-  await openMore(page);
-  await page.locator('[data-card="price"]').getByText("Price context", { exact: true }).click();
-  const line = page.locator('[data-card="price"]').getByTestId("today-outlook-note");
-  await expect(line).toContainText("Maize grain in Karnataka has usually fetched ₹19 to ₹24 per kg around harvest");
-  await line.getByRole("button", { name: "AI used: Harvest price outlook in words" }).click();
-  await expect(page.getByRole("dialog")).toContainText("Harvest price outlook in words");
+  const ready = await openPrice();
+  await expect(ready.getByTestId("today-sheet-outlook")).toContainText("Maize grain in Karnataka has usually fetched ₹19 to ₹24 per kg around harvest");
+  await expect(ready.getByRole("button", { name: "AI used: Harvest price outlook in words" })).toBeVisible();
   await page.keyboard.press("Escape");
   note = { status: "unavailable", text: null, facts: [], origin: null, generatedAt: null, modelInvocation: null };
   await page.reload();
-  await openMore(page);
-  await expect(page.locator('[data-card="price"]')).toContainText("₹19–24");
-  await expect(page.locator('[data-card="price"]').getByTestId("today-outlook-note")).toHaveCount(0);
+  await expect(card(page, "price")).toContainText("₹19–24");
+  await expect((await openPrice()).getByTestId("today-outlook-note")).toHaveCount(0);
 });
 
 test("switching farms clears the view before the next farm loads", async ({ page }) => {
@@ -518,9 +513,9 @@ test("switching farms clears the view before the next farm loads", async ({ page
   await api.releaseB();
   await expect(page.getByRole("heading", { name: "What's growing on this field?" })).toBeVisible();
   await expect(page.getByRole("link", { name: "See your year plan" })).toHaveAttribute("href", "/planner");
-  await openMore(page);
-  await expect(card(page, "weather")).toContainText("Weather on 1 Nov");
-  await expect(card(page, "harvest")).toHaveCount(0);
+  await expect(page.getByTestId("today-week")).toBeVisible();
+  await expect(card(page, "price")).toHaveCount(0);
+  await expect(card(page, "soil")).toBeVisible();
   const alerts = page.getByRole("region", { name: "Alerts" });
   await expect(alerts.getByRole("listitem")).toHaveCount(1);
   await expect(alerts).toContainText("News and warnings search paused");
@@ -555,7 +550,7 @@ for (const theme of ["light", "dark"] as const)
     await mock(page);
     await openToday(page);
     await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
-    await expect(card(page, "health")).toContainText("Within the stage greenness range");
+    await expect(gauge(page, "greenness")).toContainText("Within the stage greenness range");
     // Financial cards now share one glass surface; verify the actual painted parent.
     const surface = await page.getByRole("region", { name: "Harvest outlook", exact: true }).evaluate((el) => {
       const actual = getComputedStyle(el);
@@ -601,7 +596,9 @@ test.describe("at 360 px", () => {
     await openToday(page);
     const noOverflow = () => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth);
 
-    // The code-only curve reading sits under the hero image, beside (not inside) the calendar stage label.
+    // The code-only curve reading sits in the hero's "About this view" notes, beside (not inside) the calendar stage label.
+    await openNotes(page);
+    await expect(page.getByTestId("today-hero-info").first()).toHaveAttribute("aria-expanded", "true");
     const line = page.getByTestId("today-curve-line");
     await expect(line).toBeVisible();
     await expect(line).toContainText("Satellite curve: greening, green-up seen 2 Oct, in line with the calendar estimate");
@@ -617,13 +614,15 @@ test.describe("at 360 px", () => {
     expect(infoBox.height).toBeGreaterThanOrEqual(44);
 
     // The compact condition card keeps the interpretation and raw NDVI; all other indices live in Details.
-    await expect(card(page, "health")).toContainText("Within the stage greenness range");
-    await expect(card(page, "health")).toContainText("NDVI 0.62");
-    await expect(card(page, "health").getByTestId("today-index-line")).toHaveCount(0);
+    // The greenness gauge keeps the interpretation and raw NDVI; all other indices live in Details.
+    await page.keyboard.press("Escape");
+    await expect(page.getByTestId("today-hero-notes").first()).toBeHidden();
+    await expect(gauge(page, "greenness")).toContainText("Within the stage greenness range");
+    await expect(gauge(page, "greenness")).toContainText("0.62");
     expect(await noOverflow()).toBe(true);
 
     // Health sheet: all seven indices and the 20 m note, without sideways scrolling inside the sheet.
-    await card(page, "health").getByRole("button", { name: /details and sources/ }).click();
+    await gauge(page, "greenness").click();
     const health = page.getByRole("dialog", { name: "Crop condition" });
     await expect(health.locator(".today-index-row")).toHaveCount(7);
     await expect(health).toContainText("B5, B8A and B11 are 20 m bands resampled to the 10 m grid, so these three indices rest on fewer independent pixels.");
@@ -633,6 +632,7 @@ test.describe("at 360 px", () => {
     await expect(health).toHaveCount(0);
 
     // Curve sheet: the evidence-only line is always there and the calendar stage it is compared with is named.
+    await openNotes(page);
     await line.scrollIntoViewIfNeeded();
     await info.click();
     const curve = page.getByRole("dialog", { name: "Satellite curve and the calendar" });
@@ -715,7 +715,7 @@ test("Actions and Today preserve the slider day, scene mode and loaded Today res
   await farmTab(page, "Actions").click();
   await expect(page.getByTestId("today-actions")).toBeVisible();
   await expect(slider(page)).toHaveCount(0);
-  await expect(page.getByRole("region", { name: "Upcoming steps" })).toBeVisible();
+  await expect(page.getByRole("region", { name: "Alerts & tasks" })).toBeVisible();
   await farmTab(page, "Today").click();
   await expect(slider(page)).toHaveAttribute("aria-valuetext", chosenDay!);
   await expect(page.getByRole("button", { name: "Satellite", exact: true })).toHaveAttribute("aria-pressed", "true");
@@ -741,7 +741,8 @@ test("Actions retains care rollback, retry idempotency and alert dismissal acros
   const api = await mock(page, { failFirstCare: true });
   await openToday(page);
   await farmTab(page, "Actions").click();
-  const steps = page.getByRole("region", { name: "Upcoming steps" });
+  // Actions shows alerts and steps as one board named by the "Alerts & tasks" heading (TODAY_REFINEMENT_SPEC.md 1).
+  const steps = page.getByRole("region", { name: "Alerts & tasks" });
   const moisture = steps.getByTestId("today-next-action");
   await moisture.getByRole("button", { name: "Mark done: Check field moisture" }).click();
   await expect.poll(() => api.state.careBodies.length).toBe(1);
@@ -753,7 +754,7 @@ test("Actions retains care rollback, retry idempotency and alert dismissal acros
   await expect.poll(() => api.state.careBodies.length).toBe(2);
   expect(api.state.careKeys[1]).toBe(api.state.careKeys[0]);
   await expect(moisture.locator(".today-chip")).toHaveText("Done");
-  const alerts = page.getByRole("region", { name: "Alerts" });
+  const alerts = steps;
   await alerts.getByRole("button", { name: "Dismiss alert: Maize prices fell 9% in 30 days" }).click();
   await expect.poll(() => api.state.dismissPaths.length).toBe(1);
   await farmTab(page, "Today").click();
@@ -761,87 +762,75 @@ test("Actions retains care rollback, retry idempotency and alert dismissal acros
   await expect(page.getByTestId("today-next-action").locator(".today-chip")).toHaveText("Done");
 });
 
-test("desktop groups all eight cards around the field and retains every disclosure and detail action", async ({ page }, testInfo) => {
+test("desktop: main column with the outlook card under the hero, right pane in the refined order, every detail one tap away", async ({ page }, testInfo) => {
   await page.setViewportSize({ width: 1440, height: 1000 });
   await mock(page);
   await openToday(page);
-  const brief = page.getByTestId("today-overview");
-  const primary = page.locator(".today-map-left > .today-primary");
-  const conditions = page.getByRole("region", { name: "Weather and harvest", exact: true });
   const outlook = page.getByRole("region", { name: "Harvest outlook", exact: true });
-  const planning = page.getByRole("region", { name: "Planning references", exact: true });
-  for (const kind of ["health", "weather", "harvest", "profit", "price", "residue", "energy", "carbon"]) {
-    await expect(card(page, kind)).toHaveCount(1);
-  }
-  await expect(page.getByTestId("today-more").locator('[data-card="health"]')).toBeVisible();
-  await expect(conditions.locator(".today-card")).toHaveCount(2);
-  await expect(outlook.locator(".today-card")).toHaveCount(3);
-  await expect(planning.locator('[data-card="energy"]')).toBeHidden();
-  await planning.locator("summary").click();
-  await expect(card(page, "energy")).toBeVisible();
-  await expect(card(page, "carbon")).toBeVisible();
-  // Every grouped card still opens its original sheet, including both planning references.
-  for (const kind of ["health", "weather", "harvest", "profit", "price", "residue", "energy", "carbon"]) {
-    await card(page, kind).getByRole("button", { name: /details and sources/ }).click();
+  for (const kind of ["profit", "residue", "price", "soil", "footprint"]) await expect(outlook.locator(`[data-outlook="${kind}"]`)).toHaveCount(1);
+  await expect(page.getByTestId("today-more")).toHaveCount(0);
+  await expect(page.locator("[data-card]")).toHaveCount(0);
+  // Every block still opens its original sheet.
+  for (const name of ["Expected profit at harvest", "Harvest-week price", "Energy", "Carbon"]) {
+    await outlook.getByRole("button", { name: `${name}: details and sources` }).click();
     await expect(page.getByRole("dialog")).toBeVisible();
     await page.keyboard.press("Escape");
   }
-  await planning.locator("summary").click();
+  // A basis mark shows its one-line note on keyboard focus and hides it on Escape.
+  const mark = card(page, "profit").locator(".today-basis-mark");
+  await mark.focus();
+  await expect(card(page, "profit").locator(".today-tip-pop")).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(card(page, "profit").locator(".today-tip-pop")).toBeHidden();
+  // Right pane order: attention, Today for you, the week, field signals, Evara.
+  const right = page.locator(".today-map-right");
+  const tops = await Promise.all(["today-attention", "today-overview", "today-week", "today-gauges", "today-evara"].map(async (id) => (await right.getByTestId(id).boundingBox())!.y));
+  expect([...tops].sort((x, y) => x - y)).toEqual(tops);
+  const brief = page.getByTestId("today-overview");
   await brief.getByRole("button", { name: "Review next step", exact: true }).click();
   await expect(page.locator('[data-step-id="care:task-moisture"]')).toBeFocused();
-  await brief.locator("summary").click();
-  for (const point of todayFixture(A).overview!.points) await expect(brief.getByText(point.text, { exact: true })).toBeVisible();
-  await brief.locator('[data-ref-id="profit"]').click();
-  await expect(page.getByRole("dialog")).toBeVisible();
-  await page.keyboard.press("Escape");
-  await brief.locator("summary").click();
-  // Map layout: left column (glance, hero, gauges), open centre, right column (attention, week, Evara), then More.
-  const leftBox = (await page.locator(".today-map-left").boundingBox())!;
-  const centreBox = (await page.getByTestId("today-map-centre").boundingBox())!;
-  const rightBox = (await page.locator(".today-map-right").boundingBox())!;
-  const moreBox = (await page.getByTestId("today-more").boundingBox())!;
-  expect(leftBox.x + leftBox.width).toBeLessThanOrEqual(centreBox.x + 1);
-  expect(centreBox.x + centreBox.width).toBeLessThanOrEqual(rightBox.x + 1);
-  expect(leftBox.width).toBeLessThanOrEqual(361);
-  expect(rightBox.width).toBeLessThanOrEqual(341);
-  expect(moreBox.y).toBeGreaterThanOrEqual(Math.max(leftBox.y + leftBox.height, rightBox.y + rightBox.height) - 1);
-  expect((await primary.boundingBox())!.y).toBeGreaterThan(leftBox.y);
-  await expect(headline(page)).toBeVisible();
-  for (const id of ["today-glance", "today-gauges", "today-attention", "today-week", "today-evara"]) await expect(page.getByTestId(id)).toBeVisible();
+  // Field signals stack one per row.
+  const gaugeTops = await page.getByTestId("today-gauges").locator(".today-gauge").evaluateAll((nodes) => nodes.map((node) => node.getBoundingClientRect().top));
+  expect(new Set(gaugeTops.map(Math.round)).size).toBe(3);
   await expect(page.getByTestId("today-gauges").locator("[data-basis]")).toHaveCount(3);
+  // Main column about two thirds, right pane 360px; the outlook card sits directly under the hero frame.
+  const mainBox = (await page.locator(".today-map-main").boundingBox())!;
+  const rightBox = (await right.boundingBox())!;
+  const heroBox = (await page.locator(".today-map-main .today-hero-frame").boundingBox())!;
+  const outlookBox = (await outlook.boundingBox())!;
+  expect(mainBox.x + mainBox.width).toBeLessThanOrEqual(rightBox.x + 1);
+  expect(rightBox.width).toBeGreaterThanOrEqual(355);
+  expect(rightBox.width).toBeLessThanOrEqual(361);
+  expect(heroBox.width).toBeGreaterThanOrEqual(mainBox.width - 1);
+  expect(outlookBox.y).toBeGreaterThan(heroBox.y + heroBox.height);
+  // The hero notes sit behind the corner info button: closed by default, Enter opens, Escape closes and returns focus.
+  const info = page.getByTestId("today-hero-info");
+  await expect(info).toHaveAttribute("aria-expanded", "false");
+  await expect(page.getByTestId("today-hero-notes")).toBeHidden();
+  await info.focus();
+  await page.keyboard.press("Enter");
+  await expect(info).toHaveAttribute("aria-expanded", "true");
+  await expect(page.getByTestId("today-hero-notes")).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(page.getByTestId("today-hero-notes")).toBeHidden();
+  await expect(info).toBeFocused();
+  await expect(headline(page)).toBeVisible();
+  await expect(page.getByRole("link", { name: "Explore fields" })).toHaveAttribute("href", /tab=modify/);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
-  await page.screenshot({ path: testInfo.outputPath("today-grouped-desktop.png"), fullPage: true });
+  await page.screenshot({ path: testInfo.outputPath("today-refined-desktop.png"), fullPage: true });
 });
 
-test("compact crop card links the existing satellite check and keeps profit arithmetic explicit", async ({ page }, testInfo) => {
+test("profit stays explicit in its sheet and the satellite alert reaches its field check from the attention panel", async ({ page }, testInfo) => {
   await page.setViewportSize({ width: 1440, height: 1000 });
   await mock(page);
-  const view = todayFixture(A);
-  const alert = view.alerts.find((item) => item.id === FIXTURE_ALERT_IDS.weather)!;
-  alert.type = "satellite";
-  alert.title = "Greenness changed in part of this field";
-  alert.detail = "The synthetic satellite comparison flags a patch for a field check. Inspect it before deciding what to do.";
-  alert.source.name = "Satellite fixture";
-  const linkedStep = view.upcoming.find((step) => step.alertId === alert.id)!;
-  linkedStep.title = "Inspect the patch in the satellite image";
-  linkedStep.detail = "Check the marked patch on the ground before making a decision.";
-  alert.suggestedStep = "Inspect the patch named in the satellite alert before deciding what to do";
-  await page.route("**/api/v1/farms/*/today", (route) => route.fulfill({ json: env(todaySchema.parse(view)) }));
   await openToday(page);
-  const condition = card(page, "health");
-  await expect(condition).toContainText("Within the stage greenness range");
-  await expect(condition.getByRole("link", { name: "Review suggested field check" })).toBeVisible();
-  await page.screenshot({ path: testInfo.outputPath("today-compact-alert-profit.png"), fullPage: true });
-  await page.getByRole("region", { name: "Harvest outlook", exact: true }).screenshot({ path: testInfo.outputPath("today-harvest-outlook.png") });
-  await condition.getByRole("link", { name: "Review suggested field check" }).click();
-  await expect(page.locator(`[data-step-id="alert:${FIXTURE_ALERT_IDS.weather}"]`)).toBeFocused();
-  const arithmetic = card(page, "profit").getByRole("table", { name: "Revenue minus costs equals profit" });
-  await expect(arithmetic.getByRole("row").nth(0)).toHaveText("Revenue₹1,52,400");
-  await expect(arithmetic.getByRole("row").nth(1)).toHaveText("− Costs₹57,600");
-  await expect(arithmetic.getByRole("row").nth(2)).toContainText("= Profit₹94.8k");
+  await expect(card(page, "profit")).toContainText("₹94.8k");
+  await expect(card(page, "profit").getByTestId("today-profit-band")).toContainText("likely");
   await card(page, "residue").getByRole("button", { name: /details and sources/ }).click();
   await expect(page.getByRole("dialog")).toContainText("The incomes do not add up");
   await expect(page.getByRole("dialog")).toContainText("Dry fodder");
+  await page.keyboard.press("Escape");
+  await page.getByRole("region", { name: "Harvest outlook", exact: true }).screenshot({ path: testInfo.outputPath("today-harvest-outlook.png") });
 });
 
 for (const width of [360, 390]) {
@@ -930,7 +919,7 @@ test('Field Image reviews EXIF dates, predicts from one photo at the slider date
 });
 
 
-test("grouped layout retains soil evidence and notes across phone, tablet and desktop widths", async ({ page }, testInfo) => {
+test("the soil tile and Today for you fit across phone, tablet and desktop widths", async ({ page }, testInfo) => {
   await mock(page);
   await page.route("**/api/v1/farms/*/soil-review**", route => route.fulfill({ json: env(readyModelReview) }));
   await page.route("**/api/v1/farms/*/issues**", route => route.fulfill({ json: env({
@@ -941,23 +930,18 @@ test("grouped layout retains soil evidence and notes across phone, tablet and de
   const brief = page.getByTestId("today-overview");
   await expect(soil.getByRole("list", { name: "Confirmed soil values" })).toBeVisible();
   await expect(soil).toContainText("7.2");
-  await expect(soil).toContainText("0.86");
+  await expect(soil.getByRole("button", { name: /All soil values/ })).toBeVisible();
   for (const width of [360, 768, 1100, 1440]) {
     await page.setViewportSize({ width, height: 1000 });
-    await soil.locator("summary").click();
-    await expect(soil.getByText("Soil pH 7.2 rates neutral and salinity is normal.", { exact: true })).toBeVisible();
     await brief.locator("summary").focus();
     await page.keyboard.press("Enter");
     for (const point of todayFixture(A).overview!.points) await expect(brief.getByText(point.text, { exact: true })).toBeVisible();
-    // Check actual card bounds too: overflow-x: clip on the page must not hide a broken grid.
-    const overflowing = await page.locator(".today-map-layout .today-card, .today-overview, .today-soil, .today-map-panel").evaluateAll(elements =>
-      elements.filter(el => { const box = el.getBoundingClientRect(); return box.x < 0 || box.right > window.innerWidth || el.scrollWidth > el.clientWidth + 1; }).map(el => el.getAttribute("data-card") ?? el.className));
+    const overflowing = await page.locator(".today-map-layout .today-outlook-tile, .today-map-layout .today-outlook-lead, .today-overview, .today-map-panel").evaluateAll(elements =>
+      elements.filter(el => { const box = el.getBoundingClientRect(); return box.x < 0 || box.right > window.innerWidth || el.scrollWidth > el.clientWidth + 1; }).map(el => el.getAttribute("data-outlook") ?? el.className));
     expect(overflowing).toEqual([]);
-    await soil.locator("summary").click();
     await brief.locator("summary").click();
     await headline(page).scrollIntoViewIfNeeded();
-    await page.screenshot({ path: testInfo.outputPath(`today-redesign-${width}.png`), fullPage: true });
-    if (width === 1440) await page.screenshot({ path: testInfo.outputPath("today-redesign-desktop-viewport.png") });
+    await page.screenshot({ path: testInfo.outputPath(`today-refined-${width}.png`), fullPage: true });
   }
 });
 

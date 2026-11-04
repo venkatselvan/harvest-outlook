@@ -1,0 +1,139 @@
+/* Compare cards (SEASON_STRIP_COMPARE_SPEC.md part 2). Theme tokens only. The drawer is narrower than the page, so the
+   column count follows the container, not the viewport: three equal columns from 600 px, one below. */
+.cmp-cards {
+  container-type: inline-size;
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+}
+.cmp-cards-title {
+  margin: 0;
+  font-size: 14px;
+}
+.cmp-cards-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 12px;
+}
+@container (min-width: 600px) {
+  .cmp-cards-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+.cmp-card {
+  display: grid;
+  align-content: start;
+  gap: 10px;
+  min-width: 0;
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+  color: var(--text);
+}
+.cmp-card-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+.cmp-card-name {
+  display: grid;
+  min-width: 0;
+}
+.cmp-card-name h3 {
+  margin: 0;
+  font-size: 16px;
+  overflow-wrap: anywhere;
+}
+.cmp-card-name small {
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+.cmp-card-remove {
+  flex: none;
+  width: 44px;
+  height: 44px;
+  margin: -8px -8px 0 0;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+}
+.cmp-card-remove:hover {
+  background: var(--surface-hover);
+  color: var(--text);
+}
+.cmp-card-remove:focus-visible,
+.cmp-card-detail:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+.cmp-card .outcome-tag {
+  justify-self: start;
+}
+.cmp-card-rows {
+  display: grid;
+  gap: 0;
+  margin: 0;
+}
+.cmp-card-row {
+  display: grid;
+  gap: 3px;
+  padding: 9px 0;
+  border-top: 1px solid var(--border);
+}
+.cmp-card-row dt {
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 500;
+}
+.cmp-card-row dd {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 8px;
+  margin: 0;
+  min-width: 0;
+}
+.cmp-card-value {
+  font-size: 14px;
+  font-weight: 650;
+  overflow-wrap: anywhere;
+}
+.cmp-card-value.is-missing {
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+.cmp-card-note {
+  flex: 1 0 100%;
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+.cmp-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 8px;
+  border: 1px solid var(--border-strong);
+  border-radius: 999px;
+  background: var(--surface-soft);
+  color: var(--text-secondary);
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.cmp-chip[data-chip="state window"] {
+  border-color: var(--accent-border);
+  background: var(--accent-soft);
+  color: var(--text);
+}
+.cmp-chip[data-chip="estimate"] {
+  border-style: dashed;
+}
+.cmp-card-detail {
+  justify-self: start;
+  min-height: 44px;
+}

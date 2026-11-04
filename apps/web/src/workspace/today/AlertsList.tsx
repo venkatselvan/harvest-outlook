@@ -32,7 +32,7 @@ export interface AlertsListProps {
 /** DOM id of an alert card, so the Today overview can scroll to it. */
 export const alertDomId = (alertId: string) => `today-alert-${alertId.replace(/[^A-Za-z0-9_-]/g, "-")}`;
 
-const severityOrder: Record<FarmAlert["severity"], number> = { warning: 0, watch: 1, info: 2 };
+export const severityOrder: Record<FarmAlert["severity"], number> = { warning: 0, watch: 1, info: 2 };
 const severityLabel: Record<FarmAlert["severity"], string> = { warning: "Warning", watch: "Watch", info: "Info" };
 const typeLabel: Record<FarmAlert["type"], string> = {
   weather: "Weather",
@@ -75,7 +75,7 @@ export function sortAlerts(alerts: readonly FarmAlert[]): FarmAlert[] {
 }
 
 /** One alert as an action card (Actions tab). The suggested step's button jumps to the step, as in the regular list. */
-function AlertActionCard(props: { alert: FarmAlert; eyebrow?: ((alert: FarmAlert) => string) | undefined; hasStep: boolean; onSuggested: (alert: FarmAlert) => void }) {
+export function AlertActionCard(props: { alert: FarmAlert; eyebrow?: ((alert: FarmAlert) => string) | undefined; hasStep: boolean; onSuggested: (alert: FarmAlert) => void }) {
   const alert = () => props.alert;
   return (
     <div class="today-alert-body today-action-card">

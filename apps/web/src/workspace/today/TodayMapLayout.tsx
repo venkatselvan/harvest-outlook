@@ -2,7 +2,7 @@ import { children, createSignal, For, onCleanup, onMount, Show, type JSX } from 
 import type { UpcomingStep } from "@harvest/contracts";
 import { Icon } from "../icons";
 import { Evara } from "../Evara";
-import { mapPin, mapReady, sendMapCommand, setMapFocus, mapFocus } from "../mapLayer";
+import { mapPin, mapReady, setMapFocus, mapFocus } from "../mapLayer";
 import { alertDomId } from "./AlertsList";
 import { stepDomId } from "./UpcomingSteps";
 import { formatDay, windowLabel } from "./model";
@@ -49,13 +49,20 @@ export function TodayHeadline(props: { date: string | null | undefined; fieldNam
 }
 
 /** At a glance: cultivated area, active fields and today's season day; without a crop, the planting call to action. */
-export function GlancePanel(props: { facts: GlanceFacts; cropName: string | null; hasCycle: boolean; canPlant: boolean; onPlant: () => void }) {
+export function GlancePanel(props: { facts: GlanceFacts; cropName: string | null; hasCycle: boolean; canPlant: boolean; onPlant: () => void; exploreHref?: string | undefined }) {
   return (
     <section class="today-map-panel today-glance" aria-labelledby="today-glance-title" data-testid="today-glance">
       <div class="today-map-panel-head">
         <h2 id="today-glance-title">At a glance</h2>
         <Show when={props.cropName}>
           <span class="today-map-pill">{props.cropName}</span>
+        </Show>
+        <Show when={props.exploreHref}>
+          {(href) => (
+            <a class="today-map-link today-glance-explore" href={href()} data-testid="today-glance-explore">
+              Explore fields <Icon name="arrow" size={13} />
+            </a>
+          )}
         </Show>
       </div>
       <dl class="today-glance-metrics">
@@ -139,7 +146,12 @@ export function BasisChip(props: { gauge: Gauge }) {
   );
 }
 
-/** Greenness, water and stage progress for the slider day; each opens its existing details sheet. */
+/**
+ * Field signals: greenness, water and stage progress for the slider day, stacked in the right pane (TODAY_REFINEMENT_SPEC.md
+ * 3 and 4). Each row is one button: the glyph, the label, the value line ("Day 4 of 135 · Mid-season"), an optional note
+ * from an existing card (the crop condition headline, the estimated harvest window) and the basis chip; it opens the
+ * existing sheet, which carries the full basis words.
+ */
 export function GaugesPanel(props: { gauges: Gauge[]; subject: string | null; dateLabel: string; onOpen: (sheet: Gauge["sheet"]) => void }) {
   return (
     <section class="today-map-panel today-gauges" aria-labelledby="today-gauges-title" data-testid="today-gauges">
@@ -155,8 +167,18 @@ export function GaugesPanel(props: { gauges: Gauge[]; subject: string | null; da
                 <GaugeGlyph gauge={gauge} />
                 <span class="today-gauge-text">
                   <span class="today-gauge-label">{gauge.label}</span>
-                  <strong class="today-gauge-value">{gauge.value}</strong>
-                  <span class="today-gauge-caption">{gauge.caption}</span>
+                  <span class="today-gauge-line" data-testid={`today-gauge-line-${gauge.id}`}>
+                    <Show when={gauge.value !== "–"}>
+                      <strong class="today-gauge-value">{gauge.value}</strong>
+                      <span class="today-gauge-sep"> · </span>
+                    </Show>
+                    <span class="today-gauge-caption">{gauge.caption}</span>
+                  </span>
+                  <Show when={gauge.note}>
+                    <span class="today-gauge-note" data-testid={`today-gauge-note-${gauge.id}`}>
+                      {gauge.note}
+                    </span>
+                  </Show>
                 </span>
                 <BasisChip gauge={gauge} />
                 <span class="today-sr">. {gauge.basisNote}. Opens details and sources.</span>
@@ -287,50 +309,11 @@ export function EvaraPanel(props: { question: string }) {
   );
 }
 
-/** "More from Today": the lower-priority cards, exactly as they render, behind one collapsed disclosure. */
-export function MorePanel(props: { hint: string; children: JSX.Element }) {
-  return (
-    <section class="today-more" aria-labelledby="today-more-title" data-testid="today-more">
-      <h2 class="today-sr" id="today-more-title">
-        More from Today
-      </h2>
-      <details class="today-more-details">
-        <summary>
-          <span class="today-more-title">More from Today</span>
-          <small>{props.hint}</small>
-          <Icon name="down" size={16} />
-        </summary>
-        <div class="today-more-body">{props.children}</div>
-      </details>
-    </section>
-  );
-}
-
-/** Zoom and recenter for the map layer (the map itself takes no pointer or keyboard input). */
-export function MapControls() {
-  const x = () => {
-    const focus = mapFocus();
-    return focus ? `${Math.round(focus.right - 56)}px` : undefined;
-  };
-  return (
-    <div class="today-map-controls" role="group" aria-label="Map view" style={x() ? { "--map-controls-x": x() } : undefined}>
-      <button type="button" aria-label="Zoom in" onClick={() => sendMapCommand("zoom-in")}>
-        <span aria-hidden="true">+</span>
-      </button>
-      <button type="button" aria-label="Zoom out" onClick={() => sendMapCommand("zoom-out")}>
-        <span aria-hidden="true">−</span>
-      </button>
-      <button type="button" aria-label="Recenter map on the farm" onClick={() => sendMapCommand("recenter")}>
-        <Icon name="target" size={17} />
-      </button>
-    </div>
-  );
-}
-
 /**
- * The open centre: it publishes its box so the map fits the farm into it, and shows the farm pin (farm name and
- * "Explore fields") where the map projects the farm, plus the zoom buttons. Without the map (no saved location, imagery
- * failing, or a narrow window that has no open centre) it stays empty and the layout does not change.
+ * The phone map band: it publishes its box so the map fits the farm into it, and shows the farm pin (farm name and
+ * "Explore fields") where the map projects the farm, plus the imagery credit. Desktop and tablet do not render it (the
+ * map is the full-tab background and fits the whole viewport); without the map (no saved location, imagery failing) it
+ * stays empty and the layout does not change.
  */
 export function MapCentre(props: { farmName: string; exploreHref: string }) {
   let node: HTMLDivElement | undefined;
@@ -375,7 +358,6 @@ export function MapCentre(props: { farmName: string; exploreHref: string }) {
         )}
       </Show>
       <Show when={mapReady()}>
-        <MapControls />
         <span class="today-map-credit" data-testid="today-map-credit">Satellite basemap · Imagery © Esri · Maxar · Earthstar Geographics</span>
       </Show>
     </div>
@@ -404,18 +386,25 @@ export interface TodayMapLayoutProps {
   centre: JSX.Element;
   glance: JSX.Element;
   hero: JSX.Element;
+  /** The layered "Harvest outlook" card under the hero (TODAY_REFINEMENT_SPEC.md 5). */
+  outlook: JSX.Element;
+  /** Main-column content after the outlook card (the "Your fields" table on the All fields overview). */
+  extra?: JSX.Element;
+  /** "Today for you" (the AI overview), second in the right pane. */
+  overview: JSX.Element;
   gauges: JSX.Element;
   attention: JSX.Element;
   week: JSX.Element;
   evara: JSX.Element;
-  more: JSX.Element;
 }
 
 /**
- * Desktop and tablet: the headline, the left column (at a glance, the hero frame, the gauges), the open centre, the right
- * column (attention, the week, Evara), then "More from Today". Phone: the map band first, then one sheet in the order
- * headline, attention, hero, at a glance, week, gauges, Evara, More. The DOM follows the visible order in both, so the
- * keyboard order does too; each panel is created once and moved, never rebuilt, when the window crosses the breakpoint.
+ * Desktop and tablet (TODAY_REFINEMENT_SPEC.md 3): the headline; the main column (at a glance, the hero frame, the harvest
+ * outlook card, then any extra main content); the right pane (needs your attention, Today for you, the week ahead, field
+ * signals, Evara). The map is the full-tab background. Phone: the map band first, then one sheet in the order headline,
+ * hero, the right pane's order (attention, Today for you, week, field signals, Evara), then the outlook card, at a glance
+ * and the extra content. The DOM follows the visible order in both, so the keyboard order does too; each panel is created
+ * once and moved, never rebuilt, when the window crosses the breakpoint.
  */
 export function TodayMapLayout(props: TodayMapLayoutProps) {
   const compact = createCompact();
@@ -423,11 +412,13 @@ export function TodayMapLayout(props: TodayMapLayoutProps) {
   const centre = children(() => props.centre);
   const glance = children(() => props.glance);
   const hero = children(() => props.hero);
+  const outlook = children(() => props.outlook);
+  const extra = children(() => props.extra);
+  const overview = children(() => props.overview);
   const gauges = children(() => props.gauges);
   const attention = children(() => props.attention);
   const week = children(() => props.week);
   const evara = children(() => props.evara);
-  const more = children(() => props.more);
   return (
     <div class={`today-map-layout ${props.class ?? ""}`} data-arrangement={compact() ? "compact" : "wide"} data-testid={props.testid}>
       <Show
@@ -435,31 +426,34 @@ export function TodayMapLayout(props: TodayMapLayoutProps) {
         fallback={
           <>
             {headline()}
-            <div class="today-map-left">
+            <div class="today-map-main">
               {glance()}
               {hero()}
-              {gauges()}
+              {outlook()}
+              {extra()}
             </div>
-            {centre()}
             <div class="today-map-right">
               {attention()}
+              {overview()}
               {week()}
+              {gauges()}
               {evara()}
             </div>
-            {more()}
           </>
         }
       >
         {centre()}
         <div class="today-map-sheet">
           {headline()}
-          {attention()}
           {hero()}
-          {glance()}
+          {attention()}
+          {overview()}
           {week()}
           {gauges()}
           {evara()}
-          {more()}
+          {outlook()}
+          {glance()}
+          {extra()}
         </div>
       </Show>
     </div>

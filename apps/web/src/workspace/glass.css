@@ -30,3 +30,4 @@ html,body{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",
 .farm-command-heading.is-map-tab{background:transparent;border:0;box-shadow:none;backdrop-filter:none;-webkit-backdrop-filter:none;padding:0;margin-bottom:12px;justify-content:flex-end}
 /* Phone: the imagery credit lives inside the Today and Actions map band (TodayMapLayout), so the fixed one steps aside while the band shows. */
 @media(max-width:767px){.workspace-backdrop.credit-in-band .workspace-imagery-credit{display:none}}
+.workspace-backdrop.backdrop-suppressed :is(.workspace-backdrop-map,.workspace-imagery-credit,.workspace-geography-note){display:none}

@@ -105,7 +105,7 @@
 .today-shared-lists.is-actions { max-width: 1400px; margin-top: 0; }
 .today-shared-lists.is-actions .today-lists { grid-template-columns: minmax(0, 1fr); }
 @media (min-width: 1100px) {
-  .today-shared-lists.is-actions .today-lists { grid-template-columns: minmax(0, 1.12fr) minmax(0, 1fr); }
+  .today-shared-lists.is-actions .today-lists { grid-template-columns: minmax(0, 1fr); }
 }
 /* Evidence captions need their own surface: their contrast must not depend on the basemap underneath. */
 .today-view :is(.today-conditions, .today-sat-notes, .today-curve) {

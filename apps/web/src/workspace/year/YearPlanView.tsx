@@ -1,6 +1,6 @@
 import { Match, Show, Switch, batch, createEffect, createMemo, createSignal, on, onCleanup } from "solid-js";
 import { A } from "@solidjs/router";
-import type { CropFitCandidate, YearPlanOccupant, YearPlanReview, YearPlanSlot } from "@harvest/contracts";
+import type { CropFitCandidate, StageTimeline, YearPlanOccupant, YearPlanReview, YearPlanSlot } from "@harvest/contracts";
 import { newEntryId } from "../../features/photo-region/http";
 import { Planner } from "../Planner";
 import { today, useWorkspace } from "../state";
@@ -10,8 +10,21 @@ import { ApplyConfirm } from "./ApplyConfirm";
 import { addYearsIso } from "./format";
 import { HorizonPager } from "./HorizonPager";
 import { OptionSheet, initialSlot, type TrendState } from "./OptionSheet";
-import { PlanCalendar, PlanCalendarSkeleton } from "./PlanCalendar";
+import { PlanCalendar, PlanCalendarSkeleton, seasonsForField } from "./PlanCalendar";
 import { ScenarioLine } from "./ScenarioLine";
+import { SeasonStrip } from "./SeasonStrip";
+import { loadStageTimeline } from "./seasonStripApi";
+import {
+  chosenOption,
+  currentSpan,
+  fieldStripMonths,
+  fixedTarget,
+  planSpans,
+  savedSpans,
+  seasonMonths,
+  stripAnchor,
+  type StripTarget,
+} from "./seasonStripModel";
 import { SwapNotice } from "./SwapNotice";
 import {
   cropChoices,
@@ -104,6 +117,8 @@ export function YearPlanView(props: YearPlanViewProps = {}) {
       : [],
   );
   const fieldName = () => farmFields().find((f) => f.id === planField())?.name ?? null;
+  /** Calendar stage timelines for the season strips, by cycle id: absent until read, null when the read failed. */
+  const [timelines, setTimelines] = createSignal<Record<string, StageTimeline | null>>({});
   const [phase, setPhase] = createSignal<Phase>({ kind: "loading" });
   const [review, setReview] = createSignal<YearPlanReview>();
   const [refreshing, setRefreshing] = createSignal(false);
@@ -165,6 +180,7 @@ export function YearPlanView(props: YearPlanViewProps = {}) {
       setNavigating(false);
       setPendingNav(null);
       setTrends({});
+      setTimelines({});
     });
   }
 
@@ -350,6 +366,81 @@ export function YearPlanView(props: YearPlanViewProps = {}) {
     return id ? options().find((x) => x.optionId === id) : undefined;
   };
   const choices = createMemo(() => cropChoices(review(), s.crops()));
+
+  // Season strip (SEASON_STRIP_COMPARE_SPEC.md): the stage names of the growing crop come from its calendar timeline (a code
+  // route, no provider call). Read once per cycle; a failed read leaves the plan's own harvest window to label the months.
+  function readTimeline(cycleId: string) {
+    const id = farmId();
+    if (!id || cycleId in timelines()) return;
+    const gen = generation;
+    void loadStageTimeline(id, cycleId).then((timeline) => {
+      if (live(gen, id)) setTimelines((t) => ({ ...t, [cycleId]: timeline }));
+    });
+  }
+  createEffect(() => {
+    const r = review();
+    const cycleId = phase().kind === "ready" ? r?.scenario.currentCycleId : null;
+    if (cycleId) readTimeline(cycleId);
+  });
+  createEffect(() => {
+    if (phase().kind !== "by_field") return;
+    for (const row of fieldRows()) if (row.cycleId) readTimeline(row.cycleId);
+  });
+  const strip = createMemo(() => {
+    const r = review();
+    if (!r || phase().kind !== "ready") return [];
+    const cycleId = r.scenario.currentCycleId;
+    const { slot, target } = fixedTarget(r);
+    const cycle = props.workspace?.cycles.find((c) => c.id === cycleId);
+    const current = currentSpan({
+      fixedSlot: slot,
+      timeline: cycleId ? (timelines()[cycleId] ?? null) : null,
+      cropName: cycle?.cropName ?? (cycle ? s.cropName(cycle.cropId) : ""),
+      target,
+    });
+    const seasons = seasonsForField(props.workspace?.rotationPlans ?? [], planField());
+    return seasonMonths(
+      [...(current ? [current] : []), ...savedSpans(seasons, r.scenario.occupied, s.cropName), ...planSpans(r)],
+      stripAnchor(todayIso, r.scenario),
+      todayIso,
+    );
+  });
+  /** "Plans by field": one compact strip per field once its growing crop's timeline has been read (a field without a crop needs none). */
+  const fieldStrips = createMemo(() => {
+    const out: Record<string, ReturnType<typeof seasonMonths>> = {};
+    if (phase().kind !== "by_field") return out;
+    for (const row of fieldRows()) {
+      const timeline = row.cycleId ? timelines()[row.cycleId] : null;
+      if (row.cycleId && !timeline) continue;
+      out[row.id] = fieldStripMonths({
+        cycleName: row.cycleName,
+        timeline: timeline ?? null,
+        seasons: seasonsForField(props.workspace?.rotationPlans ?? [], row.id),
+        todayIso,
+        cropName: s.cropName,
+      });
+    }
+    return out;
+  });
+  /** The strip's "Open": the crop's sheet, a saved season's sheet (any option holds the same saved seasons), or the Saved seasons list. */
+  function openFromStrip(target: StripTarget) {
+    const r = review();
+    const optionId = target.kind === "slot" ? target.optionId : (chosenOption(r)?.optionId ?? null);
+    if (target.kind === "season" || !optionId) {
+      document.getElementById("yp-saved-heading")?.scrollIntoView({ block: "start", behavior: "smooth" });
+      return;
+    }
+    batch(() => {
+      setEditing(false);
+      setRescoreError("");
+      setSwapError("");
+      setOpen({
+        optionId,
+        slotId: target.kind === "slot" ? target.slotId : null,
+        occupantId: target.kind === "occupant" ? target.occupantId : null,
+      });
+    });
+  }
 
   // Price trends for the sheet, cached per product and place for this farm.
   const trendParams = (slot: YearPlanSlot) => ({
@@ -551,7 +642,7 @@ export function YearPlanView(props: YearPlanViewProps = {}) {
         </h2>
         <Switch>
           <Match when={phase().kind === "by_field"}>
-            <PlansByField rows={fieldRows()} onOpen={(id) => props.onOpenField?.(id)} />
+            <PlansByField rows={fieldRows()} strips={fieldStrips()} onOpen={(id) => props.onOpenField?.(id)} />
           </Match>
           <Match when={phase().kind === "idle"}>
             <div class="yp-card">
@@ -588,6 +679,9 @@ export function YearPlanView(props: YearPlanViewProps = {}) {
           <Match when={phase().kind === "ready" && review()}>
             {(r) => (
               <>
+                <Show when={!(isActive(r()) && r().options.length === 0)}>
+                  <SeasonStrip months={strip()} onOpen={openFromStrip} />
+                </Show>
                 <Show when={navigation()}>
                   {(nav) => (
                     <HorizonPager

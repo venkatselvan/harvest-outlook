@@ -1099,3 +1099,204 @@ strong.yp-band-val {
     justify-content: center;
   }
 }
+
+/* Season month strip (SEASON_STRIP_COMPARE_SPEC.md part 1). Theme tokens only; scrolls inside its own card on narrow screens. */
+.ss {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+  margin-bottom: 14px;
+  padding: 12px 14px 14px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+}
+.ss-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 4px 12px;
+}
+.ss-title {
+  margin: 0;
+  font-size: 15px;
+}
+.ss-range {
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+.ss-scroll {
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  margin: 0 -4px;
+  padding: 2px 4px 4px;
+}
+.ss-track {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(76px, 1fr);
+  gap: 4px;
+  min-width: min-content;
+}
+.ss-cell {
+  display: grid;
+  grid-template-rows: auto auto auto auto;
+  align-content: start;
+  gap: 4px;
+  min-height: 84px;
+  min-width: 44px;
+  padding: 7px 8px 6px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface-soft);
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+}
+.ss-cell:hover {
+  background: var(--surface-hover);
+}
+.ss-cell:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+.ss-cell.is-selected {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  box-shadow: inset 0 0 0 1px var(--accent);
+}
+.ss-month {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  font-size: 13px;
+  font-weight: 700;
+}
+.ss-month small {
+  color: var(--text-secondary);
+  font-size: 11px;
+  font-weight: 500;
+}
+.ss-bar {
+  display: block;
+  box-sizing: border-box;
+  height: 10px;
+  border-radius: 999px;
+  border: 1.5px dotted var(--border-strong);
+  background: transparent;
+}
+.ss-cell.is-current .ss-bar,
+.ss-compact-cell.is-current .ss-bar {
+  border: 1.5px solid var(--accent);
+  background: var(--accent);
+}
+.ss-cell.is-current.is-harvest .ss-bar,
+.ss-compact-cell.is-current.is-harvest .ss-bar {
+  background: color-mix(in srgb, var(--accent) 35%, var(--surface));
+}
+.ss-cell.is-saved .ss-bar,
+.ss-compact-cell.is-saved .ss-bar {
+  border: 1.5px solid var(--info);
+  background: var(--info);
+}
+.ss-cell.is-saved.is-harvest .ss-bar,
+.ss-compact-cell.is-saved.is-harvest .ss-bar {
+  background: color-mix(in srgb, var(--info) 35%, var(--surface));
+}
+.ss-cell.is-plan .ss-bar,
+.ss-compact-cell.is-plan .ss-bar {
+  border: 1.5px dashed var(--accent);
+  background: var(--accent-soft);
+}
+.ss-word {
+  font-size: 12px;
+  font-weight: 650;
+  line-height: 1.2;
+}
+.ss-cell.is-rest .ss-word {
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+.ss-crop {
+  min-height: 14px;
+  overflow: hidden;
+  color: var(--text-secondary);
+  font-size: 11px;
+  line-height: 1.25;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ss-detail {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface-soft);
+}
+.ss-detail-text {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.ss-detail-month {
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+.ss-detail-text strong {
+  font-size: 14px;
+  font-weight: 650;
+}
+.ss-detail-side {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.ss-detail-side .btn {
+  min-height: 44px;
+}
+/* "Plans by field": twelve small bars under the row. */
+.yp-by-field-strip {
+  flex: 1 0 100%;
+  min-width: 0;
+}
+.yp-by-field-strip-note {
+  font-size: 12px;
+}
+.yp-by-field-row:has(.yp-by-field-strip) {
+  flex-wrap: wrap;
+}
+.ss-compact {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 3px;
+}
+.ss-compact-cell {
+  display: grid;
+  gap: 2px;
+  justify-items: center;
+}
+.ss-compact-cell .ss-bar {
+  width: 100%;
+  height: 8px;
+}
+.ss-compact-month {
+  color: var(--text-secondary);
+  font-size: 10px;
+  line-height: 1;
+}
+@media (max-width: 479px) {
+  .ss {
+    padding: 10px 10px 12px;
+  }
+  .ss-detail-side .btn {
+    width: 100%;
+    justify-content: center;
+  }
+}

@@ -38,12 +38,14 @@ import {
 } from "./model";
 import { heroFieldOf, TodayHero, type FarmHero, type HeroField, type HeroMode, type HeroPrediction } from "./TodayHero";
 import { StageSlider } from "./StageSlider";
-import { TodayCards, type CardKind } from "./TodayCards";
+import { healthHeadline, TodayCards, type CardKind } from "./TodayCards";
 import { TodayOverview } from "./TodayOverview";
 import { TodayCropArea } from "./TodayCropArea";
 import { AlertsList, isFarmWide } from "./AlertsList";
 import { UpcomingSteps, stepDomId } from "./UpcomingSteps";
-import { AttentionPanel, EvaraPanel, GaugesPanel, GlancePanel, MapCentre, MorePanel, ThisWeekPanel, TodayHeadline, TodayMapLayout, WeekPanel } from "./TodayMapLayout";
+import { AttentionPanel, EvaraPanel, GaugesPanel, GlancePanel, MapCentre, ThisWeekPanel, TodayHeadline, TodayMapLayout, WeekPanel } from "./TodayMapLayout";
+import { TodayOutlook } from "./TodayOutlook";
+import { ActionsBoard } from "./ActionsBoard";
 import { attentionItems, glanceFacts, greennessGauge, stageGauge, waterGauge, weekAhead, weekPlan, weekTakeaway } from "./todayMapModel";
 import { farmHref } from "../farmTabs";
 import { ASSISTANT_PROMPTS } from "../../features/ask/model";
@@ -631,10 +633,11 @@ export function TodayView(props: TodayViewProps) {
   };
   const weekTitle = (text: string) => text.charAt(0).toUpperCase() + text.slice(1);
   /**
-   * The Today frame over the map: the headline, at a glance, the hero, the gauges, attention, the week, Evara and "More
-   * from Today" holding the lower-priority cards. Every slot reads the same view, slider day and callbacks as before.
+   * The Today frame over the map (TODAY_REFINEMENT_SPEC.md): the headline; the main column (at a glance, the hero, the
+   * layered harvest outlook card, then any extra content); the right pane (attention, Today for you, the week, field
+   * signals, Evara). Every slot reads the same view, slider day and callbacks as before.
    */
-  const mapLayout = (parts: { hero: JSX.Element; more: JSX.Element; hint: string; testid?: string; class?: string }) => (
+  const mapLayout = (parts: { hero: JSX.Element; extra?: JSX.Element; outlookSubject?: string | null; testid?: string; class?: string }) => (
     <TodayMapLayout
       testid={parts.testid}
       class={parts.class}
@@ -647,12 +650,20 @@ export function TodayView(props: TodayViewProps) {
           hasCycle={!!view()?.cycle}
           canPlant={canPlant()}
           onPlant={() => props.openPlant()}
+          exploreHref={tabHref("modify")}
         />
       }
       hero={parts.hero}
+      outlook={<TodayOutlook view={view()!} subject={parts.outlookSubject ?? null} onDetails={openDetails} {...soilProps()} />}
+      extra={parts.extra}
+      overview={<TodayOverview overview={view()?.overview} onDetails={openDetails} />}
       gauges={
         <GaugesPanel
-          gauges={[greennessGauge(view()?.health), waterGauge(condition()), stageGauge(slider(), index(), stage())]}
+          gauges={[
+            greennessGauge(view()?.health, view()?.health ? healthHeadline(view()!.health!) : null, !!view()?.ndvi?.smallField),
+            waterGauge(condition()),
+            stageGauge(slider(), index(), stage(), view()?.timeline?.harvest ?? null),
+          ]}
           subject={gaugeSubject()}
           dateLabel={gaugeDate()}
           onOpen={(kind) => setSheet(kind)}
@@ -671,7 +682,6 @@ export function TodayView(props: TodayViewProps) {
         />
       }
       evara={<EvaraPanel question={view()?.cycle ? ASSISTANT_PROMPTS[0] : ASSISTANT_PROMPTS[1]} />}
-      more={<MorePanel hint={parts.hint}>{parts.more}</MorePanel>}
     />
   );
   const aboutButton = () => (
@@ -681,7 +691,6 @@ export function TodayView(props: TodayViewProps) {
   );
 
   // ---------------------------------------------------------------- Actions tab action cards (TODAY_MAP_LAYOUT_SPEC.md)
-  const actionsVariant = () => (props.presentation === "actions" ? ("actions" as const) : undefined);
   /** "Farm-wide" on a farm with fields, "Whole farm" without; a named field otherwise. */
   const wideLabel = () => (hasFields() ? "Farm-wide" : "Whole farm");
   const alertEyebrow = (alert: FarmAlert) =>
@@ -691,35 +700,65 @@ export function TodayView(props: TodayViewProps) {
     return `${farmName()} · ${fieldId ? (fieldNamed(fieldId) ?? "A field") : step.fieldCheck?.scope === "farm" ? wideLabel() : (viewField()?.name ?? wideLabel())}`;
   };
 
+  /**
+   * Today keeps the Alerts and Upcoming steps lists below the frame; Actions shows the same alerts and steps as one board of
+   * action cards (TODAY_REFINEMENT_SPEC.md 1). The issue log is a sibling outside the switch, so it keeps its load and
+   * state when the presentation changes.
+   */
   const lists = (current: TodayData) => (
     <div class="today-lists">
-      <AlertsList
-        alerts={alerts()}
-        newsReview={current.newsReview}
-        today={current.today}
-        stepAlertIds={stepAlertIds()}
-        onDismiss={(alert) => void dismiss(alert)}
-        onSuggested={showStep}
-        error={alertError()}
-        fieldView={hasFields()}
-        variant={actionsVariant()}
-        eyebrow={alertEyebrow}
-      />
-      <IssuesLine issues={current.issues} onShow={showIssues} />
-      <Show when={current.cycle}>
-        <UpcomingSteps
-          steps={steps()}
-          nextAction={current.nextAction ?? null}
+      <Show
+        when={props.presentation === "actions"}
+        fallback={
+          <>
+            <AlertsList
+              alerts={alerts()}
+              newsReview={current.newsReview}
+              today={current.today}
+              stepAlertIds={stepAlertIds()}
+              onDismiss={(alert) => void dismiss(alert)}
+              onSuggested={showStep}
+              error={alertError()}
+              fieldView={hasFields()}
+            />
+            <IssuesLine issues={current.issues} onShow={showIssues} />
+            <Show when={current.cycle}>
+              <UpcomingSteps
+                steps={steps()}
+                nextAction={current.nextAction ?? null}
+                today={current.today}
+                busyId={busyStep()}
+                onDone={(step) => void markDone(step)}
+                error={stepError()}
+                sources={props.data()?.sources}
+                onCheck={(step) => setCheckStep(step)}
+                onOpenIssue={(issueId) => setIssueParam(issueId)}
+              />
+            </Show>
+          </>
+        }
+      >
+        <ActionsBoard
+          labelledBy="today-actions-title"
+          alerts={alerts()}
+          newsReview={current.newsReview}
           today={current.today}
+          stepAlertIds={stepAlertIds()}
+          onDismiss={(alert) => void dismiss(alert)}
+          onSuggested={showStep}
+          alertError={alertError()}
+          steps={current.cycle ? steps() : []}
+          nextAction={current.nextAction ?? null}
           busyId={busyStep()}
           onDone={(step) => void markDone(step)}
-          error={stepError()}
+          stepError={stepError()}
           sources={props.data()?.sources}
           onCheck={(step) => setCheckStep(step)}
           onOpenIssue={(issueId) => setIssueParam(issueId)}
-          variant={actionsVariant()}
-          eyebrow={stepEyebrow}
+          alertEyebrow={alertEyebrow}
+          stepEyebrow={stepEyebrow}
         />
+        <IssuesLine issues={current.issues} onShow={showIssues} />
       </Show>
       <IssuesSection
         farmId={current.farmId}
@@ -732,20 +771,6 @@ export function TodayView(props: TodayViewProps) {
         reloadKey={issuesReload()}
       />
     </div>
-  );
-
-  const side = (current: TodayData, primary?: JSX.Element) => (
-    <TodaySide
-      view={current}
-      farmId={current.farmId}
-      epoch={s.sessionEpoch()}
-      date={date()}
-      price={price()}
-      weather={weather()}
-      onDetails={openDetails}
-      primary={primary}
-      {...soilProps()}
-    />
   );
 
   return (
@@ -817,7 +842,9 @@ export function TodayView(props: TodayViewProps) {
           <div class="today-actions-layout" data-testid="today-actions">
             <header class="today-actions-heading">
               <span class="today-eyebrow">Field work</span>
-              <h2>Alerts &amp; tasks</h2>
+              <h2 id="today-actions-title" tabIndex={-1}>
+                Alerts &amp; tasks
+              </h2>
               <p>What needs attention{fieldName() ? ` on ${fieldName()}` : " on this farm"}, and what comes next.</p>
             </header>
           </div>
@@ -826,7 +853,7 @@ export function TodayView(props: TodayViewProps) {
           {mapLayout({
             testid: "today-farm-overview",
             class: "is-farm",
-            hint: "Your fields, the first field's notes, soil and harvest outlook",
+            outlookSubject: view()!.field ? `${view()!.field!.name} · ${cropName()} (first field with a crop)` : view()!.cycle ? `Whole farm · ${cropName()}` : null,
             hero: (
               <FarmOverviewHero
                 view={view()!}
@@ -841,19 +868,15 @@ export function TodayView(props: TodayViewProps) {
                 cropNames={cropNames()}
                 onSelect={(id) => props.selectField(id)}
                 onCurveDetails={() => setSheet("curve")}
+                onAbout={() => setSheet("about")}
               />
             ),
-            more: (
+            extra: (
               <>
-                <FarmOverviewFields
-                  view={view()!}
-                  cropName={cropName()}
-                  onSelect={(id) => props.selectField(id)}
-                  empty={<TodayEmpty onPlant={() => props.openPlant()} canPlant={canPlant()} fieldName={plantFieldName()} />}
-                  side={side(view()!)}
-                  lists={null}
-                />
-                {aboutButton()}
+                <FieldsTable fields={summaries()} selected={view()!.field?.id ?? null} onSelect={(id) => props.selectField(id)} />
+                <Show when={!view()!.cycle}>
+                  <TodayEmpty onPlant={() => props.openPlant()} canPlant={canPlant()} fieldName={plantFieldName()} />
+                </Show>
               </>
             ),
           })}
@@ -861,23 +884,17 @@ export function TodayView(props: TodayViewProps) {
         <Match when={view() && !view()!.cycle}>
           {mapLayout({
             class: "is-empty",
-            hint: "Soil and the weather on this day",
             hero: (
               <div class="today-primary">
                 <TodayEmpty onPlant={() => props.openPlant()} canPlant={canPlant()} fieldName={hasFields() ? fieldName() : null} />
+                {aboutButton()}
               </div>
-            ),
-            more: (
-              <>
-                <TodaySoil farmId={view()!.farmId} epoch={s.sessionEpoch()} {...soilProps()} />
-                <TodayCards view={view()!} date={view()!.today} price={null} weather={weatherAt(view()!.weatherTrack, view()!.today)} weatherOnly onDetails={openDetails} />
-              </>
             ),
           })}
         </Match>
         <Match when={view()?.cycle}>
           {mapLayout({
-            hint: "Notes, weather and harvest cards, soil, harvest outlook, crop area and planning references",
+            outlookSubject: gaugeSubject(),
             hero: (
               <div class="today-primary">
                 <TodayHero
@@ -927,8 +944,9 @@ export function TodayView(props: TodayViewProps) {
                     </Show>
                   )}
                   fieldImage={() => <Show when={`${s.sessionEpoch()}|${view()!.farmId}|${view()!.cycle!.id}`} keyed>{(_key) => <FieldImage farmId={view()!.farmId} cycleId={view()!.cycle!.id} date={date()} today={view()!.today} fieldName={fieldName()}/>}</Show>}
+                  notes={() => <Show when={`${s.sessionEpoch()}|${view()!.farmId}|${view()!.cycle!.id}`} keyed>{(_key) => <SeasonPredictionStatus farmId={view()!.farmId} cycleId={view()!.cycle!.id} onRefresh={() => reloadQuiet(view()!.farmId,s.sessionEpoch())}/>}</Show>}
+                  onAbout={() => setSheet("about")}
                 />
-                <Show when={`${s.sessionEpoch()}|${view()!.farmId}|${view()!.cycle!.id}`} keyed>{(_key) => <SeasonPredictionStatus farmId={view()!.farmId} cycleId={view()!.cycle!.id} onRefresh={() => reloadQuiet(view()!.farmId,s.sessionEpoch())}/>}</Show>
                 <Show when={otherCycles().length}>
                   <p class="today-note">
                     Also growing: {otherCycles().map((entry) => entry.cycle.cropName ?? s.cropName(entry.cycle.cropId)).join(", ")}. This view
@@ -936,12 +954,6 @@ export function TodayView(props: TodayViewProps) {
                   </p>
                 </Show>
               </div>
-            ),
-            more: (
-              <>
-                <TodaySide view={view()!} farmId={view()!.farmId} epoch={s.sessionEpoch()} date={date()} price={price()} weather={weather()} onDetails={openDetails} {...soilProps()} />
-                {aboutButton()}
-              </>
             ),
           })}
         </Match>
@@ -1012,7 +1024,7 @@ export interface FarmOverviewProps {
 }
 
 /** The farm hero (every field in its crop colour, or the wide satellite image with outlines) and the legend. */
-export function FarmOverviewHero(props: Omit<FarmOverviewProps, "empty" | "side" | "lists" | "onAbout">) {
+export function FarmOverviewHero(props: Omit<FarmOverviewProps, "empty" | "side" | "lists">) {
   const fields = () => props.view.fields ?? [];
   return (
     <div class="today-primary">
@@ -1037,6 +1049,7 @@ export function FarmOverviewHero(props: Omit<FarmOverviewProps, "empty" | "side"
             fieldImageBbox={props.view.fieldImageBbox ?? null}
             cropNames={props.cropNames}
             farm={hero()}
+            onAbout={props.onAbout}
             fieldImage={() => <div class="field-images"><div class="field-images-empty"><span class="field-images-eyebrow">Field photos</span><h3>Choose a field</h3><p>Open a field with a crop to upload photos and preview its growth through the season.</p><For each={fields().filter(field => field.cycle)}>{field => <button type="button" class="btn secondary" onClick={() => props.onSelect(field.id)}>{field.name}</button>}</For></div></div>}
           />
         )}

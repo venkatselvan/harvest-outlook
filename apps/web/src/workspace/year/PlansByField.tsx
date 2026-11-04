@@ -5,6 +5,8 @@ import { cropColor } from "../today/model";
 import { cropLabel, fieldCropOf, type FieldCycleLike } from "../fields/fieldsModel";
 import { monthYear } from "./format";
 import { reportHref } from "../report/reportApi";
+import { SeasonStripCompact } from "./SeasonStrip";
+import type { StripMonth } from "./seasonStripModel";
 
 /**
  * "Plans by field" (FIELDS_MULTICROP_SOIL_SPEC.md 12.6): the Plan tab's "All fields" view on a farm with fields. Each field
@@ -34,6 +36,9 @@ export interface FieldPlanRow {
   /** The crop is a legacy whole-farm cycle (it names no field), shown for every field without its own cycle. */
   wholeFarm: boolean;
   cropId: string | null;
+  /** The current cycle's id and its crop name without the "(whole farm)" note, for the season strip; null without a cycle. */
+  cycleId: string | null;
+  cycleName: string;
   /** "Black gram, sowing Feb 2027", "Maize, Kharif 2027" (no planned date) or "None planned". */
   next: string;
   /** The saved season the `next` text describes, or null. */
@@ -77,6 +82,8 @@ export function plansByField(
       crop: label,
       wholeFarm,
       cropId: cycle?.cropId ?? null,
+      cycleId: cycle?.id ?? null,
+      cycleName: cycle ? cropLabel(cycle, cropName) : "",
       next: nextSeasonText(next, cropName),
       nextPlanId: next?.id ?? null,
     };
@@ -92,12 +99,22 @@ function routerNavigate(): ((to: string) => void) | undefined {
   }
 }
 
-export function PlansByField(props: { rows: readonly FieldPlanRow[]; onOpen: (fieldId: string) => void }) {
+export function PlansByField(props: {
+  rows: readonly FieldPlanRow[];
+  onOpen: (fieldId: string) => void;
+  /** One compact season strip per field id, once its data is ready (a field missing here shows no strip). */
+  strips?: Readonly<Record<string, readonly StripMonth[]>> | undefined;
+}) {
   const navigate = routerNavigate();
   return (
     <div class="yp-by-field" data-testid="yp-plans-by-field">
       <h3 class="yp-by-field-title">Plans by field</h3>
       <p class="yp-muted">Each field has its own year plan. Open a field to see and change its plan.</p>
+      <Show when={props.strips && Object.keys(props.strips).length > 0}>
+        <p class="yp-muted yp-by-field-strip-note">
+          The strips show the next twelve months of the growing crop and saved seasons. A saved season without a harvest date shows only its sowing month, and a month with nothing saved reads "Field rests".
+        </p>
+      </Show>
       <ul class="yp-by-field-list">
         <For each={props.rows}>
           {(row) => (
@@ -135,6 +152,13 @@ export function PlansByField(props: { rows: readonly FieldPlanRow[]; onOpen: (fi
                 >
                   Open report
                 </a>
+              </Show>
+              <Show when={props.strips?.[row.id]}>
+                {(months) => (
+                  <div class="yp-by-field-strip">
+                    <SeasonStripCompact months={months()} fieldName={row.name} />
+                  </div>
+                )}
               </Show>
             </li>
           )}

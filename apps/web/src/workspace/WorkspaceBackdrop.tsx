@@ -8,6 +8,7 @@ import { currentCycleOf, type FieldCycleLike } from "./fields/fieldsModel";
 import { cropColor } from "./today/model";
 import {
   DEFAULT_PADDING,
+  backdropSuppressed,
   fitPadding,
   isMapTab,
   mapFocus,
@@ -54,7 +55,8 @@ export function WorkspaceBackdrop() {
   const [mounted, setMounted] = createSignal(false);
   const [tiles, setTiles] = createSignal({ loaded: 0, errors: 0 });
   const [size, setSize] = createSignal({ width: 0, height: 0 });
-  const fullTab = createMemo(() => isMapTab(activeFarmTab(location.pathname, location.search)));
+  const suppressed = () => backdropSuppressed();
+  const fullTab = createMemo(() => !suppressed() && isMapTab(activeFarmTab(location.pathname, location.search)));
   const workspace = createMemo(() => {
     const ws = s.workspace.error ? undefined : s.workspace();
     return ws?.farmId === s.farm()?.id ? ws : undefined;
@@ -78,7 +80,7 @@ export function WorkspaceBackdrop() {
     const cycles = (ws?.cycles ?? []) as FieldCycleLike[];
     return (ws?.fields ?? []).map((field) => ({ id: field.id, name: field.name, ring: field.boundary?.coordinates?.[0] ?? [], color: cropColor(currentCycleOf(field.id, cycles)?.cropId) }));
   });
-  const located = () => !!boundary() || !!savedPoint();
+  const located = () => !suppressed() && (!!boundary() || !!savedPoint());
   const layer = () => mapLayerState({ located: located(), tilesLoaded: tiles().loaded, tileErrors: tiles().errors });
   const padding = createMemo<FitPadding>(
     () => {
@@ -134,8 +136,8 @@ export function WorkspaceBackdrop() {
   // Create or remove the map, then draw the outline, the fields and their name chips.
   createEffect(() => {
     if (!mounted()) return;
-    const b = boundary();
-    const point = savedPoint();
+    const b = suppressed() ? null : boundary();
+    const point = suppressed() ? null : savedPoint();
     const shapes = fields();
     const selected = fullTab() ? tabField() : null;
     if (!b && !point) {
@@ -200,10 +202,10 @@ export function WorkspaceBackdrop() {
     setMapReady(false);
   });
   return (
-    <div class="workspace-backdrop" classList={{ "has-location": located(), "imagery-unavailable": located() && layer() === "flat", "is-map-layer": fullTab(), "credit-in-band": fullTab() && !!mapFocus() }}>
+    <div class="workspace-backdrop" classList={{ "has-location": located(), "imagery-unavailable": located() && layer() === "flat", "is-map-layer": fullTab(), "credit-in-band": fullTab() && !!mapFocus(), "backdrop-suppressed": suppressed() }}>
       <div ref={container} class="workspace-backdrop-map" aria-hidden="true" />
       <div class="workspace-backdrop-wash" />
-      <Show when={!located()}><div class="workspace-geography-note">Save your farm boundary to see its satellite context.</div></Show>
+      <Show when={!located() && !suppressed()}><div class="workspace-geography-note">Save your farm boundary to see its satellite context.</div></Show>
       <Show when={located() && layer() === "flat"}><div class="workspace-geography-note" role="status">Satellite imagery unavailable · your saved farm records remain accessible.</div></Show>
       <Show when={located() && layer() === "map"}><span class="workspace-imagery-credit">Satellite basemap · Imagery © Esri · Maxar · Earthstar Geographics</span></Show>
     </div>

@@ -5,7 +5,7 @@ import type { FieldConditionPoint } from "@harvest/contracts";
 import { todayFixture, FIXTURE_TODAY } from "./fixtures";
 import { sliderModel, stageAt } from "./model";
 import { attentionItems, glanceFacts, greennessGauge, headlineEyebrow, headlineSentence, headlineTitle, stageGauge, waterGauge, weekAhead, weekPlan, weekTakeaway } from "./todayMapModel";
-import { AttentionPanel, GaugesPanel, GlancePanel, MapCentre, TodayHeadline } from "./TodayMapLayout";
+import { AttentionPanel, GaugesPanel, GlancePanel, MapCentre, TodayHeadline, TodayMapLayout } from "./TodayMapLayout";
 
 const plain = (html: string) => html.replace(/<!--[^>]*-->/g, "").replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
 const view = todayFixture();
@@ -111,8 +111,69 @@ describe("at a glance without drawn fields", () => {
   });
 });
 
-describe("map centre fallback", () => {
-  it("renders no pin and no zoom buttons while the map layer is not showing", () => {
+describe("explore fields link in the at-a-glance header", () => {
+  const facts = { areaHa: null, fields: null, seasonDay: null };
+  it("links to the fields tab from the tile header, once", () => {
+    const html = renderToString(() => <GlancePanel facts={facts} cropName="Ginger" hasCycle canPlant onPlant={() => {}} exploreHref="/farm?tab=modify" />);
+    expect(html.match(/<a [^>]*href="\/farm\?tab=modify"/g)).toHaveLength(1);
+    expect(plain(html)).toContain("Explore fields");
+    expect(html).toContain('data-testid="today-glance-explore"');
+  });
+  it("shows no link when no destination is given", () => {
+    expect(plain(renderToString(() => <GlancePanel facts={facts} cropName={null} hasCycle canPlant onPlant={() => {}} />))).not.toContain("Explore fields");
+  });
+});
+
+describe("desktop layout has no open centre, pin or zoom buttons", () => {
+  const slot = (name: string) => <section data-slot={name} />;
+  const layout = () => (
+    <TodayMapLayout
+      headline={slot("headline")}
+      centre={<MapCentre farmName="Kabini farm" exploreHref="/farm?tab=modify" />}
+      glance={slot("glance")}
+      hero={slot("hero")}
+      outlook={slot("outlook")}
+      extra={slot("extra")}
+      overview={slot("overview")}
+      gauges={slot("gauges")}
+      attention={slot("attention")}
+      week={slot("week")}
+      evara={slot("evara")}
+    />
+  );
+  it("renders two columns: main (glance, hero, outlook, extra) then right (attention, Today for you, week, field signals, Evara), without the centre", () => {
+    const html = renderToString(layout);
+    expect(html).toContain('data-arrangement="wide"');
+    expect(html).not.toContain("today-map-centre");
+    expect(html).not.toContain("today-map-pin");
+    expect(html).not.toContain("today-map-controls");
+    expect(html).not.toContain("Zoom in");
+    expect(html).not.toContain("today-map-left");
+    expect(html).not.toContain("today-more");
+    const order = ["headline", "glance", "hero", "outlook", "extra", "attention", "overview", "week", "gauges", "evara"].map((n) => html.indexOf(`data-slot="${n}"`));
+    expect(order.every((i) => i >= 0)).toBe(true);
+    expect([...order].sort((a, b) => a - b)).toEqual(order);
+    const main = html.slice(html.indexOf("today-map-main"), html.indexOf("today-map-right"));
+    for (const n of ["glance", "hero", "outlook", "extra"]) expect(main).toContain(`data-slot="${n}"`);
+    for (const n of ["attention", "overview", "gauges"]) expect(main).not.toContain(`data-slot="${n}"`);
+    const right = html.slice(html.indexOf("today-map-right"));
+    for (const n of ["attention", "overview", "week", "gauges", "evara"]) expect(right).toContain(`data-slot="${n}"`);
+  });
+  it("sets a flexible main column, a 360px right pane, the earlier hero height and stacked field signals in the desktop CSS", () => {
+    const css = readFileSync(new URL("./today-layout.css", import.meta.url), "utf8");
+    expect(css).toMatch(/\[data-arrangement="wide"\] \{ grid-template-columns: minmax\(0, 1fr\) 360px;/);
+    expect(css).not.toMatch(/minmax\(160px, 1fr\)/);
+    expect(css).toMatch(/\.today-hero-visual \{ aspect-ratio: 1\.65; min-height: 320px; \}/);
+    // Field signals sit in the right pane, one gauge per row: never the earlier three-up row.
+    expect(css).not.toMatch(/\.today-gauge-list \{ grid-template-columns: repeat\(3/);
+    expect(css).toMatch(/\.today-gauge-list \{ grid-template-columns: minmax\(0, 1fr\)/);
+    expect(css).not.toContain(".today-map-controls");
+    expect(css).not.toContain(".today-more");
+  });
+});
+
+describe("map centre (phone band)", () => {
+  it("renders no pin, zoom buttons or credit while the map layer is not showing", () => {
     const html = renderToString(() => <MapCentre farmName="Kabini farm" exploreHref="/farm?tab=modify" />);
     expect(html).toContain('data-testid="today-map-centre"');
     expect(html).not.toContain("today-map-pin");
@@ -123,7 +184,7 @@ describe("map centre fallback", () => {
     const css = readFileSync(new URL("./today-layout.css", import.meta.url), "utf8");
     expect(css).toMatch(/\.today-map-credit \{ display: block; position: absolute;/);
     expect(css).toMatch(/height: max\(220px, 38vh\)/);
-    expect(css).toMatch(/\.today-map-controls \{ display: none; \}/);
+    expect(css).toMatch(/\[data-arrangement="compact"\]:has\(\.today-map-pin\) \.today-glance-explore \{ display: none; \}/);
   });
   it("the backdrop stays aria-hidden and non-interactive", () => {
     const source = readFileSync(new URL("../WorkspaceBackdrop.tsx", import.meta.url), "utf8");

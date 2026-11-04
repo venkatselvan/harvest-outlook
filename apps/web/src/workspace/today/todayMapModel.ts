@@ -1,5 +1,5 @@
-import type { FarmAlert, FieldConditionPoint, FieldSummary, HealthReading, UpcomingStep, WeatherPoint } from "@harvest/contracts";
-import { addDays, formatDay, formatRain, formatSoilMoisture, formatTemp, nextActionWhen, type SliderModel, type StageAt } from "./model";
+import type { FarmAlert, FieldConditionPoint, FieldSummary, HealthReading, PricePoint, UpcomingStep, WeatherPoint } from "@harvest/contracts";
+import { addDays, formatDay, formatRain, formatSoilMoisture, formatTemp, nextActionWhen, rangeLabel, type SliderModel, type StageAt } from "./model";
 
 /**
  * Code rules behind the Today full-map layout (docs/research/TODAY_MAP_LAYOUT_SPEC.md). Every value here is read from
@@ -150,8 +150,13 @@ export interface Gauge {
   label: string;
   /** Short visible value ("0.62", "Moist", "Day 47 of 120"). */
   value: string;
-  /** Line under the value (image date, model value, stage name). */
+  /** Text after the value on the same line (image date, model value, stage name). */
   caption: string;
+  /**
+   * TODAY_REFINEMENT_SPEC.md 4: an optional second line under the value, from an existing card's data (the crop condition
+   * headline under greenness, the estimated harvest window under stage progress). Null when there is nothing to add.
+   */
+  note?: string | null;
   /** Ring fill 0..1 for numeric gauges; null for the water state (an ordered state, not a number). */
   fraction: number | null;
   /** Water only: the step of dry, moist, ponded, flooded (0..3), or null when unknown. */
@@ -165,19 +170,24 @@ export interface Gauge {
 
 const clamp01 = (v: number) => Math.max(0, Math.min(1, v));
 
-/** Greenness: the satellite NDVI reading the crop-condition card shows, with its image date. */
-export function greennessGauge(health: HealthReading | null | undefined): Gauge {
+/**
+ * Greenness: the satellite NDVI reading the crop-condition card shows, with its image date. `condition` is that card's
+ * headline (for example "Within the stage greenness range"), shown as the note under the value; `smallField` adds the
+ * card's few-pixels caveat to the basis words.
+ */
+export function greennessGauge(health: HealthReading | null | undefined, condition: string | null = null, smallField = false): Gauge {
   if (!health)
-    return { id: "greenness", label: "Greenness", value: "–", caption: "No clear satellite reading yet", fraction: null, level: null, basis: null, basisNote: "No satellite reading", sheet: "health" };
+    return { id: "greenness", label: "Greenness", value: "–", caption: "No clear satellite reading yet", note: null, fraction: null, level: null, basis: null, basisNote: "No satellite reading", sheet: "health" };
   return {
     id: "greenness",
     label: "Greenness",
     value: health.ndviMean.toFixed(2).replace(/^-/, "−"),
     caption: `NDVI · image of ${formatDay(health.date, false)}`,
+    note: condition,
     fraction: clamp01(health.ndviMean),
     level: null,
     basis: "observed",
-    basisNote: `Observed in the satellite image of ${formatDay(health.date, false)}; a satellite signal, not a field inspection`,
+    basisNote: `Observed in the satellite image of ${formatDay(health.date, false)}; a satellite signal, not a field inspection${smallField ? "; small field, few satellite pixels" : ""}`,
     sheet: "health",
   };
 }
@@ -212,9 +222,13 @@ export function waterGauge(point: FieldConditionPoint | null | undefined): Gauge
   };
 }
 
-/** Stage progress: day N of M on the season slider (calendar days from sowing to the latest harvest date), with the stage name. */
-export function stageGauge(model: SliderModel | null | undefined, index: number, stage: StageAt): Gauge {
-  const base = { id: "stage" as const, label: "Stage progress", level: null, sheet: "harvest" as const };
+/**
+ * Stage progress: day N of M on the season slider (calendar days from sowing to the latest harvest date), with the stage
+ * name, and (TODAY_REFINEMENT_SPEC.md 4) the harvest window the harvest card showed as the note: "Harvest 15 Mar to 2 Apr
+ * (estimated)". The window is the timeline's calendar estimate, never a satellite reading.
+ */
+export function stageGauge(model: SliderModel | null | undefined, index: number, stage: StageAt, harvest: { earliest: string; latest: string } | null = null): Gauge {
+  const base = { id: "stage" as const, label: "Stage progress", level: null, sheet: "harvest" as const, note: harvestNote(harvest) };
   if (!model || model.total <= 0)
     return { ...base, value: "–", caption: "No stage dates for this crop yet", fraction: null, basis: null, basisNote: "No stage dates" };
   const day = Math.max(0, Math.min(model.total, Math.round(index)));
@@ -228,6 +242,60 @@ export function stageGauge(model: SliderModel | null | undefined, index: number,
     basis: "estimated",
     basisNote: "Estimated: calendar stage dates from the recorded sowing date, never marked reached by a satellite image",
   };
+}
+
+/** "Harvest 15 Mar to 2 Apr (estimated)"; null without a window. */
+export function harvestNote(harvest: { earliest: string; latest: string } | null | undefined): string | null {
+  return harvest ? `Harvest ${rangeLabel(harvest.earliest, harvest.latest)} (estimated)` : null;
+}
+
+/** The gauge's visible value line: "Day 4 of 135 · Mid-season", "0.62 · NDVI · image of 27 Oct", "Moist · …". */
+export function gaugeLine(gauge: Pick<Gauge, "value" | "caption">): string {
+  return gauge.value === "–" ? gauge.caption : `${gauge.value} · ${gauge.caption}`;
+}
+
+// ---------------------------------------------------------------- harvest outlook card (TODAY_REFINEMENT_SPEC.md 5)
+
+/**
+ * The latest recorded price quote on or before today: the newest observed weekly point of the price track (reference
+ * points are seasonal averages, not quotes). Null when the track has none.
+ */
+export function latestQuote(track: readonly PricePoint[], today: string): PricePoint | null {
+  let best: PricePoint | null = null;
+  for (const point of track) if (point.kind === "observed" && point.date <= today && point.p50 != null && (!best || point.date > best.date)) best = point;
+  return best;
+}
+
+// ---------------------------------------------------------------- actions board (TODAY_REFINEMENT_SPEC.md 1)
+
+export type ActionItem = { kind: "alert"; alert: FarmAlert; rank: number } | { kind: "step"; step: UpcomingStep; rank: number; next: boolean };
+
+/** Rank of each group in the board: overdue, due, warnings, watch, other alerts, upcoming, done. */
+export const ACTION_RANK = { overdue: 0, due: 1, warning: 2, watch: 3, info: 4, upcoming: 5, completed: 6 } as const;
+
+/**
+ * Alerts and steps as one list for the Actions board, in the existing priority order: overdue steps, due steps, warning
+ * alerts, watch alerts, info alerts, upcoming steps, then steps already done. Within a group the incoming order is kept
+ * (alerts as sorted by severity, steps as the server ordered them), except that the next action leads its group.
+ */
+export function actionItems(alerts: readonly FarmAlert[], steps: readonly UpcomingStep[], nextId: string | null | undefined): ActionItem[] {
+  const items: ActionItem[] = [
+    ...steps.map((step) => ({ kind: "step" as const, step, rank: ACTION_RANK[step.status], next: step.id === nextId })),
+    ...alerts.map((alert) => ({ kind: "alert" as const, alert, rank: ACTION_RANK[alert.severity] })),
+  ];
+  return items
+    .map((item, index) => ({ item, index }))
+    .sort((a, b) => a.item.rank - b.item.rank || Number(b.item.kind === "step" && b.item.next) - Number(a.item.kind === "step" && a.item.next) || a.index - b.index)
+    .map(({ item }) => item);
+}
+
+// ---------------------------------------------------------------- popovers
+
+/** What can happen to an open-or-closed popover: its button, the Escape key, a press outside it, its close button. */
+export type PopoverEvent = "toggle" | "escape" | "outside" | "close";
+/** Next open state of a click popover (the hero's "About this view" notes): only the button opens it; everything else closes it. */
+export function popoverNext(open: boolean, event: PopoverEvent): boolean {
+  return event === "toggle" ? !open : false;
 }
 
 // ---------------------------------------------------------------- at a glance

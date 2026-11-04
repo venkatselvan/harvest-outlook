@@ -63,3 +63,20 @@ export async function loadPriorities(farmId: string, epoch: number, current: () 
   next.status = next.alertsError && next.tasksError ? 'error' : 'ready';
   if (current()) publish(next);
 }
+
+/**
+ * Stored alerts and care schedules for every farm of one owner cohort (the All farms status chips and open-reviews
+ * total need them for each farm, not only the selected one). The same two GETs per farm as `loadPriorities`, two farms at a
+ * time, the selected farm first; nothing is dispatched or published once `current()` turns false (cohort or session change).
+ */
+export async function loadPriorityCohort(ids: readonly string[], epoch: number, current: () => boolean, publish: (value: Priority) => void, first?: string, load: typeof loadPriorities = loadPriorities) {
+  const queue = first && ids.includes(first) ? [first, ...ids.filter(id => id !== first)] : [...ids];
+  let cursor = 0;
+  await Promise.all(Array.from({ length: Math.min(2, queue.length) }, async () => {
+    while (current()) {
+      const id = queue[cursor++];
+      if (!id) return;
+      await load(id, epoch, current, publish);
+    }
+  }));
+}

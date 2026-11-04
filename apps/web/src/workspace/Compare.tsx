@@ -1,5 +1,6 @@
 import { CommodityBrowser } from "./CommodityCatalogue";
 import { CurrentQuote } from "./CurrentQuote";
+import { CompareCards } from "./CompareCards";
 import {
   For,
   Show,
@@ -513,6 +514,9 @@ export function CompareWorkspace(
             </section>
           </Show>
           <div class="comparison-main">
+            <Show when={choices().length}>
+              <CompareCards items={choices()} onRemove={toggle} onDetail={setDetails} />
+            </Show>
             <section class="comparison-table-card">
               <div class="section-heading">
                 <div>
