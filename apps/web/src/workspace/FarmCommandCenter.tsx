@@ -33,7 +33,6 @@ import { FarmWorkspace, HistoryDialog } from "./FarmPage";
 import { CompareWorkspace } from "./Compare";
 import { JournalWorkspace } from "./Journal";
 import { FarmSettings } from "./FarmSettings";
-import { MarketContextPanel } from "./MarketContextPanel";
 import MarketView from "./market/MarketView";
 import CropFitView from "./farm/CropFitView";
 import SoilReviewPanel from "./farm/SoilReviewPanel";
@@ -155,7 +154,7 @@ export function FarmCommandCenter() {
       : query().get("tool") === "soil"
         ? "soil"
         : null;
-  const [scene, setScene] = createSignal<"growth" | "satellite">("growth");
+  const [scene, setScene] = createSignal<"growth" | "satellite" | "field-image">("satellite");
   const [cycleId, setCycleId] = createSignal("");
   const [planting, setPlanting] = createSignal(false);
   const [plantCrop, setPlantCrop] = createSignal("");
@@ -515,29 +514,16 @@ export function FarmCommandCenter() {
 
   return (
     <div class={`farm-command tab-${tab()}`}>
-      <header class="farm-command-heading">
-        <div class="farm-command-identity">
-          <span class="command-farm-icon">
-            <Icon name="leaf" size={22} />
-          </span>
-          <div>
-            <h1>{s.farm()?.name ?? "Your farm"}</h1>
-            <p>
-              <Icon name="pin" size={12} />
-              {s.farm()?.location.districtName ?? "Location not recorded"}
-              <span>·</span>
-              {s.farm()?.areaHectares != null
-                ? `${s.farm()!.areaHectares!.toFixed(2)} ha`
-                : "Area unknown"}
-              <Show when={s.farm()?.facts.demo_prefilled?.value === true}>
-                <span class="command-demo">Demo farm</span>
-              </Show>
-            </p>
+      <header class="farm-command-heading" classList={{ "is-map-tab": tab() === "today" }}>
+        {/* On Today the headline ("Your farm today.") is the page h1 (TODAY_MAP_LAYOUT_SPEC.md); the other tabs keep theirs. */}
+        <Show when={tab() !== "today"}>
+          <div class="farm-command-view-heading">
+            <h1>{{ today: "Today", actions: "Alerts & actions", year: "Plan", harvest: "Market", soil: "Farm records", modify: "Modify farm" }[tab()]}</h1>
           </div>
-        </div>
+        </Show>
         <div class="farm-command-actions">
           <A
-            href="/farm/manage"
+            href={farmHref("modify", undefined, todayField())}
             class="command-icon-button"
             aria-label="Manage farm boundary and fields"
             title="Manage farm boundary and fields"
@@ -576,8 +562,9 @@ export function FarmCommandCenter() {
           {error()}
         </p>
       </Show>
-      <Show when={tab() === "today"}>
+      <Show when={tab() === "today" || tab() === "actions"}>
         <TodayView
+          presentation={tab() === "actions" ? "actions" : "today"}
           data={data}
           resource={resource}
           workspace={workspace}
@@ -675,18 +662,11 @@ export function FarmCommandCenter() {
       <Show when={tab() === "harvest"}>
         <div class="farm-tab-scroll embedded-tool market-tab">
           <Show when={s.farm()?.id}>{(id) => <MarketView farmId={id()} />}</Show>
-          <details class="market-context-details">
-            <summary>Wider market context (FAO monthly bulletin)</summary>
-            <MarketContextPanel
-              cropIds={[
-                ...new Set([
-                  ...(workspace()?.cycles.map((c) => c.cropId) ?? []),
-                  ...(workspace()?.rotationPlans.map((p) => p.cropId) ?? []),
-                ]),
-              ]}
-            />
-          </details>
+
         </div>
+      </Show>
+      <Show when={tab() === "modify"}>
+        <div class="farm-tab-scroll embedded-tool"><FarmWorkspace embedded /></div>
       </Show>
       <Show when={tab() === "soil" && section() === "activity"}>
         <div class="farm-tab-scroll embedded-tool">

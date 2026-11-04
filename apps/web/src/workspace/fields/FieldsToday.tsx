@@ -66,7 +66,7 @@ export function FieldChips(props: { items: readonly FieldChipItem[]; selected: s
  * field. The Market tab is not field-scoped (prices are per district), so it shows no chips rather than a choice that
  * changes nothing.
  */
-export const FIELD_CHIP_TABS: readonly FarmTab[] = ["today", "year", "soil"];
+export const FIELD_CHIP_TABS: readonly FarmTab[] = ["today", "actions", "year", "soil"];
 export const fieldChipsShown = (tab: FarmTab, fieldCount: number) => fieldCount > 0 && FIELD_CHIP_TABS.includes(tab);
 
 /** Chip items from the stored workspace (the shell has no Today view to read): each field with its current crop ("(whole farm)" for a legacy cycle), or "No crop". */

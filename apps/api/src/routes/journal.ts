@@ -11,6 +11,7 @@ import { analysisQueuedOut, confirmOut, createEntryOut, previewOut, taskCompleti
 
 export interface JournalRouteDeps {
   config: Config;
+  onEvidence?: (ownerId: string, entryId: string, sessionId: string | null) => Promise<void>;
   service: JournalService;
   /** Authenticated owner id from the session (INT2: `requireAuth(req).ownerId`). Never read from the body. */
   resolveOwner: (req: FastifyRequest) => string | Promise<string>;
@@ -36,7 +37,7 @@ export async function registerJournalRoutes(app: FastifyInstance, deps: JournalR
         schema: {
           tags: ["journal"],
           description:
-            "Saves a journal entry exactly as the farmer entered it (farmer-reported; originals are never modified). clientEntryId is the stable client id; the same id with the same content replays the saved entry (200), different content is 409. Supports Idempotency-Key. No AI runs here.",
+            "Saves a journal entry exactly as the farmer entered it (farmer-reported; originals are never modified). clientEntryId is the stable client id; the same id with the same content replays the saved entry (200), different content is 409. Supports Idempotency-Key. Linked crop observations queue milestone previews; provider calls run in background workers.",
           body: CreateEntryBody,
           response: { 201: envelopeSchema(createEntryOut), 200: envelopeSchema(createEntryOut) },
         },
@@ -46,6 +47,7 @@ export async function registerJournalRoutes(app: FastifyInstance, deps: JournalR
         const key = parseIdempotencyKey(req.headers["idempotency-key"]);
         const exec = async () => {
           const out = await svc.createEntry(ownerId, req.body);
+          await deps.onEvidence?.(ownerId,out.entry.id,deps.resolveSession?.(req) ?? null).catch(error => req.log.warn({error}, 'Journal milestone refresh deferred'));
           return { status: out.created ? 201 : 200, body: envelope(req.id, mode, { entry: out.entry }, out.created ? [] : ["replayed_existing_entry"]) };
         };
         const out = deps.idempotency ? await deps.idempotency.run({ ownerId, key, route: "POST /api/v1/journal", hashInput: req.body }, exec) : { ...(await exec()), replay: false };
@@ -119,7 +121,12 @@ export async function registerJournalRoutes(app: FastifyInstance, deps: JournalR
           response: { 200: envelopeSchema(confirmOut) },
         },
       },
-      async (req) => envelope(req.id, mode, (await svc.confirm(await deps.resolveOwner(req), req.params.id, req.body)) as never),
+      async (req) => {
+        const ownerId = await deps.resolveOwner(req);
+        const result = await svc.confirm(ownerId, req.params.id, req.body);
+        await deps.onEvidence?.(ownerId,req.params.id,deps.resolveSession?.(req) ?? null).catch(error => req.log.warn({error}, 'Journal milestone refresh deferred'));
+        return envelope(req.id,mode,result as never);
+      },
     );
 
     r.post(

@@ -541,45 +541,49 @@ async function fixture(
   };
 }
 
-const tabNames = ["Today", "Plan", "Market", "Farm"];
+const tabNames = ["Today", "Actions", "Plan", "Market", "Farm", "Modify"];
+const primaryNames = ["Today", "All farms"];
 const farmViews = (page: Page) =>
   page.getByRole("navigation", { name: "Farm views" });
+const primaryViews = (page: Page) => page.locator(".sidebar nav:visible, nav.glass-bottom-tabs:visible");
+const openMore = async (page: Page, name: string) => {
+  await page.getByRole("button", { name: "More", exact: true }).click();
+  await page.locator("#more-menu-panel").getByRole("link", { name, exact: true }).click();
+};
 const noHorizontalScroll = (page: Page) =>
   page.evaluate(
     () => document.documentElement.scrollWidth <= window.innerWidth,
   );
 
-test("one selected-farm workspace holds the Today view and four tabs, and the Farm tab keeps crop fit, soil records and activity", async ({
+test("one selected-farm workspace keeps Today compact, and More retains crop fit, soil records and activity", async ({
   page,
 }) => {
   await page.setViewportSize({ width: 1440, height: 1000 });
   const api = await fixture(page, { today: true });
   await page.goto("/farm");
   await expect(
-    page.getByRole("heading", { name: "South field", exact: true }),
-  ).toBeVisible();
+    page.getByLabel("Selected farm", { exact: true }),
+  ).toHaveValue(A);
   await expect(
     page.getByRole("region", { name: "Your field", exact: true }),
   ).toBeVisible();
+  await expect(page.getByRole("button", { name: "Satellite", exact: true })).toHaveAttribute("aria-pressed", "true");
   const tabs = farmViews(page);
-  await expect(tabs.getByRole("link")).toHaveCount(4);
-  for (const name of tabNames)
-    await expect(tabs.getByRole("link", { name, exact: true })).toBeVisible();
-  // The due-task count is announced as the Today tab's description, not folded into its name.
-  await expect(
-    tabs.getByRole("link", { name: "Today", exact: true }),
-  ).toHaveAccessibleDescription("1 care task due");
+  await expect(tabs).toBeVisible();
+  await expect(primaryViews(page).getByRole("link", { name: "Today", exact: true })).toHaveAccessibleDescription("1 care task due");
   await expect(
     page
       .getByRole("region", { name: "Upcoming steps" })
       .getByRole("heading", { name: "Check field moisture", exact: true }),
   ).toBeVisible();
   await page.screenshot({
-    path: "../../docs/reference/redesign/command-center-planted-fixture.png",
+    path: test.info().outputPath("command-center-planted-fixture.png"),
     fullPage: true,
   });
-  // Farm tab: crop fit first, then soil records and activity behind the secondary toggle.
-  await tabs.getByRole("link", { name: "Farm", exact: true }).click();
+  // More and the persistent tab row both reach planning and farm records.
+  await openMore(page, "Farm · crop fit");
+  await expect(tabs.getByRole("link")).toHaveCount(6);
+  for (const name of tabNames) await expect(tabs.getByRole("link", { name, exact: true })).toBeVisible();
   const sections = page.getByRole("navigation", { name: "Farm sections" });
   await expect(
     sections.getByRole("link", { name: "Crop fit", exact: true }),
@@ -634,23 +638,13 @@ test("one selected-farm workspace holds the Today view and four tabs, and the Fa
   await expect(
     tabs.getByRole("link", { name: "Farm", exact: true }),
   ).toHaveAttribute("aria-current", "page");
-  // Market tab: the timeline first, the FAO bulletin collapsed below it until opened.
+  // Market focuses on the field’s market timeline.
   await tabs.getByRole("link", { name: "Market", exact: true }).click();
   await expect(
     page.getByRole("heading", { name: "Market timeline", exact: true }),
   ).toBeVisible();
-  const context = page.locator("details.market-context-details");
-  await expect(context).not.toHaveAttribute("open", "");
-  await context
-    .getByText("Wider market context (FAO monthly bulletin)", { exact: true })
-    .click();
-  const global = page.getByRole("region", { name: "Global market context" });
-  await expect(global.getByText("105.2", { exact: false })).toBeVisible();
-  await expect(global).toContainText("index points");
-  await expect(global).not.toContainText("₹105");
-  await expect(global).toContainText("not an Indian mandi price");
-  await page.getByLabel("Selected farm", { exact: true }).selectOption(B);
-  await expect(global).toContainText("no crop-specific indicator");
+  await expect(page.getByRole("region", {name:"Global market context"})).toHaveCount(0);
+  await expect(page.locator("details.market-context-details")).toHaveCount(0);
 });
 
 test("Market tab shows the market timeline for each tracked product, moves its three cards with the week slider, and says so when no product is tracked", async ({
@@ -707,10 +701,7 @@ test("Market tab shows the market timeline for each tracked product, moves its t
   ).toContainText("No mandi price series is stored for Fresh ginger yet");
   expect(api.timelineRequests.map((q) => q.get("productId"))).toContain("ginger-fresh");
   await expect(card("weather")).toBeVisible();
-  // The FAO bulletin is still on the tab, collapsed under the timeline.
-  await expect(
-    page.locator("details.market-context-details > summary"),
-  ).toHaveText("Wider market context (FAO monthly bulletin)");
+  await expect(page.locator("details.market-context-details")).toHaveCount(0);
   // A farm that tracks no product gets the empty state instead of a chart.
   await page.getByLabel("Selected farm", { exact: true }).selectOption(B);
   await expect(page.getByTestId("market-empty")).toHaveText(
@@ -785,8 +776,8 @@ test("a planting save completed after farm switching cannot replace the selected
   await page.getByLabel("Selected farm", { exact: true }).selectOption(B);
   await api.release();
   await expect(
-    page.getByRole("heading", { name: "North field", exact: true }),
-  ).toBeVisible();
+    page.getByLabel("Selected farm", { exact: true }),
+  ).toHaveValue(B);
   await expect(page.getByTestId("today-recorded-crop")).toHaveCount(0);
   await expect(
     page.getByRole("heading", {
@@ -797,7 +788,7 @@ test("a planting save completed after farm switching cannot replace the selected
 });
 
 for (const theme of ["light", "dark"] as const)
-  test(`${theme} full-screen layout remains usable at 360px`, async ({
+  test(`dark layout remains usable at 360px with ${theme} system preference`, async ({
     page,
   }) => {
     await page.emulateMedia({ colorScheme: theme });
@@ -807,22 +798,22 @@ for (const theme of ["light", "dark"] as const)
       page.getByRole("button", { name: "Plant crop", exact: true }),
     ).toBeVisible();
     await expect(
-      page.getByRole("button", { name: "Dark mode", exact: true }),
+      page.getByRole("button", { name: "More", exact: true }),
     ).toBeInViewport();
     await expect(
       page.getByRole("region", { name: "Upcoming steps" }),
     ).toBeVisible();
     expect(await noHorizontalScroll(page)).toBe(true);
-    // The rail is gone; the four tabs are the bottom bar.
+    // The rail is gone; primary destinations live in the floating bottom bar.
     await expect(page.locator(".sidebar")).toBeHidden();
-    await expect(farmViews(page).getByRole("link")).toHaveCount(4);
+    await expect(page.locator("nav.farm-bottom-tabs").getByRole("link")).toHaveCount(2);
     await expect(
-      farmViews(page).getByRole("link", { name: "Today", exact: true }),
+      primaryViews(page).getByRole("link", { name: "Today", exact: true }),
     ).toBeInViewport();
   });
 
 for (const theme of ["light", "dark"] as const)
-  test(`${theme} 390 px: four bottom tabs replace the rail and the Evara button clears the bar and the content`, async ({
+  test(`390 px with ${theme} system: three primary destinations and scrollable farm tabs`, async ({
     page,
   }) => {
     await page.setViewportSize({ width: 390, height: 844 });
@@ -833,15 +824,15 @@ for (const theme of ["light", "dark"] as const)
       page.getByRole("region", { name: "Upcoming steps" }),
     ).toBeVisible();
     await expect(page.getByRole("region", { name: "Your field" })).toBeVisible();
-    // The rail is hidden; one tab navigation is visible and it is the bottom bar.
+    // The bottom bar holds the three main destinations; farm views stay in the top row.
     await expect(page.locator(".sidebar")).toBeHidden();
-    await expect(farmViews(page)).toHaveCount(1);
+    await expect(farmViews(page)).toBeVisible();
     const bar = page.locator("nav.farm-bottom-tabs");
     await expect(bar).toBeVisible();
-    await expect(page.locator("nav.farm-context-tabs")).toBeHidden();
+    await expect(page.locator("nav.farm-context-tabs")).toBeVisible();
     const links = bar.getByRole("link");
-    await expect(links).toHaveCount(4);
-    for (const name of tabNames) {
+    await expect(links).toHaveCount(2);
+    for (const name of primaryNames) {
       const link = bar.getByRole("link", { name, exact: true });
       await expect(link).toBeVisible();
       const box = (await link.boundingBox())!;
@@ -855,39 +846,26 @@ for (const theme of ["light", "dark"] as const)
     await expect(
       bar.getByRole("link", { name: "Today", exact: true }),
     ).toHaveAccessibleDescription("1 care task due");
-    // The bar is pinned to the bottom edge and spans the screen.
+    // Floating navigation leaves a visible map margin and safe content clearance.
     const barBox = (await bar.boundingBox())!;
-    expect(barBox.x).toBe(0);
-    expect(barBox.width).toBe(390);
-    expect(Math.round(barBox.y + barBox.height)).toBe(844);
-    // Content uses the full width with 16 px gutters.
-    const field = (await page
-      .getByRole("region", { name: "Your field" })
-      .boundingBox())!;
-    expect(Math.round(field.x)).toBe(16);
-    expect(Math.round(field.x + field.width)).toBe(374);
+    expect(barBox.x).toBe(12);
+    expect(barBox.width).toBe(366);
+    expect(Math.round(barBox.y + barBox.height)).toBe(834);
+    const field = (await page.getByRole("region", { name: "Your field" }).boundingBox())!;
+    expect(field.x).toBeGreaterThanOrEqual(12);
+    expect(field.x + field.width).toBeLessThanOrEqual(378);
     expect(await noHorizontalScroll(page)).toBe(true);
-    // Evara sits above the bar on the right with a 12 px gap.
-    // The header also carries an Evara button (the model activity indicator); this is the floating launcher.
-  const evara = page.locator(".assistant-launcher");
+    const evara = bar.getByRole("button", { name: "Evara assistant", exact: true });
     await expect(evara).toBeVisible();
     const evaraBox = (await evara.boundingBox())!;
-    expect(barBox.y - (evaraBox.y + evaraBox.height)).toBeGreaterThanOrEqual(
-      11.5,
-    );
-    expect(barBox.y - (evaraBox.y + evaraBox.height)).toBeLessThanOrEqual(12.5);
-    expect(Math.round(390 - (evaraBox.x + evaraBox.width))).toBe(16);
-    // The last content ends above the Evara button when scrolled to the end.
-    await page.evaluate(() =>
-      window.scrollTo(0, document.documentElement.scrollHeight),
-    );
-    const lastContent = await page
-      .locator(".today-layout")
-      .evaluate((el) => el.getBoundingClientRect().bottom);
-    expect(lastContent).toBeLessThanOrEqual(evaraBox.y);
+    expect(evaraBox.width).toBeGreaterThanOrEqual(44);
+    expect(evaraBox.height).toBeGreaterThanOrEqual(44);
+    await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+    const lastContent = await page.locator(".today-layout").evaluate((el) => el.getBoundingClientRect().bottom);
+    expect(lastContent).toBeLessThanOrEqual(barBox.y);
     await page.evaluate(() => window.scrollTo(0, 0));
     await page.screenshot({
-      path: `../../docs/reference/redesign/shell-mobile-${theme}.png`,
+      path: test.info().outputPath(`shell-mobile-${theme}.png`),
     });
   });
 
@@ -901,9 +879,8 @@ test("390 px: focus runs through the page, the bottom tabs, then Evara; Evara op
     page.getByRole("region", { name: "Upcoming steps" }),
   ).toBeVisible();
   const bar = page.locator("nav.farm-bottom-tabs");
-  // The header also carries an Evara button (the model activity indicator); this is the floating launcher.
-  const evara = page.locator(".assistant-launcher");
-  await bar.getByRole("link", { name: "Farm", exact: true }).focus();
+  const evara = bar.getByRole("button", { name: "Evara assistant", exact: true });
+  await bar.getByRole("link", { name: "All farms", exact: true }).focus();
   await page.keyboard.press("Tab");
   await expect(evara).toBeFocused();
   await page.keyboard.press("Enter");
@@ -926,14 +903,14 @@ test("390 px: the More menu holds add a farm, crop library and manage farms", as
   const more = page.getByRole("button", { name: "More", exact: true });
   await expect(more).toHaveAttribute("aria-expanded", "false");
   await expect(
-    page.getByRole("link", { name: "Manage farms", exact: true }),
+    page.getByRole("link", { name: "Modify farm", exact: true }),
   ).toHaveCount(0);
   const box = (await more.boundingBox())!;
   expect(box.width).toBeGreaterThanOrEqual(44);
   expect(box.height).toBeGreaterThanOrEqual(44);
   await more.click();
   await expect(more).toHaveAttribute("aria-expanded", "true");
-  for (const name of ["Add a farm", "Crops for your farm", "Manage farms"])
+  for (const name of ["Add a farm", "Crops for your farm", "Modify farm"])
     await expect(page.getByRole("link", { name, exact: true })).toBeVisible();
   await page.keyboard.press("Escape");
   await expect(more).toHaveAttribute("aria-expanded", "false");
@@ -946,14 +923,12 @@ test("390 px: the More menu holds add a farm, crop library and manage farms", as
   await expect(
     page.locator("nav.farm-bottom-tabs").locator('[aria-current="page"]'),
   ).toHaveCount(0);
-  await page
-    .locator("nav.farm-bottom-tabs")
-    .getByRole("link", { name: "Plan", exact: true })
-    .click();
+  await more.click();
+  await page.locator("#more-menu-panel").getByRole("link", { name: "Plan", exact: true }).click();
   await expect(page).toHaveURL(/\/farm\?tab=year$/);
 });
 
-test("1280 px keeps the icon rail and the top tab row, with no bottom bar", async ({
+test("1280 px keeps a slim primary rail and More, with all farm tabs visible", async ({
   page,
 }) => {
   await page.setViewportSize({ width: 1280, height: 900 });
@@ -965,68 +940,53 @@ test("1280 px keeps the icon rail and the top tab row, with no bottom bar", asyn
   ).toBeVisible();
   const rail = page.locator(".sidebar");
   await expect(rail).toBeVisible();
-  expect((await rail.boundingBox())!.width).toBe(72);
+  expect((await rail.boundingBox())!.width).toBe(78);
   for (const name of [
-    "Farm workspace",
-    "Add a farm",
-    "Crops for your farm",
-    "Manage farms",
+    "Today",
+    "All farms",
   ])
     await expect(
       rail.getByRole("link", { name, exact: true }),
     ).toBeVisible();
-  await expect(farmViews(page)).toHaveCount(1);
+  await expect(farmViews(page)).toBeVisible();
   await expect(page.locator("nav.farm-context-tabs")).toBeVisible();
   await expect(page.locator("nav.farm-bottom-tabs")).toBeHidden();
-  await expect(page.getByRole("button", { name: "More", exact: true })).toBeHidden();
+  await expect(page.getByRole("button", { name: "More", exact: true })).toBeVisible();
   const main = (await page.locator(".app-body").boundingBox())!;
-  expect(main.x).toBe(72);
+  expect(main.x).toBe(116);
   expect(await noHorizontalScroll(page)).toBe(true);
   await page.screenshot({
-    path: "../../docs/reference/redesign/shell-desktop-light.png",
+    path: test.info().outputPath("shell-desktop-dark.png"),
   });
 });
 
-test("tabs switch by click and by keyboard, and only the selected tab is current", async ({
-  page,
-}) => {
+test("More opens Plan, secondary tabs retain keyboard order, and Today retains the same farm tabs", async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 900 });
   await fixture(page, { today: true });
   await page.goto("/farm");
+  await expect(farmViews(page)).toBeVisible();
+  await expect(primaryViews(page).getByRole("link", { name: "Today", exact: true })).toHaveAttribute("aria-current", "page");
+  await openMore(page, "Plan");
+  await expect(page).toHaveURL(/\/farm\?tab=year$/);
   const tabs = farmViews(page);
   const link = (name: string) => tabs.getByRole("link", { name, exact: true });
-  await expect(link("Today")).toHaveAttribute("aria-current", "page");
-  expect(await tabs.locator('[aria-current="page"]').count()).toBe(1);
-  await link("Plan").click();
-  await expect(page).toHaveURL(/\/farm\?tab=year$/);
   await expect(link("Plan")).toHaveAttribute("aria-current", "page");
-  expect(await tabs.locator('[aria-current="page"]').count()).toBe(1);
+  await link("Today").focus();
+  for (const name of ["Actions", "Plan", "Market", "Farm", "Modify"]) {
+    await page.keyboard.press("Tab");
+    await expect(link(name)).toBeFocused();
+  }
   await link("Market").focus();
   await page.keyboard.press("Enter");
   await expect(page).toHaveURL(/\/farm\?tab=harvest$/);
   await expect(link("Market")).toHaveAttribute("aria-current", "page");
-  await expect(
-    page.getByRole("heading", { name: "Market timeline", exact: true }),
-  ).toBeVisible();
-  await expect(
-    page.getByText("Wider market context (FAO monthly bulletin)", { exact: true }),
-  ).toBeVisible();
-  await link("Farm").focus();
-  await page.keyboard.press("Enter");
-  await expect(page).toHaveURL(/\/farm\?tab=soil$/);
-  await expect(
-    page.getByRole("heading", { name: "Which crop fits next?", level: 2 }),
-  ).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Market timeline", exact: true })).toBeVisible();
+  await link("Farm").click();
+  await expect(page.getByRole("heading", { name: "Which crop fits next?", level: 2 })).toBeVisible();
   await link("Today").click();
   await expect(page).toHaveURL(/\/farm\?tab=today$/);
-  await expect(link("Today")).toHaveAttribute("aria-current", "page");
-  expect(await tabs.locator('[aria-current="page"]').count()).toBe(1);
-  // Tab order inside the row is the visual order.
-  await link("Today").focus();
-  for (const name of ["Plan", "Market", "Farm"]) {
-    await page.keyboard.press("Tab");
-    await expect(link(name)).toBeFocused();
-  }
+  await expect(tabs).toBeVisible();
+  await expect(primaryViews(page).getByRole("link", { name: "Today", exact: true })).toHaveAttribute("aria-current", "page");
 });
 
 test("legacy routes open the matching tab and Farm section", async ({
@@ -1048,6 +1008,8 @@ test("legacy routes open the matching tab and Farm section", async ({
         `${path} selects ${section}`,
       ).toHaveAttribute("aria-current", "page");
   };
+  await expectTab("/farm/manage", "Modify");
+  await expectTab("/farm?tab=modify", "Modify");
   await expectTab("/planner", "Plan");
   await expectTab("/outlook", "Market");
   await expectTab("/farm/settings", "Farm", "Soil records");
@@ -1086,7 +1048,7 @@ test("farm query views react to navigation and survive a fresh reload", async ({
     page.getByRole("region", { name: "Your field", exact: true }),
   ).toBeVisible();
   await expect(cropFit).toHaveCount(0);
-  await tabs.getByRole("link", { name: "Farm", exact: true }).click();
+  await openMore(page, "Farm · crop fit");
   await expect(cropFit).toBeVisible();
   await expect(page.locator(".cf-card")).toHaveCount(3);
   await page.reload();
@@ -1229,7 +1191,7 @@ for (const mode of ["light", "dark"] as const)
       ),
     ).toBe(true);
     await page.screenshot({
-      path: `../../docs/reference/redesign/brand-${mode}-fixture.png`,
+      path: test.info().outputPath(`brand-${mode}-fixture.png`),
       fullPage: true,
     });
   });

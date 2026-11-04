@@ -4,7 +4,7 @@ import {z} from 'zod';
 import {REPO_ROOT} from '../catalogue/files';
 import {ApiError} from './errors';
 import {sha256Hex} from './hash';
-const Reference=z.object({registryId:z.string().optional(),status:z.enum(['active','retired','pending_verification']),title:z.string(),sourceUrl:z.url(),localPath:z.string(),sourcePages:z.array(z.number().int().positive()).min(1),fileSha256:z.string().regex(/^[a-f0-9]{64}$/),limitations:z.array(z.string()),extractionScope:z.object({sampleLabel:z.string(),description:z.string(),markerLimit:z.number().int().min(1).max(100)}).strict().optional()}).passthrough();
+const Reference=z.object({registryId:z.string().optional(),status:z.enum(['active','retired','pending_verification']),title:z.string(),sourceUrl:z.url().nullable(),classifyUploadsAsReference:z.boolean().default(true),localPath:z.string(),sourcePages:z.array(z.number().int().positive()).min(1),fileSha256:z.string().regex(/^[a-f0-9]{64}$/),limitations:z.array(z.string()),extractionScope:z.object({sampleLabel:z.string(),description:z.string(),markerLimit:z.number().int().min(1).max(100)}).strict().optional()}).passthrough();
 export type PublicSoilReference=z.infer<typeof Reference>;
 const root=resolve(REPO_ROOT,'data/research/soil-crop');
 /** Local, reviewed registry only. No user-supplied URL is fetched. Retired hashes stay isolated. */

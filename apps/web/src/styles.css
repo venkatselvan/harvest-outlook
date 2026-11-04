@@ -922,7 +922,7 @@ label {
   color: var(--text);
   margin-bottom: 16px;
 }
-input:not([type="checkbox"]):not([type="range"]),
+input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
 select,
 textarea {
   display: block;

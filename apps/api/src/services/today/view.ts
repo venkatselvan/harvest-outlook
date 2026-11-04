@@ -1,3 +1,4 @@
+import { queueSeasonPredictions } from './season-predictions';
 /**
  * Today view aggregator (Stream B, docs/research/TODAY_VIEW_SPEC.md, UI_BRIEF section 3.1): one owner-scoped read that
  * composes the stage timeline, satellite scenes and health, price and weather tracks along the slider, alerts, upcoming
@@ -350,23 +351,26 @@ function illustrationScenes(all: ReadyFutureLook[], cycle: Cycle, timeline: Stag
  * looks made for another crop on this cycle id are skipped. Owner-private image path, `?fieldId=` when the cycle names a field.
  */
 export function predictedScenes(all: ReadyFutureLook[], cycle: Cycle, timeline: StageTimeline | null, readings: Map<string, NdviReading>): {scenes: SceneRef[]; skipped: number} {
-  const byWeek = new Map<string, ReadyFutureLook>();
+  const history: ReadyFutureLook[] = [];
   let skipped = 0;
   for (const l of all) {
     if (l.kind !== 'gap') continue;
     if (!l.targetDate || l.cropId !== cycle.cropId) { skipped++; continue; }
-    const wk = weekStart(l.targetDate);
-    const prev = byWeek.get(wk);
-    if (!prev || prev.createdAt < l.createdAt) byWeek.set(wk, l);
+    history.push(l);
   }
+  history.sort((a,b) => a.createdAt.localeCompare(b.createdAt));
   const fieldQuery = cycle.fieldId ? `?fieldId=${encodeURIComponent(cycle.fieldId)}` : '';
-  const scenes = [...byWeek.values()].map((l): SceneRef => {
+  const byDate = new Map<string,ReadyFutureLook[]>();
+  for (const look of history) byDate.set(look.targetDate!,[...(byDate.get(look.targetDate!) ?? []),look]);
+  // Keep the earliest expectation and latest revision per target in the bounded Today payload; all revisions remain stored.
+  const visible = [...byDate.values()].flatMap(rows => rows.length > 1 ? [rows[0]!,rows.at(-1)!] : rows).sort((a,b)=>a.createdAt.localeCompare(b.createdAt));
+  const scenes = visible.map((l): SceneRef => {
     const src = readings.get(l.sourceItemId);
     return {
       date: l.targetDate!, kind: 'predicted', itemId: null, acquisitionDate: src?.date ?? itemDate(l.sourceItemId), cloudPct: src?.sceneCloudPct ?? null,
       imagePath: `${l.imagePath}${fieldQuery}`, ndviImagePath: null, derivedFromItemId: l.sourceItemId,
       stageId: timeline ? stageAt(timeline, l.targetDate!).stage?.id ?? null : null,
-      targetDate: l.targetDate!, ...(l.guidance ? {guidance: cap(l.guidance, 400)} : {}),
+      targetDate: l.targetDate!, generatedAt:l.createdAt, ...(l.guidance ? {guidance: cap(l.guidance, 400)} : {}),
     };
   });
   return {scenes, skipped};
@@ -578,27 +582,24 @@ const alertSteps = (alerts: FarmAlert[], today: string): UpcomingStep[] => alert
 
 /**
  * Field checks as upcoming steps (FIELD_OPERATIONS_SPEC.md 4.2). Completed checks only when completed today (the care task
- * rule). Titles: "Walk the field: <crop> on <field>" and "Recheck: <issue title>".
+ * rule). Titles: "Check <crop> on <field>" and "Recheck: <issue title>".
  */
 export function fieldCheckSteps(checks: readonly FieldCheck[], issues: readonly Pick<FieldIssue, 'id' | 'title'>[], fields: readonly Pick<FarmField, 'id' | 'name'>[], today: string): UpcomingStep[] {
   const steps: UpcomingStep[] = [];
   for (const c of checks) {
     if (c.status === 'completed' && c.completedOn !== today) continue;
-    const risks = c.checklist.filter((i) => i.kind === 'risk_window').length;
-    const general = 'The general prompts are not crop-specific advice.';
-    const riskText = risks ? ` ${risks} sourced seasonal risk window${risks > 1 ? 's are' : ' is'} on the checklist.` : '';
-    if (c.kind === 'interval') {
+    if (c.kind !== 'recheck') {
       const field = c.fieldId ? fields.find((f) => f.id === c.fieldId)?.name ?? null : null;
       steps.push({
-        id: cap(c.id, 160), kind: 'field_check', title: cap(`Walk the field: ${c.cropName ?? 'your crop'}${field ? ` on ${field}` : ''}`, 160),
-        detail: cap(`Your check interval: every ${c.intervalDays ?? 7} days (your own setting).${riskText} ${general}`, 1000),
+        id: cap(c.id, 160), kind: 'field_check', title: cap(`Check ${c.cropName ?? 'your crop'}${field ? ` on ${field}` : ''}`, 160),
+        detail: cap([c.reason, ...c.checklist.map(i => i.text)].filter(Boolean).join('. '), 1000),
         dueFrom: c.dueFrom, dueTo: c.dueTo, status: c.status, careTask: null, alertId: null, fieldCheck: c,
       });
     } else {
       const title = issues.find((i) => i.id === c.issueId)?.title ?? 'an issue you logged';
       steps.push({
         id: cap(c.id, 160), kind: 'field_check', title: cap(`Recheck: ${title}`, 160),
-        detail: cap(`The recheck date you set when you recorded what you did.${riskText} ${general}`, 1000),
+        detail: cap(`The recheck date you set when you recorded what you did.`, 1000),
         dueFrom: c.dueFrom, dueTo: c.dueTo, status: c.status, careTask: null, alertId: null, fieldCheck: c, issueId: c.issueId,
       });
     }
@@ -742,13 +743,13 @@ function horizonFilter(steps: UpcomingStep[], today: string): {kept: UpcomingSte
 }
 
 const STATUS_RANK: Record<UpcomingStep['status'], number> = {overdue: 0, due: 1, upcoming: 2, completed: 3};
-const preferredTier = (st: UpcomingStep) => (st.kind === 'care_task' || st.kind === 'alert_step' ? 0 : 1);
+const preferredTier = (st: UpcomingStep) => st.kind === 'field_check' ? 0 : st.kind === 'care_task' || st.kind === 'alert_step' ? 1 : 2;
 const byStatusThenDate = (a: UpcomingStep, b: UpcomingStep) => STATUS_RANK[a.status] - STATUS_RANK[b.status] || a.dueFrom.localeCompare(b.dueFrom) || preferredTier(a) - preferredTier(b) || a.dueTo.localeCompare(b.dueTo) || a.id.localeCompare(b.id);
-/** List order: overdue, due, upcoming by dueFrom, completed (care tasks and alert steps first on ties). */
+/** List order: overdue, due, upcoming by dueFrom, completed (field checks, then care and alert actions on ties). */
 export const orderSteps = (steps: readonly UpcomingStep[]): UpcomingStep[] => [...steps].sort(byStatusThenDate);
-/** The step to do next: the first open care task or alert step in list order, else the first open stage check or transition. */
+/** Choose overdue/due work before future work; condition checks lead at the same urgency, then care and alert actions. */
 export function pickNextAction(steps: readonly UpcomingStep[]): UpcomingStep | null {
-  return [...steps].filter((st) => st.status !== 'completed').sort((a, b) => preferredTier(a) - preferredTier(b) || byStatusThenDate(a, b))[0] ?? null;
+  return [...steps].filter((st) => st.status !== 'completed').sort((a, b) => STATUS_RANK[a.status] - STATUS_RANK[b.status] || preferredTier(a) - preferredTier(b) || byStatusThenDate(a, b))[0] ?? null;
 }
 
 // ------------------------------------------------------------------ fields (FIELDS_MULTICROP_SOIL_SPEC.md 3.3)
@@ -963,14 +964,19 @@ export async function todayView(deps: TodayViewDeps, ownerId: string, farmId: st
   if (checks.undated) careNotes.push(`${checks.undated} stage check${checks.undated > 1 ? 's are' : ' is'} not listed because this crop has no stage timeline to date ${checks.undated > 1 ? 'them' : 'it'} from.`);
   if (extra.older) careNotes.push(`${extra.older} dated guidance step${extra.older > 1 ? 's' : ''} that ended more than ${OVERDUE_LOOKBACK_DAYS} days ago ${extra.older > 1 ? 'are' : 'is'} not listed.`);
   if (extra.later) careNotes.push(`${extra.later} later guidance step${extra.later > 1 ? 's appear' : ' appears'} when ${extra.later > 1 ? 'their' : 'its'} window is within ${UPCOMING_HORIZON_DAYS} days.`);
-  // Field checks (FIELD_OPERATIONS_SPEC.md 4.2): the described cycle's interval check and in-scope rechecks.
+  // Field checks (FIELD_OPERATIONS_SPEC.md 4.2): the described cycle's condition checks and in-scope rechecks.
   const scope = viewScope(workspace, selected?.id ?? null);
   const fieldChecks = scouting ? viewChecks(scouting.checks, scope, cycle?.id ?? null) : [];
   const checks14 = horizonFilter(fieldCheckSteps(fieldChecks, scouting?.issues ?? [], fields, today), today);
   if (checks14.older) careNotes.push(`${checks14.older} field check${checks14.older > 1 ? 's' : ''} overdue by more than ${OVERDUE_LOOKBACK_DAYS} days ${checks14.older > 1 ? 'are' : 'is'} not listed under upcoming steps; ${checks14.older > 1 ? 'they are' : 'it is'} in the field checks list.`);
-  if (checks14.later) careNotes.push(`The next field check is due more than ${UPCOMING_HORIZON_DAYS} days ahead (your check interval) and appears when it is closer.`);
+  if (checks14.later) careNotes.push(`Later issue rechecks appear within ${UPCOMING_HORIZON_DAYS} days of their due date.`);
   const transition = cycle ? stageStep(cycle, timeline, today) : null;
-  const ordered = orderSteps([...alertSteps(alerts?.alerts ?? [], today), ...(transition ? [transition] : []), ...care14.steps, ...extra.kept, ...checks14.kept]);
+  // An alert already represented by a field check must not become a second action
+  // (including a completed event outside the visible history window).
+  const representedAlerts = new Set([...fieldChecks, ...(scouting?.rows.completions ?? [])
+    .filter(c => c.cycle_id === cycle?.id).flatMap(c => c.check_snapshot ? [c.check_snapshot] : [])]
+    .flatMap(c => c.checklist.flatMap(i => i.alertId ? [i.alertId] : [])));
+  const ordered = orderSteps([...alertSteps((alerts?.alerts ?? []).filter(a => !representedAlerts.has(a.id)), today), ...(transition ? [transition] : []), ...care14.steps, ...extra.kept, ...checks14.kept]);
   const nextAction = pickNextAction(ordered);
   // Truncation keeps the next action and the stage transition in the list.
   const pinned = new Set([nextAction, transition].filter((x): x is UpcomingStep => !!x));
@@ -1086,6 +1092,9 @@ export async function todayView(deps: TodayViewDeps, ownerId: string, farmId: st
       const pending = await p.pendingGapLooks({config: deps.config, pool: deps.pool, now}, ownerId, farmId, cycle.id);
       return {autoRequested, pending, reason: reason === null ? null : cap(reason, 80)};
     }, null);
+  }
+  if (mode === 'live' && cycle && opts.predictions !== 'off') {
+    await guard('The milestone previews', () => queueSeasonPredictions({pool:deps.pool,config:deps.config}, {ownerId,farmId,cycleId:cycle.id}), null);
   }
   composed.predictions = predictions;
 

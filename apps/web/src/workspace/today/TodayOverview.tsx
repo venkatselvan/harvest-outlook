@@ -46,56 +46,74 @@ export function TodayOverview(props: { overview: OverviewData | null | undefined
     const o = props.overview;
     return o && o.status !== "unavailable" && (o.headline || o.points.length) ? o : null;
   };
+  const lead = () => shown()?.points.find((point) => point.kind === "do_now") ?? shown()?.points.find((point) => point.kind === "watch");
+  const leadTarget = () => lead() ? pointTarget(lead()!) : null;
+  const activate = (target: PointTarget) => {
+    if (target.kind === "dom") jumpTo(target.domId);
+    else props.onDetails(target.card);
+  };
+  const pointRow = (point: OverviewPoint) => {
+    const target = pointTarget(point);
+    return (
+      <li class="today-overview-point" data-kind={point.kind}>
+        <span class="today-chip today-overview-chip">{POINT_KIND_LABEL[point.kind]}</span>
+        <Show when={target} fallback={<span class="today-overview-text">{point.text}</span>}>
+          {(t) => (
+            <button
+              type="button"
+              class="today-overview-text today-overview-button"
+              data-ref-kind={point.ref!.kind}
+              data-ref-id={point.ref!.id}
+              data-target={t().kind === "dom" ? (t() as { domId: string }).domId : undefined}
+              onClick={() => {
+                activate(t());
+              }}
+            >
+              <span>{point.text}</span>
+              <span class="today-sr"> ({t().hint})</span>
+              <Icon name="arrow" size={12} />
+            </button>
+          )}
+        </Show>
+      </li>
+    );
+  };
   return (
     <Show when={shown()}>
       {(overview) => (
         <section class={`today-overview ${overview().status}`} aria-labelledby="today-overview-title" data-testid="today-overview">
-          <div class="today-overview-head">
-            <h2 id="today-overview-title">Today for you</h2>
-            <Show when={showsAiMark(overview())}>
-              <AiSpark use="today_overview" size={14} />
+          <div class="today-overview-brief">
+            <div class="today-overview-head">
+              <h2 id="today-overview-title">Today for you</h2>
+              <Show when={showsAiMark(overview())}>
+                <AiSpark use="today_overview" size={14} />
+              </Show>
+            </div>
+            <Show when={overview().headline || lead()?.text}>
+              <p class="today-overview-headline">{overview().headline || lead()?.text}</p>
+            </Show>
+            <Show when={leadTarget()}>
+              {(target) => <button type="button" class="btn compact secondary today-overview-action" onClick={() => activate(target())}>
+                {lead()?.ref?.kind === "step" ? "Review next step" : lead()?.ref?.kind === "alert" ? "Review alert" : "View details"}
+                <Icon name="arrow" size={14} />
+              </button>}
             </Show>
           </div>
-          <Show when={overview().headline}>
-            <p class="today-overview-headline">{overview().headline}</p>
-          </Show>
           <Show when={overview().status === "pending"}>
             <p class="today-overview-pending" aria-live="polite" data-testid="today-overview-pending">
               Updating with AI…
             </p>
           </Show>
-          <ol class="today-overview-points">
-            <For each={overview().points}>
-              {(point) => {
-                const target = pointTarget(point);
-                return (
-                  <li class="today-overview-point" data-kind={point.kind}>
-                    <span class="today-chip today-overview-chip">{POINT_KIND_LABEL[point.kind]}</span>
-                    <Show when={target} fallback={<span class="today-overview-text">{point.text}</span>}>
-                      {(t) => (
-                        <button
-                          type="button"
-                          class="today-overview-text today-overview-button"
-                          data-ref-kind={point.ref!.kind}
-                          data-ref-id={point.ref!.id}
-                          data-target={t().kind === "dom" ? (t() as { domId: string }).domId : undefined}
-                          onClick={() => {
-                            const resolved = t();
-                            if (resolved.kind === "dom") jumpTo(resolved.domId);
-                            else props.onDetails(resolved.card);
-                          }}
-                        >
-                          <span>{point.text}</span>
-                          <span class="today-sr"> ({t().hint})</span>
-                          <Icon name="arrow" size={12} />
-                        </button>
-                      )}
-                    </Show>
-                  </li>
-                );
-              }}
-            </For>
-          </ol>
+          {/* Keep the entire brief and all its original references, with urgent notes first. */}
+          <Show when={overview().points.length}>
+            <details class="today-overview-more">
+              <summary>Notes and updates <span>{overview().points.length} notes<Show when={overview().points.some((point) => point.kind === "watch")}> · Watch updates</Show></span><Icon name="down" size={15} /></summary>
+              <ol class="today-overview-points">
+                <For each={overview().points.filter((point) => point.kind === "do_now" || point.kind === "watch")}>{pointRow}</For>
+                <For each={overview().points.filter((point) => point.kind !== "do_now" && point.kind !== "watch")}>{pointRow}</For>
+              </ol>
+            </details>
+          </Show>
         </section>
       )}
     </Show>

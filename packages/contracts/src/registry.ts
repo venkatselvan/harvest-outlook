@@ -1,3 +1,4 @@
+import { FieldPhoto, FieldPhotoPrediction, FieldPhotoGallery, FieldPhotoGuidance, SaveFieldPhotos, FieldPhotoCoverage } from "./field-photos";
 import type { z } from 'zod';
 import { ApiError, DateRange, GeoPoint, SpatialScope, Unit } from './common';
 import { CoverageRecord } from './coverage';
@@ -15,6 +16,7 @@ import {CommodityCatalogue,PricedCommodity,ResearchedCropProfile} from './commod
 import { WaterBalanceInput, WaterBalanceResult } from './water';
 import {FarmCommandCenter,PlantCrop,PlantCropResult,CompleteCareTask,CompleteCareTaskResult,FocusedCrop,CareTask,SoilCropFit,PriorYearMarket} from './command-center';
 import { TodayView } from './today';
+import { FarmSummary } from './farm-summary';
 import { MarketTimeline } from './market';
 import { CropFitReview } from './crop-fit';
 import { SoilReview } from './soil-review';
@@ -31,7 +33,9 @@ import { SeasonReport } from './season-report';
  * Keys become file names under packages/contracts/schema/.
  */
 export const PUBLIC_CONTRACTS: Record<string, z.ZodType> = {
-  TodayView,FarmAlert,FarmAlerts,NdviSeries,NeighbourhoodSeasonality,PriceSeries,HarvestPriceOutlook,PriceTrend,StageTimeline,YearPlanReview,YearPlanOption,RescoreYearPlan,ApplyYearPlan,ApplyYearPlanResult,FutureLookAsset,MarketTimeline,CropFitReview,SoilReview,SeasonPreview,SeasonReport,
+  FieldPhoto, FieldPhotoPrediction, FieldPhotoGallery, FieldPhotoGuidance, SaveFieldPhotos, FieldPhotoCoverage,
+  TodayView,
+  FarmSummary,FarmAlert,FarmAlerts,NdviSeries,NeighbourhoodSeasonality,PriceSeries,HarvestPriceOutlook,PriceTrend,StageTimeline,YearPlanReview,YearPlanOption,RescoreYearPlan,ApplyYearPlan,ApplyYearPlanResult,FutureLookAsset,MarketTimeline,CropFitReview,SoilReview,SeasonPreview,SeasonReport,
   FarmCommandCenter,PlantCrop,PlantCropResult,CompleteCareTask,CompleteCareTaskResult,FocusedCrop,CareTask,SoilCropFit,PriorYearMarket,
   SoilReportedReference,SoilParameter,SoilMarkerDraft,SoilSampleDraft,SoilReportExtraction,SoilCanonicalValue,SoilMarker,SoilReport,ReviewSoilReport,ConfirmSoilReport,FarmSoilMarkers,CommodityCatalogue,PricedCommodity,ResearchedCropProfile,
   CurrentMandiQuotes,

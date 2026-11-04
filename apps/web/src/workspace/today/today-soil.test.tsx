@@ -112,6 +112,19 @@ describe("provenanceOf", () => {
 });
 
 describe("the card", () => {
+  it("keeps exact soil values and ratings visible while report bands start collapsed", () => {
+    const markup = card(reviewState(readyModelReview));
+    const detailStart = markup.indexOf('<details class="today-soil-details">');
+    const visible = markup.slice(0, detailStart);
+    expect(detailStart).toBeGreaterThan(0);
+    expect(visible).toContain('aria-label="Confirmed soil values"');
+    expect(visible.match(/class="today-soil-compact-row"/g)).toHaveLength(5);
+    expect(visible).toContain("Collected 15 Sep 2026");
+    expect(visible).not.toContain("sb-bar");
+    expect(markup).toContain("Rating bands &amp; report details");
+    expect(markup.slice(detailStart)).toContain("sb-bar");
+    expect(markup).not.toContain('<details class="today-soil-details" open');
+  });
   it("rated review: rows in order with zone names, rating chips, a bar per row, provenance, and the AI mark only for a model narrative", () => {
     const model = card(reviewState(readyModelReview));
     // Fixture parameters are ph, ec, nitrogen_unspecified, organic_matter, phosphorus_total, potassium_total: none is a priority id except pH, so the rest follow stored order.
@@ -136,7 +149,7 @@ describe("the card", () => {
 
   it("pending review: calculated rows with an aria-live line and the AI mark", () => {
     const pending = card(reviewState(pendingSoilReview, true));
-    expect(pending).toContain("Rating your soil values…");
+    expect(pending).toContain("Updating soil summary…");
     expect(pending).toMatch(/aria-live="polite"[^>]*data-testid="today-soil-pending"/);
     expect(pending).toContain("ai-spark");
     expect([...pending.matchAll(/class="sb-bar/g)]).toHaveLength(5);

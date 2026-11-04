@@ -12,6 +12,7 @@ import type {
 } from "@harvest/contracts";
 import { Icon } from "../icons";
 import { AiSpark } from "../ui/AiSpark";
+import { stepDomId } from "./UpcomingSteps";
 import {
   carbonTermLine,
   co2eParts,
@@ -27,25 +28,21 @@ import {
   formatInr,
   formatRain,
   formatTemp,
-  formatTonnesRange,
   indexLine,
   inrRangeText,
   lpgEquivalent,
-  nextStage,
   orderResidueOptions,
   priceTrend,
   profitValue,
   rangeLabel,
   rankChip,
   residueTitle,
-  RESIDUE_ALTERNATIVES,
   revenueValue,
   shortInrRange,
   spokenCo2e,
   spokenIndex,
   spokenInr,
   unavailableReason,
-  yieldBasisWords,
   type PriceTrend,
 } from "./model";
 
@@ -61,6 +58,8 @@ export interface TodayCardsProps {
   weather: WeatherPoint | null;
   /** Show only the weather and vegetation cards (no current crop). */
   weatherOnly?: boolean;
+  /** Reuse the same cards in the dashboard's field, conditions, outlook and reference sections. */
+  group?: "field" | "conditions" | "outlook" | "planning";
   onDetails: (kind: CardKind) => void;
 }
 
@@ -188,34 +187,11 @@ function Card(props: { kind: CardKind; title: string; class?: string; children: 
 function HarvestCard(props: { view: TodayView; onDetails: (kind: CardKind) => void }) {
   const days = () => props.view.daysToHarvest;
   const harvest = () => props.view.timeline?.harvest ?? null;
-  const next = () => nextStage(props.view.timeline, props.view.today);
   return (
-    <Card kind="harvest" title="Days to harvest" onDetails={props.onDetails}>
-      <Show
-        when={days()}
-        fallback={<Value short="–" spoken="Harvest date not estimated" />}
-      >
-        {(d) => (
-          <Show
-            when={d().latest >= 0}
-            fallback={<Value short="Due" spoken="Past the expected harvest window" />}
-          >
-            <Show
-              when={d().earliest > 0}
-              fallback={<Value short="Now" spoken={`Harvest window open, up to ${d().latest} more days`} />}
-            >
-              <Value short={d().earliest === d().latest ? `${d().earliest}` : `${d().earliest}–${d().latest}`} spoken={`${d().earliest} to ${d().latest} days`} unit=" days" />
-            </Show>
-          </Show>
-        )}
-      </Show>
-      <p class="today-card-sub">
-        {harvest() ? `Harvest ${rangeLabel(harvest()!.earliest, harvest()!.latest)}` : "Harvest window not estimated"}
-      </p>
-      <Show when={next()}>
-        <p class="today-card-sub">Next: {next()!.name} on {formatDay(next()!.from, false)}</p>
-      </Show>
-      <p class="today-card-basis">{props.view.timeline?.basis.label ?? "No stage dates for this crop yet"}</p>
+    <Card kind="harvest" title="Harvest window" onDetails={props.onDetails}>
+      <p class="today-harvest-window">{harvest() ? rangeLabel(harvest()!.earliest, harvest()!.latest) : "Window not estimated"}</p>
+      <Show when={days()}>{(d) => <p class="today-card-sub today-harvest-days">{d().latest < 0 ? "Past the calendar window" : d().earliest <= 0 ? `Window open · up to ${d().latest} more days` : `${d().earliest}–${d().latest} days to prepare`}</p>}</Show>
+      <p class="today-card-qualifier">Calendar estimate</p>
     </Card>
   );
 }
@@ -252,7 +228,7 @@ function PriceCard(props: { view: TodayView; date: string; price: PricePoint | n
     return point;
   };
   return (
-    <Card kind="price" title="Expected price at harvest" onDetails={props.onDetails}>
+    <Card kind="price" title="Harvest-week price" onDetails={props.onDetails}>
       <Show
         when={range()}
         fallback={
@@ -270,8 +246,9 @@ function PriceCard(props: { view: TodayView; date: string; price: PricePoint | n
           />
         )}
       </Show>
-      <Show when={range()}>
-        <OutlookLine note={props.view.outlookNote ?? null} />
+      <p class="today-card-qualifier">Historical mandi range · not a farm-gate forecast</p>
+      <Show when={range() && props.view.outlookNote && props.view.outlookNote.status !== "unavailable"}>
+        <details class="today-price-context"><summary>Price context</summary><OutlookLine note={props.view.outlookNote ?? null} /></details>
       </Show>
       <Show when={atDate()}>
         {(point) => (
@@ -287,7 +264,7 @@ function PriceCard(props: { view: TodayView; date: string; price: PricePoint | n
           </p>
         )}
       </Show>
-      <p class="today-card-basis">{harvest()?.scopeLabel ?? "No price series for this product yet"}</p>
+
     </Card>
   );
 }
@@ -303,7 +280,7 @@ export function WeatherCard(props: { date: string; weather: WeatherPoint | null;
       onDetails={props.onDetails}
     >
       <div class="today-weather-row">
-        <Icon name={(point()?.rainMm ?? 0) >= 1 ? "rain" : "sun"} size={26} />
+        <Show when={usable() && point()!.rainMm != null}><Icon name={point()!.rainMm! >= 1 ? "rain" : "sun"} size={26} /></Show>
         <Show when={usable()} fallback={<Value short="–" spoken="No weather data" />}>
           <Value
             short={`${formatTemp(point()!.tMaxC)}/${formatTemp(point()!.tMinC)}`}
@@ -317,19 +294,13 @@ export function WeatherCard(props: { date: string; weather: WeatherPoint | null;
         </Show>
         <span class={`today-chip ${point()?.kind ?? "unavailable"}`}>{weatherKindLabel[point()?.kind ?? "unavailable"]}</span>
       </p>
-      <Show when={weatherAgroFacts(point()).length}>
-        <ul class="today-agro" data-testid="today-agro" aria-label={`More weather for this day. ${AGRO_LABEL}.`}>
-          <For each={weatherAgroFacts(point())}>
-            {(fact) => (
-              <li class={fact.id === "rain_chance" ? "today-chip agro" : "today-agro-item"} data-agro={fact.id} title={`${fact.spoken}. ${AGRO_LABEL} (${agroKindNote(point()!)}). ${AGRO_ATTRIBUTION}.`}>
-                <span aria-hidden="true">{fact.short}</span>
-                <span class="today-sr">{`${fact.spoken}. ${AGRO_LABEL}; ${agroKindNote(point()!)}.`}</span>
-              </li>
-            )}
-          </For>
-        </ul>
+      <Show when={usable() && point()!.agro?.rainProbabilityPct != null}>
+        <p class="today-weather-chance" aria-label={`${Math.round(point()!.agro!.rainProbabilityPct!)} percent rain chance. ${AGRO_LABEL}; ${agroKindNote(point()!)}.`} title={`${AGRO_LABEL}. ${AGRO_ATTRIBUTION}.`}>
+          {Math.round(point()!.agro!.rainProbabilityPct!)}% rain chance
+        </p>
       </Show>
-      <p class="today-card-basis">{weatherBasis(point())}</p>
+      <Show when={point()?.kind === "typical"}><p class="today-card-qualifier">Seasonal reference, not a forecast</p></Show>
+
     </Card>
   );
 }
@@ -368,45 +339,42 @@ export function IndexLine(props: { ndvi: NdviSeries | null; healthDate: string }
   );
 }
 
-export function HealthCard(props: { health: HealthReading | null; ndvi: NdviSeries | null; onDetails: (kind: CardKind) => void }) {
+/** The existing verdict has two possible reference bases; a neighbour comparison is never a stage diagnosis. */
+export function healthHeadline(health: HealthReading): string {
+  if (health.verdict === "no_reference") return "No comparison available";
+  if (health.typicalRange) return ({ above_typical: "Greener than the stage reference", near_typical: "Within the stage greenness range", below_typical: "Less green than the stage reference" })[health.verdict];
+  if (health.neighbourhoodMean == null) return "No comparison available";
+  return ({ above_typical: "Greener than nearby land", near_typical: "Similar greenness to nearby land", below_typical: "Less green than nearby land" })[health.verdict];
+}
+
+export function healthAction(view: TodayView): { label: string; href: string; detail: string } | null {
+  const alert = view.alerts.find((alert) => alert.type === "satellite" && alert.validFrom <= view.today && alert.validTo >= view.today &&
+    (view.field?.id ? alert.fieldId === view.field.id : !alert.fieldId) && alert.suggestedStep &&
+    view.upcoming.some((step) => step.alertId === alert.id && step.status !== "completed"));
+  const step = alert && view.upcoming.find((step) => step.alertId === alert.id && step.status !== "completed");
+  return alert?.suggestedStep && step ? { label: "Review suggested field check", detail: alert.suggestedStep, href: `#${stepDomId(step.id)}` } : null;
+}
+
+export function HealthCard(props: { health: HealthReading | null; ndvi: NdviSeries | null; action?: { label: string; href: string; detail?: string } | null; checksHref?: string; onDetails: (kind: CardKind) => void }) {
   return (
-    <Card kind="health" title="Vegetation health" onDetails={props.onDetails}>
-      <Show
-        when={props.health}
-        fallback={
-          <>
-            <Value short="–" spoken="No satellite reading yet" />
-            <p class="today-card-sub">No clear satellite reading yet</p>
-            <p class="today-card-basis">Sentinel-2 images every few days when cloud allows</p>
-          </>
-        }
-      >
-        {(h) => (
-          <>
-            <div class="today-weather-row">
-              <Value short={h().ndviMean.toFixed(2)} spoken={`NDVI ${h().ndviMean.toFixed(2)}`} unit=" NDVI" />
-            </div>
-            <p class="today-card-sub">
-              <span class={`today-chip verdict ${h().verdict}`}>{verdictLabel[h().verdict]}</span>
-            </p>
-            <Show when={h().typicalRange}>
-              <p class="today-card-sub">
-                typical {h().typicalRange!.low.toFixed(2)} to {h().typicalRange!.high.toFixed(2)}
-              </p>
-            </Show>
-            <p class="today-card-basis">
-              Image of {formatDay(h().date, false)}
-              <Show when={h().neighbourhoodMean != null}> · nearby fields {h().neighbourhoodMean!.toFixed(2)}</Show>
-              <Show when={props.ndvi?.smallField}> · small field, compare with nearby</Show>
-            </p>
-            <IndexLine ndvi={props.ndvi} healthDate={h().date} />
-          </>
-        )}
+    <Card kind="health" title="Crop condition" onDetails={props.onDetails}>
+      <Show when={props.health} fallback={<p class="today-health-headline">No clear satellite reading yet</p>}>
+        {(h) => <>
+          <p class={`today-health-headline ${h().verdict}`}>{healthHeadline(h())}</p>
+          <p class="today-health-reading">NDVI {h().ndviMean.toFixed(2)} · image of {formatDay(h().date, false)}</p>
+          <Show when={props.ndvi?.smallField}><p class="today-card-qualifier">Small field: few satellite pixels; compare with nearby land.</p></Show>
+          <p class="today-card-qualifier">Satellite signal, not a diagnosis</p>
+        </>}
+      </Show>
+      <Show when={props.action} fallback={<Show when={props.checksHref}><a class="today-card-action" href={props.checksHref}>View field checks <Icon name="arrow" size={12} /></a></Show>}>
+        {(action) => <a class="today-card-action" href={action().href} title={action().detail} onClick={(event) => {
+          const node = document.getElementById(action().href.slice(1));
+          if (node) { event.preventDefault(); node.scrollIntoView({ block: "center", behavior: "smooth" }); node.focus({ preventScroll: true }); }
+        }}>{action().label} <Icon name="arrow" size={12} /></a>}
       </Show>
     </Card>
   );
 }
-
 
 // ---------------------------------------------------------------- economics and footprint cards (TODAY_ECONOMICS_FOOTPRINT_SPEC section 6)
 
@@ -421,139 +389,45 @@ function NoFigure(props: { spoken: string; reason: string }) {
 }
 
 export function ProfitCard(props: { econ: HarvestEconomics; onDetails: (kind: CardKind) => void }) {
-  const econ = () => props.econ;
-  const value = () => profitValue(econ());
-  const revenue = () => revenueValue(econ());
-  const cost = () => costValue(econ());
-  const per = (scope: "field" | "ha") => (scope === "ha" ? " /ha" : "");
-  const spokenPer = (scope: "field" | "ha") => (scope === "ha" ? " per hectare" : " for the field");
-  const harvestLine = () => {
-    const harvest = econ().harvest;
-    if (harvest) return `Harvest around ${rangeLabel(harvest.earliest, harvest.latest)}`;
-    return econ().harvestDate ? `Harvest around ${formatDay(econ().harvestDate, false)}` : null;
+  const value = () => profitValue(props.econ);
+  const revenue = () => revenueValue(props.econ);
+  const cost = () => costValue(props.econ);
+  const pair = () => {
+    const v = value(), r = revenue(), c = cost();
+    return v?.kind === "profit" && r?.scope === v.scope && c?.scope === v.scope ? { value: v, revenue: r, cost: c } : null;
   };
-  const basisLine = () => {
-    const yieldRef = econ().basis.find((b) => b.kind === "yield_reference");
-    const yieldPart = yieldRef?.label ?? (econ().yieldBasis ? `Based on ${yieldBasisWords[econ().yieldBasis!]}` : null);
-    const pricePart = econ().price?.scopeLabel ?? null;
-    return [yieldPart, pricePart].filter(Boolean).join(" · ") || "Regional yield, price and cost references";
-  };
-  return (
-    <Card kind="profit" title="Expected profit at harvest" class="today-econ-card" onDetails={props.onDetails}>
-      <Show
-        when={econ().status !== "unavailable" ? value() : null}
-        fallback={<NoFigure spoken="No profit estimate" reason={unavailableReason(econ(), "Profit at harvest cannot be estimated for this crop yet.")} />}
-      >
-        {(v) => (
-          <>
-            <Show when={v().kind === "revenue"}>
-              <p class="today-card-sub today-econ-kind">Revenue before costs</p>
-            </Show>
-            <Value
-              short={compactInr(v().estimate.central)}
-              spoken={`${v().kind === "profit" ? "Expected profit" : "Expected revenue"}${spokenPer(v().scope)}, about ${spokenInr(v().estimate.central)}`}
-              unit={per(v().scope)}
-              econ
-            />
-            <p class="today-card-sub today-econ-band" data-testid="today-profit-band">
-              <Dual
-                short={`likely ${compactInrRange(v().estimate.likely.low, v().estimate.likely.high)}`}
-                spoken={`${inrRangeText(v().estimate.likely.low, v().estimate.likely.high)}, likely range`}
-              />
-            </p>
-            <Show when={harvestLine()}>
-              <p class="today-card-sub">{harvestLine()}</p>
-            </Show>
-            <Show
-              when={v().kind === "profit" && revenue() && cost() ? { revenue: revenue()!, cost: cost()! } : null}
-              fallback={
-                <Show when={v().kind === "revenue" || !cost()}>
-                  <p class="today-card-sub today-econ-cost">Cost not sourced</p>
-                </Show>
-              }
-            >
-              {(pair) => (
-                <p class="today-card-sub today-econ-cost">
-                  <Dual
-                    short={`Revenue ${compactInr(pair().revenue.estimate.central)} · cost ${compactInr(pair().cost.value)}${per(pair().cost.scope)}`}
-                    spoken={`Revenue ${spokenInr(pair().revenue.estimate.central)}, cost ${spokenInr(pair().cost.value)}${spokenPer(pair().cost.scope)}`}
-                  />
-                </p>
-              )}
-            </Show>
-          </>
-        )}
-      </Show>
-      <p class="today-card-basis">{basisLine()}</p>
-    </Card>
-  );
+  return <Card kind="profit" title="Expected profit at harvest" class="today-econ-card" onDetails={props.onDetails}>
+    <Show when={props.econ.status !== "unavailable" ? value() : null} fallback={<NoFigure spoken="No profit estimate" reason={unavailableReason(props.econ, "Profit at harvest cannot be estimated for this crop yet.")} />}>
+      {(v) => <>
+        <table class="today-profit-table" aria-label={pair() ? "Revenue minus costs equals profit" : "Revenue, costs and profit estimates"}>
+          <caption>{v().scope === "ha" ? "Per hectare" : "For this field"}</caption>
+          <tbody>
+            <tr><th scope="row">Revenue</th><td>{revenue()?.scope === v().scope ? formatInr(revenue()!.estimate.central) : "Not sourced for this scope"}</td></tr>
+            <tr><th scope="row">{pair() ? "− Costs" : "Costs"}</th><td>{cost()?.scope === v().scope ? formatInr(cost()!.value) : "Not sourced"}</td></tr>
+            <tr class="today-profit-total"><th scope="row">{pair() ? "= Profit" : "Profit estimate"}</th><td><Show when={v().kind === "profit"} fallback="Not available"><span aria-hidden="true">{compactInr(v().estimate.central)}{v().scope === "ha" ? " /ha" : ""}</span><span class="today-sr">Expected profit {v().scope === "ha" ? "per hectare" : "for the field"}, about {spokenInr(v().estimate.central)}</span></Show></td></tr>
+          </tbody>
+        </table>
+        <Show when={v().kind === "revenue"}><p class="today-card-sub today-econ-kind">Revenue before costs · cost not sourced; profit unavailable</p></Show>
+        <Show when={value()}><p class="today-card-sub today-econ-band" data-testid="today-profit-band"><Dual short={`likely ${compactInrRange(v().estimate.likely.low, v().estimate.likely.high)}${v().kind === "revenue" ? " revenue" : ""}`} spoken={`${inrRangeText(v().estimate.likely.low, v().estimate.likely.high)}, likely ${v().kind === "revenue" ? "revenue " : ""}range`} /></p></Show>
+        <Show when={v().kind === "profit" && !pair()}><p class="today-card-qualifier">Breakdown unavailable for this scope.</p></Show>
+        <p class="today-card-qualifier">Regional references · not a farm measurement</p>
+      </>}
+    </Show>
+  </Card>;
 }
 
 export function ResidueCard(props: { residue: ResidueIncome; onDetails: (kind: CardKind) => void }) {
-  const residue = () => props.residue;
-  const title = () => residueTitle(residue().residueName);
-  const options = () => orderResidueOptions(residue().options);
-  const best = () => options()[0] ?? null;
+  const best = () => orderResidueOptions(props.residue.options)[0] ?? null;
   const income = () => best()?.incomeForField ?? null;
-  const quantity = () => {
-    const name = residue().residueName ? residue().residueName!.charAt(0).toUpperCase() + residue().residueName!.slice(1) : "Residue";
-    const surplus = residue().surplusForFieldKg, all = residue().residueForFieldKg;
-    if (surplus && all) return `${name}: about ${formatTonnesRange(surplus)} surplus of ${formatTonnesRange(all)}`;
-    if (surplus) return `${name}: about ${formatTonnesRange(surplus)} surplus`;
-    return all ? `${name}: about ${formatTonnesRange(all)} in all` : null;
-  };
-  return (
-    <Card kind="residue" title={title()} class="today-residue-card" onDetails={props.onDetails}>
-      <Show
-        when={residue().status === "available" && best() ? best()! : null}
-        fallback={<NoFigure spoken="No residue income estimate" reason={unavailableReason(residue(), "Income from this crop's residue cannot be estimated yet.")} />}
-      >
-        {(option) => (
-          <>
-            <Show
-              when={income()}
-              fallback={
-                <>
-                  <Value short="–" spoken="No income estimate: no reported price for these uses" econ />
-                  <p class="today-card-sub today-residue-noprice">No reported price for these uses yet</p>
-                </>
-              }
-            >
-              {(range) => (
-                <>
-                  <Value
-                    short={compactInrRange(range().low, range().high)}
-                    spoken={`${inrRangeText(range().low, range().high)} for the field, as ${option().label}`}
-                    econ
-                  />
-                  <p class="today-card-sub today-residue-best">as {option().label}</p>
-                </>
-              )}
-            </Show>
-            <Show when={quantity()}>
-              <p class="today-card-sub today-residue-quantity">{quantity()}</p>
-            </Show>
-            <ul class="today-residue-options" aria-label="Ways to use the residue">
-              <For each={options()}>
-                {(o, i) => (
-                  <>
-                    <Show when={i() > 0}>
-                      <li class="today-residue-or" aria-hidden="true">or</li>
-                    </Show>
-                    <li class="today-chip today-residue-chip" classList={{ "is-best": i() === 0 }} data-use={o.use}>
-                      {o.label}
-                    </li>
-                  </>
-                )}
-              </For>
-            </ul>
-            <p class="today-card-sub today-residue-alt">{RESIDUE_ALTERNATIVES}</p>
-          </>
-        )}
-      </Show>
-      <p class="today-card-basis">Residue ratio and prices from published sources</p>
-    </Card>
-  );
+  return <Card kind="residue" title={residueTitle(props.residue.residueName)} class="today-residue-card" onDetails={props.onDetails}>
+    <Show when={props.residue.status === "available" && best() ? best()! : null} fallback={<NoFigure spoken="No residue income estimate" reason={unavailableReason(props.residue, "Income from this crop's residue cannot be estimated yet.")} />}>
+      {(option) => <>
+        <Show when={income()} fallback={<p class="today-card-sub">No reported price for these uses yet</p>}>{(range) => <Value short={compactInrRange(range().low, range().high)} spoken={`${inrRangeText(range().low, range().high)} for the field, as ${option().label}`} econ />}</Show>
+        <p class="today-card-sub today-residue-best">as {option().label}</p>
+        <p class="today-card-qualifier">One possible use · extra income before use-specific costs</p>
+      </>}
+    </Show>
+  </Card>;
 }
 
 export function EnergyCard(props: { energy: EnergyFootprint; residueName: string | null; onDetails: (kind: CardKind) => void }) {
@@ -662,23 +536,34 @@ export function CarbonCard(props: { carbon: CarbonFootprint; onDetails: (kind: C
 }
 
 export function TodayCards(props: TodayCardsProps) {
+  const checksHref = () => `/farm?tab=actions${props.view.field?.id ? `&field=${encodeURIComponent(props.view.field.id)}` : ""}`;
+  const includes = (group: NonNullable<TodayCardsProps["group"]>) => !props.group || props.group === group;
+  const label = () => ({ field: "Field condition", conditions: "Weather and harvest", outlook: "Harvest outlook", planning: "Planning references" })[props.group!] ?? "Field summary";
   return (
-    <section class="today-cards" aria-label="Field summary">
-      <Show when={!props.weatherOnly}>
-        <HarvestCard view={props.view} onDetails={props.onDetails} />
+    <section class="today-cards" data-card-group={props.group} aria-label={label()}>
+      <Show when={props.group === "outlook"}><h2 class="today-card-group-title">Harvest outlook</h2></Show>
+      <Show when={includes("field") && (!props.weatherOnly || props.view.health)}><HealthCard health={props.view.health} ndvi={props.view.ndvi} action={healthAction(props.view)} checksHref={checksHref()} onDetails={props.onDetails} /></Show>
+      <Show when={includes("conditions")}>
+        <WeatherCard date={props.date} weather={props.weather} onDetails={props.onDetails} />
+        <Show when={!props.weatherOnly}>
+          <HarvestCard view={props.view} onDetails={props.onDetails} />
+        </Show>
+      </Show>
+      <Show when={!props.weatherOnly && includes("outlook")}>
         <Show when={props.view.harvestEconomics}>{(econ) => <ProfitCard econ={econ()} onDetails={props.onDetails} />}</Show>
         <PriceCard view={props.view} date={props.date} price={props.price} onDetails={props.onDetails} />
-      </Show>
-      <WeatherCard date={props.date} weather={props.weather} onDetails={props.onDetails} />
-      <Show when={!props.weatherOnly || props.view.health}>
-        <HealthCard health={props.view.health} ndvi={props.view.ndvi} onDetails={props.onDetails} />
-      </Show>
-      <Show when={!props.weatherOnly}>
         <Show when={props.view.residueIncome}>{(residue) => <ResidueCard residue={residue()} onDetails={props.onDetails} />}</Show>
-        <Show when={props.view.energyFootprint}>
-          {(energy) => <EnergyCard energy={energy()} residueName={props.view.residueIncome?.residueName ?? null} onDetails={props.onDetails} />}
+      </Show>
+      <Show when={!props.weatherOnly && includes("planning")}>
+        <Show when={props.view.energyFootprint || props.view.carbonFootprint}>
+          <details class="today-planning-reference">
+            <summary><span>Energy &amp; carbon</span><small>Planning references</small><Icon name="arrow" size={16} /></summary>
+            <div class="today-planning-cards">
+              <Show when={props.view.energyFootprint}>{(energy) => <EnergyCard energy={energy()} residueName={props.view.residueIncome?.residueName ?? null} onDetails={props.onDetails} />}</Show>
+              <Show when={props.view.carbonFootprint}>{(carbon) => <CarbonCard carbon={carbon()} onDetails={props.onDetails} />}</Show>
+            </div>
+          </details>
         </Show>
-        <Show when={props.view.carbonFootprint}>{(carbon) => <CarbonCard carbon={carbon()} onDetails={props.onDetails} />}</Show>
       </Show>
     </section>
   );

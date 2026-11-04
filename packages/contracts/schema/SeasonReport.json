@@ -426,11 +426,16 @@
             "type": "string",
             "maxLength": 160
           },
+          "reason": {
+            "type": "string",
+            "maxLength": 300
+          },
           "kind": {
             "type": "string",
             "enum": [
               "interval",
-              "recheck"
+              "recheck",
+              "condition"
             ]
           },
           "fieldId": {

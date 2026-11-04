@@ -224,7 +224,8 @@ describe("get_farm_briefing: composition on seeded farms (test DB, synthetic mod
     expect(out.limitations.join(" ")).toMatch(/CEC \(meq\/100g\)/);
     expect(out.plans).not.toBeNull();
     expect(out.plans!.option).not.toBeNull();
-    expect(out.plans!.savedSeasons.length).toBeGreaterThan(0);
+    // The demo (seed v6) saves no future seasons; the saved-season shape is covered by the briefing unit fixture above.
+    expect(out.plans!.savedSeasons).toEqual([]);
     expect(out.journal!.entries.length).toBeGreaterThan(0);
     expect(out.journal!.entries.length).toBeLessThanOrEqual(8);
     expect(out.journal!.totalsSinceSowing).not.toBeNull();

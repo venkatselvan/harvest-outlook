@@ -32,7 +32,7 @@ import {
  * Entry form. Every change is written to the device (IndexedDB) at once, keyed by the client entry id, so a reload or a
  * dropped connection loses nothing. The same id is sent on every retry; the server never creates a second entry for it.
  */
-export function JournalForm(props: { farmId: string; stages: { stageId: string; name: string }[]; store: KeyValueStore & { persistent?: boolean | undefined }; onSaved: (e: JournalEntry) => void }) {
+export function JournalForm(props: { farmId: string; cycles?: {id:string; name:string}[] | undefined; stages: { stageId: string; name: string }[]; store: KeyValueStore & { persistent?: boolean | undefined }; onSaved: (e: JournalEntry) => void }) {
   const [draft, setDraft] = createSignal<Draft>(newDraft(props.farmId, newEntryId("entry")));
   const [restored, setRestored] = createSignal(false);
   const [saving, setSaving] = createSignal(false);
@@ -84,7 +84,7 @@ export function JournalForm(props: { farmId: string; stages: { stageId: string; 
     if (issues().length > 0) return;
     setSaving(true);
     setError(null);
-    const sent = draft();
+    const sent = !draft().cycleId && props.cycles?.length === 1 ? {...draft(),cycleId:props.cycles[0]!.id} : draft();
     try {
       // Write to the durable queue first; the queue owns the entry from here (the same clientEntryId and
       // Idempotency-Key are used on every retry, so the server never creates a duplicate).
@@ -118,6 +118,14 @@ export function JournalForm(props: { farmId: string; stages: { stageId: string; 
         <p class="jr-note" role="status">Restored your unsent draft from this device.</p>
       </Show>
 
+      <Show when={props.cycles?.length}>
+        <label for="jr-cycle">Field / crop for this observation</label>
+        <select id="jr-cycle" value={draft().cycleId ?? ''} onChange={e => update({cycleId:e.currentTarget.value})}>
+          <option value="">{props.cycles?.length === 1 ? props.cycles[0]!.name : 'Farm-wide note (no image predictions)'}</option>
+          <For each={props.cycles}>{cycle => <option value={cycle.id}>{cycle.name}</option>}</For>
+        </select>
+        <small>Photos refresh this crop’s milestone previews. Earlier predictions remain available for comparison.</small>
+      </Show>
       <label for="jr-date">Date you saw this</label>
       <input id="jr-date" type="date" value={draft().observedOn} max={todayLocal()} onInput={(e) => update({ observedOn: e.currentTarget.value })} />
 

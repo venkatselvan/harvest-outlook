@@ -4,7 +4,7 @@ import type { Workspace } from "../state";
 
 /** Farm tool drawer selector. Owned by the shell, passed to views that open a drawer. */
 export type Tool = "compare" | "soil" | null;
-export type TodayScene = "growth" | "satellite";
+export type TodayScene = "growth" | "satellite" | "field-image";
 /** One current crop cycle with its care evidence, as the shell resolves it (command-center data or the saved-workspace fallback). */
 export type CommandCycle = CommandData["currentCycles"][number];
 
@@ -21,6 +21,8 @@ export type CommandCycle = CommandData["currentCycles"][number];
  * it next edits the shell.
  */
 export interface TodayViewProps {
+  /** Shared Today controller; switching presentation preserves the selected day and request lifecycle. */
+  presentation?: "today" | "actions";
   /** Parsed command-center data for the selected farm, or undefined while loading, on error, or for another farm. */
   data: Accessor<CommandData | undefined>;
   /** The command-center resource itself; the view reads `.loading` for the boundary-loading message. */

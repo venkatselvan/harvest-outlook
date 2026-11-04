@@ -222,9 +222,8 @@ async function openVoice(page: Page) {
     .first()
     .click();
   await page.getByLabel("Assistant language").selectOption("ta");
-  await page.getByRole("button", { name: "Voice input", exact: true }).click();
   await page
-    .getByRole("button", { name: "Record voice (Tamil)", exact: true })
+    .getByRole("button", { name: "Record a voice message", exact: true })
     .click();
 }
 
@@ -255,7 +254,7 @@ test("multilingual typed Evara answers remain complete with no speech requests o
   await expect(page.locator("audio")).toHaveCount(0);
 });
 
-test("Meta consent precedes capture; local WAV conversion and editable transcript require explicit application", async ({
+test("Meta consent precedes capture; local WAV conversion, and the transcript lands in the composer without being sent", async ({
   page,
 }) => {
   const api = await fixture(page);
@@ -264,15 +263,14 @@ test("Meta consent precedes capture; local WAV conversion and editable transcrip
   const notice = page.getByRole("group", { name: "Voice privacy notice" });
   await expect(notice).toContainText("sent to Meta");
   expect(await page.evaluate(() => (window as any).__mic.requests)).toBe(0);
-  await notice
-    .getByRole("button", { name: "I understand, start recording" })
+  await notice.getByRole("button", { name: "Continue" }).click();
+  await expect(page.getByText("Listening…")).toBeVisible();
+  await page
+    .getByRole("button", { name: "Stop and add to message" })
     .click();
-  await expect(
-    page.getByRole("button", { name: "Stop and transcribe" }),
-  ).toBeVisible();
-  await page.getByRole("button", { name: "Stop and transcribe" }).click();
-  const transcript = page.getByLabel("Your message (edit before using)");
+  const transcript = page.getByLabel("Message Evara");
   await expect(transcript).toHaveValue("நாளை நீர் பாய்ச்ச வேண்டும்");
+  await expect(transcript).toBeFocused();
   expect(api.recordings).toHaveLength(1);
   expect(api.turns).toHaveLength(0);
   const body = api.recordings[0]!,
@@ -287,9 +285,6 @@ test("Meta consent precedes capture; local WAV conversion and editable transcrip
   );
   expect(await page.evaluate(() => (window as any).__mic.stopped)).toBe(1);
   await transcript.fill("சரிபார்த்த குறிப்பு");
-  await page
-    .getByRole("button", { name: "Use this text", exact: true })
-    .click();
   await expect(page.getByLabel("Message Evara")).toHaveValue(
     "சரிபார்த்த குறிப்பு",
   );
@@ -313,18 +308,20 @@ for (const action of ["cancel", "switch farm"] as const)
     const api = await fixture(page);
     await microphone(page, { holdConversion: true });
     await openVoice(page);
+    await page.getByRole("button", { name: "Continue" }).click();
     await page
-      .getByRole("button", { name: "I understand, start recording" })
+      .getByRole("button", { name: "Stop and add to message" })
       .click();
-    await page.getByRole("button", { name: "Stop and transcribe" }).click();
     await expect(
-      page.getByText("Preparing your recording for Meta…", { exact: true }),
+      page.getByText("Transcribing…", { exact: true }),
     ).toBeVisible();
     await expect
       .poll(() => page.evaluate(() => !!(window as any).__mic.release))
       .toBe(true);
     if (action === "cancel")
-      await page.getByRole("button", { name: "Cancel", exact: true }).click();
+      await page
+        .getByRole("button", { name: "Cancel transcription", exact: true })
+        .click();
     else await page.getByLabel("Selected farm").selectOption(B);
     await page.evaluate(() => (window as any).__mic.release());
     await expect
@@ -340,18 +337,12 @@ test("unavailable Meta voice never requests the microphone and typed text remain
   const api = await fixture(page, false);
   await microphone(page);
   await openVoice(page);
+  await expect(page.getByText("Speech unavailable; type instead.")).toBeVisible();
   await expect(
-    page.getByText(
-      "Meta voice input is unavailable right now. You can type your message below.",
-    ),
-  ).toBeVisible();
+    page.getByRole("button", { name: "Record a voice message", exact: true }),
+  ).toBeDisabled();
   expect(await page.evaluate(() => (window as any).__mic.requests)).toBe(0);
-  await page
-    .getByLabel("Your message (edit before using)")
-    .fill("Typed fallback");
-  await page
-    .getByRole("button", { name: "Use this text", exact: true })
-    .click();
+  await page.getByLabel("Message Evara").fill("Typed fallback");
   await expect(page.getByLabel("Message Evara")).toHaveValue("Typed fallback");
   expect(api.recordings).toHaveLength(0);
 });
@@ -362,11 +353,9 @@ test("recorder construction failure releases microphone tracks", async ({
   const api = await fixture(page);
   await microphone(page, { failConstruction: true });
   await openVoice(page);
-  await page
-    .getByRole("button", { name: "I understand, start recording" })
-    .click();
+  await page.getByRole("button", { name: "Continue" }).click();
   // Scoped to the speech error: the Today hero also renders a role="alert" message when its route is stubbed.
-  await expect(page.locator(".speech-error")).toContainText(
+  await expect(page.locator(".mic-error")).toContainText(
     "microphone has been released",
   );
   expect(await page.evaluate(() => (window as any).__mic.stopped)).toBe(1);
@@ -379,22 +368,22 @@ test("cancelling a pending microphone prompt stops tracks when permission resolv
   const api = await fixture(page);
   await microphone(page, { holdPermission: true });
   await openVoice(page);
-  await page
-    .getByRole("button", { name: "I understand, start recording" })
-    .click();
+  await page.getByRole("button", { name: "Continue" }).click();
   await expect(
-    page.getByText("Waiting for microphone permission…", { exact: true }),
+    page.getByText("Waiting for microphone…", { exact: true }),
   ).toBeVisible();
   await expect
     .poll(() => page.evaluate(() => !!(window as any).__mic.releasePermission))
     .toBe(true);
-  await page.getByRole("button", { name: "Cancel", exact: true }).click();
+  await page
+    .getByRole("button", { name: "Cancel recording", exact: true })
+    .click();
   await page.evaluate(() => (window as any).__mic.releasePermission());
   await expect
     .poll(() => page.evaluate(() => (window as any).__mic.stopped))
     .toBe(1);
   await expect(
-    page.getByRole("button", { name: "Stop and transcribe" }),
+    page.getByRole("button", { name: "Stop and add to message" }),
   ).toHaveCount(0);
   expect(api.recordings).toHaveLength(0);
 });

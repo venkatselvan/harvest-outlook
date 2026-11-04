@@ -47,7 +47,7 @@ import {
   words,
   yieldBasisWords,
 } from "./model";
-import { agroKindNote, AGRO_LABEL, priceGapText, trendText, verdictLabel, weatherAgroFacts, weatherBasis, weatherKindLabel, type CardKind } from "./TodayCards";
+import { agroKindNote, AGRO_LABEL, priceGapText, trendText, weatherAgroFacts, weatherBasis, weatherKindLabel, healthHeadline, type CardKind } from "./TodayCards";
 
 export type SheetKind = CardKind | "about" | "curve";
 
@@ -601,10 +601,10 @@ export interface TodaySheetProps {
 /** Dialog title of a sheet kind: the card's own title, so the sheet and the card it opened from agree. */
 export function sheetTitle(kind: SheetKind, view: Pick<TodayView, "residueIncome">, date: string): string {
   return {
-      harvest: "Days to harvest",
-      price: "Expected price at harvest",
+      harvest: "Harvest window",
+      price: "Harvest-week price",
       weather: `Weather on ${formatDay(date)}`,
-      health: "Vegetation health",
+      health: "Crop condition",
       profit: "Expected profit at harvest",
       residue: residueTitle(view.residueIncome?.residueName),
       energy: "Energy",
@@ -729,18 +729,18 @@ export function TodaySheetBody(props: Omit<TodaySheetProps, "onClose">) {
           {(health) => (
             <>
               <p>
-                NDVI {health().ndviMean.toFixed(2)} on {formatDay(health().date)} · {verdictLabel[health().verdict]}
+                NDVI {health().ndviMean.toFixed(2)} on {formatDay(health().date)} · {healthHeadline(health())}
                 <Show when={health().typicalRange}>
                   {" "}
                   (typical for this stage {health().typicalRange!.low.toFixed(2)} to {health().typicalRange!.high.toFixed(2)})
                 </Show>
               </p>
               <Show when={health().neighbourhoodMean != null}>
-                <p>Fields within about 1 km: {health().neighbourhoodMean!.toFixed(2)}</p>
+                <p>Surrounding land within about 1 km: {health().neighbourhoodMean!.toFixed(2)}</p>
               </Show>
               <p>Clear pixels in the field: {Math.round(health().clearFraction * 100)}%</p>
               <Show when={props.view.ndvi?.smallField}>
-                <p>This field covers few satellite pixels; the nearby-fields value is the safer reference.</p>
+                <p>This field covers few satellite pixels; the surrounding-land value is a reference; it may include other vegetation.</p>
               </Show>
               <p>
                 NDVI measures how green the canopy looks from space. It is a satellite reading, not a field inspection.

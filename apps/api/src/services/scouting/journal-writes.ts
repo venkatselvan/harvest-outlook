@@ -231,7 +231,8 @@ export async function completeCheck(deps: ScoutingDeps, ownerId: string, farmId:
     const check = schedule.find((x) => x.id === body.checkId && x.status !== 'completed');
     if (!check) throw notFound('Field check');
     const cycle = check.cycleId ? ws.cycles.find((x) => x.id === check.cycleId) : undefined;
-    if (check.kind === 'interval' && cycle && body.completedOn < (cycle.establishmentDate ?? cycle.sowingDate)) throw validation('A field check cannot precede crop establishment');
+    if (check.kind !== 'recheck' && cycle && body.completedOn < (cycle.establishmentDate ?? cycle.sowingDate)) throw validation('A field check cannot precede crop establishment');
+    if (check.kind === 'condition' && body.completedOn < check.dueFrom) throw validation('A condition check cannot be completed before its window begins');
     const issue = check.issueId ? rows.issues.find((i) => i.id === check.issueId) : undefined;
     if (issue && body.completedOn < issue.observed_on) throw validation('A recheck cannot precede the day the issue was observed');
     if (body.result === 'nothing_found' && body.issueIds.length) throw validation('Issues are listed only when the result is issues_found');
@@ -247,11 +248,11 @@ export async function completeCheck(deps: ScoutingDeps, ownerId: string, farmId:
     const facts: [string, string][] = [['field_check_id', check.id], ...(check.cycleId ? [['cycle_id', check.cycleId] as [string, string]] : []), ...(check.fieldId ? [['field_id', check.fieldId] as [string, string]] : []), ...(check.issueId ? [['field_issue_id', check.issueId] as [string, string]] : [])];
     const entryId = await writeJournalEntry(c, {ownerId, farmId, clientEntryId: body.clientEntryId, date: body.completedOn, text: withNote(`${lead}: ${outcome}`, body.note), activity: 'pest_check', mode, hash, mediaIds: [], facts});
     const row = (await c.query<CompletionRow>(
-      `INSERT INTO field_check_completions (owner_id, farm_id, mode, check_id, check_kind, field_id, cycle_id, issue_id, due_on, completed_on, result, issue_ids, client_entry_id, payload_hash, journal_entry_id)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12::uuid[],$13,$14,$15)
+      `INSERT INTO field_check_completions (owner_id, farm_id, mode, check_id, check_kind, field_id, cycle_id, issue_id, due_on, completed_on, result, issue_ids, client_entry_id, payload_hash, journal_entry_id, check_snapshot)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12::uuid[],$13,$14,$15,$16::jsonb)
        RETURNING id, owner_id, farm_id, mode, check_id, check_kind, field_id, cycle_id, issue_id, to_char(due_on,'YYYY-MM-DD') AS due_on, to_char(completed_on,'YYYY-MM-DD') AS completed_on,
          result, issue_ids, client_entry_id, payload_hash, journal_entry_id, created_at`,
-      [ownerId, farmId, mode, check.id, check.kind, check.fieldId, check.cycleId, check.issueId, check.dueFrom, body.completedOn, body.result, body.issueIds, body.clientEntryId, hash, entryId])).rows[0]!;
+      [ownerId, farmId, mode, check.id, check.kind, check.fieldId, check.cycleId, check.issueId, check.dueFrom, body.completedOn, body.result, body.issueIds, body.clientEntryId, hash, entryId, JSON.stringify(check)])).rows[0]!;
     return {check: {...check, status: 'completed', completedOn: row.completed_on, journalEntryId: entryId}, journalEntryId: entryId, alreadyCompleted: false};
   });
 }

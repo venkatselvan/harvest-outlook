@@ -2,14 +2,16 @@ import {afterAll, beforeAll, describe, expect, it} from 'vitest';
 import {CompleteCheckResult, FieldChecks, FieldIssue, FieldIssues, TodayView} from '@harvest/contracts';
 import {farmBody, login, makeJpeg, setupHarness, upload, type Client, type Harness} from './helpers';
 import {istToday} from '../src/services/scouting/issues';
-import {addDays} from '../src/services/scouting/schedule';
+import {addDays, conditionCheckId} from '../src/services/scouting/schedule';
 
 /**
  * SYNTHETIC: farms, fields, cycles, photos and issues are invented test data; runtime mode is synthetic and no provider is
  * called. Dates are relative to the real IST date because the routes use the server clock.
  */
 const TODAY = istToday();
-const EST = addDays(TODAY, -7); // the first check (7-day default) is due today
+const EST = addDays(TODAY, -7);
+const ALERT = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
+const CHECK = conditionCheckId('cycle-north', ALERT);
 const rect = (x0: number, y0: number, x1: number, y1: number) => ({type: 'Polygon', coordinates: [[[x0, y0], [x1, y0], [x1, y1], [x0, y1], [x0, y0]]]});
 const BOUNDARY = rect(76.25, 13.25, 76.252, 13.251);
 const FIELDS = [
@@ -29,6 +31,10 @@ beforeAll(async () => {
   const put = await a.call('PUT', `${base()}/workspace`, {payload: {expectedVersion: 0, boundary: BOUNDARY, previousHarvest: {status: 'unknown'}, cycles: [CYCLE], rotationPlans: [], fields: FIELDS, checkIntervalDays: 7}});
   expect(put.statusCode, put.body).toBe(200);
   expect(put.json().data.fields[1].checkIntervalDays).toBe(10);
+  await h.pool.query(`INSERT INTO farm_alerts (id, owner_id, farm_id, mode, type, severity, origin, title, detail, source, valid_from, valid_to, suggested_step, fingerprint, field_id, cycle_id)
+    SELECT $1, owner_id, id, 'synthetic', 'crop_threat', 'watch', 'rule', 'Maize leaf risk', 'Synthetic crop risk', $3::jsonb, $4, $5, 'Inspect maize leaves for fresh damage.', 'scout-test', 'north', 'cycle-north' FROM farms WHERE id=$2`,
+    [ALERT, farmId, JSON.stringify({name: 'Test source', url: 'https://example.test/risk', date: TODAY}), TODAY, addDays(TODAY, 3)]);
+
   plainFarmId = (await a.call('POST', '/api/v1/farms', {payload: farmBody({facts: {}})})).json().data.id;
   const up = await upload(a, await makeJpeg(), {farmId});
   expect(up.statusCode, up.body).toBe(201);
@@ -95,7 +101,7 @@ describe('scouting routes: issues', () => {
     expect(checks.statusCode, checks.body).toBe(200);
     const list = FieldChecks.parse(checks.json().data).checks;
     expect(list.find((c) => c.kind === 'recheck')).toMatchObject({id: `recheck:${issue.id}:${addDays(TODAY, 3)}`, issueId: issue.id, status: 'upcoming', fieldId: 'north'});
-    expect(list.find((c) => c.kind === 'interval')).toMatchObject({id: `check:cycle-north:${TODAY}`, status: 'due', intervalDays: 7, cropName: 'Maize'});
+    expect(list.find((c) => c.kind === 'condition')).toMatchObject({id: CHECK, status: 'due', intervalDays: null, cropName: 'Maize'});
     // Field required on a farm with fields; unknown field 404; another owner 404.
     expect((await a.call('GET', `${base()}/checks`)).json().error.code).toBe('field_required');
     expect((await a.call('GET', `${base()}/checks?fieldId=west`)).statusCode).toBe(404);
@@ -105,7 +111,7 @@ describe('scouting routes: issues', () => {
   });
 
   it('completes the field check with issues found, replays it, refuses a conflicting replay and an unknown check', async () => {
-    const body = {clientEntryId: 'check-north-1', checkId: `check:cycle-north:${TODAY}`, completedOn: TODAY, result: 'issues_found', issueIds: [issue.id], note: 'North edge only'};
+    const body = {clientEntryId: 'check-north-1', checkId: CHECK, completedOn: TODAY, result: 'issues_found', issueIds: [issue.id], note: 'North edge only'};
     const res = await a.call('POST', `${base()}/checks/complete`, {payload: body});
     expect(res.statusCode, res.body).toBe(201);
     const out = CompleteCheckResult.parse(res.json().data);
@@ -116,10 +122,16 @@ describe('scouting routes: issues', () => {
     expect((await a.call('POST', `${base()}/checks/complete`, {payload: {...body, note: 'changed'}})).json().error.code).toBe('idempotency_conflict');
     expect((await a.call('POST', `${base()}/checks/complete`, {payload: {...body, clientEntryId: 'check-north-x', checkId: 'check:cycle-north:2001-01-01'}})).statusCode).toBe(404);
     expect((await a.call('POST', `${base()}/checks/complete`, {payload: {...body, clientEntryId: 'check-north-f', completedOn: addDays(TODAY, 1)}})).statusCode).toBe(400);
-    // The next interval check is anchored on the completion.
+    // Completion satisfies this condition; no recurring check is created.
     const list = FieldChecks.parse((await a.call('GET', `${base()}/checks?fieldId=north`)).json().data).checks;
-    expect(list.find((c) => c.kind === 'interval' && c.status !== 'completed')!.id).toBe(`check:cycle-north:${addDays(TODAY, 7)}`);
-    expect(list.filter((c) => c.status === 'completed').map((c) => c.id)).toEqual([`check:cycle-north:${TODAY}`]);
+    expect(list.some((c) => c.kind === 'condition' && c.status !== 'completed')).toBe(false);
+    expect(list.filter((c) => c.status === 'completed').map((c) => c.id)).toEqual([CHECK]);
+    expect(list.find(c => c.id === CHECK)?.reason).toBe('Maize leaf risk');
+    await h.pool.query('UPDATE farm_alerts SET dismissed_at=now() WHERE id=$1', [ALERT]);
+    const afterDismissal = FieldChecks.parse((await a.call('GET', `${base()}/checks?fieldId=north`)).json().data);
+    expect(afterDismissal.checks.find(c => c.id === CHECK)?.checklist[0]?.text).toBe('Inspect maize leaves for fresh damage.');
+    await h.pool.query('UPDATE farm_alerts SET dismissed_at=NULL WHERE id=$1', [ALERT]);
+
   });
 
   it('lists issues with counts and seenBefore; the journal timeline shows the three entries', async () => {
@@ -148,7 +160,7 @@ describe('scouting routes: issues', () => {
     const put = await a.call('PUT', `/api/v1/farms/${plainFarmId}/workspace`, {payload: {expectedVersion: 0, boundary: null, previousHarvest: {status: 'unknown'}, cycles: [{...CYCLE, id: 'plain', fieldId: undefined}], rotationPlans: []}});
     expect(put.statusCode, put.body).toBe(200);
     const checks = FieldChecks.parse((await a.call('GET', `/api/v1/farms/${plainFarmId}/checks`)).json().data).checks;
-    expect(checks.map((c) => [c.id, c.scope, c.fieldId])).toEqual([[`check:plain:${TODAY}`, 'farm', null]]);
+    expect(checks).toEqual([]); // A growing crop alone is not a reason for a field visit.
     const res = await a.call('POST', `/api/v1/farms/${plainFarmId}/issues`, {payload: newIssue({clientEntryId: 'issue-plain-1', fieldId: undefined, location: undefined, mediaIds: [], photoMarks: [], category: 'weed', title: 'Weeds between rows'})});
     expect(res.statusCode, res.body).toBe(201);
     expect(FieldIssue.parse(res.json().data)).toMatchObject({scope: 'farm', cycleId: 'plain'});
@@ -162,10 +174,11 @@ describe('Today view: field_check steps and the issues block', () => {
     expect(res.statusCode, res.body).toBe(200);
     const view = TodayView.parse(res.json().data);
     const steps = view.upcoming.filter((s) => s.kind === 'field_check');
-    // The check due today was completed today (listed as done); the next one is 7 days out.
-    expect(steps.map((s) => [s.id, s.status])).toEqual([[`check:cycle-north:${addDays(TODAY, 7)}`, 'upcoming'], [`check:cycle-north:${TODAY}`, 'completed']]);
-    expect(steps[0]).toMatchObject({title: 'Walk the field: Maize on North strip', careTask: null, alertId: null});
-    expect(steps[0]!.fieldCheck!.checklist.filter((i) => i.kind === 'general')).toHaveLength(8);
+    // The event was completed today; no duplicate alert step or weekly follow-up.
+    expect(steps.map((s) => [s.id, s.status])).toEqual([[CHECK, 'completed']]);
+    expect(view.upcoming.some(s => s.kind === 'alert_step' && s.alertId === ALERT)).toBe(false);
+    expect(steps[0]).toMatchObject({title: 'Check Maize on North strip', careTask: null, alertId: null});
+    expect(steps[0]!.fieldCheck!.checklist.filter((i) => i.kind === 'general')).toHaveLength(0);
     expect(view.issues).toMatchObject({open: 1, treating: 0});
     expect(view.issues!.latest.map((i) => i.title)).toEqual(['More holes']);
     // A field without issues and a farm-wide view without any keep the earlier shape (no issues key).

@@ -20,7 +20,7 @@ export async function soilReportRoutes(app:FastifyInstance,deps:SoilDeps){
  r.post('/api/v1/farms/:id/soil-reports/sample',{schema:{tags:['soil'],params:uuidParam,body:z.object({}).strict(),response:{201:envelopeSchema(SoilReport)}}},async(req,reply)=>{
   const auth=requireAuth(req);if(!await getFarm(deps.pool,auth.ownerId,req.params.id))throw notFound('Farm');
   const {reference,data}=await activeSoilReference();
-  return reply.code(201).send(envelope(req.id,deps.config.RUNTIME_MODE,await createSoilReport(deps,auth,req.params.id,data,'Agricultural soil reference.pdf',referenceSource(reference))));
+  return reply.code(201).send(envelope(req.id,deps.config.RUNTIME_MODE,await createSoilReport(deps,auth,req.params.id,data,'Farm soil sample.pdf',referenceSource(reference))));
  });
  r.get('/api/v1/farms/:id/soil-reports',{schema:{tags:['soil'],params:uuidParam,response:{200:envelopeSchema(z.object({reports:z.array(SoilReport)}))}}},async req=>envelope(req.id,deps.config.RUNTIME_MODE,await listSoilReports(deps,requireAuth(req).ownerId,req.params.id)));
  r.get('/api/v1/soil-reports/:id',{config:{rateLimit:{max:120,timeWindow:'1 minute'}},schema:{tags:['soil'],params:uuidParam,response:{200:envelopeSchema(SoilReport)}}},async req=>envelope(req.id,deps.config.RUNTIME_MODE,await readSoilReport(deps,requireAuth(req).ownerId,req.params.id)));

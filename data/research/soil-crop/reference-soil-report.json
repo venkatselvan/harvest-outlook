@@ -1,62 +1,20 @@
 {
-  "registryId": "icar-naarm-vizianagaram-grl-nf-2019",
+  "registryId": "microtech-farm-soil-2026",
   "status": "active",
-  "title": "ICAR paddy-field soil analysis — Vizianagaram (2019)",
-  "sourceUrl": "https://www.niti.gov.in/sites/default/files/2023-03/Adoption%20of%20Natural%20Farming%20and%20its%20Effect%20on%20Crop%20Yield%20and%20Farmers%27%20Livelihood%20in%20India.pdf",
-  "publicationUrl": "https://www.niti.gov.in/node/678",
-  "localPath": "data/research/soil-crop/samples/icar-naarm-agricultural-soil-reference-2020.pdf",
+  "title": "Farm soil report \u00b7 Micro Tech Labs (October 2026)",
+  "sourceUrl": null,
+  "localPath": "data/research/soil-crop/samples/farm-soil-report.pdf",
   "sourcePages": [
-    54,
-    120,
-    122,
-    123
+    1
   ],
-  "pageMapping": [
-    {
-      "retainedPage": 1,
-      "sourcePdfPage": 54,
-      "role": "Agricultural field sampling context"
-    },
-    {
-      "retainedPage": 2,
-      "sourcePdfPage": 120,
-      "role": "Laboratory methods"
-    },
-    {
-      "retainedPage": 3,
-      "sourcePdfPage": 122,
-      "role": "Plot-wise chemical tables IV(a) and IV(b), printed page 104"
-    },
-    {
-      "retainedPage": 4,
-      "sourcePdfPage": 123,
-      "role": "Chemical table IV(c), printed page 105; microbial table below is outside selected extraction scope"
-    }
-  ],
-  "retrievedAt": "2026-10-30T18:46:02.665112+00:00",
-  "sourceSha256": "58668eb7f9c9d48052a3243121c92a98235e7f533def198568579aab2d0840e5",
-  "fileSha256": "e753a2bc98ad179d9898daaddb8d8ccce169daaa2cf72a22b2d1db451b5ffea8",
-  "sourcePublisher": "NITI Aayog official publication repository",
-  "reportIssuer": "ICAR–National Academy of Agricultural Research Management",
-  "laboratoryAsPublished": "ICAR–Central Research Institute for Dryland Agriculture",
-  "publicationPeriod": "July 2020",
-  "collectionPeriod": "April–May 2019",
-  "sampleCode": "GRL / NF",
-  "agriculturalContext": "Actual farmer paddy-field composite soil sampling, Vizianagaram district, Andhra Pradesh; NF and Non-NF plots are separate.",
+  "fileSha256": "20810ff84363cf706302e8902d84aeed5c1fbcc0589ca3ede8a632b979dff23a",
+  "classifyUploadsAsReference": false,
   "extractionScope": {
-    "sampleLabel": "GRL / NF",
-    "description": "Extract only the GRL row and NF (Natural Farming) column in chemical tables IV(a), IV(b), IV(c), source PDF pages 122–123 (retained pages 3–4). Return its twelve chemical readings as one selected plot/sample. Retained pages 1–2 provide sampling and methods context. Other village rows, Non-NF columns and the microbial table are not selected; do not mix or extract them.",
-    "markerLimit": 12
+    "sampleLabel": "MTLR-0337/1010/26-27",
+    "description": "Read the single soil sample on page 1, reference MTLR-0337/1010/26-27. Extract all six measured results. Keep the desirable limits column separate from results. Preserve total organic matter and total phosphorus/potassium as printed; do not relabel them organic carbon or available nutrients. Nitrogen form, test methods, depth and collection date are unreported. Received and reported dates are separate.",
+    "markerLimit": 6
   },
   "limitations": [
-    "Published measured agricultural-field soil analysis; not a government-issued individual Soil Health Card or a measurement of the demo field or any user farm.",
-    "Unmodified original PDF pages 54,120,122,123 are retained with sampling and laboratory-method context.",
-    "The full tables contain multiple paired farm plots. Only the explicitly selected GRL / NF plot and twelve chemical readings are in this reference extraction scope; this is not a complete-table extraction.",
-    "Collection is reported as April–May 2019 and publication as July 2020; exact collection/report days are not supplied and must remain null.",
-    "No pH or electrical conductivity reading is published in the selected chemical tables; missing parameters must not be invented.",
-    "Available nitrogen is described in the source as Kjeldahl method (with its cited reference); retain the source wording rather than silently substituting a different extraction method.",
-    "P and K chemical forms and unit labels must be retained as published, without conversion between elemental and oxide forms.",
-    "Other NF/Non-NF plots and the microbial table must remain separate and unselected.",
-    "No field nutrient dose or universal fertility rating is inferred from this reference."
+    "Sample for trying the review flow; it does not add measurements to the selected farm."
   ]
 }

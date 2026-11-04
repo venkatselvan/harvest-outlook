@@ -1,6 +1,7 @@
 import { For, Match, Show, Switch, batch, createContext, createEffect, createSignal, on, onCleanup, useContext, type Accessor, type JSX } from "solid-js";
 import type { SoilReading, SoilReview } from "@harvest/contracts";
 import { AiSpark } from "../ui/AiSpark";
+import { Icon } from "../icons";
 import { Chip } from "../ui/Chip";
 import { BiomarkerBar } from "../farm/SoilBiomarkers";
 import { loadSoilReview, pollSoilReview, refreshSoilReview } from "../farm/soilReviewApi";
@@ -135,33 +136,43 @@ export function TodaySoilView(props: { state: SoilCardState; dismissed: boolean;
                   </button>
                 </div>
               </Show>
-              <Show when={!summaryFailed(review()) && headline().text}>
-                <p class="today-overview-headline">{headline().text}</p>
-              </Show>
               <Show when={headline().pending}>
-                <p class="today-soil-pending" aria-live="polite" data-testid="today-soil-pending">
-                  The ratings below are already calculated.
-                </p>
-              </Show>
-              <Show when={headline().note}>
-                <p class="today-soil-note" data-testid="today-soil-code-note">
-                  {headline().note}
-                </p>
+                <p class="today-soil-pending" aria-live="polite" data-testid="today-soil-pending">Updating soil summary…</p>
               </Show>
               <Show when={rows().length > 0} fallback={<p class="today-soil-why">None of the confirmed values could be rated against a cited band.</p>}>
-                <ul class="today-soil-list">
-                  <For each={rows()}>{(reading) => <Row reading={reading} review={review()} showProvenance={shared() === null} />}</For>
+                {/* Exact values and source ratings stay visible; range interpretation is an intentional second step. */}
+                <ul class="today-soil-compact-list" aria-label="Confirmed soil values">
+                  <For each={rows()}>{(reading) => <li class="today-soil-compact-row" data-parameter={reading.parameter}>
+                    <span class="today-soil-compact-label">{reading.label}<Show when={reading.assumption}><span class="today-soil-assumption" title="Assumed form" aria-label="Assumed form">†</span></Show></span>
+                    <span class="today-soil-compact-value">{valueText(reading)}</span>
+                    <Chip tone={ratingChipTone(reading.rating)}>{ratingLabel(reading.rating)}</Chip>
+                  </li>}</For>
                 </ul>
+                <Show when={rows().some((reading) => !!reading.assumption)}><p class="today-soil-assumption-note">† Assumed form · see report details</p></Show>
                 <Show when={shared()}>
-                  <p class="today-soil-prov today-soil-shared" data-testid="today-soil-provenance">
-                    {shared()}
-                  </p>
+                  <p class="today-soil-prov today-soil-shared" data-testid="today-soil-provenance">{shared()}</p>
                 </Show>
               </Show>
+              <div class="today-soil-footer">
+              <details class="today-soil-details">
+                <summary>Rating bands &amp; report details <Icon name="down" size={15} /></summary>
+                <Show when={!summaryFailed(review()) && headline().text && !headline().pending}>
+                  <p class="today-overview-headline">{headline().text}</p>
+                </Show>
+                <Show when={headline().note}>
+                  <p class="today-soil-note" data-testid="today-soil-code-note">{headline().note}</p>
+                </Show>
+                <Show when={rows().length > 0}>
+                  <ul class="today-soil-list">
+                    <For each={rows()}>{(reading) => <Row reading={reading} review={review()} showProvenance={shared() === null} />}</For>
+                  </ul>
+                </Show>
+              </details>
               <div class="today-soil-actions">
                 <button type="button" class="text-button" onClick={() => props.onRecords()}>
                   All soil values
                 </button>
+              </div>
               </div>
             </Shell>
           );

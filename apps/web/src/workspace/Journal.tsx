@@ -124,6 +124,7 @@ export function JournalWorkspace() {
         cropName,
       } as Cycle;
       const d = newDraft(targetFarmId, draftId);
+      if (c.id) d.cycleId = c.id;
       d.observedOn =
         c.stage === "sowed"
           ? c.sowingDate

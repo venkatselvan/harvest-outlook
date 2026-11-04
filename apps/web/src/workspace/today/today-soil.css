@@ -105,3 +105,33 @@
   border-style: dashed;
   border-color: var(--accent-border);
 }
+
+/* The farmer sees the measured value first, then chooses whether to inspect its source bands. */
+.today-soil-compact-list { display: grid; gap: 0; list-style: none; padding: 0; margin: 4px 0; }
+.today-soil-compact-row { display: grid; grid-template-columns: minmax(90px, 1fr) minmax(70px, auto) minmax(75px, auto); align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--border); font-size: 13px; line-height: 1.45; }
+.today-soil-compact-row:last-child { border-bottom: 0; }
+.today-soil-compact-label { font-weight: 500; min-width: 0; }
+.today-soil-compact-value { font-variant-numeric: tabular-nums; text-align: right; color: var(--text); white-space: nowrap; }
+.today-soil-compact-row > .chip { justify-self: end; font-size: 11px; }
+.today-soil-assumption { display: block; font-size: 11px; font-weight: 400; color: var(--text-secondary); margin-top: 3px; }
+.today-soil-details { border-top: 1px solid var(--border); }
+.today-soil-details .today-overview-headline { font-size: 14px; font-weight: 400; line-height: 1.5; margin: 8px 0 15px; }
+.today-soil-details .today-soil-note { margin-bottom: 15px; }
+.today-soil-details .today-soil-list { margin: 10px 0 18px; gap: 18px; }
+.today-soil-shared { padding: 4px 0 8px; font-size: 12px; }
+.today-soil-actions .text-button { min-height: 44px; }
+@media(max-width:480px){.today-soil-compact-row { grid-template-columns: minmax(90px, 1fr) minmax(55px, auto) minmax(65px, auto); gap: 8px; font-size: 12px; }.today-soil-compact-row > .chip { font-size: 11px; padding-inline: 6px; }}
+.today-view .today-side > .today-soil { padding: 15px 17px; gap: 4px; }
+.today-view .today-side > .today-soil .today-overview-head h2 { font-size: 16px; }
+.today-soil-compact-list { margin: 3px 0; }
+.today-soil-compact-row { padding-block: 6px; font-size: 12px; }
+.today-soil-assumption { display: inline; margin: 0 0 0 4px; font-size: 11px; color: var(--text-secondary); }
+.today-soil-assumption-note { margin: 0; color: var(--text-secondary); font-size: 11px; line-height: 1.4; }
+.today-soil-shared { padding: 2px 0 5px; font-size: 11px; }
+.today-soil-footer { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: start; gap: 8px; border-top: 1px solid var(--border); }
+.today-soil-footer .today-soil-details { border: 0; min-width: 0; }
+.today-soil-footer .today-soil-details > summary { font-size: 12px; line-height: 1.4; gap: 6px; }
+.today-soil-footer .today-soil-actions .text-button { font-size: 12px; white-space: nowrap; }
+.today-soil-footer:has(.today-soil-details[open]) { grid-template-columns: minmax(0, 1fr); }
+.today-soil-footer:has(.today-soil-details[open]) .today-soil-actions { justify-content: flex-end; }
+.today-soil-compact-row > .chip,.today-soil-assumption-note,.today-soil-shared { font-size: 12px; }

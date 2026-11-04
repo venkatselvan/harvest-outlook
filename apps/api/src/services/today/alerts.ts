@@ -30,7 +30,7 @@ import type { MonitoringSnapshot } from '../monitoring';
  */
 
 /** `fieldId` (2026-11-03, 12.4): set on crop-threat alerts of a field's cycle and on a field's satellite alert; absent = farm-wide. */
-export type AlertDraft = Pick<FarmAlert, 'type' | 'severity' | 'origin' | 'title' | 'detail' | 'source' | 'validFrom' | 'validTo' | 'suggestedStep'> & { fieldId?: string | undefined };
+export type AlertDraft = Pick<FarmAlert, 'type' | 'severity' | 'origin' | 'title' | 'detail' | 'source' | 'validFrom' | 'validTo' | 'suggestedStep'> & { fieldId?: string | undefined; cycleId?: string | undefined };
 
 const DAY_MS = 86_400_000;
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
@@ -201,7 +201,7 @@ export function structuredAlerts(snapshot: MonitoringSnapshot, workspace: FarmWo
         detail: `${risk.data.detail ?? 'Published seasonal risk window for this crop stage.'} Calendar window from the recorded ${anchor} date (${from} to ${to}), not an observed outbreak.`.slice(0, 600),
         source: { name: `${src.publisher}: ${src.title}`.slice(0, 200), url: src.url, date }, validFrom: from, validTo: to, suggestedStep: risk.data.suggestedStep ?? null,
         // 12.4: a field's cycle raises the alert for that field; a cycle recorded without a field stays farm-wide.
-        ...(cycle.fieldId ? { fieldId: cycle.fieldId } : {}) });
+        cycleId: cycle.id, ...(cycle.fieldId ? { fieldId: cycle.fieldId } : {}) });
     }
   }
   if (!riskData) notes.push('crop_threat_windows_skipped:seasonal_risks_not_in_research');
@@ -627,8 +627,9 @@ export async function groundedReview(deps: GroundedDeps, args: GroundedArgs): Pr
  * Stable identity of an alert: type, title, source URL and start of validity; plus the field when the alert names one
  * (2026-11-03, 12.4), so two fields with the same crop get separate alerts. Farm-wide fingerprints are unchanged.
  */
-export function alertFingerprint(a: Pick<AlertDraft, 'type' | 'title' | 'validFrom' | 'fieldId'> & { source: { url: string } }): string {
+export function alertFingerprint(a: Pick<AlertDraft, 'type' | 'title' | 'validFrom' | 'fieldId' | 'cycleId'> & { source: { url: string } }): string {
   const parts: string[] = [a.type, a.title.trim().toLowerCase(), normalizeUrl(a.source.url) ?? a.source.url, a.validFrom];
+  if (a.cycleId) parts.push(`cycle:${a.cycleId}`);
   if (a.fieldId) parts.push(`field:${a.fieldId}`);
   return sha256Hex(canonicalJson(parts));
 }
@@ -659,12 +660,12 @@ export async function persistAlerts(pool: Pool, ownerId: string, farmId: string,
         }
       }
       const r = await c.query<{ inserted: boolean }>(
-        `INSERT INTO farm_alerts (owner_id, farm_id, mode, type, severity, origin, title, detail, source, valid_from, valid_to, suggested_step, fingerprint, field_id)
-         SELECT f.owner_id, f.id, $3, $4, $5, $6, $7, $8, $9::jsonb, $10::date, $11::date, $12, $13, $14 FROM farms f WHERE f.id=$2 AND f.owner_id=$1 AND f.deleted_at IS NULL
+        `INSERT INTO farm_alerts (owner_id, farm_id, mode, type, severity, origin, title, detail, source, valid_from, valid_to, suggested_step, fingerprint, field_id, cycle_id)
+         SELECT f.owner_id, f.id, $3, $4, $5, $6, $7, $8, $9::jsonb, $10::date, $11::date, $12, $13, $14, $15 FROM farms f WHERE f.id=$2 AND f.owner_id=$1 AND f.deleted_at IS NULL
          ON CONFLICT (farm_id, mode, fingerprint) DO UPDATE SET severity=EXCLUDED.severity, detail=EXCLUDED.detail, source=EXCLUDED.source,
-           valid_to=GREATEST(farm_alerts.valid_to, EXCLUDED.valid_to), suggested_step=EXCLUDED.suggested_step
+           valid_to=GREATEST(farm_alerts.valid_to, EXCLUDED.valid_to), suggested_step=EXCLUDED.suggested_step, cycle_id=EXCLUDED.cycle_id
          RETURNING (xmax = 0) AS inserted`,
-        [ownerId, farmId, mode, a.type, a.severity, a.origin, a.title.slice(0, 120), a.detail.slice(0, 600), JSON.stringify({ name: a.source.name.slice(0, 200), url: a.source.url, date: a.source.date }), a.validFrom, a.validTo, a.suggestedStep?.slice(0, 300) ?? null, fingerprint, a.fieldId ?? null]);
+        [ownerId, farmId, mode, a.type, a.severity, a.origin, a.title.slice(0, 120), a.detail.slice(0, 600), JSON.stringify({ name: a.source.name.slice(0, 200), url: a.source.url, date: a.source.date }), a.validFrom, a.validTo, a.suggestedStep?.slice(0, 300) ?? null, fingerprint, a.fieldId ?? null, a.cycleId ?? null]);
       if (!r.rows[0]) throw notFound('Farm');
       if (r.rows[0].inserted) inserted++; else updated++;
     }

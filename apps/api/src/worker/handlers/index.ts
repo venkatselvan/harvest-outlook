@@ -1,3 +1,7 @@
+import { createSeasonPredictionsHandler } from './season-predictions';
+import { createFieldPhotoHandler } from "./field-photo";
+import { createPhotoCoverageHandler } from "./photo-coverage";
+import { PHOTO_COVERAGE_JOB } from "../../services/today/photo-coverage";
 import type { Config } from "../../config";
 import { samEnvFromConfig } from "../../config";
 import type { Pool } from "../../db/pool";
@@ -17,6 +21,7 @@ import { createYearPlanHandler } from './year-plan';
 import { createMonitorHandler } from './monitoring';
 import { createFutureLookHandler } from './future-look';
 import { createOutlookNoteHandler, OUTLOOK_NOTE_JOB_TYPE } from './outlook-note';
+import {createFarmSummaryHandler,FARM_SUMMARY_JOB} from './farm-summary';
 import { createTodayOverviewHandler, TODAY_OVERVIEW_JOB_TYPE } from './today-overview';
 import { createCropFitHandler, CROP_FIT_JOB_TYPE } from './crop-fit';
 import { createSoilReviewHandler, SOIL_REVIEW_JOB_TYPE } from './soil-review';
@@ -43,10 +48,15 @@ export function registerWorkerHandlers(registry: Record<string, JobHandler>, dep
   registry['soil.extract']=createSoilHandler({config,pool,storage,budget,...(deps.fetchImpl?{fetchImpl:deps.fetchImpl}:{})});
   registry['farm.year-plan'] = createYearPlanHandler({ config, pool, budget, ...(deps.fetchImpl ? { fetchImpl: deps.fetchImpl } : {}) });
   registry['farm.monitor'] = createMonitorHandler({ config, pool, budget, fetchImpl: deps.fetchImpl });
+  registry['today.season-predictions'] = createSeasonPredictionsHandler(deps);
+  registry['today.field-photo'] = createFieldPhotoHandler(deps);
+  // PHOTO_COVERAGE_SPEC.md: SAM 3.1 crop / weed-like / standing-water image shares and a Muse Spark summary.
+  registry[PHOTO_COVERAGE_JOB] = createPhotoCoverageHandler(deps);
   registry['today.future-look'] = createFutureLookHandler({ config, pool, storage, budget, ...(deps.fetchImpl ? { fetchImpl: deps.fetchImpl } : {}) });
   // Round 2 (docs/research/ROUND2_SPEC.md): harvest outlook note, crop fit review (soil review is added when its handler lands).
   registry[OUTLOOK_NOTE_JOB_TYPE] = createOutlookNoteHandler({ config, pool, budget, ...(deps.fetchImpl ? { fetchImpl: deps.fetchImpl } : {}) });
   // TODAY_ECONOMICS_FOOTPRINT_SPEC.md section 9: the Today overview.
+  registry[FARM_SUMMARY_JOB] = createFarmSummaryHandler({ config, pool, budget, ...(deps.fetchImpl ? { fetchImpl: deps.fetchImpl } : {}) });
   registry[TODAY_OVERVIEW_JOB_TYPE] = createTodayOverviewHandler({ config, pool, budget, ...(deps.fetchImpl ? { fetchImpl: deps.fetchImpl } : {}) });
   registry[CROP_FIT_JOB_TYPE] = createCropFitHandler({ config, pool, budget, ...(deps.fetchImpl ? { fetchImpl: deps.fetchImpl } : {}) });
   registry[SOIL_REVIEW_JOB_TYPE] = createSoilReviewHandler({ config, pool, budget, ...(deps.fetchImpl ? { fetchImpl: deps.fetchImpl } : {}) });

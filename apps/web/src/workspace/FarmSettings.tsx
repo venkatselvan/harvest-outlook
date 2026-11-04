@@ -29,7 +29,7 @@ import { Icon } from "./icons";
 import { SoilScopeNote } from "./fields/SoilScopeNote";
 import { Evara } from "./Evara";
 import { AiSpark, AiSparkInline } from "./ui/AiSpark";
-import { SoilMarkerCards, SoilReferenceCards } from "./SoilMarkerCards";
+import { SoilMarkerCards } from "./SoilMarkerCards";
 import {
   loadSoilMarkers,
   loadSoilReport,
@@ -250,7 +250,7 @@ export function FarmSettings() {
     const request = ++uploadRequest;
     sampleKey ||= newEntryId("soil-reference");
     setUploading(true);
-    setUploadName("Public laboratory reference");
+    setUploadName("Sample soil report");
     setError("");
     try {
       const next = await loadReferenceReport(farmId, sampleKey);
@@ -332,28 +332,7 @@ export function FarmSettings() {
                 </button>
               </p>
             </Show>
-            <Show when={markerData()?.samples.length}>
-              <SoilMarkerCards data={markerData()} onReport={openReport} />
-            </Show>
-            <For
-              each={referenceReports().filter(
-                (report) =>
-                  !!(report.reviewed ?? report.extraction)?.samples.some(
-                    (sample) => sample.markers.length,
-                  ),
-              )}
-            >
-              {(report) => (
-                <SoilReferenceCards
-                  report={report}
-                  farmName={s.farm()?.name ?? "this farm"}
-                  onReview={(page) => openReport(report.id, page)}
-                />
-              )}
-            </For>
-            <Show when={!markerData()?.samples.length}>
-              <SoilMarkerCards data={markerData()} onReport={openReport} />
-            </Show>
+            <SoilMarkerCards data={markerData()} onReport={openReport} />
             <section
               class="soil-reports-section"
               aria-label="Farm soil reports"
@@ -413,12 +392,12 @@ export function FarmSettings() {
             <Show when={referenceReports().length}>
               <section
                 class="soil-reference-list"
-                aria-label="Public reference reports"
+                aria-label="Sample reports"
               >
                 <div class="section-heading">
                   <div>
                     <Icon name="layers" />
-                    <h2>Public reference samples</h2>
+                    <h2>Sample reports</h2>
                   </div>
                   <span class="tiny-pill">Kept separate</span>
                 </div>
@@ -442,8 +421,7 @@ export function FarmSettings() {
               <p class="eyebrow">FROM THE LAB TO YOUR RECORD</p>
               <h2>Add a soil report.</h2>
               <p>
-                Evara reads the document and proposes structured values. Review
-                each result against its source page before confirming.{" "}
+                Upload a report, then review its values.{" "}
                 <AiSpark use="soil_extraction" />
               </p>
               <div
@@ -502,46 +480,24 @@ export function FarmSettings() {
               <div class="soil-intake-note">
                 <Icon name="check" size={15} />
                 <p>
-                  The original stays private to this workspace. Reading a report
-                  does not automatically confirm its values.
+                  Private to your workspace.
                 </p>
               </div>
             </div>
             <div class="soil-public-sample">
-              <Evara size={42} />
-              <p class="eyebrow">TRY THE REVIEW FLOW</p>
-              <h3>Read an agricultural soil analysis.</h3>
-              <p>
-                ICAR’s published paddy-field research from Vizianagaram contains
-                soil samples collected in April–May 2019 and published in 2020.
-                Evara reads the selected GRL / NF (natural farming) column:
-                twelve chemical readings, kept separate from the other plots and
-                treatments.
-              </p>
-              <p>
-                This is a historical agricultural research sample, not a Soil
-                Health Card or measurements of {s.farm()?.name}. The selected
-                tables do not report pH or electrical conductivity.
-              </p>
-              <a
-                class="soil-public-source-link"
-                href="https://www.niti.gov.in/sites/default/files/2023-03/Adoption%20of%20Natural%20Farming%20and%20its%20Effect%20on%20Crop%20Yield%20and%20Farmers%27%20Livelihood%20in%20India.pdf#page=122"
-                target="_blank"
-                rel="noreferrer"
-              >
-                View public source · pages 54, 120, 122–123 ↗
-              </a>
+              <h3>Try a sample report</h3>
+              <p>If you don’t have a soil report, load a sample to see how the feature works.</p>
               <button
                 class="btn secondary full-width"
                 disabled={uploading()}
                 onClick={() => void sample()}
               >
-                Load public sample report
+                Load sample report
                 <Icon name="arrow" size={16} />
               </button>
             </div>
-            <div class="soil-method-note">
-              <h3>Measurements need context.</h3>
+            <details class="soil-method-note">
+              <summary>About soil measurements</summary>
               <p>
                 Method, extractant, depth and units affect comparability.
                 Laboratory ratings remain quoted ratings; there is no universal
@@ -554,7 +510,7 @@ export function FarmSettings() {
               >
                 Why laboratory methods matter ↗
               </a>
-            </div>
+            </details>
           </aside>
         </div>
       </Show>
@@ -592,7 +548,7 @@ function ReportRow(props: { report: SoilReport; onOpen: () => void }) {
         </strong>
         <small>
           {r().filename} · added {dateLabel(r().createdAt.slice(0, 10))}
-          {r().kind === "reference_sample" ? " · public reference" : ""}
+          {r().kind === "reference_sample" ? " · sample" : ""}
         </small>
       </span>
       <span class={`soil-report-status ${r().status}`}>
@@ -869,7 +825,7 @@ function SoilReportReview(props: {
                   <Icon name="layers" size={20} />
                   <div>
                     <strong>
-                      Public reference sample · not measurements of{" "}
+                      Sample report · not added to{" "}
                       {props.farmName}
                     </strong>
                     <p>
@@ -878,7 +834,7 @@ function SoilReportReview(props: {
                     </p>
                     <Show when={r().referenceSource}>
                       <a
-                        href={r().referenceSource!.url}
+                        href={r().referenceSource!.url ?? r().originalUrl}
                         target="_blank"
                         rel="noreferrer"
                       >

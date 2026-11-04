@@ -46,8 +46,8 @@ export async function listSoilReports(deps:SoilDeps,ownerId:string,farmId:string
 export async function createSoilReport(deps:SoilDeps,auth:{ownerId:string;sessionId:string},farmId:string,data:Buffer,filename:string,reference:SoilReport['referenceSource']=null){
  if(!await getFarm(deps.pool,auth.ownerId,farmId))throw notFound('Farm');if(data.length>10*1024*1024)throw new ApiError(413,'report_too_large','Soil reports are limited to ten megabytes');
  const hash=sha256Hex(data);
- const registry=await soilReferenceRegistry();if(registry.pending?.fileSha256===hash)throw new ApiError(503,'reference_sample_unverified','The agricultural reference is awaiting source verification and cannot be extracted yet');if(registry.retired.some(r=>r.fileSha256===hash))throw new ApiError(409,'reference_sample_retired','This public reference was retired because it is not an agricultural-land report. Load the current agricultural sample.');
- if(!reference&&registry.active?.fileSha256===hash)reference=referenceSource(registry.active);
+ const registry=await soilReferenceRegistry();if(registry.pending?.fileSha256===hash)throw new ApiError(503,'reference_sample_unverified','The agricultural reference is awaiting source verification and cannot be extracted yet');if(registry.retired.some(r=>r.fileSha256===hash))throw new ApiError(409,'reference_sample_retired','This sample has been retired. Load the current farm sample.');
+ if(!reference&&registry.active?.classifyUploadsAsReference&&registry.active.fileSha256===hash)reference=referenceSource(registry.active);
  const kind=reference?'reference_sample':'field_report';
  const existing=(await deps.pool.query<Row>('SELECT * FROM soil_reports WHERE owner_id=$1 AND farm_id=$2 AND kind=$3 AND mode=$4 AND sha256=$5',[auth.ownerId,farmId,kind,deps.config.RUNTIME_MODE,hash])).rows[0];if(existing)return out(existing);
  const rendered=await renderSoilPages(data),id=randomUUID(),originalKey=`soil-reports/${id}/original`,keys:string[]=[];

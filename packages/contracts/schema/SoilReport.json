@@ -164,8 +164,15 @@
               "type": "string"
             },
             "url": {
-              "type": "string",
-              "format": "uri"
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uri"
+                },
+                {
+                  "type": "null"
+                }
+              ]
             },
             "pages": {
               "type": "array",

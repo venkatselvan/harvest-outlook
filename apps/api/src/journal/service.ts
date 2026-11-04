@@ -1,3 +1,4 @@
+import { getWorkspace } from '../services/workspace';
 import { addDays } from "@harvest/domain";
 import type { Mode } from "@harvest/contracts";
 import { withTransaction, type Pool } from "../db/pool";
@@ -96,6 +97,10 @@ export class JournalService {
       if (!stages.some((s) => s.stageId === body.stageId)) throw new ApiError(422, "unknown_stage", `stage '${body.stageId}' is not part of the plan`);
     }
 
+    const workspace = await getWorkspace(this.pool, ownerId, body.farmId);
+    const currentCycles = workspace.cycles.filter(c => c.stage !== 'harvested');
+    const cycleId = body.cycleId ?? (currentCycles.length === 1 ? currentCycles[0]!.id : null);
+    if (body.cycleId && !workspace.cycles.some(c => c.id === body.cycleId)) throw notFound('Crop cycle');
     const now = this.clock();
     const id = await withTransaction(this.pool, async (c) => {
       const ins = await c.query<{ id: string }>(
@@ -127,6 +132,7 @@ export class JournalService {
       );
       const entryId = ins.rows[0]?.id;
       if (!entryId) return null;
+      await c.query("UPDATE journal_entries SET cycle_id=$2 WHERE id=$1", [entryId, cycleId]);
       const farmer = { ownerId, entryId, source: "farmer" as const, evidenceState: "farmer_reported" as const };
       if (body.activity) await repo.insertFact(c, { ...farmer, field: "activity", value: body.activity, unit: null, kind: "original", requiresConfirmation: false });
       if (body.quantity) await repo.insertFact(c, { ...farmer, field: "quantity", value: body.quantity.value, unit: body.quantity.unit, kind: "original", requiresConfirmation: false });

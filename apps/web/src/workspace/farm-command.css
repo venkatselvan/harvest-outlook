@@ -1720,6 +1720,65 @@
 .farm-subnav > a:focus-visible {
   outline-offset: -3px;
 }
+/* More is a shared anchored disclosure at every viewport width. */
+.farm-shell .more-menu {
+  display: block;
+  position: relative;
+  order: 4;
+  flex-shrink: 0;
+}
+.more-menu-button {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+.more-menu-button[aria-expanded="true"] {
+  background: var(--accent-soft);
+  border-color: var(--accent-border);
+  color: var(--accent);
+}
+.more-menu-panel {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  width: 260px;
+  max-width: calc(100vw - 36px);
+  max-height: min(70dvh, calc(100dvh - 120px));
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  z-index: 1200;
+  display: grid;
+  min-width: 220px;
+  padding: 6px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: 0 12px 40px var(--shadow-color);
+}
+.more-menu-link {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 48px;
+  padding: 0 12px;
+  border-radius: 8px;
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 550;
+  text-decoration: none;
+}
+.more-menu-link:hover {
+  background: var(--surface-soft);
+}
+.more-menu-link:focus-visible {
+  outline-offset: -3px;
+}
 @media (max-width: 767px) {
   .farm-shell .sidebar {
     display: none;
@@ -1749,59 +1808,6 @@
     max-width: none;
     min-height: 44px;
     font-size: 13px;
-  }
-  .farm-shell .more-menu {
-    display: block;
-    position: relative;
-    order: 4;
-    flex-shrink: 0;
-  }
-  .more-menu-button {
-    display: grid;
-    place-items: center;
-    width: 44px;
-    height: 44px;
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    background: var(--surface);
-    color: var(--text-secondary);
-    cursor: pointer;
-  }
-  .more-menu-button[aria-expanded="true"] {
-    background: var(--accent-soft);
-    border-color: var(--accent-border);
-    color: var(--accent);
-  }
-  .more-menu-panel {
-    position: absolute;
-    top: calc(100% + 8px);
-    right: 0;
-    z-index: 1200;
-    display: grid;
-    min-width: 220px;
-    padding: 6px;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    box-shadow: 0 12px 40px var(--shadow-color);
-  }
-  .more-menu-link {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    min-height: 48px;
-    padding: 0 12px;
-    border-radius: 8px;
-    color: var(--text);
-    font-size: 14px;
-    font-weight: 550;
-    text-decoration: none;
-  }
-  .more-menu-link:hover {
-    background: var(--surface-soft);
-  }
-  .more-menu-link:focus-visible {
-    outline-offset: -3px;
   }
   .farm-context-tabs {
     display: none;
@@ -1938,4 +1944,17 @@
 .market-trend h3 {
   margin: 0 0 4px;
   font-size: 15px;
+}
+
+/* Farm views stay within Today, including on narrow screens. */
+.farm-command .farm-context-tabs {
+  display: flex; width: fit-content; max-width: 100%; box-sizing: border-box;
+  overflow-x: auto; gap: 3px; scrollbar-width: thin;
+}
+.farm-command .farm-context-tabs > a { flex: 0 0 auto; white-space: nowrap; min-height: 44px; }
+.embedded-tool .page-heading.is-compact > .heading-actions { display: flex; }
+.farm-shell .glass-bottom-tabs > a,
+.farm-shell .glass-bottom-tabs > button { width: 33.333%; }
+@media (max-width: 767px) {
+  .farm-command .farm-context-tabs { width: 100%; }
 }

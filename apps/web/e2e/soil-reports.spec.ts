@@ -401,9 +401,8 @@ test("field values require explicit selection; corrected censored result and sou
   const cards = page.getByRole("region", { name: "Confirmed soil markers" });
   await expect(cards.getByText("<0.5", { exact: true })).toBeVisible();
   await expect(cards.getByText("mS/cm", { exact: true })).toBeVisible();
-  await expect(
-    cards.getByText("Available iron", { exact: true }),
-  ).toBeVisible();
+  await cards.locator('.soil-missing-markers > summary').filter({hasText:'Not reported'}).click();
+  await expect(cards.getByText('Available iron · No confirmed measurement', {exact:true})).toBeVisible();
   expect(api.posts).toBe(1);
 });
 test("public reference retains queued preview on429, honours cooldown, and never promotes values to farm markers", async ({
@@ -412,7 +411,7 @@ test("public reference retains queued preview on429, honours cooldown, and never
   await page.clock.install({ time: new Date("2026-10-30T09:00:00Z") });
   const api = await fixture(page, { referenceCooldown: true });
   await page.goto("/farm/settings");
-  await page.getByRole("button", { name: "Load public sample report" }).click();
+  await page.getByRole("button", { name: "Load sample report" }).click();
   const dialog = page.getByRole("dialog");
   await expect(
     dialog.getByRole("heading", { name: "ANACON-public-sample.pdf" }),
@@ -434,13 +433,8 @@ test("public reference retains queued preview on429, honours cooldown, and never
     dialog.getByRole("button", { name: "Confirm selected results" }),
   ).toHaveCount(0);
   await dialog.getByRole("button", { name: "Close soil report" }).click();
-  const reference = page.getByRole("region", {
-    name: "Public reference marker overview",
-  });
-  await expect(reference.getByText("9.12", { exact: true })).toBeVisible();
-  await expect(
-    reference.getByText(/not measurements of Farm Alpha/),
-  ).toBeVisible();
+  await expect(page.getByRole("region", {name:"Sample marker overview"})).toHaveCount(0);
+  await expect(page.getByRole("region", {name:"Sample reports"})).toBeVisible();
   await expect(
     page
       .getByRole("region", { name: "Confirmed soil markers" })
@@ -481,34 +475,21 @@ test("switching farms after a draft PATCH prevents an old report confirmation fr
   ).toBeVisible();
 });
 
-test("marker source links open their page and delayed report details preserve subsequent page choices", async ({
-  page,
-}) => {
-  const api = await fixture(page, { sourceNavigation: true });
+test("sample report review preserves source page choices through a delayed refresh", async ({page}) => {
+  const api = await fixture(page, {sourceNavigation:true});
   await page.goto("/farm/settings");
-  const overview = page.getByRole("region", {
-    name: "Public reference marker overview",
-  });
-  await overview.getByRole("button", { name: "p. 3", exact: true }).click();
+  await expect(page.getByRole("region", {name:"Sample marker overview"})).toHaveCount(0);
+  await page.getByRole("region", {name:"Sample reports"}).locator('.soil-report-row').click();
   const dialog = page.getByRole("dialog");
-  await expect(dialog.getByLabel("Report preview page")).toHaveValue("3");
-  await expect(
-    dialog.getByRole("img", { name: "Page 3 of ANACON-public-sample.pdf" }),
-  ).toBeVisible();
+  await dialog.getByRole("button", {name:"Original pages",exact:true}).click();
+  await dialog.getByLabel("Report preview page").selectOption("3");
+  await expect(dialog.getByRole("img", {name:"Page 3 of ANACON-public-sample.pdf"})).toBeVisible();
   await expect.poll(() => !!api.pendingDetail).toBe(true);
   await dialog.getByLabel("Report preview page").selectOption("4");
   await api.finishDetail();
   await expect(dialog.getByText(/version 2/)).toBeVisible();
   await expect(dialog.getByLabel("Report preview page")).toHaveValue("4");
-  await expect(
-    dialog.getByRole("img", { name: "Page 4 of ANACON-public-sample.pdf" }),
-  ).toBeVisible();
-  await dialog.getByRole("button", { name: "Close soil report" }).click();
-  await overview.getByRole("button", { name: "p. 3", exact: true }).click();
-  await expect(dialog.getByLabel("Report preview page")).toHaveValue("3");
-  await expect(
-    dialog.getByRole("img", { name: "Page 3 of ANACON-public-sample.pdf" }),
-  ).toBeVisible();
+  await expect(dialog.getByRole("img", {name:"Page 4 of ANACON-public-sample.pdf"})).toBeVisible();
   expect(api.posts).toBe(0);
 });
 
@@ -567,10 +548,41 @@ test("report-local desirable criteria and received dates survive explicit review
   });
   await dialog.getByRole("button", { name: "Close soil report" }).click();
   const cards = page.getByRole("region", { name: "Confirmed soil markers" });
+  await cards.locator('.soil-marker-details > summary').first().click();
   await expect(cards).toContainText("Received 5 Oct 2026");
   await expect(cards).toContainText("Collection date unreported");
   await expect(
     cards.getByRole("region", { name: "This report’s printed reference" }),
   ).toContainText("0.2–0.8");
   await expect(cards.getByText("Lab rating:", { exact: false })).toHaveCount(0);
+});
+
+test('farm soil overview shows six compact measurements and expands evidence on demand', async ({page}, testInfo) => {
+  await fixture(page);
+  const rows: Partial<SoilMarkerDraft>[] = [
+    {parameter:'ph',rawLabel:'pH',rawValue:'7.2',rawUnit:null},
+    {parameter:'electrical_conductivity',rawLabel:'EC',rawValue:'0.86',rawUnit:'ds/m'},
+    {parameter:'organic_matter',rawLabel:'Total organic matter',rawValue:'2.4',rawUnit:'%'},
+    {parameter:'nitrogen_unspecified',rawLabel:'Nitrogen',rawValue:'278',rawUnit:'kg/ha'},
+    {parameter:'phosphorus_total',rawLabel:'Total Phosphorus',rawValue:'16',rawUnit:'kg/ha'},
+    {parameter:'potassium_total',rawLabel:'Total potassium',rawValue:'186',rawUnit:'kg/ha'},
+  ];
+  await page.route('**/soil-markers', route => route.fulfill({json:env({farmId:A,limitations:[],samples:[{
+    id:'44444444-4444-4444-8444-444444444444',reportId:R,sourceSampleId:'S1',sampleLabel:'MTLR-0337/1010/26-27',laboratory:'Micro Tech Labs & Research',
+    collectionDate:null,receivedDate:'2026-10-10',reportDate:'2026-10-15',depth:null,confirmedAt:'2026-11-03T10:00:00Z',
+    markers:rows.map((row,i)=>({...marker({id:`result-${i}`,method:null,extractant:null,soilWaterRatio:null,...row}),reviewStatus:'confirmed',confirmedAt:'2026-11-03T10:00:00Z',canonical:{value:null,unit:null,conversion:null,missingReason:null}})),
+  }]})}));
+  await page.goto('/farm/settings');
+  const overview=page.getByRole('region',{name:'Confirmed soil markers'});
+  await expect(overview.locator('.soil-marker-card')).toHaveCount(6);
+  for (const width of [390,1440]) {
+    await page.setViewportSize({width,height:1000});
+    const cards=await overview.locator('.soil-marker-card').evaluateAll(elements=>elements.map(el=>{const r=el.getBoundingClientRect();return {height:r.height,right:r.right};}));
+    expect(cards.every(card=>card.height<200 && card.right<=width)).toBe(true);
+    await expect(overview.locator('.soil-marker-details[open]')).toHaveCount(0);
+    await expect(page.getByRole('button',{name:'Load sample report'})).toBeVisible();
+    await page.locator('.soil-settings-layout').screenshot({path:testInfo.outputPath(`compact-soil-${width}.png`)});
+  }
+  await overview.locator('.soil-marker-details > summary').first().click();
+  await expect(overview.getByRole('button',{name:'p. 1',exact:true})).toBeVisible();
 });

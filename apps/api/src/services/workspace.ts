@@ -69,7 +69,7 @@ const assemble = (farmId: string, row?: WorkspaceRow): FarmWorkspace => ({
   farmId, version: row?.version ?? 0, updatedAt: row?.updated_at.toISOString() ?? null,
 });
 
-export async function getWorkspace(pool: Pool, ownerId: string, farmId: string): Promise<FarmWorkspace> {
+export async function getWorkspace(pool: Pool | PoolClient, ownerId: string, farmId: string): Promise<FarmWorkspace> {
   const r = await pool.query<WorkspaceRow & { farm_id: string }>(
     `SELECT f.id AS farm_id, w.version, w.state, w.updated_at FROM farms f
      LEFT JOIN farm_workspaces w ON w.farm_id=f.id WHERE f.id=$1 AND f.owner_id=$2 AND f.deleted_at IS NULL`, [farmId, ownerId]);

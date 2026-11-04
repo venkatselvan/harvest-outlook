@@ -138,7 +138,8 @@ function model() {
       }
     })(),
   );
-  const farm = () => farms()?.find((f) => f.id === selected()) ?? farms()?.[0];
+  // A failed Solid resource throws when read; keep shared chrome mounted so its error/retry UI can render.
+  const farm = () => farms.error ? undefined : farms()?.find((f) => f.id === selected()) ?? farms()?.[0];
   const [workspace, { refetch: refreshWorkspace, mutate: setWorkspace }] =
     createResource(
       () => farm()?.id,

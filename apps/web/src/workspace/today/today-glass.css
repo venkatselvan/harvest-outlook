@@ -1,0 +1,149 @@
+/* Smoked forest surfaces share the shell's light/dark palette. Existing components retain their evidence and controls. */
+.today-view {
+  --today-radius: 24px;
+  --today-panel: var(--glass-panel, var(--surface-glass));
+  --today-edge: var(--glass-edge, var(--border));
+  padding-top: 24px;
+}
+.today-view :is(.today-card, .today-overview, .today-section, .today-fields, .today-slider, .today-crop-area) {
+  background: var(--today-panel);
+  border: 1px solid var(--today-edge);
+  border-radius: var(--today-radius);
+  box-shadow: 0 16px 48px rgb(5 22 13 / 9%), inset 0 1px 0 rgb(255 255 255 / 4%);
+  backdrop-filter: blur(24px) saturate(1.12);
+  -webkit-backdrop-filter: blur(24px) saturate(1.12);
+}
+.today-layout { gap: 22px; max-width: 1600px; }
+.today-primary { gap: 16px; align-content: start; }
+.today-side { gap: 18px; }
+.today-hero-frame { border-radius: 28px; border-color: var(--today-edge); box-shadow: 0 20px 60px rgb(0 15 7 / 16%); }
+.today-hero-top { top: 15px; left: 15px; right: 15px; }
+.today-hero-second { top: 57px; left: 15px; right: 15px; }
+.today-hero-overlay { padding: 22px 20px 18px; }
+.today-hero-toggle, .today-date-chip, .today-sat-tools { backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px); }
+.today-hero-toggle button { min-height: 32px; padding-inline: 13px; }
+.today-slider { padding: 18px 20px; }
+.today-slider-head { gap: 12px; flex-wrap: wrap; }
+.today-slider-head label { font-weight: 550; font-size: 13px; }
+.today-slider-ends { font-size: 11px; line-height: 1.5; }
+.today-cards { gap: 14px; }
+.today-card { padding: 19px 17px 13px; gap: 7px; }
+.today-card h3 { font-weight: 500; line-height: 1.5; }
+.today-card-value { font-weight: 500; letter-spacing: -.045em; font-size: clamp(25px, 2.2vw, 36px); }
+.today-card-sub { line-height: 1.55; }
+.today-card-basis { line-height: 1.5; }
+.today-card-more { min-height: 32px; margin-top: auto; padding-top: 8px; }
+.today-overview, .today-fields, .today-crop-area { padding: 22px; }
+.today-overview-head h2, .today-section-head h2, .today-fields h2, .today-crop-area h2 { font-weight: 500; letter-spacing: -.025em; font-size: 18px; }
+.today-overview-headline { font-weight: 500; font-size: 16px; line-height: 1.55; }
+.today-overview-points { gap: 12px; }
+.today-overview-point { padding-top: 12px; }
+.today-overview-chip { font-size: 10px; }
+.today-chip { padding: 4px 8px; }
+.today-lists { gap: 22px; }
+.today-section { padding: 23px; }
+.today-section-head { gap: 12px; flex-wrap: wrap; align-items: center; }
+.today-alert, .today-step, .today-next { border-radius: 15px; background: color-mix(in srgb, var(--surface-soft) 65%, transparent); }
+.today-alert-list, .today-step-list { gap: 12px; }
+.today-next { padding: 20px; }
+.today-next-title { font-size: 19px; font-weight: 550; line-height: 1.4; }
+.today-step-done { min-height: 40px; }
+.today-about { justify-self: start; min-height: 36px; }
+.today-crop-area { display: grid; gap: 16px; }
+.today-crop-area-bar { height: 10px; display: flex; gap: 3px; border-radius: 999px; overflow: hidden; }
+.today-crop-area-bar span { min-width: 1px; }
+.today-crop-area ul { padding: 0; margin: 0; display: grid; gap: 12px; list-style: none; }
+.today-crop-area li { display: grid; grid-template-columns: 11px minmax(0, 1fr) auto; align-items: center; gap: 5px 9px; font-size: 12px; }
+.today-crop-area strong { font-weight: 550; font-variant-numeric: tabular-nums; }
+.today-crop-area small { grid-column: 2 / -1; color: var(--text-secondary); font-size: 11px; }
+.today-crop-area .today-section-head h2 { margin: 0; }
+.today-actions-layout { max-width: 1400px; margin-inline: auto; }
+.today-actions-heading { padding: 3px 0 27px; }
+.today-eyebrow { font-size: 11px; text-transform: uppercase; letter-spacing: .15em; color: var(--text-secondary); }
+.today-actions-heading h2 { margin: 9px 0; font-size: clamp(27px, 3vw, 39px); letter-spacing: -.045em; font-weight: 450; }
+.today-actions-heading p { color: var(--text-secondary); margin: 0; font-size: 13px; line-height: 1.65; }
+.today-illustration-prediction .today-sat-future { position: static; margin: 10px 0 0; text-align: left; align-items: flex-start; padding: 14px; background: var(--today-panel); }
+.today-illustration-prediction .today-sat-future-text { justify-content: flex-start; }
+.today-illustration-prediction .today-predicted-link { display: flex; align-items: center; gap: 9px; width: 100%; margin-top: 10px; padding: 13px 15px; border: 1px solid var(--today-edge); border-radius: 14px; background: var(--today-panel); color: var(--text); text-align: left; cursor: pointer; }
+@media (min-width: 1100px) {
+  .today-layout { grid-template-columns: minmax(0, 1.65fr) minmax(330px, .9fr); }
+  .today-hero-frame, .today-skeleton-hero { aspect-ratio: 1.42; }
+  .today-layout > .today-primary { position: sticky; top: 18px; }
+  .today-actions-layout .today-lists { grid-template-columns: minmax(0, 1.12fr) minmax(0, 1fr); }
+}
+@media (min-width: 1550px) {
+  .today-hero-frame, .today-skeleton-hero { aspect-ratio: 1.65; }
+}
+@media (max-width: 759px) {
+  .today-view { padding: 18px 14px 100px; }
+  .today-layout, .today-lists { gap: 18px; }
+  .today-hero-frame { border-radius: 22px; aspect-ratio: 1.12; }
+  .today-hero-top { inset: 10px 10px auto; }
+  .today-hero-second { top: 53px; left: 10px; right: 10px; }
+  .today-hero-overlay { padding-inline: 13px; }
+  .today-overview, .today-fields, .today-crop-area, .today-section { padding: 19px; }
+  .today-card { padding: 17px 13px 11px; border-radius: 20px; }
+  .today-card-value { font-size: 27px; }
+  .today-slider { padding: 16px; border-radius: 20px; }
+  .today-hero-toggle button { padding-inline: 10px; font-size: 11px; }
+  .today-date-chip { font-size: 10px; }
+  .today-actions-heading { padding-bottom: 22px; }
+}
+@media (prefers-reduced-transparency: reduce) {
+  .today-view :is(.today-card, .today-overview, .today-section, .today-fields, .today-slider, .today-crop-area) { background: var(--surface); backdrop-filter: none; -webkit-backdrop-filter: none; }
+}
+.today-greenness-web { display: grid; gap: 12px; border-top: 1px solid var(--today-edge); padding-top: 18px; }
+.today-greenness-web h3 { margin: 0; font-size: 14px; font-weight: 500; }
+.today-greenness-web svg { width: 100%; max-height: 260px; color: var(--accent); }
+.today-web-grid { fill: none; stroke: var(--border-strong); stroke-width: 1; }
+.today-web-shape { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 2; }
+.today-greenness-web svg text { font: 12px system-ui; fill: var(--text-secondary); }
+.today-greenness-web svg .today-web-scale { font-size: 9px; }
+.today-crop-area .today-web-values li { grid-template-columns: minmax(0, 1fr) auto; }
+.today-crop-area .today-web-values small { grid-column: 1 / -1; }
+.today-shared-lists { max-width: 1600px; margin: 22px auto 0; }
+.today-shared-lists.is-actions { max-width: 1400px; margin-top: 0; }
+.today-shared-lists.is-actions .today-lists { grid-template-columns: minmax(0, 1fr); }
+@media (min-width: 1100px) {
+  .today-shared-lists.is-actions .today-lists { grid-template-columns: minmax(0, 1.12fr) minmax(0, 1fr); }
+}
+/* Evidence captions need their own surface: their contrast must not depend on the basemap underneath. */
+.today-view :is(.today-conditions, .today-sat-notes, .today-curve) {
+  padding: 12px 14px;
+  margin: 9px 0 0;
+  border: 1px solid var(--today-edge);
+  border-radius: 15px;
+  color: var(--text-secondary);
+  background: var(--today-panel);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+}
+@media (prefers-reduced-transparency: reduce) {
+  .today-view :is(.today-conditions, .today-sat-notes, .today-curve) { background: var(--surface); backdrop-filter: none; -webkit-backdrop-filter: none; }
+}
+/* Keep the hero and brief beside each other; the full set of metrics uses the next row. */
+@media (min-width: 1100px) {
+  .today-layout > .today-primary { position: static; }
+  .today-layout > .today-cards,
+  .today-layout > .today-crop-area { grid-column: 1 / -1; }
+  .today-layout > .today-cards,
+  .today-first-field-body > .today-cards { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .today-first-field-body > .today-side,
+  .today-first-field-body > .today-cards,
+  .today-first-field-body > .today-crop-area { grid-column: 1 / -1; }
+  .today-first-field-body > .today-side { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .today-crop-area:has(.today-greenness-web) { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: start; }
+  .today-crop-area:has(.today-greenness-web) > :not(.today-greenness-web) { grid-column: 1; }
+  .today-crop-area > .today-greenness-web { grid-column: 2; grid-row: 1 / span 5; border-top: 0; border-left: 1px solid var(--today-edge); padding: 0 0 0 24px; }
+}
+@media (min-width: 760px) and (max-width: 1099px) {
+  .today-cards { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+/* An unavailable image has text, so let that frame grow rather than overlaying its explanation with stage metadata. */
+.today-hero-frame.satellite:has(.today-sat > .today-hero-message) { aspect-ratio: auto; min-height: 340px; padding: 100px 14px 14px; display: flex; flex-direction: column; }
+.today-hero-frame.satellite:has(.today-sat > .today-hero-message) .today-sat { position: static; display: block; }
+.today-hero-frame.satellite .today-sat > .today-hero-message { position: static; inset: auto; height: auto; padding: 12px 5px; }
+.today-hero-frame.satellite:has(.today-sat > .today-hero-message) .today-hero-overlay { position: static; margin-top: 16px; }
+@media(max-width:759px) {
+  .today-hero-frame.satellite:has(.today-sat > .today-hero-message) { padding: 140px 10px 10px; min-height: 0; }
+}

@@ -9,7 +9,7 @@ import {renderSoilPages} from '../src/services/soil-pages';
 import {importCommodityCatalogue} from '../src/services/commodity-catalogue';
 import {loadCatalogueIntoDb} from '../src/catalogue/load';
 import {deleteFarm} from '../src/services/farms';
-import {activeSoilReference,soilReferenceRegistry} from '../src/services/soil-reference-registry';
+import {activeSoilReference,soilReferenceRegistry,referenceSource} from '../src/services/soil-reference-registry';
 import {REPO_ROOT} from '../src/catalogue/files';
 import {farmBody,login,makeJpeg,multipart,setupHarness,type Harness,type Client} from './helpers';
 let h:Harness,a:Client,b:Client,jpeg:Buffer;
@@ -56,9 +56,14 @@ describe('soil evidence and researched inventory',()=>{
   const{f,auth}=await farm();const [x,y]=await Promise.all([createSoilReport(deps(),auth,f.id,jpeg,'a.jpg'),createSoilReport(deps(),auth,f.id,jpeg,'a.jpg')]);expect(x.id).toBe(y.id);expect(Number((await h.pool.query("SELECT count(*) FROM jobs WHERE payload->>'reportId'=$1",[x.id])).rows[0].count)).toBe(1);
   const live=await createSoilReport(deps({config:{...h.config,RUNTIME_MODE:'live'}}),auth,f.id,jpeg,'a.jpg');expect(live.id).not.toBe(x.id);await expect(createSoilReport(deps(),auth,f.id,Buffer.from('not a document'),'x.pdf')).rejects.toMatchObject({statusCode:415});await expect(renderSoilPages(Buffer.from('%PDF-broken'))).rejects.toMatchObject({code:'invalid_pdf'});const photographed=await renderSoilPages(await makeJpeg({width:2300,height:1800}));expect(photographed.pages[0]?.width).toBe(2300);expect(photographed.pages[0]?.height).toBe(1800);
  });
- it('isolates the active public agricultural PDF and never confirms it as field measurements',async()=>{
-  const{f,auth}=await farm();const registry=await soilReferenceRegistry();if(!registry.active){expect((await a.call('POST',`/api/v1/farms/${f.id}/soil-reports/sample`,{payload:{}})).statusCode).toBe(503);return}const {reference,data}=await activeSoilReference();const r=await createSoilReport(deps(),auth,f.id,data,'my-report.pdf');expect(r.kind).toBe('reference_sample');expect(r.pages.length).toBeGreaterThan(0);expect(r.referenceSource?.pages).toEqual(reference.sourcePages);
-  await expect(confirmSoilReport(deps(),auth.ownerId,r.id,{expectedVersion:r.version,sampleIds:['s1'],markerIds:['ec']})).rejects.toMatchObject({code:'reference_sample_not_field_evidence'});expect((await farmSoilMarkers(deps(),auth.ownerId,f.id)).samples).toEqual([]);
+ it('loads the farm sample separately while allowing its owner to upload the same report as field evidence',async()=>{
+  const{f,auth}=await farm();const {reference,data}=await activeSoilReference();
+  expect(reference.sourcePages).toEqual([1]);expect(reference.sourceUrl).toBeNull();
+  const r=await createSoilReport(deps(),auth,f.id,data,'Farm soil sample.pdf',referenceSource(reference));
+  expect(r.kind).toBe('reference_sample');expect(r.pages).toHaveLength(1);expect(r.referenceSource?.pages).toEqual([1]);
+  await expect(confirmSoilReport(deps(),auth.ownerId,r.id,{expectedVersion:r.version,sampleIds:['s1'],markerIds:['ec']})).rejects.toMatchObject({code:'reference_sample_not_field_evidence'});
+  const own=await createSoilReport(deps(),auth,f.id,data,'SOIL REPORT.pdf');expect(own.kind).toBe('field_report');expect(own.referenceSource).toBeNull();expect(own.id).not.toBe(r.id);
+  expect((await farmSoilMarkers(deps(),auth.ownerId,f.id)).samples).toEqual([]);
  });
  it('retires only registered public references while preserving owner history, raw audit and field reports',async()=>{
   const{f,auth}=await farm();const retired=(await soilReferenceRegistry()).retired[0]!;const data=await readFile(REPO_ROOT+'/'+retired.localPath);const before=Number((await h.pool.query('SELECT count(*) FROM jobs')).rows[0].count);await expect(createSoilReport(deps(),auth,f.id,data,'old-public.pdf')).rejects.toMatchObject({code:'reference_sample_retired'});expect(Number((await h.pool.query('SELECT count(*) FROM jobs')).rows[0].count)).toBe(before);

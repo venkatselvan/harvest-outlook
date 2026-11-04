@@ -1,0 +1,216 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "string",
+      "format": "uuid",
+      "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+    },
+    "mediaId": {
+      "type": "string",
+      "format": "uuid",
+      "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+    },
+    "capturedOn": {
+      "type": "string",
+      "format": "date",
+      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+    },
+    "createdAt": {
+      "type": "string"
+    },
+    "imagePath": {
+      "type": "string"
+    },
+    "journalEntryId": {
+      "anyOf": [
+        {
+          "type": "string",
+          "format": "uuid",
+          "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "coverage": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "photoId": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "status": {
+              "type": "string",
+              "enum": [
+                "queued",
+                "running",
+                "ready",
+                "failed",
+                "unavailable"
+              ]
+            },
+            "method": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "mask",
+                    "box"
+                  ]
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "\"box\": union of SAM proposal boxes / photo area (overstates pixel share; never pixel coverage). \"mask\": union of decoded mask pixels / photo area (not shipped while SAM masks are unsupported, DECISIONS.md D44)."
+            },
+            "modelId": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "summaryModelId": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "classes": {
+              "maxItems": 3,
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "key": {
+                    "type": "string",
+                    "enum": [
+                      "crop",
+                      "weed",
+                      "water"
+                    ]
+                  },
+                  "label": {
+                    "type": "string"
+                  },
+                  "fraction": {
+                    "anyOf": [
+                      {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 1
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "description": "Share of the PHOTO (0..1), never field area. With method \"box\" it is the union of outline boxes divided by the photo area: boxes include background, so it overstates the pixel share."
+                  },
+                  "regions": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 9007199254740991
+                  },
+                  "confidence": {
+                    "anyOf": [
+                      {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 1
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "phrases": {
+                    "maxItems": 5,
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "description": "SAM concept phrases actually sent for this class, in order; the share is from the last one. The label is a display name, not necessarily a phrase that was searched."
+                  }
+                },
+                "required": [
+                  "key",
+                  "label",
+                  "fraction",
+                  "regions",
+                  "confidence",
+                  "phrases"
+                ]
+              }
+            },
+            "summary": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 600
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "limitations": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "failureReason": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "promptVersion": {
+              "type": "string",
+              "const": "photo-coverage-v2"
+            },
+            "createdAt": {
+              "type": "string"
+            },
+            "outdated": {
+              "type": "boolean",
+              "description": "True when the photo date or the crop of the cycle changed after this measurement; the crop search phrase or the calendar stage in the summary may no longer apply."
+            }
+          },
+          "required": [
+            "photoId",
+            "status",
+            "method",
+            "modelId",
+            "summaryModelId",
+            "classes",
+            "summary",
+            "limitations",
+            "failureReason",
+            "promptVersion",
+            "createdAt",
+            "outdated"
+          ]
+        },
+        {
+          "type": "null"
+        }
+      ]
+    }
+  },
+  "required": [
+    "id",
+    "mediaId",
+    "capturedOn",
+    "createdAt",
+    "imagePath"
+  ],
+  "$id": "https://harvest-outlook.local/schema/1.0/FieldPhoto.json",
+  "x-schemaVersion": "1.0"
+}

@@ -20,6 +20,13 @@ export interface AlertsListProps {
    * cover the whole farm (weather, price, news) get a small "Farm-wide" chip. Omitted on a farm without fields.
    */
   fieldView?: boolean;
+  /**
+   * 2026-11-04 (TODAY_MAP_LAYOUT_SPEC.md, Actions tab): "actions" shapes each alert as an action card: an eyebrow (farm ·
+   * field), the title, "01 · Evidence" (the alert text and its dated source), "02 · Suggested action" and one button.
+   */
+  variant?: "actions" | undefined;
+  /** The eyebrow line of an action card ("Kabini farm · Farm-wide"). */
+  eyebrow?: ((alert: FarmAlert) => string) | undefined;
 }
 
 /** DOM id of an alert card, so the Today overview can scroll to it. */
@@ -67,6 +74,47 @@ export function sortAlerts(alerts: readonly FarmAlert[]): FarmAlert[] {
   return [...alerts].sort((a, b) => severityOrder[a.severity] - severityOrder[b.severity]);
 }
 
+/** One alert as an action card (Actions tab). The suggested step's button jumps to the step, as in the regular list. */
+function AlertActionCard(props: { alert: FarmAlert; eyebrow?: ((alert: FarmAlert) => string) | undefined; hasStep: boolean; onSuggested: (alert: FarmAlert) => void }) {
+  const alert = () => props.alert;
+  return (
+    <div class="today-alert-body today-action-card">
+      <p class="today-action-eyebrow">
+        <span>{props.eyebrow?.(alert()) ?? typeLabel[alert().type]}</span>
+        <span class={`today-chip severity ${alert().severity}`}>{severityLabel[alert().severity]}</span>
+      </p>
+      <h3>{alert().title}</h3>
+      <dl class="today-action-evidence">
+        <div>
+          <dt>01 · Evidence</dt>
+          <dd>
+            <span>{alert().detail}</span>
+            <a class="today-alert-source" href={alert().source.url} target="_blank" rel="noreferrer noopener">
+              {alert().source.name} · {formatDay(alert().source.date)} <span aria-hidden="true">↗</span>
+              <span class="today-sr"> (opens in a new tab)</span>
+            </a>
+          </dd>
+        </div>
+        <div>
+          <dt>02 · Suggested action</dt>
+          <dd>{alert().suggestedStep ?? "This alert names no step; read it and decide whether it applies to your field."}</dd>
+        </div>
+      </dl>
+      <div class="today-action-footer">
+        <span>
+          {typeLabel[alert().type]} · until {formatDay(alert().validTo, false)}
+        </span>
+        <Show when={alert().suggestedStep && props.hasStep}>
+          <button type="button" class="btn compact secondary" aria-label={`Review the suggested step: ${alert().suggestedStep}`} onClick={() => props.onSuggested(alert())}>
+            Review step <Icon name="arrow" size={13} />
+          </button>
+        </Show>
+      </div>
+      <span class="today-sr">Valid {rangeLabel(alert().validFrom, alert().validTo)}.</span>
+    </div>
+  );
+}
+
 export function AlertsList(props: AlertsListProps) {
   let heading: HTMLHeadingElement | undefined;
   const sorted = () => sortAlerts(props.alerts);
@@ -92,6 +140,7 @@ export function AlertsList(props: AlertsListProps) {
             {(alert) => (
               <li class={`today-alert ${alert.severity}`} id={alertDomId(alert.id)} tabIndex={-1} data-alert-id={alert.id}>
                 <span class="today-alert-bar" aria-hidden="true" />
+                <Show when={props.variant !== "actions"} fallback={<AlertActionCard alert={alert} eyebrow={props.eyebrow} hasStep={props.stepAlertIds.has(alert.id)} onSuggested={props.onSuggested} />}>
                 <div class="today-alert-body">
                   <p class="today-alert-kicker">
                     <span class={`today-chip severity ${alert.severity}`}>{severityLabel[alert.severity]}</span>
@@ -125,6 +174,7 @@ export function AlertsList(props: AlertsListProps) {
                   </Show>
                   <span class="today-sr">Valid {rangeLabel(alert.validFrom, alert.validTo)}.</span>
                 </div>
+                </Show>
                 <button
                   type="button"
                   class="today-alert-dismiss"

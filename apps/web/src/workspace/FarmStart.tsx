@@ -75,7 +75,8 @@ export function FarmStart(props: {
           <h3>{props.busy ? "Preparing your demo…" : "Load a demo farm"}</h3>
           <p>
             Start on a farm that has used the app for two years: past harvests,
-            a journal, the crop in the field now and saved plans.
+            a journal and the crop in the field now. No future seasons are saved, so
+            you generate the plan.
           </p>
           <strong>
             {props.busy ? "Loading…" : "Explore the demo"}

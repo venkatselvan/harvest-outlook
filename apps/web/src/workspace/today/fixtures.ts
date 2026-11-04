@@ -1204,22 +1204,12 @@ export const FIXTURE_ISSUE_IDS = {
 } as const;
 /** An interval field check with one invented risk-window item (example.org source) and the eight general prompts. */
 export function fieldCheckStepFixture(over: { missedCount?: number; status?: UpcomingStep["status"] } = {}): UpcomingStep {
-  const general = [
-    "New leaf damage or holes",
-    "Discoloured or wilting plants",
-    "Insects on leaves, stems or the soil surface",
-    "Weeds taller than the crop between rows",
-    "Standing water or dry cracked soil",
-    "Animal tracks or grazing damage",
-    "Anything different from last week",
-    "Take a photo of anything unusual",
-  ];
   const status = over.status ?? "due";
   return {
     id: "check:maize-cycle:2026-11-01",
     kind: "field_check",
-    title: "Walk the field: Maize on North strip",
-    detail: "Your check interval: every 7 days (your own setting).",
+    title: "Check Maize on North strip",
+    detail: "Maize leaf damage risk",
     dueFrom: "2026-11-01",
     dueTo: "2026-11-03",
     status,
@@ -1228,7 +1218,8 @@ export function fieldCheckStepFixture(over: { missedCount?: number; status?: Upc
     issueId: null,
     fieldCheck: {
       id: "check:maize-cycle:2026-11-01",
-      kind: "interval",
+      kind: "condition",
+      reason: "Maize leaf damage risk",
       fieldId: "north",
       cycleId: "maize-cycle",
       issueId: null,
@@ -1236,7 +1227,7 @@ export function fieldCheckStepFixture(over: { missedCount?: number; status?: Upc
       dueFrom: "2026-11-01",
       dueTo: "2026-11-03",
       status,
-      intervalDays: 7,
+      intervalDays: null,
       checklist: [
         {
           text: "Fixture risk window: look for fresh feeding on young leaves",
@@ -1246,7 +1237,6 @@ export function fieldCheckStepFixture(over: { missedCount?: number; status?: Upc
           sourceDate: "2026-10-20",
           alertId: FIXTURE_ALERT_IDS.threat,
         },
-        ...general.map((text) => ({ text, kind: "general" as const, sourceName: null, sourceUrl: null, sourceDate: null, alertId: null })),
       ],
       completedOn: null,
       journalEntryId: null,

@@ -285,3 +285,20 @@ export function rotationWarningText(c: Pick<CropFitCandidate, "reasonCodes" | "r
   if (c.reasonCodes.includes("same_family_repeat")) return `Same crop family as ${prev}; the year plan avoids this order`;
   return null;
 }
+
+/** The "Not ranked (a, b): reason" lines of a review's limitations. */
+export const notRankedLines = (r: Pick<CropFitReview, "limitations">): string[] => r.limitations.filter((l) => l.startsWith("Not ranked"));
+
+/** Crops named across the lines (each line lists them in brackets, comma separated); a line without a list counts as one. */
+export function notRankedCount(lines: readonly string[]): number {
+  return lines.reduce((n, l) => {
+    const names = /^Not ranked \(([^)]*)\)/.exec(l)?.[1]?.split(",").map((x) => x.trim()).filter(Boolean);
+    return n + (names?.length || 1);
+  }, 0);
+}
+
+/** Summary of the disclosure that holds the per-crop lines. */
+export const notRankedSummary = (lines: readonly string[]): string => {
+  const n = notRankedCount(lines);
+  return `${n} ${n === 1 ? "crop" : "crops"} not ranked · why`;
+};

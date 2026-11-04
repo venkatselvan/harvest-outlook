@@ -1,7 +1,9 @@
+import { SeasonPredictionStatus } from './SeasonPredictionStatus';
+import { FieldImage } from "./FieldImage";
 import { createEffect, createMemo, createSignal, For, Match, on, onCleanup, Show, Switch, untrack, type JSX } from "solid-js";
 import type { CareTask, CompleteCheck, FarmAlert, FieldSummary, PricePoint, TodayView as TodayData, UpcomingStep, WeatherPoint } from "@harvest/contracts";
 import { useLocation, useNavigate } from "@solidjs/router";
-import { useWorkspace, today as browserToday, type Field } from "../state";
+import { boundaryArea, useWorkspace, today as browserToday, type Field } from "../state";
 import { newEntryId } from "../../features/photo-region/http";
 import { Icon } from "../icons";
 import type { FieldBoundary } from "../fieldGeometry";
@@ -38,8 +40,13 @@ import { heroFieldOf, TodayHero, type FarmHero, type HeroField, type HeroMode, t
 import { StageSlider } from "./StageSlider";
 import { TodayCards, type CardKind } from "./TodayCards";
 import { TodayOverview } from "./TodayOverview";
-import { AlertsList } from "./AlertsList";
+import { TodayCropArea } from "./TodayCropArea";
+import { AlertsList, isFarmWide } from "./AlertsList";
 import { UpcomingSteps, stepDomId } from "./UpcomingSteps";
+import { AttentionPanel, EvaraPanel, GaugesPanel, GlancePanel, MapCentre, MorePanel, ThisWeekPanel, TodayHeadline, TodayMapLayout, WeekPanel } from "./TodayMapLayout";
+import { attentionItems, glanceFacts, greennessGauge, stageGauge, waterGauge, weekAhead, weekPlan, weekTakeaway } from "./todayMapModel";
+import { farmHref } from "../farmTabs";
+import { ASSISTANT_PROMPTS } from "../../features/ask/model";
 import { TodayEmpty } from "./TodayEmpty";
 import { TodaySheet, type SheetKind } from "./TodaySheet";
 import TodaySoil, { createSoilCardController, SoilCardContext } from "./TodaySoil";
@@ -54,6 +61,9 @@ import { ISSUES_SECTION_ID, IssuesLine, IssuesSection } from "../scouting/Issues
 import type { FieldOption } from "../scouting/IssueForm";
 import type { Boundary } from "../state";
 import "./today.css";
+import "./today-glass.css";
+import "./today-cards-compact.css";
+import "./today-layout.css";
 
 /** `fieldId` is the field the request asked for (null: no field, the farm view or the "All fields" overview). */
 type LoadState =
@@ -78,8 +88,8 @@ export function careTaskStep(task: CareTask): UpcomingStep {
 }
 
 /**
- * The right-hand column of a crop view: "Today for you", the soil card under it (FIELDS_MULTICROP_SOIL_SPEC.md 7), then the
- * cards. Shared by the field view and the first-field section of the "All fields" overview.
+ * Present the daily brief first, keep condition with the field, and group weather, soil and harvest economics.
+ * These are the same cards and callbacks; their data and detail sheets have a single owner.
  */
 export function TodaySide(props: {
   view: TodayData;
@@ -91,13 +101,25 @@ export function TodaySide(props: {
   onDetails: (kind: CardKind) => void;
   onUpload: () => void;
   onRecords: () => void;
+  primary?: JSX.Element;
 }) {
   return (
-    <div class="today-side">
+    <>
       <TodayOverview overview={props.view.overview} onDetails={props.onDetails} />
-      <TodaySoil farmId={props.farmId} epoch={props.epoch} onUpload={props.onUpload} onRecords={props.onRecords} />
-      <TodayCards view={props.view} date={props.date} price={props.price} weather={props.weather} onDetails={props.onDetails} />
-    </div>
+      <div class="today-primary">
+        {props.primary}
+      </div>
+      <div class="today-side">
+        <TodayCards group="conditions" view={props.view} date={props.date} price={props.price} weather={props.weather} onDetails={props.onDetails} />
+        <TodayCards group="field" view={props.view} date={props.date} price={props.price} weather={props.weather} onDetails={props.onDetails} />
+        <TodaySoil farmId={props.farmId} epoch={props.epoch} onUpload={props.onUpload} onRecords={props.onRecords} />
+      </div>
+      <TodayCards group="outlook" view={props.view} date={props.date} price={props.price} weather={props.weather} onDetails={props.onDetails} />
+      <TodayCropArea fields={props.view.fields ?? []} />
+      <Show when={props.view.energyFootprint || props.view.carbonFootprint}>
+        <TodayCards group="planning" view={props.view} date={props.date} price={props.price} weather={props.weather} onDetails={props.onDetails} />
+      </Show>
+    </>
   );
 }
 
@@ -185,9 +207,10 @@ export function TodayView(props: TodayViewProps) {
   /** Workspace version this view last saw for the selected farm; undefined until the first version is known. */
   let seenVersion: number | undefined;
 
-  const farmId = () => s.farm()?.id;
+  const farmId = createMemo(() => s.farm()?.id);
   /** The shell's field selection: an id, null (no field / All fields), or undefined while it cannot tell yet (the view waits). */
-  const fieldKey = () => props.field();
+  // Only a resolved field change resets this controller; unrelated URL parameters (such as the presentation tab) do not.
+  const fieldKey = createMemo(() => props.field());
   const state = (): LoadState => {
     const current = load();
     if (current.status === "idle") return current;
@@ -276,10 +299,12 @@ export function TodayView(props: TodayViewProps) {
       void fetchView(target, field, s.sessionEpoch(), true);
     });
   });
+  // Compare stable identities, not refreshed response objects: polling must keep the selected day.
+  const cycleId = createMemo(() => view()?.cycle?.id);
   // A different cycle starts the slider at today again.
   createEffect(
     on(
-      () => view()?.cycle?.id,
+      cycleId,
       () => {
         player.stop();
         setPick(null);
@@ -291,7 +316,10 @@ export function TodayView(props: TodayViewProps) {
   // ---------------------------------------------------------------- slider-driven values
   const slider = createMemo(() => {
     const current = view();
-    return current ? sliderModel(current) : null;
+    if (!current) return null;
+    const harvest = current.cycle?.harvestDate;
+    return sliderModel(harvest && current.slider && harvest > current.slider.to
+      ? {...current,slider:{...current.slider,to:harvest}} : current);
   });
   const index = () => {
     const model = slider();
@@ -309,7 +337,7 @@ export function TodayView(props: TodayViewProps) {
   const weather = createMemo(() => weatherAt(view()?.weatherTrack ?? [], date()));
   const ticks = createMemo(() => {
     const model = slider();
-    return model ? stageTicks(view()?.timeline, model) : [];
+    return model ? stageTicks(view()?.timeline, model, view()?.cycle?.harvestDate) : [];
   });
   const marks = createMemo(() => {
     const model = slider();
@@ -324,8 +352,12 @@ export function TodayView(props: TodayViewProps) {
     onChange: setPlaying,
   });
   onCleanup(() => player.stop());
+  // Actions shares this controller, but hidden playback must not move the selected day.
+  createEffect(() => {
+    if (props.presentation === "actions") player.stop();
+  });
   const togglePlay = () => (player.playing ? player.stop() : player.start());
-  const mode = (): HeroMode => (props.scene() === "satellite" ? "satellite" : "illustration");
+  const mode = (): HeroMode => (props.scene() === "field-image" ? "field-image" : props.scene() === "satellite" ? "satellite" : "illustration");
 
   // ---------------------------------------------------------------- fields (FIELDS_MULTICROP_SOIL_SPEC.md 5, 6.3)
   const workspaceFields = (): Field[] => (props.workspace() as { fields?: Field[] } | undefined)?.fields ?? [];
@@ -563,6 +595,102 @@ export function TodayView(props: TodayViewProps) {
   const openDetails = (kind: CardKind) => setSheet(kind);
   const canPlant = () => !!props.data();
 
+  // ---------------------------------------------------------------- full-map layout (TODAY_MAP_LAYOUT_SPEC.md)
+  const farmName = () => s.farm()?.name ?? "Your farm";
+  /** The headline names a selected field ("Strip 2 today."); a farm without fields and "All fields" read "Your farm today.". */
+  const headlineField = () => (layout() === "field" ? fieldName() : null);
+  /** Open alerts and due or overdue steps (an alert and its own suggested step count once); the headline counts the same list. */
+  const attention = createMemo(() => {
+    const current = view();
+    return current ? attentionItems(alerts(), steps(), current.today) : { items: [], total: 0 };
+  });
+  const tabHref = (tab: "actions" | "modify") => farmHref(tab, undefined, fieldKey() ?? null);
+  /** The drawn farm's area, for a whole-farm crop on a farm without fields (map area, not a survey). */
+  const farmAreaHa = () => {
+    const area = boundaryArea((view()?.farmBoundary ?? props.workspace()?.boundary ?? null) as Boundary | null);
+    return area > 0 ? area : null;
+  };
+  /** What the gauges describe: the described field and crop ("North strip · Maize"), else the crop or the field. */
+  const gaugeSubject = () => {
+    const current = view();
+    if (!current?.cycle) return fieldName();
+    return viewField()?.name ? `${viewField()!.name} · ${cropName()}` : cropName();
+  };
+  const gaugeDate = () => (date() === view()?.today ? "Today" : formatDay(date(), false));
+  const viewToday = () => view()?.today ?? browserToday();
+  /** Where the five days come from: the forecast source, and the model label when a day shows a rain chance. */
+  const weekBasis = () => {
+    const days = new Set(weekAhead([], viewToday()).map((day) => day.date));
+    const points = (view()?.weatherTrack ?? []).filter((point) => days.has(point.date));
+    const sources = [...new Set(points.filter((p) => p.kind === "forecast" || p.kind === "observed").map((p) => p.basis.source))];
+    const parts: string[] = [];
+    if (sources.length) parts.push(`Weather: ${sources.join(", ")}`);
+    if (points.some((p) => p.kind !== "unavailable" && p.agro?.rainProbabilityPct != null)) parts.push("rain chance is an Open-Meteo model estimate for the grid cell");
+    if (points.some((p) => p.kind === "typical")) parts.push("typical days are seasonal averages, not a forecast");
+    return parts.length ? `${parts.join("; ")}.` : null;
+  };
+  const weekTitle = (text: string) => text.charAt(0).toUpperCase() + text.slice(1);
+  /**
+   * The Today frame over the map: the headline, at a glance, the hero, the gauges, attention, the week, Evara and "More
+   * from Today" holding the lower-priority cards. Every slot reads the same view, slider day and callbacks as before.
+   */
+  const mapLayout = (parts: { hero: JSX.Element; more: JSX.Element; hint: string; testid?: string; class?: string }) => (
+    <TodayMapLayout
+      testid={parts.testid}
+      class={parts.class}
+      headline={<TodayHeadline date={view()?.today} fieldName={headlineField()} count={attention().total} />}
+      centre={<MapCentre farmName={farmName()} exploreHref={tabHref("modify")} />}
+      glance={
+        <GlancePanel
+          facts={glanceFacts({ fields: summaries(), farmAreaHa: farmAreaHa(), hasCycle: !!view()?.cycle, model: slider() })}
+          cropName={view()?.cycle ? cropName() : null}
+          hasCycle={!!view()?.cycle}
+          canPlant={canPlant()}
+          onPlant={() => props.openPlant()}
+        />
+      }
+      hero={parts.hero}
+      gauges={
+        <GaugesPanel
+          gauges={[greennessGauge(view()?.health), waterGauge(condition()), stageGauge(slider(), index(), stage())]}
+          subject={gaugeSubject()}
+          dateLabel={gaugeDate()}
+          onOpen={(kind) => setSheet(kind)}
+        />
+      }
+      attention={<AttentionPanel items={attention().items} total={attention().total} actionsHref={tabHref("actions")} />}
+      week={
+        <WeekPanel
+          days={weekAhead(view()?.weatherTrack ?? [], viewToday())}
+          takeaway={weekTakeaway(alerts(), viewToday())}
+          basis={(() => {
+            const text = weekBasis();
+            return text ? weekTitle(text) : null;
+          })()}
+          onDetails={() => setSheet("weather")}
+        />
+      }
+      evara={<EvaraPanel question={view()?.cycle ? ASSISTANT_PROMPTS[0] : ASSISTANT_PROMPTS[1]} />}
+      more={<MorePanel hint={parts.hint}>{parts.more}</MorePanel>}
+    />
+  );
+  const aboutButton = () => (
+    <button type="button" class="text-button today-about" onClick={() => setSheet("about")}>
+      <Icon name="info" size={14} /> About this view
+    </button>
+  );
+
+  // ---------------------------------------------------------------- Actions tab action cards (TODAY_MAP_LAYOUT_SPEC.md)
+  const actionsVariant = () => (props.presentation === "actions" ? ("actions" as const) : undefined);
+  /** "Farm-wide" on a farm with fields, "Whole farm" without; a named field otherwise. */
+  const wideLabel = () => (hasFields() ? "Farm-wide" : "Whole farm");
+  const alertEyebrow = (alert: FarmAlert) =>
+    `${farmName()} · ${alert.fieldId && !isFarmWide(alert) ? (fieldNamed(alert.fieldId) ?? "A field") : wideLabel()}`;
+  const stepEyebrow = (step: UpcomingStep) => {
+    const fieldId = step.fieldCheck?.fieldId ?? null;
+    return `${farmName()} · ${fieldId ? (fieldNamed(fieldId) ?? "A field") : step.fieldCheck?.scope === "farm" ? wideLabel() : (viewField()?.name ?? wideLabel())}`;
+  };
+
   const lists = (current: TodayData) => (
     <div class="today-lists">
       <AlertsList
@@ -574,6 +702,8 @@ export function TodayView(props: TodayViewProps) {
         onSuggested={showStep}
         error={alertError()}
         fieldView={hasFields()}
+        variant={actionsVariant()}
+        eyebrow={alertEyebrow}
       />
       <IssuesLine issues={current.issues} onShow={showIssues} />
       <Show when={current.cycle}>
@@ -587,6 +717,8 @@ export function TodayView(props: TodayViewProps) {
           sources={props.data()?.sources}
           onCheck={(step) => setCheckStep(step)}
           onOpenIssue={(issueId) => setIssueParam(issueId)}
+          variant={actionsVariant()}
+          eyebrow={stepEyebrow}
         />
       </Show>
       <IssuesSection
@@ -602,7 +734,7 @@ export function TodayView(props: TodayViewProps) {
     </div>
   );
 
-  const side = (current: TodayData) => (
+  const side = (current: TodayData, primary?: JSX.Element) => (
     <TodaySide
       view={current}
       farmId={current.farmId}
@@ -611,16 +743,20 @@ export function TodayView(props: TodayViewProps) {
       price={price()}
       weather={weather()}
       onDetails={openDetails}
+      primary={primary}
       {...soilProps()}
     />
   );
 
   return (
     <SoilCardContext.Provider value={soilCard}>
-    <div class="today-view" aria-busy={state().status === "loading"} data-fields={hasFields() ? (overview() ? "all" : "field") : undefined}>
+    <div class="today-view" data-presentation={props.presentation ?? "today"} aria-busy={state().status === "loading"} data-fields={hasFields() ? (overview() ? "all" : "field") : undefined}>
       {/* The field chips row lives in the shell under the tab bar since 12.6 (FIELDS_MULTICROP_SOIL_SPEC.md); not repeated here. */}
       <Switch>
         <Match when={state().status === "idle" || state().status === "loading"}>
+          <Show when={props.presentation !== "actions"}>
+            <TodayHeadline date={null} fieldName={headlineField()} count={null} />
+          </Show>
           <div class="today-layout" role="status" aria-label="Loading today's field view">
             <div class="today-primary">
               <div class="today-skeleton today-skeleton-hero" />
@@ -632,6 +768,9 @@ export function TodayView(props: TodayViewProps) {
           </div>
         </Match>
         <Match when={state().status === "error"}>
+          <Show when={props.presentation !== "actions"}>
+            <TodayHeadline date={null} fieldName={headlineField()} count={null} />
+          </Show>
           <div class="today-layout">
             <div class="today-primary">
               <Show
@@ -674,99 +813,150 @@ export function TodayView(props: TodayViewProps) {
             </Show>
           </div>
         </Match>
-        <Match when={view() && overview()}>
-          <FarmOverview
-            view={view()!}
-            hero={farmHero()}
-            mode={mode()}
-            onMode={(next) => props.setScene(next === "satellite" ? "satellite" : "growth")}
-            date={date()}
-            stage={stage()}
-            progress={progress()}
-            cropName={cropName()}
-            condition={condition()}
-            cropNames={cropNames()}
-            onSelect={(id) => props.selectField(id)}
-            onCurveDetails={() => setSheet("curve")}
-            empty={<TodayEmpty onPlant={() => props.openPlant()} canPlant={canPlant()} fieldName={plantFieldName()} />}
-            side={side(view()!)}
-            lists={lists(view()!)}
-            onAbout={() => setSheet("about")}
-          />
-        </Match>
-        <Match when={view() && !view()!.cycle}>
-          <div class="today-layout is-empty">
-            <div class="today-primary">
-              <TodayEmpty onPlant={() => props.openPlant()} canPlant={canPlant()} fieldName={hasFields() ? fieldName() : null} />
-            </div>
-            <TodaySoil farmId={view()!.farmId} epoch={s.sessionEpoch()} {...soilProps()} />
-            <TodayCards view={view()!} date={view()!.today} price={null} weather={weatherAt(view()!.weatherTrack, view()!.today)} weatherOnly onDetails={openDetails} />
-            {lists(view()!)}
+        <Match when={view() && props.presentation === "actions"}>
+          <div class="today-actions-layout" data-testid="today-actions">
+            <header class="today-actions-heading">
+              <span class="today-eyebrow">Field work</span>
+              <h2>Alerts &amp; tasks</h2>
+              <p>What needs attention{fieldName() ? ` on ${fieldName()}` : " on this farm"}, and what comes next.</p>
+            </header>
           </div>
         </Match>
-        <Match when={view()?.cycle}>
-          <div class="today-layout">
-            <div class="today-primary">
-              <TodayHero
+        <Match when={view() && overview()}>
+          {mapLayout({
+            testid: "today-farm-overview",
+            class: "is-farm",
+            hint: "Your fields, the first field's notes, soil and harvest outlook",
+            hero: (
+              <FarmOverviewHero
+                view={view()!}
+                hero={farmHero()}
                 mode={mode()}
-                onMode={(next) => props.setScene(next === "satellite" ? "satellite" : "growth")}
+                onMode={(next) => props.setScene(next === "field-image" ? "field-image" : next === "satellite" ? "satellite" : "growth")}
                 date={date()}
-                today={view()!.today}
                 stage={stage()}
                 progress={progress()}
-                cropId={view()!.cycle!.cropId}
                 cropName={cropName()}
-                boundary={boundary()}
-                scenes={view()!.scenes}
-                imageBbox={view()!.ndvi?.imageBbox ?? null}
-                indexStage={view()!.indexStage ?? null}
-                onCurveDetails={() => setSheet("curve")}
                 condition={condition()}
-                hasConditions={!!view()!.conditions}
-                fieldImageBbox={view()!.fieldImageBbox ?? null}
-                fieldName={hasFields() ? fieldName() : null}
-                companionCropId={view()!.cycle!.companion?.cropId ?? null}
-                rowRatio={view()!.cycle!.companion?.rowRatio ?? null}
                 cropNames={cropNames()}
-                otherFields={hasFields() ? otherFields() : null}
-                prediction={heroPrediction()}
+                onSelect={(id) => props.selectField(id)}
+                onCurveDetails={() => setSheet("curve")}
               />
-              <Show
-                when={slider()}
-                fallback={<p class="today-note">Stage dates are not available for this crop yet, so the season slider is hidden.</p>}
-              >
-                {(model) => (
-                  <StageSlider
-                    model={model()}
-                    value={index()}
-                    onChange={(next) => setPick(next)}
-                    valueDate={date()}
-                    ticks={ticks()}
-                    onBackToToday={() => setPick(null)}
-                    startLabel={`Sown ${formatDay(view()!.cycle!.sowingDate, false)}`}
-                    endLabel={`Harvest by ${formatDay(model().to, false)}`}
-                    marks={marks()}
-                    playing={playing()}
-                    onPlay={togglePlay}
-                    onInteract={() => player.stop()}
-                  />
-                )}
-              </Show>
-              <Show when={otherCycles().length}>
-                <p class="today-note">
-                  Also growing: {otherCycles().map((entry) => entry.cycle.cropName ?? s.cropName(entry.cycle.cropId)).join(", ")}. This view
-                  shows {cropName()}.
-                </p>
-              </Show>
-            </div>
-            {side(view()!)}
-            {lists(view()!)}
-            <button type="button" class="text-button today-about" onClick={() => setSheet("about")}>
-              <Icon name="info" size={14} /> About this view
-            </button>
-          </div>
+            ),
+            more: (
+              <>
+                <FarmOverviewFields
+                  view={view()!}
+                  cropName={cropName()}
+                  onSelect={(id) => props.selectField(id)}
+                  empty={<TodayEmpty onPlant={() => props.openPlant()} canPlant={canPlant()} fieldName={plantFieldName()} />}
+                  side={side(view()!)}
+                  lists={null}
+                />
+                {aboutButton()}
+              </>
+            ),
+          })}
+        </Match>
+        <Match when={view() && !view()!.cycle}>
+          {mapLayout({
+            class: "is-empty",
+            hint: "Soil and the weather on this day",
+            hero: (
+              <div class="today-primary">
+                <TodayEmpty onPlant={() => props.openPlant()} canPlant={canPlant()} fieldName={hasFields() ? fieldName() : null} />
+              </div>
+            ),
+            more: (
+              <>
+                <TodaySoil farmId={view()!.farmId} epoch={s.sessionEpoch()} {...soilProps()} />
+                <TodayCards view={view()!} date={view()!.today} price={null} weather={weatherAt(view()!.weatherTrack, view()!.today)} weatherOnly onDetails={openDetails} />
+              </>
+            ),
+          })}
+        </Match>
+        <Match when={view()?.cycle}>
+          {mapLayout({
+            hint: "Notes, weather and harvest cards, soil, harvest outlook, crop area and planning references",
+            hero: (
+              <div class="today-primary">
+                <TodayHero
+                  mode={mode()}
+                  onMode={(next) => props.setScene(next === "field-image" ? "field-image" : next === "satellite" ? "satellite" : "growth")}
+                  date={date()}
+                  today={view()!.today}
+                  stage={stage()}
+                  progress={progress()}
+                  cropId={view()!.cycle!.cropId}
+                  cropName={cropName()}
+                  boundary={boundary()}
+                  scenes={view()!.scenes}
+                  imageBbox={view()!.ndvi?.imageBbox ?? null}
+                  indexStage={view()!.indexStage ?? null}
+                  onCurveDetails={() => setSheet("curve")}
+                  condition={condition()}
+                  hasConditions={!!view()!.conditions}
+                  fieldImageBbox={view()!.fieldImageBbox ?? null}
+                  fieldName={hasFields() ? fieldName() : null}
+                  companionCropId={view()!.cycle!.companion?.cropId ?? null}
+                  rowRatio={view()!.cycle!.companion?.rowRatio ?? null}
+                  cropNames={cropNames()}
+                  otherFields={hasFields() ? otherFields() : null}
+                  prediction={heroPrediction()}
+                  timeline={() => (
+                    <Show
+                      when={slider()}
+                      fallback={<p class="today-note">Stage dates are not available for this crop yet, so the season slider is hidden.</p>}
+                    >
+                      {(model) => (
+                        <StageSlider
+                          model={model()}
+                          value={index()}
+                          onChange={(next) => setPick(next)}
+                          valueDate={date()}
+                          ticks={ticks()}
+                          onBackToToday={() => setPick(null)}
+                          startLabel={`Sown ${formatDay(view()!.cycle!.sowingDate, false)}`}
+                          endLabel={`Harvest by ${formatDay(model().to, false)}`}
+                          marks={marks()}
+                          playing={playing()}
+                          onPlay={togglePlay}
+                          onInteract={() => player.stop()}
+                        />
+                      )}
+                    </Show>
+                  )}
+                  fieldImage={() => <Show when={`${s.sessionEpoch()}|${view()!.farmId}|${view()!.cycle!.id}`} keyed>{(_key) => <FieldImage farmId={view()!.farmId} cycleId={view()!.cycle!.id} date={date()} today={view()!.today} fieldName={fieldName()}/>}</Show>}
+                />
+                <Show when={`${s.sessionEpoch()}|${view()!.farmId}|${view()!.cycle!.id}`} keyed>{(_key) => <SeasonPredictionStatus farmId={view()!.farmId} cycleId={view()!.cycle!.id} onRefresh={() => reloadQuiet(view()!.farmId,s.sessionEpoch())}/>}</Show>
+                <Show when={otherCycles().length}>
+                  <p class="today-note">
+                    Also growing: {otherCycles().map((entry) => entry.cycle.cropName ?? s.cropName(entry.cycle.cropId)).join(", ")}. This view
+                    shows {cropName()}.
+                  </p>
+                </Show>
+              </div>
+            ),
+            more: (
+              <>
+                <TodaySide view={view()!} farmId={view()!.farmId} epoch={s.sessionEpoch()} date={date()} price={price()} weather={weather()} onDetails={openDetails} {...soilProps()} />
+                {aboutButton()}
+              </>
+            ),
+          })}
         </Match>
       </Switch>
+      {/* A single stable list owner keeps issue loading and list expansion intact across Today / Actions. */}
+      <Show when={view()}>
+        {(current) => (
+          <div class="today-shared-lists" classList={{ "is-actions": props.presentation === "actions" }}>
+            {lists(current())}
+            <Show when={props.presentation === "actions"}>
+              <ThisWeekPanel rows={weekPlan(steps(), current().today)} today={current().today} />
+            </Show>
+          </div>
+        )}
+      </Show>
       <Show when={sheet() && view()}>
         <TodaySheet kind={sheet()!} view={view()!} date={date()} price={price()} weather={weather()} onClose={() => setSheet(null)} />
       </Show>
@@ -801,13 +991,8 @@ export function TodayView(props: TodayViewProps) {
   );
 }
 
-/**
- * "All fields" (FIELDS_MULTICROP_SOIL_SPEC.md 6.3): the farm hero (every field in its crop colour, illustration or the wide
- * satellite image with outlines), the legend, the "Your fields" table where a row opens that field, then the cards, soil,
- * alerts and steps of the field the server described (the first field with a current crop), under a heading naming it.
- * Without a crop anywhere, the planting entry takes that place.
- */
-export function FarmOverview(props: {
+/** Props of the "All fields" overview, shared by its hero half and its fields half. */
+export interface FarmOverviewProps {
   view: TodayData;
   hero: FarmHero | null;
   mode: HeroMode;
@@ -824,40 +1009,51 @@ export function FarmOverview(props: {
   side: JSX.Element;
   lists: JSX.Element;
   onAbout?: () => void;
-}) {
+}
+
+/** The farm hero (every field in its crop colour, or the wide satellite image with outlines) and the legend. */
+export function FarmOverviewHero(props: Omit<FarmOverviewProps, "empty" | "side" | "lists" | "onAbout">) {
+  const fields = () => props.view.fields ?? [];
+  return (
+    <div class="today-primary">
+      <Show when={props.hero} fallback={<p class="today-note">The farm outline is not available, so the farm picture is hidden. Your fields are listed below.</p>}>
+        {(hero) => (
+          <TodayHero
+            mode={props.mode}
+            onMode={props.onMode}
+            date={props.date}
+            today={props.view.today}
+            stage={props.stage}
+            progress={props.progress}
+            cropId={props.view.cycle?.cropId ?? ""}
+            cropName={props.cropName}
+            boundary={hero().boundary}
+            scenes={props.view.scenes}
+            imageBbox={props.view.ndvi?.imageBbox ?? null}
+            indexStage={null}
+            onCurveDetails={props.onCurveDetails}
+            condition={props.condition}
+            hasConditions={!!props.view.conditions}
+            fieldImageBbox={props.view.fieldImageBbox ?? null}
+            cropNames={props.cropNames}
+            farm={hero()}
+            fieldImage={() => <div class="field-images"><div class="field-images-empty"><span class="field-images-eyebrow">Field photos</span><h3>Choose a field</h3><p>Open a field with a crop to upload photos and preview its growth through the season.</p><For each={fields().filter(field => field.cycle)}>{field => <button type="button" class="btn secondary" onClick={() => props.onSelect(field.id)}>{field.name}</button>}</For></div></div>}
+          />
+        )}
+      </Show>
+      <FieldsLegend fields={fields()} />
+    </div>
+  );
+}
+
+/** The "Your fields" table where a row opens that field, then the described field's cards under a heading naming it. */
+export function FarmOverviewFields(props: Pick<FarmOverviewProps, "view" | "cropName" | "onSelect" | "empty" | "side" | "lists">) {
   const fields = () => props.view.fields ?? [];
   const described = () => props.view.field ?? null;
   const heading = () =>
     described() ? `${described()!.name}: ${props.cropName}` : props.view.cycle ? `Whole farm: ${props.cropName}` : "No crop on any field yet";
   return (
-    <div class="today-layout is-farm" data-testid="today-farm-overview">
-      <div class="today-primary">
-        <Show when={props.hero} fallback={<p class="today-note">The farm outline is not available, so the farm picture is hidden. Your fields are listed below.</p>}>
-          {(hero) => (
-            <TodayHero
-              mode={props.mode}
-              onMode={props.onMode}
-              date={props.date}
-              today={props.view.today}
-              stage={props.stage}
-              progress={props.progress}
-              cropId={props.view.cycle?.cropId ?? ""}
-              cropName={props.cropName}
-              boundary={hero().boundary}
-              scenes={props.view.scenes}
-              imageBbox={props.view.ndvi?.imageBbox ?? null}
-              indexStage={null}
-              onCurveDetails={props.onCurveDetails}
-              condition={props.condition}
-              hasConditions={!!props.view.conditions}
-              fieldImageBbox={props.view.fieldImageBbox ?? null}
-              cropNames={props.cropNames}
-              farm={hero()}
-            />
-          )}
-        </Show>
-        <FieldsLegend fields={fields()} />
-      </div>
+    <>
       <div class="today-side">
         <FieldsTable fields={fields()} selected={described()?.id ?? null} onSelect={props.onSelect} />
       </div>
@@ -877,6 +1073,22 @@ export function FarmOverview(props: {
           {props.lists}
         </div>
       </section>
+    </>
+  );
+}
+
+/**
+ * "All fields" (FIELDS_MULTICROP_SOIL_SPEC.md 6.3): the farm hero (every field in its crop colour, illustration or the wide
+ * satellite image with outlines), the legend, the "Your fields" table where a row opens that field, then the cards, soil,
+ * alerts and steps of the field the server described (the first field with a current crop), under a heading naming it.
+ * Without a crop anywhere, the planting entry takes that place. Today's full-map layout places the two halves in its own
+ * frame (the hero in the left column, the fields behind "More from Today"); this composition keeps the original order.
+ */
+export function FarmOverview(props: FarmOverviewProps) {
+  return (
+    <div class="today-layout is-farm" data-testid="today-farm-overview">
+      <FarmOverviewHero {...props} />
+      <FarmOverviewFields {...props} />
       <Show when={props.onAbout}>
         <button type="button" class="text-button today-about" onClick={() => props.onAbout?.()}>
           <Icon name="info" size={14} /> About this view

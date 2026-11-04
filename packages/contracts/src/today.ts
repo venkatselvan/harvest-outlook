@@ -34,6 +34,7 @@ export const SceneRef = z.object({
  stageId: z.string().max(80).nullable(),
  /** 2026-11-03: predicted scenes: the date the look is for (equals `date`). */
  targetDate: isoDate.optional(),
+ generatedAt: z.string().optional(),
  /** 2026-11-03: predicted and v2 stage illustrations: the code-written guidance used in the prompt. */
  guidance: z.string().max(400).optional(),
 }).strict();

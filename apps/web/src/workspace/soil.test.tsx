@@ -180,7 +180,7 @@ describe("method and purpose boundaries in marker cards", () => {
       />
     ));
     expect(html.replace(/<!--.*?-->/g, "")).toContain(
-      "not measurements of Demo boundary",
+      "not added to Demo boundary",
     );
     expect(html).toContain("Draft extraction");
     expect(html).toContain("9.12");

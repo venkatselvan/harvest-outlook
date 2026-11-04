@@ -142,7 +142,7 @@ describe('todayView: automatic predicted look (live only)', () => {
     expect(predicted).toEqual([{
       date: '2026-11-02', kind: 'predicted', itemId: null, acquisitionDate: '2026-10-27', cloudPct: expect.any(Number),
       imagePath: `/api/v1/farms/${farmId}/future-look/${row.id}/image`, ndviImagePath: null, derivedFromItemId: LATEST,
-      stageId: expect.any(String), targetDate: '2026-11-02', guidance: row.guidance,
+      stageId: expect.any(String), targetDate: '2026-11-02', guidance: row.guidance, generatedAt:expect.any(String),
     }]);
     expect(v.predictions).toEqual({autoRequested: false, pending: 0, reason: 'week_exists'});
     expect(v.limitations.join(' ')).toContain('Predicted looks are AI image edits (Meta) of the latest real satellite image of this field');
@@ -156,7 +156,7 @@ describe('predictedScenes (pure)', () => {
   const look = (o: Partial<Look>): Look => ({assetId: 'a', stageId: 'development', sourceItemId: LATEST, cropId: 'maize', createdAt: '2026-11-04T00:00:00.000Z', imagePath: '/api/v1/farms/f/future-look/a/image', kind: 'gap', targetDate: '2026-11-02', guidance: 'g', ...o});
   const cycle = {id: 'c', cropId: 'maize', cropName: 'Maize', sowingDate: '2026-09-20', stage: 'growing'} as FarmWorkspace['cycles'][number];
 
-  it('keeps the newest look per week, skips stage looks and other crops, and carries ?fieldId= for a field cycle', () => {
+  it('keeps exact milestone dates and historical expectations, skips stage looks and other crops, and carries ?fieldId= for a field cycle', () => {
     const out = predictedScenes([
       look({assetId: 'old', imagePath: '/x/old/image', createdAt: '2026-11-03T00:00:00.000Z'}),
       look({assetId: 'new', imagePath: '/x/new/image', targetDate: '2026-11-03', createdAt: '2026-11-04T00:00:00.000Z'}),
@@ -164,7 +164,7 @@ describe('predictedScenes (pure)', () => {
       look({assetId: 'wheat', cropId: 'wheat', targetDate: '2026-11-09'}),
     ], {...cycle, fieldId: 'north strip'} as typeof cycle, MAIZE, new Map());
     expect(out.skipped).toBe(1);
-    expect(out.scenes).toEqual([expect.objectContaining({kind: 'predicted', date: '2026-11-03', targetDate: '2026-11-03', imagePath: '/x/new/image?fieldId=north%20strip', stageId: 'development', guidance: 'g'})]);
+    expect(out.scenes).toEqual([expect.objectContaining({date:'2026-11-02',generatedAt:'2026-11-03T00:00:00.000Z'}),expect.objectContaining({kind: 'predicted', date: '2026-11-03', targetDate: '2026-11-03', imagePath: '/x/new/image?fieldId=north%20strip', stageId: 'development', guidance: 'g'})]);
     expect(predictedScenes([look({})], cycle, null, new Map()).scenes[0]).toMatchObject({imagePath: '/api/v1/farms/f/future-look/a/image', stageId: null});
   });
 });

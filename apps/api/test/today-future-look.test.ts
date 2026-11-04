@@ -149,15 +149,15 @@ describe('requestFutureLook', () => {
     const ids: string[] = [];
     for (let i = 1; i <= 10; i++) ids.push((await requestFutureLook(deps, ownerId, farmId, {itemId: LATEST, stageId: `s${i}`})).assetId!);
     expect(new Set(ids).size).toBe(10);
-    expect(await requestFutureLook(deps, ownerId, farmId, {itemId: LATEST, stageId: 's11'})).toMatchObject({assetId: null, status: 'unavailable', reason: 'cycle_limit_reached'});
+    expect(await requestFutureLook(deps, ownerId, farmId, {itemId: LATEST, stageId: 's11'})).toMatchObject({assetId: null, status: 'unavailable', reason: 'daily_limit_reached'});
     // Gap looks share the cap.
-    expect(await requestFutureLook(deps, ownerId, farmId, {itemId: LATEST, kind: 'gap', targetDate: '2026-11-20'})).toMatchObject({assetId: null, status: 'unavailable', reason: 'cycle_limit_reached', kind: 'gap'});
+    expect(await requestFutureLook(deps, ownerId, farmId, {itemId: LATEST, kind: 'gap', targetDate: '2026-11-20'})).toMatchObject({assetId: null, status: 'unavailable', reason: 'daily_limit_reached', kind: 'gap'});
     expect(await count('future_look_assets WHERE farm_id=$1', [farmId])).toBe(10);
     // A failure that was not billed frees its slot; a billed failure keeps it.
     await h.pool.query("UPDATE future_look_assets SET status='failed', failure_reason='provider_bad_request' WHERE id=$1", [ids[0]]);
     expect(await requestFutureLook(deps, ownerId, farmId, {itemId: LATEST, stageId: 's11'})).toMatchObject({status: 'queued'});
     await h.pool.query("UPDATE future_look_assets SET status='failed', failure_reason='qa_scene_changed_outside_field', billed=true WHERE id=$1", [ids[1]]);
-    expect(await requestFutureLook(deps, ownerId, farmId, {itemId: LATEST, stageId: 's12'})).toMatchObject({status: 'unavailable', reason: 'cycle_limit_reached'});
+    expect(await requestFutureLook(deps, ownerId, farmId, {itemId: LATEST, stageId: 's12'})).toMatchObject({status: 'unavailable', reason: 'daily_limit_reached'});
     // The billed failure is final for its tuple: requesting it again returns the failed row, no new job.
     const jobs = await count("jobs WHERE payload->>'farmId'=$1", [farmId]);
     expect(await requestFutureLook(deps, ownerId, farmId, {itemId: LATEST, stageId: 's2'})).toMatchObject({assetId: ids[1], status: 'failed', reason: 'qa_scene_changed_outside_field', deduplicated: true});
@@ -627,4 +627,17 @@ describe('narrow field: outline, mask and stored look follow the field ring (liv
     const v2 = buildFutureLookPrompt({stageId: 'development', stageName: 'Crop development', cropName: 'Maize', kind: 'gap', guidance: g, promptVersion: 'future-look-v2'});
     expect(v2).toContain('Keep the red outline where it is. No text');
   });
+});
+
+// Exact milestone dates must not collapse to Monday or share a cache entry after evidence changes.
+it('keeps adjacent milestone dates and refreshed revisions distinct while deduplicating the same request', async () => {
+  const {farmId,ownerId} = await farmWithCycle();
+  const req = {itemId:LATEST,kind:'gap' as const,targetDate:'2026-11-05',cycleId:'cycle-1',milestoneRevision:'evidence-a'};
+  const first=await requestFutureLook(svc(),ownerId,farmId,req);
+  expect(first.targetDate).toBe('2026-11-05');
+  expect((await requestFutureLook(svc(),ownerId,farmId,req)).assetId).toBe(first.assetId);
+  const adjacent=await requestFutureLook(svc(),ownerId,farmId,{...req,targetDate:'2026-11-06'});
+  expect(adjacent.targetDate).toBe('2026-11-06'); expect(adjacent.assetId).not.toBe(first.assetId);
+  const refreshed=await requestFutureLook(svc(),ownerId,farmId,{...req,milestoneRevision:'evidence-b'});
+  expect(refreshed.assetId).not.toBe(first.assetId);
 });

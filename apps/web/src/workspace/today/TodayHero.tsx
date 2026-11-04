@@ -1,3 +1,4 @@
+import type { JSX } from "solid-js";
 import { createEffect, createMemo, createSignal, For, Match, onCleanup, onMount, Show, Switch, untrack } from "solid-js";
 import type { FieldConditionPoint, FieldSummary, IndexStageReading, NdviSeries, SceneRef } from "@harvest/contracts";
 import { createReducedMotion, FieldGrowthScene } from "../FieldGrowthScene";
@@ -31,9 +32,11 @@ import {
 } from "./model";
 import { sceneImageUrl } from "./todayApi";
 
-export type HeroMode = "illustration" | "satellite";
+export type HeroMode = "illustration" | "satellite" | "field-image";
 
 export interface TodayHeroProps {
+  fieldImage?: () => JSX.Element;
+  timeline?: () => JSX.Element;
   mode: HeroMode;
   onMode: (mode: HeroMode) => void;
   /** Slider date (YYYY-MM-DD). */
@@ -727,10 +730,35 @@ export function TodayHero(props: TodayHeroProps) {
   });
   const scene = createMemo(() => (farm() ? sceneFields(farm()!, layers().water.look) : null));
   const heroLabel = () => (farm() ? "Your farm" : props.fieldName ? `Your field ${props.fieldName}` : "Your field");
+  const actualScene = createMemo(() => satellite() ? props.scenes.find(scene => scene.kind === 'observed' && sceneDate(scene) === props.date && scene.imagePath) : null);
+  const expectedScene = createMemo(() => actualScene() ? props.scenes.filter(scene => scene.kind === 'predicted' && predictedDate(scene) === props.date && scene.imagePath)
+    .sort((a,b) => (a.generatedAt ?? '').localeCompare(b.generatedAt ?? ''))[0] : null);
   const fieldCount = () => farm()?.fields.length ?? 0;
   return (
     <section class="today-hero" aria-label={heroLabel()} data-hero-mode={farm() ? "farm" : "field"}>
-      <div class="today-hero-frame" classList={{ satellite: satellite() }}>
+      <div class="today-hero-frame" classList={{ satellite: satellite(), "field-photo-mode": props.mode === "field-image", "has-season-timeline": !!props.timeline }}>
+        <div class="today-hero-top">
+          <div class="today-hero-toggle" role="group" aria-label="Field view">
+            <button type="button" aria-pressed={props.mode === "illustration"} onClick={() => props.onMode("illustration")}>
+              Illustration
+            </button>
+            <button type="button" aria-pressed={props.mode === "satellite"} onClick={() => props.onMode("satellite")}>
+              Satellite
+            </button>
+            <Show when={props.fieldImage}>
+              <button type="button" class="field-image-tab" aria-pressed={props.mode === "field-image"} onClick={() => props.onMode("field-image")}>Field Image</button>
+            </Show>
+          </div>
+          <span class="today-date-chip" data-testid="today-date-chip">
+            <Show when={isToday()}>
+              <span class="today-date-chip-today">Today</span>
+            </Show>
+            {formatDay(props.date)}
+          </span>
+        </div>
+        <Show when={props.timeline}><div class="today-hero-timeline">{props.timeline?.()}</div></Show>
+        <div class="today-hero-visual">
+        <Show when={props.mode !== "field-image"} fallback={props.fieldImage?.()}>
         <Show
           when={satellite()}
           fallback={
@@ -783,22 +811,7 @@ export function TodayHero(props: TodayHeroProps) {
             prediction={farm() ? null : props.prediction}
           />
         </Show>
-        <div class="today-hero-top">
-          <div class="today-hero-toggle" role="group" aria-label="Field view">
-            <button type="button" aria-pressed={props.mode === "illustration"} onClick={() => props.onMode("illustration")}>
-              Illustration
-            </button>
-            <button type="button" aria-pressed={props.mode === "satellite"} onClick={() => props.onMode("satellite")}>
-              Satellite
-            </button>
-          </div>
-          <span class="today-date-chip" data-testid="today-date-chip">
-            <Show when={isToday()}>
-              <span class="today-date-chip-today">Today</span>
-            </Show>
-            {formatDay(props.date)}
-          </span>
-        </div>
+        </Show>
         <div class="today-hero-second" classList={{ "has-tools": satellite() && ((image().fieldAvailable && !farm()) || image().ndviAvailable) }}>
           <EventBadges events={layers().events} condition={point()} />
           <Show when={satellite() && ((image().fieldAvailable && !farm()) || image().ndviAvailable)}>
@@ -860,7 +873,23 @@ export function TodayHero(props: TodayHeroProps) {
             <SatelliteCaption pick={pick()} stage={props.stage} date={props.date} />
           </Show>
         </div>
+        </div>
       </div>
+      <Show when={actualScene() && expectedScene()}>
+        <details class="field-image-evidence"><summary>AI estimate vs actual satellite observation · {formatDay(props.date)}</summary>
+          <p>Compare the saved AI image with the real satellite observation. The estimate was generated {expectedScene()?.generatedAt?.slice(0,10) ?? 'at an unrecorded time'}.</p>
+          <div class="field-image-compare-grid"><figure><img src={sceneImageUrl(expectedScene()?.imagePath) ?? undefined} alt="Expected satellite appearance"/><figcaption>Saved AI estimate</figcaption></figure><figure><img src={sceneImageUrl(actualScene()?.imagePath) ?? undefined} alt="Actual satellite observation"/><figcaption>Actual satellite observation</figcaption></figure></div>
+        </details>
+      </Show>
+      <Show when={props.mode === "illustration" && !farm() && props.date > props.today && props.prediction}>
+        <div class="today-illustration-prediction" data-testid="today-illustration-prediction">
+          <Show when={pick().mode === "predicted"} fallback={<FutureImageLabel label="Create an indicative satellite look for this date. The illustration is schematic, not an observation." date={props.date} prediction={props.prediction ?? null} />}>
+            <button type="button" class="today-predicted-link" onClick={() => props.onMode("satellite")}>
+              <AiSparkIcon size={16} /> AI-predicted look available for {formatDay(props.date)}. View satellite look →
+            </button>
+          </Show>
+        </div>
+      </Show>
       <Show when={satellite()}>
         <SatelliteNotes image={image()} overlay={overlayDrawn()} predicted={pick().mode === "predicted"} />
       </Show>

@@ -124,27 +124,27 @@ describe("field check steps in Today", () => {
   const steps = (list: UpcomingStep[], over: Partial<Parameters<typeof UpcomingSteps>[0]> = {}) =>
     html(() => <UpcomingSteps steps={list} nextAction={null} today={TODAY} busyId="" onDone={noop} error="" onCheck={noop} onOpenIssue={noop} {...over} />);
 
-  it("lists the check with the interval caption, the sourced checklist and the general prompts", () => {
+  it("lists the condition reason and specific sourced action", () => {
     const markup = steps([fieldCheckStepFixture(), recheckStepFixture()]);
     const words = text(markup);
-    expect(words).toContain("Walk the field: Maize on North strip");
-    expect(words).toContain("Your check interval: every 7 days (your own setting)");
-    expect(words).toContain("Checklist");
-    expect(words).toContain("Risk windows this week, from their sources");
+    expect(words).toContain("Check Maize on North strip");
+    expect(words).toContain("Maize leaf damage risk");
+    expect(words).toContain("What to check");
+    expect(words).toContain("Based on the current alert");
     expect(markup).toContain('href="https://example.org/bulletin"');
     expect(words).toContain("20 Oct 2026");
-    expect(words).toContain("General prompts (not crop-specific advice)");
-    expect(words).toContain("Take a photo of anything unusual");
+    expect(words).not.toContain("General prompts (not crop-specific advice)");
+    expect(words).not.toContain("Take a photo of anything unusual");
     // The server's long detail text is not repeated under a field check.
     expect(words).not.toContain("Your check interval: every 7 days (your own setting).");
-    expect(markup).toContain('aria-label="Mark done: Walk the field: Maize on North strip"');
+    expect(markup).toContain('aria-label="Mark done: Check Maize on North strip"');
     // A recheck shows its title and opens its issue.
     expect(words).toContain("Recheck: Holes in young leaves");
     expect(markup).toContain('aria-label="Open issue: Recheck: Holes in young leaves"');
   });
 
-  it("shows the missed count only when the server sends one", () => {
-    expect(text(steps([fieldCheckStepFixture({ missedCount: 2 })]))).toContain("2 earlier checks were missed; this is the latest one.");
+  it("does not display obsolete missed weekly walks", () => {
+    expect(text(steps([fieldCheckStepFixture({ missedCount: 2 })]))).not.toContain("2 earlier checks were missed; this is the latest one.");
     expect(steps([fieldCheckStepFixture()])).not.toContain("sc-check-missed");
     expect(missedText(fieldCheckStepFixture({ missedCount: 1 }).fieldCheck!)).toBe("1 earlier check was missed; this is the latest one.");
   });
@@ -451,15 +451,15 @@ describe("check interval setting", () => {
     expect(intervalText({ ...field, checkIntervalDays: 4 }, 10)).toBe("every 4 days (your setting for this field)");
   });
 
-  it("the Fields panel shows each field's interval and the farm-wide setting when it can be saved", () => {
+  it("the Fields panel no longer offers interval settings", () => {
     const panel = (over: Partial<Parameters<typeof FieldsPanel>[0]> = {}) =>
       text(
         html(() => (
           <FieldsPanel fields={FIELDS} farmBoundary={null} cycles={[]} plans={[]} cropName={(id) => id} saving={false} onSave={async () => undefined} drawing={false} drawn={null} onStartDraw={noop} onEndDraw={noop} todayHref={() => "#"} {...over} />
         )),
       );
-    expect(panel()).toContain("Your check interval: every 7 days (default)");
+    expect(panel()).not.toContain("Your check interval");
     expect(panel()).not.toContain("Farm check interval");
-    expect(panel({ farmCheckIntervalDays: 10, onSaveFarmInterval: async () => undefined })).toContain("Farm check interval (fields without their own): every 10 days");
+    expect(panel({ farmCheckIntervalDays: 10, onSaveFarmInterval: async () => undefined })).not.toContain("Farm check interval (fields without their own): every 10 days");
   });
 });

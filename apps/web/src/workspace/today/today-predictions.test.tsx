@@ -57,10 +57,10 @@ const stageIdAt = (date: string) => {
 };
 const pickAt = (date: string, scenes: readonly SceneRef[] = view.scenes) => sceneFor(scenes, date, FIXTURE_TODAY, stageIdAt(date));
 
-const hero = (date: string, options: { prediction?: HeroPrediction | null; scenes?: SceneRef[]; farm?: FarmHero } = {}) =>
+const hero = (date: string, options: { prediction?: HeroPrediction | null; scenes?: SceneRef[]; farm?: FarmHero; mode?: "satellite" | "illustration" } = {}) =>
   renderToString(() => (
     <TodayHero
-      mode="satellite"
+      mode={options.mode ?? "satellite"}
       onMode={() => undefined}
       date={date}
       today={FIXTURE_TODAY}
@@ -368,5 +368,21 @@ describe("requestPrediction and pollPrediction", () => {
   it("rejects an asset of another farm", async () => {
     const { impl } = fakeFetch([{ status: 200, body: envelope(asset("ready", { farmId: "22222222-2222-4222-8222-222222222222" })) }]);
     await expect(loadPrediction(FIXTURE_FARM_ID, assetId, impl)).rejects.toThrow(/did not match/);
+  });
+});
+
+
+describe("illustration prediction presentation", () => {
+  it("exposes the same future-look request control and pending status", () => {
+    const future = "2026-11-10";
+    expect(text(hero(future, { mode: "illustration", prediction: livePrediction() }))).toContain("Predict with AI");
+    const pending = hero(future, { mode: "illustration", prediction: livePrediction({ pending: true }) });
+    expect(text(pending)).toContain("Predicting with AI…");
+    expect(pending).not.toContain('data-testid="today-predict"');
+  });
+  it("preserves blocked reasons and offers the available generated look", () => {
+    expect(text(hero("2026-11-10", { mode: "illustration", prediction: livePrediction({ blocked: "Daily limit reached" }) }))).toContain("Daily limit reached");
+    expect(text(hero("2026-11-16", { mode: "illustration", prediction: livePrediction() }))).toContain("AI-predicted look available");
+    expect(text(hero(FIXTURE_TODAY, { mode: "illustration", prediction: livePrediction() }))).not.toContain("Predict with AI");
   });
 });

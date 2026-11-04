@@ -69,3 +69,130 @@
     animation: none;
   }
 }
+
+/* Inline composer microphone (InlineMic.tsx). */
+.mic-button,
+.mic-stop,
+.mic-cancel {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border-radius: 50%;
+  cursor: pointer;
+}
+.mic-button {
+  border: 1px solid var(--accent-border);
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+.mic-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.mic-stop {
+  border: 1px solid var(--danger);
+  background: var(--danger);
+  color: var(--surface);
+}
+.mic-cancel {
+  border: 1px solid var(--accent-border);
+  background: var(--surface);
+  color: var(--accent);
+}
+.mic-pill {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 38px;
+  padding: 3px 12px 3px 3px;
+  border: 1px solid var(--accent-border);
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+.mic-pill-text {
+  min-width: 0;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.mic-time {
+  font-variant-numeric: tabular-nums;
+  font-weight: 500;
+}
+.mic-bars {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  height: 24px;
+  flex-shrink: 0;
+}
+.mic-bar {
+  width: 3px;
+  height: calc(4px + var(--lvl, 0.12) * 20px);
+  border-radius: 2px;
+  background: var(--accent);
+  transition: height 80ms linear;
+}
+.compose-input.mic-active {
+  padding-left: 5px;
+}
+.compose-input.mic-active > textarea {
+  display: none;
+}
+.mic-notice {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 8px;
+  padding: 9px 11px;
+  border: 1px solid var(--accent-border);
+  border-radius: 10px;
+  background: var(--accent-soft);
+  font-size: 12px;
+  line-height: 1.45;
+}
+.mic-notice p {
+  margin: 0;
+}
+.mic-notice-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.mic-notice-actions .btn {
+  min-height: 36px;
+  padding: 6px 12px;
+  font-size: 12px;
+}
+.mic-error,
+.mic-warning {
+  margin: 6px 0 0;
+  font-size: 12px;
+  line-height: 1.4;
+}
+.mic-error {
+  color: var(--danger);
+}
+.mic-warning {
+  color: var(--text-secondary);
+}
+.mic-live {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+@media (prefers-reduced-motion: reduce) {
+  .mic-bar {
+    transition: none;
+  }
+}

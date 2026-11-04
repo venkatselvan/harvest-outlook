@@ -609,12 +609,12 @@ test("axe finds no serious or critical violation on the pager, five rows, an int
 });
 
 for (const theme of ["light", "dark"] as const) {
-  test(`${theme} theme at 390 px with four rows: no page overflow, the calendar scrolls to the current month`, async ({ page }) => {
+  test(`dark theme with ${theme} system at 390 px: four rows fit and calendar scrolls to current month`, async ({ page }, testInfo) => {
     await mock(page);
     await page.emulateMedia({ colorScheme: theme });
     await page.goto("/planner");
     await expect(page.locator(".yp-cal-row")).toHaveCount(4);
-    await expect(page.locator("html")).toHaveAttribute("data-theme", theme);
+    await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
     // Every row head fits the 390 px column: the profit headline wraps instead of running off the edge.
     const overflowing = await page.locator(".yp-row-head").evaluateAll((heads) =>
@@ -625,6 +625,6 @@ for (const theme of ["light", "dark"] as const) {
     expect(await scroller.evaluate((el) => el.scrollWidth > el.clientWidth)).toBe(true);
     await expect.poll(() => scroller.evaluate((el) => el.scrollLeft)).toBeGreaterThan(0);
     await page.locator(".yp-panel").scrollIntoViewIfNeeded();
-    await page.screenshot({ path: `../../docs/reference/redesign/year-plan-r2-mock-${theme}.png` });
+    await page.screenshot({ path: testInfo.outputPath(`year-plan-r2-dark-system-${theme}.png`) });
   });
 }

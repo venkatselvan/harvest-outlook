@@ -6,7 +6,7 @@ import {withTransaction} from '../db/pool';
 import {payloadHash} from './hash';
 import {appendFact,getFarm} from './farms';
 import {boundaryMetrics,getWorkspace} from './workspace';
-import {DEMO_FARM_NAME,DEMO_LABEL,DEMO_SAMPLE_SOURCE,DEMO_SEED_VERSION,LEGACY_DEMO_NAMES,istDate,mergeTrackRecord,seedDemoCare,seedDemoJournal} from './demo-track-record';
+import {DEMO_FARM_NAME,DEMO_LABEL,DEMO_SAMPLE_SOURCE,DEMO_SEED_VERSION,LEGACY_DEMO_NAMES,LEGACY_V5_ROTATION_PLANS,istDate,mergeTrackRecord,seedDemoCare,seedDemoJournal} from './demo-track-record';
 const SOURCE='https://uasmandya.edu.in/ars-arasikere';
 const BOUNDARY_NOTE='Prefilled outline around a coarse public research-site reference; verify the boundary before using it as a field record.';
 export function demoState(boundary:unknown){return FarmWorkspaceState.parse({boundary,previousHarvest:{status:'unknown'},cycles:[],rotationPlans:[]})}
@@ -27,6 +27,13 @@ export function withoutLegacyDemoRecords(input:WorkspaceState):WorkspaceState{
  return state;
 }
 
+/** Seed v5 saved three future seasons; v6 saves none. Removes exactly those records (matched by id and unedited seed fields) and nothing the farmer added. */
+export function withoutV5DemoPlans(input:WorkspaceState):WorkspaceState{
+ const state=structuredClone(input);
+ state.rotationPlans=state.rotationPlans.filter(r=>{const seeded=LEGACY_V5_ROTATION_PLANS.find(p=>p.id===r.id);return !(seeded&&Object.entries(seeded).every(([k,v])=>payloadHash(v)===payloadHash((r as Record<string,unknown>)[k])))});
+ return state;
+}
+
 type FactValue=string|number|boolean;
 /** Appends a fact only when the current one differs (value, basis or source), so a repeated load writes nothing. Returns whether it wrote. */
 async function ensureFact(c:PoolClient,ownerId:string,farmId:string,key:string,value:FactValue,opts:{basis:'derived'|'farmer_reported';source:string;onlyIfAbsent?:boolean}){
@@ -39,7 +46,7 @@ export interface DemoFarmDeps{pool:Pool;config:Config;now?:(()=>Date)|undefined}
 
 /**
  * Brings an owned demo farm to the two-year track record (spec sections 1 to 4) inside the caller's transaction:
- * legacy clean-up for seed versions 1 to 4, merge by id, marker facts, rename of a seed-named farm, journal and care seeds.
+ * legacy clean-up for seed versions 1 to 5 (v5 saved three future seasons that v6 no longer seeds), merge by id, marker facts, rename of a seed-named farm, journal and care seeds.
  * When the workspace changed: version bump, queued year-plan and monitor jobs cancelled, year plans archived (kept for
  * audit, never shown; the Plan tab rebuilds one) and the monitor snapshot cleared.
  */
@@ -47,7 +54,7 @@ async function applyTrackRecord(c:PoolClient,deps:DemoFarmDeps,ownerId:string,fa
  await c.query('SELECT id FROM farms WHERE id=$1 AND owner_id=$2 FOR UPDATE',[farmId,ownerId]);
  const workspace=(await c.query<{state:unknown}>('SELECT state FROM farm_workspaces WHERE farm_id=$1 FOR UPDATE',[farmId])).rows[0];
  const old=FarmWorkspaceState.parse(workspace?.state??demoState(null));
- const cleaned=[1,2,3,4].includes(marker)?withoutLegacyDemoRecords(old):old;
+ const cleaned=withoutV5DemoPlans([1,2,3,4].includes(marker)?withoutLegacyDemoRecords(old):old);
  const next=mergeTrackRecord(cleaned,loadDate);
  if(!workspace)await c.query('INSERT INTO farm_workspaces(farm_id,version,state) VALUES($1,1,$2::jsonb)',[farmId,JSON.stringify(next)]);
  else if(JSON.stringify(old)!==JSON.stringify(next)){

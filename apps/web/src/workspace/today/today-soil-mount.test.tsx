@@ -53,6 +53,17 @@ const overview = () => (
 const fake = (state: SoilCardState): SoilCardController => ({ state: () => state, dismissed: () => false, retry: noop, dismiss: noop });
 
 describe("soil card mount", () => {
+  it("keeps one soil section with weather, before the harvest outlook", () => {
+    const markup = html(side);
+    const soil = markup.indexOf('data-testid="today-soil"');
+    expect(soil).toBeGreaterThan(markup.indexOf('class="today-side"'));
+    expect(soil).toBeGreaterThan(markup.indexOf('data-testid="today-overview"'));
+    expect(soil).toBeGreaterThan(markup.indexOf('data-card-group="conditions"'));
+    expect(soil).toBeLessThan(markup.indexOf('data-card-group="outlook"'));
+    for (const kind of ['health', 'weather', 'harvest', 'profit', 'price', 'residue', 'energy', 'carbon']) {
+      expect(count(markup, new RegExp(`data-card="${kind}"`, 'g'))).toBe(1);
+    }
+  });
   it("renders exactly once in the field view and once in the All fields overview", () => {
     expect(count(html(side), /data-testid="today-soil"/g)).toBe(1);
     expect(count(routed(overview), /data-testid="today-soil"/g)).toBe(1);

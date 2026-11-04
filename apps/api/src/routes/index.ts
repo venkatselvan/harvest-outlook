@@ -1,3 +1,5 @@
+import { linkJournalPhotos, queueSeasonPredictions } from '../services/today/season-predictions';
+import {fieldPhotoRoutes} from "./field-photos";
 import type { FastifyInstance } from "fastify";
 import type { Config } from "../config";
 import { agentEnvFromConfig } from "../config";
@@ -43,6 +45,7 @@ import {cropFitRoutes} from './crop-fit';
 import {soilReviewRoutes} from './soil-review';
 import {seasonPreviewRoutes} from './season-preview';
 import {scoutingRoutes} from './scouting';
+import {farmSummaryRoutes} from './farm-summary';
 import {seasonReportRoutes} from './season-report';
 
 export interface RouteDeps {
@@ -83,12 +86,14 @@ export async function registerRoutes(app: FastifyInstance, deps: RouteDeps): Pro
   await app.register(commodityCatalogueRoutes,{config,pool});
   await registerMarketContextRoutes(app,{config});
   await app.register(commandCenterRoutes,{config,pool});
+  await app.register(farmSummaryRoutes,{config,pool});
   await app.register(soilReportRoutes,{config,pool,storage:deps.storage,budget:deps.budget,...(deps.weatherFetch?{fetchImpl:deps.weatherFetch as unknown as typeof fetch}:{})});
   // Stream A: year plan (UI_BRIEF section 4); its job type farm.year-plan is registered in worker/handlers/index.ts.
   await app.register(yearPlanRoutes,{config,pool,budget:deps.budget,...(deps.weatherFetch?{fetchImpl:deps.weatherFetch as unknown as typeof fetch}:{})});
   await app.register(boundaryContextRoutes,{config,pool,...(deps.weatherFetch?{fetchImpl:deps.weatherFetch as unknown as typeof fetch}:{})});
   await app.register(aiActivityRoutes,{config,pool});
   await app.register(demoFarmRoutes,{config,pool,yearPlan:{config,pool,budget:deps.budget,...(deps.weatherFetch?{fetchImpl:deps.weatherFetch as unknown as typeof fetch}:{})}});
+  await app.register(fieldPhotoRoutes, { config, pool, storage: deps.storage });
   await app.register(mediaRoutes, { config, pool, storage: deps.storage });
   await app.register(jobRoutes, { config, pool });
   // Stream B: Today view (UI_BRIEF section 4) and the wholesale price reads. The weather seam only reaches the plugins that call Open-Meteo;
@@ -134,6 +139,10 @@ export async function registerRoutes(app: FastifyInstance, deps: RouteDeps): Pro
   await registerJournalRoutes(app, {
     config,
     service: deps.journal,
+    onEvidence: async (ownerId,entryId,sessionId) => {
+      const scope = await linkJournalPhotos(pool,ownerId,entryId,{config,sessionId,onError:error => app.log.warn({error},'Photo coverage request deferred')});
+      if (scope) await queueSeasonPredictions({pool,config},scope,sessionId);
+    },
     resolveOwner: (req) => requireAuth(req).ownerId,
     onRequest: privateRouteGuard(config, pool),
     resolveSession: (req) => requireAuth(req).sessionId,

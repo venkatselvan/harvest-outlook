@@ -42,6 +42,7 @@ async function fixture(page: Page) {
   await page.route("https://**", (route) => route.abort());
   await page.route("**/api/v1/**", async (route) => {
     const path = new URL(route.request().url()).pathname;
+    if (path.endsWith("/journal")) return route.fulfill({ json: env({ farmId, currentPlan: null, entries: [], completedTasks: [], revisions: [] }) });
     const data =
       path === "/api/v1/session"
         ? { authenticated: true, csrfToken: "test" }
@@ -220,125 +221,73 @@ async function contrastIssues(page: Page, scope = "body") {
   });
 }
 
-test("system theme initializes in the head even before the application module loads", async ({
-  page,
-}) => {
-  await page.emulateMedia({ colorScheme: "dark" });
-  await page.route("**/*", (route) =>
-    route.request().resourceType() === "script" ||
-    route.request().url().includes("/api/")
-      ? route.abort()
-      : route.continue(),
-  );
-  await page.goto("/farm");
-  await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
-  await expect(page.locator("html")).toHaveCSS(
-    "background-color",
-    "rgb(17, 20, 23)",
-  );
-  await expect(page.locator("#root")).toBeEmpty();
-});
-
-test("theme follows system until chosen, supports keyboard toggle, and persists across routes and reload", async ({
-  page,
-}) => {
-  await fixture(page);
-  await page.emulateMedia({ colorScheme: "dark" });
-  await page.goto("/farm/settings");
-  const toggle = page.getByRole("button", { name: "Dark mode", exact: true });
-  await expect(toggle).toHaveAttribute("aria-pressed", "true");
-  await page.emulateMedia({ colorScheme: "light" });
-  await expect(toggle).toHaveAttribute("aria-pressed", "false");
-  await page.emulateMedia({ colorScheme: "dark" });
-  await expect(toggle).toHaveAttribute("aria-pressed", "true");
-  await toggle.focus();
-  await page.keyboard.press("Space");
-  await expect(toggle).toHaveAttribute("aria-pressed", "false");
-  await expect
-    .poll(() => page.evaluate(() => localStorage.getItem("ho.theme")))
-    .toBe("light");
-  await page.emulateMedia({ colorScheme: "light" });
-  await page.emulateMedia({ colorScheme: "dark" });
-  await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
-  await page
-    .getByRole("navigation", { name: "Farm views" })
-    .getByRole("link", { name: "Plan", exact: true })
-    .click();
-  await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
-  await page.reload();
-  await expect(toggle).toHaveAttribute("aria-pressed", "false");
-  await toggle.click();
-  await page.reload();
-  await expect(toggle).toHaveAttribute("aria-pressed", "true");
-  await expect(page.locator("body")).toHaveCSS(
-    "background-color",
-    "rgb(17, 20, 23)",
-  );
-});
-
-for (const theme of ["light", "dark"] as const) {
-  test(`${theme} theme keeps workspace routes, season form, report modal and assistant readable`, async ({
-    page,
-  }) => {
-    await page.setViewportSize({ width: 1280, height: 900 });
-    await fixture(page);
-    await page.emulateMedia({ colorScheme: theme });
-    for (const path of [
-      "/farm",
-      "/planner",
-      "/explore",
-      "/catalogue",
-      "/outlook",
-      "/journal",
-      "/farm/settings",
-    ]) {
-      await page.goto(path);
-      await expect(
-        page.getByRole("button", { name: "Dark mode", exact: true }),
-      ).toBeVisible();
-      await expect(page.locator("h1").first()).toBeVisible();
-      expect(await contrastIssues(page), `Text contrast on ${path}`).toEqual(
-        [],
-      );
-    }
-    await page.getByRole("button", { name: /Theme soil report/ }).click();
-    await expect(page.getByRole("dialog")).toBeVisible();
-    expect(
-      await contrastIssues(page, '[role="dialog"]'),
-      "Report modal text contrast",
-    ).toEqual([]);
-    await page.getByRole("button", { name: "Close soil report" }).click();
-    await page.goto("/planner");
-    await page
-      .getByRole("button", { name: "Add a season", exact: true })
-      .click();
-    await expect(page.getByRole("dialog")).toBeVisible();
-    const formSelect = page
-      .getByRole("dialog")
-      .getByRole("combobox", { name: "Crop", exact: true });
-    await expect(formSelect).toHaveCSS(
-      "background-color",
-      theme === "light" ? "rgb(255, 255, 255)" : "rgb(27, 31, 36)",
-    );
-    expect(
-      await contrastIssues(page, '[role="dialog"]'),
-      "Season form text contrast",
-    ).toEqual([]);
-    await page.getByRole("button", { name: "Close season editor" }).click();
-    await page
-      .getByRole("button", { name: "Open Evara", exact: true })
-      .first()
-      .click();
-    await expect(
-      page.getByLabel("Evara farm assistant", { exact: true }),
-    ).toBeVisible();
-    expect(
-      await contrastIssues(page, ".assistant-panel"),
-      "Assistant text contrast",
-    ).toEqual([]);
-    await page.setViewportSize({ width: 360, height: 740 });
-    const toggle = page.getByRole("button", { name: "Dark mode", exact: true });
-    await expect(toggle).toBeInViewport();
-    expect(await toggle.boundingBox()).toMatchObject({ width: 40, height: 40 });
+for (const deviceTheme of ["light", "dark"] as const) {
+  test(`dark theme is applied before app load despite ${deviceTheme} system and stored light`, async ({ page }) => {
+    await page.emulateMedia({ colorScheme: deviceTheme });
+    await page.addInitScript(() => localStorage.setItem("ho.theme", "light"));
+    await page.route("**/*", route => route.request().resourceType() === "script" || route.request().url().includes("/api/") ? route.abort() : route.continue());
+    await page.goto("/farm");
+    await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
+    await expect(page.locator("html")).toHaveCSS("background-color", "rgb(20, 37, 27)");
+    await expect(page.locator("html")).toHaveCSS("color-scheme", "dark");
+    await expect(page.locator('meta[name="theme-color"]')).toHaveAttribute("content", "#14251b");
+    await expect(page.locator("#root")).toBeEmpty();
   });
 }
+
+test("dark tinted workspace ignores old preferences, system changes and legacy theme events", async ({ page }) => {
+  await fixture(page);
+  await page.addInitScript(() => localStorage.setItem("ho.theme", "light"));
+  await page.emulateMedia({ colorScheme: "light" });
+  await page.goto("/farm/settings");
+  await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
+  await expect(page.getByRole("button", { name: "Dark mode", exact: true })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: /Use (clearer|tinted) glass/ })).toHaveCount(0);
+  await expect(page.locator(".glass-workspace")).not.toHaveClass(/clear-glass/);
+  await page.evaluate(() => window.dispatchEvent(new CustomEvent("ho:theme", { detail: "light" })));
+  await page.emulateMedia({ colorScheme: "dark" });
+  await page.emulateMedia({ colorScheme: "light" });
+  await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
+  await page.reload();
+  await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
+  await page.getByRole("button", { name: "More", exact: true }).click();
+  const more = page.locator("#more-menu-panel");
+  for (const name of ["Plan", "Market", "Farm · crop fit", "Soil records", "Activity & journal", "Add a farm", "Crops for your farm", "Manage farms"]) {
+    await expect(more.getByRole("link", { name, exact: true })).toBeVisible();
+  }
+  await more.getByRole("link", { name: "Plan", exact: true }).click();
+  await expect(page).toHaveURL(/tab=year/);
+  await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
+  await expect(page.locator(".sidebar-secondary")).toHaveCount(0);
+});
+
+test("dark workspace keeps secondary routes, forms and assistant readable without theme controls", async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await fixture(page);
+  await page.emulateMedia({ colorScheme: "light" });
+  for (const path of ["/farm", "/planner", "/explore", "/catalogue", "/outlook", "/journal", "/farm/settings"]) {
+    await page.goto(path);
+    await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
+    await expect(page.locator("h1").first()).toBeVisible();
+    expect(await contrastIssues(page), `Text contrast on ${path}`).toEqual([]);
+  }
+  await page.getByRole("button", { name: /Theme soil report/ }).click();
+  await expect(page.getByRole("dialog")).toBeVisible();
+  expect(await contrastIssues(page, '[role="dialog"]'), "Report modal text contrast").toEqual([]);
+  await page.getByRole("button", { name: "Close soil report" }).click();
+  await page.goto("/planner");
+  await page.getByRole("button", { name: "Add a season", exact: true }).click();
+  await expect(page.getByRole("dialog")).toBeVisible();
+  await expect(page.getByRole("dialog").getByRole("combobox", { name: "Crop", exact: true })).toHaveCSS("background-color", "rgba(23, 43, 30, 0.96)");
+  expect(await contrastIssues(page, '[role="dialog"]'), "Season form text contrast").toEqual([]);
+  await page.getByRole("button", { name: "Close season editor" }).click();
+  await page.getByRole("button", { name: "Open Evara", exact: true }).first().click();
+  await expect(page.getByLabel("Evara farm assistant", { exact: true })).toBeVisible();
+  expect(await contrastIssues(page, ".assistant-panel"), "Assistant text contrast").toEqual([]);
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(page.getByRole("button", { name: "Dark mode", exact: true })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "More", exact: true })).toBeInViewport();
+  const box = (await page.getByRole("button", { name: "More", exact: true }).boundingBox())!;
+  expect(box.width).toBeGreaterThanOrEqual(44);
+  expect(box.height).toBeGreaterThanOrEqual(44);
+});

@@ -25,6 +25,8 @@ import {
   defaultControls,
   formatInr,
   grownBeforeText,
+  notRankedCount,
+  notRankedSummary,
   pickCards,
   pickerControls,
   pickerSections,
@@ -208,7 +210,15 @@ describe("crop fit cards and states (rendered)", () => {
   it("an empty review explains why nothing fits", () => {
     const html = text(renderToString(() => <CropFitResults review={emptyReview} showAll={false} onToggleAll={noop} onOpen={noop} onRetry={noop} retrying={false} />));
     expect(html).toContain("No crop fits this sowing date");
-    expect(html).toContain("Not ranked (maize, paddy)");
+    expect(html).toContain("2 crops not ranked · why");
+    // The per-crop line sits inside the disclosure, not loose in the empty state.
+    const raw = renderToString(() => <CropFitResults review={emptyReview} showAll={false} onToggleAll={noop} onOpen={noop} onRetry={noop} retrying={false} />);
+    expect(raw).toMatch(/<details[^>]*class="cf-why"[^>]*><summary>2 crops not ranked · why<\/summary>[\s\S]*Not ranked \(maize, paddy\)[\s\S]*<\/details>/);
+  });
+  it("counts every crop named across the not-ranked lines, singular for one", () => {
+    expect(notRankedCount(["Not ranked (maize, paddy): a.", "Not ranked (ragi): b."])).toBe(3);
+    expect(notRankedSummary(["Not ranked (ragi): b."])).toBe("1 crop not ranked · why");
+    expect(notRankedSummary(["Not ranked: unexplained."])).toBe("1 crop not ranked · why");
   });
   it("the detail shows the soil comparison table, profit bands, notes and basis", () => {
     const maize = CANDIDATES[0]!;

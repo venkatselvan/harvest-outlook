@@ -1,4 +1,5 @@
 import { deflateSync } from "node:zlib";
+import { readyModelReview } from "../src/workspace/farm/soilReviewFixtures";
 import { expect, test, type Page, type Route } from "@playwright/test";
 import {
   FarmCommandCenter as commandSchema,
@@ -6,6 +7,7 @@ import {
   type TodayView,
 } from "@harvest/contracts";
 import {
+  fieldCheckStepFixture,
   FIXTURE_ALERT_IDS,
   FIXTURE_BOUNDARY,
   todayEmptyFixture,
@@ -149,6 +151,7 @@ const command = (farmId: string, completed: boolean) => ({
 });
 
 interface MockOptions {
+  conditionCheck?: boolean;
   /** How /today answers: the fixture, a 404 envelope, or a network failure. */
   today?: "ok" | "missing" | "network";
   /** Hold farm B's /today response until `releaseB()`. */
@@ -172,6 +175,13 @@ async function mock(page: Page, options: MockOptions = {}) {
   const todayFor = (farmId: string): TodayView => {
     const view = farmId === A ? todayFixture(A) : todayEmptyFixture(B);
     view.alerts = view.alerts.filter((alert) => !state.dismissed.has(alert.id));
+    if (options.conditionCheck && farmId === A) {
+      const step = fieldCheckStepFixture({status: state.completed.has('condition') ? 'completed' : 'due'});
+      if (step.status === 'completed') { step.fieldCheck!.completedOn = '2026-11-01'; step.fieldCheck!.journalEntryId = J; }
+      view.upcoming = [step];
+      view.nextAction = step.status === 'completed' ? null : step;
+    }
+
     view.upcoming = view.upcoming.map((step) =>
       state.completed.has(step.careTask?.id ?? "")
         ? { ...step, status: "completed", careTask: step.careTask && { ...step.careTask, status: "completed", completedOn: "2026-11-01", journalEntryId: J } }
@@ -198,6 +208,12 @@ async function mock(page: Page, options: MockOptions = {}) {
         return;
       }
       return route.fulfill({ json: env(todayFor(id)) });
+    }
+    if (path.endsWith("/checks/complete") && method === "POST") {
+      const body = route.request().postDataJSON();
+      state.completed.add('condition');
+      const check = {...fieldCheckStepFixture().fieldCheck!, status: 'completed', completedOn: body.completedOn, journalEntryId: J};
+      return route.fulfill({status: 201, json: env({check, journalEntryId: J, alreadyCompleted: false})});
     }
     if (path.endsWith("/complete") && method === "POST") {
       const body = route.request().postDataJSON();
@@ -276,10 +292,19 @@ async function press(page: Page, key: string, times: number) {
   await target.focus();
   for (let i = 0; i < times; i++) await target.press(key);
 }
+/** The page h1 on Today is the headline (TODAY_MAP_LAYOUT_SPEC.md); the fixture farm has no fields. */
+const headline = (page: Page) => page.getByRole("heading", { level: 1, name: "Your farm today." });
+/** The deeper cards sit behind the collapsed "More from Today" disclosure; open it (idempotent). */
+async function openMore(page: Page) {
+  const details = page.getByTestId("today-more").locator("details.today-more-details");
+  await expect(details).toHaveCount(1);
+  if (!(await details.evaluate((el) => (el as HTMLDetailsElement).open))) await details.locator(":scope > summary").click();
+}
 async function openToday(page: Page) {
   await page.goto("/farm");
-  await expect(page.getByRole("heading", { name: "South field", exact: true })).toBeVisible();
+  await expect(headline(page)).toBeVisible();
   await expect(slider(page)).toBeVisible();
+  await openMore(page);
 }
 
 test.use({ viewport: { width: 390, height: 844 } });
@@ -301,7 +326,7 @@ test("slider opens at today and moves the stage, date, price and weather togethe
   await expect(card(page, "weather")).toContainText(`${formatTemp(nowWeather.tMaxC)}/${formatTemp(nowWeather.tMinC)}`);
   await expect(card(page, "harvest")).toContainText("63–73 days");
   await expect(card(page, "price")).toContainText("₹19–24");
-  await expect(card(page, "price")).toContainText("Based on 3 years of Karnataka mandi prices");
+  await expect(card(page, "price")).toContainText("Historical mandi range");
   await expect(page.getByRole("button", { name: "Back to today" })).toHaveCount(0);
 
   // 39 days later by keyboard: 10 Dec 2026, inside the grain-filling stage, beyond the forecast horizon.
@@ -317,7 +342,7 @@ test("slider opens at today and moves the stage, date, price and weather togethe
   await expect(card(page, "weather")).toContainText("Typical");
   await expect(card(page, "weather")).not.toContainText("Forecast");
   await expect(card(page, "weather")).toContainText(`${formatTemp(laterWeather.tMaxC)}/${formatTemp(laterWeather.tMinC)}`);
-  await expect(card(page, "weather")).toContainText("Typical for this date, 2023 to 2025");
+  await expect(card(page, "weather")).toContainText("Seasonal reference, not a forecast");
 
   await page.getByRole("button", { name: "Back to today" }).click();
   await expect(slider(page)).toHaveAttribute("aria-valuetext", "1 Nov 2026");
@@ -329,8 +354,9 @@ test("slider opens at today and moves the stage, date, price and weather togethe
 
   // Details live one tap away in a bottom sheet; Escape closes it.
   await card(page, "price").getByRole("button", { name: /details and sources/ }).click();
-  const sheet = page.getByRole("dialog", { name: "Expected price at harvest" });
+  const sheet = page.getByRole("dialog", { name: "Harvest-week price" });
   await expect(sheet).toContainText("not a forecast and not a farm-gate price");
+  await expect(sheet).toContainText("Based on 3 years of Karnataka mandi prices");
   await page.keyboard.press("Escape");
   await expect(sheet).toHaveCount(0);
 });
@@ -338,6 +364,7 @@ test("slider opens at today and moves the stage, date, price and weather togethe
 test("satellite view shows observed scene dates for past dates and a labelled illustration for future dates", async ({ page }) => {
   await mock(page);
   await openToday(page);
+  await page.getByRole("button", { name: "Illustration", exact: true }).click();
   await expect(page.getByRole("region", { name: "Interactive crop growth model" })).toBeVisible();
   await expect(stage(page)).toContainText("Illustration");
   await page.getByRole("button", { name: "Satellite", exact: true }).click();
@@ -452,15 +479,18 @@ test("the next action card shows the window and action; every later step shows i
   await expect(steps).not.toContainText("Expected");
 });
 
-test("the outlook line sits under the price value: writing while pending, the sentence with the AI mark when ready", async ({ page }) => {
+test("Price context discloses the pending or ready outlook and its AI evidence", async ({ page }) => {
   await mock(page);
   let note: TodayView["outlookNote"] = { status: "pending", text: null, facts: [], origin: null, generatedAt: null, modelInvocation: null };
   await page.route("**/api/v1/farms/*/today", (route) => route.fulfill({ json: env(todaySchema.parse({ ...todayFixture(A), outlookNote: note })) }));
   await openToday(page);
   const card = page.locator('[data-card="price"]');
+  await card.getByText("Price context", { exact: true }).click();
   await expect(card.getByTestId("today-outlook-note")).toHaveText(/Writing the outlook…/);
   note = todayFixture(A).outlookNote!;
   await page.reload();
+  await openMore(page);
+  await page.locator('[data-card="price"]').getByText("Price context", { exact: true }).click();
   const line = page.locator('[data-card="price"]').getByTestId("today-outlook-note");
   await expect(line).toContainText("Maize grain in Karnataka has usually fetched ₹19 to ₹24 per kg around harvest");
   await line.getByRole("button", { name: "AI used: Harvest price outlook in words" }).click();
@@ -468,6 +498,7 @@ test("the outlook line sits under the price value: writing while pending, the se
   await page.keyboard.press("Escape");
   note = { status: "unavailable", text: null, facts: [], origin: null, generatedAt: null, modelInvocation: null };
   await page.reload();
+  await openMore(page);
   await expect(page.locator('[data-card="price"]')).toContainText("₹19–24");
   await expect(page.locator('[data-card="price"]').getByTestId("today-outlook-note")).toHaveCount(0);
 });
@@ -477,7 +508,7 @@ test("switching farms clears the view before the next farm loads", async ({ page
   await openToday(page);
   await expect(page.getByRole("region", { name: "Alerts" }).getByRole("listitem")).toHaveCount(3);
   await page.getByLabel("Selected farm", { exact: true }).selectOption(B);
-  await expect(page.getByRole("heading", { name: "North field", exact: true })).toBeVisible();
+  await expect(page.getByLabel("Selected farm", { exact: true })).toHaveValue(B);
   await expect.poll(() => api.state.todayFarms.includes(B)).toBe(true);
   await expect(page.getByRole("status", { name: "Loading today's field view" })).toBeVisible();
   await expect(slider(page)).toHaveCount(0);
@@ -487,6 +518,7 @@ test("switching farms clears the view before the next farm loads", async ({ page
   await api.releaseB();
   await expect(page.getByRole("heading", { name: "What's growing on this field?" })).toBeVisible();
   await expect(page.getByRole("link", { name: "See your year plan" })).toHaveAttribute("href", "/planner");
+  await openMore(page);
   await expect(card(page, "weather")).toContainText("Weather on 1 Nov");
   await expect(card(page, "harvest")).toHaveCount(0);
   const alerts = page.getByRole("region", { name: "Alerts" });
@@ -499,7 +531,7 @@ test("switching farms clears the view before the next farm loads", async ({ page
 test("a missing or unreachable Today endpoint shows the error state and keeps the care schedule", async ({ page }) => {
   const api = await mock(page, { today: "missing" });
   await page.goto("/farm");
-  await expect(page.getByRole("heading", { name: "South field", exact: true })).toBeVisible();
+  await expect(headline(page)).toBeVisible();
   const error = page.getByRole("alert").filter({ hasText: "Today's field view is unavailable" });
   await expect(error).toContainText("not available on this server yet");
   const steps = page.getByRole("region", { name: "Upcoming steps" });
@@ -518,14 +550,37 @@ test("a missing or unreachable Today endpoint shows the error state and keeps th
 });
 
 for (const theme of ["light", "dark"] as const)
-  test(`${theme} theme at 390 px renders without horizontal overflow`, async ({ page }) => {
+  test(`system ${theme} preference keeps dark glass at 390 px without horizontal overflow`, async ({ page }, testInfo) => {
     await page.emulateMedia({ colorScheme: theme });
     await mock(page);
     await openToday(page);
-    await expect(page.locator("html")).toHaveAttribute("data-theme", theme);
-    await expect(card(page, "health")).toContainText("Near typical");
-    const surface = await card(page, "price").evaluate((el) => getComputedStyle(el).backgroundColor);
-    expect(surface).toBe(theme === "light" ? "rgb(255, 255, 255)" : "rgb(27, 31, 36)");
+    await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
+    await expect(card(page, "health")).toContainText("Within the stage greenness range");
+    // Financial cards now share one glass surface; verify the actual painted parent.
+    const surface = await page.getByRole("region", { name: "Harvest outlook", exact: true }).evaluate((el) => {
+      const actual = getComputedStyle(el);
+      const probe = document.createElement("span");
+      probe.style.backgroundColor = "var(--glass-panel)";
+      probe.style.color = "var(--text)";
+      el.append(probe);
+      const expected = getComputedStyle(probe);
+      const result = {
+        background: actual.backgroundColor, foreground: actual.color,
+        expectedBackground: expected.backgroundColor, expectedForeground: expected.color,
+        backdrop: actual.backdropFilter,
+        supportsBlur: CSS.supports("backdrop-filter", "blur(1px)"),
+      };
+      probe.remove();
+      return result;
+    });
+    expect(surface.background).toBe(surface.expectedBackground);
+    expect(surface.foreground).toBe(surface.expectedForeground);
+    expect(surface.foreground).not.toBe(surface.background);
+    const channels = surface.background.match(/[\d.]+/g)!.map(Number);
+    const opacity = channels.length === 4 ? channels[3]! : 1;
+    expect(opacity).toBeGreaterThan(.5);
+    expect(opacity).toBeLessThan(1);
+    if (surface.supportsBlur) expect(surface.backdrop).toContain("blur(");
     const noOverflow = () => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth);
     expect(await noOverflow()).toBe(true);
     await page.getByRole("button", { name: "Satellite", exact: true }).click();
@@ -533,13 +588,15 @@ for (const theme of ["light", "dark"] as const)
     expect(await noOverflow()).toBe(true);
     await page.getByRole("button", { name: "Illustration", exact: true }).click();
     await expect(page.locator(".field-growth-canvas")).toBeVisible();
+    await page.getByRole("button", { name: "Satellite", exact: true }).click();
+    await expect.poll(() => page.locator(".today-sat img").evaluate((img: HTMLImageElement) => img.complete && img.naturalWidth)).toBe(96);
     await page.waitForTimeout(150);
-    await page.screenshot({ path: `../../docs/reference/redesign/today-mock-${theme}.png`, fullPage: true });
+    await page.screenshot({ path: testInfo.outputPath(`today-system-${theme}-dark-ui.png`), fullPage: true });
   });
 
 test.describe("at 360 px", () => {
   test.use({ viewport: { width: 360, height: 740 } });
-  test("the satellite curve line and the health index line fit the screen, and each opens its sheet", async ({ page }) => {
+  test("satellite evidence and the compact condition card fit, with all raw indices in Details", async ({ page }) => {
     await mock(page);
     await openToday(page);
     const noOverflow = () => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth);
@@ -559,25 +616,15 @@ test.describe("at 360 px", () => {
     expect(infoBox.width).toBeGreaterThanOrEqual(44);
     expect(infoBox.height).toBeGreaterThanOrEqual(44);
 
-    // The health card keeps its NDVI headline and adds moisture, red-edge and surface water of the same image.
-    const indexLine = card(page, "health").getByTestId("today-index-line");
-    await indexLine.scrollIntoViewIfNeeded();
-    await expect(indexLine).toBeVisible();
-    const items = indexLine.locator("li");
-    await expect(items).toHaveCount(3);
-    await expect(items.nth(0)).toContainText(/^Moisture index \(NDMI\)\s*0\.18/);
-    await expect(items.nth(1)).toContainText(/^Red-edge greenness \(NDRE\)\s*0\.31/);
-    await expect(items.nth(2)).toContainText(/^Water index \(NDWI\)\s*−0\.45/);
-    await expect(card(page, "health")).toContainText("Near typical");
-    const cardBox = (await card(page, "health").boundingBox())!;
-    const indexBox = (await indexLine.boundingBox())!;
-    expect(indexBox.x).toBeGreaterThanOrEqual(cardBox.x);
-    expect(indexBox.x + indexBox.width).toBeLessThanOrEqual(cardBox.x + cardBox.width + 1);
+    // The compact condition card keeps the interpretation and raw NDVI; all other indices live in Details.
+    await expect(card(page, "health")).toContainText("Within the stage greenness range");
+    await expect(card(page, "health")).toContainText("NDVI 0.62");
+    await expect(card(page, "health").getByTestId("today-index-line")).toHaveCount(0);
     expect(await noOverflow()).toBe(true);
 
     // Health sheet: all seven indices and the 20 m note, without sideways scrolling inside the sheet.
     await card(page, "health").getByRole("button", { name: /details and sources/ }).click();
-    const health = page.getByRole("dialog", { name: "Vegetation health" });
+    const health = page.getByRole("dialog", { name: "Crop condition" });
     await expect(health.locator(".today-index-row")).toHaveCount(7);
     await expect(health).toContainText("B5, B8A and B11 are 20 m bands resampled to the 10 m grid, so these three indices rest on fewer independent pixels.");
     await expect(health).toContainText("(B8 − B11) / (B8 + B11)");
@@ -637,8 +684,9 @@ test("recording the first planting replaces the empty state with the new cycle w
   await expect(page.getByRole("heading", { name: "What's growing on this field?" })).toBeVisible();
   // Leave Today and return, so the view mounts with the workspace already loaded: the live path where the first
   // workspace version change after mount used to be ignored (a fresh page load hid it).
-  await page.getByRole("link", { name: "Market", exact: true }).first().click();
-  await page.getByRole("link", { name: "Today", exact: true }).first().click();
+  await page.getByRole("button", { name: "More", exact: true }).filter({ visible: true }).click();
+  await page.locator(".more-menu-panel").getByRole("link", { name: "Market", exact: true }).click();
+  await farmTab(page, "Today").click();
   await expect(page.getByRole("heading", { name: "What's growing on this field?" })).toBeVisible();
   const callsBeforePlanting = fresh.todayCalls;
   await page.getByRole("button", { name: "Plant a crop" }).click();
@@ -652,4 +700,414 @@ test("recording the first planting replaces the empty state with the new cycle w
   await expect(slider(page)).toBeVisible();
   await expect(page.getByRole("heading", { name: "What's growing on this field?" })).toHaveCount(0);
   expect(fresh.todayCalls - callsBeforePlanting).toBe(1); // exactly one refetch after the workspace version moved
+});
+
+// Presentation regressions: every route stays inside the UI fixture, with no provider traffic.
+const farmTab = (page: Page, label: string) => page.getByRole("navigation", { name: "Farm views" }).getByRole("link", { name: label, exact: true }).filter({ visible: true }).first();
+
+test("Actions and Today preserve the slider day, scene mode and loaded Today resource", async ({ page }) => {
+  const api = await mock(page);
+  await openToday(page);
+  await page.getByRole("button", { name: "Satellite", exact: true }).click();
+  await press(page, "ArrowRight", 4);
+  const chosenDay = await slider(page).getAttribute("aria-valuetext");
+  const loads = api.state.todayFarms.length;
+  await farmTab(page, "Actions").click();
+  await expect(page.getByTestId("today-actions")).toBeVisible();
+  await expect(slider(page)).toHaveCount(0);
+  await expect(page.getByRole("region", { name: "Upcoming steps" })).toBeVisible();
+  await farmTab(page, "Today").click();
+  await expect(slider(page)).toHaveAttribute("aria-valuetext", chosenDay!);
+  await expect(page.getByRole("button", { name: "Satellite", exact: true })).toHaveAttribute("aria-pressed", "true");
+  expect(api.state.todayFarms).toHaveLength(loads);
+});
+
+test("opening Actions pauses season playback and retains the paused day", async ({ page }) => {
+  await mock(page);
+  await openToday(page);
+  await page.getByTestId("today-play").click();
+  await expect.poll(() => slider(page).inputValue()).not.toBe("47");
+  await farmTab(page, "Actions").click();
+  await expect(page.getByTestId("today-actions")).toBeVisible();
+  await farmTab(page, "Today").click();
+  await expect(page.getByTestId("today-play")).toHaveAttribute("aria-pressed", "false");
+  const pausedDay = await slider(page).inputValue();
+  // Four player intervals: an accidentally running hidden player would advance the day.
+  await page.waitForTimeout(500);
+  await expect(slider(page)).toHaveValue(pausedDay);
+});
+
+test("Actions retains care rollback, retry idempotency and alert dismissal across presentations", async ({ page }) => {
+  const api = await mock(page, { failFirstCare: true });
+  await openToday(page);
+  await farmTab(page, "Actions").click();
+  const steps = page.getByRole("region", { name: "Upcoming steps" });
+  const moisture = steps.getByTestId("today-next-action");
+  await moisture.getByRole("button", { name: "Mark done: Check field moisture" }).click();
+  await expect.poll(() => api.state.careBodies.length).toBe(1);
+  await expect(moisture.locator(".today-chip")).toHaveText("Done");
+  await api.failHeldCare();
+  await expect(steps.getByRole("alert")).toContainText("Simulated failure");
+  await expect(moisture.locator(".today-chip")).toHaveCount(0);
+  await moisture.getByRole("button", { name: "Mark done: Check field moisture" }).click();
+  await expect.poll(() => api.state.careBodies.length).toBe(2);
+  expect(api.state.careKeys[1]).toBe(api.state.careKeys[0]);
+  await expect(moisture.locator(".today-chip")).toHaveText("Done");
+  const alerts = page.getByRole("region", { name: "Alerts" });
+  await alerts.getByRole("button", { name: "Dismiss alert: Maize prices fell 9% in 30 days" }).click();
+  await expect.poll(() => api.state.dismissPaths.length).toBe(1);
+  await farmTab(page, "Today").click();
+  await expect(page.locator(`[data-alert-id="${FIXTURE_ALERT_IDS.price}"]`)).toHaveCount(0);
+  await expect(page.getByTestId("today-next-action").locator(".today-chip")).toHaveText("Done");
+});
+
+test("desktop groups all eight cards around the field and retains every disclosure and detail action", async ({ page }, testInfo) => {
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await mock(page);
+  await openToday(page);
+  const brief = page.getByTestId("today-overview");
+  const primary = page.locator(".today-map-left > .today-primary");
+  const conditions = page.getByRole("region", { name: "Weather and harvest", exact: true });
+  const outlook = page.getByRole("region", { name: "Harvest outlook", exact: true });
+  const planning = page.getByRole("region", { name: "Planning references", exact: true });
+  for (const kind of ["health", "weather", "harvest", "profit", "price", "residue", "energy", "carbon"]) {
+    await expect(card(page, kind)).toHaveCount(1);
+  }
+  await expect(page.getByTestId("today-more").locator('[data-card="health"]')).toBeVisible();
+  await expect(conditions.locator(".today-card")).toHaveCount(2);
+  await expect(outlook.locator(".today-card")).toHaveCount(3);
+  await expect(planning.locator('[data-card="energy"]')).toBeHidden();
+  await planning.locator("summary").click();
+  await expect(card(page, "energy")).toBeVisible();
+  await expect(card(page, "carbon")).toBeVisible();
+  // Every grouped card still opens its original sheet, including both planning references.
+  for (const kind of ["health", "weather", "harvest", "profit", "price", "residue", "energy", "carbon"]) {
+    await card(page, kind).getByRole("button", { name: /details and sources/ }).click();
+    await expect(page.getByRole("dialog")).toBeVisible();
+    await page.keyboard.press("Escape");
+  }
+  await planning.locator("summary").click();
+  await brief.getByRole("button", { name: "Review next step", exact: true }).click();
+  await expect(page.locator('[data-step-id="care:task-moisture"]')).toBeFocused();
+  await brief.locator("summary").click();
+  for (const point of todayFixture(A).overview!.points) await expect(brief.getByText(point.text, { exact: true })).toBeVisible();
+  await brief.locator('[data-ref-id="profit"]').click();
+  await expect(page.getByRole("dialog")).toBeVisible();
+  await page.keyboard.press("Escape");
+  await brief.locator("summary").click();
+  // Map layout: left column (glance, hero, gauges), open centre, right column (attention, week, Evara), then More.
+  const leftBox = (await page.locator(".today-map-left").boundingBox())!;
+  const centreBox = (await page.getByTestId("today-map-centre").boundingBox())!;
+  const rightBox = (await page.locator(".today-map-right").boundingBox())!;
+  const moreBox = (await page.getByTestId("today-more").boundingBox())!;
+  expect(leftBox.x + leftBox.width).toBeLessThanOrEqual(centreBox.x + 1);
+  expect(centreBox.x + centreBox.width).toBeLessThanOrEqual(rightBox.x + 1);
+  expect(leftBox.width).toBeLessThanOrEqual(361);
+  expect(rightBox.width).toBeLessThanOrEqual(341);
+  expect(moreBox.y).toBeGreaterThanOrEqual(Math.max(leftBox.y + leftBox.height, rightBox.y + rightBox.height) - 1);
+  expect((await primary.boundingBox())!.y).toBeGreaterThan(leftBox.y);
+  await expect(headline(page)).toBeVisible();
+  for (const id of ["today-glance", "today-gauges", "today-attention", "today-week", "today-evara"]) await expect(page.getByTestId(id)).toBeVisible();
+  await expect(page.getByTestId("today-gauges").locator("[data-basis]")).toHaveCount(3);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+  await page.screenshot({ path: testInfo.outputPath("today-grouped-desktop.png"), fullPage: true });
+});
+
+test("compact crop card links the existing satellite check and keeps profit arithmetic explicit", async ({ page }, testInfo) => {
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await mock(page);
+  const view = todayFixture(A);
+  const alert = view.alerts.find((item) => item.id === FIXTURE_ALERT_IDS.weather)!;
+  alert.type = "satellite";
+  alert.title = "Greenness changed in part of this field";
+  alert.detail = "The synthetic satellite comparison flags a patch for a field check. Inspect it before deciding what to do.";
+  alert.source.name = "Satellite fixture";
+  const linkedStep = view.upcoming.find((step) => step.alertId === alert.id)!;
+  linkedStep.title = "Inspect the patch in the satellite image";
+  linkedStep.detail = "Check the marked patch on the ground before making a decision.";
+  alert.suggestedStep = "Inspect the patch named in the satellite alert before deciding what to do";
+  await page.route("**/api/v1/farms/*/today", (route) => route.fulfill({ json: env(todaySchema.parse(view)) }));
+  await openToday(page);
+  const condition = card(page, "health");
+  await expect(condition).toContainText("Within the stage greenness range");
+  await expect(condition.getByRole("link", { name: "Review suggested field check" })).toBeVisible();
+  await page.screenshot({ path: testInfo.outputPath("today-compact-alert-profit.png"), fullPage: true });
+  await page.getByRole("region", { name: "Harvest outlook", exact: true }).screenshot({ path: testInfo.outputPath("today-harvest-outlook.png") });
+  await condition.getByRole("link", { name: "Review suggested field check" }).click();
+  await expect(page.locator(`[data-step-id="alert:${FIXTURE_ALERT_IDS.weather}"]`)).toBeFocused();
+  const arithmetic = card(page, "profit").getByRole("table", { name: "Revenue minus costs equals profit" });
+  await expect(arithmetic.getByRole("row").nth(0)).toHaveText("Revenue₹1,52,400");
+  await expect(arithmetic.getByRole("row").nth(1)).toHaveText("− Costs₹57,600");
+  await expect(arithmetic.getByRole("row").nth(2)).toContainText("= Profit₹94.8k");
+  await card(page, "residue").getByRole("button", { name: /details and sources/ }).click();
+  await expect(page.getByRole("dialog")).toContainText("The incomes do not add up");
+  await expect(page.getByRole("dialog")).toContainText("Dry fodder");
+});
+
+for (const width of [360, 390]) {
+  test(`unavailable satellite explanation and stage metadata remain separate at ${width}px`, async ({ page }, testInfo) => {
+    await page.setViewportSize({ width, height: 844 });
+    await mock(page);
+    await page.route("**/api/v1/farms/*/ndvi/**", (route) => route.abort());
+    await openToday(page);
+    const message = page.locator(".today-sat > .today-hero-message");
+    await expect(message).toContainText("The image could not load. Try again later.");
+    const explanation = (await message.boundingBox())!;
+    const metadata = (await page.locator(".today-hero-overlay").boundingBox())!;
+    expect(metadata.y).toBeGreaterThanOrEqual(explanation.y + explanation.height);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+    await page.screenshot({ path: testInfo.outputPath(`today-unavailable-${width}-viewport.png`) });
+    await page.screenshot({ path: testInfo.outputPath(`today-unavailable-${width}.png`), fullPage: true });
+  });
+}
+
+test('Field Image reviews EXIF dates, predicts from one photo at the slider date, compares and enforces six photos', async ({ page }) => {
+  await mock(page);
+  const photoId = '44444444-4444-4444-8444-444444444444';
+  const mediaId = '55555555-5555-4555-8555-555555555555';
+  const predictionId = '66666666-6666-4666-8666-666666666666';
+  let photos: Array<{id: string; mediaId: string; capturedOn: string; createdAt: string; imagePath: string}> = [];
+  let predictions: Array<{id: string; photoId: string; sourceDate: string; targetDate: string; status: string; imagePath: string | null; failureReason: null}> = [];
+  const predictBodies: unknown[] = [];
+  let uploads = 0, reads = 0;
+  await page.route('**/api/v1/media**', async route => {
+    if (route.request().method() === 'POST') {
+      uploads++;
+      return route.fulfill({status: 201, json: env({id: mediaId, contentPath: `/api/v1/media/${mediaId}/content`, exifCreatedAt: '2026-10-20'})});
+    }
+    return route.fulfill({contentType: 'image/png', body: observedPng});
+  });
+  await page.route('**/api/v1/farms/**/field-photos**', async route => {
+    const path = new URL(route.request().url()).pathname;
+    if (path.endsWith('/image')) return route.fulfill({contentType: 'image/png', body: illustrationPng});
+    if (path.endsWith('/predict')) {
+      const body = route.request().postDataJSON(); predictBodies.push(body);
+      predictions = [{id: predictionId, photoId, sourceDate: photos[0]!.capturedOn, targetDate: body.targetDate, status: 'queued', imagePath: null, failureReason: null}];
+      return route.fulfill({status: 202, json: env(predictions[0])});
+    }
+    if (route.request().method() === 'POST') {
+      const input = route.request().postDataJSON().photos[0];
+      photos = [{id: photoId, mediaId: input.mediaId, capturedOn: input.capturedOn, createdAt: asOf, imagePath: `/api/v1/media/${mediaId}/content`}];
+    }
+    if (predictions.length && route.request().method() === 'GET') {
+      predictions[0]!.status = 'ready';
+      predictions[0]!.imagePath = `${path}/predictions/${predictionId}/image`;
+    }
+    reads++;
+    return route.fulfill({json: env({photos, predictions})});
+  });
+  await page.goto('/farm');
+  await expect(slider(page)).toBeVisible();
+  expect(reads).toBe(0); // no photo network request while another view is open
+  await page.getByRole('button', {name: 'Field Image', exact: true}).click();
+  await expect(page.getByRole('heading', {name: 'Add your field photos'})).toBeVisible();
+  const file = {name: 'field.jpg', mimeType: 'image/jpeg', buffer: observedPng};
+  await page.getByLabel('Upload field photos', {exact: true}).setInputFiles(file);
+  await expect(page.getByLabel('Date taken for field.jpg')).toHaveValue('2026-10-20');
+  await page.getByLabel('Date taken for field.jpg').fill('2026-10-21');
+  await page.getByRole('button', {name: 'Save photo dates'}).click();
+  await expect(page.getByRole('img', {name: 'Field photo taken 21 Oct 2026', exact: true})).toBeVisible();
+  await press(page, 'ArrowRight', 12);
+  await page.getByRole('button', {name: 'Predict with AI', exact: true}).click();
+  await expect(page.getByRole('button', {name: 'Predicting…'})).toBeDisabled();
+  await expect(page.getByRole('button', {name: 'Compare original'})).toBeVisible({timeout: 10000});
+  expect(predictBodies).toEqual([{targetDate: '2026-11-13'}]);
+  await expect(page.getByTestId('field-images')).toContainText('not an observation');
+  await page.getByRole('button', {name: 'Compare original'}).click();
+  await expect(page.getByRole('img', {name: 'Field photo taken 21 Oct 2026', exact: true})).toBeVisible();
+  await page.getByRole('button', {name: 'Show AI prediction'}).click();
+  await page.getByLabel('Upload field photos', {exact: true}).setInputFiles(Array.from({length: 6}, (_, i) => ({...file, name: `field-${i}.jpg`})));
+  await expect(page.getByTestId('field-images').getByRole('alert')).toContainText('up to 6 photos');
+  expect(uploads).toBe(1);
+  await page.getByRole('button', {name: 'Satellite', exact: true}).click();
+  await page.getByRole('button', {name: 'Field Image', exact: true}).click();
+  await expect(page.getByRole('button', {name: 'Compare original'})).toBeVisible();
+  const overflow = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth);
+  expect(overflow).toBe(false);
+  await page.locator('.today-hero').screenshot({path: '../../output/field-image-mobile.png'});
+  await page.setViewportSize({width: 1440, height: 1000});
+  await page.locator('.today-hero').screenshot({path: '../../output/field-image-desktop.png'});
+});
+
+
+test("grouped layout retains soil evidence and notes across phone, tablet and desktop widths", async ({ page }, testInfo) => {
+  await mock(page);
+  await page.route("**/api/v1/farms/*/soil-review**", route => route.fulfill({ json: env(readyModelReview) }));
+  await page.route("**/api/v1/farms/*/issues**", route => route.fulfill({ json: env({
+    farmId: A, asOf: "2026-11-01", issues: [], counts: { open: 0, treating: 0, resolved: 0, dismissed: 0 }, limitations: [],
+  }) }));
+  await openToday(page);
+  const soil = page.getByTestId("today-soil");
+  const brief = page.getByTestId("today-overview");
+  await expect(soil.getByRole("list", { name: "Confirmed soil values" })).toBeVisible();
+  await expect(soil).toContainText("7.2");
+  await expect(soil).toContainText("0.86");
+  for (const width of [360, 768, 1100, 1440]) {
+    await page.setViewportSize({ width, height: 1000 });
+    await soil.locator("summary").click();
+    await expect(soil.getByText("Soil pH 7.2 rates neutral and salinity is normal.", { exact: true })).toBeVisible();
+    await brief.locator("summary").focus();
+    await page.keyboard.press("Enter");
+    for (const point of todayFixture(A).overview!.points) await expect(brief.getByText(point.text, { exact: true })).toBeVisible();
+    // Check actual card bounds too: overflow-x: clip on the page must not hide a broken grid.
+    const overflowing = await page.locator(".today-map-layout .today-card, .today-overview, .today-soil, .today-map-panel").evaluateAll(elements =>
+      elements.filter(el => { const box = el.getBoundingClientRect(); return box.x < 0 || box.right > window.innerWidth || el.scrollWidth > el.clientWidth + 1; }).map(el => el.getAttribute("data-card") ?? el.className));
+    expect(overflowing).toEqual([]);
+    await soil.locator("summary").click();
+    await brief.locator("summary").click();
+    await headline(page).scrollIntoViewIfNeeded();
+    await page.screenshot({ path: testInfo.outputPath(`today-redesign-${width}.png`), fullPage: true });
+    if (width === 1440) await page.screenshot({ path: testInfo.outputPath("today-redesign-desktop-viewport.png") });
+  }
+});
+
+test('Field Image prediction and photo controls stay inside the card at every screen size', async ({page}, testInfo) => {
+  await mock(page);
+  const photoId = '44444444-4444-4444-8444-444444444444', mediaId = '55555555-5555-4555-8555-555555555555';
+  await page.route('**/api/v1/media/**', route => route.fulfill({contentType: 'image/png', body: observedPng}));
+  await page.route('**/api/v1/farms/**/field-photos**', route => route.fulfill({json: env({
+    photos: [{id: photoId, mediaId, capturedOn: '2026-10-20', createdAt: asOf, imagePath: `/api/v1/media/${mediaId}/content`}], predictions: [],
+  })}));
+  await openToday(page);
+  await page.getByRole('button', {name: 'Field Image', exact: true}).click();
+  const predict = page.getByRole('button', {name: 'Predict with AI', exact: true});
+  await expect(predict).toBeEnabled();
+  for (const width of [1440, 2048, 1100, 768, 360]) {
+    await page.setViewportSize({width, height: 1000});
+    const frame = await page.locator('.today-hero-frame').boundingBox();
+    const timeline = await page.locator('.today-hero-timeline').boundingBox();
+    expect(timeline!.x + timeline!.width).toBeLessThanOrEqual(width);
+    expect(timeline!.y).toBeGreaterThan(frame!.y);
+    // Visibility alone misses clipping by an overflow:hidden ancestor.
+    const clipped = await page.locator('.field-image-action, .field-images-toolbar, .field-image-thumbnails').evaluateAll(elements =>
+      elements.filter(el => {
+        const card = el.closest('.today-hero-frame')!.getBoundingClientRect(), box = el.getBoundingClientRect();
+        return box.bottom > card.bottom || box.right > card.right || box.left < card.left;
+      }).map(el => el.className));
+    expect(clipped, `Controls clipped at ${width}px`).toEqual([]);
+    await predict.click({trial: true});
+    await page.locator('.today-hero').screenshot({path: testInfo.outputPath(`field-image-controls-${width}.png`)});
+  }
+});
+
+test('Field Image replaces an outdated preview and explains maturity and seasonal weather', async ({page}) => {
+  await mock(page);
+  const photoId = '44444444-4444-4444-8444-444444444444', mediaId = '55555555-5555-4555-8555-555555555555';
+  const oldId = '66666666-6666-4666-8666-666666666666', newId = '77777777-7777-4777-8777-777777777777';
+  const photo = {id: photoId, mediaId, capturedOn: '2026-10-20', createdAt: asOf, imagePath: `/api/v1/media/${mediaId}/content`};
+  const old = {id: oldId, photoId, sourceDate: '2026-10-20', targetDate: '2026-11-01', status: 'ready', imagePath: `/api/v1/farms/${A}/cycles/maize-cycle/field-photos/predictions/${oldId}/image`, failureReason: null, promptVersion: 'field-photo-v1', outdated: true};
+  const updated = {...old, id: newId, imagePath: old.imagePath.replace(oldId,newId), promptVersion: 'field-photo-v2', outdated: false,
+    guidance: {sourceStage: 'Initial', targetStage: 'Ripening / estimated harvest window', elapsedDays: 12, targetAgeDays: 119,
+      growth: 'Dense mature crop with grain-filled panicles.', change: 'senescing', weather: {kind: 'typical', summary: 'Seasonal weather scenario', rainMm: 0.2, tMinC: 18, tMaxC: 29, sunshineHours: null, source: 'WEA-openmeteo-archive', issuedAt: null},
+      interval: {from: '2026-10-20', to: '2026-11-01', observedDays: 0, forecastDays: 6, typicalDays: 6, missingDays: 0, rainMm: 10, meanTempC: 23},
+      limitations: ['Seasonal averages cannot tell whether this exact day will be sunny or rainy.'], sources: []}};
+  let regenerated = false;
+  await page.route('**/api/v1/media/**', route => route.fulfill({contentType: 'image/png', body: observedPng}));
+  await page.route('**/api/v1/farms/**/field-photos**', async route => {
+    const path = new URL(route.request().url()).pathname;
+    if (path.endsWith('/image')) return route.fulfill({contentType: 'image/png', body: illustrationPng});
+    if (path.endsWith('/predict')) {expect(route.request().postDataJSON()).toEqual({targetDate:'2026-11-01'}); regenerated = true; return route.fulfill({status: 202, json: env(updated)});}
+    return route.fulfill({json: env({photos: [photo], predictions: regenerated ? [old, updated] : [old]})});
+  });
+  await openToday(page);
+  await page.getByRole('button', {name: 'Field Image', exact: true}).click();
+  await expect(page.getByText('This preview used older growth guidance without target-day weather.')).toBeVisible();
+  await page.getByRole('button', {name: 'Regenerate with stage & weather'}).click();
+  await expect(page.getByTestId('field-images')).toContainText('Exact weather on this date is not yet forecast');
+  await expect(page.getByRole('button', {name: 'Regenerate with stage & weather'})).toHaveCount(0);
+  await page.locator('.field-image-evidence summary').click();
+  await expect(page.getByTestId('field-images')).toContainText('grain-filled panicles');
+  await expect(page.getByTestId('field-images')).toContainText('cannot tell whether this exact day will be sunny or rainy');
+  await page.getByRole('button', {name: 'Satellite', exact: true}).click();
+  await page.getByRole('button', {name: 'Field Image', exact: true}).click();
+  await expect(page.getByTestId('field-images').locator('.field-image-photo img')).toHaveAttribute('src', new RegExp(newId));
+});
+
+test('milestone buttons move the in-card timeline and dated photos show expected versus actual', async ({page}, testInfo) => {
+  await mock(page);
+  const photoId='44444444-4444-4444-8444-444444444444',mediaId='55555555-5555-4555-8555-555555555555';
+  const predictionId='66666666-6666-4666-8666-666666666666';
+  await page.route('**/api/v1/media/**',route=>route.fulfill({contentType:'image/png',body:observedPng}));
+  await page.route('**/api/v1/farms/**/field-photos**',route=>route.fulfill(new URL(route.request().url()).pathname.endsWith('/image') ? {contentType:'image/png',body:illustrationPng} : {json:env({
+    photos:[{id:photoId,mediaId,capturedOn:'2026-11-01',createdAt:'2026-11-01T10:00:00Z',imagePath:`/api/v1/media/${mediaId}/content`}],
+    predictions:[{id:predictionId,photoId,sourceDate:'2026-10-20',targetDate:'2026-11-01',createdAt:'2026-10-25T10:00:00Z',status:'ready',failureReason:null,imagePath:`/api/v1/farms/${A}/cycles/maize-cycle/field-photos/predictions/${predictionId}/image`}],
+  })}));
+  await openToday(page);
+  for (const width of [390,1440]) {
+    await page.setViewportSize({width,height:1000});
+  for (const mode of ['Illustration','Satellite','Field Image']) {
+    await page.getByRole('button',{name:mode,exact:true}).click();
+    await expect(page.locator('.today-hero-frame').getByRole('slider')).toBeVisible();
+    const box = await page.locator('.today-hero-frame').boundingBox(); expect(box!.x + box!.width).toBeLessThanOrEqual(width);
+    const timeline = (await page.locator('.today-hero-timeline').boundingBox())!;
+    const visual = (await page.locator('.today-hero-visual').boundingBox())!;
+    expect(visual.y).toBeGreaterThanOrEqual(timeline.y + timeline.height);
+    // The hero sits in the 360 px left column of the map layout at a reduced height (TODAY_MAP_LAYOUT_SPEC.md).
+    if (mode !== 'Field Image') expect(visual.height).toBeGreaterThanOrEqual(200);
+    const before = page.getByRole('button',{name:/Day before estimated harvest/});
+    await before.click();
+    await expect(before).toHaveAttribute('aria-pressed','true');
+    await page.getByRole('button',{name:'Back to today',exact:true}).click();
+      await page.locator('.today-hero').screenshot({path:testInfo.outputPath(`milestones-${mode}-${width}.png`)});
+  }
+  }
+  await page.getByText('Expected vs actual · 1 Nov 2026',{exact:true}).click();
+  await expect(page.getByAltText('Expected crop appearance')).toBeVisible();
+  await expect(page.getByAltText('Actual field observation')).toBeVisible();
+  await expect(page.getByText('This prediction was saved before the actual photo was added.',{exact:false})).toBeVisible();
+});
+
+for (const mode of ['Illustration', 'Satellite', 'Field Image']) {
+  test(`dragged season date survives a background prediction refresh in ${mode}`, async ({ page }) => {
+    const { state } = await mock(page);
+    let polls = 0;
+    let pendingPoll: Route | undefined;
+    await page.route('**/season-predictions', route => {
+      if (++polls > 1) { pendingPoll = route; return; }
+      return route.fulfill({ json: env({ state: 'running', pending: 1, result: null }) });
+    });
+    await openToday(page);
+    await expect.poll(() => state.todayFarms.length).toBeGreaterThanOrEqual(2);
+    await page.getByRole('button', { name: mode, exact: true }).click();
+    await expect.poll(() => !!pendingPoll, { timeout: 10000 }).toBe(true);
+    await slider(page).scrollIntoViewIfNeeded();
+    const originalInput = (await slider(page).elementHandle())!;
+    const rail = (await slider(page).boundingBox())!;
+    const x = (fraction: number) => rail.x + 12 + (rail.width - 24) * fraction;
+    await page.mouse.move(x(47 / 120), rail.y + rail.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(x(.8), rail.y + rail.height / 2, { steps: 12 });
+    await page.mouse.up();
+    const selected = await slider(page).inputValue();
+    const selectedDate = await slider(page).getAttribute('aria-valuetext');
+    expect(Number(selected)).toBeGreaterThan(85);
+    const requests = state.todayFarms.length;
+    await pendingPoll!.fulfill({ json: env({ state: 'succeeded', pending: 0, result: null }) });
+    await expect.poll(() => state.todayFarms.length).toBeGreaterThan(requests);
+    await expect(page.locator('.today-milestone-status summary')).toHaveText('Automatic milestone previews');
+    expect(await originalInput.evaluate(input => input.isConnected)).toBe(true);
+    await expect(slider(page)).toHaveValue(selected);
+    await expect(chip(page)).toHaveText(selectedDate!);
+  });
+}
+
+
+test("condition field checks explain the reason and stay completed after refresh", async ({ page }) => {
+  await mock(page, {conditionCheck: true});
+  await openToday(page);
+  const details = page.getByTestId("sc-check-details");
+  await expect(details).toContainText("Maize leaf damage risk");
+  await expect(page.getByText("Your check interval", {exact: false})).toHaveCount(0);
+  await details.getByText("What to check", {exact: true}).click();
+  await expect(details).toContainText("look for fresh feeding on young leaves");
+  await expect(details).not.toContainText("Anything different from last week");
+  await page.getByRole("button", {name: "Mark done: Check Maize on North strip", exact: true}).click();
+  const sheet = page.getByRole("dialog", {name: "Check Maize on North strip"});
+  await sheet.getByRole("radio", {name: "Nothing found", exact: true}).check();
+  await sheet.getByRole("button", {name: "Save check", exact: true}).click();
+  await expect(sheet).toHaveCount(0);
+  await expect(page.getByRole("button", {name: "Mark done: Check Maize on North strip", exact: true})).toHaveCount(0);
+  await page.reload();
+  await expect(page.getByTestId("sc-check-details")).toContainText("Maize leaf damage risk");
+  await expect(page.getByRole("button", {name: "Mark done: Check Maize on North strip", exact: true})).toHaveCount(0);
 });

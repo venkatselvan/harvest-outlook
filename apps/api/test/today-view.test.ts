@@ -266,10 +266,7 @@ describe('todayView: Hassan farm with a maize cycle (live, injected providers)',
     // Next action: care tasks and alert steps first, then due before upcoming, then the earlier start (the alert step).
     expect(view.nextAction).toMatchObject({kind: 'alert_step', status: 'due', dueFrom: '2026-10-28'});
     expect(view.upcoming.find((s) => s.id === view.nextAction!.id)).toEqual(view.nextAction);
-    // The long-overdue interval check rolled to the latest slot, so it is inside the lookback and listed first by status, yet
-    // it does not become the next action (field checks rank below care tasks and alert steps).
-    expect(view.upcoming[0]).toMatchObject({kind: 'field_check', status: 'overdue', fieldCheck: {kind: 'interval', dueFrom: '2026-10-27', missedCount: 7}});
-    expect(view.nextAction!.kind).not.toBe('field_check');
+    expect(view.upcoming.some(s => s.fieldCheck?.kind === 'interval')).toBe(false);
     // Outlook note: live mode queues the job for these facts; the facts carry the card's range.
     expect(view.outlookNote).toMatchObject({status: 'pending', text: null, origin: null});
     expect(view.outlookNote!.facts[1]).toBe(`Likely price in the harvest weeks: ₹${refP50(mid) - 4} to ₹${refP50(mid) + 5} per kg (middle half of past years), typical ₹${refP50(mid)} per kg`);
@@ -603,7 +600,7 @@ describe('upcoming steps v2: next action and order', () => {
     const careOverdue = step({id: 'care-overdue', kind: 'care_task', status: 'overdue', dueFrom: '2026-10-25', dueTo: '2026-10-28'});
     const careDone = step({id: 'care-done', kind: 'care_task', status: 'completed', dueFrom: '2026-10-01'});
 
-    expect(pickNextAction([overdueCheck, dueAnyTime, transition, careLater, careSoon])?.id).toBe('care-soon'); // tier beats status
+    expect(pickNextAction([overdueCheck, dueAnyTime, transition, careLater, careSoon])?.id).toBe('check-overdue'); // an overdue check precedes future care
     expect(pickNextAction([careLater, careSoon, alertDue])?.id).toBe('alert-due'); // due beats upcoming
     expect(pickNextAction([careLater, alertDue, careOverdue])?.id).toBe('care-overdue'); // overdue beats due
     expect(pickNextAction([overdueCheck, dueAnyTime, transition])?.id).toBe('check-overdue'); // no care or alert step

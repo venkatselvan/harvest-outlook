@@ -1,3 +1,4 @@
+import { seasonMilestones } from '@harvest/contracts';
 import type {
   CarbonFootprint,
   BasisRef,
@@ -134,11 +135,11 @@ export function nextStage(timeline: StageTimeline | null | undefined, date: stri
 }
 
 /** Stage start dates after the first stage, as slider ticks (stage boundaries). */
-export function stageTicks(timeline: StageTimeline | null | undefined, model: SliderModel) {
+export function stageTicks(timeline: StageTimeline | null | undefined, model: SliderModel, harvestDate?: string) {
   if (!timeline) return [];
-  return timeline.stages
-    .filter((stage, i) => i > 0 && stage.from >= model.from && stage.from <= model.to)
-    .map((stage) => ({ id: stage.id, name: stage.name, date: stage.from, fraction: fractionOf(model, stage.from) }));
+  return seasonMilestones(timeline, harvestDate)
+    .filter(point => point.date >= model.from && point.date <= model.to)
+    .map(point => ({...point, fraction: fractionOf(model, point.date)}));
 }
 
 /**
@@ -272,7 +273,7 @@ function predictedFor(scenes: readonly SceneRef[], date: string, latestObserved:
     const target = predictedDate(scene);
     if (!Number.isFinite(dayNumber(target)) || target > date) continue;
     if (latestObserved && target <= latestObserved) continue;
-    if (!found || target > predictedDate(found)) found = scene;
+    if (!found || target >= predictedDate(found)) found = scene;
   }
   if (!found) return null;
   return daysBetween(predictedDate(found), date) <= PREDICTED_MAX_GAP_DAYS ? found : null;
@@ -344,6 +345,7 @@ export const PREDICTION_MAX_DAYS_AHEAD = 120;
  * daily limit and "a look exists this week" do not stop a farmer's own request.
  */
 export function predictionBlockedReason(reason: string | null | undefined, date: string, today: string): string | null {
+  if (reason === "daily_limit_reached") return "Today’s AI image allowance is used up. Try again tomorrow.";
   if (reason === "cycle_limit_reached") return "This crop has used all its AI predicted looks for the season.";
   if (reason === "budget_exceeded") return "Today's AI budget is used up. Try again tomorrow.";
   if (reason === "provider_unavailable") return "The AI image service is not set up on this server.";

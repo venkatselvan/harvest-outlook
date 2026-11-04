@@ -202,6 +202,16 @@ describe("FieldsPanel", () => {
     expect(text(noBoundary)).toContain("Draw the farm boundary first.");
     expect(noBoundary).toMatch(/<button[^>]*disabled[^>]*data-testid="fields-add"/);
   });
+  it("offers existing-outline adjustment and requires Finish before its explicit save", () => {
+    const available = panel({ onEditOutline: noop });
+    expect(available).toContain('aria-label="Edit outline for Strip 1"');
+    const adjusting = panel({ editingFieldId: "north", drawing: true, drawn: fields[0]!.boundary, onEditOutline: noop });
+    expect(text(adjusting)).toContain("Adjusting the field outline.");
+    expect(text(adjusting)).not.toContain("Save field boundary");
+    const finished = panel({ editingFieldId: "north", drawing: false, drawn: fields[0]!.boundary, onEditOutline: noop });
+    expect(text(finished)).toContain("Adjusted field:");
+    expect(text(finished)).toContain("Save field boundary");
+  });
   it("names a finished outline before saving it", () => {
     const markup = panel({ fields: [], drawn: scaled([[0, 0], [1, 0], [1, 1], [0, 1]]) });
     expect(markup).toContain('data-testid="fields-draw"');

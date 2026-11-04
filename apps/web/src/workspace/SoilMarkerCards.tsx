@@ -1,3 +1,4 @@
+import "./soil-marker-cards.css";
 import { SoilPrintedReference } from "./SoilPrintedReference";
 import type {
   FarmSoilMarkers,
@@ -89,12 +90,10 @@ export function SoilMarkerCards(props: {
           </label>
         </Show>
       </div>
-      <p class="section-description">
-        Original laboratory values, units and methods. Samples and depths stay
-        separate; missing measurements remain unknown.
-      </p>
+
       <Show when={sample()}>
         {(s) => (
+          <details class="soil-sample-details"><summary>Report details</summary>
           <div class="soil-sample-provenance">
             <span>
               <Icon name="calendar" size={14} />
@@ -122,10 +121,11 @@ export function SoilMarkerCards(props: {
               <Icon name="arrow" size={14} />
             </button>
           </div>
+          </details>
         )}
       </Show>
       <div class="soil-marker-grid">
-        <For each={cards()}>
+        <For each={cards().filter(entry => entry.marker)}>
           {(entry) => (
             <article
               class={`soil-marker-card ${entry.marker ? "measured" : "unmeasured"}`}
@@ -159,6 +159,7 @@ export function SoilMarkerCards(props: {
                             : "unit unreported")}
                       </span>
                     </div>
+                    <details class="soil-marker-details"><summary>Details</summary>
                     <p class="soil-marker-method">
                       {m().analyteForm ??
                         (entry.parameter === "unknown_other"
@@ -233,6 +234,7 @@ export function SoilMarkerCards(props: {
                         </p>
                       </details>
                     </Show>
+                    </details>
                   </>
                 )}
               </Show>
@@ -240,6 +242,11 @@ export function SoilMarkerCards(props: {
           )}
         </For>
       </div>
+      <Show when={cards().some(entry => !entry.marker)}>
+        <details class="soil-missing-markers"><summary>Not reported ({cards().filter(entry => !entry.marker).length})</summary>
+          <ul><For each={cards().filter(entry => !entry.marker)}>{entry => <li>{soilLabel(entry.parameter)} · No confirmed measurement</li>}</For></ul>
+        </details>
+      </Show>
       <Show when={!sample()}>
         <div class="soil-unmeasured-note">
           <Icon name="journal" size={18} />
@@ -250,9 +257,11 @@ export function SoilMarkerCards(props: {
           </p>
         </div>
       </Show>
-      <For each={props.data?.limitations ?? []}>
-        {(line) => <p class="soil-data-limitation">{line}</p>}
-      </For>
+      <Show when={props.data?.limitations.length}>
+        <details class="soil-missing-markers"><summary>About these results</summary>
+          <For each={props.data?.limitations ?? []}>{line => <p class="soil-data-limitation">{line}</p>}</For>
+        </details>
+      </Show>
     </section>
   );
 }
@@ -293,12 +302,12 @@ export function SoilReferenceCards(props: {
   return (
     <section
       class="soil-markers-section soil-reference-markers"
-      aria-label="Public reference marker overview"
+      aria-label="Sample marker overview"
     >
       <div class="section-heading">
         <div>
           <Icon name="layers" />
-          <h2>Public reference markers</h2>
+          <h2>Sample results</h2>
           <span class="tiny-pill">
             {props.report.reviewed
               ? "Reviewed reference record"
@@ -312,7 +321,7 @@ export function SoilReferenceCards(props: {
       </div>
       <div class="soil-reference-card-notice">
         <strong>
-          Historical laboratory sample · not measurements of {props.farmName}
+          Sample report · not added to {props.farmName}
         </strong>
         <p>
           {props.report.referenceSource?.title ?? props.report.filename}. These
@@ -404,6 +413,7 @@ export function SoilReferenceCards(props: {
                             : "unit unreported")}
                       </span>
                     </div>
+                    <details class="soil-marker-details"><summary>Details</summary>
                     <p class="soil-marker-method">
                       {marker.analyteForm ??
                         (marker.parameter === "unknown_other"
@@ -460,6 +470,7 @@ export function SoilReferenceCards(props: {
                         </For>
                       </details>
                     </Show>
+                    </details>
                   </article>
                 )}
               </For>
@@ -468,9 +479,9 @@ export function SoilReferenceCards(props: {
         )}
       </Show>
       <div class="soil-reference-links">
-        <Show when={props.report.referenceSource}>
+        <Show when={props.report.referenceSource?.url}>
           <a
-            href={props.report.referenceSource!.url}
+            href={props.report.referenceSource!.url!}
             target="_blank"
             rel="noreferrer"
           >
@@ -478,7 +489,7 @@ export function SoilReferenceCards(props: {
           </a>
         </Show>
         <a href={props.report.originalUrl} download={props.report.filename}>
-          Download two-page report
+          Download report
         </a>
         <details>
           <summary>Source & extraction provenance</summary>

@@ -78,6 +78,7 @@ export const CreateEntryBody = z
   .object({
     clientEntryId: z.string().regex(/^[A-Za-z0-9][A-Za-z0-9._:-]{7,127}$/),
     farmId: z.uuid(),
+    cycleId: z.string().min(1).max(120).optional(),
     planId: z.uuid().optional(),
     observedOn: IsoDate,
     note: z.string().trim().max(10000).optional(),

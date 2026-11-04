@@ -10,6 +10,8 @@ import {
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { Icon } from "./icons";
+import { boundaryDraft, commitBoundaryDraft, undoBoundaryDraft } from "./boundaryEditorModel";
+import "./farm-map-editor.css";
 import { boundaryArea, type Boundary } from "./state";
 /** A saved field drawn on the map in its crop colour (FIELDS_MULTICROP_SOIL_SPEC.md 6.1). */
 export interface MapField {
@@ -61,7 +63,9 @@ export function FarmMap(props: {
   let contextShape: L.Polygon | undefined;
   const fieldShapes: L.Polygon[] = [];
   let pickMarker: L.CircleMarker | undefined;
-  const dots: L.CircleMarker[] = [];
+  const dots: L.Marker[] = [];
+  let suppressVertexClickUntil = 0;
+  let restoreMapDragging: (() => void) | undefined;
   const field = () => props.subject === "field";
   const latLngs = (b: Boundary | null | undefined) =>
     b?.coordinates[0]?.slice(0, -1).map((p) => L.latLng(p[1]!, p[0]!)) ?? [];
@@ -95,7 +99,9 @@ export function FarmMap(props: {
       fieldShapes.push(polygon);
     }
   };
-  const [vertices, setVertices] = createSignal<L.LatLng[]>([]);
+  const [draft, setDraft] = createSignal(boundaryDraft<L.LatLng>());
+  const vertices = () => draft().points;
+  const commitVertices = (points: readonly L.LatLng[]) => setDraft((current) => commitBoundaryDraft(current, points));
   const [validationError, setValidationError] = createSignal("");
   const [satellite, setSatellite] = createSignal(true);
   const [tileError, setTileError] = createSignal(false);
@@ -104,34 +110,86 @@ export function FarmMap(props: {
   let labels: L.TileLayer;
   const redraw = () => {
     if (!map) return;
+    restoreMapDragging?.();
     shape?.remove();
+    shape = undefined;
     line?.remove();
+    line = undefined;
     dots.splice(0).forEach((d) => d.remove());
     const points = props.editing
       ? vertices()
       : (props.boundary?.coordinates[0]?.map((p) => L.latLng(p[1]!, p[0]!)) ??
         []);
     if (points.length > 2)
-      shape = L.polygon(points, {
+      shape = L.polygon([...points], {
         color: "#e7ff8e",
         weight: 3,
         fillColor: "#b5d670",
         fillOpacity: 0.23,
       }).addTo(map);
     else if (points.length)
-      line = L.polyline(points, { color: "#e7ff8e", weight: 3 }).addTo(map);
+      line = L.polyline([...points], { color: "#e7ff8e", weight: 3 }).addTo(map);
     if (props.editing)
       points.forEach((point, i) => {
-        const dot = L.circleMarker(point, {
-          radius: 6,
-          color: "#274f36",
-          weight: 2,
-          fillColor: "#f7ffe9",
-          fillOpacity: 1,
+        const dot = L.marker(point, {
+          icon: L.divIcon({ className: "boundary-vertex", html: '<span aria-hidden="true"></span>', iconSize: [44, 44], iconAnchor: [22, 22] }),
+          draggable: !props.saving,
+          keyboard: true,
+          bubblingMouseEvents: false,
+          title: `${field() ? "Field" : "Farm boundary"} point ${i + 1}: drag to move, or use arrow keys. Shift moves farther.`,
+          autoPan: false,
+          autoPanOnFocus: false,
         }).addTo(map!);
+        const element = dot.getElement();
+        if (element) {
+          element.setAttribute("aria-label", `${field() ? "Field" : "Farm boundary"} point ${i + 1}`);
+          element.setAttribute("data-vertex-index", String(i));
+          element.addEventListener("pointerdown", () => {
+            if (!map || props.saving) return;
+            // Stop camera motion before Leaflet captures the handle's starting pixel position.
+            map.stop();
+            if (!restoreMapDragging) {
+              const wasEnabled = map.dragging.enabled();
+              map.dragging.disable();
+              restoreMapDragging = () => { if (wasEnabled) map?.dragging.enable(); restoreMapDragging = undefined; };
+            }
+          }, { capture: true });
+          element.addEventListener("touchstart", (event) => event.preventDefault(), { capture: true, passive: false });
+          L.DomEvent.disableClickPropagation(element);
+          element.addEventListener("keydown", (event) => {
+            const directions: Record<string, [number, number]> = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] };
+            const direction = directions[event.key];
+            if (!direction || props.saving || !map) return;
+            event.preventDefault(); event.stopPropagation();
+            map.stop();
+            const pixel = map.latLngToLayerPoint(vertices()[i]!);
+            const distance = event.shiftKey ? 10 : 1;
+            const moved = map.layerPointToLatLng(pixel.add(L.point(direction[0] * distance, direction[1] * distance)));
+            commitVertices(vertices().map((value, index) => index === i ? moved : value));
+            queueMicrotask(() => dots[i]?.getElement()?.focus());
+          });
+        }
+        dot.on("dragstart", () => {
+          if (!map || restoreMapDragging) return;
+          map.stop();
+          const wasEnabled = map.dragging.enabled();
+          map.dragging.disable();
+          restoreMapDragging = () => { if (wasEnabled) map?.dragging.enable(); restoreMapDragging = undefined; };
+        });
+        dot.on("drag", () => {
+          const moved = vertices().map((value, index) => index === i ? dot.getLatLng() : value);
+          if (shape) shape.setLatLngs([...moved]);
+          else line?.setLatLngs([...moved]);
+        });
+        dot.on("dragend", () => {
+          const moved = dot.getLatLng();
+          restoreMapDragging?.();
+          suppressVertexClickUntil = Date.now() + 400;
+          commitVertices(vertices().map((value, index) => index === i ? moved : value));
+        });
         dot.on("click", (e) => {
           L.DomEvent.stopPropagation(e);
-          if (i === 0 && points.length >= 3) finish();
+          // A tap selects an edit handle; only Finish commits the draft. A short drag must never save it.
         });
         dots.push(dot);
       });
@@ -165,6 +223,10 @@ export function FarmMap(props: {
       doubleClickZoom: false,
       maxZoom: 20,
     }).setView(props.center ?? [11.0168, 76.9558], props.boundary ? 16 : 14);
+    const releaseVertex = () => restoreMapDragging?.();
+    window.addEventListener("pointerup", releaseVertex);
+    window.addEventListener("pointercancel", releaseVertex);
+    onCleanup(() => { window.removeEventListener("pointerup", releaseVertex); window.removeEventListener("pointercancel", releaseVertex); });
     base = L.tileLayer(
       "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
       {
@@ -179,8 +241,9 @@ export function FarmMap(props: {
     base.on("tileerror", () => setTileError(true));
     base.on("tileload", () => setTileError(false));
     map.on("click", (e: L.LeafletMouseEvent) => {
+      if (Date.now() < suppressVertexClickUntil) return;
       if (props.editing && !props.saving)
-        setVertices([...vertices(), e.latlng]);
+        commitVertices([...vertices(), e.latlng]);
       else if (props.locate && !props.editing) pick(e.latlng);
     });
     const fit = props.fitTo ?? props.boundary;
@@ -188,6 +251,7 @@ export function FarmMap(props: {
       map.fitBounds(L.geoJSON(fit as GeoJSON.Polygon).getBounds(), {
         padding: [70, 70],
         maxZoom: 18,
+        animate: false,
       });
     redrawContext();
     redraw();
@@ -195,6 +259,7 @@ export function FarmMap(props: {
     observer.observe(container);
     onCleanup(() => {
       observer.disconnect();
+      restoreMapDragging?.();
       map?.remove();
     });
   });
@@ -203,11 +268,7 @@ export function FarmMap(props: {
       () => [props.boundary, props.editing] as const,
       ([b, edit]) => {
         if (edit)
-          setVertices(
-            b?.coordinates[0]
-              ?.slice(0, -1)
-              .map((p) => L.latLng(p[1]!, p[0]!)) ?? [],
-          );
+          setDraft(boundaryDraft(b?.coordinates[0]?.slice(0, -1).map((p) => L.latLng(p[1]!, p[0]!)) ?? []));
         redraw();
       },
     ),
@@ -226,14 +287,16 @@ export function FarmMap(props: {
   createEffect(on(vertices, () => setValidationError(""), { defer: true }));
   createEffect(() => {
     const c = props.center;
-    if (map && c) map.setView(c, 15);
+    if (map && c) map.setView(c, 15, { animate: false });
   });
   createEffect(() => {
     const b = props.fitTo ?? props.boundary;
-    if (map && b && !props.editing)
+    if (map && b)
       map.fitBounds(L.geoJSON(b as GeoJSON.Polygon).getBounds(), {
-        padding: [70, 70],
+        paddingTopLeft: [70, 70],
+        paddingBottomRight: [70, props.editing ? (window.innerWidth < 768 ? 190 : 110) : 70],
         maxZoom: 18,
+        animate: false,
       });
   });
   /** Tap-to-locate: a point inside `locate.within` (when given) is handed to `onPick`; outside shows a message. */
@@ -357,18 +420,18 @@ export function FarmMap(props: {
             <span>
               {vertices().length >= 3
                 ? field()
-                  ? "Add more points or finish the field."
-                  : "Add more points or finish your boundary."
+                  ? "Drag a point to adjust it, or finish the field."
+                  : "Drag a point to adjust it, or finish your boundary."
                 : field()
                   ? "Click each corner inside the dashed farm outline. Corners may sit on its edge or on another field's edge."
-                  : "Click each corner on the map. Pan to move around."}
+                  : "Click corners to add points. Drag a point to adjust; drag elsewhere to pan."}
             </span>
           </div>
           <div class="draw-actions">
             <button
               class="text-button"
-              disabled={props.saving || !vertices().length}
-              onClick={() => setVertices(vertices().slice(0, -1))}
+              disabled={props.saving || !draft().history.length}
+              onClick={() => setDraft(undoBoundaryDraft)}
             >
               Undo
             </button>
@@ -376,8 +439,7 @@ export function FarmMap(props: {
               class="text-button"
               disabled={props.saving || !vertices().length}
               onClick={() => {
-                setVertices([]);
-                props.onBoundary(null);
+                commitVertices([]);
               }}
             >
               Clear

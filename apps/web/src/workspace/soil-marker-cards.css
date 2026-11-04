@@ -1,0 +1,25 @@
+/* Keep the overview about measurements; supporting evidence opens on demand. */
+.soil-markers-section .soil-marker-grid { align-items: start; gap: 10px; }
+.soil-markers-section .soil-marker-card { padding: 14px 16px; }
+.soil-markers-section .soil-marker-top { min-height: 0; line-height: 1.4; }
+.soil-markers-section .soil-marker-value { margin-top: 10px; min-height: 34px; }
+.soil-markers-section .soil-marker-value > strong { font-size: 28px; }
+.soil-markers-section .soil-marker-details { margin-top: 10px; }
+.soil-marker-details > summary,
+.soil-sample-details > summary,
+.soil-missing-markers > summary { cursor: pointer; color: var(--text-secondary); font-size: 12px; padding: 8px 0; }
+.soil-marker-details > summary { min-height: 28px; }
+.soil-marker-details[open] > summary { margin-bottom: 8px; }
+.soil-sample-details { margin: 8px 0 12px; }
+.soil-sample-details .soil-sample-provenance { margin: 0 0 10px; }
+.soil-missing-markers { margin-top: 12px; font-size: 12px; color: var(--text-secondary); }
+.soil-missing-markers ul { margin: 6px 0; padding-left: 20px; columns: 2; }
+.soil-missing-markers li { margin-bottom: 6px; break-inside: avoid; }
+.soil-public-sample > h3 { margin-top: 0; }
+@media (max-width: 600px) {
+  .soil-markers-section .soil-marker-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .soil-markers-section .soil-marker-card { padding: 12px; }
+  .soil-missing-markers ul { columns: 1; }
+}
+.soil-intake-panel .soil-public-sample { display: block; padding: 18px; }
+.soil-method-note > summary { cursor: pointer; color: var(--text-secondary); font-size: 12px; padding: 10px 0; }

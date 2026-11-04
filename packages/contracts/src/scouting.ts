@@ -2,8 +2,7 @@ import {z} from 'zod';
 import {FieldId} from './workspace';
 
 /**
- * Field operations (2026-11-03, docs/research/FIELD_OPERATIONS_SPEC.md sections 3 to 5): field checks (a recurring app action
- * at the farmer's own interval, never an agronomic claim), the issue log (what the farmer saw: category, severity and status
+ * Field operations (2026-11-03, docs/research/FIELD_OPERATIONS_SPEC.md sections 3 to 5): field checks (condition-triggered inspections and recorded issue follow-ups), the issue log (what the farmer saw: category, severity and status
  * are farmer-reported, never a diagnosis) and responses (what the farmer did; the app never recommends a product, a rate or a
  * timing). A "label wait" is the farmer's own reading of a product label, turned into a date by arithmetic only.
  */
@@ -85,14 +84,16 @@ export const FieldIssues = z.object({
  limitations: z.array(z.string()),
 }).strict();
 
-export const CheckKind = z.enum(['interval', 'recheck']);
+/** interval is retained for historical completions only; no new interval checks are scheduled. */
+export const CheckKind = z.enum(['interval', 'recheck', 'condition']);
 export const CheckItem = z.object({
  text: z.string().max(300), kind: z.enum(['risk_window', 'general']), sourceName: z.string().max(200).nullable(), sourceUrl: z.string().nullable(),
  sourceDate: z.iso.date().nullable(), alertId: z.uuid().nullable(),
 }).strict();
 export const FieldCheck = z.object({
- /** Deterministic: `check:<cycleId>:<dueOn>` or `recheck:<issueId>:<dueOn>`. */
+ /** Deterministic: `condition:<hash(cycleId, alertId)>` or `recheck:<issueId>:<dueOn>`; legacy check ids remain readable. */
  id: z.string().max(160),
+ reason: z.string().max(300).optional(),
  kind: CheckKind, fieldId: z.string().nullable(), cycleId: z.string().nullable(), issueId: z.uuid().nullable(),
  cropName: z.string().nullable(), dueFrom: z.iso.date(), dueTo: z.iso.date(), status: z.enum(['upcoming', 'due', 'overdue', 'completed']),
  intervalDays: z.number().int().nullable(), checklist: z.array(CheckItem).max(20), completedOn: z.iso.date().nullable(), journalEntryId: z.uuid().nullable(),

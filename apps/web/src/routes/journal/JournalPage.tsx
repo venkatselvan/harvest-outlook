@@ -124,7 +124,7 @@ export function JournalPage() {
                   </Sheet>
                 )}
               </Show>
-              <JournalForm farmId={f().id} stages={timeline()?.currentPlan?.stages ?? []} store={store} onSaved={onSaved} />
+              <JournalForm cycles={ws.farm()?.id === f().id ? ws.workspace()?.cycles.map(c => ({id:c.id,name:`${ws.workspace()?.fields?.find(field => field.id === c.fieldId)?.name ?? 'Farm'} · ${c.cropName ?? c.cropId}`})) : undefined} farmId={f().id} stages={timeline()?.currentPlan?.stages ?? []} store={store} onSaved={onSaved} />
               <section class="jr-timeline" aria-labelledby="jr-timeline-title">
                 <h2 id="jr-timeline-title">Season timeline</h2>
                 <Switch>

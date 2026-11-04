@@ -25,6 +25,7 @@ export const mediaOut = z.object({
   width: z.number(),
   height: z.number(),
   exifOrientation: z.number().nullable(),
+  exifCreatedAt: z.string().nullable().optional(),
   /** Dimensions after EXIF orientation is applied (the frame region polygons refer to). */
   orientedWidth: z.number(),
   orientedHeight: z.number(),

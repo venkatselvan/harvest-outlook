@@ -156,14 +156,14 @@ describe("All fields overview", () => {
     expect(count(markup, /data-field-row=/g)).toBe(3);
     expect(count(markup, /<button type="button" class="today-fields-open"/g)).toBe(3);
   });
-  it("shows the described field's cards under a heading naming it, with the soil card under Today for you", () => {
+  it("shows the described field's cards under a heading naming it, with compact soil beside the hero", () => {
     const markup = overview("illustration");
     const first = markup.slice(markup.indexOf('data-testid="today-first-field"'));
     expect(text(first)).toContain("North strip: Maize");
     expect(first).toContain('data-testid="today-overview"');
     expect(first).toContain('data-testid="today-soil"');
     expect(first.indexOf('data-testid="today-overview"')).toBeLessThan(first.indexOf('data-testid="today-soil"'));
-    expect(first.indexOf('data-testid="today-soil"')).toBeLessThan(first.indexOf('class="today-cards"'));
+    expect(first.indexOf('data-testid="today-soil"')).toBeLessThan(first.indexOf('data-card-group="outlook"'));
   });
   it("satellite: the wide image with one outline per field in its crop colour, the described field thicker, and labels", () => {
     const markup = overview("satellite");

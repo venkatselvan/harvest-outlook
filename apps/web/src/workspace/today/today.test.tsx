@@ -202,8 +202,8 @@ describe("stage lookup", () => {
     expect(nextStage(timeline, FIXTURE_TODAY)?.id).toBe("tasselling");
     expect(nextStage(timeline, "2027-01-01")).toBeNull();
     const ticks = stageTicks(timeline, sliderModel(fixture)!);
-    expect(ticks.map((tick) => tick.id)).toEqual(["vegetative", "tasselling", "grain_fill", "maturity"]);
-    expect(ticks[1]!.fraction).toBeCloseTo(55 / 120, 6);
+    expect(ticks.map((tick) => tick.id)).toEqual(["after-sowing", "vegetative", "tasselling", "grain_fill", "maturity", "before-harvest", "harvest"]);
+    expect(ticks.find(tick => tick.id === "tasselling")!.fraction).toBeCloseTo(55 / 120, 6);
     expect(growthProgress(timeline, FIXTURE_SOWN)).toBe(0);
     expect(growthProgress(timeline, FIXTURE_HARVEST.latest)).toBe(1);
     expect(growthProgress(timeline, "2030-01-01")).toBe(1);
@@ -310,15 +310,15 @@ describe("rendered states", () => {
       )),
     );
     expect(html).toContain("63–73 days");
-    expect(html).toContain("Next: Tasselling and silking on 9 Nov");
+    expect(html).toContain("Harvest window 3 Jan to 13 Jan");
     expect(html).toContain("₹19–24 /kg");
     expect(html).toContain("₹19.2 to ₹23.8 per kg");
-    expect(html).toContain("Based on 3 years of Karnataka mandi prices (test fixture)");
+    expect(html).toContain("Historical mandi range · not a farm-gate forecast");
     expect(html).toMatch(/10 Dec: ₹21\.\d\/kg typical/);
-    expect(html).toContain("Typical for this date, 2023 to 2025");
+    expect(html).toContain("Seasonal reference, not a forecast");
     expect(html).toContain("0.62");
-    expect(html).toContain("Near typical");
-    expect(html).toContain("typical 0.55 to 0.70");
+    expect(html).toContain("Within the stage greenness range");
+    expect(html).toContain("Satellite signal, not a diagnosis");
   });
   it("satellite hero names the observed date, cloud and the illustration label", () => {
     const hero = (date: string) =>
@@ -520,32 +520,22 @@ describe("spectral indices and the stage reader", () => {
     expect(formatIndex(null)).toBe("–");
     expect(formatIndex(Number.NaN)).toBe("–");
   });
-  it("Health card: the index line sits under the basis line, with a spoken form, and hides without index data", () => {
-    const html = card(fixture.ndvi);
-    const visible = seen(html);
-    // One line per index, name and code then value, in this order; a bare "Moisture 0.18" is never shown.
-    expect(visible).toContain("Moisture index (NDMI) 0.18 Red-edge greenness (NDRE) 0.31 Water index (NDWI) −0.45");
-    expect(visible).not.toMatch(/Moisture 0\.18|Surface water/);
-    expect(visible.indexOf("Moisture index (NDMI)")).toBeGreaterThan(visible.indexOf("Image of 27 Oct"));
-    expect(html).toContain("Moisture index, NDMI 0.18");
-    expect(html).toContain("Red-edge greenness, NDRE 0.31");
-    expect(html).toContain("Water index, NDWI minus 0.45");
-    expect((html.match(/data-index-id=/g) ?? []).length).toBe(3);
-    expect(html).toContain('data-testid="today-index-line"');
-    // The NDVI headline and verdict are unchanged.
-    expect(visible).toContain("0.62");
-    expect(visible).toContain("Near typical");
-    // No summaries (a row analysed before the indices existed), only null summaries, or no series: no line, no blank dashes.
-    expect(card(withIndices(undefined))).not.toContain("today-index-line");
-    const nulls = { evi: null, ndre: null, gndvi: null, savi: null, ndmi: null, lswi: null, ndwi: null };
-    expect(card(withIndices(nulls))).not.toContain("today-index-line");
-    expect(card(null)).not.toContain("today-index-line");
-    expect(text(card(withIndices(undefined)))).toContain("Near typical");
+  it("Health card shows the interpretation, raw NDVI and date; full raw indices stay in Details", () => {
+    const visible = seen(card(fixture.ndvi));
+    expect(visible).toContain("Within the stage greenness range");
+    expect(visible).toContain("NDVI 0.62");
+    expect(visible).toContain("image of 27 Oct");
+    expect(visible).toContain("Satellite signal, not a diagnosis");
+    expect(visible).not.toContain("NDMI");
+    const sheet = text(renderToString(() => <TodaySheetBody kind="health" view={fixture} date={FIXTURE_TODAY} price={null} weather={null} />));
+    for (const code of ["NDMI", "NDRE", "NDWI"]) expect(sheet).toContain(code);
+    expect(sheet).toContain("−0.45");
   });
-  it("Health card names the image when the index scene is not the one behind the NDVI headline", () => {
+  it("Health details name the index image independently from the headline's observation date", () => {
     const earlier = { ...fixture.ndvi!, latestUsable: { ...latest(), date: "2026-10-22" } };
-    expect(seen(card(earlier))).toContain("Water index (NDWI) −0.45 Indices from the image of 22 Oct");
-    expect(text(card(fixture.ndvi))).not.toContain("Indices from the image of");
+    const sheet = text(renderToString(() => <TodaySheetBody kind="health" view={{ ...fixture, ndvi: earlier }} date={FIXTURE_TODAY} price={null} weather={null} />));
+    expect(sheet).toContain("NDVI 0.62 on 27 Oct 2026");
+    expect(sheet).toContain("image of 22 Oct 2026");
   });
   it("Health sheet: a table of all seven indices with value, meaning and formula, the 20 m note and the attribution", () => {
     const html = renderToString(() => <TodaySheetBody kind="health" view={fixture} date={FIXTURE_TODAY} price={null} weather={null} />);
@@ -885,10 +875,10 @@ describe("economics and footprint: cards", () => {
   const one = (el: () => unknown) => text(renderToString(() => el() as never));
   const noop = () => undefined;
 
-  it("order: harvest, profit, price, weather, health, residue, energy, carbon", () => {
+  it("six main answers followed by the two disclosed planning references", () => {
     const html = cards();
     const kinds = [...html.matchAll(/data-card="([a-z]+)"/g)].map((m) => m[1]);
-    expect(kinds).toEqual(["harvest", "profit", "price", "weather", "health", "residue", "energy", "carbon"]);
+    expect(kinds).toEqual(["health", "weather", "harvest", "profit", "price", "residue", "energy", "carbon"]);
   });
   it("profit card: field profit with the likely band, harvest dates, revenue and cost, basis", () => {
     const html = one(() => <ProfitCard econ={harvestEconomicsFixture()} onDetails={noop} />);
@@ -898,11 +888,10 @@ describe("economics and footprint: cards", () => {
     expect(html).toContain("likely ₹68–123k");
     expect(html).toContain("₹68,400 to ₹1,22,400, likely range");
     expect(html).toContain("Expected profit for the field, about ₹94,800");
-    expect(html).toContain("Harvest around 3 Jan to 13 Jan");
-    expect(html).toContain("Revenue ₹1.5 L · cost ₹57.6k");
-    expect(html).toContain("Revenue ₹1,52,400, cost ₹57,600 for the field");
-    expect(html).toContain("District maize yield, 2021 to 2023 (test fixture)");
-    expect(html).toContain("Based on 3 years of Karnataka mandi prices (test fixture)");
+    expect(html).toContain("Revenue ₹1,52,400 − Costs ₹57,600 = Profit ₹94.8k");
+    const sheet = text(renderToString(() => <TodaySheetBody kind="profit" view={fixture} date={FIXTURE_TODAY} price={null} weather={null} />));
+    expect(sheet).toContain("District maize yield, 2021 to 2023 (test fixture)");
+    expect(sheet).toContain("Based on 3 years of Karnataka mandi prices (test fixture)");
   });
   it("profit card without an area: per hectare with /ha", () => {
     const econ = { ...harvestEconomicsFixture(), fieldAreaHa: null, profitForField: null, revenueForField: null };
@@ -910,14 +899,14 @@ describe("economics and footprint: cards", () => {
     expect(html).toContain("₹79k");
     expect(html).toContain("/ha");
     expect(html).toContain("per hectare");
-    expect(html).toContain("Revenue ₹1.3 L · cost ₹48k /ha");
+    expect(html).toContain("Revenue ₹1,27,000 − Costs ₹48,000 = Profit ₹79k /ha");
   });
   it("profit card partial shows revenue, labels it, and says the cost is not sourced; a loss reads as a loss", () => {
     const partial = one(() => <ProfitCard econ={harvestEconomicsPartialFixture()} onDetails={noop} />);
     expect(partial).toContain("Revenue before costs");
-    expect(partial).toContain("₹1.5 L");
-    expect(partial).toContain("Expected revenue for the field");
-    expect(partial).toContain("Cost not sourced");
+    expect(partial).toContain("Revenue ₹1,52,400");
+    expect(partial).toContain("Profit estimate Not available");
+    expect(partial).toContain("cost not sourced; profit unavailable");
     const loss = { ...harvestEconomicsFixture(), profitForField: { central: -4200, likely: { low: -9000, high: 1500 }, possible: { low: -15000, high: 8000 } } };
     const text1 = one(() => <ProfitCard econ={loss} onDetails={noop} />);
     expect(text1).toContain("−₹4.2k");
@@ -950,13 +939,12 @@ describe("economics and footprint: cards", () => {
     expect(t).toContain("₹5.2–18.9k");
     expect(t).toContain("₹5,227 to ₹18,900 for the field, as CBG feedstock");
     expect(t).toContain("as CBG feedstock");
-    expect(t).toContain("Maize stover: about 2.9–7.6 t surplus of 7.2–12.6 t");
-    expect(t).toContain("Alternatives, not added together");
-    const chips = [...html.matchAll(/data-use="([a-z_]+)"/g)].map((m) => m[1]);
-    expect(chips).toEqual(["cbg_feedstock", "dry_fodder", "biomass_fuel"]);
-    expect(html.match(/class="[^"]*is-best[^"]*"/g)).toHaveLength(1);
-    expect(t.indexOf("CBG feedstock")).toBeLessThan(t.indexOf("Dry fodder"));
-    expect(t).toContain("or");
+    expect(t).toContain("One possible use");
+    expect(t).not.toContain("Dry fodder");
+    const sheet = renderToString(() => <TodaySheetBody kind="residue" view={{ ...fixture, residueIncome: residue }} date={FIXTURE_TODAY} price={null} weather={null} />);
+    expect(text(sheet)).toContain("The incomes do not add up");
+    expect([...sheet.matchAll(/data-use="([a-z_]+)"/g)].map((m) => m[1])).toEqual(["cbg_feedstock", "dry_fodder", "biomass_fuel"]);
+    expect(text(sheet)).toContain("2.9–7.6 t");
     // No total of the options anywhere: neither the sum of the centres nor of the ends.
     const sums = [5227 + 5250, 18900 + 16500, 12063.5 + 10875, 10477, 35400];
     for (const sum of sums) expect(t).not.toContain(sum.toLocaleString("en-IN"));
@@ -970,7 +958,7 @@ describe("economics and footprint: cards", () => {
     expect(t).toContain("No reported price for these uses yet");
     expect(t).toContain("Biomass fuel");
     expect(t).not.toContain("₹0");
-    expect(t).toContain("Residue: about 2.9–7.6 t surplus");
+    expect(t).toContain("One possible use");
   });
   it("energy card: used-to-grow figure and breakdown words, then the residue energy and the LPG cylinders", () => {
     const html = one(() => <EnergyCard energy={energyFootprintFixture()} residueName="maize stover" onDetails={noop} />);
@@ -1045,7 +1033,8 @@ describe("economics and footprint: cards", () => {
     }
     // The short number is hidden from screen readers and a spoken form is present beside it.
     expect(html).toContain('class="today-sr"');
-    expect(html.match(/today-econ-value/g)!.length).toBe(4);
+    expect(html.match(/today-econ-value/g)!.length).toBe(3);
+    expect(html).toContain('aria-label="Revenue minus costs equals profit"');
   });
   it("the outlook line wraps and keeps its mark: the sentence span may shrink, the spark does not", () => {
     const css = readFileSync(new URL("./today.css", import.meta.url), "utf8");
@@ -1056,9 +1045,9 @@ describe("economics and footprint: cards", () => {
   it("a block the API did not send renders no card; the weather-only layout shows none of the new cards", () => {
     const legacy = { ...fixture, harvestEconomics: undefined, residueIncome: null, energyFootprint: undefined, carbonFootprint: null };
     const kinds = [...cards(legacy).matchAll(/data-card="([a-z]+)"/g)].map((m) => m[1]);
-    expect(kinds).toEqual(["harvest", "price", "weather", "health"]);
+    expect(kinds).toEqual(["health", "weather", "harvest", "price"]);
     const only = [...cards(fixture, true).matchAll(/data-card="([a-z]+)"/g)].map((m) => m[1]);
-    expect(only).toEqual(["weather", "health"]);
+    expect(only).toEqual(["health", "weather"]);
     const empty = { ...todayEmptyFixture(), harvestEconomics: harvestEconomicsFixture(), residueIncome: residueIncomeFixture(), energyFootprint: energyFootprintFixture(), carbonFootprint: carbonFootprintFixture() };
     const emptyKinds = [...cards(empty, true).matchAll(/data-card="([a-z]+)"/g)].map((m) => m[1]);
     expect(emptyKinds).toEqual(["weather"]);
@@ -1221,6 +1210,20 @@ describe("Today overview ('Today for you')", () => {
       }
     }
   });
+  it("keeps the headline and next-step shortcut visible and retains every complete note in a disclosure", () => {
+    const markup = render(overviewFixture());
+    const detailStart = markup.indexOf('class="today-overview-more"');
+    expect(detailStart).toBeGreaterThan(0);
+    expect(markup.slice(0, detailStart)).toContain('today-overview-headline');
+    expect(markup.slice(0, detailStart)).toContain('Review next step');
+    expect(markup.slice(detailStart)).toContain('data-kind="do_now"');
+    expect(markup.slice(detailStart)).toContain('data-kind="watch"');
+    for (const point of overviewFixture().points) expect(text(markup)).toContain(point.text);
+    expect(markup.slice(0, detailStart)).not.toContain('data-kind="money"');
+    expect(markup.slice(detailStart)).toContain('data-ref-id="profit"');
+    expect(markup.slice(detailStart)).toContain("Expect about ₹94,800");
+    expect(markup).not.toContain('<details class="today-overview-more" open');
+  });
   it("shows the headline and the points in order, each with its kind chip", () => {
     const html = render(overviewFixture());
     const t = text(html);
@@ -1229,7 +1232,8 @@ describe("Today overview ('Today for you')", () => {
     const kinds = [...html.matchAll(/data-kind="([a-z_]+)"/g)].map((m) => m[1]);
     expect(kinds).toEqual(["do_now", "watch", "money", "later", "good_news"]);
     const chips = ["Do now", "Watch", "Money", "Later", "Good news"];
-    const positions = chips.map((c) => t.indexOf(c));
+    const notes = text(html.slice(html.indexOf('class="today-overview-points"')));
+    const positions = chips.map((c) => notes.indexOf(c));
     expect(positions.every((p, i) => p >= 0 && (i === 0 || p > positions[i - 1]!))).toBe(true);
     expect(t.indexOf("Check field moisture today")).toBeLessThan(t.indexOf("Heavy rain is due on 4 Nov"));
     expect(t.indexOf("Expect about ₹94,800")).toBeLessThan(t.indexOf("Your crop looks near typical"));

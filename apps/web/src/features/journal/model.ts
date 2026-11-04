@@ -21,6 +21,7 @@ export const MAX_PHOTOS = 4;
 export interface Draft {
   clientEntryId: string;
   farmId: string;
+  cycleId?: string;
   observedOn: string;
   note: string;
   language: "en" | "ta" | "hi";
@@ -73,6 +74,7 @@ export const canSubmit = (d: Draft, today?: string): boolean => draftIssues(d, t
 /** Request body for POST /api/v1/journal. The same clientEntryId is sent on every retry, so a retry cannot duplicate the entry. */
 export function draftToBody(d: Draft): Record<string, unknown> {
   const body: Record<string, unknown> = { clientEntryId: d.clientEntryId, farmId: d.farmId, observedOn: d.observedOn, language: d.language, mediaIds: d.mediaIds };
+  if (d.cycleId) body.cycleId = d.cycleId;
   if (d.note.trim()) body.note = d.note.trim();
   if (d.activity) body.activity = d.activity;
   if (d.quantityValue.trim()) body.quantity = { value: Number(d.quantityValue), unit: d.quantityUnit };

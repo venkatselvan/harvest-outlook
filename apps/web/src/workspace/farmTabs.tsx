@@ -2,24 +2,28 @@ import { For, Show, createSignal } from "solid-js";
 import { Icon } from "./icons";
 
 /**
- * The four farm tabs (docs/research/UI_BRIEF.md section 2). The ids are the stable `?tab=` values and the CSS hooks
+ * The farm tabs (docs/research/UI_BRIEF.md section 2). The ids are the stable `?tab=` values and the CSS hooks
  * (`tab-today`, `tab-year`, ...); the labels are what the farmer reads.
  *
  * | label  | id        | content                                                     |
  * | Today  | `today`   | TodayView                                                   |
  * | Plan   | `year`    | YearPlanView                                                |
- * | Market | `harvest` | harvest context, market context, Outlook                    |
+ * | Market | `harvest` | local market timeline and harvest outlook                  |
  * | Farm   | `soil`    | crop fit, soil records (FarmSettings) and Activity (Journal) |
+ * | Modify | `modify`  | farm boundary and field editor                              |
+ * | Actions| `actions` | alerts and upcoming field work                              |
  */
-export type FarmTab = "today" | "year" | "harvest" | "soil";
+export type FarmTab = "today" | "year" | "harvest" | "soil" | "actions" | "modify";
 /** The secondary toggle inside the Farm tab. Nothing from the old Soil, Settings and Activity views is dropped. */
 export type FarmSection = "fit" | "records" | "activity";
 
 export const farmTabs: { id: FarmTab; label: string; icon: string }[] = [
   { id: "today", label: "Today", icon: "grid" },
+  { id: "actions", label: "Actions", icon: "check" },
   { id: "year", label: "Plan", icon: "calendar" },
   { id: "harvest", label: "Market", icon: "trend" },
   { id: "soil", label: "Farm", icon: "leaf" },
+  { id: "modify", label: "Modify", icon: "map" },
 ];
 export const farmSections: { id: FarmSection; label: string }[] = [
   { id: "fit", label: "Crop fit" },
@@ -38,6 +42,7 @@ const clean = (path: string) =>
 const commandPaths = [
   "/farm",
   "/farm/settings",
+  "/farm/manage",
   "/planner",
   "/explore",
   "/outlook",
@@ -54,6 +59,7 @@ export const selectedTab = (path: string, query?: string): FarmTab => {
   const route = clean(path);
   if (isTab(query)) return query;
   if (query === "activity") return "soil";
+  if (route === "/farm/manage") return "modify";
   if (route === "/planner") return "year";
   if (route === "/explore" || route === "/farm/settings") return "soil";
   if (route === "/outlook") return "harvest";
@@ -124,8 +130,8 @@ const [dueBadge, setDueBadge] = createSignal(0);
 export { dueBadge, setDueBadge };
 
 /**
- * One list of the four tabs, drawn as the top tab row from 768 px up and as the bottom tab bar below that
- * (`variant`). Both are links, so every tab is keyboard reachable with Tab and opens with Enter. They are plain
+ * The farm tab row stays visible above the selected view at every screen size.
+ * The optional bottom variant shares the same links; so every tab is keyboard reachable with Tab and opens with Enter. They are plain
  * anchors: the router intercepts same-origin links itself, and its `A` component would mark every tab as the current
  * page because it ignores the query string.
  */

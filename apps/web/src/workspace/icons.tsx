@@ -47,6 +47,13 @@ export function Icon(props: { name: string; size?: number; class?: string }) {
     info: <><circle cx="12" cy="12" r="9"/><path d="M12 11v6m0-10h.01"/></>,
     moon: <path d="M20.5 13.1A8.6 8.6 0 0 1 10.9 3.5a8.7 8.7 0 1 0 9.6 9.6Z" />,
     close: <path d="m6 6 12 12M6 18 18 6" />,
+    mic: (
+      <>
+        <rect x="9" y="3" width="6" height="11" rx="3" />
+        <path d="M5 11a7 7 0 0 0 14 0m-7 7v3" />
+      </>
+    ),
+    stop: <rect x="6.5" y="6.5" width="11" height="11" rx="2.2" fill="currentColor" />,
     arrow: <path d="M4 12h16m-6-6 6 6-6 6" />,
     swap: <path d="M4 8h15m-4-4 4 4-4 4M20 16H5m4-4-4 4 4 4" />,
     pin: (

@@ -17,7 +17,7 @@ import type {Pool} from '../../db/pool';
 import {ApiError, notFound} from '../errors';
 import {getFarm} from '../farms';
 import {fieldOf, getWorkspace, requireField} from '../workspace';
-import {GENERAL_PROMPTS_LABEL, addDays, checkSchedule, type CheckScope} from './schedule';
+import {addDays, checkSchedule, type CheckScope} from './schedule';
 import {issueCropName, scoutingRows, toScheduleCompletion, toScheduleIssue, type EventRow, type IssueRow, type Mode, type ScoutingRows} from './repository';
 
 export interface ScoutingDeps { pool: Pool; config: {RUNTIME_MODE: Mode}; now?: (() => Date) | undefined }
@@ -33,9 +33,8 @@ export const ISSUE_LIMITATIONS = [
   'An earliest harvest date is arithmetic on the label wait you entered; the app does not check a label.',
 ];
 export const CHECK_LIMITATIONS = [
-  'Your check interval is your own setting (7 days unless you change it); it is not crop-specific advice.',
-  `${GENERAL_PROMPTS_LABEL} are the same for every crop.`,
-  'Risk-window items are sourced seasonal windows for the crop stage on the calendar, not observed outbreaks.',
+  'Field checks follow relevant crop risks, weather and satellite alerts. Crop care and growth-stage guidance appear separately in Upcoming steps.',
+  'Alerts indicate a reason to inspect; they do not confirm damage in the field.',
 ];
 
 // ------------------------------------------------------------------ the current cycle (same rule as the Today view)
@@ -122,7 +121,7 @@ export async function readFieldChecks(deps: ScoutingDeps, ownerId: string, farmI
   const state = await scoutingState(deps.pool, ownerId, farmId, deps.config.RUNTIME_MODE, ws, today);
   const checks = state.checks.filter((c) => scope.all || c.fieldId === null || c.fieldId === scope.fieldId);
   const limitations = [...CHECK_LIMITATIONS];
-  if (!checks.some((c) => c.kind === 'interval' && c.status !== 'completed')) limitations.push('No crop is growing here, so no field check is scheduled.');
+  if (!checks.some((c) => c.status !== 'completed')) limitations.push('No condition-triggered field check is due. Continue with the crop care and growth-stage guidance in Upcoming steps.');
   return {farmId, asOf: today, checks, limitations};
 }
 

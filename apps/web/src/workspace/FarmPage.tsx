@@ -46,15 +46,16 @@ export function PageHeading(props: {
   eyebrow: string;
   title: string;
   description: string;
+  compact?: boolean;
   children?: import("solid-js").JSX.Element;
 }) {
   return (
-    <div class="page-heading">
-      <div>
+    <div class="page-heading" classList={{ "is-compact": !!props.compact }}>
+      <Show when={!props.compact}><div>
         <p class="eyebrow">{props.eyebrow}</p>
         <h1>{props.title}</h1>
         <p class="page-description">{props.description}</p>
-      </div>
+      </div></Show>
       <div class="heading-actions">{props.children}</div>
     </div>
   );
@@ -240,7 +241,7 @@ export function HistoryDialog(props: { onClose: () => void }) {
   );
 }
 export function FarmWorkspace(
-  props: { startAdding?: boolean; onReady?: () => void } = {},
+  props: { startAdding?: boolean; onReady?: () => void; embedded?: boolean } = {},
 ) {
   const s = useWorkspace();
   const [pageQuery] = useSearchParams<{ history?: string }>();
@@ -258,6 +259,7 @@ export function FarmWorkspace(
   /** Fields (FIELDS_MULTICROP_SOIL_SPEC.md 6.1): the map draws a new field while `fieldDrawing`; the finished outline waits in `fieldDraft`. */
   const [fieldDrawing, setFieldDrawing] = createSignal(false);
   const [fieldDraft, setFieldDraft] = createSignal<Boundary | null>(null);
+  const [fieldEditingId, setFieldEditingId] = createSignal<string | null>(null);
   const [history, setHistory] = createSignal(false);
   createEffect(() => {
     if (pageQuery.history === "1" && s.farm()?.id) setHistory(true);
@@ -297,6 +299,7 @@ export function FarmWorkspace(
         setDraft(null);
         setFieldDrawing(false);
         setFieldDraft(null);
+        setFieldEditingId(null);
         setSavingBoundary(false);
         setAdding(false);
         setError("");
@@ -340,7 +343,7 @@ export function FarmWorkspace(
   /** Field mode on the map: drawing a new field, or showing the finished outline before it is named. */
   const fieldMode = () => !onboarding() && !editing() && (fieldDrawing() || !!fieldDraft());
   const mapFields = (): MapField[] =>
-    farmFields().map((field) => ({
+    farmFields().filter((field) => field.id !== fieldEditingId()).map((field) => ({
       id: field.id,
       name: field.name,
       boundary: field.boundary,
@@ -349,6 +352,7 @@ export function FarmWorkspace(
   const endFieldDraw = () => {
     setFieldDrawing(false);
     setFieldDraft(null);
+    setFieldEditingId(null);
   };
   const visibleBoundary = () =>
     onboarding() || editing()
@@ -636,7 +640,7 @@ export function FarmWorkspace(
   }
   return (
     <div class="workspace-page">
-      <PageHeading
+      <PageHeading compact={!!props.embedded}
         eyebrow="YOUR LAND, IN PERSPECTIVE"
         title={
           onboarding()
@@ -666,6 +670,7 @@ export function FarmWorkspace(
           </A>
         </Show>
       </PageHeading>
+
       <Show when={s.farms.error}>
         <div class="alert-card" role="alert">
           Your farms couldn't load. {(s.farms.error as Error).message}
@@ -689,8 +694,10 @@ export function FarmWorkspace(
             <div>
               <strong>Demo farm · two years of sample records</strong>
               <p>
-                Harvests, journal entries, sales and saved seasons were loaded
-                as sample records so you can see the app with a track record;
+                Harvests, journal entries, sales and the crop in the field now
+                were loaded as sample records so you can see the app with a track
+                record; no future seasons are saved, so generate the plan and
+                see crop fit for yourself;
                 the field outline sits around a public research-site reference.
                 Weather, prices and recommendations come from live sources for
                 this location.
@@ -809,6 +816,7 @@ export function FarmWorkspace(
                           currentWorkspace()?.boundary ?? null,
                           farmFields(),
                           outline,
+                          fieldEditingId() ?? undefined,
                         ),
                     }
                   : {
@@ -837,6 +845,7 @@ export function FarmWorkspace(
             </div>
             <Show when={!onboarding() && s.farm()}>
               <FieldsPanel
+                scopeKey={`${s.sessionEpoch()}|${s.farm()?.id ?? ""}`}
                 fields={farmFields()}
                 farmBoundary={currentWorkspace()?.boundary ?? null}
                 cycles={(currentWorkspace()?.cycles ?? []) as FieldCycleLike[]}
@@ -845,23 +854,27 @@ export function FarmWorkspace(
                 saving={s.saving() || savingBoundary()}
                 disabled={editing() || !currentWorkspace()}
                 onSave={async (fields, notice) => {
+                  const farmId = s.farm()?.id, epoch = s.sessionEpoch();
                   await s.saveWorkspace({ fields });
-                  s.setNotice(notice);
+                  if (s.farm()?.id === farmId && s.sessionEpoch() === epoch) s.setNotice(notice);
                 }}
                 drawing={fieldDrawing()}
                 drawn={fieldDraft()}
                 onStartDraw={(keep) => {
                   setEditing(false);
-                  if (!keep) setFieldDraft(null);
+                  if (!keep) { setFieldDraft(null); setFieldEditingId(null); }
                   setFieldDrawing(true);
+                }}
+                editingFieldId={fieldEditingId()}
+                onEditOutline={(field) => {
+                  setEditing(false);
+                  setFieldEditingId(field.id);
+                  setFieldDraft(field.boundary);
+                  setFieldDrawing(true);
+                  document.querySelector(".farm-map")?.scrollIntoView({ block: "center" });
                 }}
                 onEndDraw={endFieldDraw}
                 todayHref={(id) => farmHref("today", undefined, id)}
-                farmCheckIntervalDays={currentWorkspace()?.checkIntervalDays}
-                onSaveFarmInterval={async (checkIntervalDays) => {
-                  await s.saveWorkspace({ checkIntervalDays });
-                  s.setNotice(`Your field check interval is now every ${checkIntervalDays} days.`);
-                }}
               />
             </Show>
           </section>
@@ -923,6 +936,7 @@ export function FarmWorkspace(
                     <button
                       class="btn secondary full-width"
                       onClick={() => {
+                        endFieldDraw();
                         setDraft(s.workspace()?.boundary ?? null);
                         setEditing(true);
                       }}
@@ -948,7 +962,8 @@ export function FarmWorkspace(
                     <Show when={editing()}>
                       <button
                         class="text-button full-width"
-                        onClick={() => setEditing(false)}
+                        disabled={savingBoundary() || s.saving()}
+                        onClick={() => { if (!savingBoundary() && !s.saving()) setEditing(false); }}
                       >
                         Cancel boundary edit
                       </button>

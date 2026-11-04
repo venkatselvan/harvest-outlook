@@ -352,20 +352,21 @@ export interface OverviewOutcome {
 }
 
 /** One muse-spark call (budget reserve/settle, store:false, reasoning low, response deleted in finally). Never throws. */
-export async function writeOverviewWithMeta(deps: OverviewWriteDeps, args: {overviewId: string; jobId: string | null; ownerId: string; farmId: string; input: string; facts: readonly OverviewFact[]; fallback: OverviewText}): Promise<OverviewOutcome> {
+export async function writeOverviewWithMeta(deps: OverviewWriteDeps, args: {overviewId: string; jobId: string | null; ownerId: string; farmId: string; input: string; facts: readonly OverviewFact[]; fallback: OverviewText; instructions?: string; purpose?: string; schemaName?: string; maxPoints?: number}): Promise<OverviewOutcome> {
   const out: OverviewOutcome = {origin: 'deterministic', headline: args.fallback.headline, points: args.fallback.points, failure: null, dispatched: false, responseDeleted: null, model: null, costUsd: null, usage: null};
   const model = deps.config.META_TEXT_MODEL;
   const provider = deps.provider ?? new MetaProvider(new MetaClient({apiKey: deps.config.MODEL_API_KEY, baseUrl: deps.config.META_BASE_URL, timeoutMs: 30_000, maxRetries: 0, ...(deps.fetchImpl ? {fetchImpl: deps.fetchImpl} : {})}), deps.config.MODEL_API_KEY);
-  const schema = toStrictJsonSchema(OverviewSchema);
-  const estimate = deps.budget.estimate('meta', model, {inputTokens: Math.ceil((args.input.length + OVERVIEW_INSTRUCTIONS.length) / 2), outputTokens: OVERVIEW_MAX_OUTPUT_TOKENS}).usd ?? 0;
+  const schema = toStrictJsonSchema(args.maxPoints ? OverviewSchema.extend({points: OverviewSchema.shape.points.max(args.maxPoints)}) : OverviewSchema);
+  const instructions = args.instructions ?? OVERVIEW_INSTRUCTIONS;
+  const estimate = deps.budget.estimate('meta', model, {inputTokens: Math.ceil((args.input.length + instructions.length) / 2), outputTokens: OVERVIEW_MAX_OUTPUT_TOKENS}).usd ?? 0;
   let reservationId: string | null = null;
   let handled = false;
   let responseId: string | null = null;
   try {
     reservationId = (await deps.budget.reserve({ownerId: args.ownerId, sessionId: null, ...(args.jobId ? {jobId: args.jobId} : {}), provider: 'meta', model, estimate, requestId: args.overviewId})).reservationId;
     out.dispatched = true;
-    const response = await withModelActivity({pool: deps.pool, ownerId: args.ownerId, sessionId: null, mode: 'live', purpose: `today_overview/${args.farmId}`},
-      () => provider.call({pass: 'interpretation', model, instructions: OVERVIEW_INSTRUCTIONS, input: args.input, textFormat: {name: 'today_overview', schema}, maxOutputTokens: OVERVIEW_MAX_OUTPUT_TOKENS, reasoningEffort: 'low', store: false}));
+    const response = await withModelActivity({pool: deps.pool, ownerId: args.ownerId, sessionId: null, mode: 'live', purpose: `${args.purpose ?? 'today_overview'}/${args.farmId}`},
+      () => provider.call({pass: 'interpretation', model, instructions, input: args.input, textFormat: {name: args.schemaName ?? 'today_overview', schema}, maxOutputTokens: OVERVIEW_MAX_OUTPUT_TOKENS, reasoningEffort: 'low', store: false}));
     if (!response.ok) {
       if (response.error.outcomeUncertain) await deps.budget.markUncertain(reservationId); else await deps.budget.release(reservationId);
       handled = true;
@@ -383,6 +384,7 @@ export async function writeOverviewWithMeta(deps: OverviewWriteDeps, args: {over
     try { raw = JSON.parse(response.result.outputText ?? 'null'); } catch { out.failure = 'invalid_json'; return out; }
     const gate = gateOverview(raw, args.facts);
     if (!gate.ok) { out.failure = `gate_${gate.reason}`; return out; }
+    if (args.maxPoints && gate.points.length > args.maxPoints) {out.failure = 'gate_too_many_points'; return out;}
     out.origin = 'model';
     out.headline = gate.headline;
     out.points = gate.points;

@@ -7,6 +7,8 @@
  *
  * Dates are fixed calendar dates calibrated for a load date from 2026-11-01 to about 2027-01-31. Any record dated after the
  * IST load date is skipped (never written as a future actual); saved seasons are plans and keep their future dates.
+ * Seed v6 saves no future seasons: the demo starts with the current crop only, so Plan generation and Crop fit ranking run on the
+ * farm's own record. Seed v5 farms lose exactly the three plans it saved (LEGACY_V5_ROTATION_PLANS, removed in demo-farm.ts).
  */
 import type {PoolClient} from 'pg';
 import {FarmWorkspaceState,type FarmWorkspaceState as WorkspaceState} from '@harvest/contracts';
@@ -18,7 +20,7 @@ import {focusedResearch} from './focused-crops';
 import {ApiError} from './errors';
 import {payloadHash} from './hash';
 
-export const DEMO_SEED_VERSION=5;
+export const DEMO_SEED_VERSION=6;
 export const DEMO_FARM_NAME='Arsikere demo farm';
 export const DEMO_LABEL='Demo farm with two years of sample records near the public ARS Arsikere research-site reference';
 /** Source text of the farmer-style facts the seed adds (spec section 1). */
@@ -48,7 +50,8 @@ export const DEMO_CYCLES:readonly Cycle[]=[
  {id:'demo2y:ginger-2026',...GINGER,sowingDate:'2026-05-16',establishmentDate:'2026-05-16',establishmentMethod:'rhizome_planting',stage:'growing',notes:'Own seed rhizome from 2025 plus 700 kg bought; raised beds, mulch, drainage channels.'},
 ];
 
-export const DEMO_ROTATION_PLANS:readonly Rotation[]=[
+/** The three future seasons seed v5 saved. No longer seeded; kept only so a v5 farm can be cleaned of exactly these records. */
+export const LEGACY_V5_ROTATION_PLANS:readonly Rotation[]=[
  {id:'demo2y:plan-2027-maize',...MAIZE,year:2027,season:'Kharif',plannedSowingDate:'2027-06-05',plannedHarvestDate:'2027-09-30',kind:'crop',establishmentMethod:'direct_sowing',notes:'Maize after the ginger harvest, as in 2025, so ginger does not follow ginger.'},
  {id:'demo2y:plan-2027-green-gram',...GREEN_GRAM,year:2027,season:'Rabi',plannedSowingDate:'2027-10-15',plannedHarvestDate:'2027-12-30',kind:'crop',establishmentMethod:'direct_sowing',notes:'A short green gram crop after the maize, before the field is prepared for ginger again.'},
  {id:'demo2y:plan-2028-ginger',...GINGER,year:2028,season:'Kharif',plannedSowingDate:'2028-05-15',plannedHarvestDate:'2029-01-15',kind:'crop',establishmentMethod:'rhizome_planting',notes:'Back to ginger after a two-season break, as in 2024 and 2026.'},
@@ -89,6 +92,7 @@ export const DEMO_JOURNAL:readonly DemoJournalEntry[]=[
  e('2025-10-11-sale','2025-10-11','sale','250 kg kept for home use.',{quantity:kg(4000),sale:{amountInr:'78000.00',note:'Hassan APMC, ₹19.50/kg'},expense:spend('1200.00','transport')}),
  // Between seasons (the pump repair sits outside any crop window on purpose)
  e('2025-12-10-expense-repairs','2025-12-10','expense','Borewell pump repaired.',{expense:spend('5500.00','repairs')}),
+ e('2026-01-10-other','2026-01-10','other','Rotation on this field so far: ginger in 2024, then maize followed ginger in 2025, and green gram followed the maize, before the field was prepared for ginger again in 2026.'),
  e('2026-02-20-other','2026-02-20','other','Land prepared for ginger: two ploughings, raised beds marked.'),
  // Ginger 2026 (current)
  e('2026-05-16-planting','2026-05-16','planting','Seed rhizome planted on raised beds: 800 kg own seed, 700 kg bought.',{quantity:kg(1500),expense:spend('42000.00','seed')}),
@@ -122,15 +126,14 @@ export const DEMO_CARE:readonly {cycleId:string;actionId:string;date:string;note
 const cycleDates=(c:Cycle)=>[c.sowingDate,c.establishmentDate,c.harvestDate].filter((d):d is string=>!!d);
 
 /**
- * Merge by id (spec section 4): seed records missing from the workspace are added after the farmer's records; any record
+ * Merge by id (spec section 4; cycles only from seed v6, no saved seasons): seed records missing from the workspace are added after the farmer's records; any record
  * with the same id keeps the farmer's version; previousHarvest is set only when it is unknown.
  */
 export function mergeTrackRecord(input:WorkspaceState,loadDate:string):WorkspaceState{
  const state=structuredClone(input);
  if(state.previousHarvest.status==='unknown'&&DEMO_PREVIOUS_HARVEST.harvestDate<=loadDate)state.previousHarvest={...DEMO_PREVIOUS_HARVEST};
- const cycleIds=new Set(state.cycles.map(c=>c.id)),planIds=new Set(state.rotationPlans.map(r=>r.id));
+ const cycleIds=new Set(state.cycles.map(c=>c.id));
  for(const cycle of DEMO_CYCLES)if(!cycleIds.has(cycle.id)&&cycleDates(cycle).every(d=>d<=loadDate))state.cycles.push(structuredClone(cycle));
- for(const plan of DEMO_ROTATION_PLANS)if(!planIds.has(plan.id))state.rotationPlans.push(structuredClone(plan));
  return FarmWorkspaceState.parse(state);
 }
 

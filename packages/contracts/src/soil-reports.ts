@@ -17,7 +17,7 @@ export const SoilCanonicalValue=z.object({value:z.number().finite().nullable(),u
 export const SoilMarker=SoilMarkerDraft.safeExtend({canonical:SoilCanonicalValue,reviewStatus:z.enum(['pending','confirmed']),confirmedAt:z.iso.datetime().nullable()});
 export const SoilReport=z.object({
  id:z.uuid(),farmId:z.uuid(),kind:z.enum(['field_report','reference_sample']),status:z.enum(['pending','running','needs_review','confirmed','unavailable','error']),version:z.number().int(),filename:z.string(),contentType:z.string(),bytes:z.number().int(),sha256:z.string(),createdAt:z.iso.datetime(),jobId:z.uuid().nullable(),modelInvocation:ModelInvocation.nullable(),
- originalUrl:z.string(),referenceSource:z.object({title:z.string(),url:z.url(),pages:z.array(z.number().int().positive()),limitations:z.array(z.string()),extractionScope:z.object({sampleLabel:z.string(),description:z.string(),markerLimit:z.number().int().min(1).max(100)}).strict().optional()}).strict().nullable(),
+ originalUrl:z.string(),referenceSource:z.object({title:z.string(),url:z.url().nullable(),pages:z.array(z.number().int().positive()),limitations:z.array(z.string()),extractionScope:z.object({sampleLabel:z.string(),description:z.string(),markerLimit:z.number().int().min(1).max(100)}).strict().optional()}).strict().nullable(),
  pages:z.array(z.object({page:z.number().int(),imageUrl:z.string(),width:z.number().int(),height:z.number().int(),nativeTextAvailable:z.boolean()}).strict()),
  extraction:SoilReportExtraction.nullable(),reviewed:SoilReportExtraction.nullable(),confirmedSampleIds:z.array(z.string()),warnings:z.array(z.string()),
 }).strict();

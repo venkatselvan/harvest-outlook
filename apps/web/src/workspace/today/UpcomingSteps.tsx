@@ -23,6 +23,13 @@ export interface UpcomingStepsProps {
   onCheck?: ((step: UpcomingStep) => void) | undefined;
   /** Opens the issue a recheck step looks at again. */
   onOpenIssue?: ((issueId: string) => void) | undefined;
+  /**
+   * 2026-11-04 (TODAY_MAP_LAYOUT_SPEC.md, Actions tab): "actions" shapes each step as an action card: an eyebrow (farm ·
+   * field), the title, "01 · Evidence", "02 · Suggested action" and the step's one existing button. Same data and buttons.
+   */
+  variant?: "actions" | undefined;
+  /** The eyebrow line of an action card ("Kabini farm · North strip"). */
+  eyebrow?: ((step: UpcomingStep) => string) | undefined;
 }
 
 /** DOM id for a step, so an alert's suggested step can scroll to it. */
@@ -86,7 +93,75 @@ function DoneButton(props: { step: UpcomingStep; busyId: string; onDone: (step: 
   );
 }
 
+const FIELD_CHECK_ACTION = "Walk the field, then tap Done to record what you found.";
+/** What the action card suggests: the care task's action, the step's own detail, or the field check's recording step. */
+const suggestedAction = (step: UpcomingStep): string =>
+  step.careTask?.action ?? (step.kind === "field_check" ? FIELD_CHECK_ACTION : step.detail) ?? "No action text was given for this step.";
+
+/** One step as an action card (Actions tab): evidence first, then the suggested action, then the step's existing button. */
+function ActionStepBody(props: {
+  step: UpcomingStep;
+  when: string;
+  titleId?: string | undefined;
+  kicker?: string | undefined;
+  /** The next-action card shows only the Done chip (its line already says due or overdue), like the regular card. */
+  doneChipOnly?: boolean | undefined;
+  eyebrow?: ((step: UpcomingStep) => string) | undefined;
+  sources: FarmCommandCenter["sources"] | undefined;
+  busyId: string;
+  onDone: (step: UpcomingStep) => void;
+  onCheck?: ((step: UpcomingStep) => void) | undefined;
+  onOpenIssue?: ((issueId: string) => void) | undefined;
+}) {
+  return (
+    <div class="today-action-card">
+      <p class="today-action-eyebrow">
+        <span>{props.eyebrow?.(props.step) ?? ""}</span>
+        <Show when={props.kicker}>
+          <span class="today-step-origin">{props.kicker}</span>
+        </Show>
+        <Show when={props.step.kind === "alert_step"}>
+          <span class="today-step-origin">From an alert</span>
+        </Show>
+      </p>
+      <h3 id={props.titleId} class={props.titleId ? "today-next-title" : undefined}>
+        {props.step.title}
+      </h3>
+      <dl class="today-action-evidence">
+        <div>
+          <dt>01 · Evidence</dt>
+          <dd>
+            <span class={`today-action-when ${props.step.status}`}>
+              {props.when}
+              <Show when={props.doneChipOnly ? (props.step.status === "completed" ? "Done" : null) : statusChip[props.step.status]}>
+                {(chip) => <span class={`today-chip step ${props.step.status}`}>{chip()}</span>}
+              </Show>
+            </span>
+            <Show when={props.step.kind === "field_check"}>
+              <FieldCheckDetails step={props.step} />
+            </Show>
+            <StepSources step={props.step} sources={props.sources} />
+          </dd>
+        </div>
+        <div>
+          <dt>02 · Suggested action</dt>
+          <dd>{suggestedAction(props.step)}</dd>
+        </div>
+      </dl>
+      <div class="today-action-footer">
+        <Show when={props.step.kind === "field_check"}>
+          <FieldCheckActions step={props.step} busyId={props.busyId} onCheck={props.onCheck} onOpenIssue={props.onOpenIssue} />
+        </Show>
+        <Show when={canComplete(props.step)}>
+          <DoneButton step={props.step} busyId={props.busyId} onDone={props.onDone} />
+        </Show>
+      </div>
+    </div>
+  );
+}
+
 export function UpcomingSteps(props: UpcomingStepsProps) {
+  const actions = () => props.variant === "actions";
   const [all, setAll] = createSignal(false);
   /** The next action as it is in the list (so an optimistic Done shows on the card too). */
   const next = () => {
@@ -119,6 +194,24 @@ export function UpcomingSteps(props: UpcomingStepsProps) {
             data-testid="today-next-action"
             aria-labelledby="today-next-title"
           >
+            <Show
+              when={!actions()}
+              fallback={
+                <ActionStepBody
+                  step={step()}
+                  when={nextActionWhen(step(), props.today)}
+                  titleId="today-next-title"
+                  kicker="Next action"
+                  doneChipOnly
+                  eyebrow={props.eyebrow}
+                  sources={props.sources}
+                  busyId={props.busyId}
+                  onDone={props.onDone}
+                  onCheck={props.onCheck}
+                  onOpenIssue={props.onOpenIssue}
+                />
+              }
+            >
             <p class="today-next-kicker">
               <Icon name={step().status === "completed" ? "check" : kindIcon[step().kind]} size={14} /> Next action
               <Show when={step().kind === "alert_step"}>
@@ -145,6 +238,7 @@ export function UpcomingSteps(props: UpcomingStepsProps) {
             <Show when={canComplete(step())}>
               <DoneButton step={step()} busyId={props.busyId} onDone={props.onDone} />
             </Show>
+            </Show>
           </article>
         )}
       </Show>
@@ -153,7 +247,22 @@ export function UpcomingSteps(props: UpcomingStepsProps) {
           <ul class="today-step-list" aria-label="Later steps">
             <For each={visible()}>
               {(step) => (
-                <li class={`today-step ${step.status} ${step.kind}`} id={stepDomId(step.id)} tabIndex={-1} data-step-id={step.id}>
+                <li class={`today-step ${step.status} ${step.kind}`} classList={{ "is-action-card": actions() }} id={stepDomId(step.id)} tabIndex={-1} data-step-id={step.id}>
+                  <Show
+                    when={!actions()}
+                    fallback={
+                      <ActionStepBody
+                        step={step}
+                        when={windowLabel(step.dueFrom, step.dueTo)}
+                        eyebrow={props.eyebrow}
+                        sources={props.sources}
+                        busyId={props.busyId}
+                        onDone={props.onDone}
+                        onCheck={props.onCheck}
+                        onOpenIssue={props.onOpenIssue}
+                      />
+                    }
+                  >
                   <span class="today-step-icon" aria-hidden="true">
                     <Icon name={step.status === "completed" ? "check" : kindIcon[step.kind]} size={16} />
                   </span>
@@ -181,6 +290,7 @@ export function UpcomingSteps(props: UpcomingStepsProps) {
                   </Show>
                   <Show when={step.kind === "field_check"}>
                     <FieldCheckActions step={step} busyId={props.busyId} onCheck={props.onCheck} onOpenIssue={props.onOpenIssue} />
+                  </Show>
                   </Show>
                 </li>
               )}

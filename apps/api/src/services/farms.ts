@@ -258,7 +258,9 @@ export async function deleteFarm(
     // must be read before the delete below; the objects go after commit like every other private file.
     const sceneRows = await c.query<{ image_keys: Record<string, unknown> | null }>("SELECT image_keys FROM ndvi_scene_stats WHERE farm_id=$1 AND owner_id=$2 AND image_keys IS NOT NULL", [id, ownerId]);
     const futureRows = await c.query<{ storage_key: string }>("SELECT storage_key FROM future_look_assets WHERE farm_id=$1 AND owner_id=$2 AND storage_key IS NOT NULL", [id, ownerId]);
+    const photoPredictions = await c.query<{storage_key: string}>("SELECT storage_key FROM field_photo_predictions WHERE farm_id=$1 AND owner_id=$2 AND storage_key IS NOT NULL", [id, ownerId]);
     const todayKeys = [
+      ...photoPredictions.rows.map(r => ({id: "field_photo_prediction", storage_key: r.storage_key})),
       ...sceneRows.rows.flatMap((r) => Object.values(r.image_keys ?? {}).filter((k): k is string => typeof k === "string" && k.length > 0)).filter((k, i, all) => all.indexOf(k) === i).map((storage_key) => ({ id: "ndvi_scene", storage_key })),
       ...futureRows.rows.map((r) => r.storage_key).filter((k, i, all) => all.indexOf(k) === i).map((storage_key) => ({ id: "future_look", storage_key })),
     ];

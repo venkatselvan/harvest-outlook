@@ -129,6 +129,13 @@ export function StageSlider(props: StageSliderProps) {
           </Show>
         </span>
       </Show>
+      <div class="today-slider-milestones" role="group" aria-label="Approximate crop milestones">
+        <For each={props.ticks}>{tick => <button type="button" class="today-milestone" aria-pressed={props.valueDate === tick.date}
+          title={`${tick.name} · ${formatDay(tick.date)} · approximate calendar date`}
+          onClick={() => { props.onInteract?.(); props.onChange(Math.round(tick.fraction * props.model.total)); }}>
+          <span>{tick.name}</span><time>{formatDay(tick.date, false)}</time>
+        </button>}</For>
+      </div>
       <div class="today-slider-ends" aria-hidden="true">
         <span>{props.startLabel}</span>
         <span>{props.endLabel}</span>

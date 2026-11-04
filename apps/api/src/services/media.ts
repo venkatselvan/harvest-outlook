@@ -1,3 +1,4 @@
+import { exifCreatedDate } from "./exif-date";
 import { randomUUID } from "node:crypto";
 import sharp from "sharp";
 import type { PoolClient } from "pg";
@@ -28,6 +29,7 @@ export interface ProcessedImage {
   width: number;
   height: number;
   orientation: number | null;
+  exifCreatedAt: string | null;
   orientedWidth: number;
   orientedHeight: number;
   normalized: { data: Buffer; width: number; height: number };
@@ -54,6 +56,7 @@ export async function processImage(buf: Buffer): Promise<ProcessedImage> {
       width: meta.width,
       height: meta.height,
       orientation,
+      exifCreatedAt: exifCreatedDate(meta.exif),
       orientedWidth: swap ? meta.height : meta.width,
       orientedHeight: swap ? meta.width : meta.height,
       normalized: { data: out.data, width: out.info.width, height: out.info.height },
@@ -75,6 +78,7 @@ interface MediaRow {
   width: number;
   height: number;
   exif_orientation: number | null;
+  exif_created_at: string | Date | null;
   region_polygon: [number, number][] | null;
   region_transform: RegionBody["transform"] | null;
   region_source: "manual" | "sam_confirmed" | null;
@@ -85,7 +89,7 @@ interface MediaRow {
   n_bytes: string | null;
 }
 
-const SELECT = `SELECT o.id, o.farm_id, o.content_type, o.byte_size, o.sha256, o.width, o.height, o.exif_orientation,
+const SELECT = `SELECT o.id, o.farm_id, o.content_type, o.byte_size, o.sha256, o.width, o.height, o.exif_orientation, o.exif_created_at::text,
     o.region_polygon, o.region_transform, o.region_source, o.region_version, o.created_at,
     d.width AS n_width, d.height AS n_height, d.byte_size AS n_bytes
   FROM media_objects o LEFT JOIN media_objects d ON d.parent_media_id = o.id AND d.kind = 'derivative'
@@ -102,6 +106,7 @@ function toOut(r: MediaRow): MediaOut {
     width: r.width,
     height: r.height,
     exifOrientation: r.exif_orientation,
+    exifCreatedAt: r.exif_created_at instanceof Date ? r.exif_created_at.toISOString().slice(0, 10) : r.exif_created_at ?? null,
     orientedWidth: swap ? r.height : r.width,
     orientedHeight: swap ? r.width : r.height,
     normalized: { width: r.n_width ?? 0, height: r.n_height ?? 0, bytes: Number(r.n_bytes ?? 0), contentType: "image/jpeg" },
@@ -129,9 +134,9 @@ export async function storeImage(pool: Pool, storage: StorageAdapter, ownerId: s
     await storage.put({ ownerId, key: normKey }, img.normalized.data);
     await withTransaction(pool, async (c) => {
       await c.query(
-        `INSERT INTO media_objects (id, owner_id, farm_id, kind, storage_key, content_type, byte_size, sha256, width, height, exif_orientation)
-         VALUES ($1,$2,$3,'image',$4,$5,$6,$7,$8,$9,$10)`,
-        [id, ownerId, farmId, origKey, img.kind.mime, buf.byteLength, sha256Hex(buf), img.width, img.height, img.orientation],
+        `INSERT INTO media_objects (id, owner_id, farm_id, kind, storage_key, content_type, byte_size, sha256, width, height, exif_orientation, exif_created_at)
+         VALUES ($1,$2,$3,'image',$4,$5,$6,$7,$8,$9,$10,$11)`,
+        [id, ownerId, farmId, origKey, img.kind.mime, buf.byteLength, sha256Hex(buf), img.width, img.height, img.orientation, img.exifCreatedAt],
       );
       await c.query(
         `INSERT INTO media_objects (owner_id, farm_id, kind, storage_key, content_type, byte_size, sha256, width, height, parent_media_id)

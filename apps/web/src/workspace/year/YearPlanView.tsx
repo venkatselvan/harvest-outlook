@@ -264,6 +264,7 @@ export function YearPlanView(props: YearPlanViewProps = {}) {
   });
 
   // Saved seasons changed (added here or edited below): re-read the review quietly so "Out of date" can appear.
+  // Observe the initial version: deferring would leave `previous` undefined on the first saved change.
   createEffect(
     on(
       () => s.workspace()?.version,
@@ -281,7 +282,6 @@ export function YearPlanView(props: YearPlanViewProps = {}) {
             /* Background check only; the plan on screen stays usable. */
           });
       },
-      { defer: true },
     ),
   );
 

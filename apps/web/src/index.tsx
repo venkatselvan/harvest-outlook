@@ -5,6 +5,7 @@ import { installOffline } from "./features/offline/install";
 import { ensureSession } from "./lib/session";
 import { installTheme } from "./lib/theme";
 import "./styles.css";
+import "./workspace/glass.css";
 
 installTheme();
 

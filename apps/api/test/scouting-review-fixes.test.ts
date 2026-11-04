@@ -39,11 +39,18 @@ async function newFarm(workspace: Record<string, unknown>): Promise<string> {
   return id;
 }
 
+async function seedCondition(id: string, cycleId: string) {
+  await h.pool.query(`INSERT INTO farm_alerts (owner_id, farm_id, mode, type, severity, origin, title, detail, source, valid_from, valid_to, suggested_step, fingerprint, field_id, cycle_id)
+    SELECT owner_id, id, 'synthetic', 'crop_threat', 'watch', 'rule', 'Crop inspection risk', 'Synthetic risk', $2::jsonb, $3, $4, 'Inspect leaves for fresh damage.', 'review-test', 'north', $5 FROM farms WHERE id=$1`,
+    [id, JSON.stringify({name: 'Test source', url: 'https://example.test/risk', date: TODAY}), TODAY, d(3), cycleId]);
+}
+
 beforeAll(async () => {
   h = await setupHarness();
   a = await login(h.app);
   b = await login(h.app);
   farmId = await newFarm({boundary: BOUNDARY, cycles: CYCLES, fields: FIELDS});
+  await seedCondition(farmId, 'cycle-north');
   ownerId = (await h.pool.query<{owner_id: string}>('SELECT owner_id FROM farms WHERE id=$1', [farmId])).rows[0]!.owner_id;
 }, 60_000);
 afterAll(async () => h?.close());
@@ -69,10 +76,11 @@ describe('S1: farmer-written issue titles stay out of the overview facts and poi
     expect(deterministicOverview(set!).points.find((p) => p.kind === 'do_now')!.text).toMatch(/^Do next: Recheck an issue you logged, due /);
   });
 
-  it('an interval check is "Walk the field: <crop>" without the field name', async () => {
+  it('a condition check is "Walk the field: <crop>" without the field name', async () => {
     const id = await newFarm({boundary: BOUNDARY, cycles: [{...CYCLES[0]!, ...NO_CARE, id: 'walk', sowingDate: d(-7), establishmentDate: d(-7)}], fields: FIELDS});
+    await seedCondition(id, 'walk');
     const view = TodayView.parse((await a.call('GET', `${base(id)}/today?fieldId=north`)).json().data);
-    expect(view.nextAction).toMatchObject({kind: 'field_check', title: 'Walk the field: Test millet on North strip'});
+    expect(view.nextAction).toMatchObject({kind: 'field_check', title: 'Check Test millet on North strip'});
     const set = overviewFacts(view, {overdueChecks: []})!;
     expect(set.facts.find((f) => f.id === 'next')!.text).toMatch(/^Next step: Walk the field: Test millet, due /);
     expect(JSON.stringify(set)).not.toContain('North strip');
@@ -154,7 +162,7 @@ describe('S3 and N3 and N4: events and check completions', () => {
     const southIssue = (await post('/issues', issue('rvw-n3-south', {fieldId: 'south', title: 'South holes'}))).json().data.id as string;
     const northIssue = (await post('/issues', issue('rvw-n3-north', {title: 'North holes'}))).json().data.id as string;
     const listed = await a.call('GET', `${base()}/checks?fieldId=north`);
-    const checkId = (listed.json().data.checks as {id: string; kind: string; status: string}[]).find((c) => c.kind === 'interval' && c.status !== 'completed')!.id;
+    const checkId = (listed.json().data.checks as {id: string; kind: string; status: string}[]).find((c) => c.kind === 'condition' && c.status !== 'completed')!.id;
     const complete = (clientEntryId: string, issueIds: string[]) => post('/checks/complete', {clientEntryId, checkId, completedOn: TODAY, result: 'issues_found', issueIds});
     const wrongField = await complete('rvw-n3-c1', [southIssue]);
     expect(err(wrongField), wrongField.body).toEqual([400, 'validation_error']);

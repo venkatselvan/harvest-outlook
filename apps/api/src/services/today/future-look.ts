@@ -32,6 +32,10 @@
  * - `futureLookField` mirrors the private `fieldPolygon` in services/today/ndvi.ts (same ring rounding, fallback square
  *   and polygon hash). Exporting that function from ndvi.ts would remove the copy; the test suite checks they agree.
  *
+ * Milestone refresh (2026-11-03): internal milestoneRevision requests preserve exact target dates and old evidence
+ * revisions. The cap is now 10 images per cycle in a rolling 24-hour window, with the existing USD budget enforced by
+ * each worker. Manual/legacy gap requests still use weekly caching; milestone requests cache by exact date + revision.
+ *
  * Predicted looks (FIELDS_MULTICROP_SOIL_SPEC.md section 11, 2026-11-03; prompt version future-look-v2):
  * - two kinds. `stage` as above; `gap` = the predicted look of the field on a target date after the latest usable real
  *   scene. Both carry `target_date` and the code-written `guidance` (services/today/prediction-guidance.ts) that went into
@@ -80,7 +84,7 @@ export const FUTURE_LOOK_PROMPT_VERSION = 'future-look-v3';
 export const FUTURE_LOOK_PROMPT_VERSION_V2 = 'future-look-v2';
 /** Rows made before 2026-11-03 (no guidance); the worker renders them with the v1 template. */
 export const FUTURE_LOOK_PROMPT_VERSION_V1 = 'future-look-v1';
-/** Max assets per farm cycle (both kinds) that are queued, running, ready or billed. Raised from 6 on 2026-11-03 (spec 11.2). */
+/** Max assets per farm cycle per rolling day (both kinds) that are queued, running, ready or billed. Raised from 6 on 2026-11-03 (spec 11.2). */
 export const FUTURE_LOOK_CYCLE_CAP = 10;
 /** A gap look's requested target date may be at most this many days after today (spec 11.3). */
 export const GAP_MAX_DAYS_AHEAD = 120;
@@ -118,6 +122,8 @@ export interface PredictionContext {
 }
 
 export interface FutureLookRequest {
+  /** Internal milestone workflow: exact date and immutable evidence revision, never accepted from the public request body. */
+  milestoneRevision?: string;
   itemId: string;
   /** Required for `stage`; ignored for `gap` (the stage at the target date comes from the timeline). */
   stageId?: string | null | undefined;
@@ -535,7 +541,7 @@ export async function requestFutureLook(deps: FutureLookDeps, ownerId: string, f
     if (req.targetDate! <= sourceDate) throw new ApiError(409, 'conflict', 'A predicted look must be for a date after the latest real satellite image', {reason: 'target_not_after_scene', sourceDate});
     // Week start, unless that is not after the real image; either way the stored target stays in the requested week.
     const ws = weekStart(req.targetDate!);
-    targetDate = ws > sourceDate ? ws : addDays(sourceDate, 1);
+    targetDate = req.milestoneRevision ? req.targetDate! : ws > sourceDate ? ws : addDays(sourceDate, 1);
     const at = stageAt(timeline, targetDate);
     if (at.stage) { stageId = at.stage.id; stageNameRaw = at.stage.name; }
     else if (at.phase === 'after_harvest') { stageId = 'after_harvest'; stageNameRaw = 'After harvest'; }
@@ -552,7 +558,14 @@ export async function requestFutureLook(deps: FutureLookDeps, ownerId: string, f
   const context = req.context ?? await storedPredictionContext(pool, {
     ownerId, farmId, polygonHash: field.hash, ring: field.ring, cycle, timeline, today, targetDate, facts: farm.facts, now,
   });
-  const guidance = guidanceFor({timeline, sourceDate, targetDate, cropName, context}).guidance;
+  let guidance = guidanceFor({timeline, sourceDate, targetDate, cropName, context}).guidance;
+  if (req.milestoneRevision) {
+    const observation = (await pool.query<{date:string; stage:unknown}>(
+      `SELECT e.entry_date::text AS date, f.value AS stage FROM journal_entries e JOIN journal_facts f ON f.entry_id=e.id
+       WHERE e.owner_id=$1 AND e.farm_id=$2 AND e.cycle_id=$3 AND e.entry_date<=$4::date AND f.fact_key='observed_stage' AND f.kind IN ('original','confirmed')
+       ORDER BY e.entry_date DESC,f.created_at DESC LIMIT 1`, [ownerId,farmId,cycle.id,targetDate])).rows[0];
+    if (observation) guidance = `${guidance.slice(0,280)} Farmer recorded stage ${promptSafe(String(observation.stage),60) ?? 'unknown'} on ${observation.date}.`;
+  }
   const week = kind === 'gap' ? weekStart(targetDate) : null;
 
   return withTransaction(pool, async (c: PoolClient) => {
@@ -573,21 +586,23 @@ export async function requestFutureLook(deps: FutureLookDeps, ownerId: string, f
       }
     }
     const active = (await c.query<FutureLookRow>(
-      kind === 'stage'
+      req.milestoneRevision
+        ? `SELECT * FROM future_look_assets WHERE owner_id=$1 AND farm_id=$2 AND cycle_id=$3 AND kind='gap' AND target_date=$4::date AND evidence_revision=$5 ORDER BY created_at DESC LIMIT 1`
+        : kind === 'stage'
         ? `SELECT * FROM future_look_assets WHERE owner_id=$1 AND farm_id=$2 AND cycle_id=$3 AND kind='stage' AND stage_id=$4 AND status IN ('queued','running','ready')
            ORDER BY (status='ready') DESC, created_at DESC LIMIT 1`
         : `SELECT * FROM future_look_assets WHERE owner_id=$1 AND farm_id=$2 AND cycle_id=$3 AND kind='gap' AND target_week=$4::date AND status IN ('queued','running','ready')
            ORDER BY (status='ready') DESC, created_at DESC LIMIT 1`,
-      [...scope, kind === 'stage' ? stageId : week])).rows[0];
+      req.milestoneRevision ? [...scope, targetDate, req.milestoneRevision] : [...scope, kind === 'stage' ? stageId : week])).rows[0];
     if (active) return resultOf(active, true);
     const same = (await c.query<FutureLookRow>(
       `SELECT * FROM future_look_assets WHERE owner_id=$1 AND farm_id=$2 AND cycle_id=$3 AND kind=$4 AND stage_id=$5 AND target_week IS NOT DISTINCT FROM $6::date
-         AND source_item_id=$7 AND prompt_version=$8`,
-      [...scope, kind, stageId, week, req.itemId, FUTURE_LOOK_PROMPT_VERSION])).rows[0];
+         AND source_item_id=$7 AND prompt_version=$8 AND evidence_revision=$9 AND ($10::date IS NULL OR target_date=$10::date)`,
+      [...scope, kind, stageId, week, req.itemId, FUTURE_LOOK_PROMPT_VERSION, req.milestoneRevision ?? '', req.milestoneRevision ? targetDate : null])).rows[0];
     if (same && (same.billed || same.attempt >= FUTURE_LOOK_MAX_ATTEMPTS)) return resultOf(same, true);
     const counted = (await c.query<{n: number}>(
-      `SELECT count(*)::int AS n FROM future_look_assets WHERE owner_id=$1 AND farm_id=$2 AND cycle_id=$3 AND (status IN ('queued','running','ready') OR billed)`, scope)).rows[0]!.n;
-    if (counted >= FUTURE_LOOK_CYCLE_CAP) return unavailable('cycle_limit_reached');
+      `SELECT count(*)::int AS n FROM future_look_assets WHERE owner_id=$1 AND farm_id=$2 AND cycle_id=$3 AND (status IN ('queued','running','ready') OR billed) AND created_at > now() - interval '1 day'`, scope)).rows[0]!.n;
+    if (counted >= FUTURE_LOOK_CYCLE_CAP) return unavailable('daily_limit_reached');
 
     const row = same
       ? (await c.query<FutureLookRow>(
@@ -595,9 +610,9 @@ export async function requestFutureLook(deps: FutureLookDeps, ownerId: string, f
              response_deleted=NULL, stage_name=$2, crop_name=$3, source_acquired_at=$4, target_date=$5::date, guidance=$6 WHERE id=$1 RETURNING *`,
           [same.id, stageName, cropName, latest.acquired_at, targetDate, guidance])).rows[0]!
       : (await c.query<FutureLookRow>(
-          `INSERT INTO future_look_assets (owner_id, farm_id, cycle_id, source_item_id, source_acquired_at, stage_id, stage_name, crop_id, crop_name, prompt_version, status, kind, target_date, guidance)
-           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,'queued',$11,$12::date,$13) RETURNING *`,
-          [ownerId, farmId, cycle.id, req.itemId, latest.acquired_at, stageId, stageName, cycle.cropId, cropName, FUTURE_LOOK_PROMPT_VERSION, kind, targetDate, guidance])).rows[0]!;
+          `INSERT INTO future_look_assets (owner_id, farm_id, cycle_id, source_item_id, source_acquired_at, stage_id, stage_name, crop_id, crop_name, prompt_version, status, kind, target_date, guidance, evidence_revision)
+           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,'queued',$11,$12::date,$13,$14) RETURNING *`,
+          [ownerId, farmId, cycle.id, req.itemId, latest.acquired_at, stageId, stageName, cycle.cropId, cropName, FUTURE_LOOK_PROMPT_VERSION, kind, targetDate, guidance, req.milestoneRevision ?? ''])).rows[0]!;
     // One job per arm of the row: fl:{assetId}:{attempt}. farmId in the payload lets deleteFarm's job cleanup find it.
     const q = await enqueue(c, FUTURE_LOOK_JOB_TYPE, {assetId: row.id, farmId, sessionId}, ownerId, `fl:${row.id}:${row.attempt}`);
     await c.query('UPDATE future_look_assets SET job_id=$2 WHERE id=$1', [row.id, q.job.id]);

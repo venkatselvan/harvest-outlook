@@ -1,4 +1,5 @@
 import { Logo } from "./Logo";
+import { Evara } from "./Evara";
 import { ModelActivity } from "./ModelActivity";
 import { AiUsesButton } from "./ui/AiSpark";
 import { installModalFocus } from "./modalFocus";
@@ -17,12 +18,12 @@ import { WorkspaceProvider, useWorkspace } from "./state";
 import { Assistant } from "./Assistant";
 import { Icon } from "./icons";
 import { capabilitiesState, refreshCapabilities } from "../lib/capabilities";
-import { theme, toggleTheme } from "../lib/theme";
-import { FarmTabNav, activeFarmTab } from "./farmTabs";
+import { activeFarmTab, farmHref, tabField, dueBadge } from "./farmTabs";
+import { WorkspaceBackdrop } from "./WorkspaceBackdrop";
 
 /**
- * Below 768 px the left rail is hidden and the bottom tab bar replaces it. The rail's other destinations
- * (add a farm, crop library, manage farms) live behind this header button instead of a fifth tab.
+ * Secondary destinations share this anchored header disclosure on desktop and mobile.
+ * Native links keep their normal Tab order; Escape, focus leaving and outside pointer presses close it.
  */
 function MoreMenu(props: { links: { href: string; icon: string; label: string }[] }) {
   const location = useLocation();
@@ -84,10 +85,10 @@ function MoreMenu(props: { links: { href: string; icon: string; label: string }[
         <div class="more-menu-panel" id="more-menu-panel">
           <For each={props.links}>
             {(link) => (
-              <A href={link.href} class="more-menu-link">
+              <a href={link.href} class="more-menu-link">
                 <Icon name={link.icon} size={18} />
                 {link.label}
-              </A>
+              </a>
             )}
           </For>
         </div>
@@ -100,26 +101,34 @@ function Shell(props: ParentProps) {
   onMount(() => onCleanup(installModalFocus()));
   const s = useWorkspace();
   const location = useLocation();
+  const safeFarms = () => s.farms.error ? [] : s.farms() ?? [];
   const nav = [
-    { href: "/farm", icon: "map", label: "Farm workspace" },
+    { href: "/farm?tab=today", icon: "grid", label: "Today" },
+    { href: "/farms", icon: "leaf", label: "All farms" },
+  ];
+  const moreLinks = () => [
+    { href: farmHref("year", undefined, tabField()), icon: "calendar", label: "Plan" },
+    { href: farmHref("harvest", undefined, tabField()), icon: "trend", label: "Market" },
+    { href: farmHref("soil", undefined, tabField()), icon: "leaf", label: "Farm · crop fit" },
+    { href: farmHref("soil", "records", tabField()), icon: "journal", label: "Soil records" },
+    { href: farmHref("soil", "activity", tabField()), icon: "journal", label: "Activity & journal" },
     { href: "/farm/setup", icon: "plus", label: "Add a farm" },
     { href: "/catalogue", icon: "leaf", label: "Crops for your farm" },
-    { href: "/farm/manage", icon: "settings", label: "Manage farms" },
+    { href: farmHref("modify", undefined, tabField()), icon: "settings", label: "Modify farm" },
   ];
-  const selectedNav = (href: string) =>
-    href === "/farm"
-      ? !["/catalogue", "/farm/manage", "/farm/setup"].some((path) =>
-          location.pathname.startsWith(path),
-        )
-      : location.pathname.startsWith(href);
+  const selectedNav = (href: string) => {
+    if (href.includes("?tab=")) return !!activeFarmTab(location.pathname, location.search);
+    return location.pathname === href;
+  };
+  const openAssistant = () => window.dispatchEvent(new CustomEvent("ho:assistant-open"));
   const activeTab = () => activeFarmTab(location.pathname, location.search);
   /** The bottom tab bar needs a farm to show, and stays out of the way of the add-a-farm wizard. */
   const showTabBar = () =>
     !!s.farm() && !location.pathname.startsWith("/farm/setup");
   createEffect(() => {
     const title =
-      nav.find((n) => location.pathname.startsWith(n.href))?.label ??
-      "Season explorer";
+      nav.find((n) => selectedNav(n.href))?.label ??
+      (activeTab() ? "Farm workspace" : "Harvest Outlook");
     document.title = `${title} · Harvest Outlook`;
   });
   void refreshCapabilities();
@@ -130,7 +139,8 @@ function Shell(props: ParentProps) {
     }
   });
   return (
-    <div class="app-shell farm-shell">
+    <div class="app-shell farm-shell glass-workspace">
+      <WorkspaceBackdrop />
       <a class="skip-link" href="#main">
         Skip to content
       </a>
@@ -147,21 +157,25 @@ function Shell(props: ParentProps) {
         <nav aria-label="Main navigation">
           <For each={nav}>
             {(n) => (
-              <A
-                href={n.href}
+              <a
+                href={n.href.includes("?tab=") ? farmHref("today", undefined, tabField()) : n.href}
                 aria-label={n.label}
                 title={n.label}
                 class="sidebar-link"
                 classList={{ selected: selectedNav(n.href) }}
+                aria-current={selectedNav(n.href) ? "page" : undefined}
+                aria-describedby={n.href.includes("?tab=today") && dueBadge() ? "glass-rail-due" : undefined}
               >
                 <Icon name={n.icon} size={20} />
                 <span>{n.label}</span>
-                <Show when={n.href === "/farm" && s.farms()?.length}>
-                  <small>{s.farms()!.length}</small>
+                <Show when={n.href.includes("?tab=today") && dueBadge()}>
+                  <small class="glass-rail-badge" aria-hidden="true">{dueBadge()}</small>
+                  <span class="farm-tab-sr" id="glass-rail-due">{dueBadge() === 1 ? "1 care task due" : `${dueBadge()} care tasks due`}</span>
                 </Show>
-              </A>
+              </a>
             )}
           </For>
+          <button type="button" class="sidebar-link evara-nav" aria-label="Evara assistant" title="Evara assistant" onClick={openAssistant}><Evara size={25} /><span>Evara</span></button>
         </nav>
         <div class="sidebar-bottom">
           <div
@@ -177,54 +191,23 @@ function Shell(props: ParentProps) {
       </aside>
       <div class="app-body">
         <header class="topbar">
-          <div class="breadcrumbs">
-            <span>Workspace</span>
-            <span>/</span>
-            <strong>
-              {location.pathname.includes("/farm/plan/")
-                ? "Season explorer"
-                : (nav.find((n) => location.pathname.startsWith(n.href))
-                    ?.label ?? "Harvest assistant")}
-            </strong>
+          <div class="breadcrumbs glass-farm-context">
+            <span class="glass-context-icon"><Icon name="leaf" size={20} /></span>
+            <div class="glass-context-copy">
+              <Show when={safeFarms().length} fallback={<strong>Harvest Outlook</strong>}>
+                <label class="farm-picker">
+                  <select aria-label="Selected farm" value={s.farm()?.id ?? ""} onChange={(event) => s.selectFarm(event.currentTarget.value)}>
+                    <For each={safeFarms()}>{farm => <option value={farm.id}>{farm.name}</option>}</For>
+                  </select>
+                </label>
+              </Show>
+              <span class="glass-context-location">
+                {location.pathname === "/farms" ? "All farms · " : ""}{s.farm()?.location.districtName ?? "Your growing workspace"}
+                <Show when={s.farm()?.facts.demo_prefilled?.value === true || s.farm()?.facts.demo_illustrative?.value === true}><span class="demo-mini-badge">Demo farm</span></Show>
+              </span>
+            </div>
           </div>
           <div class="topbar-actions">
-            <button
-              class="theme-toggle"
-              type="button"
-              aria-label="Dark mode"
-              aria-pressed={theme() === "dark"}
-              title={`Switch to ${theme() === "dark" ? "light" : "dark"} mode`}
-              onClick={toggleTheme}
-            >
-              <Icon name={theme() === "dark" ? "moon" : "sun"} size={18} />
-              <span>Dark mode</span>
-            </button>
-            <Show when={s.farms()?.length}>
-              <label class="farm-picker">
-                <Icon name="leaf" size={17} />
-                <Show
-                  when={
-                    s.farm()?.facts.demo_prefilled?.value === true ||
-                    s.farm()?.facts.demo_illustrative?.value === true
-                  }
-                >
-                  <span class="demo-mini-badge">DEMO FARM</span>
-                </Show>
-                <select
-                  aria-label="Selected farm"
-                  value={s.farm()?.id ?? ""}
-                  onChange={(e) => s.selectFarm(e.currentTarget.value)}
-                >
-                  <For each={s.farms() ?? []}>
-                    {(f) => (
-                      <option value={f.id} selected={f.id === s.farm()?.id}>
-                        {f.name}
-                      </option>
-                    )}
-                  </For>
-                </select>
-              </label>
-            </Show>
             <Show when={capabilitiesState().status === "ready"}>
               <span
                 class="runtime-status"
@@ -247,7 +230,7 @@ function Shell(props: ParentProps) {
             </span>
             <ModelActivity />
             <AiUsesButton />
-            <MoreMenu links={nav.slice(1)} />
+            <MoreMenu links={moreLinks()} />
           </div>
         </header>
         <main id="main" tabindex="-1">
@@ -266,7 +249,11 @@ function Shell(props: ParentProps) {
           {props.children}
         </main>
         <Show when={showTabBar()}>
-          <FarmTabNav variant="bottom" current={activeTab} />
+          <nav class="farm-bottom-tabs glass-bottom-tabs" aria-label="Main farm navigation">
+            <a href={farmHref("today", undefined, tabField())} classList={{ active: !!activeTab() }} aria-label="Today" aria-current={activeTab() ? "page" : undefined} aria-describedby={dueBadge() ? "glass-bottom-due" : undefined}><Icon name="grid" size={21} /><span class="farm-tab-label">Today</span><Show when={dueBadge()}><small aria-hidden="true">{dueBadge()}</small><span class="farm-tab-sr" id="glass-bottom-due">{dueBadge() === 1 ? "1 care task due" : `${dueBadge()} care tasks due`}</span></Show></a>
+            <A href="/farms" classList={{ active: location.pathname === "/farms" }} aria-label="All farms" aria-current={location.pathname === "/farms" ? "page" : undefined}><Icon name="leaf" size={21} /><span class="farm-tab-label">All farms</span></A>
+            <button type="button" onClick={openAssistant} aria-label="Evara assistant"><Evara size={22} /><span class="farm-tab-label">Evara</span></button>
+          </nav>
         </Show>
       </div>
       <Assistant />

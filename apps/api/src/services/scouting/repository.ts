@@ -4,7 +4,7 @@
  * them. Writes live in journal-writes.ts.
  */
 import type {PoolClient} from 'pg';
-import type {FarmWorkspace, IssueCategory, IssueResponse, IssueSeverity, IssueStatus, PhotoMark} from '@harvest/contracts';
+import type {FarmWorkspace, FieldCheck, IssueCategory, IssueResponse, IssueSeverity, IssueStatus, PhotoMark} from '@harvest/contracts';
 import type {Config} from '../../config';
 import type {Pool} from '../../db/pool';
 import type {RiskAlert, ScheduleCompletion, ScheduleIssue} from './schedule';
@@ -13,11 +13,11 @@ type Db = Pool | PoolClient;
 export type Mode = Config['RUNTIME_MODE'];
 
 export interface CompletionRow {
-  id: string; owner_id: string; farm_id: string; mode: Mode; check_id: string; check_kind: 'interval' | 'recheck'; field_id: string | null; cycle_id: string | null;
+  id: string; owner_id: string; farm_id: string; mode: Mode; check_id: string; check_kind: FieldCheck['kind']; check_snapshot: FieldCheck | null; field_id: string | null; cycle_id: string | null;
   issue_id: string | null; due_on: string; completed_on: string; result: 'nothing_found' | 'issues_found'; issue_ids: string[]; client_entry_id: string;
   payload_hash: string; journal_entry_id: string; created_at: Date;
 }
-const COMPLETION_COLS = `c.id, c.owner_id, c.farm_id, c.mode, c.check_id, c.check_kind, c.field_id, c.cycle_id, c.issue_id, to_char(c.due_on,'YYYY-MM-DD') AS due_on,
+const COMPLETION_COLS = `c.check_snapshot, c.id, c.owner_id, c.farm_id, c.mode, c.check_id, c.check_kind, c.field_id, c.cycle_id, c.issue_id, to_char(c.due_on,'YYYY-MM-DD') AS due_on,
   to_char(c.completed_on,'YYYY-MM-DD') AS completed_on, c.result, c.issue_ids, c.client_entry_id, c.payload_hash, c.journal_entry_id, c.created_at`;
 
 export interface IssueRow {
@@ -68,20 +68,20 @@ export async function eventByClientId(db: Db, ownerId: string, clientEntryId: st
   return (await db.query<EventRow>(`SELECT ${EVENT_COLS} FROM field_issue_events e WHERE e.owner_id=$1 AND e.client_entry_id=$2`, [ownerId, clientEntryId])).rows[0] ?? null;
 }
 
-/** Stored crop-threat RULE alerts of the farm in this mode (dismissed ones excluded); the checklist's risk-window items. */
+/** Actionable crop, weather and satellite alerts; price/market alerts never schedule field inspections. */
 export async function riskAlertsOf(db: Db, ownerId: string, farmId: string, mode: Mode): Promise<RiskAlert[]> {
-  const rows = (await db.query<{id: string; title: string; detail: string; source: {name: string; url: string; date: string}; valid_from: string; valid_to: string; field_id: string | null}>(
-    `SELECT a.id, a.title, a.detail, a.source, to_char(a.valid_from,'YYYY-MM-DD') AS valid_from, to_char(a.valid_to,'YYYY-MM-DD') AS valid_to, a.field_id
+  const rows = (await db.query<{id: string; title: string; detail: string; source: {name: string; url: string; date: string}; valid_from: string; valid_to: string; field_id: string | null; cycle_id: string | null; type: RiskAlert['type']; suggested_step: string | null}>(
+    `SELECT a.id, a.title, a.detail, a.source, to_char(a.valid_from,'YYYY-MM-DD') AS valid_from, to_char(a.valid_to,'YYYY-MM-DD') AS valid_to, a.field_id, a.cycle_id, a.type, a.suggested_step
        FROM farm_alerts a ${farmJoin('a')}
-      WHERE a.owner_id=$1 AND a.farm_id=$2 AND a.mode=$3 AND a.type='crop_threat' AND a.origin='rule' AND a.dismissed_at IS NULL
+      WHERE a.owner_id=$1 AND a.farm_id=$2 AND a.mode=$3 AND a.type IN ('crop_threat', 'weather', 'satellite') AND a.suggested_step IS NOT NULL AND a.dismissed_at IS NULL
       ORDER BY a.valid_from, a.id`, [ownerId, farmId, mode])).rows;
-  return rows.map((r) => ({id: r.id, title: r.title, detail: r.detail, sourceName: r.source.name, sourceUrl: r.source.url, sourceDate: r.source.date, validFrom: r.valid_from, validTo: r.valid_to, fieldId: r.field_id}));
+  return rows.map((r) => ({id: r.id, title: r.title, detail: r.detail, sourceName: r.source.name, sourceUrl: r.source.url, sourceDate: r.source.date, validFrom: r.valid_from, validTo: r.valid_to, fieldId: r.field_id, cycleId: r.cycle_id, type: r.type, suggestedStep: r.suggested_step}));
 }
 
 // ------------------------------------------------------------------ schedule inputs
 
 export const toScheduleCompletion = (r: CompletionRow): ScheduleCompletion => ({
-  checkId: r.check_id, checkKind: r.check_kind, fieldId: r.field_id, cycleId: r.cycle_id, issueId: r.issue_id, dueOn: r.due_on, completedOn: r.completed_on, journalEntryId: r.journal_entry_id,
+  snapshot: r.check_snapshot, checkId: r.check_id, checkKind: r.check_kind, fieldId: r.field_id, cycleId: r.cycle_id, issueId: r.issue_id, dueOn: r.due_on, completedOn: r.completed_on, journalEntryId: r.journal_entry_id,
 });
 export function toScheduleIssue(r: IssueRow, ws: Pick<FarmWorkspace, 'cycles'>): ScheduleIssue {
   return {id: r.id, fieldId: r.field_id, cycleId: r.cycle_id, cropName: issueCropName(r, ws), title: r.title, status: r.status, recheckOn: r.recheck_on};

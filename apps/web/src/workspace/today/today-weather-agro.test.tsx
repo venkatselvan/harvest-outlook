@@ -18,24 +18,21 @@ const point = (over: Partial<WeatherPoint> = {}): WeatherPoint => ({
 const card = (p: WeatherPoint | null) => renderToString(() => <WeatherCard date={FIXTURE_TODAY} weather={p} onDetails={() => undefined} />);
 
 describe("weather card: deeper values (Open-Meteo model estimates for the grid cell)", () => {
-  it("shows water demand, humidity, gusts and rain chance, each carrying the grid-cell estimate wording for screen readers and hover", () => {
+  it("keeps rain chance primary with its model-estimate qualifier; deeper weather stays in Details", () => {
     expect(WeatherPoint.safeParse(point()).success).toBe(true);
     const html = card(point());
     const t = text(html);
-    expect(t).toContain("water demand 4.0 mm");
-    expect(t).toContain("humidity 78%");
-    expect(t).toContain("gusts 31 km/h");
     expect(t).toContain("16% rain chance");
-    expect(t).toContain(`${AGRO_LABEL}; forecast issued`);
-    expect(html).toContain(`title="Average humidity 78 percent. ${AGRO_LABEL} (forecast issued`);
+    expect(t).toContain("Weather on 1 Nov");
+    expect(t).toContain("Forecast");
+    expect(t).not.toMatch(/water demand|humidity|gusts/);
+    expect(html).toContain(AGRO_LABEL);
     expect(html).toContain("Weather data by Open-Meteo.com");
   });
-
-  it("typical days say so instead of implying a forecast; null values are left out, never drawn as zero", () => {
+  it("typical days say not a forecast; null rain chance is omitted, never zero", () => {
     const t = text(card(point({ kind: "typical", basis: { source: "Open-Meteo archive", issuedAt: null, years: [2021, 2022, 2023] }, agro: agro({ gustMaxKmh: null, rainProbabilityPct: null, et0Mm: null }) })));
-    expect(t).toContain("typical (climatology), not a forecast");
-    expect(t).toContain("humidity 78%");
-    expect(t).not.toMatch(/gusts|rain chance|water demand/);
+    expect(t).toContain("Seasonal reference, not a forecast");
+    expect(t).not.toMatch(/gusts|rain chance|water demand|humidity/);
   });
 
   it("draws nothing when agro is absent or the day is unavailable", () => {

@@ -72,6 +72,9 @@ async function fixture(
   page: Page,
   options: {
     existing?: boolean;
+    withField?: boolean;
+    secondFarm?: boolean;
+    holdPut?: boolean;
     holdContext?: boolean;
     unlistedDistrict?: boolean;
   } = {},
@@ -89,6 +92,7 @@ async function fixture(
         }
       : boundaryContext;
   let putBody: Record<string, unknown> | undefined;
+  let putRoute: Route | undefined;
   let realCreated = false;
   let demoCreated = false;
   let demoCalls = 0;
@@ -134,44 +138,7 @@ async function fixture(
         stage: "growing",
       },
     ],
-    rotationPlans: [
-      {
-        id: "demo2y:plan-2027-maize",
-        year: 2027,
-        season: "Kharif",
-        cropId: "maize",
-        cropName: "Maize",
-        productId: "maize-grain",
-        plannedSowingDate: "2027-06-05",
-        plannedHarvestDate: "2027-09-30",
-        kind: "crop",
-        establishmentMethod: "direct_sowing",
-      },
-      {
-        id: "demo2y:plan-2027-green-gram",
-        year: 2027,
-        season: "Rabi",
-        cropId: "green-gram",
-        cropName: "Green gram",
-        productId: "green-gram-whole",
-        plannedSowingDate: "2027-10-15",
-        plannedHarvestDate: "2027-12-30",
-        kind: "crop",
-        establishmentMethod: "direct_sowing",
-      },
-      {
-        id: "demo2y:plan-2028-ginger",
-        year: 2028,
-        season: "Kharif",
-        cropId: "ginger",
-        cropName: "Ginger",
-        productId: "ginger-fresh",
-        plannedSowingDate: "2028-05-15",
-        plannedHarvestDate: "2029-01-15",
-        kind: "crop",
-        establishmentMethod: "rhizome_planting",
-      },
-    ],
+    rotationPlans: [],
     version: demoCalls >= 2 ? 2 : 1,
     boundary:
       demoCalls >= 2
@@ -207,6 +174,7 @@ async function fixture(
     }
     if (path.endsWith("/workspace") && method === "PUT") {
       putBody = route.request().postDataJSON();
+      if (options.holdPut) { putRoute = route; return; }
       await route.fulfill({
         json: envelope({ ...workspace(A), ...putBody, version: 2 }),
       });
@@ -231,7 +199,7 @@ async function fixture(
             source: "Public campus location; prefilled field boundary",
             records: {
               cycles: 3,
-              seasons: 3,
+              seasons: 0,
               journalEntries: 41,
               careActions: 5,
             },
@@ -263,13 +231,14 @@ async function fixture(
             ? {
                 farms: [
                   ...(options.existing || realCreated ? [farm(A)] : []),
+                  ...(options.secondFarm ? [farm(B)] : []),
                   ...(demoCreated ? [farm(B, true)] : []),
                 ],
               }
             : path.endsWith("/workspace")
               ? path.includes(B)
                 ? demoWorkspace()
-                : workspace(A)
+                : { ...workspace(A), ...(options.withField ? { fields: [{ id: "east-field", name: "East field", boundary: { type: "Polygon", coordinates: [[[76.942, 11.0105], [76.944, 11.0105], [76.944, 11.012], [76.942, 11.0105]]] }, notes: "Preserve this note", checkIntervalDays: 9 }] } : {}) }
               : path === "/api/v1/boundary-context"
                 ? contextData()
                 : path === "/api/v1/ai/activity"
@@ -342,6 +311,9 @@ async function fixture(
     },
     get demoCalls() {
       return demoCalls;
+    },
+    async finishPut() {
+      await putRoute!.fulfill({ json: envelope({ ...workspace(A), ...putBody, version: 2 }) });
     },
     async finishContext() {
       await contextRoute!.fulfill({ json: envelope(contextData()) });
@@ -523,7 +495,7 @@ test("returning users can load the labelled demo repeatedly without replacing th
   await page.goto("/farm");
   // Below 768 px the rail is hidden; its links sit behind the header More button.
   await page.getByRole("button", { name: "More", exact: true }).click();
-  await page.getByRole("link", { name: "Manage farms", exact: true }).click();
+  await page.getByRole("link", { name: "Modify farm", exact: true }).click();
   await expect(page.getByLabel("Selected farm")).toHaveValue(A);
   await page
     .getByRole("button", { name: "Try demo farm", exact: true })
@@ -536,7 +508,7 @@ test("returning users can load the labelled demo repeatedly without replacing th
     "Demo farm · two years of sample records",
   );
   await expect(page.locator(".demo-banner")).toContainText(
-    "Harvests, journal entries, sales and saved seasons were loaded as sample records",
+    "Harvests, journal entries, sales and the crop in the field now were loaded as sample records",
   );
   await expect(page.locator(".demo-banner")).not.toContainText(
     "prefilled boundary",
@@ -568,7 +540,7 @@ test("returning users can load the labelled demo repeatedly without replacing th
     "Finger millet",
   );
   await expect(page.locator(".land-story")).toContainText(
-    "3 seasons in your rotation",
+    "Good farming looks beyond the next harvest.",
   );
   await page
     .getByRole("button", { name: "Edit farm boundary", exact: true })
@@ -593,7 +565,7 @@ test("existing boundary edits finish with a saved confirmation", async ({
   await page.goto("/farm");
   // Below 768 px the rail is hidden; its links sit behind the header More button.
   await page.getByRole("button", { name: "More", exact: true }).click();
-  await page.getByRole("link", { name: "Manage farms", exact: true }).click();
+  await page.getByRole("link", { name: "Modify farm", exact: true }).click();
   await expect(page.locator(".boundary-label")).toBeVisible();
   await page
     .getByRole("button", { name: "Edit farm boundary", exact: true })
@@ -699,4 +671,132 @@ test("Evara displays only the model reported by an actual active invocation and 
   await api.finishChat();
   await expect(page.getByText("Test answer", { exact: true })).toBeVisible();
   await expect(page.getByLabel("Actual model activity")).toHaveCount(0);
+});
+
+
+/** These requests are intercepted by fixture(); editing cannot mutate a stored farm. */
+async function dragVertex(page: Page, index: number, dx: number, dy: number, touch = false) {
+  const handle = page.locator(`.farm-map [data-vertex-index="${index}"]`);
+  await expect(handle).toBeVisible();
+  const box = (await handle.boundingBox())!;
+  const x = box.x + box.width / 2, y = box.y + box.height / 2;
+  if (touch) {
+    const input = await page.context().newCDPSession(page);
+    await input.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [{ x, y, id: 1 }] });
+    for (let step = 1; step <= 8; step++) {
+      await input.send("Input.dispatchTouchEvent", { type: "touchMove", touchPoints: [{ x: x + dx * step / 8, y: y + dy * step / 8, id: 1 }] });
+      await page.evaluate(() => new Promise<void>((resolve) => requestAnimationFrame(() => resolve())));
+    }
+    await input.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
+    await input.detach();
+  } else {
+    await page.mouse.move(x, y); await page.mouse.down();
+    await page.mouse.move(x + dx, y + dy, { steps: 8 }); await page.mouse.up();
+  }
+  await expect.poll(async () => { const moved = (await handle.boundingBox())!; return Math.abs(moved.x - box.x - dx); }).toBeLessThanOrEqual(2);
+}
+
+test("farm vertices drag locally, undo restores a moved point, and only Finish saves", async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 900 });
+  const api = await fixture(page, { existing: true });
+  await page.goto("/farm/manage");
+  await page.getByRole("button", { name: "Edit farm boundary", exact: true }).click();
+  await expect(page.locator(".boundary-vertex")).toHaveCount(3);
+  const first = page.locator('[data-vertex-index="0"]');
+  const original = (await first.boundingBox())!;
+  await first.click();
+  expect(api.putBody).toBeUndefined();
+  await expect(page.getByRole("button", { name: "Finish boundary", exact: true })).toBeVisible();
+  await dragVertex(page, 0, 22, -12);
+  expect(api.putBody).toBeUndefined();
+  await expect(page.getByText("3 boundary points", { exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "Undo", exact: true }).click();
+  expect(Math.round((await first.boundingBox())!.x)).toBe(Math.round(original.x));
+  await dragVertex(page, 0, 15, -8);
+  await page.getByRole("button", { name: "Finish boundary", exact: true }).click();
+  await expect.poll(() => !!api.putBody).toBe(true);
+  const saved = api.putBody!.boundary as typeof boundary;
+  expect(saved.coordinates[0]![0]).not.toEqual(boundary.coordinates[0]![0]);
+  expect(saved.coordinates[0]![0]).toEqual(saved.coordinates[0]!.at(-1));
+  expect(saved.coordinates[0]).toHaveLength(4);
+});
+
+test("a new polygon misclick can be dragged and map panning works again after release", async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 900 });
+  const api = await fixture(page);
+  await page.goto("/farm"); await page.getByRole("button", { name: "Set up my farm" }).click();
+  const map = page.locator(".farm-map .map-canvas");
+  for (const position of [{ x: 110, y: 160 }, { x: 280, y: 160 }, { x: 220, y: 300 }]) await map.click({ position });
+  await dragVertex(page, 1, -35, 20);
+  await expect(page.getByText("3 boundary points", { exact: true })).toBeVisible();
+  const first = page.locator('[data-vertex-index="0"]');
+  const before = (await first.boundingBox())!;
+  const area = (await map.boundingBox())!;
+  await page.mouse.move(area.x + area.width - 200, area.y + 210); await page.mouse.down();
+  await page.mouse.move(area.x + area.width - 145, area.y + 225, { steps: 8 }); await page.mouse.up();
+  await expect.poll(async () => Math.abs((await first.boundingBox())!.x - before.x)).toBeGreaterThan(35);
+  expect(api.putBody).toBeUndefined();
+  await page.getByRole("button", { name: "Finish boundary", exact: true }).click();
+  await expect(page.locator(".boundary-label")).toBeVisible();
+});
+
+test.describe("touch-enabled field editor", () => {
+  test.use({ hasTouch: true, isMobile: true });
+  test("saved field corners support keyboard adjustment and cancel, then touch drag and explicit field save", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  const api = await fixture(page, { existing: true, withField: true });
+  await page.goto("/farm/manage");
+  await page.getByRole("button", { name: "Edit outline for East field", exact: true }).click();
+  await expect(page.getByRole("button", { name: "Save field boundary", exact: true })).toHaveCount(0);
+  const first = page.locator('[data-vertex-index="0"]');
+  await first.focus();
+  const original = (await first.boundingBox())!;
+  await page.keyboard.press("Shift+ArrowRight");
+  expect(Math.abs((await first.boundingBox())!.x - original.x - 10)).toBeLessThanOrEqual(2);
+  expect(api.putBody).toBeUndefined();
+  await page.locator(".fields-draw").getByRole("button", { name: "Cancel", exact: true }).click();
+  await expect(page.locator(".boundary-vertex")).toHaveCount(0);
+  expect(api.putBody).toBeUndefined();
+  await page.getByRole("button", { name: "Edit outline for East field", exact: true }).click();
+  const canvas = (await page.locator(".farm-map .map-canvas").boundingBox())!;
+  const corner = (await first.boundingBox())!;
+  await dragVertex(page, 0, Math.round(canvas.x + 25 - corner.x - corner.width / 2), 0, true);
+  await page.getByRole("button", { name: "Finish field", exact: true }).click();
+  await expect(page.locator(".map-validation-error")).toContainText("outside the farm boundary");
+  expect(api.putBody).toBeUndefined();
+  await page.getByRole("button", { name: "Undo", exact: true }).click();
+  await dragVertex(page, 0, 12, -8, true);
+  await page.getByRole("button", { name: "Finish field", exact: true }).click();
+  expect(api.putBody).toBeUndefined();
+  await page.getByRole("button", { name: "Save field boundary", exact: true }).click();
+  await expect.poll(() => !!api.putBody).toBe(true);
+  const fields = api.putBody!.fields as { id: string; notes: string; checkIntervalDays: number; boundary: typeof boundary }[];
+  expect(fields).toHaveLength(1);
+  expect(fields[0]).toMatchObject({ id: "east-field", notes: "Preserve this note", checkIntervalDays: 9 });
+  expect(fields[0]!.boundary.coordinates[0]![0]).not.toEqual([76.942, 11.0105]);
+});
+
+});
+
+
+test("a late outline save cannot clear a new farm's drawing and saving disables discard", async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 900 });
+  const api = await fixture(page, { existing: true, withField: true, secondFarm: true, holdPut: true });
+  await page.goto("/farm/manage");
+  await page.getByRole("button", { name: "Edit outline for East field", exact: true }).click();
+  await page.getByRole("button", { name: "Finish field", exact: true }).click();
+  await page.getByRole("button", { name: "Save field boundary", exact: true }).click();
+  await expect.poll(() => !!api.putBody).toBe(true);
+  await expect(page.locator(".fields-draw").getByRole("button", { name: "Discard", exact: true })).toBeDisabled();
+  await page.getByRole("combobox", { name: "Selected farm" }).selectOption(B);
+  await expect(page.locator('[data-field-id="east-field"]')).toHaveCount(0);
+  await page.getByTestId("fields-add").click();
+  const map = page.locator(".farm-map .map-canvas");
+  await map.click({ position: { x: 180, y: 180 } });
+  await map.click({ position: { x: 230, y: 240 } });
+  await expect(page.getByText("2 field points", { exact: true })).toBeVisible();
+  await api.finishPut();
+  await expect(page.getByRole("combobox", { name: "Selected farm" })).toHaveValue(B);
+  await expect(page.getByText("2 field points", { exact: true })).toBeVisible();
+  await expect(page.locator(".fields-draw")).toContainText("Drawing a new field.");
 });

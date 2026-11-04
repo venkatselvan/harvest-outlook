@@ -1,3 +1,4 @@
+import { queueSeasonPredictions } from '../services/today/season-predictions';
 import type { FastifyInstance } from "fastify";
 import type { ZodTypeProvider } from "fastify-type-provider-zod";
 import { z } from "zod";
@@ -51,6 +52,7 @@ export async function farmRoutes(app: FastifyInstance, opts: { config: Config; p
     schema: { tags: ['farms'], params: uuidParam, body: PutFarmWorkspace, response: { 200: envelopeSchema(FarmWorkspace) } },
   }, async (req) => {
     const auth=requireAuth(req);const saved=await putWorkspace(pool,auth.ownerId,req.params.id,req.body);
+    for (const cycle of saved.cycles) await queueSeasonPredictions({pool,config},{ownerId:auth.ownerId,farmId:req.params.id,cycleId:cycle.id},auth.sessionId).catch(error => req.log.warn({error}, 'Milestone refresh deferred'));
     // Year plan for the saved farm (one farm.year-plan job per context hash; same hash -> no new job). Best effort: the
     // save never fails because of planning. A workspace saved with unknown harvest history (the farm-setup save, before
     // the history dialog) is not planned here, so setup does not spend a model call on a context about to change; the

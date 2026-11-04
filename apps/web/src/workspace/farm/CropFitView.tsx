@@ -16,6 +16,8 @@ import {
   harvestText,
   isActive,
   localToday,
+  notRankedLines,
+  notRankedSummary,
   pickCards,
   pickingModel,
   picksChip,
@@ -105,7 +107,12 @@ export function CropFitResults(props: { review: CropFitReview; showAll: boolean;
           <div class="cf-empty">
             <h4>No crop fits this sowing date</h4>
             <p>{r().summary}</p>
-            <For each={r().limitations.filter((l) => l.startsWith("Not ranked"))}>{(l) => <p class="cf-muted">{l}</p>}</For>
+            <Show when={notRankedLines(r()).length > 0}>
+              <details class="cf-why">
+                <summary>{notRankedSummary(notRankedLines(r()))}</summary>
+                <For each={notRankedLines(r())}>{(l) => <p class="cf-muted">{l}</p>}</For>
+              </details>
+            </Show>
             <p class="cf-muted">Try another date or a season.</p>
           </div>
         </Match>

@@ -1,37 +1,25 @@
 import { For, Show } from "solid-js";
 import type { UpcomingStep } from "@harvest/contracts";
 import { Icon } from "../icons";
-import { day, generalItems, GENERAL_PROMPTS_LABEL, intervalCaption, isRecheck, missedText, riskItems } from "./scoutingModel";
+import { day, generalItems, isRecheck, riskItems } from "./scoutingModel";
 import "./scouting.css";
 
-/**
- * The body of a `field_check` step in Today's upcoming steps (FIELD_OPERATIONS_SPEC.md 4.2, 4.3): the farmer's own interval
- * ("Your check interval"), the number of missed walks when the server rolled a long-overdue check forward, and a
- * "Checklist" block: the sourced risk windows active that week with their source link and date, then the fixed general
- * prompts under "General prompts (not crop-specific advice)". Nothing here is crop advice of the app's own.
- */
+/** The condition that prompted this check and its specific inspection steps. */
 export function FieldCheckDetails(props: { step: UpcomingStep }) {
   const check = () => props.step.fieldCheck ?? null;
   return (
     <Show when={check()} fallback={<Show when={props.step.detail}>{(detail) => <p class="today-step-detail">{detail()}</p>}</Show>}>
       {(c) => (
         <div class="sc-check" data-testid="sc-check-details">
-          <Show when={intervalCaption(c())}>{(caption) => <p class="sc-check-caption">{caption()}</p>}</Show>
+          <Show when={c().reason}>{(reason) => <p class="sc-check-caption">{reason()}</p>}</Show>
           <Show when={c().kind === "recheck"}>
-            <p class="sc-check-caption">The recheck date you set when you recorded what you did.</p>
-          </Show>
-          <Show when={missedText(c())}>
-            {(missed) => (
-              <p class="sc-check-missed" data-testid="sc-check-missed">
-                {missed()}
-              </p>
-            )}
+            <p class="sc-check-caption">The recheck date you recorded for this issue.</p>
           </Show>
           <Show when={c().checklist.length}>
             <details class="today-step-details sc-checklist">
-              <summary>Checklist</summary>
+              <summary>What to check</summary>
               <Show when={riskItems(c()).length}>
-                <p class="sc-checklist-head">Risk windows this week, from their sources</p>
+                <p class="sc-checklist-head">Based on the current alert</p>
                 <ul class="sc-checklist-list" data-testid="sc-risk-items">
                   <For each={riskItems(c())}>
                     {(item) => (
@@ -53,7 +41,7 @@ export function FieldCheckDetails(props: { step: UpcomingStep }) {
                 </ul>
               </Show>
               <Show when={generalItems(c()).length}>
-                <p class="sc-checklist-head">{GENERAL_PROMPTS_LABEL}</p>
+                <p class="sc-checklist-head">Follow-up</p>
                 <ul class="sc-checklist-list" data-testid="sc-general-items">
                   <For each={generalItems(c())}>{(item) => <li>{item.text}</li>}</For>
                 </ul>

@@ -18,8 +18,15 @@ import {
 } from "../features/ask/model";
 import { newEntryId } from "../features/photo-region/http";
 import { tabField } from "./farmTabs";
-import { VoiceInput } from "../features/speech/VoiceInput";
+import {
+  InlineMicControl,
+  InlineMicMessages,
+  InlineMicNotice,
+  createInlineMic,
+  insertTranscript,
+} from "../features/speech/InlineMic";
 import "../features/speech/speech.css";
+const MESSAGE_LIMIT = 800;
 interface Message {
   role: "user" | "assistant";
   text: string;
@@ -34,7 +41,7 @@ export function Assistant() {
    */
   const selectedField = () => {
     const id = tabField();
-    const ws = s.workspace();
+    const ws = s.workspace.error ? undefined : s.workspace();
     if (!id || !ws || ws.farmId !== s.farm()?.id) return null;
     return ws.fields?.find((field) => field.id === id) ?? null;
   };
@@ -45,8 +52,28 @@ export function Assistant() {
   const [busy, setBusy] = createSignal(false);
   const [error, setError] = createSignal("");
   const [language, setLanguage] = createSignal<AskLanguage>("en");
-  const [voice, setVoice] = createSignal(false);
   let scroll: HTMLDivElement | undefined;
+  let composer: HTMLTextAreaElement | undefined;
+  const mic = createInlineMic({
+    language,
+    farmId: () => s.farm()?.id,
+    onTranscript: (transcript) => {
+      const current = composer?.value ?? text();
+      const at = composer?.selectionStart ?? current.length;
+      const to = composer?.selectionEnd ?? at;
+      const next = insertTranscript(current, transcript, at, to, MESSAGE_LIMIT);
+      setText(next.value);
+      queueMicrotask(() => {
+        if (!composer) return;
+        composer.value = next.value;
+        composer.focus();
+        composer.setSelectionRange(next.caret, next.caret);
+      });
+      return next.truncated
+        ? `The transcript was shortened to fit ${MESSAGE_LIMIT} characters.`
+        : undefined;
+    },
+  });
   let requestSequence = 0;
   let scope = "";
   const ensureScope = () => {
@@ -77,7 +104,7 @@ export function Assistant() {
     setMessages([]);
     setText("");
     setError("");
-    setVoice(false);
+    mic.cancel();
     try {
       for (const key of Object.keys(sessionStorage))
         if (key.startsWith("ho.chat.")) sessionStorage.removeItem(key);
@@ -106,7 +133,7 @@ export function Assistant() {
       ++requestSequence;
       setBusy(false);
       setText("");
-      setVoice(false);
+      mic.cancel();
       try {
         const saved = JSON.parse(sessionStorage.getItem(storageKey()) ?? "[]");
         setMessages(
@@ -138,7 +165,7 @@ export function Assistant() {
   });
   async function send(question: string) {
     question = question.trim().slice(0, 800);
-    if (!question || busy()) return;
+    if (!question || busy() || mic.busy()) return;
     const farmId = s.farm()?.id;
     const epoch = s.sessionEpoch();
     const key = storageKey();
@@ -154,6 +181,7 @@ export function Assistant() {
       s.farm()?.id === farmId;
     setError("");
     setText("");
+    mic.reset();
     const previous = messages();
     setMessages([...previous, { role: "user", text: question }]);
     setBusy(true);
@@ -226,7 +254,7 @@ export function Assistant() {
             <div class="assistant-welcome">
               <span class="eyebrow">A LITTLE HELP IN THE FIELD</span>
               <div class="evara-welcome-title">
-                <Evara size={61} />
+                <Evara size={76} />
                 <h3>Hi, I'm Evara.</h3>
               </div>
               <p>{assistantWelcomeText(s.farm()?.name, selectedField()?.name)}</p>
@@ -325,13 +353,6 @@ export function Assistant() {
                 <option value="hi">हिन्दी</option>
                 <option value="ta">தமிழ்</option>
               </select>
-              <button
-                type="button"
-                class="text-button"
-                onClick={() => setVoice(!voice())}
-              >
-                Voice input
-              </button>
               <AiSpark use="speech" />
               <Show when={messages().length}>
                 <button
@@ -343,18 +364,13 @@ export function Assistant() {
                 </button>
               </Show>
             </div>
-            <Show when={voice()}>
-              <VoiceInput
-                language={language()}
-                onConfirmText={setText}
-                {...(s.farm() ? { farmId: s.farm()!.id } : {})}
-              />
-            </Show>
-            <div class="compose-input">
+            <InlineMicNotice mic={mic} />
+            <div class="compose-input" classList={{ "mic-active": mic.busy() }}>
               <textarea
+                ref={composer}
                 aria-label="Message Evara"
                 rows="2"
-                maxLength="800"
+                maxLength={MESSAGE_LIMIT}
                 lang={language()}
                 placeholder="Ask anything about your farm…"
                 value={text()}
@@ -366,15 +382,17 @@ export function Assistant() {
                   }
                 }}
               />
+              <InlineMicControl mic={mic} />
               <button
                 type="submit"
                 class="send-button"
-                disabled={busy() || !text().trim()}
+                disabled={busy() || mic.busy() || !text().trim()}
                 aria-label="Send message"
               >
                 <Icon name="arrow" />
               </button>
             </div>
+            <InlineMicMessages mic={mic} />
             <small>
               Uses your selected farm. Guidance depends on available evidence.
             </small>
