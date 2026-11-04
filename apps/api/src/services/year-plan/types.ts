@@ -86,6 +86,12 @@ export interface OccupiedInterval extends DateRange {
   source: 'cycle' | 'rotation_plan';
   basis: 'recorded' | 'planned' | 'sourced_duration' | 'assumed_duration';
   note: string | null;
+  /**
+   * 2026-11-04 (EVARA_ACTIONS_SPEC.md 1.1): a saved season's realisation, 'planned' or 'overdue' (replaceable); set on
+   * rotation_plan intervals built from saved seasons only. A saved season a recorded cycle realises ('sown') is not an
+   * interval at all (the cycle is). Absent on cycles and on the assumed previous-year plan (neither is replaceable).
+   */
+  realisation?: 'planned' | 'overdue' | undefined;
 }
 
 export interface FixedSlot extends SlotPlan {

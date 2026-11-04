@@ -11,6 +11,7 @@
         "not_found",
         "conflict",
         "version_conflict",
+        "alternative_not_applicable",
         "idempotency_mismatch",
         "payload_too_large",
         "unsupported_media_type",

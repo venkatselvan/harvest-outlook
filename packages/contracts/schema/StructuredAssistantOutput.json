@@ -16,6 +16,7 @@
         "market_question",
         "water_question",
         "observation",
+        "growth_journey",
         "clarification_needed",
         "out_of_scope"
       ]
@@ -2085,6 +2086,17 @@
         "minLength": 1,
         "maxLength": 1000
       }
+    },
+    "ui": {
+      "anyOf": [
+        {
+          "type": "string",
+          "maxLength": 4000
+        },
+        {
+          "type": "null"
+        }
+      ]
     }
   },
   "required": [

@@ -21,6 +21,7 @@ import {
   occupantEndText,
   occupantName,
   profitText,
+  realisationTag,
   sortedOccupants,
 } from "./model";
 
@@ -95,7 +96,9 @@ export const gapLabel = (gap: YearPlanGap) =>
 export function occupantLabel(o: YearPlanOccupant, interactive = true): string {
   const what = o.source === "saved_season" ? "saved season" : o.source === "recorded_cycle" ? "recorded crop" : "assumed plan";
   const from = o.source === "assumed_plan" ? " Assumed from last year's plan." : "";
-  return `${occupantName(o)}, ${what}, ${shortSpan(o.sowing, o.occupancy.to)}.${from} Sow ${longDate(o.sowing)}, ${occupantEndText(o)}${interactive ? ". Open details" : ""}`;
+  // The strip's visible text says "Planned, not sown" in place of "Saved season", so the name starts with it too (WCAG 2.5.3).
+  const tag = realisationTag(o);
+  return `${occupantName(o)}, ${tag ? `${tag.toLowerCase()}, ${what}` : what}, ${shortSpan(o.sowing, o.occupancy.to)}.${from} Sow ${longDate(o.sowing)}, ${occupantEndText(o)}${interactive ? ". Open details" : ""}`;
 }
 
 export type TrackItem =
@@ -484,7 +487,7 @@ function OccupantStrip(props: { occupant: YearPlanOccupant; horizonFrom: string;
         {occupantName(o())}
       </span>
       <span class="yp-strip-dates">
-        {OCCUPANT_STRIP_LABEL[o().source]} · {shortSpan(o().sowing, o().occupancy.to)}
+        {realisationTag(o()) ?? OCCUPANT_STRIP_LABEL[o().source]} · {shortSpan(o().sowing, o().occupancy.to)}
       </span>
     </span>
   );

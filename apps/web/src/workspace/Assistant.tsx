@@ -1,9 +1,10 @@
 import { Evara } from "./Evara";
 import { For, Show, createEffect, createSignal, on, onCleanup } from "solid-js";
-import { useLocation } from "@solidjs/router";
+import { useLocation, useNavigate } from "@solidjs/router";
+import { EvaraAction as evaraActionSchema, type EvaraAction } from "@harvest/contracts";
 import { Icon } from "./icons";
 import { AiSpark } from "./ui/AiSpark";
-import { useWorkspace } from "./state";
+import { today, useWorkspace } from "./state";
 import { postTurn } from "../features/ask/askApi";
 import {
   ASSISTANT_PROMPTS,
@@ -12,12 +13,16 @@ import {
   assistantWelcomeText,
   provenanceLabel,
   turnAnswerText,
+  turnUi,
   type AskLanguage,
   type TurnResult,
   wasWithheld,
 } from "../features/ask/model";
 import { newEntryId } from "../features/photo-region/http";
-import { tabField } from "./farmTabs";
+import { selectedTab, tabField } from "./farmTabs";
+import { EvaraActions, EvaraUiView, hasProse } from "./evara/EvaraUi";
+import { PlanCropSheet } from "./evara/PlanCropSheet";
+import type { EvaraContext, LocalAssistantMessage, PlanCropRequest } from "./evara/actions";
 import {
   InlineMicControl,
   InlineMicMessages,
@@ -32,6 +37,18 @@ interface Message {
   text: string;
   turn?: TurnResult;
   language?: AskLanguage;
+  /** A message the panel wrote itself after a save (code-written text and its actions); it carries no turn. */
+  actions?: EvaraAction[] | undefined;
+}
+
+/** A stored message made safe to render: a tree or action the kit no longer accepts is dropped, the text stays. */
+function revive(m: Message): Message {
+  const actions = Array.isArray(m.actions) ? m.actions.filter((a) => evaraActionSchema.safeParse(a).success) : undefined;
+  return {
+    ...m,
+    ...(m.turn ? { turn: { ...m.turn, ui: turnUi(m.turn.ui) } } : {}),
+    ...(actions?.length ? { actions } : { actions: undefined }),
+  };
 }
 export function Assistant() {
   const s = useWorkspace();
@@ -46,12 +63,15 @@ export function Assistant() {
     return ws.fields?.find((field) => field.id === id) ?? null;
   };
   const loc = useLocation();
+  const navigate = useNavigate();
   const [open, setOpen] = createSignal(false);
   const [messages, setMessages] = createSignal<Message[]>([]);
   const [text, setText] = createSignal("");
   const [busy, setBusy] = createSignal(false);
   const [error, setError] = createSignal("");
   const [language, setLanguage] = createSignal<AskLanguage>("en");
+  /** The Plan-this-crop sheet an Evara action opened (nothing is written until its confirm button). */
+  const [sheet, setSheet] = createSignal<PlanCropRequest | null>(null);
   let scroll: HTMLDivElement | undefined;
   let composer: HTMLTextAreaElement | undefined;
   const mic = createInlineMic({
@@ -104,6 +124,7 @@ export function Assistant() {
     setMessages([]);
     setText("");
     setError("");
+    setSheet(null);
     mic.cancel();
     try {
       for (const key of Object.keys(sessionStorage))
@@ -133,6 +154,7 @@ export function Assistant() {
       ++requestSequence;
       setBusy(false);
       setText("");
+      setSheet(null);
       mic.cancel();
       try {
         const saved = JSON.parse(sessionStorage.getItem(storageKey()) ?? "[]");
@@ -146,6 +168,7 @@ export function Assistant() {
                     typeof m.text === "string",
                 )
                 .slice(-40)
+                .map(revive)
             : [],
         );
       } catch {
@@ -205,6 +228,7 @@ export function Assistant() {
         newEntryId("chat"),
       );
       if (!active()) return;
+      result.ui = turnUi(result.ui);
       const answer = turnAnswerText(result);
       const next: Message[] = [
         ...previous,
@@ -229,6 +253,62 @@ export function Assistant() {
       if (active()) setBusy(false);
     }
   }
+  const persist = (next: Message[]) => {
+    try {
+      sessionStorage.setItem(storageKey(), JSON.stringify(next));
+    } catch {}
+  };
+  /** The workspace of the selected farm, or undefined while it loads or when it belongs to another farm. */
+  const currentWorkspace = () => {
+    const ws = s.workspace.error ? undefined : s.workspace();
+    return ws && ws.farmId === s.farm()?.id ? ws : undefined;
+  };
+  /**
+   * What Evara's actions run against (workspace/evara/actions.ts). Getters, so a message rendered earlier still acts on the
+   * farm, field and language that are current when the farmer taps.
+   */
+  const evaraCtx: EvaraContext = {
+    get farmId() {
+      return s.farm()?.id ?? null;
+    },
+    get fieldId() {
+      return selectedField()?.id ?? null;
+    },
+    get language() {
+      return language();
+    },
+    get tab() {
+      return selectedTab(loc.pathname, new URLSearchParams(loc.search).get("tab") ?? undefined);
+    },
+    today,
+    rotationPlans: () => currentWorkspace()?.rotationPlans,
+    cycles: () => currentWorkspace()?.cycles,
+    fields: () => currentWorkspace()?.fields ?? [],
+    cropName: s.cropName,
+    fieldBoundary: () => selectedField()?.boundary ?? null,
+    productIdFor: (cropId) => s.crops()?.find((c) => c.cropId === cropId)?.products[0]?.productId ?? null,
+    save: (patch) => s.saveWorkspace(patch),
+    refreshWorkspace: () => s.refreshWorkspace(),
+    notify: (text) => s.setNotice(text),
+    say: (m: LocalAssistantMessage) => {
+      const next: Message[] = [...messages(), { role: "assistant" as const, text: m.text, actions: m.actions, language: m.language }].slice(-40);
+      setMessages(next);
+      persist(next);
+    },
+    ask: (question) => void send(question),
+    navigate: (href) => {
+      navigate(href);
+      // On a phone the panel covers the screen the action opens; on wider screens it stays beside it.
+      if (typeof matchMedia === "function" && matchMedia("(max-width: 767px)").matches) setOpen(false);
+    },
+    writeCompareSelection: (farmId, productIds) => {
+      const saved = s.loadCompareSelection(farmId);
+      s.rememberCompareSelection(farmId, { productIds, date: saved?.date ?? today(), manualProducts: true, manualDate: saved?.manualDate ?? false });
+    },
+    openSheet: (request) => setSheet(request),
+    // Replaced per message by EvaraUiView, which knows the tree the journey belongs to.
+    showJourney: () => undefined,
+  };
   return (
     <>
       <Show when={open()}>
@@ -279,7 +359,19 @@ export function Assistant() {
                       <Evara size={19} /> EVARA
                     </span>
                   </Show>
-                  <p>{m.text}</p>
+                  <Show when={m.turn?.ui} fallback={<p>{m.text}</p>}>
+                    {(ui) => (
+                      <>
+                        <Show when={!hasProse(ui())}>
+                          <p>{m.text}</p>
+                        </Show>
+                        <EvaraUiView ui={ui()} ctx={evaraCtx} language={m.language} />
+                      </>
+                    )}
+                  </Show>
+                  <Show when={m.actions?.length}>
+                    <EvaraActions actions={m.actions!} ctx={evaraCtx} />
+                  </Show>
                   <Show when={m.turn}>
                     <div class="chat-evidence">
                       <span>{provenanceLabel(m.turn!.provenance)}</span>
@@ -398,6 +490,9 @@ export function Assistant() {
             </small>
           </form>
         </aside>
+      </Show>
+      <Show when={sheet()}>
+        {(request) => <PlanCropSheet ctx={evaraCtx} request={request()} onClose={() => setSheet(null)} />}
       </Show>
       <button
         class={`assistant-launcher ${open() ? "open" : ""}`}

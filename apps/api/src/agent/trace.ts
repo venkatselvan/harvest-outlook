@@ -48,6 +48,8 @@ export type TraceStepKind =
   | "response_cleanup"
   | "chain_recovery"
   | "cap_recovery"
+  /** 2026-11-04: the Evara UI tree was resolved (origin, dropped codes and source outcomes; never the program text). */
+  | "ui_resolved"
   | "run_finished";
 
 export interface TraceStep {

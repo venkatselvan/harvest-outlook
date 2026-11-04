@@ -23,18 +23,19 @@ import * as data from '../year-plan/data';
 import { enumerateCandidates, type CandidateSet } from '../year-plan/candidates';
 import { ENGINE_LIMITATIONS, marginNormaliser, runInputKeys, type ScoringNorm } from '../year-plan/assemble';
 import { ASSUMPTIONS } from '../year-plan/scoring';
-import { addDays, isoWeek } from '../year-plan/dates';
+import { addDays, isoWeek, overlaps } from '../year-plan/dates';
 import { collectInputKeys, emptyInputs, monthlyRainFromDaily, priceHarvestDate, slotPriceKey, type Inputs, type PriceInputKey } from '../year-plan/inputs';
-import { buildScenario, type TimelineFn } from '../year-plan/scenario';
+import { buildScenario, isReplaceable, realCropId, type TimelineFn } from '../year-plan/scenario';
+import { isSameAsSavedSeason, replacementOf, replacesPhrase, type YearPlanReplacement } from '../year-plan/alternatives';
 import type { RotationRule } from '../year-plan/scoring';
 import { ENGINE_VERSION as YEAR_PLAN_ENGINE_VERSION, PRICE_LOOKUP_CAP as YEAR_PLAN_PRICE_LOOKUP_CAP, soilChecksOf, spreadKeys, todayIst, yearPlanContext } from '../year-plan/service';
-import type { EngineContext } from '../year-plan/types';
+import type { EngineContext, OccupiedInterval } from '../year-plan/types';
 import type { EvaluatedSlot } from '../year-plan/assemble';
 import { marketNow as readMarketNow, type MarketNowArgs } from './market-now';
 import { estimateProfit } from '../estimate';
 import * as soilRatings from '../soil-ratings';
 import { intercropSystemOf, normaliseRequest, placeCandidates, planCandidates, rankCandidates, resolveMode, seasonContext, type PlacedPlan, type RankOptions } from './rank';
-import { picksWithMeta, pickPool, deterministicPicks, isPrunedOrder, POOL_SIZE, type PickField } from './select';
+import { picksWithMeta, pickPool, PICKS, deterministicPicks, isPrunedOrder, POOL_SIZE, type PickField } from './select';
 import { compareSoil, hasConfirmedMarkers, soilFacts, type PhRange, type RateMarkerFn } from './soil-compare';
 import { CROP_FIT_ENGINE_VERSION, CROP_FIT_JOB_TYPE, type RankedCandidate, type ResolvedMode, type Unplaced } from './types';
 
@@ -91,6 +92,8 @@ export interface FitContext {
   /** 2026-11-03 (12.3): the field ranked for (null = the whole farm) and the area used (the field's, else the farm fact). */
   fieldId: string | null;
   areaHa: number | null;
+  /** 2026-11-04: the limitation naming the field on a farm with fields (fieldNote); null without fields. */
+  fieldNote: string | null;
 }
 interface Row {
   id: string; owner_id: string; farm_id: string; mode: string; fit_mode: string; request_key: string; context_hash: string; request: CropFitRequest;
@@ -135,8 +138,11 @@ export async function fitContext(deps: Pick<CropFitDeps, 'pool' | 'config' | 'no
   if (!farm) throw notFound('Farm');
   const stored = await getWorkspace(deps.pool, ownerId, farmId);
   // 12.3: with a field, the field view (its cycles and saved seasons plus farm-wide legacy ones; 404 field_not_found when
-  // unknown) and the field's own area. Without one the whole farm is ranked as before, also on a farm with fields.
-  const fieldId = raw.fieldId ?? null;
+  // unknown) and the field's own area. 2026-11-04 (EVARA_ACTIONS_SPEC.md 1.2 item 5): a farm with fields and no fieldId
+  // ranks the first field with a current (unharvested) cycle, else the first field, instead of stacking every field's
+  // seasons on one virtual field; the review then carries that fieldId (same context, key and row as naming the field).
+  // A farm without fields is ranked as a whole as before.
+  const fieldId = raw.fieldId ?? defaultFieldId(stored);
   const workspace = fieldView(stored, fieldId);
   const areaHa = fieldId ? fieldAreaHa(stored, fieldId) : farm.areaHectares;
   const soil = await farmSoilMarkers(deps, ownerId, farmId);
@@ -171,8 +177,20 @@ export async function fitContext(deps: Pick<CropFitDeps, 'pool' | 'config' | 'no
   return {
     hash: payloadHash(material), asOf, farmId, request, requestKey: requestKey(request, fieldId), resolved: resolveMode(ctx, request),
     ctx, farm, workspaceVersion: workspace.version, soil, soilPh, soilReportStatus, soilChecks: soilChecks.fn, history: { cycles: workspace.cycles, previousHarvest: workspace.previousHarvest }, scenarioArgs,
-    fieldId, areaHa,
+    fieldId, areaHa, fieldNote: fieldNote(stored, fieldId),
   };
+}
+
+/** The field a farm with fields is ranked for when none is named (see fitContext); null on a farm without fields. */
+export function defaultFieldId(ws: Pick<Workspace, 'fields' | 'cycles'>): string | null {
+  if (!ws.fields.length) return null;
+  return (ws.fields.find((f) => ws.cycles.some((c) => c.fieldId === f.id && c.stage !== 'harvested')) ?? ws.fields[0]!).id;
+}
+/** The limitation that names the ranked field on a farm with fields (written for every review of such a farm, so a named and a defaulted request share one row). */
+function fieldNote(ws: Pick<Workspace, 'fields'>, fieldId: string | null): string | null {
+  const f = fieldId ? ws.fields.find((x) => x.id === fieldId) : undefined;
+  if (!f) return null;
+  return `Ranked for the field ${f.name}${ws.fields.length > 1 ? `; each of the farm's ${ws.fields.length} fields has its own review (without a field named, the first field with a growing crop is ranked, else the first field)` : ''}.`;
 }
 
 function blank(c: FitContext): CropFitReview {
@@ -503,6 +521,80 @@ async function invocationFor(deps: Pick<CropFitDeps, 'pool'>, ownerId: string, f
   return f ? { id: f.id, provider: 'meta', requestedModel: f.requested_model, model: f.model, purpose: `crop_fit/${farmId}`, status: f.status, startedAt: f.started_at.toISOString(), finishedAt: f.finished_at?.toISOString() ?? null, processing: 'standard', requestedStorage: false, responseDeleted } : null;
 }
 
+interface PlanPass {
+  ectx: EngineContext; planSet: CandidateSet; planKeys: PriceInputKey[]; planLooked: PriceInputKey[]; normSet: CandidateSet;
+  placed: PlacedPlan[]; unplaced: Unplaced[]; keys: PriceInputKey[]; needed: number; notes: string[];
+}
+/**
+ * One candidate pass (round 3, ROUND3_SPEC 5): the year plan's context (season: widened to 12 months from the floor with the
+ * next horizon's intervals), its candidate set and price keys spread to the plan's lookup cap, and for next and season the
+ * plan candidates; next widens like season when nothing fits before the plan horizon ends (orchestrator, 2026-11-01).
+ * `setAside` (pass 2, EVARA_ACTIONS_SPEC.md 1.2) removes the replaceable saved seasons (planned or overdue, not sown) from the
+ * occupied intervals of both horizons; recorded cycles and an assumed previous-year plan stay. earliestSowing never depends
+ * on saved seasons in the current horizon, so it is unchanged.
+ */
+function planCandidatesPass(c: FitContext, mode: CropFitRequest['mode'], setAside: boolean, fixedKey: string | null): PlanPass {
+  const keep = (ctx: EngineContext): EngineContext => (setAside ? { ...ctx, occupied: ctx.occupied.filter((o) => !isReplaceable(o)) } : ctx);
+  const base = keep(c.ctx);
+  const notes: string[] = [];
+  const readNext = (): EngineContext | null => { try { return keep(buildScenario({ ...c.scenarioArgs, horizonFrom: c.ctx.horizon.to })); } catch { return null; } };
+  let ectx = base;
+  if (mode === 'season') {
+    const next = readNext();
+    if (!next) notes.push('Saved seasons after the year plan horizon could not be read; season candidates there may overlap them.');
+    ectx = seasonContext(base, c.resolved.floor, next);
+  }
+  const setOf = (x: EngineContext) => {
+    const planSet = enumerateCandidates(x);
+    const planKeys = runInputKeys(x, planSet);
+    const planLooked = spreadKeys(planKeys, YEAR_PLAN_PRICE_LOOKUP_CAP, fixedKey ? [fixedKey] : []);
+    const looked = new Set(planLooked.map((k) => k.key));
+    const normSet: CandidateSet = planLooked.length < planKeys.length ? { ...planSet, candidates: planSet.candidates.filter((y) => y.kind === 'green_manure' || looked.has(slotPriceKey(y))) } : planSet;
+    return { planSet, planKeys, planLooked, normSet };
+  };
+  const sets = setOf(ectx);
+  if (mode === 'date') return { ectx, ...sets, placed: [], unplaced: [], keys: sets.planLooked, needed: sets.planKeys.length, notes };
+  let { placed, unplaced } = planCandidates(ectx, c.resolved, sets.normSet);
+  let keys = sets.planLooked;
+  let needed = sets.planKeys.length;
+  if (sets.planLooked.length < sets.planKeys.length) notes.push(`Price lookups are capped at ${YEAR_PLAN_PRICE_LOOKUP_CAP} as in the year plan: ${sets.planLooked.length} of ${sets.planKeys.length} crop and harvest-week combinations were looked up, spread evenly across crops; sowing weeks whose harvest week was not looked up were left out.`);
+  // Next crop after saved seasons that fill the plan horizon (orchestrator, 2026-11-01): widen to 12 months from the first
+  // free day exactly as season mode does, so the farmer still sees the next crop rather than an empty list.
+  if (mode === 'next' && !placed.length && ectx.occupied.length) {
+    const wide = seasonContext(base, c.resolved.floor, readNext());
+    if (wide !== base) {
+      const w = setOf(wide);
+      const again = planCandidates(wide, c.resolved, w.normSet);
+      if (again.placed.length) {
+        ectx = wide; placed = again.placed; unplaced = again.unplaced; keys = w.planLooked; needed = w.planLooked.length;
+        notes.push(`Saved seasons fill the free months up to the end of the year plan horizon (${fmt(addDays(c.ctx.horizon.to, -1))}); windows after it are scored on the same basis.`);
+        return { ectx, ...w, placed, unplaced, keys, needed, notes };
+      }
+    }
+  }
+  return { ectx, ...sets, placed, unplaced, keys, needed, notes };
+}
+
+/** "Pigeon pea is planned for 12 Feb 2027 but not sown, so these picks are ranked as replacements for it." (one sentence, code). */
+export function replaceSentence(rs: readonly YearPlanReplacement[], today: string): string {
+  const cap = (x: string) => (x ? x[0]!.toUpperCase() + x.slice(1) : x);
+  if (rs.length === 1) {
+    const r = rs[0]!;
+    const name = cap(r.cropName.toLowerCase());
+    const d = r.plannedSowingDate;
+    if (!d) return `${name} is a saved season that is not sown, so these picks are ranked as replacements for it.`;
+    return d < today ? `${name} was planned for ${fmt(d)} and is not sown, so these picks are ranked as replacements for it.` : `${name} is planned for ${fmt(d)} but not sown, so these picks are ranked as replacements for it.`;
+  }
+  return `${cap(replacesPhrase(rs, today))} are planned but not sown, so these picks are ranked as replacements for them.`;
+}
+
+/** "Maize (planned 5 Feb 2027) is already the best fit, so nothing here would replace it." (every ranked crop is a saved season). */
+export function alreadyBestSentence(rs: readonly YearPlanReplacement[]): string {
+  const cap = (x: string) => (x ? x[0]!.toUpperCase() + x.slice(1) : x);
+  if (!rs.length) return 'The saved season is already the best fit, so nothing here would replace it.';
+  return `${cap(replacesPhrase(rs, '0000-00-00'))} ${rs.length === 1 ? 'is' : 'are'} already the best fit, so nothing here would replace ${rs.length === 1 ? 'it' : 'them'}.`;
+}
+
 const rawOf = (r: CropFitRequest, fieldId?: string | null): RawRequest => ({ mode: r.mode, season: r.season ?? undefined, sowing: r.sowing ?? undefined, after: r.after ?? undefined, ...(fieldId ? { fieldId } : {}) });
 
 /** Worker body: rank -> store the code ranking (running) -> Meta picks (or deterministic) -> ready. Provider problems never throw. */
@@ -523,6 +615,8 @@ export async function generateCropFit(deps: CropFitDeps, reviewId: string, owner
   let invocation: ModelInvocation | null = null;
   const save = async (status: CropFitReview['status'], final: boolean) => {
     result.status = status;
+    // CropFitReview.summary is max(600): a long sentence must never turn a review into a parse error (2026-11-04).
+    result.summary = result.summary.slice(0, 600);
     if (final) result.generatedAt = new Date().toISOString();
     await deps.pool.query(`UPDATE crop_fit_reviews r SET status=$3,result=$4::jsonb,input_context=$5::jsonb,invocation=$6::jsonb${final ? ',finished_at=now()' : ''} FROM farms f WHERE r.id=$1 AND r.owner_id=$2 AND f.id=r.farm_id AND f.owner_id=$2 AND f.deleted_at IS NULL AND r.archived_at IS NULL`,
       [reviewId, ownerId, status, JSON.stringify(CropFitReview.parse(result)), JSON.stringify(stored), invocation ? JSON.stringify(invocation) : null]);
@@ -541,25 +635,18 @@ export async function generateCropFit(deps: CropFitDeps, reviewId: string, owner
     // 21-day placement. Every mode scores on the year plan's normaliser (marginNormaliser over that set).
     const mode = c.request.mode;
     const plan = await currentYearPlan(deps, ownerId, row.farm_id, c.asOf, c.fieldId);
-    // Season covers 12 months from the floor (orchestrator decision): the plan context widened past the plan horizon.
-    let ectx: EngineContext = c.ctx;
-    if (mode === 'season') {
-      let next: EngineContext | null = null;
-      try { next = buildScenario({ ...c.scenarioArgs, horizonFrom: c.ctx.horizon.to }); }
-      catch { limitations.push('Saved seasons after the year plan horizon could not be read; season candidates there may overlap them.'); }
-      ectx = seasonContext(c.ctx, c.resolved.floor, next);
-    }
-    const planSet: CandidateSet = enumerateCandidates(ectx);
-    const planKeys = runInputKeys(ectx, planSet);
     const fixedKey = c.ctx.fixedSlot ? slotPriceKey(c.ctx.fixedSlot) : null;
-    const planLooked = spreadKeys(planKeys, YEAR_PLAN_PRICE_LOOKUP_CAP, fixedKey ? [fixedKey] : []);
-    const planLookedSet = new Set(planLooked.map((k) => k.key));
-    const normSet: CandidateSet = planLooked.length < planKeys.length ? { ...planSet, candidates: planSet.candidates.filter((x) => x.kind === 'green_manure' || planLookedSet.has(slotPriceKey(x))) } : planSet;
     const storedNorm = plan?.norm && (plan.norm.maxMarginRate !== null || (plan.norm.maxRevenueRate ?? null) !== null) ? plan.norm : null;
+    // Pass 1 (as before 2026-11-04) and, for next and season, pass 2 with the replaceable saved seasons set aside
+    // (EVARA_ACTIONS_SPEC.md 1.2): planCandidatesPass below.
+    const p1 = planCandidatesPass(c, mode, false, fixedKey);
+    let pass = p1;
+    let ectx: EngineContext = p1.ectx;
     let placed: PlacedPlan[];
     let unplaced: Unplaced[];
     let keys: PriceInputKey[];
     let needed: number;
+    let replaced: OccupiedInterval[] = [];
     if (mode === 'date') {
       ({ placed, unplaced } = placeCandidates(c.ctx, c.resolved));
       const own = collectInputKeys(placed.map((p) => p.plan));
@@ -568,32 +655,24 @@ export async function generateCropFit(deps: CropFitDeps, reviewId: string, owner
       const ownLooked = new Set(ownKeys.map((k) => k.key));
       if (ownKeys.length < own.length) placed = placed.filter((p) => ownLooked.has(slotPriceKey(p.plan)));
       // The plan's keys are needed for its normaliser unless the current plan's stored normaliser is used.
-      keys = storedNorm ? ownKeys : [...ownKeys, ...planLooked.filter((k) => !ownLooked.has(k.key))];
-      needed = own.length + (storedNorm ? 0 : planKeys.length);
+      keys = storedNorm ? ownKeys : [...ownKeys, ...p1.planLooked.filter((k) => !ownLooked.has(k.key))];
+      needed = own.length + (storedNorm ? 0 : p1.planKeys.length);
+      limitations.push(...p1.notes);
     } else {
-      ({ placed, unplaced } = planCandidates(ectx, c.resolved, normSet));
-      keys = planLooked;
-      needed = planKeys.length;
-      if (planLooked.length < planKeys.length) limitations.push(`Price lookups are capped at ${YEAR_PLAN_PRICE_LOOKUP_CAP} as in the year plan: ${planLooked.length} of ${planKeys.length} crop and harvest-week combinations were looked up, spread evenly across crops; sowing weeks whose harvest week was not looked up were left out.`);
-      // Next crop after saved seasons that fill the plan horizon (orchestrator, 2026-11-01): widen to 12 months from the
-      // first free day exactly as season mode does, so the farmer still sees the next crop rather than an empty list.
-      if (mode === 'next' && !placed.length && ectx.occupied.length) {
-        let next: EngineContext | null = null;
-        try { next = buildScenario({ ...c.scenarioArgs, horizonFrom: c.ctx.horizon.to }); } catch { /* no later horizon: widen without its intervals */ }
-        const wide = seasonContext(c.ctx, c.resolved.floor, next);
-        if (wide !== c.ctx) {
-          const wideSet = enumerateCandidates(wide);
-          const wideKeys = spreadKeys(runInputKeys(wide, wideSet), YEAR_PLAN_PRICE_LOOKUP_CAP, fixedKey ? [fixedKey] : []);
-          const wideLooked = new Set(wideKeys.map((k) => k.key));
-          const wideNorm: CandidateSet = wideKeys.length < wideSet.candidates.length ? { ...wideSet, candidates: wideSet.candidates.filter((x) => x.kind === 'green_manure' || wideLooked.has(slotPriceKey(x))) } : wideSet;
-          const again = planCandidates(wide, c.resolved, wideNorm);
-          if (again.placed.length) {
-            ectx = wide; placed = again.placed; unplaced = again.unplaced; keys = wideKeys; needed = wideKeys.length;
-            limitations.push(`Saved seasons fill the free months up to the end of the year plan horizon (${fmt(addDays(c.ctx.horizon.to, -1))}); windows after it are scored on the same basis.`);
-          }
-        }
+      // Pass 2 runs when pass 1 places nothing, or when every pass-1 placement sows after a replaceable season that ends after
+      // the field is free (the planned, unsown seasons are what push the field out). It is used when some placement then
+      // overlaps a replaceable season (a real replacement ranking); otherwise pass 1 stands.
+      const replaceable = p1.ectx.occupied.filter(isReplaceable);
+      const pushedOut = (sowing: string) => replaceable.some((r) => r.to <= sowing && r.to > c.resolved.floor);
+      if (replaceable.length && (!p1.placed.length || p1.placed.every((p) => pushedOut(p.plan.sowing)))) {
+        const p2 = planCandidatesPass(c, mode, true, fixedKey);
+        if (p2.placed.some((p) => replaceable.some((r) => overlaps(p.plan.occupancy.from, p.plan.occupancy.to, r.from, r.to)))) { pass = p2; replaced = replaceable; }
       }
+      ectx = pass.ectx; placed = pass.placed; unplaced = pass.unplaced; keys = pass.keys; needed = pass.needed;
+      limitations.push(...pass.notes);
     }
+    const planSet = pass.planSet;
+    const normSet = pass.normSet;
     const inputs: Inputs = emptyInputs(c.asOf, c.ctx.irrigation);
     const fetched = await fetchOutlooks(deps, c, keys);
     inputs.priceOutlooks = fetched.map;
@@ -651,6 +730,36 @@ export async function generateCropFit(deps: CropFitDeps, reviewId: string, owner
       grownBefore: grownBeforeOf(c.history, rc.plan.cropId),
     }));
     result.yearPlanReviewId = plan?.id ?? null;
+    // Pass 2 (EVARA_ACTIONS_SPEC.md 1.2): each candidate that overlaps a set-aside season names the seasons it would take over.
+    // A candidate identical to the saved season it overlaps (same crop and product, sown within 7 days) is that season, not a
+    // replacement: it keeps its place in the ranking without `replaces` for it, and the picks prefer the others (2026-11-04).
+    let replacedSeasons: YearPlanReplacement[] = [];
+    const twins = new Set<CropFitCandidate>();
+    let twinSeasons: YearPlanReplacement[] = [];
+    if (replaced.length) {
+      const rotationPlans = c.scenarioArgs.workspace.rotationPlans;
+      const seen = new Map<string, YearPlanReplacement>();
+      const twinSeen = new Map<string, YearPlanReplacement>();
+      for (const cand of result.candidates) {
+        const occ = cand.occupancy ?? { from: cand.sowing, to: cand.harvest.latest };
+        const hit = replaced.filter((r) => overlaps(occ.from, occ.to, r.from, r.to));
+        const same = hit.filter((r) => isSameAsSavedSeason(cand, rotationPlans.find((p) => p.id === r.id)));
+        const rs = hit.filter((r) => !same.includes(r)).map((r) => replacementOf(r, rotationPlans, c.ctx.names)).filter((r): r is YearPlanReplacement => r !== null).slice(0, 6);
+        if (rs.length) { cand.replaces = rs; for (const r of rs) seen.set(r.rotationPlanId, r); }
+        else if (same.length) {
+          twins.add(cand);
+          for (const r of same) { const x = replacementOf(r, rotationPlans, c.ctx.names); if (x) twinSeen.set(x.rotationPlanId, x); }
+        }
+      }
+      const byDate = (x: YearPlanReplacement, y: YearPlanReplacement) => (x.plannedSowingDate ?? '').localeCompare(y.plannedSowingDate ?? '') || x.rotationPlanId.localeCompare(y.rotationPlanId);
+      replacedSeasons = [...seen.values()].sort(byDate);
+      twinSeasons = [...twinSeen.values()].sort(byDate);
+      // The replace pass flag and lead only describe a ranking in which something would replace a saved season.
+      if (replacedSeasons.length) result.replacePass = true;
+    }
+    const allTwins = twins.size > 0 && twins.size === result.candidates.length;
+    const replaceLead = replacedSeasons.length ? `${replaceSentence(replacedSeasons, c.asOf)} `
+      : allTwins ? `${alreadyBestSentence(twinSeasons)} ` : '';
     if (mode === 'season') {
       const first = [...result.candidates].sort((a, b) => a.sowing.localeCompare(b.sowing))[0];
       result.resolvedSowing = first?.sowing ?? null;
@@ -675,6 +784,8 @@ export async function generateCropFit(deps: CropFitDeps, reviewId: string, owner
       'Profit is simulated from the yield range and the harvest-week price range (2,000 seeded draws): likely = middle half of the simulated outcomes, possible = 10th to 90th percentile; the cost of cultivation is a fixed published figure.',
       'Price now is the median wholesale mandi modal price over the last 14 trading days of stored quotes, not a farm-gate offer.',
       'Soil need classes come from published crop nutrient uptake scaled by the regional yield; they are comparisons, not fertiliser doses.',
+      ...(c.fieldNote ? [c.fieldNote] : []),
+      ...(replacedSeasons.length ? [`Saved seasons that are planned but not sown (${replacesPhrase(replacedSeasons, c.asOf)}) were set aside for this ranking; a crop that overlaps one would replace it. Recorded crops stay as they are.`] : []),
       ...c.resolved.notes, ...c.ctx.warnings, ...unplacedNote(unplaced), ...limitations,
     ].map((x) => x.slice(0, 600));
     stored.unplaced = unplaced;
@@ -684,19 +795,29 @@ export async function generateCropFit(deps: CropFitDeps, reviewId: string, owner
     stored.yearPlanReviewId = plan?.id ?? null;
     stored.planCandidates = planSet.candidates.length;
     if (!result.candidates.length) {
-      result.summary = mode === 'season' ? `No pool crop has a sourced ${c.request.season} sowing week on this field between ${fmt(c.resolved.floor)} and ${fmt(addDays(ectx.horizon.to, -1))} that is harvested by then.`
-        : mode === 'next' ? `No pool crop has a sourced sowing week between ${fmt(c.resolved.target!)} and the end of the year plan horizon (${fmt(c.ctx.horizon.to)}) on this field${c.ctx.occupied.length ? `; saved seasons (${c.ctx.occupied.map((o) => `${data.cropDisplayName(o.cropId).toLowerCase()} ${fmt(o.from)} to ${fmt(o.to)}`).join(', ')}) take the free months` : ''}.`
-        : `No pool crop has a sourced sowing window within 21 days of ${fmt(c.resolved.target!)} on this field.`;
+      // Pass 2 placed nothing either (or nothing was replaceable): say whether recorded crops or the windows are the cause.
+      const occupants = p1.ectx.occupied;
+      const setAside = occupants.filter(isReplaceable);
+      const held = occupants.filter((o) => !isReplaceable(o));
+      const heldText = held.length ? `${held.slice(0, 4).map((o) => `${data.cropDisplayName(realCropId(o.cropId)).toLowerCase()} ${fmt(o.from)} to ${fmt(o.to)}`).join(', ')}${held.length > 4 ? ` and ${held.length - 4} more` : ''}` : '';
+      const why = setAside.length
+        ? `, even with the planned, unsown seasons set aside${held.length ? `; recorded or assumed crops (${heldText}) take the free months` : ''}`
+        : held.length ? `; recorded crops (${heldText}) take the free months` : '';
+      result.summary = (mode === 'season' ? `No pool crop has a sourced ${c.request.season} sowing week on this field between ${fmt(c.resolved.floor)} and ${fmt(addDays(ectx.horizon.to, -1))} that is harvested by then${why}.`
+        : mode === 'next' ? `No pool crop has a sourced sowing week between ${fmt(c.resolved.target!)} and the end of the year plan horizon (${fmt(c.ctx.horizon.to)}) on this field${why}.`
+        : `No pool crop has a sourced sowing window within 21 days of ${fmt(c.resolved.target!)} on this field.`).slice(0, 600);
       return finish('unavailable');
     }
     const rankedBy = mode === 'next' ? 'score less the wait penalty' : 'score';
     const tail = ` ${sameAsPlan}. ${comparison}`;
-    const pool = pickPool(result.candidates);
-    const pruned = result.candidates.slice(0, POOL_SIZE).filter((x) => isPrunedOrder(x) && !pool.includes(x)).length;
+    // Picks prefer crops that are not a repeat of a saved season; repeats only fill the places left when fewer than three others remain.
+    const others = result.candidates.filter((x) => !twins.has(x));
+    const pool = others.length >= PICKS ? pickPool(others) : others.length ? [...pickPool(others), ...pickPool(result.candidates.filter((x) => twins.has(x))).slice(0, PICKS - others.length)] : pickPool(result.candidates);
+    const pruned = result.candidates.slice(0, POOL_SIZE).filter((x) => isPrunedOrder(x) && !pool.includes(x) && !twins.has(x)).length;
     if (pruned) result.limitations.push(`The picks leave out ${pruned} of the eight best-ranked crop${pruned > 1 ? 's' : ''} whose order after the previous crop a source advises against or repeats its crop family, as the year plan does; ${pruned > 1 ? 'they stay' : 'it stays'} in the ranking.`);
     result.picks = deterministicPicks(pool);
     result.pickOrigin = 'deterministic';
-    result.summary = `${result.candidates.length} crops scored by code for ${sowingText}, ranked by ${rankedBy}; the top three are picked by rank.${tail}`.slice(0, 600);
+    result.summary = `${replaceLead}${result.candidates.length} crops scored by code for ${sowingText}, ranked by ${rankedBy}; the top three are picked by rank.${tail}`.slice(0, 600);
     await save('running', false);
     // ---- Meta picks
     if (pool.length <= 3) { result.limitations.push(`${pruned ? 'Three or fewer crops are eligible for the picks' : 'Three or fewer crops fit this date'}, so no model selection was needed; the picks are calculated.`); return finish('ready'); }
@@ -713,7 +834,7 @@ export async function generateCropFit(deps: CropFitDeps, reviewId: string, owner
     stored.meta = { failure: sel.failure, dispatched: sel.dispatched, model: sel.model, costUsd: sel.costUsd, usage: sel.usage };
     result.picks = sel.picks;
     result.pickOrigin = sel.origin;
-    if (sel.origin === 'model') result.summary = `Meta picked three of the top eight of ${result.candidates.length} crops scored by code for ${sowingText} (ranked by ${rankedBy}) and explained each from the code facts.${tail}`.slice(0, 600);
+    if (sel.origin === 'model') result.summary = `${replaceLead}Meta picked three of the top eight of ${result.candidates.length} crops scored by code for ${sowingText} (ranked by ${rankedBy}) and explained each from the code facts.${tail}`.slice(0, 600);
     else result.limitations.push(`${MODEL_UNAVAILABLE} (${sel.failure ?? 'unknown'}); showing the calculated top three. Ask again later for model picks.`);
     invocation = await invocationFor(deps, ownerId, row.farm_id, startedAt, sel.responseDeleted);
     result.modelInvocation = invocation;

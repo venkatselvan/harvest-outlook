@@ -13,6 +13,8 @@ import { currentCycle, todayView, type TodayViewDeps } from "../../services/toda
 import { fieldOf, fieldView, getWorkspace } from "../../services/workspace";
 import { cropDisplayName } from "../../services/year-plan/data";
 import { readYearPlan } from "../../services/year-plan/service";
+import { seasonRealisation } from "../../services/year-plan/scenario";
+import { defaultFieldId } from "../../services/crop-fit/service";
 import { briefingLines, scoutingState } from "../../services/scouting/issues";
 import type { ToolContext, ToolHandler } from "../tools/registry";
 
@@ -192,7 +194,9 @@ export async function farmBriefing(deps: BriefingDeps, farmId: string, ctx: Tool
     section("soilReview", () => readSoilReview(svc, ctx.ownerId, farmId, fid ?? null)),
     section("yearPlan", () => readYearPlan(svc, ctx.ownerId, farmId, fid !== undefined ? { fieldId: fid } : {})),
     section("workspace", async () => fieldView(stored, fid ?? null)),
-    section("cropFit", () => storedCropFit(ro, ctx.ownerId, farmId, ctx.mode, fid ?? null)),
+    // 2026-11-04: crop fit on a farm with fields always ranks one field (crop-fit defaultFieldId when none is named), so with no
+    // field picked here the stored review of that default field is read.
+    section("cropFit", () => storedCropFit(ro, ctx.ownerId, farmId, ctx.mode, fid ?? defaultFieldId(stored))),
     section("journal", () => listEntries(ro, ctx.ownerId, farmId, 60)),
     // Field operations (FIELD_OPERATIONS_SPEC.md 5.3): open issues and the next field check per field, plain reads; no model
     // is asked to interpret an issue.
@@ -284,7 +288,7 @@ export async function farmBriefing(deps: BriefingDeps, farmId: string, ctx: Tool
     }
   }
   composeSoil(briefing, done, limitations);
-  composePlans(briefing, done, limitations);
+  composePlans(briefing, done, limitations, today);
   composeCropFit(briefing, done, limitations);
   composeJournal(briefing, done, ctx.mode, view?.cycle ?? null, limitations);
 
@@ -582,7 +586,7 @@ function composeSoil(b: Briefing, done: Map<string, unknown>, lim: string[]): vo
   for (const l of review?.limitations ?? []) lim.push(l);
 }
 
-function composePlans(b: Briefing, done: Map<string, unknown>, lim: string[]): void {
+function composePlans(b: Briefing, done: Map<string, unknown>, lim: string[], today: string): void {
   const plan = done.get("yearPlan") as import("@harvest/contracts").YearPlanReview | undefined;
   const ws = done.get("workspace") as import("@harvest/contracts").FarmWorkspace | undefined;
   if (!plan && !ws) return;
@@ -595,6 +599,7 @@ function composePlans(b: Briefing, done: Map<string, unknown>, lim: string[]): v
     stale: plan?.stale ?? false,
     option: opt
       ? {
+          optionId: cut(opt.optionId, 120)!,
           label: cut(opt.label, 60)!,
           chosen: chosen !== null,
           slots: opt.slots.slice(0, 6).map((s) => ({
@@ -612,6 +617,7 @@ function composePlans(b: Briefing, done: Map<string, unknown>, lim: string[]): v
         }
       : null,
     savedSeasons: (ws?.rotationPlans ?? []).slice(0, 6).map((p) => ({
+      id: cut(p.id, 120)!,
       year: p.year,
       season: cut(p.season, 80)!,
       cropName: cut(p.cropName ?? cropDisplayName(p.cropId), 120)!,
@@ -619,17 +625,43 @@ function composePlans(b: Briefing, done: Map<string, unknown>, lim: string[]): v
       kind: p.kind ?? "crop",
       plannedSowingDate: p.plannedSowingDate ?? null,
       plannedHarvestDate: p.plannedHarvestDate ?? null,
+      // EVARA_ACTIONS_SPEC 1.4: planned / overdue (replaceable) or sown, by the year plan's own rule on this field view.
+      ...realisationOf(p, ws?.cycles ?? [], today),
     })),
     previousHarvest: prev ? { status: prev.status, cropName: prev.status === "known" ? cut(prev.cropName ?? cropDisplayName(prev.cropId), 120) : null, harvestDate: prev.status === "known" ? prev.harvestDate : null } : null,
+    // EVARA_ACTIONS_SPEC 1.4: the year plan's alternatives (no free window), names and dates only; the growing crop (fixed slot)
+    // is left out of each option's slots, so every slot listed is a new season. Null when the field has a free window.
+    alternatives: alternativesOf(plan),
   };
+  if (b.plans.alternatives) lim.push(b.plans.alternatives.basis === "sown_comparison" ? "The year plan's comparison plans show what could have fitted the field; they cannot be applied." : "The year plan's alternative plans would replace planned seasons that are not sown yet.");
   if (plan && !opt) lim.push("No year plan has been made for this field yet.");
   if (plan?.stale) lim.push("The stored year plan was made before later changes to the farm and may be out of date.");
   if (opt && !chosen) lim.push("No year-plan option has been applied; the first suggested option is shown.");
   if ((ws?.rotationPlans.length ?? 0) > 6) lim.push(`${ws!.rotationPlans.length - 6} further saved seasons are not included.`);
 }
 
+type PlanReview = import("@harvest/contracts").YearPlanReview;
+/** Briefing view of YearPlanReview.alternatives: basis, summary (300), at most 2 options with at most 6 new-season slots. */
+function alternativesOf(plan: PlanReview | undefined): NonNullable<NonNullable<Briefing["plans"]>["alternatives"]> | null {
+  const a = plan?.alternatives;
+  if (!a) return null;
+  return {
+    basis: a.basis,
+    summary: cut(a.summary, 300)!,
+    options: a.options.slice(0, 2).map((o) => ({
+      optionId: cut(o.optionId, 120)!,
+      label: cut(o.label, 60)!,
+      slots: o.slots.filter((s) => !s.fixed).slice(0, 6).map((s) => ({ cropName: cut(s.cropName, 120)!, productName: cut(s.productName, 120)!, kind: s.kind ?? "crop", sowing: s.sowing, harvest: { earliest: s.harvest.earliest, latest: s.harvest.latest } })),
+    })),
+  };
+}
+function realisationOf(p: FarmWorkspace["rotationPlans"][number], cycles: FarmWorkspace["cycles"], today: string): { realisation?: string } {
+  const r = seasonRealisation(p, cycles, today);
+  return r ? { realisation: r } : {};
+}
+
 /** The latest ready crop-fit review stored for the farm, or for the field (12.5; read only; never ensureCropFit). */
-async function storedCropFit(pool: Pool, ownerId: string, farmId: string, mode: string, fieldId: string | null = null): Promise<{ review: import("@harvest/contracts").CropFitReview; createdAt: Date } | null> {
+export async function storedCropFit(pool: Pool, ownerId: string, farmId: string, mode: string, fieldId: string | null = null): Promise<{ review: import("@harvest/contracts").CropFitReview; createdAt: Date } | null> {
   const row = (
     await pool.query<{ result: unknown; created_at: Date }>(
       "SELECT result, created_at FROM crop_fit_reviews WHERE farm_id=$1 AND owner_id=$2 AND mode=$3 AND archived_at IS NULL AND status='ready' AND result->>'fieldId' IS NOT DISTINCT FROM $4::text ORDER BY created_at DESC LIMIT 1",
@@ -653,7 +685,9 @@ function composeCropFit(b: Briefing, done: Map<string, unknown>, lim: string[]):
     generatedAt: r.generatedAt,
     picks: r.picks.slice(0, 3).map((p) => {
       const c = r.candidates.find((x) => x.cropId === p.cropId && x.productId === p.productId);
-      return { rank: p.rank, cropId: cut(p.cropId, 120)!, cropName: cut(c?.cropName ?? cropDisplayName(p.cropId), 120)!, productName: cut(c?.productName ?? p.productId, 120)!, reason: cut(p.headline, 160) ?? "" };
+      // EVARA_ACTIONS_SPEC 1.4: the planned, unsown season(s) this pick would replace (replace pass), by crop name.
+      const replaces = c?.replaces?.length ? cut(c.replaces.map((r) => r.cropName).join(" and "), 120) : null;
+      return { rank: p.rank, cropId: cut(p.cropId, 120)!, cropName: cut(c?.cropName ?? cropDisplayName(p.cropId), 120)!, productName: cut(c?.productName ?? p.productId, 120)!, reason: cut(p.headline, 160) ?? "", replacesCropName: replaces };
     }),
   };
   lim.push("The crop-fit picks are the latest stored review; they may predate later changes to the farm.");

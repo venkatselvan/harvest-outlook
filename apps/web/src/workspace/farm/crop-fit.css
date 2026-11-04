@@ -527,3 +527,43 @@
 .farm-crop-chips:empty {
   display: none;
 }
+
+/* Replace a planned, unsown season (EVARA_ACTIONS_SPEC.md 1.2). Chips may wrap onto two lines; the button is full width on a phone. */
+.cf-chips .cf-chip-wrap {
+  white-space: normal;
+}
+.cf-replace-note,
+.cf-replace-done {
+  margin: 0 0 8px;
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+.cf-replace-done {
+  color: var(--text);
+}
+.cf-inline-error {
+  margin: 0 0 8px;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--danger-soft);
+  color: var(--danger);
+  font-size: 13px;
+}
+.cf-replace {
+  display: flex;
+}
+.cf-sheet-replace {
+  display: grid;
+  gap: 8px;
+  width: 100%;
+}
+@media (max-width: 479px) {
+  .cf-replace .btn,
+  .cf-sheet-replace .btn {
+    width: 100%;
+    justify-content: center;
+    text-align: center;
+    white-space: normal;
+  }
+}

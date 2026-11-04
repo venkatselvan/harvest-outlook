@@ -47,6 +47,7 @@ import {seasonPreviewRoutes} from './season-preview';
 import {scoutingRoutes} from './scouting';
 import {farmSummaryRoutes} from './farm-summary';
 import {seasonReportRoutes} from './season-report';
+import {cropJourneyRoutes} from './crop-journey';
 
 export interface RouteDeps {
   config: Config;
@@ -112,6 +113,8 @@ export async function registerRoutes(app: FastifyInstance, deps: RouteDeps): Pro
   await app.register(seasonPreviewRoutes,{config,pool,...(deps.weatherFetch?{weatherFetch:deps.weatherFetch}:{})});
   await app.register(scoutingRoutes,{config,pool});
   await app.register(seasonReportRoutes,{config,pool});
+  // EVARA_ACTIONS_SPEC.md 3.2: crop journey (job type today.crop-journey in worker/handlers/index.ts).
+  await app.register(cropJourneyRoutes,{config,pool,budget:deps.budget});
 
   await registerPlanRoutes(app, {
     config,

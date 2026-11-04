@@ -18,6 +18,8 @@ import {FarmCommandCenter,PlantCrop,PlantCropResult,CompleteCareTask,CompleteCar
 import { TodayView } from './today';
 import { FarmSummary } from './farm-summary';
 import { MarketTimeline } from './market';
+import { EvaraUi } from './evara-ui';
+import { CropJourney } from './crop-journey';
 import { CropFitReview } from './crop-fit';
 import { SoilReview } from './soil-review';
 import { SeasonPreview } from './season-preview';
@@ -35,7 +37,7 @@ import { SeasonReport } from './season-report';
 export const PUBLIC_CONTRACTS: Record<string, z.ZodType> = {
   FieldPhoto, FieldPhotoPrediction, FieldPhotoGallery, FieldPhotoGuidance, SaveFieldPhotos, FieldPhotoCoverage,
   TodayView,
-  FarmSummary,FarmAlert,FarmAlerts,NdviSeries,NeighbourhoodSeasonality,PriceSeries,HarvestPriceOutlook,PriceTrend,StageTimeline,YearPlanReview,YearPlanOption,RescoreYearPlan,ApplyYearPlan,ApplyYearPlanResult,FutureLookAsset,MarketTimeline,CropFitReview,SoilReview,SeasonPreview,SeasonReport,
+  FarmSummary,FarmAlert,FarmAlerts,NdviSeries,NeighbourhoodSeasonality,PriceSeries,HarvestPriceOutlook,PriceTrend,StageTimeline,YearPlanReview,YearPlanOption,RescoreYearPlan,ApplyYearPlan,ApplyYearPlanResult,FutureLookAsset,MarketTimeline,CropFitReview,SoilReview,SeasonPreview,SeasonReport,EvaraUi,CropJourney,
   FarmCommandCenter,PlantCrop,PlantCropResult,CompleteCareTask,CompleteCareTaskResult,FocusedCrop,CareTask,SoilCropFit,PriorYearMarket,
   SoilReportedReference,SoilParameter,SoilMarkerDraft,SoilSampleDraft,SoilReportExtraction,SoilCanonicalValue,SoilMarker,SoilReport,ReviewSoilReport,ConfirmSoilReport,FarmSoilMarkers,CommodityCatalogue,PricedCommodity,ResearchedCropProfile,
   CurrentMandiQuotes,

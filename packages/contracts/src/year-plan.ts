@@ -97,6 +97,21 @@ export const YearPlanOccupant = z.object({
  occupancy: DateWindow,
  occupancyBasis: z.enum(['recorded', 'planned', 'sourced_duration', 'assumed_duration']),
  note: text.nullable(),
+ /**
+  * 2026-11-04 (docs/research/EVARA_ACTIONS_SPEC.md 1.1): 'planned' = a saved season no recorded cycle realises yet, date
+  * today or later; 'overdue' = planned date passed, still unsown; 'sown' = a recorded cycle, or a saved season a recorded
+  * cycle realises (same crop, sowing within 45 days). planned and overdue are replaceable. Absent on older stored rows
+  * (the web then treats the occupant as not replaceable).
+  */
+ realisation: z.enum(['planned', 'overdue', 'sown']).optional(),
+}).strict();
+
+/** 2026-11-04 (EVARA_ACTIONS_SPEC.md 1.2, 1.3): a planned, unsown saved season a candidate or an alternative plan would take over. */
+export const YearPlanReplacement = z.object({
+ rotationPlanId: z.string().max(160),
+ cropId: z.string().max(120),
+ cropName: z.string().max(120),
+ plannedSowingDate: isoDate.nullable(),
 }).strict();
 
 /**
@@ -208,6 +223,23 @@ export const YearPlanOption = z.object({
  editable: z.boolean(),
 }).strict();
 
+/**
+ * 2026-11-04 (EVARA_ACTIONS_SPEC.md 1.3): plans computed when the growing crop and the saved seasons leave no free window.
+ * 'replace_planned': the engine ran with the planned, unsown seasons set aside; `replaces` lists them and an option's slots
+ * that overlap them are what would replace them (appliable with ApplyYearPlan.alternative). 'sown_comparison': nothing is
+ * replaceable; the engine ran for the horizon that starts at the growing crop's sowing date with no fixed slot, as a
+ * comparison of what could have fitted (never appliable). Deterministic selection only; no model call.
+ */
+export const YearPlanAlternatives = z.object({
+ basis: z.enum(['replace_planned', 'sown_comparison']),
+ summary: text,
+ replaces: z.array(YearPlanReplacement).max(12),
+ horizon: DateWindow,
+ /** Option ids are prefixed 'alt-' and never collide with the review's own options. */
+ options: z.array(YearPlanOption).max(3),
+ limitations: z.array(text).max(10),
+}).strict();
+
 export const YearPlanScenario = z.object({
  /** Round 3: 'future' is a later 12-month horizon (ROUND3_SPEC.md section 1) that starts after the current one. */
  kind: z.enum(['occupied', 'fresh', 'future']),
@@ -254,6 +286,8 @@ export const YearPlanReview = z.object({
  modelSelection: YearPlanSelection.nullable().optional(),
  /** True when the growing crop and the occupants leave no window in this horizon where any sourced crop fits: the options then hold the growing crop alone, or nothing (status 'unavailable'). */
  noFreeWindow: z.boolean().optional(),
+ /** 2026-11-04 (EVARA_ACTIONS_SPEC.md 1.3): alternatives when no free window exists; null when a window exists or nothing fits either way; absent on older rows. */
+ alternatives: YearPlanAlternatives.nullable().optional(),
  candidatesConsidered: z.number().int().nonnegative(),
  summary: text,
  limitations: z.array(text),
@@ -297,6 +331,12 @@ export const ApplyYearPlan = z.object({
  expectedWorkspaceVersion: z.number().int().nonnegative(),
  /** 2026-11-03: the field whose review is applied; its saved seasons carry this fieldId. Required (400 field_required) when the farm has fields. */
  fieldId: FieldId.optional(),
+ /**
+  * 2026-11-04 (EVARA_ACTIONS_SPEC.md 1.3): true applies an option of `review.alternatives` (basis replace_planned): the
+  * replaced saved seasons the chosen slots overlap are removed in the same write. A sown_comparison option is refused
+  * (400 alternative_not_applicable).
+  */
+ alternative: z.boolean().optional(),
 }).strict();
 export const ApplyYearPlanResult = z.object({workspace: FarmWorkspace, review: YearPlanReview}).strict();
 
@@ -310,6 +350,8 @@ export type CostEstimate = z.infer<typeof CostEstimate>;
 export type StageTimeline = z.infer<typeof StageTimeline>;
 export type IntercropCompanion = z.infer<typeof IntercropCompanion>;
 export type YearPlanOccupant = z.infer<typeof YearPlanOccupant>;
+export type YearPlanReplacement = z.infer<typeof YearPlanReplacement>;
+export type YearPlanAlternatives = z.infer<typeof YearPlanAlternatives>;
 export type YearPlanSelection = z.infer<typeof YearPlanSelection>;
 export type YearPlanHorizonQuery = z.infer<typeof YearPlanHorizonQuery>;
 export type YearPlanFieldQuery = z.infer<typeof YearPlanFieldQuery>;

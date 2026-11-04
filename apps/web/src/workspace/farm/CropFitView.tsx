@@ -1,12 +1,16 @@
 import { For, Match, Show, Switch, batch, createEffect, createSignal, on, onCleanup } from "solid-js";
-import type { CropFitReview } from "@harvest/contracts";
+import type { CropFitCandidate, CropFitReview } from "@harvest/contracts";
+import { today, useWorkspace } from "../state";
 import { AiSparkInline } from "../ui/AiSpark";
 import { Chip } from "../ui/Chip";
 import { CandidateChips, CropFitCard } from "./CropFitCard";
 import { CropFitControls } from "./CropFitControls";
 import { CropFitSheet } from "./CropFitSheet";
+import { replacePlannedSeason } from "./cropFitReplace";
+import { ReplaceConfirm } from "./ReplaceConfirm";
 import { classifyCropFitError, loadCropFit, pollCropFit, refreshCropFit, type CropFitFailure } from "./cropFitApi";
 import {
+  REPLACE_PASS_NOTE,
   SAME_AS_PLAN_LINE,
   candidateKey,
   candidateTitle,
@@ -68,13 +72,29 @@ function SkeletonCards() {
  * Everything below the controls for one review: top picks (three cards), the ranked list behind "See all n crops", and
  * the empty and error states. Presentational, so tests render it with fixtures.
  */
-export function CropFitResults(props: { review: CropFitReview; showAll: boolean; onToggleAll: () => void; onOpen: (key: string) => void; onRetry: () => void; retrying: boolean }) {
+/** 2026-11-04 (EVARA_ACTIONS_SPEC.md 1.2): what "Replace with <crop>" needs; omitted where nothing can be replaced (no workspace). */
+export interface ReplaceControls {
+  onReplace: (candidate: CropFitCandidate) => void;
+  /** True while a replace is being saved; every replace button is then disabled. */
+  busy: boolean;
+  /** Why the last replace was refused or failed; "" when none. */
+  error: string;
+  /** The line after a replace that was saved ("Replaced Pigeon pea with Maize."); "" when none. */
+  notice: string;
+}
+
+export function CropFitResults(props: { review: CropFitReview; showAll: boolean; onToggleAll: () => void; onOpen: (key: string) => void; onRetry: () => void; retrying: boolean; replace?: ReplaceControls | undefined }) {
   const cards = () => pickCards(props.review);
   const r = () => props.review;
   const ranked = () => rankedCandidates(r());
   return (
     <>
       <p class="cf-muted cf-explain">{SAME_AS_PLAN_LINE}.</p>
+      <Show when={r().replacePass}>
+        <p class="cf-replace-note">{REPLACE_PASS_NOTE}</p>
+      </Show>
+      <Show when={props.replace?.notice}>{(m) => <p class="cf-replace-done" role="status">{m()}</p>}</Show>
+      <Show when={props.replace?.error}>{(m) => <p class="cf-inline-error" role="alert">{m()}</p>}</Show>
       <div class="cf-section-head">
         <h3 id="cf-picks-heading">Top picks</h3>
         <PicksStatus review={r()} />
@@ -85,7 +105,7 @@ export function CropFitResults(props: { review: CropFitReview; showAll: boolean;
             <For each={cards()}>
               {(card) => (
                 <div role="listitem">
-                  <CropFitCard card={card} fieldAreaHa={r().fieldAreaHa} onOpen={() => props.onOpen(candidateKey(card.candidate))} />
+                  <CropFitCard card={card} fieldAreaHa={r().fieldAreaHa} onOpen={() => props.onOpen(candidateKey(card.candidate))} onReplace={props.replace?.onReplace} replaceBusy={props.replace?.busy} />
                 </div>
               )}
             </For>
@@ -102,6 +122,10 @@ export function CropFitResults(props: { review: CropFitReview; showAll: boolean;
               Try again
             </button>
           </div>
+        </Match>
+        <Match when={r().candidates.length > 0}>
+          {/* Crops were ranked but none was picked: this is not "nothing fits", the ranked list below has them. */}
+          <p class="cf-muted">No top picks were chosen for this date. The ranked crops are listed below.</p>
         </Match>
         <Match when={true}>
           <div class="cf-empty">
@@ -168,6 +192,7 @@ export default function CropFitView(props: {
   fieldName?: string | null | undefined;
 }) {
   const field = () => props.fieldId ?? null;
+  const ws = useWorkspace();
   const todayIso = localToday();
   const [controls, setControls] = createSignal<ControlsState>(defaultControls(todayIso));
   const [review, setReview] = createSignal<CropFitReview>();
@@ -176,6 +201,11 @@ export default function CropFitView(props: {
   const [dateError, setDateError] = createSignal<string | null>(null);
   const [showAll, setShowAll] = createSignal(false);
   const [open, setOpen] = createSignal<string | null>(null);
+  const [replaceBusy, setReplaceBusy] = createSignal(false);
+  const [replaceError, setReplaceError] = createSignal("");
+  const [replaceNotice, setReplaceNotice] = createSignal("");
+  /** The candidate whose "Replace with" the farmer tapped; nothing is saved until they confirm it. */
+  const [confirming, setConfirming] = createSignal<CropFitCandidate | null>(null);
   let generation = 0;
   let controller: AbortController | undefined;
 
@@ -221,6 +251,10 @@ export default function CropFitView(props: {
           setOpen(null);
           setShowAll(false);
           setDateError(null);
+          setReplaceBusy(false);
+          setReplaceError("");
+          setReplaceNotice("");
+          setConfirming(null);
           setControls(defaultControls(todayIso));
           setPhase({ kind: "loading" });
         });
@@ -232,6 +266,62 @@ export default function CropFitView(props: {
     generation++;
     controller?.abort();
   });
+
+  /**
+   * "Replace with <crop>": swap the planned, unsown saved season the candidate replaces for this crop (the year plan's own
+   * saved-season swap), then refresh the workspace and re-read the ranking, which has changed with the saved seasons.
+   */
+  function askReplace(candidate: CropFitCandidate) {
+    if (replaceBusy()) return;
+    batch(() => {
+      setReplaceError("");
+      setReplaceNotice("");
+      setOpen(null);
+      setConfirming(candidate);
+    });
+  }
+  async function replaceWith(candidate: CropFitCandidate) {
+    if (replaceBusy()) return;
+    const farmId = props.farmId;
+    const fieldId = field();
+    const gen = generation;
+    const workspace = ws.workspace();
+    if (!workspace || workspace.farmId !== farmId || ws.workspace.loading)
+      return setReplaceError("Your saved seasons are still loading. Try again in a moment.");
+    if (review()?.stale) return setReplaceError("This ranking is out of date. Refresh it, then try again.");
+    batch(() => {
+      setReplaceBusy(true);
+      setReplaceError("");
+      setReplaceNotice("");
+    });
+    try {
+      const outcome = await replacePlannedSeason({
+        candidate,
+        rotationPlans: workspace.rotationPlans,
+        cycles: workspace.cycles,
+        fieldId,
+        todayIso: today(),
+        save: (patch) => ws.saveWorkspace(patch),
+        refresh: () => ws.refreshWorkspace(),
+        reload: () => {
+          if (gen === generation && props.farmId === farmId && field() === fieldId) void load(farmId, controls(), false);
+        },
+      });
+      if (gen !== generation) return;
+      if (outcome.kind === "replaced")
+        batch(() => {
+          setOpen(null);
+          setReplaceNotice(`Replaced ${outcome.from} with ${outcome.to} in your saved seasons.`);
+        });
+      else if (outcome.kind === "unchanged") setOpen(null);
+      else setReplaceError(outcome.message);
+    } finally {
+      if (gen === generation) batch(() => {
+        setReplaceBusy(false);
+        setConfirming(null);
+      });
+    }
+  }
 
   function change(next: ControlsState) {
     batch(() => {
@@ -300,11 +390,14 @@ export default function CropFitView(props: {
           <SkeletonCards />
         </Match>
         <Match when={review()}>
-          {(r) => <CropFitResults review={r()} showAll={showAll()} onToggleAll={() => setShowAll((v) => !v)} onOpen={setOpen} onRetry={refresh} retrying={refreshing()} />}
+          {(r) => <CropFitResults review={r()} showAll={showAll()} onToggleAll={() => setShowAll((v) => !v)} onOpen={setOpen} onRetry={refresh} retrying={refreshing()} replace={{ onReplace: askReplace, busy: replaceBusy(), error: replaceError(), notice: replaceNotice() }} />}
         </Match>
       </Switch>
       <Show when={openCandidate()} keyed>
-        {(candidate) => <CropFitSheet candidate={candidate} review={review()!} pick={openPick()} onClose={() => setOpen(null)} />}
+        {(candidate) => <CropFitSheet candidate={candidate} review={review()!} pick={openPick()} onClose={() => setOpen(null)} onReplace={askReplace} replaceBusy={replaceBusy()} replaceError={replaceError()} />}
+      </Show>
+      <Show when={confirming()} keyed>
+        {(candidate) => <ReplaceConfirm candidate={candidate} busy={replaceBusy()} error={replaceError()} onConfirm={() => void replaceWith(candidate)} onClose={() => setConfirming(null)} />}
       </Show>
     </section>
   );

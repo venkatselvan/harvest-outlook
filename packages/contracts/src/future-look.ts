@@ -14,7 +14,8 @@ export type FutureLookStatus = z.infer<typeof FutureLookStatus>;
  * or today when the stage is current); `gap` = the predicted look of this field on a date after the latest real scene (at
  * most one per crop cycle per calendar week). Both are code-guided Meta image edits, never observations.
  */
-export const FutureLookKind = z.enum(['stage', 'gap']);
+/** 2026-11-04 (EVARA_ACTIONS_SPEC.md 3.2): 'journey' = one stage of a crop journey (an arbitrary crop's cycle on this field), owned by a crop_journeys row. */
+export const FutureLookKind = z.enum(['stage', 'gap', 'journey']);
 export type FutureLookKind = z.infer<typeof FutureLookKind>;
 
 /**
@@ -92,6 +93,8 @@ export const FutureLookAsset = z.object({
   targetDate: z.iso.date().nullable(),
   /** The code-written guidance sentence that went into the prompt (no NDVI number). */
   guidance: z.string().max(400).nullable(),
+  /** 2026-11-04: the crop journey this asset belongs to (kind 'journey'); null otherwise; absent on older rows. */
+  journeyId: z.uuid().nullable().optional(),
   createdAt: z.iso.datetime(),
   updatedAt: z.iso.datetime(),
 }).strict();

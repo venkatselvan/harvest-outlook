@@ -212,6 +212,46 @@ export function candidateTitle(c: Pick<CropFitCandidate, "cropName" | "productNa
 export const shareBasisText = (comp: Pick<IntercropCompanion, "shareBasis">): string => (comp.shareBasis === "sourced" ? "Sourced shares" : "Assumed shares");
 /** "In your year plan: Best overall" (several labels are joined); null when no plan option starts with this crop. */
 export const yearPlanText = (c: Pick<CropFitCandidate, "yearPlanLabels">): string | null => (c.yearPlanLabels?.length ? `In your year plan: ${c.yearPlanLabels.join(", ")}` : null);
+/**
+ * 2026-11-04 (EVARA_ACTIONS_SPEC.md 1.2): "Replaces Pigeon pea (planned 12 Feb 2027)" on a candidate ranked with the planned,
+ * unsown seasons set aside; several seasons are joined with "and". Null on an ordinary ranking.
+ */
+export function replacesText(c: Pick<CropFitCandidate, "replaces"> & Partial<Pick<CropFitCandidate, "cropId" | "sowing">>): string | null {
+  const list = c.replaces ?? [];
+  if (!list.length) return null;
+  const move = sameCropMove(c);
+  if (move) return `Same crop: moves the sowing from ${formatDate(move.from, move.from.slice(0, 4) !== move.to.slice(0, 4))} to ${formatDate(move.to)}`;
+  return `Replaces ${list.map((r) => (r.plannedSowingDate ? `${r.cropName} (planned ${formatDate(r.plannedSowingDate)})` : r.cropName)).join(" and ")}`;
+}
+/**
+ * A candidate that "replaces" the same crop it already plans (seen live: "Maize replaces Maize, planned 5 Feb, sow 12 Feb"):
+ * the write is the same swap, but the farmer is moving the sowing date, not changing the crop. Null otherwise.
+ */
+export function sameCropMove(c: Pick<CropFitCandidate, "replaces"> & Partial<Pick<CropFitCandidate, "cropId" | "sowing">>): { from: string; to: string } | null {
+  const list = c.replaces ?? [];
+  const only = list.length === 1 ? list[0]! : null;
+  return only && c.sowing && only.cropId === c.cropId && only.plannedSowingDate ? { from: only.plannedSowingDate, to: c.sowing } : null;
+}
+/** The button on such a candidate: "Replace with Maize", or "Move Maize to 12 Feb" when it is the same crop. */
+export const replaceButtonText = (c: Pick<CropFitCandidate, "cropName" | "productName" | "kind" | "companion" | "replaces" | "cropId" | "sowing">): string => {
+  const move = sameCropMove(c);
+  return move ? `Move ${candidateTitle(c)} to ${formatDate(move.to, false)}` : `Replace with ${candidateTitle(c)}`;
+};
+/**
+ * The confirm step of "Replace with <crop>": what the saved season becomes, as one line, so nothing is saved on a single tap.
+ * "Pigeon pea (planned 16 May 2027) → Maize, sow 20 May 2027, harvest 10 Sep 2027 – 25 Sep 2027".
+ */
+export function replaceConfirmText(c: Pick<CropFitCandidate, "replaces" | "cropName" | "productName" | "kind" | "companion" | "sowing" | "harvest">): string {
+  const from = (c.replaces ?? []).map((r) => (r.plannedSowingDate ? `${r.cropName} (planned ${formatDate(r.plannedSowingDate)})` : r.cropName)).join(" and ");
+  const harvest = c.harvest ? `${formatDate(c.harvest.earliest)} – ${formatDate(c.harvest.latest)}` : "not known";
+  return `${from} → ${candidateTitle(c)}, sow ${formatDate(c.sowing)}, harvest ${harvest}`;
+}
+export const replaceConfirmTitle = (c: Pick<CropFitCandidate, "replaces" | "cropName" | "productName" | "kind" | "companion" | "cropId" | "sowing">): string => {
+  const move = sameCropMove(c);
+  return move ? `Move ${candidateTitle(c)} to ${formatDate(move.to, false)}?` : `Replace with ${candidateTitle(c)}?`;
+};
+/** The one-line note under the heading of a replace-pass review. */
+export const REPLACE_PASS_NOTE = "These picks would replace a season you have planned but not sown yet.";
 /** "Grown here before: 2025" from the recorded cycles; null when the crop was never recorded on this farm. */
 export function grownBeforeText(c: Pick<CropFitCandidate, "grownBefore">): string | null {
   const g = c.grownBefore;

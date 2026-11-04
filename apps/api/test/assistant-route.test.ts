@@ -135,6 +135,9 @@ describe("POST /api/v1/assistant/turns (synthetic mode)", () => {
     expect(first.statusCode).toBe(200);
     expect(second.headers["idempotent-replay"]).toBe("true");
     expect(second.json().data.traceId).toBe(first.json().data.traceId);
+    // 2026-11-04: the Evara UI tree is part of the stored response, so the replay returns the same tree.
+    expect(first.json().data.ui).toMatchObject({ version: "1", origin: "fallback", root: { type: "stack" } });
+    expect(second.json().data.ui).toEqual(first.json().data.ui);
     expect(created).toBe(1);
     expect((await post(client, body({ text: "something else" }), { "idempotency-key": key })).statusCode).toBe(422);
   });

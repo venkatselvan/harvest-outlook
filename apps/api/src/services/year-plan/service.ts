@@ -21,7 +21,8 @@ import { compareSoil, hasConfirmedMarkers, soilFacts, type RateMarkerFn } from '
 import { neighbourhoodSeasonality } from '../today/ndvi';
 import * as data from './data';
 import { addDays, monthOf, overlaps } from './dates';
-import { buildScenario, HorizonError, MAX_YEAR_INDEX, monthYear, occupancyFor, type AssumedPredecessorInput, type TimelineFn } from './scenario';
+import { buildScenario, HorizonError, MAX_YEAR_INDEX, monthYear, occupancyFor, seasonRealisation, type AssumedPredecessorInput, type TimelineFn } from './scenario';
+import { alternativesFrom, alternativesSetup, onlySavedSeasonsFit, ONLY_SAVED_LIMITATION, overlapsInterval, reviewSummaryWithAlternatives, type YearPlanAlternatives } from './alternatives';
 import { ASSUMPTIONS, type SoilCheckLite } from './scoring';
 import { stageTimeline } from '../today/stage-timeline';
 import { enumerateCandidates, shortHash, type CandidateSet } from './candidates';
@@ -39,7 +40,9 @@ import { appendBestProfitOption, appendGreenManureOption, deterministicSelection
  * Rescoring "<base>:edit" again replaces the stored edit of the same base option.
  */
 /** Part of the context hash: reviews stored under an older version are stale and rebuilt on the next ensure. */
-export const ENGINE_VERSION = 'year-plan-v5-2026-11-01';
+// v6 (2026-11-04, EVARA_ACTIONS_SPEC.md 1): realised saved seasons are no longer occupants, occupants carry realisation, and
+// a review without a free window carries alternatives; older rows are stale and rebuilt.
+export const ENGINE_VERSION = 'year-plan-v6-2026-11-04';
 export const JOB_TYPE = 'farm.year-plan';
 export const EDIT_SUFFIX = ':edit';
 /**
@@ -87,6 +90,8 @@ export interface YearPlanContext {
   /** 2026-11-03 (12.2): the field this context plans (null on a farm without fields) and its spherical area. */
   fieldId: string | null;
   fieldAreaHa: number | null;
+  /** 2026-11-04: the saved seasons of the planned view (the field's plus farm-wide ones), for the alternatives' replacements. */
+  rotationPlans: FarmWorkspace['rotationPlans'];
 }
 interface InputsSummary {
   annualMeans: Record<string, number>; climatologyRainByMonth: number[] | null; climatologySource: { sourceId: string; years: { from: number; to: number } } | null;
@@ -250,7 +255,7 @@ export async function yearPlanContext(deps: ContextDeps, ownerId: string, farmId
   return {
     hash: payloadHash(material), chainHash: payloadHash(stable), asOf, farmId, farmVersion: farm.version, workspaceVersion: workspace.version, ctx, set, farm, soilPh, soilSummary,
     horizonFrom: horizonKey(ctx), soilChecks: soilChecks.fn, assumedInput: ctx.assumed ? assumedPredecessor : null,
-    fieldId, fieldAreaHa: base.fieldAreaHa,
+    fieldId, fieldAreaHa: base.fieldAreaHa, rotationPlans: workspace.rotationPlans,
   };
 }
 
@@ -445,6 +450,40 @@ function annualMeansOf(map: Map<string, HarvestPriceOutlook>, into: Map<string, 
   for (const [p, o] of best) into.set(p, o.annualMean!);
 }
 
+/**
+ * Alternatives of a review with no crop sequence (EVARA_ACTIONS_SPEC.md 1.3): the setup's context (replaceable seasons set
+ * aside, or the comparison from the growing crop's sowing date), its own candidates and price lookups (at most `cap`, spread
+ * as in the main run, on a copy of the inputs so the stored main inputs are unchanged), one engine run and code selection.
+ * The limitation says why there are none when the setup or the run gives nothing.
+ */
+async function computeAlternatives(deps: YearPlanDeps, c: YearPlanContext, inputs: Inputs, cap: number): Promise<{ alternatives: YearPlanAlternatives | null; limitation: string | null; slotSeasons: Record<string, string> }> {
+  const setup = alternativesSetup(c.ctx);
+  if (!setup.basis) return { alternatives: null, limitation: c.ctx.occupied.length || c.ctx.fixedSlot ? setup.reason : null, slotSeasons: {} };
+  const set = enumerateCandidates(setup.ctx);
+  const allKeys = runInputKeys(setup.ctx, set).filter((k) => !inputs.priceOutlooks.has(k.key));
+  const keys = spreadKeys(allKeys, cap);
+  const fetched = await fetchOutlooks(deps, c, keys);
+  const altInputs: Inputs = { ...inputs, priceOutlooks: new Map([...inputs.priceOutlooks, ...fetched.map]), annualMeans: new Map(inputs.annualMeans) };
+  annualMeansOf(fetched.map, altInputs.annualMeans);
+  const looked = new Set([...keys.map((k) => k.key), ...inputs.priceOutlooks.keys()]);
+  const kept: CandidateSet = keys.length < allKeys.length ? { ...set, candidates: set.candidates.filter((x) => x.kind === 'green_manure' || looked.has(slotPriceKey(x))) } : set;
+  const run = runYearPlanEngine(setup.ctx, altInputs, { candidateSet: kept });
+  const alternatives = alternativesFrom(c.ctx, setup, run, c.rotationPlans);
+  if (!alternatives) {
+    return { alternatives: null, slotSeasons: {}, limitation: setup.basis === 'replace_planned' && onlySavedSeasonsFit(setup, run, c.rotationPlans) ? ONLY_SAVED_LIMITATION
+      : setup.basis === 'replace_planned'
+      ? 'Even with the planned, unsown seasons set aside, no crop sequence fits this field with sourced sowing windows, so no alternative plan is shown.'
+      : 'No crop sequence would have fitted this field from the growing crop\'s sowing date either, so no comparison plan is shown.' };
+  }
+  const seasons = new Map<string, string>(kept.candidates.map((x) => [`slot-${shortHash(x.candidateId)}`, x.season]));
+  const slotSeasons: Record<string, string> = {};
+  for (const o of alternatives.options) for (const s of o.slots) { const season = seasons.get(s.slotId); if (season) slotSeasons[s.slotId] = season; }
+  if (keys.length < allKeys.length) alternatives.limitations.push(`Price lookups for the alternatives are capped at ${cap}: ${keys.length} of ${allKeys.length} further crop and harvest-week combinations were looked up; sowing dates whose harvest week was not looked up were left out.`);
+  if (fetched.failed) alternatives.limitations.push(`${fetched.failed} harvest-week price lookups for the alternatives failed and score no price.`);
+  alternatives.limitations = alternatives.limitations.slice(0, 10);
+  return { alternatives, limitation: null, slotSeasons };
+}
+
 /** Worker body: inputs -> engine -> Meta selection (or deterministic) -> persist. Provider problems never throw. */
 export async function generateYearPlan(deps: YearPlanDeps, reviewId: string, ownerId: string, isCancelled: () => Promise<boolean> = async () => false) {
   const row = (await deps.pool.query<Row>(`SELECT ${COLS} FROM farm_year_plans WHERE id=$1 AND owner_id=$2 AND archived_at IS NULL`, [reviewId, ownerId])).rows[0];
@@ -553,7 +592,17 @@ export async function generateYearPlan(deps: YearPlanDeps, reviewId: string, own
     stored.scenario = result.scenario;
     result.candidatesConsidered = set.candidates.length;
     result.limitations = [...run.limitations, ...limitations].map((x) => x.slice(0, 1000));
-    if (!run.shortlist.length) { result.status = 'unavailable'; result.summary = 'No crop sequence fits the free months of this field with sourced sowing windows.'; return finish(); }
+    // ---- alternatives (EVARA_ACTIONS_SPEC.md 1.3): only when no crop sequence fits (no free window, the growing crop alone,
+    // or nothing at all); deterministic selection, no model call, no job. Null in the normal case.
+    result.alternatives = null;
+    if (run.sequencesConsidered === 0) {
+      const alt = await computeAlternatives(deps, c, inputs, cap);
+      result.alternatives = alt.alternatives;
+      if (alt.limitation) result.limitations.push(alt.limitation.slice(0, 1000));
+      for (const [k, v] of Object.entries(alt.slotSeasons)) slotSeasons[k] = v;
+    }
+    const altSummary = result.alternatives ? reviewSummaryWithAlternatives(result.alternatives, c.ctx.fixedSlot !== null) : null;
+    if (!run.shortlist.length) { result.status = 'unavailable'; result.summary = altSummary ?? 'No crop sequence fits the free months of this field with sourced sowing windows.'; return finish(); }
     // ---- selection
     const candidates = selectionCandidates(run.shortlist);
     result.options = deterministicSelection(candidates);
@@ -561,6 +610,7 @@ export async function generateYearPlan(deps: YearPlanDeps, reviewId: string, own
     result.summary = 'Plans picked and labelled by code from the scored crop sequences; every date, range and score is calculated.';
     if (candidates.length < 3) {
       result.status = 'ready';
+      if (altSummary) result.summary = altSummary;
       result.modelSelection = { outcome: 'not_needed', detail: null };
       const distinct = distinctOptions(run.options).length;
       result.limitations.push(distinct > candidates.length
@@ -601,10 +651,12 @@ export async function generateYearPlan(deps: YearPlanDeps, reviewId: string, own
 }
 
 /** 12.2: `fieldId` is the caller's field (validated by requireField); a review of another field (or farm-wide) is not found. */
-async function loadRow(deps: YearPlanDeps, ownerId: string, farmId: string, reviewId: string, fieldId: string | null = null): Promise<Row> {
+async function loadRow(deps: YearPlanDeps, ownerId: string, farmId: string, reviewId: string, fieldId: string | null = null, alternative = false): Promise<Row> {
   const row = (await deps.pool.query<Row>(`SELECT ${COLS} FROM farm_year_plans WHERE id=$1 AND farm_id=$2 AND owner_id=$3 AND mode=$4 AND archived_at IS NULL AND input_context->>'fieldId' IS NOT DISTINCT FROM $5::text`, [reviewId, farmId, ownerId, deps.config.RUNTIME_MODE, fieldId])).rows[0];
   if (!row) throw notFound('Year plan');
-  if (!['ready', 'partial'].includes(row.status)) throw new ApiError(409, 'review_not_ready', 'Wait for the year plan to finish first');
+  // An 'unavailable' review can still carry alternatives (a fresh field its saved seasons fill); only those may be applied.
+  const ok = alternative && row.status === 'unavailable' && !!row.result.alternatives;
+  if (!ok && !['ready', 'partial'].includes(row.status)) throw new ApiError(409, 'review_not_ready', 'Wait for the year plan to finish first');
   return row;
 }
 const staleError = () => new ApiError(409, 'review_stale', 'Farm inputs changed since this plan was made; refresh the plan first');
@@ -681,20 +733,32 @@ export async function rescoreYearPlan(deps: YearPlanDeps, ownerId: string, farmI
 }
 
 const capitalise = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
-function occupiedNow(workspace: FarmWorkspace, stateId: string | null, fixed: { cycleId: string; to: string } | null): { id: string; from: string; to: string; cropId: string }[] {
+function occupiedNow(workspace: FarmWorkspace, stateId: string | null, fixed: { cycleId: string; to: string } | null, asOf: string): { id: string; from: string; to: string; cropId: string }[] {
   const out: { id: string; from: string; to: string; cropId: string }[] = [];
   // The current crop keeps the release date the plan itself used (stage-timeline window when its harvest is not recorded).
   for (const cy of workspace.cycles.filter((x) => x.stage !== 'harvested')) out.push({ id: cy.id, cropId: cy.cropId, from: cy.sowingDate, to: fixed && fixed.cycleId === cy.id ? fixed.to : occupancyFor(cy.cropId, cy.productId ?? null, cy.establishmentMethod ?? null, cy.sowingDate, cy.harvestDate ?? null, stateId).to });
-  for (const p of workspace.rotationPlans) if (p.plannedSowingDate) out.push({ id: p.id, cropId: p.cropId, from: p.plannedSowingDate, to: occupancyFor(p.cropId, p.productId ?? null, null, p.plannedSowingDate, p.plannedHarvestDate ?? null, stateId).to });
+  // EVARA_ACTIONS_SPEC 1.1: a saved season a recorded cycle realises is that cycle, as in buildScenario; it is not checked twice.
+  for (const p of workspace.rotationPlans) if (p.plannedSowingDate && seasonRealisation(p, workspace.cycles, asOf) !== 'sown') out.push({ id: p.id, cropId: p.cropId, from: p.plannedSowingDate, to: occupancyFor(p.cropId, p.productId ?? null, null, p.plannedSowingDate, p.plannedHarvestDate ?? null, stateId).to });
   return out;
 }
 
-/** Appends the option's seasons (fixed slot skipped) as yearplan:{reviewId}:{optionId}:{slotId}; idempotent; existing entries untouched. */
+/**
+ * Appends the option's seasons (fixed slot skipped) as yearplan:{reviewId}:{optionId}:{slotId}; idempotent; existing entries
+ * untouched. 2026-11-04 (EVARA_ACTIONS_SPEC.md 1.3): `alternative: true` applies an option of review.alternatives of basis
+ * replace_planned; the saved seasons in alternatives.replaces that the chosen slots overlap are removed in the same write and
+ * the overlap check ignores them. A sown_comparison alternative is refused (400 alternative_not_applicable). An alternative
+ * may be applied from a review whose status is 'unavailable' (a fresh field the saved seasons fill: no main option).
+ */
 export async function applyYearPlan(deps: YearPlanDeps, ownerId: string, farmId: string, body: ApplyYearPlan): Promise<{ workspace: FarmWorkspace; review: YearPlanReview }> {
   const field = requireField(await getWorkspace(deps.pool, ownerId, farmId), body.fieldId);
   const fieldId = field?.id ?? null;
-  const row = await loadRow(deps, ownerId, farmId, body.reviewId, fieldId);
-  const option = body.optionId.endsWith(EDIT_SUFFIX) ? row.input_context.edits?.[body.optionId]?.option : row.result.options.find((o) => o.optionId === body.optionId);
+  const alt = body.alternative === true;
+  const row = await loadRow(deps, ownerId, farmId, body.reviewId, fieldId, alt);
+  const alternatives = alt ? row.result.alternatives ?? null : null;
+  if (alt && !alternatives) throw notFound('Alternative plan');
+  if (alternatives?.basis === 'sown_comparison') throw new ApiError(400, 'alternative_not_applicable', 'This plan is a comparison of what could have fitted the field; it cannot be applied, the sown crop stays');
+  const option = alternatives ? alternatives.options.find((o) => o.optionId === body.optionId)
+    : body.optionId.endsWith(EDIT_SUFFIX) ? row.input_context.edits?.[body.optionId]?.option : row.result.options.find((o) => o.optionId === body.optionId);
   if (!option) throw notFound('Plan option');
   let slots = option.slots.filter((s) => !s.fixed);
   if (body.slotIds) {
@@ -707,12 +771,20 @@ export async function applyYearPlan(deps: YearPlanDeps, ownerId: string, farmId:
   const asOf = todayIst(nowOf(deps));
   const workspace = await getWorkspace(deps.pool, ownerId, farmId);
   const c = await rowContext(deps, ownerId, farmId, asOf, row);
-  if (slots.every((s) => workspace.rotationPlans.some((p) => p.id === key(s.slotId)))) return { workspace, review: await view(deps, row, c) };
+  if (slots.every((s) => workspace.rotationPlans.some((p) => p.id === key(s.slotId)))) return { workspace, review: alt ? await currentReviewAfterAlternative(deps, row, farmId, fieldId, c.horizonFrom) : await view(deps, row, c) };
   if (c.hash !== row.context_hash) throw staleError();
   if (workspace.version !== body.expectedWorkspaceVersion) throw new ApiError(409, 'version_conflict', 'Saved seasons changed; reload before applying this plan', { currentVersion: workspace.version });
   const additions = slots.filter((s) => !workspace.rotationPlans.some((p) => p.id === key(s.slotId)));
   // 12.2: only this field's crops and seasons (plus farm-wide legacy ones) can overlap; other fields are separate land.
-  const occupied = occupiedNow(fieldView(workspace, fieldId), c.ctx.stateId, c.ctx.fixedSlot ? { cycleId: c.ctx.fixedSlot.cycleId, to: c.ctx.fixedSlot.occupancy.to } : null);
+  const onField = fieldView(workspace, fieldId);
+  const occupiedAll = occupiedNow(onField, c.ctx.stateId, c.ctx.fixedSlot ? { cycleId: c.ctx.fixedSlot.cycleId, to: c.ctx.fixedSlot.occupancy.to } : null, asOf);
+  // Alternative: the replaced seasons (listed by the review, still saved on this field) that a chosen slot overlaps.
+  const removed = new Set<string>();
+  if (alternatives) {
+    const listed = new Set(alternatives.replaces.map((r) => r.rotationPlanId));
+    for (const o of occupiedAll) if (listed.has(o.id) && onField.rotationPlans.some((p) => p.id === o.id) && overlapsInterval({ slots: additions }, o)) removed.add(o.id);
+  }
+  const occupied = occupiedAll.filter((o) => !removed.has(o.id));
   for (const [i, s] of additions.entries()) {
     if (s.sowing < asOf) throw new ApiError(409, 'plan_window_passed', `${s.cropName}: the sowing date ${s.sowing} has passed`);
     const hit = occupied.find((o) => overlaps(s.occupancy.from, s.occupancy.to, o.from, o.to));
@@ -746,9 +818,13 @@ export async function applyYearPlan(deps: YearPlanDeps, ownerId: string, farmId:
     return { id: key(s.slotId), year: Number(s.sowing.slice(0, 4)), season: capitalise(season), cropId: s.cropId, cropName: s.cropName, ...product, ...kind, ...method, plannedSowingDate: s.sowing, plannedHarvestDate: harvestLatest, notes: notes.slice(0, 2000), ...(fieldId ? { fieldId } : {}) };
   });
   let after = c;
-  const saved = await putWorkspace(deps.pool, ownerId, farmId, { boundary: workspace.boundary, previousHarvest: workspace.previousHarvest, cycles: workspace.cycles, rotationPlans: [...workspace.rotationPlans, ...entries], expectedVersion: workspace.version }, {
+  const saved = await putWorkspace(deps.pool, ownerId, farmId, { boundary: workspace.boundary, previousHarvest: workspace.previousHarvest, cycles: workspace.cycles, rotationPlans: [...workspace.rotationPlans.filter((p) => !removed.has(p.id)), ...entries], expectedVersion: workspace.version }, {
     farmVersion: c.farmVersion,
     afterSave: async (client, savedWs) => {
+      // 2026-11-04 (EVARA_ACTIONS_SPEC.md 1.3): an alternative changes the field's occupants (a season removed, another added), so the
+      // stored scenario, summary, noFreeWindow and alternatives are no longer true of the new context: the row is NOT re-keyed. It stays
+      // under its old hash (read as stale; kept so a repeated apply stays a no-op) and the new hash gets a fresh review below.
+      if (alternatives) return;
       after = await yearPlanContext({ ...deps, pool: client as unknown as Pool }, ownerId, farmId, asOf, c.horizonFrom, c.horizonFrom ? { keepAssumed: c.assumedInput, fieldId } : { fieldId });
       const mode = deps.config.RUNTIME_MODE;
       await client.query("UPDATE jobs SET cancel_requested=true WHERE id IN (SELECT job_id FROM farm_year_plans WHERE farm_id=$1 AND owner_id=$2 AND mode=$3 AND context_hash=$4 AND id<>$5 AND archived_at IS NULL AND horizon_from IS NOT DISTINCT FROM $6::date) AND state IN ('queued','running')", [farmId, ownerId, mode, after.hash, row.id, c.horizonFrom]);
@@ -760,5 +836,20 @@ export async function applyYearPlan(deps: YearPlanDeps, ownerId: string, farmId:
       row.context_hash = after.hash;
     },
   });
+  if (alternatives) return { workspace: saved, review: await currentReviewAfterAlternative(deps, row, farmId, fieldId, c.horizonFrom) };
   return { workspace: saved, review: await view(deps, row, after) };
+}
+
+/**
+ * After an alternative apply: the review of the field's new context. ensureYearPlan finds no row under the new hash (the applied
+ * review was not re-keyed) and queues a build; the pending review is returned and the web polls. If queueing is unavailable the
+ * current-context read is returned (blank or the stale row, flagged stale), never the applied review as if it were current.
+ */
+async function currentReviewAfterAlternative(deps: YearPlanDeps, row: Row, farmId: string, fieldId: string | null, horizonFrom: string | null): Promise<YearPlanReview> {
+  const opts = { ...(horizonFrom ? { from: horizonFrom } : {}), ...(fieldId ? { fieldId } : {}) };
+  try {
+    return await ensureYearPlan(deps, { ownerId: row.owner_id, sessionId: row.session_id }, farmId, opts);
+  } catch {
+    return readYearPlan(deps, row.owner_id, farmId, opts);
+  }
 }

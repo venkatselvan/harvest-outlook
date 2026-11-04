@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { ApiError } from "../../lib/api";
-import { ASSISTANT_PROMPTS, askErrorMessage, assistantWelcomeText, clarificationFollowUp, turnAnswerText, wasWithheld, type TurnResult } from "./model";
+import { evaraTreeFixture } from "../../workspace/evara/fixtures";
+import { ASSISTANT_PROMPTS, askErrorMessage, assistantWelcomeText, clarificationFollowUp, turnAnswerText, turnUi, wasWithheld, type TurnResult } from "./model";
 
 const base: TurnResult = {
   status: "approved", provenance: "synthetic_fixture", traceId: "t", intent: null, language: "en", gateStatus: "approved", answerBlocks: [], numericRefs: [], claimEvidenceRefs: [],
@@ -51,7 +52,10 @@ describe("Evara panel copy", () => {
   });
   it("lists the 15-day care prompt first", () => {
     expect(ASSISTANT_PROMPTS[0]).toBe("How should I care for my crop in the next 15 days?");
-    expect(ASSISTANT_PROMPTS.length).toBe(4);
+    expect(ASSISTANT_PROMPTS.length).toBe(5);
+  });
+  it("offers the ginger growth journey as the last welcome prompt", () => {
+    expect(ASSISTANT_PROMPTS[4]).toBe("Show me how ginger would grow here");
   });
   it("a failed empty turn shows the reference, with the ran-out-of-room sentence only for max_output_tokens", () => {
     const failed: TurnResult = { ...base, status: "failed", traceId: "tr_9", gateStatus: null, incomplete: { reasons: ["provider_error"] } };
@@ -65,5 +69,26 @@ describe("Evara panel copy", () => {
     expect(turnAnswerText({ ...base, status: "failed", clarifications: [clar] })).toBe("Which plot?");
     const block = { text: "Irrigate lightly." } as TurnResult["answerBlocks"][number];
     expect(turnAnswerText({ ...base, status: "failed", answerBlocks: [block], clarifications: [clar] })).toBe("Irrigate lightly.");
+  });
+});
+
+describe("the turn's UI tree", () => {
+  it("passes a tree the kit contract accepts, and reads null for a turn without one (older server, stored message, error)", () => {
+    const ui = evaraTreeFixture();
+    expect(turnUi(ui)).toEqual(ui);
+    expect(turnUi(null)).toBeNull();
+    expect(turnUi(undefined)).toBeNull();
+  });
+  it("drops a malformed or stale tree instead of letting the renderer meet it: an unknown node, a wrong version, a prose-free text node", () => {
+    const ui = evaraTreeFixture();
+    expect(turnUi({ ...ui, version: "2" })).toBeNull();
+    expect(turnUi({ ...ui, root: { type: "carousel", children: [] } })).toBeNull();
+    expect(turnUi({ ...ui, root: { type: "text", blockId: "b", kind: "text", text: "" } })).toBeNull();
+    expect(turnUi("<script>")).toBeNull();
+  });
+  it("leaves the text path alone: a turn with a tree still has its answer text for speech, storage and the next question's context", () => {
+    const withUi: TurnResult = { ...base, ui: evaraTreeFixture(), answerBlocks: [{ id: "b1", kind: "text", text: "Three crops could follow paddy.", numericRefIds: [], claimIds: [] }] };
+    expect(turnAnswerText(withUi)).toBe("Three crops could follow paddy.");
+    expect(turnAnswerText({ ...withUi, ui: null })).toBe("Three crops could follow paddy.");
   });
 });

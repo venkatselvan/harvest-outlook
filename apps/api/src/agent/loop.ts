@@ -1,5 +1,6 @@
 import { z } from "zod";
-import { SCHEMA_VERSION, StructuredAssistantOutput, ToolName, type Mode, type ValueRecord } from "@harvest/contracts";
+import { SCHEMA_VERSION, StructuredAssistantOutput, ToolName, type EvaraUi, type Mode, type ValueRecord } from "@harvest/contracts";
+import type { Config } from "../config";
 import type { Pool } from "../db/pool";
 import type { InputItem, ParsedUsage } from "../providers/meta/types";
 import { restoreOptionals, toRawJsonSchema, toStrictJsonSchema, type JsonSchema } from "../providers/meta/strict-schema";
@@ -17,6 +18,11 @@ import type { ToolContext, ToolRegistry } from "./tools/registry";
 import { AgentTrace, redactForTrace } from "./trace";
 import { resolveTurnProduct, type ProductResolution } from "./product-resolution";
 import { COMPACT_VIEWS } from "./tool-views";
+import { composeFallback, minimalUi } from "./ui/compose";
+import { capProgram, type Dropped as EvaraDroppedEntry } from "./ui/parse";
+import { loadEvaraData } from "./ui/load";
+import { resolveEvaraUi } from "./ui/resolve";
+import { emptyEvaraData } from "./ui/types";
 
 export interface AgentTurnInput {
   ownerId: string;
@@ -51,6 +57,8 @@ export interface AgentDeps {
   limits: AgentLimits;
   models: { text: string; escalation: string };
   signal?: AbortSignal | undefined;
+  /** 2026-11-04 (EVARA_LANG.md): the server config, so the Evara UI loader can read the stored year plan. Absent: no plan data. */
+  config?: Config | undefined;
 }
 
 export type AgentStatus = "approved" | "partial" | "incomplete" | "provider_unavailable" | "budget_exceeded" | "cancelled" | "failed";
@@ -81,6 +89,12 @@ export interface AgentRunResult {
   toolRounds: number;
   toolCalls: number;
   trace: AgentTrace;
+  /**
+   * 2026-11-04 (EVARA_ACTIONS_SPEC.md 2.6, docs/EVARA_LANG.md): the best candidate's Evara Lang program resolved after the
+   * gate into an EvaraUi tree (text nodes carry approved blocks only); the fallback composer's tree when the program is
+   * empty, invalid or the load fails. Never fails the turn.
+   */
+  ui: EvaraUi | null;
 }
 
 class Stop extends Error {
@@ -203,6 +217,8 @@ export async function runAgentTurn(deps: AgentDeps, input: AgentTurnInput): Prom
   const responseIds: string[] = [];
   /** Tools that returned an ok result in this run. */
   const calledTools = new Set<string>();
+  /** Ok tool outputs of this run in call order (the Evara UI loader reads the briefing, screening and crop identities from here). */
+  const okToolOutputs: { name: string; output: unknown }[] = [];
   const serverInitiated: string[] = [];
   const productResolutions = new Map<string, ProductResolution>();
   const toolResultViews: string[] = [];
@@ -330,6 +346,22 @@ export async function runAgentTurn(deps: AgentDeps, input: AgentTurnInput): Prom
     const r = schema.safeParse(restored);
     if (!r.success) return { ok: false, message: r.error.issues.slice(0, 6).map((i) => `${i.path.map(String).join(".") || "(root)"}: ${i.message}`).join("; ").slice(0, 600) };
     return { ok: true, value: r.data, json: restored };
+  };
+
+  /**
+   * Review fix E7c-3: a `ui` program over the contract's 4000 characters is cut (ui/parse.ts capProgram) before the strict
+   * validation, so an over-long program never turns a gate-passing answer into schema_invalid. The cut program is remembered
+   * with its drop entry; when it is the final candidate's program the resolver records it in EvaraUi.dropped.
+   */
+  const truncatedPrograms = new Map<string, EvaraDroppedEntry>();
+  const capUi = (v: unknown): unknown => {
+    if (!v || typeof v !== "object" || Array.isArray(v)) return v;
+    const ui = (v as { ui?: unknown }).ui;
+    if (typeof ui !== "string") return v;
+    const c = capProgram(ui);
+    if (!c.dropped) return v;
+    truncatedPrograms.set(c.program, c.dropped);
+    return { ...(v as object), ui: c.program };
   };
 
   const repairBudgetLeft = () => repairs < limits.maxRepairAttempts;
@@ -464,7 +496,10 @@ export async function runAgentTurn(deps: AgentDeps, input: AgentTurnInput): Prom
           if (outcome.status === "unavailable") unboundUsed.add(name);
         }
       }
-      if (name && outcome.status === "ok") calledTools.add(name);
+      if (name && outcome.status === "ok") {
+        calledTools.add(name);
+        okToolOutputs.push({ name, output: outcome.output });
+      }
       const toolName = (name ?? `invalid:${rawName.replace(/[^A-Za-z0-9_.-]/g, "").slice(0, 40)}`);
       const ins = await pool.query<{ id: string }>(
         `INSERT INTO tool_results (owner_id, agent_run_id, tool_name, args_hash, result, error, duration_ms, status, call_id, redacted_args, ordinal)
@@ -560,7 +595,7 @@ export async function runAgentTurn(deps: AgentDeps, input: AgentTurnInput): Prom
       // Validate the contract shape with the agent-local claim fields split off, but gate the full candidate.
       const parsed = parseStructured(r.outputText, outRaw, {
         safeParse: (v: unknown) => {
-          const full = { ...(v as object), toolRequests: [], proposedFacts };
+          const full = { ...(capUi(v) as object), toolRequests: [], proposedFacts };
           const split = splitClaimExtras(full);
           if (!split.ok) return { success: false, error: { issues: [{ path: ["claimEvidenceRefs"], message: split.message }] } } as never;
           const c = StructuredAssistantOutput.safeParse(split.stripped);
@@ -689,6 +724,47 @@ export async function runAgentTurn(deps: AgentDeps, input: AgentTurnInput): Prom
           ],
         }
       : baseReport;
+
+  // ---------------------------------------------------------------- Evara UI (2026-11-04, docs/EVARA_LANG.md)
+  // After the final gate call: the best candidate's program (carried through repair and templates) is resolved against
+  // this run's data. Read-only, bounded, guarded; any throw gives the fallback tree with a trace detail.
+  const uiIntent = final ? final.candidate.intent : (profile?.intent ?? null);
+  const uiBlocks = final ? final.gate.approvedBlocks.map((b) => ({ id: b.id, kind: b.kind, text: b.text })) : [];
+  const uiProgram = final?.candidate.ui ?? null;
+  const uiPreDropped = uiProgram !== null && truncatedPrograms.has(uiProgram) ? [truncatedPrograms.get(uiProgram)!] : [];
+  let ui: EvaraUi | null = null;
+  const uiSources: Record<string, string> = {};
+  try {
+    const data = await loadEvaraData(pool, {
+      ownerId: input.ownerId,
+      mode: input.mode,
+      farmId: farmUuid,
+      fieldId: input.fieldId,
+      asOf,
+      language: input.language,
+      intent: uiIntent,
+      blocks: uiBlocks,
+      hasClarification: approvedClarifications.length > 0,
+      program: uiProgram,
+      toolOutputs: okToolOutputs,
+      config: deps.config,
+      budget,
+      signal: deps.signal,
+      skipDb: stop?.status === "cancelled" || stop?.status === "provider_unavailable",
+      report: (source, s) => void (uiSources[source] = s),
+    });
+    ui = resolveEvaraUi(uiProgram, data, { dropped: uiPreDropped });
+    trace.add("ui_resolved", { detail: { origin: ui.origin, root: ui.root.type, programChars: uiProgram?.length ?? 0, dropped: ui.dropped.map((d) => ({ line: d.line, code: d.code })), sources: uiSources } });
+  } catch (e) {
+    const bare = emptyEvaraData({ language: input.language, intent: uiIntent, blocks: uiBlocks, hasClarification: approvedClarifications.length > 0, today: asOf.slice(0, 10) });
+    try {
+      ui = composeFallback(bare, uiPreDropped);
+    } catch {
+      ui = minimalUi(bare, uiPreDropped);
+    }
+    trace.add("ui_resolved", { detail: { origin: "fallback", root: ui.root.type, programChars: uiProgram?.length ?? 0, dropped: uiPreDropped.map((d) => ({ line: d.line, code: d.code })), error: e instanceof Error ? e.name : "unknown" } });
+  }
+
   const result: AgentRunResult = {
     runId,
     status,
@@ -711,6 +787,7 @@ export async function runAgentTurn(deps: AgentDeps, input: AgentTurnInput): Prom
     toolRounds,
     toolCalls,
     trace,
+    ui,
   };
   if (stop?.status === "cancelled") trace.add("cancelled", { detail: { reason: stop.code } });
   // L5 privacy: delete every provider-stored response of this run (success or failure). Best effort and bounded:

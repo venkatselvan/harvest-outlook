@@ -155,6 +155,8 @@ export const ApiErrorCode = z.enum([
   'not_found',
   'conflict',
   'version_conflict',
+  /** 2026-11-04 (EVARA_ACTIONS_SPEC.md 1.3): ApplyYearPlan.alternative on a sown_comparison option. */
+  'alternative_not_applicable',
   'idempotency_mismatch',
   'payload_too_large',
   'unsupported_media_type',

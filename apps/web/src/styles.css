@@ -3020,13 +3020,27 @@ label small {
   font-size: 12px;
 }
 .clarification > button {
-  font-size: 11px;
+  font-size: 12px;
   border: 1px solid var(--border);
-  border-radius: 4px;
+  border-radius: 12px;
   color: var(--text-secondary);
   background: var(--surface-soft);
-  padding: 5px 8px;
-  margin: 7px 5px 0 0;
+  padding: 9px 12px;
+  min-height: 44px;
+  margin: 7px 6px 0 0;
+}
+.clarification > button:focus-visible,
+.assistant-prompts > button:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+}
+/* Evara UI kit (workspace/evara/evara-ui.css) sits inside an assistant message; local messages carry their own action strip. */
+.chat-message.assistant > .ev-ui {
+  margin-top: 2px;
+}
+.chat-message.assistant > .ev-actions {
+  margin-top: 10px;
+  white-space: normal;
 }
 .assistant-compose {
   background: var(--surface);

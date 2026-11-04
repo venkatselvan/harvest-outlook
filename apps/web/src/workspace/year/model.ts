@@ -1,4 +1,5 @@
 import type {
+  ApplyYearPlan,
   CostEstimate,
   CropFitCandidate,
   IntercropCompanion,
@@ -17,6 +18,10 @@ import type { Rotation } from "../state";
 import { addDaysIso, addYearsIso, formatAreaHa, formatInrBand, formatInrRange, formatKgRange, longDate, monthYear, partOfMonth, shortSpan } from "./format";
 
 /** Pure view-model logic for the Year plan: no Solid, no fetch. */
+
+/** Derived from the review: the contracts export the schemas of these two but not their types (2026-11-04). */
+export type YearPlanAlternatives = NonNullable<YearPlanReview["alternatives"]>;
+export type YearPlanReplacement = YearPlanAlternatives["replaces"][number];
 
 import { POOL_CROPS, ROLE_LABEL, ROLE_ORDER, isLegume, type RoleGroup, type RotationRole } from "../cropPool";
 
@@ -164,6 +169,14 @@ export const modelUnavailable = (review: Pick<YearPlanReview, "status" | "option
 
 export const MODEL_UNAVAILABLE_CHIP = "Model unavailable, showing calculated plans";
 
+/** "Planned seasons fill the year · 2 alternatives" or "Sown · 1 comparison plan" (replaces "No space for another crop"). */
+export function alternativesChip(alternatives: Pick<YearPlanAlternatives, "basis" | "options">): string {
+  const n = alternatives.options.length;
+  return alternatives.basis === "replace_planned"
+    ? `Planned seasons fill the year · ${n} ${n === 1 ? "alternative" : "alternatives"}`
+    : `Sown · ${n} comparison ${n === 1 ? "plan" : "plans"}`;
+}
+
 export interface SelectionStatus {
   chip: string;
   tone: "watch" | "neutral";
@@ -200,9 +213,13 @@ function noSpaceLine(review: Pick<YearPlanReview, "options" | "scenario">): stri
  * running review shows the "Planning…" chip instead, and a review without any plan to show has nothing to describe.
  */
 export function selectionStatus(
-  review: Pick<YearPlanReview, "status" | "options" | "scenario" | "modelSelection" | "noFreeWindow">,
+  review: Pick<YearPlanReview, "status" | "options" | "scenario" | "modelSelection" | "noFreeWindow" | "alternatives">,
 ): SelectionStatus | null {
   if (isActive(review)) return null;
+  // 2026-11-04 (EVARA_ACTIONS_SPEC.md 1.3): alternatives exist, so the year is not a dead end; the server's own summary is the line.
+  const alternatives = review.alternatives;
+  if (alternatives && alternatives.options.length > 0)
+    return { chip: alternativesChip(alternatives), tone: "neutral", line: alternatives.summary };
   if (review.noFreeWindow) return { chip: "No space for another crop", tone: "neutral", line: noSpaceLine(review) };
   const selection = review.modelSelection;
   if (!selection) return modelUnavailable(review) ? { chip: MODEL_UNAVAILABLE_CHIP, tone: "watch", line: null } : null;
@@ -937,4 +954,119 @@ export async function swapSavedSeason(args: {
     return { kind: "failed", message: typeof e?.message === "string" && e.message ? e.message : "The saved season could not be changed. Try again." };
   }
   return { kind: "saved", from: occupant.cropName, to: candidate.cropName };
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
+// 2026-11-04 (EVARA_ACTIONS_SPEC.md 1.1, 1.3): planned-but-unsown seasons and the alternatives the server computes when the
+// growing crop and the saved seasons leave no free window.
+
+/** The small tag on a saved season no recorded cycle realises; a sown season (or an older row without `realisation`) gets none. */
+export const REALISATION_TAG = { planned: "Planned, not sown", overdue: "Overdue, not sown" } as const;
+export const realisationTag = (o: Pick<YearPlanOccupant, "realisation">): string | null =>
+  o.realisation === "planned" || o.realisation === "overdue" ? REALISATION_TAG[o.realisation] : null;
+
+/** "Pigeon pea", "Pigeon pea and Maize", "Pigeon pea, Maize and Onion"; repeated names are said once. */
+export function joinNames(names: readonly string[]): string {
+  const unique = [...new Set(names.filter(Boolean))];
+  return unique.length <= 1 ? (unique[0] ?? "") : `${unique.slice(0, -1).join(", ")} and ${unique[unique.length - 1]}`;
+}
+
+/** "Pigeon pea (planned 12 Feb 2027)"; the date is left out when the saved season has none. */
+export const replacementText = (r: Pick<YearPlanReplacement, "cropName" | "plannedSowingDate">): string =>
+  r.plannedSowingDate ? `${r.cropName} (planned ${longDate(r.plannedSowingDate)})` : r.cropName;
+
+/** The engine's overlap rule on occupancies (half-open), as in `swapRefusal`. */
+const windowsOverlap = (a: { from: string; to: string }, b: { from: string; to: string }) => a.from < b.to && b.from < a.to;
+
+/**
+ * The planned seasons one alternative option takes over: those of `alternatives.replaces` whose occupancy a suggested
+ * (not growing) slot overlaps. The server removes exactly these on apply. A season the occupants do not describe counts as taken
+ * (the farmer is never told less than the server does); an option that overlaps none of them takes over none: the empty list.
+ */
+export function replacedByOption(
+  alternatives: Pick<YearPlanAlternatives, "basis" | "replaces">,
+  option: Pick<YearPlanOption, "slots">,
+  occupied: readonly YearPlanOccupant[] | undefined,
+): YearPlanReplacement[] {
+  if (alternatives.basis !== "replace_planned") return [];
+  const slots = option.slots.filter((s) => !s.fixed);
+  const hit = alternatives.replaces.filter((r) => {
+    const season = (occupied ?? []).find((o) => o.id === r.rotationPlanId);
+    return !season || slots.some((s) => windowsOverlap(s.occupancy, season.occupancy));
+  });
+  return hit;
+}
+
+/** The occupants an alternative is drawn against: the saved seasons it takes over are no longer in the way, a comparison draws none. */
+export function alternativeOccupants(
+  alternatives: Pick<YearPlanAlternatives, "basis" | "replaces">,
+  option: Pick<YearPlanOption, "slots">,
+  occupied: readonly YearPlanOccupant[] | undefined,
+): YearPlanOccupant[] {
+  if (alternatives.basis !== "replace_planned") return [];
+  const taken = new Set(replacedByOption(alternatives, option, occupied).map((r) => r.rotationPlanId));
+  return (occupied ?? []).filter((o) => !taken.has(o.id));
+}
+
+/**
+ * "Instead of Pigeon pea" / "For comparison only, Paddy stays". A comparison plan has no growing slot of its own, so the
+ * growing crop's name comes from the review's own plan (`growingCropName`).
+ */
+export function alternativeBasisText(
+  alternatives: Pick<YearPlanAlternatives, "basis" | "replaces">,
+  option: Pick<YearPlanOption, "slots">,
+  occupied: readonly YearPlanOccupant[] | undefined,
+  growingCropName?: string | null,
+): string {
+  if (alternatives.basis === "replace_planned") {
+    const names = joinNames(replacedByOption(alternatives, option, occupied).map((r) => r.cropName));
+    return names ? `Instead of ${names}` : "Fits beside your planned seasons";
+  }
+  return `For comparison only, ${option.slots.find((s) => s.fixed)?.cropName ?? growingCropName ?? "the sown crop"} stays`;
+}
+
+/** The button of a replace_planned card and the sheet footer: "Use instead of Pigeon pea". */
+export const useInsteadText = (replaced: readonly Pick<YearPlanReplacement, "cropName">[]): string =>
+  replaced.length ? `Use instead of ${joinNames(replaced.map((r) => r.cropName))}` : "Add these seasons";
+
+/** The alternative option with this id, with its alternatives block; null when the id is one of the review's own options. */
+export function alternativeOption(
+  review: Pick<YearPlanReview, "alternatives">,
+  optionId: string | null | undefined,
+): { alternatives: YearPlanAlternatives; option: YearPlanOption } | null {
+  const alternatives = review.alternatives;
+  const option = alternatives?.options.find((o) => o.optionId === optionId);
+  return alternatives && option ? { alternatives, option } : null;
+}
+
+/**
+ * The apply request for one option. `alternative: true` goes only with an option of `review.alternatives` whose basis is
+ * `replace_planned` (the server removes the seasons it replaces in the same write); a `sown_comparison` option has no
+ * request at all (null: it is never applied, the server would answer 400 alternative_not_applicable).
+ */
+export function applyBody(args: {
+  review: Pick<YearPlanReview, "reviewId" | "alternatives">;
+  option: YearPlanOption;
+  workspaceVersion: number;
+}): ApplyYearPlan | null {
+  const { review, option, workspaceVersion } = args;
+  if (!review.reviewId) return null;
+  const alt = alternativeOption(review, option.optionId);
+  if (alt?.alternatives.basis === "sown_comparison") return null;
+  return {
+    reviewId: review.reviewId,
+    optionId: option.optionId,
+    slotIds: slotsToApply(option).map((x) => x.slotId),
+    expectedWorkspaceVersion: workspaceVersion,
+    ...(alt ? { alternative: true } : {}),
+  };
+}
+
+/** One slot of an alternative card: "₹4,200 to ₹9,300 for your field", the per-hectare band when the area is unknown, else "Profit not shown". */
+export function slotProfitLine(slot: Pick<YearPlanSlot, "profitForField" | "profitEstimate" | "fixed" | "kind">): string {
+  if (slot.fixed) return "Already growing";
+  if (slot.kind === "green_manure") return "No income; adds nitrogen";
+  if (slot.profitForField) return `${formatInrBand(slot.profitForField.likely)} for your field`;
+  if (slot.profitEstimate) return `${formatInrBand(slot.profitEstimate.likely)} per hectare`;
+  return "Profit not shown";
 }

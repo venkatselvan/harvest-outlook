@@ -81,10 +81,11 @@ describe('scenario.occupied (synthetic fixtures)', () => {
   it('a saved sole-crop season with a planned harvest is a saved_season occupant with its own crop, product, names, dates and the engine interval (basis planned)', () => {
     const saved = { id: 'sv-gn', year: 2027, season: 'Kharif', cropId: 'groundnut', cropName: 'Groundnut', productId: 'groundnut-pod', productName: 'Groundnut pods', plannedSowingDate: '2027-06-01', plannedHarvestDate: '2027-09-15', establishmentMethod: 'direct_sowing' };
     const ctx = buildScenario(args(ws({ rotationPlans: [saved] })));
-    expect(ctx.occupied).toEqual([{ id: 'sv-gn', cropId: 'groundnut', source: 'rotation_plan', from: '2027-06-01', to: addDays('2027-09-15', GAP), basis: 'planned', note: null }]);
+    expect(ctx.occupied).toEqual([{ id: 'sv-gn', cropId: 'groundnut', source: 'rotation_plan', from: '2027-06-01', to: addDays('2027-09-15', GAP), basis: 'planned', note: null, realisation: 'planned' }]);
     expect(ctx.scenario.occupied).toEqual([{
       id: 'sv-gn', source: 'saved_season', cropId: 'groundnut', productId: 'groundnut-pod', cropName: 'Groundnut', productName: 'Groundnut pods', kind: 'crop', companion: null,
       establishmentMethod: 'direct_sowing', sowing: '2027-06-01', harvestDate: '2027-09-15', occupancy: { from: '2027-06-01', to: addDays('2027-09-15', GAP) }, occupancyBasis: 'planned', note: null,
+      realisation: 'planned',
     }]);
     expect(YearPlanScenario.parse(ctx.scenario).occupied).toHaveLength(1);
     // The engine's name map comes first for crops; a product keeps the farmer's own name.
@@ -130,6 +131,7 @@ describe('scenario.occupied (synthetic fixtures)', () => {
     expect(ctx.scenario.occupied).toEqual([{
       id: 'cy-2', source: 'recorded_cycle', cropId: 'green-gram', productId: 'green-gram-whole', cropName: 'Green gram', productName: 'Whole grain', kind: 'crop', companion: null,
       establishmentMethod: 'direct_sowing', sowing: '2026-12-01', harvestDate: '2027-02-10', occupancy: { from: '2026-12-01', to: addDays('2027-02-10', GAP) }, occupancyBasis: 'recorded', note: null,
+      realisation: 'sown',
     }]);
   });
 

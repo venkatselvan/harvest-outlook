@@ -123,3 +123,35 @@ export const planPendingReview: CropFitReview = { ...planReview, status: "pendin
 export const planErrorReview: CropFitReview = { ...planPendingReview, status: "error", summary: "The scoring job failed." };
 /** An intercrop whose yield shares are fallback assumptions. */
 export const assumedShareCandidate: CropFitCandidate = { ...intercropPlan, companion: { ...COMPANION, shareBasis: "assumed", source: null } };
+
+// ---------------------------------------------------------------- 2026-11-04: replace pass (EVARA_ACTIONS_SPEC.md 1.2)
+/** The saved pigeon pea season (id and dates as in year/fixtures.ts `workspaceWithSavedSeason`) that the replace-pass candidates would take over. */
+export const REPLACED_SEASON = { rotationPlanId: "yearplan:2f6d8c1e:pigeon-pea:2027-05-16", cropId: "pigeon-pea", cropName: "Pigeon pea", plannedSowingDate: "2027-05-16" } as const;
+const replaceMaize = fixtureCandidate({
+  cropId: "maize", productId: "maize-grain", cropName: "Maize", productName: "Grain", rank: 1, score: 70, rankScore: 68, sowing: "2027-05-20",
+  harvest: { earliest: "2027-09-10", latest: "2027-09-25" }, replaces: [{ ...REPLACED_SEASON }],
+});
+const replaceSorghum = fixtureCandidate({
+  cropId: "sorghum", productId: "sorghum-grain", cropName: "Sorghum", productName: "Grain", rank: 2, score: 66, rankScore: 64, sowing: "2027-06-01",
+  harvest: { earliest: "2027-09-20", latest: "2027-10-05" }, replaces: [{ ...REPLACED_SEASON }],
+});
+const replaceOnion = fixtureCandidate({
+  cropId: "onion", productId: "onion-bulb", cropName: "Onion", productName: "Bulb", rank: 3, score: 60, rankScore: 58, sowing: "2027-12-10", harvest: { earliest: "2028-04-01", latest: "2028-04-20" },
+});
+/** The field's only saved season is planned and unsown, so pass 2 ranked replacements for it; Onion needs no replacement. */
+export const replacePassReview: CropFitReview = {
+  ...base, request: { mode: "next", season: null, sowing: null }, resolvedSowing: "2027-05-20", currentCycleId: "cyc-paddy", replacePass: true,
+  candidates: [replaceMaize, replaceSorghum, replaceOnion],
+  picks: [
+    { cropId: "maize", productId: "maize-grain", rank: 1, headline: "Harvest lands in strong price weeks", reasons: [{ code: "price_timing_strong", text: "Its harvest usually meets above-average prices." }] },
+    { cropId: "sorghum", productId: "sorghum-grain", rank: 2, headline: "Low water need", reasons: [] },
+    { cropId: "onion", productId: "onion-bulb", rank: 3, headline: "High margin for the months it uses", reasons: [] },
+  ],
+  summary: "Pigeon pea is planned for 16 May 2027 but not sown, so these picks are ranked as replacements for it.", limitations: [],
+};
+/** Nothing could be placed even with the planned season set aside. */
+export const replaceEmptyReview: CropFitReview = {
+  ...emptyReview, summary: "Every season on this field is sown and no sourced sowing window is open, so no crop fits.",
+};
+/** Crops were ranked, but no pick was chosen. */
+export const rankedWithoutPicksReview: CropFitReview = { ...base, picks: [], pickOrigin: null, modelInvocation: null };

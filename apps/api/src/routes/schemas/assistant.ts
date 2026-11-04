@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { FieldId, StructuredAssistantOutput } from "@harvest/contracts";
+import { EvaraUi, FieldId, StructuredAssistantOutput } from "@harvest/contracts";
 
 const dateRe = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -63,5 +63,11 @@ export const turnOut = z.object({
     })
     .nullable(),
   costEstimate: z.object({ estimatedUsd: z.number(), settledUsd: z.number(), providerCalls: z.number(), billable: z.boolean(), basis: z.literal("estimated_not_billed") }),
+  /**
+   * 2026-11-04 (docs/EVARA_LANG.md): the answer as Evara UI components, resolved by the server from the model's Evara Lang
+   * program after the gate (text nodes are approved blocks; every other string is code-written). Null only on responses
+   * stored before this field existed.
+   */
+  ui: EvaraUi.nullable(),
 });
 export type TurnOut = z.infer<typeof turnOut>;

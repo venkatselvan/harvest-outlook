@@ -43,6 +43,8 @@ import {
   pickChangesDraft,
   pickerCurrent,
   priceBasisText,
+  realisationTag,
+  useInsteadText,
   profitText,
   ratioStated,
   sheetItems,
@@ -52,6 +54,7 @@ import {
   yieldBasisText,
   type CropChoice,
   type DraftSlot,
+  type YearPlanReplacement,
 } from "./model";
 import { idlePenaltyText } from "./model";
 import { SlotEditor } from "./SlotEditor";
@@ -81,6 +84,12 @@ export function initialSlot(option: YearPlanOption, slotId: string | null): Year
  */
 export function OptionSheet(props: {
   farmId: string;
+  /**
+   * Set when the option is one of `review.alternatives` (EVARA_ACTIONS_SPEC.md 1.3). The sheet then has no slot edit, no
+   * re-score and no swap: a 'replace' alternative is applied as it is ("Use instead of ...", the seasons it takes over
+   * are named), a 'comparison' only shows what could have fitted. `occupied` replaces the review's saved seasons.
+   */
+  alternative?: { kind: "replace" | "comparison"; replaces: readonly YearPlanReplacement[]; occupied: readonly YearPlanOccupant[] } | undefined;
   /** The field the plan is for; passed on to the crop pickers of the editor and the swap sheets. */
   fieldId?: string | null | undefined;
   review: YearPlanReview;
@@ -136,7 +145,7 @@ export function OptionSheet(props: {
     props.onRescore(applyPick(swapDrafts(), picker.key, candidate));
   };
   // Saved seasons: pills and panel beside the plan's own crops; the swap edits the saved season, not this option.
-  const occupied = () => props.review.scenario.occupied ?? [];
+  const occupied = () => (props.alternative ? props.alternative.occupied : (props.review.scenario.occupied ?? []));
   const occupant = () => (props.occupantId ? occupied().find((o) => o.id === props.occupantId) : undefined);
   const items = () => sheetItems(props.option, occupied());
   const [occupantSwapId, setOccupantSwapId] = createSignal<string | null>(null);
@@ -175,8 +184,14 @@ export function OptionSheet(props: {
               <span>{profit().caption}</span>
             </div>
           </div>
-          <Show when={editedFrom(props.option) || props.applied || warnings().short.length}>
+          <Show when={props.alternative || editedFrom(props.option) || props.applied || warnings().short.length}>
             <div class="yp-sheet-chips">
+              <Show when={props.alternative?.kind === "replace"}>
+                <Chip tone="info">Alternative to your planned seasons</Chip>
+              </Show>
+              <Show when={props.alternative?.kind === "comparison"}>
+                <Chip tone="neutral">For comparison only</Chip>
+              </Show>
               <Show when={editedFrom(props.option)}>{(from) => <Chip tone="info">Edited from {from()}</Chip>}</Show>
               <Show when={props.applied}>
                 <Chip tone="done">In saved seasons</Chip>
@@ -187,14 +202,18 @@ export function OptionSheet(props: {
         </Show>
       }
       footer={
-        <Show when={!props.editing}>
-          <Show when={props.option.editable}>
+        <Show when={!props.editing && props.alternative?.kind !== "comparison"}>
+          <Show when={props.option.editable && !props.alternative}>
             <button type="button" class="btn secondary" onClick={() => props.onEdit()}>
               Edit
             </button>
           </Show>
           <button type="button" class="btn" disabled={props.applied} onClick={() => props.onUse()}>
-            {props.applied ? "Already in saved seasons" : "Use this plan"}
+            {props.applied
+              ? "Already in saved seasons"
+              : props.alternative
+                ? useInsteadText(props.alternative.replaces)
+                : "Use this plan"}
           </button>
         </Show>
       }
@@ -296,7 +315,7 @@ export function OptionSheet(props: {
                     onClick={() => props.onSelectOccupant(item.occupant.id)}
                   >
                     {item.occupant.cropName}
-                    <small>{OCCUPANT_PILL_LABEL[item.occupant.source]}</small>
+                    <small>{realisationTag(item.occupant) ?? OCCUPANT_PILL_LABEL[item.occupant.source]}</small>
                   </button>
                 )
               }
@@ -320,7 +339,7 @@ export function OptionSheet(props: {
               slot={slot()}
               areaHa={props.option.fieldAreaHa}
               trend={props.trend(slot())}
-              onSwap={props.option.editable && !slot().fixed ? () => setSwapKey(slot().slotId) : undefined}
+              onSwap={props.option.editable && !slot().fixed && !props.alternative ? () => setSwapKey(slot().slotId) : undefined}
               swapDisabled={props.rescoreBusy}
             />
           }
@@ -328,7 +347,7 @@ export function OptionSheet(props: {
           {(o) => (
             <OccupantDetail
               occupant={o()}
-              onSwap={o().source === "saved_season" ? () => setOccupantSwapId(o().id) : undefined}
+              onSwap={o().source === "saved_season" && !props.alternative ? () => setOccupantSwapId(o().id) : undefined}
               swapDisabled={props.rescoreBusy || props.swapBusy}
               stale={props.review.stale}
             />
@@ -434,6 +453,7 @@ export function OccupantDetail(props: {
       <div class="yp-slot-heading">
         <h3 id="yp-slot-title">{occupantName(o())}</h3>
         <Chip tone={OCCUPANT_TONE[o().source]}>{OCCUPANT_STRIP_LABEL[o().source]}</Chip>
+        <Show when={realisationTag(o())}>{(tag) => <Chip tone={o().realisation === "overdue" ? "overdue" : "due"}>{tag()}</Chip>}</Show>
         <Show when={props.onSwap}>
           {(swap) => (
             <button

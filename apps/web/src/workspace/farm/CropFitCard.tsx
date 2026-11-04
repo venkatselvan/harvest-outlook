@@ -11,6 +11,8 @@ import {
   priceHarvestText,
   priceNowText,
   profitText,
+  replaceButtonText,
+  replacesText,
   shareBasisText,
   soilChipText,
   rotationWarningText,
@@ -31,9 +33,11 @@ export function CandidateChips(props: { candidate: CropFitCandidate }) {
   const plan = () => yearPlanText(props.candidate);
   const grown = () => grownBeforeText(props.candidate);
   const rotation = () => rotationWarningText(props.candidate);
+  const replaces = () => replacesText(props.candidate);
   return (
-    <Show when={plan() || grown() || rotation() || isIntercrop(props.candidate)}>
+    <Show when={replaces() || plan() || grown() || rotation() || isIntercrop(props.candidate)}>
       <span class="cf-chips">
+        <Show when={replaces()}>{(t) => <Chip tone="info" class="cf-chip-wrap">{t()}</Chip>}</Show>
         <Show when={rotation()}>{(t) => <Chip tone="watch">{t()}</Chip>}</Show>
         <Show when={isIntercrop(props.candidate)}>
           <Chip tone="legume">Intercrop</Chip>
@@ -42,6 +46,22 @@ export function CandidateChips(props: { candidate: CropFitCandidate }) {
         <Show when={plan()}>{(t) => <Chip tone="info">{t()}</Chip>}</Show>
         <Show when={grown()}>{(t) => <Chip tone="observed">{t()}</Chip>}</Show>
       </span>
+    </Show>
+  );
+}
+
+/**
+ * "Replace with Maize" on a candidate that replaces a planned, unsown season (EVARA_ACTIONS_SPEC.md 1.2). Renders nothing
+ * for an ordinary candidate or when the caller gives no handler (the picker rows, where "Use this crop" already swaps).
+ */
+export function ReplaceButton(props: { candidate: CropFitCandidate; onReplace?: ((c: CropFitCandidate) => void) | undefined; busy?: boolean | undefined }) {
+  return (
+    <Show when={props.onReplace && props.candidate.replaces?.length}>
+      <div class="cf-replace">
+        <button type="button" class="btn compact" disabled={props.busy === true} onClick={() => props.onReplace?.(props.candidate)}>
+          {props.busy ? "Replacing…" : replaceButtonText(props.candidate)}
+        </button>
+      </div>
     </Show>
   );
 }
@@ -82,7 +102,7 @@ export function SoilChips(props: { candidate: CropFitCandidate; max?: number }) 
  * harvest, yield, profit for the field, soil match). The crop name is the button that opens the detail sheet; its
  * click area covers the card.
  */
-export function CropFitCard(props: { card: PickCard; fieldAreaHa: number | null; onOpen: () => void }) {
+export function CropFitCard(props: { card: PickCard; fieldAreaHa: number | null; onOpen: () => void; onReplace?: ((c: CropFitCandidate) => void) | undefined; replaceBusy?: boolean | undefined }) {
   const c = () => props.card.candidate;
   const profit = () => profitText(c(), props.fieldAreaHa);
   return (
@@ -139,6 +159,7 @@ export function CropFitCard(props: { card: PickCard; fieldAreaHa: number | null;
         {sowingText(c())} · {harvestText(c())}
       </p>
       <Show when={waitLine(c())}>{(t) => <p class="cf-wait">{t()}</p>}</Show>
+      <ReplaceButton candidate={c()} onReplace={props.onReplace} busy={props.replaceBusy} />
     </article>
   );
 }

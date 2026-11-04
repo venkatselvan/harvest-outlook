@@ -135,12 +135,48 @@ function fixedSlotFor(cycle: FarmWorkspaceState['cycles'][number], stateId: stri
   };
 }
 
+/**
+ * 2026-11-04 (docs/research/EVARA_ACTIONS_SPEC.md 1.1): a saved season counts as sown when a recorded cycle of the same crop
+ * on the same field (or a cycle recorded for the whole farm, or the season itself saved for the whole farm) was sown within
+ * this many days of its planned sowing date. Orchestrator decision in the spec; not an agronomic figure.
+ */
+export const REALISED_WITHIN_DAYS = 45;
+export type SeasonRealisation = 'planned' | 'overdue' | 'sown';
+type CycleLike = Pick<FarmWorkspaceState['cycles'][number], 'id' | 'cropId' | 'sowingDate'> & { fieldId?: string | undefined };
+type SeasonLike = Pick<FarmWorkspaceState['rotationPlans'][number], 'cropId' | 'plannedSowingDate'> & { fieldId?: string | undefined };
+
+/**
+ * The recorded cycle that realises a saved season (EVARA_ACTIONS_SPEC 1.1): same cropId (an intercrop season's main crop),
+ * sowing within REALISED_WITHIN_DAYS of the planned date, and the same field, or either side recorded for the whole farm
+ * (no fieldId). Any stage counts, a harvested cycle too. The closest sowing wins, then the cycle id; null when none (or the
+ * season has no planned date).
+ */
+export function realisingCycle<C extends CycleLike>(season: SeasonLike, cycles: readonly C[]): C | null {
+  const planned = season.plannedSowingDate;
+  if (!planned) return null;
+  const hits = cycles.filter((c) => c.cropId === season.cropId && (c.fieldId === undefined || season.fieldId === undefined || c.fieldId === season.fieldId)
+    && Math.abs(daysBetween(c.sowingDate, planned)) <= REALISED_WITHIN_DAYS);
+  return hits.sort((a, b) => Math.abs(daysBetween(a.sowingDate, planned)) - Math.abs(daysBetween(b.sowingDate, planned)) || a.id.localeCompare(b.id))[0] ?? null;
+}
+
+/**
+ * Realisation of a saved season on a field view (EVARA_ACTIONS_SPEC 1.1): 'sown' when a recorded cycle realises it
+ * (realisingCycle); otherwise 'planned' when its planned sowing date is `today` (the IST calendar date) or later, 'overdue'
+ * when it has passed. planned and overdue are replaceable. Null for a season without a planned sowing date.
+ */
+export function seasonRealisation(season: SeasonLike, cycles: readonly CycleLike[], today: string): SeasonRealisation | null {
+  if (!season.plannedSowingDate) return null;
+  if (realisingCycle(season, cycles)) return 'sown';
+  return season.plannedSowingDate >= today ? 'planned' : 'overdue';
+}
+export const isReplaceable = (o: Pick<OccupiedInterval, 'source' | 'realisation'>): boolean => o.source === 'rotation_plan' && (o.realisation === 'planned' || o.realisation === 'overdue');
+
 /** Contract cap of YearPlanScenario.occupied. */
 export const MAX_OCCUPANTS = 24;
 /** Id prefix of the occupied interval futureScenario adds for the previous year's unsaved plan. */
 export const ASSUMED_PREFIX = 'assumed:';
 /** A rotation token 'ic:<systemId>' resolved to the system's main crop (the occupant shows the real crop). */
-const realCropId = (id: string): string => (id.startsWith(IC_PREFIX) ? intercropSystem(id.slice(IC_PREFIX.length))?.mainCropId ?? id.slice(IC_PREFIX.length) : id);
+export const realCropId = (id: string): string => (id.startsWith(IC_PREFIX) ? intercropSystem(id.slice(IC_PREFIX.length))?.mainCropId ?? id.slice(IC_PREFIX.length) : id);
 
 /**
  * Saved-season follow-up (docs/research/YEAR_PLAN_SAVED_SEASONS.md, 2026-11-01): the occupied intervals of a horizon as the
@@ -165,6 +201,8 @@ export function occupantsOf(intervals: readonly OccupiedInterval[], workspace: P
       out.push({
         id: c.id.slice(0, 160), source: 'recorded_cycle', cropId: c.cropId.slice(0, 120), productId, cropName: cropName(c.cropId, c.cropName), productName: productName(c.productId ?? null, c.productName),
         kind: 'crop', companion: null, establishmentMethod: c.establishmentMethod ? c.establishmentMethod.slice(0, 80) : null, sowing: c.sowingDate, harvestDate: c.harvestDate ?? null, ...shared,
+        // EVARA_ACTIONS_SPEC 1.1: a recorded cycle is sown and never replaceable.
+        realisation: 'sown',
       });
     } else if (assumed && o.id === `${ASSUMED_PREFIX}${assumed.reviewId}`) {
       const cropId = realCropId(assumed.cropId);
@@ -183,6 +221,8 @@ export function occupantsOf(intervals: readonly OccupiedInterval[], workspace: P
         kind: p.kind ?? 'crop',
         companion: comp ? { systemId: comp.systemId ? comp.systemId.slice(0, 120) : null, cropId: comp.cropId.slice(0, 120), cropName: (comp.cropName ?? names?.crop?.[comp.cropId] ?? cropDisplayName(comp.cropId)).slice(0, 120), rowRatio: comp.rowRatio.slice(0, 20) } : null,
         establishmentMethod: p.establishmentMethod ? p.establishmentMethod.slice(0, 80) : null, sowing: p.plannedSowingDate, harvestDate: p.plannedHarvestDate ?? null, ...shared,
+        // A saved-season interval is never 'sown' (a realised season is not an interval); absent only on hand-built intervals.
+        ...(o.realisation ? { realisation: o.realisation } : {}),
       });
     }
   }
@@ -222,10 +262,13 @@ export function buildScenario(args: BuildScenarioArgs): EngineContext {
   }
   for (const p of workspace.rotationPlans) {
     if (!p.plannedSowingDate) { warnings.push(`Saved season ${p.season} ${p.year} (${p.cropId}) has no planned sowing date and cannot be placed on the calendar.`); continue; }
+    // EVARA_ACTIONS_SPEC 1.1: a saved season a recorded cycle realises is that cycle (fixed slot or occupant); not drawn twice.
+    const realisation = seasonRealisation(p, workspace.cycles, asOf);
+    if (realisation === 'sown') continue;
     const o = occupancyFor(p.cropId, p.productId ?? null, null, p.plannedSowingDate, p.plannedHarvestDate ?? null, stateId);
     // An intercrop season with a sourced system nitrogen credit is a legume predecessor for rotation (token ic:<systemId>).
     const rotId = p.kind === 'intercrop' && p.companion?.systemId && intercropSystem(p.companion.systemId)?.nitrogenCredit?.sourced ? `${IC_PREFIX}${p.companion.systemId}` : p.cropId;
-    occupied.push({ id: p.id, cropId: rotId, source: 'rotation_plan', from: p.plannedSowingDate, to: o.to, basis: o.basis === 'recorded' ? 'planned' : o.basis, note: o.notes[0] ?? null });
+    occupied.push({ id: p.id, cropId: rotId, source: 'rotation_plan', from: p.plannedSowingDate, to: o.to, basis: o.basis === 'recorded' ? 'planned' : o.basis, note: o.notes[0] ?? null, realisation: realisation ?? undefined });
   }
   const futures = Array.from({ length: MAX_YEAR_INDEX }, (_, i) => addYears(horizon.to, i));
   const horizonStarts = { current: { ...horizon }, futures };

@@ -54,20 +54,22 @@ describe('crop fit per field', () => {
   const get = async (id: string, q: string) => CropFitReview.parse((await a.call('GET', url(id, q))).json().data);
   const keys = async (id: string) => (await h.pool.query<{ request_key: string; archived: boolean }>('SELECT request_key, archived_at IS NOT NULL AS archived FROM crop_fit_reviews WHERE farm_id=$1 ORDER BY created_at', [id])).rows;
 
-  it('each field has its own review row and request key, with its own area; the whole farm (no fieldId) stays available and separate', async () => {
+  it('each field has its own review row and request key, with its own area; without a fieldId the first field with a growing crop is ranked (EVARA_ACTIONS_SPEC 1.2 item 5)', async () => {
     const id = await farmWith({ cycles: [cycle('c-west', 'paddy', 'paddy-grain', '2026-08-15', 'west')] });
     const west = await get(id, '&fieldId=west');
     const east = await get(id, '&fieldId=east');
     const whole = await get(id, '');
-    expect(new Set([west.reviewId, east.reviewId, whole.reviewId]).size).toBe(3);
-    expect([west.fieldId, east.fieldId, whole.fieldId]).toEqual(['west', 'east', undefined]);
+    // 2026-11-04: no fieldId on a farm with fields = the first field with a current cycle (west), the same row as naming it.
+    expect(new Set([west.reviewId, east.reviewId, whole.reviewId]).size).toBe(2);
+    expect(whole.reviewId).toBe(west.reviewId);
+    expect([west.fieldId, east.fieldId, whole.fieldId]).toEqual(['west', 'east', 'west']);
     expect(west.fieldAreaHa).toBeCloseTo(areaOf(WEST), 9);
     expect(east.fieldAreaHa).toBeCloseTo(areaOf(EAST), 9);
     expect(west.fieldAreaHa).not.toBe(east.fieldAreaHa);
     expect(west.contextHash).not.toBe(east.contextHash);
     // The same query returns the same review per field.
     expect((await get(id, '&fieldId=west')).reviewId).toBe(west.reviewId);
-    expect((await keys(id)).map((k) => k.request_key).sort()).toEqual(['season:kharif::field=east', 'season:kharif::field=west', 'season:kharif:'].sort());
+    expect((await keys(id)).map((k) => k.request_key).sort()).toEqual(['season:kharif::field=east', 'season:kharif::field=west'].sort());
     // Generated with the field's own context: west scores after its growing paddy, east is a fresh field.
     const owner = await ownerOf(id);
     await generateCropFit(deps(), west.reviewId!, owner);
@@ -85,7 +87,16 @@ describe('crop fit per field', () => {
     const rows = await keys(id);
     expect(rows.filter((k) => k.archived).map((k) => k.request_key)).toEqual(['season:kharif::field=west']);
     expect((await get(id, '&fieldId=east')).reviewId).toBe(east.reviewId);
-    expect((await get(id, '')).reviewId).toBe(whole.reviewId);
+    expect((await get(id, '')).reviewId).toBe(forced.reviewId);
+    expect(readyWest.limitations).toContain('Ranked for the field West strip; each of the farm\'s 2 fields has its own review (without a field named, the first field with a growing crop is ranked, else the first field).');
+  });
+
+  it('2026-11-04: without a growing crop on any field, no fieldId ranks the first field', async () => {
+    const id = await farmWith();
+    const whole = await get(id, '');
+    expect(whole.fieldId).toBe('west');
+    expect(whole.reviewId).toBe((await get(id, '&fieldId=west')).reviewId);
+    expect(whole.fieldAreaHa).toBeCloseTo(areaOf(WEST), 9);
   });
 
   it('an unknown field is 404 field_not_found on GET and POST, a malformed id is 400, a stranger gets 404', async () => {

@@ -1300,3 +1300,105 @@ strong.yp-band-val {
     justify-content: center;
   }
 }
+
+/* Alternatives (EVARA_ACTIONS_SPEC.md 1.3): one stacked card per option; nothing scrolls sideways, so 375 px is the same list. */
+.yp-subhead {
+  margin: 4px 0 8px;
+  font-size: 16px;
+}
+.yp-alts {
+  display: grid;
+  gap: 10px;
+  margin-top: 18px;
+  min-width: 0;
+}
+.yp-alts .yp-subhead {
+  margin: 0;
+}
+.yp-alts-intro {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+.yp-alt-list {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+}
+.yp-alt-card {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+}
+.yp-alt-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 2px 12px;
+}
+.yp-alt-head h4 {
+  margin: 0;
+  font-size: 15px;
+  overflow-wrap: anywhere;
+}
+.yp-alt-profit {
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+.yp-alt-profit strong {
+  color: var(--text);
+  font-size: 14px;
+}
+.yp-alt-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 8px;
+}
+.yp-alt-slots {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.yp-alt-slots li {
+  display: grid;
+  gap: 1px;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface-soft);
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+.yp-alt-slots li small {
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+.yp-alt-slots li span {
+  color: var(--text-secondary);
+}
+.yp-alt-slots .yp-alt-slot-profit {
+  color: var(--text);
+}
+.yp-alt-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+@media (max-width: 479px) {
+  .yp-alt-card {
+    padding: 12px;
+  }
+  .yp-alt-actions .btn {
+    flex: 1 1 100%;
+    justify-content: center;
+    text-align: center;
+    white-space: normal;
+  }
+}

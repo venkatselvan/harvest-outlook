@@ -1,0 +1,563 @@
+/*
+ * Evara UI kit (docs/research/EVARA_ACTIONS_SPEC.md 2.8). Theme tokens only (theme.css, glass.css): no colour literals.
+ * Written for the 375 px phone first: the assistant panel is then about 351 px wide with 16 px of padding, so the content
+ * column is about 319 px. Every control is at least 44 px tall and wide; focus rings use --focus.
+ */
+.ev-ui {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+  white-space: normal;
+  color: var(--text);
+}
+.ev-stack {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+}
+.ev-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+.ev-muted {
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+/* Text and callouts. Block text keeps its paragraph breaks. */
+.ev-text {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.65;
+  color: var(--text);
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+}
+.ev-text.kind-warning {
+  border-left: 3px solid var(--danger);
+  background: var(--danger-soft);
+  border-radius: 4px 12px 12px 4px;
+  padding: 9px 12px;
+}
+.ev-text.kind-limitation,
+.ev-text.kind-evidence {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+.ev-text.kind-limitation {
+  font-style: italic;
+}
+.ev-callout {
+  border: 1px solid var(--border);
+  border-left-width: 4px;
+  border-radius: 4px 14px 14px 4px;
+  padding: 10px 12px;
+  background: var(--surface-soft);
+}
+.ev-callout p {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.6;
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+}
+.ev-callout.tone-info {
+  border-color: var(--info);
+  background: var(--info-soft);
+}
+.ev-callout.tone-good {
+  border-color: var(--accent-border);
+  border-left-color: var(--accent);
+  background: var(--accent-soft);
+}
+.ev-callout.tone-warning {
+  border-color: var(--danger);
+  background: var(--danger-soft);
+}
+
+/* Farm snapshot */
+.ev-snapshot {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin: 0;
+}
+.ev-snapshot > div {
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--surface-soft);
+  padding: 8px 11px;
+  min-width: 0;
+}
+.ev-snapshot dt {
+  font-size: 11px;
+  color: var(--text-secondary);
+  letter-spacing: 0.3px;
+}
+.ev-snapshot dd {
+  margin: 2px 0 0;
+  font-size: 13px;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+/* Buttons. Primary = the action that changes something. */
+.ev-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 44px;
+  min-width: 44px;
+  padding: 9px 14px;
+  border: 1px solid var(--border-strong);
+  border-radius: 14px;
+  background: var(--surface-soft);
+  color: var(--text);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.3;
+  text-align: center;
+  cursor: pointer;
+  max-width: 100%;
+}
+.ev-btn:hover:not(:disabled) {
+  background: var(--surface-hover);
+}
+.ev-btn.primary {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: var(--on-accent);
+}
+.ev-btn.primary:hover:not(:disabled) {
+  background: var(--primary-hover);
+}
+.ev-btn:disabled {
+  opacity: 0.6;
+  cursor: progress;
+}
+.ev-btn:focus-visible,
+.ev-table-wrap:focus-visible,
+.ev-journey-anchor:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+}
+.ev-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.ev-actions:empty {
+  display: none;
+}
+.ev-choice {
+  display: grid;
+  gap: 8px;
+}
+.ev-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+/* Crop compare: a real table. The first column stays put while the rest scrolls sideways. */
+.ev-compare {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+.ev-table-wrap {
+  container-type: inline-size;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  -webkit-overflow-scrolling: touch;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--surface);
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-strong) var(--surface-soft);
+}
+.ev-table {
+  border-collapse: separate;
+  border-spacing: 0;
+  width: max-content;
+  min-width: 100%;
+  font-size: 13px;
+}
+.ev-table th,
+.ev-table td {
+  padding: 10px 12px;
+  text-align: left;
+  vertical-align: top;
+  border-bottom: 1px solid var(--border);
+  min-width: 112px;
+  max-width: 190px;
+  line-height: 1.45;
+}
+.ev-table thead th {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  background: var(--surface-soft);
+  white-space: nowrap;
+}
+.ev-table .ev-sticky {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  min-width: 104px;
+  max-width: 132px;
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+}
+.ev-table thead .ev-sticky {
+  background: var(--surface-soft);
+  z-index: 2;
+}
+.ev-table tbody th.ev-sticky {
+  font-weight: 600;
+  color: var(--text);
+}
+.ev-crop-name {
+  display: block;
+  overflow-wrap: anywhere;
+}
+.ev-table .ev-sticky small {
+  display: block;
+  margin-top: 2px;
+  font-weight: 400;
+  font-size: 11px;
+  color: var(--text-secondary);
+  overflow-wrap: anywhere;
+}
+.ev-cell-text {
+  display: inline;
+  overflow-wrap: anywhere;
+}
+.ev-cell-text[data-tone="good"] {
+  color: var(--accent);
+  font-weight: 600;
+}
+.ev-cell-text[data-tone="watch"] {
+  color: var(--text);
+  font-weight: 600;
+}
+.ev-cell-text[data-tone="short"] {
+  color: var(--danger);
+  font-weight: 600;
+}
+.ev-tone-mark {
+  font-style: normal;
+  margin-right: 4px;
+}
+.ev-cell-empty {
+  color: var(--text-secondary);
+}
+.ev-cell-note {
+  display: block;
+  margin-top: 3px;
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+/* The row's actions sit under the row and stay in view while the table scrolls sideways. */
+.ev-row-actions td {
+  padding: 0;
+  max-width: none;
+  min-width: 0;
+}
+.ev-row-actions .ev-row-strip {
+  position: sticky;
+  left: 0;
+  width: max-content;
+  max-width: min(100%, 320px);
+  max-width: 100cqw;
+  padding: 6px 10px 10px;
+}
+.ev-scroll-hint {
+  font-size: 11px;
+}
+
+/* Plan options */
+.ev-plan {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+.ev-plan h4,
+.ev-journey h4 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+}
+.ev-plan-list {
+  display: grid;
+  gap: 10px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.ev-plan-card {
+  display: grid;
+  gap: 8px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--surface-soft);
+  padding: 12px;
+  min-width: 0;
+}
+.ev-plan-label {
+  font-size: 14px;
+}
+.ev-slots {
+  display: grid;
+  gap: 8px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.ev-slots > li {
+  display: grid;
+  gap: 2px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text-secondary);
+  padding-left: 10px;
+  border-left: 2px solid var(--accent-border);
+}
+.ev-slot-crop {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+}
+.ev-slot-replaces {
+  color: var(--text);
+}
+
+/* Growth journey */
+.ev-journey-anchor {
+  min-width: 0;
+  border-radius: 18px;
+}
+.ev-journey {
+  display: grid;
+  gap: 8px;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  background: var(--surface-soft);
+  padding: 12px;
+  min-width: 0;
+}
+.ev-journey-head {
+  display: grid;
+  gap: 2px;
+}
+.ev-journey-strip {
+  display: flex;
+  gap: 10px;
+  list-style: none;
+  margin: 0;
+  padding: 2px 2px 8px;
+  overflow-x: auto;
+  scroll-snap-type: x proximity;
+  scrollbar-width: thin;
+}
+.ev-stage {
+  flex: 0 0 min(220px, 72%);
+  display: grid;
+  align-content: start;
+  gap: 6px;
+  scroll-snap-align: start;
+  min-width: 0;
+}
+.ev-scene,
+.ev-stage-figure {
+  position: relative;
+  height: 150px;
+  margin: 0;
+  border-radius: 14px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  background: var(--surface);
+}
+.ev-scene .field-growth,
+.ev-scene .field-growth-canvas {
+  min-height: 0;
+  height: 100%;
+  border-radius: 0;
+}
+.ev-scene .field-growth-orbit,
+.ev-scene .field-growth-footnote,
+.ev-scene .field-growth-timeline {
+  display: none;
+}
+.ev-stage-figure {
+  height: auto;
+  display: grid;
+}
+.ev-stage-figure img {
+  display: block;
+  width: 100%;
+  height: 150px;
+  object-fit: cover;
+}
+.ev-stage-figure figcaption {
+  padding: 5px 8px;
+  font-size: 11px;
+  line-height: 1.4;
+  color: var(--text-secondary);
+  background: var(--surface);
+}
+.ev-stage-text {
+  display: grid;
+  gap: 1px;
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--text-secondary);
+}
+.ev-stage-text strong {
+  font-size: 13px;
+  color: var(--text);
+}
+.ev-stage-reason,
+.ev-journey-notice {
+  color: var(--text);
+}
+.ev-journey-notice {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.6;
+  border: 1px solid var(--info);
+  background: var(--info-soft);
+  border-radius: 12px;
+  padding: 8px 10px;
+}
+.ev-journey-notice.is-error {
+  border-color: var(--danger);
+  background: var(--danger-soft);
+}
+.ev-journey-progress {
+  margin: 0;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+.ev-journey-note {
+  font-size: 11px;
+}
+
+/* Plan-this-crop sheet (the shared Sheet supplies the frame) */
+.ev-sheet-body {
+  display: grid;
+  gap: 14px;
+  min-width: 0;
+}
+.ev-sheet-body h3 {
+  margin: 0 0 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+.ev-sheet-facts {
+  display: grid;
+  gap: 4px;
+  font-size: 13px;
+}
+.ev-sheet-facts p {
+  margin: 0;
+}
+.ev-stage-list {
+  display: grid;
+  gap: 6px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.ev-stage-list li {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 2px 12px;
+  font-size: 13px;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--border);
+}
+.ev-stage-list li span {
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+.ev-change {
+  display: grid;
+  gap: 8px;
+  border: 1px solid var(--accent-border);
+  border-radius: 16px;
+  background: var(--accent-soft);
+  padding: 12px;
+}
+.ev-change p {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.55;
+}
+.ev-change .ev-muted {
+  font-size: 12px;
+}
+.ev-change-option {
+  display: grid;
+  gap: 8px;
+}
+.ev-change .ev-btn {
+  justify-self: start;
+}
+.ev-sheet-refusal {
+  color: var(--text);
+}
+.ev-sheet-error {
+  display: grid;
+  gap: 8px;
+  border: 1px solid var(--danger);
+  background: var(--danger-soft);
+  border-radius: 12px;
+  padding: 10px 12px;
+}
+.ev-sheet-error p,
+.ev-sheet-loading {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.55;
+}
+.ev-sheet-foot {
+  display: flex;
+  justify-content: flex-end;
+}
+
+@media (max-width: 480px) {
+  .ev-snapshot {
+    grid-template-columns: 1fr;
+  }
+  .ev-stage {
+    flex-basis: 78%;
+  }
+  .ev-change .ev-btn,
+  .ev-sheet-foot .ev-btn {
+    justify-self: stretch;
+    width: 100%;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ev-journey-strip {
+    scroll-behavior: auto;
+  }
+}

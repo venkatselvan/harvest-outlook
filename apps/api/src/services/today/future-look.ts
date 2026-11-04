@@ -62,6 +62,8 @@ import type {Config} from '../../config';
 import {withTransaction, type Pool} from '../../db/pool';
 import {StorageError, type StorageAdapter} from '../../storage/types';
 import {rasterizePolygon} from '../../visuals/qa';
+import {editImage} from '../../visuals/muse-image';
+import {withModelActivity} from '../model-activity';
 import {ITEM_ID_RE, NDVI_METHOD_VERSION, bboxProblem, prepareRing, ringBbox, squareAround, type Bbox, type LonLat} from '../../providers/sentinel2';
 import {getFarm} from '../farms';
 import {fieldOf, getWorkspace} from '../workspace';
@@ -94,6 +96,9 @@ export const FUTURE_LOOK_AUTO_DAILY_CAP = 2;
 export const FUTURE_LOOK_MAX_ATTEMPTS = 3;
 export const FUTURE_LOOK_DISCLAIMER = 'Generated illustration of a typical stage, made by editing a real satellite image. Not an observation of this field and not a prediction.';
 export const PREDICTED_LOOK_DISCLAIMER = 'Predicted with AI: an image edit of the latest real satellite image of this field, guided by the crop calendar, the field\'s greenness curve and the expected weather. Not an observation.';
+/** Crop journey stage images (EVARA_ACTIONS_SPEC.md 3.2, 2026-11-04): the label on every journey asset. */
+export const CROP_JOURNEY_LABEL = 'Illustrative growth, generated image, not a prediction';
+export const CROP_JOURNEY_DISCLAIMER = 'Generated illustrations of a typical growth cycle, made by editing a real image of this field inside its outline. Not observations of this field and not predictions of yield or health. Stage dates come from the crop calendar.';
 
 const PENDING: ReadonlySet<string> = new Set(['queued', 'running']);
 
@@ -147,6 +152,8 @@ export interface FutureLookRow {
   model: string | null; provider_request_id: string | null; response_deleted: boolean | null; created_at: Date; updated_at: Date;
   /** Added by 0037; node-postgres returns `date` columns as a local-midnight Date. */
   kind: FutureLookKind; target_date: Date | string | null; guidance: string | null; target_week: Date | string | null;
+  /** Added by 0046 (crop journey); null on stage and gap rows. */
+  journey_id?: string | null;
 }
 
 // ------------------------------------------------------------------ small helpers
@@ -387,23 +394,103 @@ export async function compositeInsideField(a: {scene: Buffer; output: Buffer; fi
   return sharp(px, {raw: {width: a.width, height: a.height, channels: 3}}).png().toBuffer();
 }
 
+// ------------------------------------------------------------------ single-stage render core (shared since 2026-11-04)
+
+/**
+ * Outline drawn on the image sent to the model (the prompts refer to "the field outlined in red"). Same value as
+ * OUTLINE_COLOUR in worker/handlers/future-look.ts, which keeps its own inline copy of these steps (that file is not part of
+ * the crop-journey packet); the two must stay equal.
+ */
+export const FIELD_EDIT_OUTLINE_COLOUR = '#ff2a2a';
+
+export interface FieldEditImage {
+  /** JPEG sent to the model: the source with the field outline drawn in red. QA compares the output with this. */
+  sent: Buffer;
+  imageDataUrl: string;
+  width: number;
+  height: number;
+  /** Outline stroke in source pixels; the stored composite keeps the real image within half of it from the ring edge. */
+  stroke: number;
+}
+
+/** The image a field edit sends: the clean source (PNG or JPEG) with the ring outlined in red, as JPEG quality 92 (the live-verified encoding). */
+export async function fieldEditImage(source: Buffer, field: readonly [number, number][]): Promise<FieldEditImage> {
+  const meta = await sharp(source).metadata();
+  const W = meta.width ?? 512, H = meta.height ?? 512;
+  const pts = field.map(([x, y]) => `${(x * W).toFixed(1)},${(y * H).toFixed(1)}`).join(' ');
+  const stroke = Math.max(2, Math.round(W / 170));
+  const svg = Buffer.from(`<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}"><polygon points="${pts}" fill="none" stroke="${FIELD_EDIT_OUTLINE_COLOUR}" stroke-width="${stroke}" stroke-linejoin="round"/></svg>`);
+  const sent = await sharp(source).flatten({background: '#000000'}).toColourspace('srgb').composite([{input: svg, top: 0, left: 0}]).jpeg({quality: 92}).toBuffer();
+  return {sent, imageDataUrl: `data:image/jpeg;base64,${sent.toString('base64')}`, width: W, height: H, stroke};
+}
+
+export interface FieldEditInput {
+  /** Clean source image: a stored Sentinel-2 visual scene, or an owner field photo (orientation applied). */
+  source: Buffer;
+  /** Field ring (or confirmed photo region) in normalised image coordinates of `source`. */
+  field: [number, number][];
+  prompt: string;
+  edit: {baseUrl: string; apiKey: string; model: string; fetchImpl?: typeof fetch | undefined; sleep?: ((ms: number) => Promise<void>) | undefined; timeoutMs?: number | undefined};
+  /** Model-activity record for the paid call (purpose shown in the AI activity list); omitted = no record. */
+  activity?: {pool: Pool; ownerId: string; sessionId: string | null; mode: string; purpose: string} | undefined;
+}
+
+/**
+ * `billed` is true whenever the provider returned an image (billable even when QA rejects it or a later step fails).
+ * Provider errors are not caught here: `MuseImageError` propagates so the caller can tell a definitive failure from an
+ * unknown outcome (budget release vs uncertain).
+ */
+export type FieldEditResult =
+  | {status: 'ready'; png: Buffer; qa: FutureLookQa; requestId: string | null; billed: true}
+  | {status: 'failed'; reason: string; qa: FutureLookQa | null; requestId: string | null; billed: true};
+
+/**
+ * One Meta image edit of a source image inside a field outline, the deterministic QA, and the stored composite: the steps of
+ * worker/handlers/future-look.ts (outline, edit, evaluateFutureLook on the sent image, compositeInsideField so only pixels
+ * strictly inside the ring come from the model) as one function, for the crop journey (2026-11-04). Budget reservation,
+ * dispatch markers, storage and the asset row stay with the caller. No behaviour change for the existing stage and gap looks,
+ * whose handler is unchanged.
+ */
+export async function renderFieldEdit(input: FieldEditInput): Promise<FieldEditResult> {
+  const img = await fieldEditImage(input.source, input.field);
+  const call = () => editImage({
+    baseUrl: input.edit.baseUrl, apiKey: input.edit.apiKey, model: input.edit.model, prompt: input.prompt, imageDataUrl: img.imageDataUrl, size: `${img.width}x${img.height}`,
+    ...(input.edit.fetchImpl ? {fetchImpl: input.edit.fetchImpl} : {}), ...(input.edit.sleep ? {sleep: input.edit.sleep} : {}), ...(input.edit.timeoutMs ? {timeoutMs: input.edit.timeoutMs} : {}),
+  });
+  const res = input.activity ? await withModelActivity(input.activity, call) : await call();
+  let qa: FutureLookQa | null = null;
+  try {
+    qa = await evaluateFutureLook({input: img.sent, output: res.png, field: input.field});
+    if (!qa.passed) return {status: 'failed', reason: `qa_${qa.reasons[0] ?? 'failed'}`.slice(0, 80), qa, requestId: res.requestId, billed: true};
+    const png = await compositeInsideField({scene: input.source, output: res.png, field: input.field, width: img.width, height: img.height, edgePx: Math.ceil(img.stroke / 2)});
+    return {status: 'ready', png, qa, requestId: res.requestId, billed: true};
+  } catch {
+    return {status: 'failed', reason: 'internal_error', qa, requestId: res.requestId, billed: true};
+  }
+}
+
 // ------------------------------------------------------------------ row mapping
+
+/** Stored kind as the contract kind (rows before 0037 read as 'stage'; 'journey' since 0046). */
+const kindOf = (k: string): FutureLookKind => (k === 'gap' ? 'gap' : k === 'journey' ? 'journey' : 'stage');
 
 export function toFutureLookAsset(r: FutureLookRow): FutureLookAsset {
   const qa = r.qa === null ? null : FutureLookQa.safeParse(r.qa);
-  const kind: FutureLookKind = r.kind === 'gap' ? 'gap' : 'stage';
+  const kind = kindOf(r.kind);
   const derivedFromDate = r.source_acquired_at?.toISOString().slice(0, 10) ?? null;
   const targetDate = pgDate(r.target_date);
   return {
     assetId: r.id, farmId: r.farm_id, cycleId: r.cycle_id, stageId: r.stage_id, stageName: r.stage_name, cropId: r.crop_id, cropName: r.crop_name,
     sourceItemId: r.source_item_id, sourceAcquiredAt: r.source_acquired_at?.toISOString() ?? null, derivedFromDate,
     status: r.status, failureReason: r.status === 'failed' || r.status === 'unavailable' ? r.failure_reason : null,
-    label: kind === 'gap' ? predictedLookLabel(targetDate, derivedFromDate) : futureLookLabel(r.stage_name),
-    disclaimer: kind === 'gap' ? PREDICTED_LOOK_DISCLAIMER : FUTURE_LOOK_DISCLAIMER,
+    label: kind === 'gap' ? predictedLookLabel(targetDate, derivedFromDate) : kind === 'journey' ? CROP_JOURNEY_LABEL : futureLookLabel(r.stage_name),
+    disclaimer: kind === 'gap' ? PREDICTED_LOOK_DISCLAIMER : kind === 'journey' ? CROP_JOURNEY_DISCLAIMER : FUTURE_LOOK_DISCLAIMER,
     imagePath: r.status === 'ready' ? futureLookImagePath(r.farm_id, r.id) : null,
     qa: qa && qa.success ? qa.data : null, model: r.model, responseDeleted: r.response_deleted, promptVersion: r.prompt_version, attempt: r.attempt,
     createdAt: r.created_at.toISOString(), updatedAt: r.updated_at.toISOString(),
     kind, targetDate, guidance: r.guidance ? r.guidance.slice(0, 400) : null,
+    // Journey rows only, so stage and gap assets keep their exact shape.
+    ...(kind === 'journey' ? {journeyId: r.journey_id ?? null} : {}),
   };
 }
 
@@ -654,18 +741,26 @@ export interface FutureLookImage { bytes: Buffer; contentType: 'image/png'; labe
 /**
  * PNG bytes of a ready illustration; 404 for any other state, a foreign asset or a missing object. With `fieldId` (the
  * field view's paths carry it, spec 11.2) the asset's cycle must name that field, else 404; the bytes do not depend on it.
+ * Crop journey assets (kind 'journey', 2026-11-04) carry no real cycle: with `fieldId` their journey must name that field
+ * (a journey without a field matches no fieldId), else 404. Owner and farm scoping are the same ownedRow check for all kinds.
  */
 export async function futureLookImage(deps: FutureLookImageDeps, ownerId: string, farmId: string, assetId: string, fieldId?: string): Promise<FutureLookImage> {
   const row = await ownedRow(deps, ownerId, farmId, assetId);
   if (row.status !== 'ready' || !row.storage_key) throw notFound('Illustration');
+  const kind = kindOf(row.kind);
   if (fieldId !== undefined) {
-    const cycle = (await getWorkspace(deps.pool, ownerId, farmId)).cycles.find((c) => c.id === row.cycle_id);
-    if (!cycle || cycle.fieldId !== fieldId) throw notFound('Illustration');
+    if (kind === 'journey') {
+      const journey = (await deps.pool.query<{field_id: string | null}>('SELECT field_id FROM crop_journeys WHERE id=$1 AND owner_id=$2 AND farm_id=$3', [row.journey_id ?? null, ownerId, farmId])).rows[0];
+      if (!journey || journey.field_id !== fieldId) throw notFound('Illustration');
+    } else {
+      const cycle = (await getWorkspace(deps.pool, ownerId, farmId)).cycles.find((c) => c.id === row.cycle_id);
+      if (!cycle || cycle.fieldId !== fieldId) throw notFound('Illustration');
+    }
   }
   try {
     const bytes = Buffer.from(await deps.storage.get({ownerId, key: row.storage_key}));
-    const label = row.kind === 'gap' ? predictedLookLabel(pgDate(row.target_date), row.source_acquired_at?.toISOString().slice(0, 10) ?? null) : futureLookLabel(row.stage_name);
-    return {bytes, contentType: 'image/png', label, sourceAcquiredAt: row.source_acquired_at?.toISOString() ?? null, kind: row.kind === 'gap' ? 'gap' : 'stage'};
+    const label = kind === 'gap' ? predictedLookLabel(pgDate(row.target_date), row.source_acquired_at?.toISOString().slice(0, 10) ?? null) : kind === 'journey' ? CROP_JOURNEY_LABEL : futureLookLabel(row.stage_name);
+    return {bytes, contentType: 'image/png', label, sourceAcquiredAt: row.source_acquired_at?.toISOString() ?? null, kind};
   } catch (e) {
     if (e instanceof StorageError) throw notFound('Illustration');
     throw e;

@@ -169,6 +169,8 @@ export const FarmBriefing = z
           .object({
             label: bText(60),
             chosen: z.boolean(),
+            /** 2026-11-04 (EVARA_ACTIONS_SPEC.md 2.5): the option id, so the model can name it in @UsePlan; absent on older runs. */
+            optionId: bText(120).optional(),
             slots: z
               .array(
                 z
@@ -191,14 +193,71 @@ export const FarmBriefing = z
           .strict()
           .nullable(),
         savedSeasons: z
-          .array(z.object({ year: z.number().int(), season: bText(80), cropName: bText(120), productName: bText(120).nullable(), kind: bText(20), plannedSowingDate: IsoDate.nullable(), plannedHarvestDate: IsoDate.nullable() }).strict())
+          .array(
+            z
+              .object({
+                /** 2026-11-04 (EVARA_ACTIONS_SPEC.md 2.5): the saved season's id, so the model can name it in @ReplaceSeason; absent on older runs. */
+                id: bText(160).optional(),
+                year: z.number().int(),
+                season: bText(80),
+                cropName: bText(120),
+                productName: bText(120).nullable(),
+                kind: bText(20),
+                plannedSowingDate: IsoDate.nullable(),
+                plannedHarvestDate: IsoDate.nullable(),
+                /** 2026-11-04 (EVARA_ACTIONS_SPEC.md 1.4): planned (replaceable), overdue (replaceable) or sown. */
+                realisation: bText(20).optional(),
+              })
+              .strict(),
+          )
           .max(6),
         previousHarvest: z.object({ status: bText(20), cropName: bText(120).nullable(), harvestDate: IsoDate.nullable() }).strict().nullable(),
+        /**
+         * 2026-11-04 (EVARA_ACTIONS_SPEC.md 1.4): alternative plans computed when no free window exists ('replace_planned' or
+         * 'sown_comparison'); dates and names only, no unit records. Null when the field has a free window; absent on older runs.
+         */
+        alternatives: z
+          .object({
+            basis: bText(20),
+            summary: bText(300),
+            options: z
+              .array(
+                z
+                  .object({
+                    /** The alternative option's id (prefixed alt-), for @UsePlan("alternatives", id). */
+                    optionId: bText(120).optional(),
+                    label: bText(60),
+                    slots: z.array(z.object({ cropName: bText(120), productName: bText(120), kind: bText(20), sowing: IsoDate, harvest: z.object({ earliest: IsoDate, latest: IsoDate }).strict() }).strict()).max(6),
+                  })
+                  .strict(),
+              )
+              .max(2),
+          })
+          .strict()
+          .nullable()
+          .optional(),
       })
       .strict()
       .nullable(),
     cropFit: z
-      .object({ generatedAt: IsoDateTime.nullable(), picks: z.array(z.object({ rank: z.number().int(), cropId: bText(120), cropName: bText(120), productName: bText(120), reason: bText(160) }).strict()).max(3) })
+      .object({
+        generatedAt: IsoDateTime.nullable(),
+        picks: z
+          .array(
+            z
+              .object({
+                rank: z.number().int(),
+                cropId: bText(120),
+                cropName: bText(120),
+                productName: bText(120),
+                reason: bText(160),
+                /** 2026-11-04 (EVARA_ACTIONS_SPEC.md 1.4): the planned, unsown season this pick would replace, by crop name; null when it takes a free window. */
+                replacesCropName: bText(120).nullable().optional(),
+              })
+              .strict(),
+          )
+          .max(3),
+      })
       .strict()
       .nullable(),
     journal: z
@@ -472,6 +531,8 @@ export const AssistantIntent = z.enum([
   'market_question',
   'water_question',
   'observation',
+  /** 2026-11-04 (EVARA_ACTIONS_SPEC.md 2.6): the farmer asks to see how a crop would look or grow (GrowthJourney). */
+  'growth_journey',
   'clarification_needed',
   'out_of_scope',
 ]);
@@ -516,6 +577,12 @@ export const StructuredAssistantOutput = z
     claimEvidenceRefs: z.array(ClaimEvidenceRef),
     proposedPlanChange: ToolSchemas.propose_plan_revision.input.optional(),
     limitations: z.array(z.string().min(1).max(1000)),
+    /**
+     * 2026-11-04 (EVARA_ACTIONS_SPEC.md 2): the Evara Lang program (one `name = Component(...)` statement per line) that
+     * arranges this answer's blocks and the kit's data components. It carries no prose (string literals are ids, dates and
+     * enum words only); the server resolves it into an EvaraUi tree after the gate. Null or absent = the fallback composer.
+     */
+    ui: z.string().max(4000).nullable().optional(),
   })
   .strict()
   .superRefine((o, ctx) => {

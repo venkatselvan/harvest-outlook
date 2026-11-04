@@ -64,6 +64,7 @@ export function toTurnOut(r: AgentRunResult, approved: { text: string | null; ha
         }
       : null,
     costEstimate: { estimatedUsd: r.cost.estimatedUsd, settledUsd: r.cost.settledUsd, providerCalls: r.cost.providerCalls, billable: r.cost.billable, basis: "estimated_not_billed" },
+    ui: r.ui ?? null,
   };
 }
 
@@ -122,7 +123,7 @@ export async function registerAssistantRoutes(app: FastifyInstance, deps: Assist
 
       const out = await runIdempotent(pool, { ownerId, key, route: "POST /api/v1/assistant/turns", hashInput: body }, async () => {
         const result = await withModelActivity({pool,ownerId,sessionId,mode:config.RUNTIME_MODE,purpose:'assistant'},()=>runAgentTurn(
-          { pool, budget, provider: providerFor(config.RUNTIME_MODE), registry, limits, models: { text: config.META_TEXT_MODEL, escalation: config.META_ESCALATION_MODEL }, signal: ac.signal },
+          { pool, budget, provider: providerFor(config.RUNTIME_MODE), registry, limits, models: { text: config.META_TEXT_MODEL, escalation: config.META_ESCALATION_MODEL }, signal: ac.signal, config },
           { ownerId, sessionId, mode: config.RUNTIME_MODE, requestId: req.id, language: body.language, text, farmId: body.farmId, fieldId: body.fieldId, planId: body.planId, selectedDate: body.selectedDate, scenarioId: body.scenarioId, farmGeography },
         ));
         if (result.status === "provider_unavailable") {

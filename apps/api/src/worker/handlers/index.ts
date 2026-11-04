@@ -20,6 +20,8 @@ import {createSoilHandler} from './soil-reports';
 import { createYearPlanHandler } from './year-plan';
 import { createMonitorHandler } from './monitoring';
 import { createFutureLookHandler } from './future-look';
+import { createCropJourneyHandler } from './crop-journey';
+import { CROP_JOURNEY_JOB_TYPE } from '../../services/today/crop-journey';
 import { createOutlookNoteHandler, OUTLOOK_NOTE_JOB_TYPE } from './outlook-note';
 import {createFarmSummaryHandler,FARM_SUMMARY_JOB} from './farm-summary';
 import { createTodayOverviewHandler, TODAY_OVERVIEW_JOB_TYPE } from './today-overview';
@@ -53,6 +55,8 @@ export function registerWorkerHandlers(registry: Record<string, JobHandler>, dep
   // PHOTO_COVERAGE_SPEC.md: SAM 3.1 crop / weed-like / standing-water image shares and a Muse Spark summary.
   registry[PHOTO_COVERAGE_JOB] = createPhotoCoverageHandler(deps);
   registry['today.future-look'] = createFutureLookHandler({ config, pool, storage, budget, ...(deps.fetchImpl ? { fetchImpl: deps.fetchImpl } : {}) });
+  // EVARA_ACTIONS_SPEC.md 3.2: crop journey stage illustrations.
+  registry[CROP_JOURNEY_JOB_TYPE] = createCropJourneyHandler({ config, pool, storage, budget, ...(deps.fetchImpl ? { fetchImpl: deps.fetchImpl } : {}) });
   // Round 2 (docs/research/ROUND2_SPEC.md): harvest outlook note, crop fit review (soil review is added when its handler lands).
   registry[OUTLOOK_NOTE_JOB_TYPE] = createOutlookNoteHandler({ config, pool, budget, ...(deps.fetchImpl ? { fetchImpl: deps.fetchImpl } : {}) });
   // TODAY_ECONOMICS_FOOTPRINT_SPEC.md section 9: the Today overview.

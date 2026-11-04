@@ -27,7 +27,7 @@ import {
   yieldFieldText,
   yieldText,
 } from "./cropFitModel";
-import { CandidateChips } from "./CropFitCard";
+import { CandidateChips, ReplaceButton } from "./CropFitCard";
 
 /**
  * Detail of one crop (ROUND2_SPEC.md 4.2): score parts, profit (central, likely, possible; per hectare and for the
@@ -282,9 +282,22 @@ export function CandidateDetail(props: { candidate: CropFitCandidate; review: Pi
   );
 }
 
-export function CropFitSheet(props: { candidate: CropFitCandidate; review: CropFitReview; pick?: CropFitPick | undefined; onClose: () => void }) {
+export function CropFitSheet(props: { candidate: CropFitCandidate; review: CropFitReview; pick?: CropFitPick | undefined; onClose: () => void; onReplace?: ((c: CropFitCandidate) => void) | undefined; replaceBusy?: boolean | undefined; replaceError?: string | undefined }) {
   return (
-    <Sheet title={candidateTitle(props.candidate)} subtitle={<span>Rank {props.candidate.rank} of {props.review.candidates.length}</span>} onClose={props.onClose} class="cf-sheet">
+    <Sheet
+      title={candidateTitle(props.candidate)}
+      subtitle={<span>Rank {props.candidate.rank} of {props.review.candidates.length}</span>}
+      onClose={props.onClose}
+      class="cf-sheet"
+      footer={
+        props.onReplace && props.candidate.replaces?.length ? (
+          <div class="cf-sheet-replace">
+            <Show when={props.replaceError}>{(m) => <p class="cf-inline-error" role="alert">{m()}</p>}</Show>
+            <ReplaceButton candidate={props.candidate} onReplace={props.onReplace} busy={props.replaceBusy} />
+          </div>
+        ) : undefined
+      }
+    >
       <CandidateDetail candidate={props.candidate} review={props.review} pick={props.pick} />
     </Sheet>
   );

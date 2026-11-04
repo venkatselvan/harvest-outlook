@@ -1,5 +1,5 @@
-import { Match, Show, Switch, batch, createEffect, createMemo, createSignal, on, onCleanup } from "solid-js";
-import { A } from "@solidjs/router";
+import { Match, Show, Switch, batch, createEffect, createMemo, createSignal, on, onCleanup, untrack } from "solid-js";
+import { A, useLocation, useNavigate } from "@solidjs/router";
 import type { CropFitCandidate, StageTimeline, YearPlanOccupant, YearPlanReview, YearPlanSlot } from "@harvest/contracts";
 import { newEntryId } from "../../features/photo-region/http";
 import { Planner } from "../Planner";
@@ -14,6 +14,8 @@ import { PlanCalendar, PlanCalendarSkeleton, seasonsForField } from "./PlanCalen
 import { ScenarioLine } from "./ScenarioLine";
 import { SeasonStrip } from "./SeasonStrip";
 import { loadStageTimeline } from "./seasonStripApi";
+import { hasUsePlanParams, usePlanTarget, withoutUsePlanParams } from "./usePlanLink";
+import { AlternativesSection } from "./AlternativesSection";
 import {
   chosenOption,
   currentSpan,
@@ -27,6 +29,9 @@ import {
 } from "./seasonStripModel";
 import { SwapNotice } from "./SwapNotice";
 import {
+  alternativeOccupants,
+  alternativeOption,
+  applyBody,
   cropChoices,
   draftProblems,
   horizonQuery,
@@ -37,10 +42,10 @@ import {
   planRebuilt,
   planningModel,
   replaceOption,
+  replacedByOption,
   rescoreBody,
   scenarioText,
   selectionStatus,
-  slotsToApply,
   swapSavedSeason,
   type DraftSlot,
   type HorizonNavigation,
@@ -99,6 +104,8 @@ export interface YearPlanViewProps {
  */
 export function YearPlanView(props: YearPlanViewProps = {}) {
   const s = useWorkspace();
+  const location = useLocation();
+  const navigate = useNavigate();
   /** The farm's fields as the shell knows them; an empty list is a farm without fields. */
   const farmFields = () => props.workspace?.fields ?? [];
   /** The field every request names: the selected field on a farm with fields, else null (farm-wide plan). */
@@ -357,15 +364,57 @@ export function YearPlanView(props: YearPlanViewProps = {}) {
     (navigating() ? pendingNav() : null) ?? review()?.navigation ?? pendingNav() ?? undefined;
 
   const options = () => review()?.options ?? [];
-  const openOption = () => {
-    const o = open();
-    return o ? options().find((x) => x.optionId === o.optionId) : undefined;
-  };
-  const confirmingOption = () => {
-    const id = confirming();
-    return id ? options().find((x) => x.optionId === id) : undefined;
-  };
+  /** The plans the server computed for a year its planned seasons (or the sown crop) fill; options ids start with "alt-". */
+  const alternatives = () => review()?.alternatives ?? null;
+  /** The crop growing now: the review's fixed slot, else a recorded crop among the saved seasons. */
+  const growingCropName = () =>
+    options().flatMap((o) => o.slots).find((x) => x.fixed)?.cropName ??
+    review()?.scenario.occupied?.find((o) => o.source === "recorded_cycle")?.cropName ??
+    null;
+  const hasAlternatives = () => (alternatives()?.options.length ?? 0) > 0;
+  /** An option id of the review itself, else one of its alternatives. */
+  const findOption = (optionId: string | null | undefined) =>
+    optionId
+      ? (options().find((x) => x.optionId === optionId) ?? alternatives()?.options.find((x) => x.optionId === optionId))
+      : undefined;
+  const openOption = () => findOption(open()?.optionId);
+  const confirmingOption = () => findOption(confirming());
+  /** How the open or confirming option relates to the saved seasons: null for the review's own plans. */
+  const alternativeFor = (optionId: string | null | undefined) => alternativeOption(review() ?? { alternatives: null }, optionId);
   const choices = createMemo(() => cropChoices(review(), s.crops()));
+  // Evara's "use plan" link (?option=<id>[&alternative=1]): once the review has settled, open that option's sheet (alternative
+  // mode for an alternatives option), then drop the two parameters from the URL (replace, not push) so a refresh does not
+  // reopen it. An id the loaded review does not have opens nothing; the parameters are dropped the same way.
+  createEffect(() => {
+    const search = location.search;
+    const r = review();
+    if (phase().kind !== "ready" || !r || r.reviewId === null || isActive(r) || !hasUsePlanParams(search)) return;
+    const target = usePlanTarget(search, r);
+    untrack(() => {
+      if (target)
+        batch(() => {
+          setEditing(false);
+          setRescoreError("");
+          setSwapError("");
+          setOpen({ optionId: target.optionId, slotId: null, occupantId: null });
+        });
+      navigate(`${location.pathname}${withoutUsePlanParams(search)}`, { replace: true });
+    });
+  });
+  /** The sheet's alternative mode: the saved seasons the option takes over (replace_planned), or a read-only comparison. */
+  const sheetAlternative = (optionId: string) => {
+    const alt = alternativeFor(optionId);
+    if (!alt) return undefined;
+    const occupied = review()?.scenario.occupied;
+    return alt.alternatives.basis === "replace_planned"
+      ? ({ kind: "replace", replaces: replacedByOption(alt.alternatives, alt.option, occupied), occupied: alternativeOccupants(alt.alternatives, alt.option, occupied) } as const)
+      : ({ kind: "comparison", replaces: [], occupied: [] } as const);
+  };
+  /** The planned seasons applying this option removes; empty for the review's own options. */
+  const confirmingReplaces = (optionId: string) => {
+    const alt = alternativeFor(optionId);
+    return alt ? replacedByOption(alt.alternatives, alt.option, review()?.scenario.occupied) : [];
+  };
 
   // Season strip (SEASON_STRIP_COMPARE_SPEC.md): the stage names of the growing crop come from its calendar timeline (a code
   // route, no provider call). Read once per cycle; a failed read leaves the plan's own harvest window to label the months.
@@ -580,6 +629,8 @@ export function YearPlanView(props: YearPlanViewProps = {}) {
     if (!current.reviewId) return setApplyError("This plan is not saved on the server yet. Refresh, then try again.");
     if (!workspace || workspace.farmId !== id || s.workspace.loading)
       return setApplyError("Your saved seasons are still loading. Try again in a moment.");
+    const body = applyBody({ review: current, option, workspaceVersion: workspace.version });
+    if (!body) return setApplyError("A comparison plan is not applied. It shows what could have fitted the field.");
     const key = applyKeys.get(optionId) ?? newEntryId("year-plan-apply");
     applyKeys.set(optionId, key);
     const gen = generation;
@@ -588,23 +639,16 @@ export function YearPlanView(props: YearPlanViewProps = {}) {
       setApplyError("");
     });
     try {
-      const before = workspace.rotationPlans.length;
-      const result = await apply(
-        id,
-        withFieldId(
-          {
-            reviewId: current.reviewId,
-            optionId,
-            slotIds: slotsToApply(option).map((x) => x.slotId),
-            expectedWorkspaceVersion: workspace.version,
-          },
-          planField(),
-        ),
-        { idempotencyKey: key },
-      );
+      const before = new Set(workspace.rotationPlans.map((r) => r.id));
+      const result = await apply(id, withFieldId(body, planField()), { idempotencyKey: key });
       if (!live(gen, id)) return;
       setReview(mergeServerReview(review(), result.review));
-      setApplyAdded(Math.max(0, result.workspace.rotationPlans.length - before));
+      // A replacing apply removes seasons in the same write, so the length is no measure; count the seasons that are new.
+      setApplyAdded(
+        body.alternative
+          ? result.workspace.rotationPlans.filter((r) => !before.has(r.id)).length
+          : Math.max(0, result.workspace.rotationPlans.length - before.size),
+      );
       await s.refreshWorkspace();
     } catch (error) {
       if (!live(gen, id)) return;
@@ -732,6 +776,11 @@ export function YearPlanView(props: YearPlanViewProps = {}) {
                     </button>
                   </p>
                 </Show>
+                <Show when={hasAlternatives() && (r().options.length > 0 || (r().scenario.occupied ?? []).length > 0)}>
+                  <h3 class="yp-subhead" id="yp-current-heading">
+                    Your current plan
+                  </h3>
+                </Show>
                 <Switch>
                   <Match when={r().options.length > 0}>
                     <PlanCalendar
@@ -763,7 +812,7 @@ export function YearPlanView(props: YearPlanViewProps = {}) {
                       occupied={r().scenario.occupied ?? []}
                       onOpen={() => {}}
                     />
-                    <Show when={!r().noFreeWindow}>
+                    <Show when={!r().noFreeWindow && !hasAlternatives()}>
                       <div class="yp-card">
                         <h3>
                           {r().status === "error" ? "The plan could not be built right now" : "No crop sequence fits yet"}
@@ -779,7 +828,7 @@ export function YearPlanView(props: YearPlanViewProps = {}) {
                       </div>
                     </Show>
                   </Match>
-                  <Match when={true}>
+                  <Match when={!hasAlternatives()}>
                     <div class="yp-card">
                       <h3>
                         {r().status === "error" ? "The plan could not be built right now" : "No crop sequence fits yet"}
@@ -795,6 +844,33 @@ export function YearPlanView(props: YearPlanViewProps = {}) {
                     </div>
                   </Match>
                 </Switch>
+                <Show when={alternatives()}>
+                  {(alt) => (
+                    <AlternativesSection
+                      alternatives={alt()}
+                      occupied={r().scenario.occupied ?? []}
+                      appliedOptionIds={r().appliedOptionIds}
+                      growingCropName={growingCropName()}
+                      onOpen={(optionId) =>
+                        batch(() => {
+                          setEditing(false);
+                          setRescoreError("");
+                          setSwapError("");
+                          setOpen({ optionId, slotId: null, occupantId: null });
+                        })
+                      }
+                      onUse={(optionId) =>
+                        batch(() => {
+                          setOpen(null);
+                          setEditing(false);
+                          setApplyError("");
+                          setApplyAdded(null);
+                          setConfirming(optionId);
+                        })
+                      }
+                    />
+                  )}
+                </Show>
               </>
             )}
           </Match>
@@ -813,6 +889,7 @@ export function YearPlanView(props: YearPlanViewProps = {}) {
             fieldId={planField()}
             review={review()!}
             option={option}
+            alternative={sheetAlternative(option.optionId)}
             slotId={open()?.slotId ?? null}
             occupantId={open()?.occupantId ?? null}
             applied={!!review() && isApplied(review()!, option.optionId)}
@@ -863,6 +940,8 @@ export function YearPlanView(props: YearPlanViewProps = {}) {
         {(option) => (
           <ApplyConfirm
             option={option}
+            replaces={confirmingReplaces(option.optionId)}
+            alternative={alternativeFor(option.optionId)?.alternatives.basis === "replace_planned"}
             applied={!!review() && isApplied(review()!, option.optionId) && applyAdded() == null}
             busy={applyBusy()}
             error={applyError()}

@@ -7,7 +7,8 @@ import type { SlotPlan } from '../year-plan/types';
  * Crop fit v2 (ROUND2_SPEC.md section 4). Internal shapes shared by the pure ranking (rank.ts), the soil comparison
  * (soil-compare.ts), the Meta picks (select.ts) and the persisted review (service.ts).
  */
-export const CROP_FIT_ENGINE_VERSION = 'crop-fit-v3.1-2026-11-01';
+// v3.2 (2026-11-04, EVARA_ACTIONS_SPEC.md 1.2): replace pass, default field on a farm with fields, realisation-aware occupancy.
+export const CROP_FIT_ENGINE_VERSION = 'crop-fit-v3.2-2026-11-04';
 export const CROP_FIT_JOB_TYPE = 'farm.crop-fit';
 /** Largest distance from the requested sowing date to the nearest day of a sourced window (ROUND2_SPEC 4.1). */
 export const MAX_SHIFT_DAYS = 21;

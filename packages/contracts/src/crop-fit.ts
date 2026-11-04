@@ -1,7 +1,7 @@
 import {z} from 'zod';
 import {ModelInvocation} from './common';
 import {FieldId} from './workspace';
-import {BasisRef, CostEstimate, DateWindow, HarvestWindow, IntercropCompanion, NumberEstimate, NumberRange, PriceEstimate, ScoreComponents, ScoreWeights, YearPlanReason} from './year-plan';
+import {BasisRef, CostEstimate, DateWindow, HarvestWindow, IntercropCompanion, NumberEstimate, NumberRange, PriceEstimate, ScoreComponents, ScoreWeights, YearPlanReason, YearPlanReplacement} from './year-plan';
 
 /**
  * Crop fit v2 (ROUND2_SPEC.md section 4): every pool crop scored for one sowing date on this field with the year-plan
@@ -67,6 +67,8 @@ export const CropFitCandidate = z.object({
   */
  occupancy: DateWindow.optional(),
  companionHarvest: HarvestWindow.nullable().optional(),
+ /** 2026-11-04 (EVARA_ACTIONS_SPEC.md 1.2): the planned, unsown saved seasons this candidate overlaps and would take over; present only on a replace-pass ranking. */
+ replaces: z.array(YearPlanReplacement).max(6).optional(),
  window: z.object({scope: z.enum(['district', 'state']), season: CropSeason, fit: z.number().min(0).max(1), shiftedDays: z.number().int()}).strict().nullable(),
  yieldKgPerHa: NumberRange.nullable(),
  yieldBasis: z.enum(['district', 'state', 'reference', 'farmer']).nullable(),
@@ -131,6 +133,8 @@ export const CropFitReview = z.object({
  limitations: z.array(text),
  /** 2026-11-03 (FIELDS_MULTICROP_SOIL_SPEC.md 12.3): the field the review ranks for (`?fieldId=`); absent = the whole farm. fieldAreaHa is then that field's area. */
  fieldId: FieldId.optional(),
+ /** 2026-11-04 (EVARA_ACTIONS_SPEC.md 1.2): true when the candidates were ranked with the planned, unsown saved seasons set aside (pass 2). */
+ replacePass: z.boolean().optional(),
 }).strict();
 
 export type CropFitMode = z.infer<typeof CropFitMode>;

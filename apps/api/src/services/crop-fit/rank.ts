@@ -2,6 +2,7 @@ import type { CropFitRequest, CropSeason } from '@harvest/contracts';
 import * as data from '../year-plan/data';
 import { addDays, daysBetween, isCalendarDate, overlaps } from '../year-plan/dates';
 import { makeSlotPlan, predecessorOf, type CandidateSet, type WindowHit } from '../year-plan/candidates';
+import { isReplaceable, realCropId } from '../year-plan/scenario';
 import { evaluateSlot, marginNormaliser, type ScoringNorm } from '../year-plan/assemble';
 import { ASSUMPTIONS, clip, reasonCodes, slotDisplayScore, soilRotationScore, type ReasonCode } from '../year-plan/scoring';
 import type { Inputs } from '../year-plan/inputs';
@@ -165,7 +166,11 @@ export function occupancyConflict(ctx: EngineContext, plan: SlotPlan): string | 
   const fx = ctx.fixedSlot;
   if (fx && overlaps(plan.occupancy.from, plan.occupancy.to, fx.occupancy.from, fx.occupancy.to)) return `The field is expected to be under ${cropName(fx.cropId).toLowerCase()} until ${fmt(fx.occupancy.to)}.`;
   const o = ctx.occupied.find((x) => overlaps(plan.occupancy.from, plan.occupancy.to, x.from, x.to));
-  return o ? `Overlaps a saved season or another crop on this field (${cropName(o.cropId).toLowerCase()}, ${fmt(o.from)} to ${fmt(o.to)}).` : null;
+  if (!o) return null;
+  const name = cropName(realCropId(o.cropId)).toLowerCase();
+  // 2026-11-04 (EVARA_ACTIONS_SPEC.md 1.2): a planned, unsown saved season can be replaced; say so instead of a hard clash.
+  if (isReplaceable(o)) return `Overlaps the saved ${name} season (${fmt(o.from)} to ${fmt(o.to)}), which is ${o.realisation === 'overdue' ? 'past its planned date and ' : ''}planned but not sown; this crop could replace it.`;
+  return `Overlaps a saved season or another crop on this field (${name}, ${fmt(o.from)} to ${fmt(o.to)}).`;
 }
 
 const round4 = (x: number) => Math.round(clip(x, 0, 1) * 10000) / 10000;

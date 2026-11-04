@@ -3180,6 +3180,10 @@
                     "chosen": {
                       "type": "boolean"
                     },
+                    "optionId": {
+                      "type": "string",
+                      "maxLength": 120
+                    },
                     "slots": {
                       "maxItems": 6,
                       "type": "array",
@@ -3510,6 +3514,10 @@
               "items": {
                 "type": "object",
                 "properties": {
+                  "id": {
+                    "type": "string",
+                    "maxLength": 160
+                  },
                   "year": {
                     "type": "integer",
                     "minimum": -9007199254740991,
@@ -3559,6 +3567,10 @@
                         "type": "null"
                       }
                     ]
+                  },
+                  "realisation": {
+                    "type": "string",
+                    "maxLength": 20
                   }
                 },
                 "required": [
@@ -3609,6 +3621,105 @@
                     "status",
                     "cropName",
                     "harvestDate"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "alternatives": {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "basis": {
+                      "type": "string",
+                      "maxLength": 20
+                    },
+                    "summary": {
+                      "type": "string",
+                      "maxLength": 300
+                    },
+                    "options": {
+                      "maxItems": 2,
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "optionId": {
+                            "type": "string",
+                            "maxLength": 120
+                          },
+                          "label": {
+                            "type": "string",
+                            "maxLength": 60
+                          },
+                          "slots": {
+                            "maxItems": 6,
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "cropName": {
+                                  "type": "string",
+                                  "maxLength": 120
+                                },
+                                "productName": {
+                                  "type": "string",
+                                  "maxLength": 120
+                                },
+                                "kind": {
+                                  "type": "string",
+                                  "maxLength": 20
+                                },
+                                "sowing": {
+                                  "type": "string",
+                                  "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                                },
+                                "harvest": {
+                                  "type": "object",
+                                  "properties": {
+                                    "earliest": {
+                                      "type": "string",
+                                      "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                                    },
+                                    "latest": {
+                                      "type": "string",
+                                      "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                                    }
+                                  },
+                                  "required": [
+                                    "earliest",
+                                    "latest"
+                                  ],
+                                  "additionalProperties": false
+                                }
+                              },
+                              "required": [
+                                "cropName",
+                                "productName",
+                                "kind",
+                                "sowing",
+                                "harvest"
+                              ],
+                              "additionalProperties": false
+                            }
+                          }
+                        },
+                        "required": [
+                          "label",
+                          "slots"
+                        ],
+                        "additionalProperties": false
+                      }
+                    }
+                  },
+                  "required": [
+                    "basis",
+                    "summary",
+                    "options"
                   ],
                   "additionalProperties": false
                 },
@@ -3675,6 +3786,17 @@
                   "reason": {
                     "type": "string",
                     "maxLength": 160
+                  },
+                  "replacesCropName": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "maxLength": 120
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
                   }
                 },
                 "required": [

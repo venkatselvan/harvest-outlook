@@ -1,3 +1,4 @@
+import { EvaraUi as evaraUiSchema, type EvaraUi } from "@harvest/contracts";
 import { ApiError } from "../../lib/api";
 
 /**
@@ -63,6 +64,18 @@ export interface TurnResult {
   limitations: string[];
   incomplete: { reasons: string[] } | null;
   costEstimate: { estimatedUsd: number; settledUsd: number; providerCalls: number; billable: boolean; basis: "estimated_not_billed" };
+  /**
+   * 2026-11-04 (docs/research/EVARA_ACTIONS_SPEC.md 2.1): the resolved Evara UI tree the panel renders beside the text. Null or
+   * absent (older servers, stored messages, errors) = the panel shows the answer text.
+   */
+  ui?: EvaraUi | null;
+}
+
+/** The turn's UI tree when it is valid for the kit, else null: a malformed or stale tree never reaches the renderer, the text shows instead. */
+export function turnUi(value: unknown): EvaraUi | null {
+  if (value === null || value === undefined) return null;
+  const parsed = evaraUiSchema.safeParse(value);
+  return parsed.success ? parsed.data : null;
 }
 
 export const provenanceLabel = (p: TurnResult["provenance"]): string =>
@@ -86,6 +99,7 @@ export const ASSISTANT_PROMPTS = [
   "What should I plant next?",
   "Review my farm's weather and market outlook",
   "Help me compare crops for this season",
+  "Show me how ginger would grow here",
 ] as const;
 
 const NO_CHECKED_ANSWER = "I couldn't produce a checked answer from the available information.";
