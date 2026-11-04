@@ -1,7 +1,7 @@
 import type { Mode } from "@harvest/contracts";
 import type { Pool } from "../db/pool";
 import { ReplayCutoffRequiredError } from "../ingest/errors";
-import { READABLE_ROW_MODES, scopedQuery } from "../ingest/scope";
+import { MARKET_PRICE_COLUMNS, READABLE_ROW_MODES, scopedQuery } from "../ingest/scope";
 import { MANDI_LABEL, MIN_SEASON_YEARS, MIN_VALID_DAYS, isoWeek, stateNameFor } from "../plans/adapters/market-outlook";
 import { canonicalMarketKey } from "../providers/datagovin/market-alias";
 import { ApiError } from "./errors";
@@ -240,8 +240,13 @@ async function resolveProduct(pool: Pool, productId: string): Promise<{ id: stri
   return r.rows[0] ?? null;
 }
 
+/**
+ * Narrowed, shared read (ingest/scope.ts): the seasonal reference of several weeks, the trend and the observed series of
+ * one Today view, the market timeline and the briefing read the same product range; identical reads share one query
+ * and its rows for up to MARKET_READ_TTL_MS. Replay reads are keyed by their exact cutoff.
+ */
 async function loadRows(pool: Pool, mode: Mode, productUuid: string, from: string, to: string, cutoff: Date | undefined): Promise<PriceRow[]> {
-  const raw = await scopedQuery(mode).marketObservations(pool, { productId: productUuid, from, to, availableBy: cutoff });
+  const raw = await scopedQuery(mode).marketObservations(pool, { productId: productUuid, from, to, availableBy: cutoff, columns: MARKET_PRICE_COLUMNS, shared: true });
   return raw.map(toRow);
 }
 

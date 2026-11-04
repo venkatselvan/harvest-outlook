@@ -1,7 +1,7 @@
 import { Decimal } from "@harvest/domain";
 import type { DateRange, Mode, ValueRecord } from "@harvest/contracts";
 import type { Pool } from "../../db/pool";
-import { READABLE_ROW_MODES, scopedQuery } from "../../ingest/scope";
+import { MARKET_PRICE_COLUMNS, READABLE_ROW_MODES, scopedQuery, sharedMarketQuery } from "../../ingest/scope";
 import type { MarketOutlookSource, MarketReference, MarketReferenceMarket, OutlookResult, OutlookScopeHint, PriceMissingReason } from "../sources";
 
 /**
@@ -149,7 +149,7 @@ export class PgMarketOutlookSource implements MarketOutlookSource {
     const from = iso(utc(issueDay) - HISTORY_YEARS * 366 * DAY);
     // Stored rows reference crop_products.id (uuid); callers may pass the product slug.
     const resolved = await this.o.pool.query<{ id: string }>("SELECT id FROM crop_products WHERE slug = $1 OR id::text = $1 LIMIT 1", [productId]);
-    const rows = resolved.rows[0] ? await scopedQuery(mode).marketObservations(this.o.pool, { productId: resolved.rows[0].id, from, to: issueDay, availableBy }) : [];
+    const rows = resolved.rows[0] ? await scopedQuery(mode).marketObservations(this.o.pool, { productId: resolved.rows[0].id, from, to: issueDay, availableBy, columns: MARKET_PRICE_COLUMNS, shared: true }) : [];
     const quotes = rows.map(toQuote).filter((q): q is Quote => q !== null);
     const unavailable = (missingReason: PriceMissingReason): OutlookResult => ({ state: "unavailable", missingReason });
     if (quotes.length === 0) return unavailable(noRowsReason(this.key()));
@@ -316,13 +316,15 @@ export function toPriceReferenceBlock(result: OutlookResult, keyConfigured: bool
 
 /** Distinct product ids that have any readable valid row in this mode (cheap pre-check before per-product reads). */
 export async function productsWithMarketRows(pool: Pool, mode: Mode): Promise<Set<string>> {
-  const r = await pool.query<{ id: string; slug: string }>(
+  // Shared (ingest/scope.ts): this EXISTS scan took 2-4 s per monitoring call on the restored production data.
+  const params = [[...READABLE_ROW_MODES[mode]], mode === "synthetic"];
+  const rows = await sharedMarketQuery(pool, "productsWithMarketRows", params, async () => (await pool.query<{ id: string; slug: string }>(
     `SELECT p.id::text AS id, p.slug FROM crop_products p WHERE EXISTS (
        SELECT 1 FROM market_observations m WHERE m.product_id = p.id AND m.mode = ANY($1::text[]) AND m.is_synthetic = $2 AND m.validation_status = 'valid')`,
-    [[...READABLE_ROW_MODES[mode]], mode === "synthetic"],
-  );
+    params,
+  )).rows);
   // Both the uuid and the slug identify the product to callers.
-  return new Set(r.rows.flatMap((x) => [x.id, x.slug]));
+  return new Set(rows.flatMap((x) => [x.id, x.slug]));
 }
 
 export async function priceReferencesFor(
@@ -330,7 +332,7 @@ export async function priceReferencesFor(
   args: { productIds: string[]; issueDate: string; stateId: string | null; districtName: string | null; keyConfigured: boolean },
 ): Promise<Record<string, PriceReferenceBlock>> {
   const have = await productsWithMarketRows(pool, mode);
-  const out: Record<string, PriceReferenceBlock> = {};
+  const done = new Map<string, PriceReferenceBlock>();
   const todo = [...new Set(args.productIds)];
   const hint = { stateId: args.stateId, districtName: args.districtName };
   for (let i = 0; i < todo.length; i += 6) {
@@ -338,8 +340,12 @@ export async function priceReferencesFor(
       const res: OutlookResult = have.has(id)
         ? await source.getOutlook(id, [], [], args.issueDate, hint)
         : { state: "unavailable", missingReason: noRowsReason(args.keyConfigured) };
-      out[id] = toPriceReferenceBlock(res, args.keyConfigured);
+      done.set(id, toPriceReferenceBlock(res, args.keyConfigured));
     }));
   }
+  // Keys in request order (2026-11-05). They used to follow completion order, which made the order of monitoring's
+  // market products depend on query timing (and on which reads were already in the shared memo).
+  const out: Record<string, PriceReferenceBlock> = {};
+  for (const id of todo) out[id] = done.get(id)!;
   return out;
 }

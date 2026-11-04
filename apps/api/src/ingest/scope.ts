@@ -1,6 +1,7 @@
 import type { Mode } from "@harvest/contracts";
 import type { Pool } from "../db/pool";
 import { ReplayCutoffRequiredError } from "./errors";
+import { databaseKey, ReadMemo } from "./read-memo";
 
 /**
  * Which stored row modes a runtime mode may read. Live reads never see synthetic rows: the mode column
@@ -36,6 +37,61 @@ export interface MarketFilter {
   availableBy?: Date | undefined;
   /** Include rows from unverified commodity mappings (flagged validation_status='unverified_mapping'). Default false. */
   includeUnverified?: boolean | undefined;
+  /**
+   * Columns to return (default: every column). The price readers pass MARKET_PRICE_COLUMNS: the `raw` and `flags`
+   * JSON (about 300 of the 755 bytes of a row) are then neither sorted by Postgres nor parsed by Node. The identity
+   * and validation_status are always selected; vintage selection, filters and row order are unchanged.
+   */
+  columns?: readonly MarketColumn[] | undefined;
+  /**
+   * Serve this read from the shared in-process memo (see read-memo.ts and MARKET_READ_TTL_MS): identical concurrent
+   * reads share one query and a result is reused for at most MARKET_READ_TTL_MS. Only for read paths that accept that
+   * staleness bound; replay reads stay exact (the cutoff is part of the key).
+   */
+  shared?: boolean | undefined;
+}
+
+/** Selectable market_observations columns (an allow-list: column names are interpolated into SQL). */
+export const MARKET_COLUMNS = [
+  "id", "market_id", "product_id", "observed_on", "source_id", "variety_key", "grade_key", "validation_status",
+  "price_min", "price_modal", "price_max", "arrivals", "unit", "is_synthetic", "created_at", "updated_at", "mode",
+  "evidence_state", "market_name", "state_name", "district_name", "variety", "grade", "price_min_inr_per_kg",
+  "price_modal_inr_per_kg", "price_max_inr_per_kg", "arrivals_unit", "flags", "raw", "available_at", "vintage_seq",
+  "revision_of", "revised_at",
+] as const;
+export type MarketColumn = (typeof MARKET_COLUMNS)[number];
+
+/**
+ * The columns read by the price readers: services/price-series.ts (toRow), services/crop-fit/market-now.ts,
+ * services/today/alerts.ts (loadPriceMoves) and plans/adapters/market-outlook.ts (toQuote).
+ */
+export const MARKET_PRICE_COLUMNS: readonly MarketColumn[] = [
+  "market_id", "product_id", "observed_on", "source_id", "variety_key", "grade_key", "validation_status",
+  "market_name", "state_name", "district_name", "variety", "grade", "unit", "arrivals",
+  "price_min_inr_per_kg", "price_modal_inr_per_kg", "price_max_inr_per_kg",
+];
+
+/** How long a shared market read is reused. Rows ingested by another process (the worker) are visible within this. */
+export const MARKET_READ_TTL_MS = 120_000;
+/** Rows kept in the shared memo across all entries (about 400 bytes each once parsed). */
+const MARKET_READ_MAX_ROWS = 300_000;
+const marketReads = new ReadMemo<Record<string, unknown>>({ ttlMs: MARKET_READ_TTL_MS, maxWeight: MARKET_READ_MAX_ROWS });
+
+/** Forget shared market reads. Called after an in-process market ingest (ingest/market-store.ts) and by tests. */
+export function clearSharedMarketReads(): void {
+  marketReads.clear();
+}
+/**
+ * Another read-only market_observations query served from the same memo (same TTL, cleared by the same ingest hook).
+ * `name` and `params` must identify the result completely; never use it for a replay cutoff that is not in `params`.
+ */
+export function sharedMarketQuery<T extends Record<string, unknown>>(pool: Pool, name: string, params: readonly unknown[], load: () => Promise<T[]>): Promise<T[]> {
+  return marketReads.get(JSON.stringify([databaseKey(pool), name, params]), load) as Promise<T[]>;
+}
+
+/** Hit/miss counters of the shared market memo (tests and diagnostics). */
+export function sharedMarketReadStats(): { hits: number; misses: number; entries: number } {
+  return { hits: marketReads.hits, misses: marketReads.misses, entries: marketReads.size };
 }
 
 function modeClause(mode: Mode, params: unknown[]): string {
@@ -60,9 +116,9 @@ function cutoff(mode: Mode, availableBy: Date | undefined, what: string): Date |
 }
 
 /** One row per identity: latest vintage among the filtered rows (filters, including the cutoff, apply before selection). */
-function latestVintageSql(table: string, identity: string[], where: string[], order: string, post = "true"): string {
+function latestVintageSql(table: string, identity: string[], where: string[], order: string, post = "true", select = "*"): string {
   return `SELECT * FROM (
-      SELECT DISTINCT ON (${identity.join(", ")}) * FROM ${table}
+      SELECT DISTINCT ON (${identity.join(", ")}) ${select} FROM ${table}
       WHERE ${where.join(" AND ")}
       ORDER BY ${identity.join(", ")}, available_at DESC NULLS LAST, vintage_seq DESC
     ) v WHERE ${post} ORDER BY ${order}`;
@@ -73,6 +129,15 @@ const IDENTITY = {
   weather_forecasts: ["location_key", "issued_at", "valid_on", "source_id"],
   market_observations: ["market_id", "product_id", "observed_on", "source_id", "variety_key", "grade_key"],
 } as const;
+
+function selectList(columns: readonly MarketColumn[] | undefined): string {
+  if (!columns) return "*";
+  const allowed = new Set<string>(MARKET_COLUMNS);
+  for (const c of columns) if (!allowed.has(c)) throw new Error(`Unknown market_observations column: ${c}`);
+  // Identity (DISTINCT ON) and validation_status (post filter) are always selected; order is fixed for a stable key.
+  const want = new Set<string>([...IDENTITY.market_observations, "validation_status", ...columns]);
+  return MARKET_COLUMNS.filter((c) => want.has(c)).join(", ");
+}
 
 /** Mode-scoped read helper. Callers cannot widen the mode: it is fixed at construction (server-controlled). */
 export function scopedQuery(mode: Mode): ScopedQuery {
@@ -104,8 +169,16 @@ export function scopedQuery(mode: Mode): ScopedQuery {
       if (by) { params.push(by); where.push(`available_at <= $${params.length}`); }
       // Validation is applied AFTER vintage selection, so hiding a vintage can never resurface an older one.
       const post = f.includeUnverified ? "true" : "validation_status = 'valid'";
-      const r = await pool.query(latestVintageSql("market_observations", [...IDENTITY.market_observations], where, "observed_on, market_id", post), params);
-      return r.rows as Record<string, unknown>[];
+      const select = selectList(f.columns);
+      const sql = latestVintageSql("market_observations", [...IDENTITY.market_observations], where, "observed_on, market_id", post, select);
+      const run = async () => (await pool.query(sql, params)).rows as Record<string, unknown>[];
+      if (!f.shared) return run();
+      // Replay: the exact cutoff is part of the key. Live/synthetic: a cutoff (callers pass "now") matches an entry made
+      // with an earlier cutoff within the TTL window, which is the same staleness bound as the TTL itself.
+      const exact = mode === "replay" ? by?.toISOString() ?? null : null;
+      const window = mode !== "replay" && by ? by.getTime() : null;
+      const key = JSON.stringify([databaseKey(pool), mode, f.marketId ?? null, f.productId ?? null, f.from ?? null, f.to ?? null, exact, by ? "cutoff" : "latest", !!f.includeUnverified, select]);
+      return marketReads.get(key, run, window);
     },
   };
 }

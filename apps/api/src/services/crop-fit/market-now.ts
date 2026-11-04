@@ -1,6 +1,6 @@
 import type { CropFitCandidate, Mode } from '@harvest/contracts';
 import type { Pool } from '../../db/pool';
-import { scopedQuery } from '../../ingest/scope';
+import { MARKET_PRICE_COLUMNS, scopedQuery } from '../../ingest/scope';
 import { MIN_VALID_DAYS } from '../../plans/adapters/market-outlook';
 import { canonicalMarketKey } from '../../providers/datagovin/market-alias';
 import { districtKey, median, resolveStateName } from '../price-series';
@@ -62,7 +62,7 @@ export async function marketNow(pool: Pool, mode: Mode, args: MarketNowArgs): Pr
   const product = (await pool.query<{ id: string }>('SELECT id::text AS id FROM crop_products WHERE slug=$1 LIMIT 1', [args.productId])).rows[0];
   if (!product) return null;
   const availableBy = mode === 'replay' ? new Date(`${args.asOf}T23:59:59.999Z`) : undefined;
-  const raw = await scopedQuery(mode).marketObservations(pool, { productId: product.id, from: addDays(args.asOf, -LOOKBACK_DAYS), to: args.asOf, availableBy });
+  const raw = await scopedQuery(mode).marketObservations(pool, { productId: product.id, from: addDays(args.asOf, -LOOKBACK_DAYS), to: args.asOf, availableBy, columns: MARKET_PRICE_COLUMNS, shared: true });
   const rows: Row[] = [];
   for (const r of raw) {
     const modal = num(r.price_modal_inr_per_kg);

@@ -4,7 +4,7 @@ import type { FarmWorkspace, IndexStageReading, Mode, NdviReading, NdviSeries, S
 import { FarmAlertSeverity, FarmAlertType, type FarmAlert, type FarmAlerts, type FarmNewsReviewStatus } from '@harvest/contracts';
 import type { Config } from '../../config';
 import { withTransaction, type Pool } from '../../db/pool';
-import { scopedQuery } from '../../ingest/scope';
+import { MARKET_PRICE_COLUMNS, scopedQuery } from '../../ingest/scope';
 import { stateNameFor } from '../../plans/adapters/market-outlook';
 import { MetaClient } from '../../providers/meta/client';
 import { MIN_CLEAR_FRACTION } from '../../providers/sentinel2';
@@ -324,7 +324,7 @@ export async function loadPriceMoves(pool: Pool, o: { mode: Mode; productIds: st
   for (const slug of o.productIds.slice(0, 12)) {
     const product = (await pool.query<{ id: string; name: string }>('SELECT id, name FROM crop_products WHERE slug=$1 OR id::text=$1 LIMIT 1', [slug])).rows[0];
     if (!product) { notes.push(`price_move_skipped:${slug}:product_unknown`); continue; }
-    const rows = await scopedQuery(o.mode).marketObservations(pool, { productId: product.id, from: addDays(asOfDate, -(2 * PRICE_THRESHOLDS.windowDays - 1)), to: asOfDate, availableBy: new Date(o.asOf) });
+    const rows = await scopedQuery(o.mode).marketObservations(pool, { productId: product.id, from: addDays(asOfDate, -(2 * PRICE_THRESHOLDS.windowDays - 1)), to: asOfDate, availableBy: new Date(o.asOf), columns: MARKET_PRICE_COLUMNS, shared: true });
     const inState = rows.filter((r) => typeof r.state_name === 'string' && r.state_name.toLowerCase() === stateName.toLowerCase());
     const quotes = inState.map((r) => ({ date: pgDate(r.observed_on), inrPerKg: Number(r.price_modal_inr_per_kg), sourceId: String(r.source_id) }));
     const stats = priceMoveFromQuotes(quotes, asOfDate);

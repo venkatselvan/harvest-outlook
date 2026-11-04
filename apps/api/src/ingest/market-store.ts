@@ -1,6 +1,7 @@
 import type { Pool } from "../db/pool";
 import type { MandiRow } from "../providers/datagovin/normalize";
 import { emptyVintageCounts, insertVintage, tally, type VintageCounts } from "./vintage";
+import { clearSharedMarketReads } from "./scope";
 
 export interface MarketStoreCounts extends VintageCounts {
   /** Stored rows whose commodity mapping is unverified (validation_status='unverified_mapping'; hidden from default reads). */
@@ -36,36 +37,42 @@ export async function storeMarketRows(pool: Pool, rows: MandiRow[], opts: Market
   }
   const unresolved = new Set<string>();
   const synthetic = opts.mode === "synthetic";
-  for (const r of rows) {
-    if (!r.productSlug) {
-      counts.skippedUnmapped++;
-      continue;
+  try {
+    for (const r of rows) {
+      if (!r.productSlug) {
+        counts.skippedUnmapped++;
+        continue;
+      }
+      const productId = products.get(r.productSlug);
+      if (!productId) {
+        counts.skippedNoProduct++;
+        unresolved.add(r.productSlug);
+        continue;
+      }
+      const validation = r.mappingVerified ? "valid" : "unverified_mapping";
+      const o = await insertVintage(pool, {
+        table: "market_observations",
+        identity: {
+          market_id: r.marketId, product_id: productId, observed_on: r.observedOn, source_id: opts.sourceId,
+          variety_key: (r.variety ?? "").toLowerCase(), grade_key: (r.grade ?? "").toLowerCase(),
+        },
+        values: { price_min: r.priceMin, price_modal: r.priceModal, price_max: r.priceMax, arrivals: r.arrivals, unit: r.sourceUnit, arrivals_unit: r.arrivalsUnit },
+        other: {
+          is_synthetic: synthetic, mode: opts.mode, evidence_state: synthetic ? "illustrative" : "observed",
+          market_name: r.marketName, state_name: r.state, district_name: r.district, variety: r.variety, grade: r.grade,
+          price_min_inr_per_kg: r.priceMinPerKg, price_modal_inr_per_kg: r.priceModalPerKg, price_max_inr_per_kg: r.priceMaxPerKg,
+          flags: JSON.stringify(r.flags), raw: JSON.stringify(r.raw), available_at: opts.availableAt,
+        },
+        hasRevisedAt: true,
+        curation: { validation_status: validation },
+      });
+      tally(counts, o);
+      if (o !== "unchanged" && validation !== "valid") counts.storedUnverifiedMapping++;
     }
-    const productId = products.get(r.productSlug);
-    if (!productId) {
-      counts.skippedNoProduct++;
-      unresolved.add(r.productSlug);
-      continue;
-    }
-    const validation = r.mappingVerified ? "valid" : "unverified_mapping";
-    const o = await insertVintage(pool, {
-      table: "market_observations",
-      identity: {
-        market_id: r.marketId, product_id: productId, observed_on: r.observedOn, source_id: opts.sourceId,
-        variety_key: (r.variety ?? "").toLowerCase(), grade_key: (r.grade ?? "").toLowerCase(),
-      },
-      values: { price_min: r.priceMin, price_modal: r.priceModal, price_max: r.priceMax, arrivals: r.arrivals, unit: r.sourceUnit, arrivals_unit: r.arrivalsUnit },
-      other: {
-        is_synthetic: synthetic, mode: opts.mode, evidence_state: synthetic ? "illustrative" : "observed",
-        market_name: r.marketName, state_name: r.state, district_name: r.district, variety: r.variety, grade: r.grade,
-        price_min_inr_per_kg: r.priceMinPerKg, price_modal_inr_per_kg: r.priceModalPerKg, price_max_inr_per_kg: r.priceMaxPerKg,
-        flags: JSON.stringify(r.flags), raw: JSON.stringify(r.raw), available_at: opts.availableAt,
-      },
-      hasRevisedAt: true,
-      curation: { validation_status: validation },
-    });
-    tally(counts, o);
-    if (o !== "unchanged" && validation !== "valid") counts.storedUnverifiedMapping++;
+  } finally {
+    // Shared market reads (scope.ts) made before or during this ingest are forgotten, so this process sees the rows at
+    // once. Every stored call counts, also "unchanged" ones (curation may have changed) and a call that failed part way.
+    if (rows.length > 0) clearSharedMarketReads();
   }
   counts.unresolvedProductSlugs = [...unresolved].sort();
   return counts;
