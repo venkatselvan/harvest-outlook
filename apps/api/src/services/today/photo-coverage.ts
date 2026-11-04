@@ -127,10 +127,10 @@ async function photoForCoverage(db: Pick<Pool, 'query'>, s: PhotoScope, photoId:
 }
 
 /**
- * Explicit (retry) or automatic request. Returns the current row; explicit requests without the live provider persist
+ * Explicit (retry/re-evaluate) or automatic request. Returns the current row; explicit requests without the live provider persist
  * an `unavailable` row and then throw 409 provider_unavailable (automatic callers get the row back instead).
  */
-export async function requestPhotoCoverage(deps: CoverageDeps, s: PhotoScope, photoId: string, sessionId: string | null, opts: {auto?: boolean} = {}): Promise<FieldPhotoCoverage> {
+export async function requestPhotoCoverage(deps: CoverageDeps, s: PhotoScope, photoId: string, sessionId: string | null, opts: {auto?: boolean; regenerate?: boolean} = {}): Promise<FieldPhotoCoverage> {
   const auto = !!opts.auto;
   const cycle = await photoCycle(deps.pool, s);
   const photo = await photoForCoverage(deps.pool, s, photoId);
@@ -142,7 +142,7 @@ export async function requestPhotoCoverage(deps: CoverageDeps, s: PhotoScope, ph
   const view = (row: CoverageJobRow) => ({stale: staleState(row), outdated: row.status === 'ready' && isOutdated(row, current)});
   /**
    * Re-run when: the row is stale (F1) without an unresolved dispatch; it was measured for another photo date or crop
-   * (F5); or it failed for a reason known to have sent nothing (automatic requests only re-run `provider_unavailable`).
+   * (F5); an explicit regenerate requests a fresh completed measurement; or it failed for a reason known to have sent nothing (automatic requests only re-run `provider_unavailable`).
    * Never re-run a row still in progress or one whose provider outcome is unknown.
    */
   const reusable = (row: CoverageJobRow) => {
@@ -150,7 +150,7 @@ export async function requestPhotoCoverage(deps: CoverageDeps, s: PhotoScope, ph
     if (stale) return stale.reason === 'interrupted_needs_review' && !isOutdated(row, current);
     if (row.status === 'queued' || row.status === 'running') return true;
     if (isOutdated(row, current)) return false;
-    if (row.status === 'ready') return true;
+    if (row.status === 'ready') return auto || !opts.regenerate;
     return !(canRetryPhotoCoverage(row.failure_reason) && (!auto || row.failure_reason === 'provider_unavailable'));
   };
   const before = await find(deps.pool);

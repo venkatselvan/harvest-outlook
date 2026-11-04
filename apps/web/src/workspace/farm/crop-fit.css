@@ -1,10 +1,12 @@
 /* Farm tab crop fit (ROUND2_SPEC.md 4.2). Mobile first (390 px); theme tokens only (apps/web/src/theme.css). */
 .cf-view {
+  box-sizing: border-box;
   display: grid;
   gap: 14px;
   padding: 16px 14px 32px;
-  max-width: 960px;
-  margin: 0 auto;
+  width: 100%;
+  min-width: 0;
+  margin: 0;
   color: var(--text);
 }
 .cf-head h2 {

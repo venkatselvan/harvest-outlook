@@ -1,9 +1,10 @@
 import { Evara } from "./Evara";
-import { For, Show, createEffect, createSignal, on, onCleanup } from "solid-js";
+import { For, Show, createEffect, createMemo, createSignal, on, onCleanup, untrack } from "solid-js";
 import { useLocation, useNavigate } from "@solidjs/router";
-import { EvaraAction as evaraActionSchema, type EvaraAction } from "@harvest/contracts";
 import { Icon } from "./icons";
-import { AiSpark } from "./ui/AiSpark";
+import { getOwnerScope } from "../features/offline/scope";
+import { chatPrefix, loadChats, reviveMessages, type Chat, type ChatMessage as Message } from "../features/ask/chatHistory";
+import "./assistant.css";
 import { today, useWorkspace } from "./state";
 import { postTurn } from "../features/ask/askApi";
 import {
@@ -15,7 +16,6 @@ import {
   turnAnswerText,
   turnUi,
   type AskLanguage,
-  type TurnResult,
   wasWithheld,
 } from "../features/ask/model";
 import { newEntryId } from "../features/photo-region/http";
@@ -32,24 +32,6 @@ import {
 } from "../features/speech/InlineMic";
 import "../features/speech/speech.css";
 const MESSAGE_LIMIT = 800;
-interface Message {
-  role: "user" | "assistant";
-  text: string;
-  turn?: TurnResult;
-  language?: AskLanguage;
-  /** A message the panel wrote itself after a save (code-written text and its actions); it carries no turn. */
-  actions?: EvaraAction[] | undefined;
-}
-
-/** A stored message made safe to render: a tree or action the kit no longer accepts is dropped, the text stays. */
-function revive(m: Message): Message {
-  const actions = Array.isArray(m.actions) ? m.actions.filter((a) => evaraActionSchema.safeParse(a).success) : undefined;
-  return {
-    ...m,
-    ...(m.turn ? { turn: { ...m.turn, ui: turnUi(m.turn.ui) } } : {}),
-    ...(actions?.length ? { actions } : { actions: undefined }),
-  };
-}
 export function Assistant() {
   const s = useWorkspace();
   /**
@@ -64,12 +46,63 @@ export function Assistant() {
   };
   const loc = useLocation();
   const navigate = useNavigate();
-  const [open, setOpen] = createSignal(false);
-  const [messages, setMessages] = createSignal<Message[]>([]);
-  const [text, setText] = createSignal("");
-  const [busy, setBusy] = createSignal(false);
-  const [error, setError] = createSignal("");
-  const [language, setLanguage] = createSignal<AskLanguage>("en");
+  let ownerScope = getOwnerScope();
+  let uiKey = `ho.chat.ui.${ownerScope}`;
+  let savedUi: {open?: boolean; expanded?: boolean; activeId?: string} = {};
+  try { savedUi = JSON.parse(sessionStorage.getItem(uiKey) ?? '{}'); } catch {}
+  const [open, setOpen] = createSignal(!!savedUi.open);
+  const [expanded, setExpanded] = createSignal(!!savedUi.expanded);
+  const [historyOpen, setHistoryOpen] = createSignal(false);
+  const [historyFilter, setHistoryFilter] = createSignal('all');
+  const [chats, setChats] = createSignal<Chat[]>((() => { try { return loadChats(localStorage, ownerScope); } catch { return []; } })());
+  const [activeId, setActiveId] = createSignal(savedUi.activeId ?? '');
+  const currentChat = createMemo(() => chats().find(c => c.id === activeId()));
+  const messages = createMemo(() => currentChat()?.messages ?? []);
+  const text = () => currentChat()?.draft ?? '';
+  const language = () => currentChat()?.language ?? 'en';
+  const [pending, setPending] = createSignal<string[]>([]);
+  const busy = () => pending().includes(activeId());
+  const [errors, setErrors] = createSignal<Record<string, string>>({});
+  const error = () => errors()[activeId()] ?? '';
+  const setError = (value: string) => setErrors(e => ({...e, [activeId()]: value}));
+  let disposed = false;
+  const updateChat = (id: string, patch: Partial<Chat>) => {
+    setChats(list => list.map(c => c.id === id ? {...c, ...patch} : c));
+    const chat = chats().find(c => c.id === id);
+    if (chat) try { localStorage.setItem(`${chatPrefix(ownerScope)}${id}`, JSON.stringify(chat)); } catch {}
+  };
+  const setMessages = (value: Message[]) => updateChat(activeId(), {messages: value, updatedAt: new Date().toISOString()});
+  const setText = (draft: string) => updateChat(activeId(), {draft});
+  const setLanguage = (value: AskLanguage) => updateChat(activeId(), {language: value});
+  const makeChat = (farmId: string | null, farmName: string, imported: Message[] = []) => {
+    const now = new Date().toISOString();
+    const chat: Chat = {id: newEntryId('conversation'), farmId, farmName, title: imported.find(m => m.role === 'user')?.text.slice(0, 80) ?? 'New chat', createdAt: now, updatedAt: now, messages: imported, draft: '', language: 'en'};
+    setChats(list => [chat, ...list]);
+    setActiveId(chat.id);
+    updateChat(chat.id, {});
+    return chat;
+  };
+  const newChat = () => {
+    makeChat(s.farm()?.id ?? null, s.farm()?.name ?? 'General');
+    setHistoryOpen(false);
+    setSheet(null);
+    mic.cancel();
+  };
+  const visibleChats = () => chats().filter(c => (c.messages.length || c.draft) && (historyFilter() === 'all' || c.farmId === historyFilter())).sort((a,b) => b.updatedAt.localeCompare(a.updatedAt));
+  const historyFarms = () => [...new Map(chats().filter(c => c.farmId).map(c => [c.farmId!, c.farmName])).entries()];
+  const resumeChat = (chat: Chat) => {
+    setActiveId(chat.id);
+    if (chat.farmId) s.selectFarm(chat.farmId);
+    setHistoryOpen(false);
+    setSheet(null);
+    mic.cancel();
+  };
+  createEffect(() => {
+    try {
+      if (!activeId()) { sessionStorage.removeItem(uiKey); return; }
+      sessionStorage.setItem(uiKey, JSON.stringify({open: open(), expanded: expanded(), activeId: activeId()}));
+    } catch {}
+  });
   /** The Plan-this-crop sheet an Evara action opened (nothing is written until its confirm button). */
   const [sheet, setSheet] = createSignal<PlanCropRequest | null>(null);
   let scroll: HTMLDivElement | undefined;
@@ -94,89 +127,69 @@ export function Assistant() {
         : undefined;
     },
   });
-  let requestSequence = 0;
-  let scope = "";
-  const ensureScope = () => {
-    if (scope) return scope;
-    try {
-      scope =
-        sessionStorage.getItem("ho.chat.sessionScope") ?? newEntryId("session");
-      sessionStorage.setItem("ho.chat.sessionScope", scope);
-    } catch {
-      scope = newEntryId("session");
-    }
-    return scope;
-  };
-  const storageKey = () =>
-    `ho.chat.${ensureScope()}.${s.farm()?.id ?? "general"}`;
-  const clearMessages = () => {
-    ++requestSequence;
-    setBusy(false);
-    setMessages([]);
-    try {
-      sessionStorage.removeItem(storageKey());
-    } catch {}
-  };
   const sessionEnded = () => {
-    ++requestSequence;
-    scope = "";
-    setBusy(false);
-    setMessages([]);
-    setText("");
-    setError("");
-    setSheet(null);
-    mic.cancel();
+    setChats([]); setActiveId(''); setPending([]); setErrors({});
+    setOpen(false); setHistoryOpen(false); setSheet(null); mic.cancel();
     try {
-      for (const key of Object.keys(sessionStorage))
-        if (key.startsWith("ho.chat.")) sessionStorage.removeItem(key);
+      for (const storage of [localStorage, sessionStorage])
+        for (const key of Object.keys(storage)) if (key.startsWith('ho.chat.')) storage.removeItem(key);
     } catch {}
   };
   const ask = (event: Event) => {
     const question = (event as CustomEvent<{ text?: unknown }>).detail?.text;
     if (typeof question === "string" && question.trim()) {
-      setOpen(true);
+      openAssistant();
       setText(question.trim().slice(0, 800));
       setError("");
     }
   };
-  const openAssistant = () => setOpen(true);
+  const openAssistant = () => {
+    if (!currentChat()) makeChat(s.farm()?.id ?? null, s.farm()?.name ?? 'General');
+    setOpen(true);
+  };
+  const localDataPurged = () => {
+    sessionEnded();
+    ownerScope = getOwnerScope();
+    uiKey = `ho.chat.ui.${ownerScope}`;
+  };
   window.addEventListener("ho:assistant-open", openAssistant);
   window.addEventListener("ho:session-ended", sessionEnded);
+  window.addEventListener("ho:local-data-purged", localDataPurged);
   window.addEventListener("ho:ask", ask);
   onCleanup(() => {
-    ++requestSequence;
+    disposed = true;
     window.removeEventListener("ho:session-ended", sessionEnded);
+    window.removeEventListener("ho:local-data-purged", localDataPurged);
     window.removeEventListener("ho:ask", ask);
     window.removeEventListener("ho:assistant-open", openAssistant);
   });
-  createEffect(
-    on([() => s.farm()?.id, s.sessionEpoch], () => {
-      ++requestSequence;
-      setBusy(false);
-      setText("");
-      setSheet(null);
-      mic.cancel();
+  // A memo avoids resetting the chat when farm records refresh with the same id.
+  const farmId = createMemo(() => s.farm()?.id ?? null);
+  createEffect(on([farmId, s.sessionEpoch], ([id]) => {
+    if (!id && s.farms.loading) return;
+    untrack(() => {
+      // Adopt every old per-farm session chat so All chats includes farms not visited yet.
+      const selectedChat = activeId();
       try {
-        const saved = JSON.parse(sessionStorage.getItem(storageKey()) ?? "[]");
-        setMessages(
-          Array.isArray(saved)
-            ? saved
-                .filter(
-                  (m: Message) =>
-                    m &&
-                    ["user", "assistant"].includes(m.role) &&
-                    typeof m.text === "string",
-                )
-                .slice(-40)
-                .map(revive)
-            : [],
-        );
-      } catch {
-        setMessages([]);
-      }
-      setError("");
-    }),
-  );
+        const legacyScope = sessionStorage.getItem('ho.chat.sessionScope');
+        const prefix = `ho.chat.${legacyScope}.`;
+        for (const key of Object.keys(sessionStorage).filter(k => k.startsWith(prefix))) {
+          const legacy = reviveMessages(JSON.parse(sessionStorage.getItem(key) ?? '[]'));
+          if (!legacy.length) continue;
+          const oldFarm = key.slice(prefix.length);
+          const farm = s.farms()?.find(f => f.id === oldFarm);
+          const chat = makeChat(oldFarm === 'general' ? null : oldFarm, farm?.name ?? 'General', legacy);
+          if (localStorage.getItem(`${chatPrefix(ownerScope)}${chat.id}`)) sessionStorage.removeItem(key);
+        }
+      } catch {}
+      if (chats().some(c => c.id === selectedChat)) setActiveId(selectedChat);
+      if (currentChat()?.farmId === id) return;
+      const latest = chats().filter(c => c.farmId === id).sort((a,b) => b.updatedAt.localeCompare(a.updatedAt))[0];
+      if (latest) setActiveId(latest.id);
+      else makeChat(id, s.farm()?.name ?? 'General');
+      setSheet(null); mic.cancel();
+    });
+  }));
   createEffect(() => {
     messages();
     queueMicrotask(() =>
@@ -189,25 +202,22 @@ export function Assistant() {
   async function send(question: string) {
     question = question.trim().slice(0, 800);
     if (!question || busy() || mic.busy()) return;
-    const farmId = s.farm()?.id;
+    const farmId = currentChat()?.farmId ?? undefined;
     const epoch = s.sessionEpoch();
-    const key = storageKey();
+    const chatId = activeId();
     const requestLanguage = language();
-    const fieldId = selectedField()?.id;
+    const fieldId = farmId ? selectedField()?.id : undefined;
     const planId = loc.pathname.includes("/farm/plan/")
       ? loc.pathname.split("/").pop()
       : undefined;
-    const request = ++requestSequence;
-    const active = () =>
-      request === requestSequence &&
-      epoch === s.sessionEpoch() &&
-      s.farm()?.id === farmId;
+    const active = () => !disposed && epoch === s.sessionEpoch() && chats().some(c => c.id === chatId);
     setError("");
     setText("");
     mic.reset();
     const previous = messages();
     setMessages([...previous, { role: "user", text: question }]);
-    setBusy(true);
+    updateChat(chatId, {title: previous.length ? currentChat()!.title : question.slice(0, 80)});
+    setPending(ids => [...ids, chatId]);
     try {
       const context = previous
         .slice(-4)
@@ -240,28 +250,20 @@ export function Assistant() {
           language: requestLanguage,
         },
       ];
-      setMessages(next);
-      try {
-        sessionStorage.setItem(key, JSON.stringify(next));
-      } catch {}
+      updateChat(chatId, {messages: next, updatedAt: new Date().toISOString()});
     } catch (e) {
       if (active()) {
-        setError(askErrorMessage(e).message);
-        setText(question);
+        setErrors(errors => ({...errors, [chatId]: askErrorMessage(e).message}));
+        updateChat(chatId, {draft: question});
       }
     } finally {
-      if (active()) setBusy(false);
+      if (active()) setPending(ids => ids.filter(id => id !== chatId));
     }
   }
-  const persist = (next: Message[]) => {
-    try {
-      sessionStorage.setItem(storageKey(), JSON.stringify(next));
-    } catch {}
-  };
   /** The workspace of the selected farm, or undefined while it loads or when it belongs to another farm. */
   const currentWorkspace = () => {
     const ws = s.workspace.error ? undefined : s.workspace();
-    return ws && ws.farmId === s.farm()?.id ? ws : undefined;
+    return ws && ws.farmId === currentChat()?.farmId ? ws : undefined;
   };
   /**
    * What Evara's actions run against (workspace/evara/actions.ts). Getters, so a message rendered earlier still acts on the
@@ -269,10 +271,10 @@ export function Assistant() {
    */
   const evaraCtx: EvaraContext = {
     get farmId() {
-      return s.farm()?.id ?? null;
+      return currentChat()?.farmId ?? null;
     },
     get fieldId() {
-      return selectedField()?.id ?? null;
+      return currentChat()?.farmId ? selectedField()?.id ?? null : null;
     },
     get language() {
       return language();
@@ -291,15 +293,12 @@ export function Assistant() {
     refreshWorkspace: () => s.refreshWorkspace(),
     notify: (text) => s.setNotice(text),
     say: (m: LocalAssistantMessage) => {
-      const next: Message[] = [...messages(), { role: "assistant" as const, text: m.text, actions: m.actions, language: m.language }].slice(-40);
+      const next: Message[] = [...messages(), { role: "assistant" as const, text: m.text, actions: m.actions, language: m.language }];
       setMessages(next);
-      persist(next);
     },
     ask: (question) => void send(question),
     navigate: (href) => {
       navigate(href);
-      // On a phone the panel covers the screen the action opens; on wider screens it stays beside it.
-      if (typeof matchMedia === "function" && matchMedia("(max-width: 767px)").matches) setOpen(false);
     },
     writeCompareSelection: (farmId, productIds) => {
       const saved = s.loadCompareSelection(farmId);
@@ -312,16 +311,16 @@ export function Assistant() {
   return (
     <>
       <Show when={open()}>
-        <aside class="assistant-panel" aria-label="Evara farm assistant">
+        <aside class="assistant-panel" classList={{"is-expanded": expanded()}} aria-label="Evara farm assistant">
           <div class="assistant-header">
             <div class="assistant-avatar">
               <Evara size={38} />
             </div>
             <div>
               <strong>Evara</strong>
-              <span>{s.farm()?.name ?? "Let's get growing"}</span>
+              <span>{currentChat()?.farmName ?? "Let's get growing"}</span>
             </div>
-            <AiSpark use="assistant" />
+            <button type="button" class="icon-button" aria-label={expanded() ? 'Collapse assistant' : 'Expand assistant'} aria-pressed={expanded()} onClick={() => setExpanded(v => !v)}><Icon name={expanded() ? 'collapse' : 'expand'} size={18}/></button>
             <button
               class="icon-button"
               aria-label="Close assistant"
@@ -330,15 +329,35 @@ export function Assistant() {
               <Icon name="close" />
             </button>
           </div>
-          <div class="assistant-messages" ref={scroll} aria-live="polite">
-            <div class="assistant-welcome">
+          <div class="assistant-chat-tools">
+            <button type="button" class="text-button" aria-pressed={historyOpen()} onClick={() => setHistoryOpen(v => !v)}><Icon name="history" size={16}/> Chat history</button>
+            <button type="button" class="text-button" onClick={newChat}><Icon name="plus" size={16}/> New chat</button>
+          </div>
+          <Show when={historyOpen()} fallback={<></>}>
+            <section class="assistant-history" aria-label="Chat history">
+              <div class="assistant-history-filters" role="group" aria-label="Filter chats">
+                <button type="button" aria-pressed={historyFilter() === 'all'} onClick={() => setHistoryFilter('all')}>All chats</button>
+                <For each={historyFarms()}>{([id, name]) => <button type="button" aria-pressed={historyFilter() === id} onClick={() => setHistoryFilter(id)}>{name}</button>}</For>
+              </div>
+              <p class="assistant-history-note">Saved on this device.</p>
+              <Show when={visibleChats().length} fallback={<p>No chats in this view yet.</p>}>
+                <For each={visibleChats()}>{chat => <button type="button" class="assistant-history-item" aria-current={chat.id === activeId() ? 'true' : undefined} onClick={() => resumeChat(chat)}>
+                  <strong>{chat.title}</strong><span>{chat.farmName} · {new Date(chat.updatedAt).toLocaleDateString('en-IN', {day: 'numeric', month: 'short'})}{pending().includes(chat.id) ? ' · Replying…' : ''}</span>
+                  <small>{chat.messages.at(-1)?.text.slice(0, 110) ?? chat.draft}</small>
+                </button>}</For>
+              </Show>
+            </section>
+          </Show>
+          <div class="assistant-messages" classList={{'assistant-hidden': historyOpen()}} ref={scroll} aria-live="polite">
+            <Show when={!messages().length}><div class="assistant-welcome">
               <span class="eyebrow">A LITTLE HELP IN THE FIELD</span>
               <div class="evara-welcome-title">
                 <Evara size={76} />
                 <h3>Hi, I'm Evara.</h3>
               </div>
-              <p>{assistantWelcomeText(s.farm()?.name, selectedField()?.name)}</p>
+              <p>{assistantWelcomeText(currentChat()?.farmId ? currentChat()?.farmName : undefined, currentChat()?.farmId ? selectedField()?.name : undefined)}</p>
             </div>
+            </Show>
             <Show when={!messages().length}>
               <div class="assistant-prompts">
                 <For each={ASSISTANT_PROMPTS}>
@@ -427,7 +446,7 @@ export function Assistant() {
             </Show>
           </div>
           <form
-            class="assistant-compose"
+            class="assistant-compose" classList={{"assistant-hidden": historyOpen()}}
             onSubmit={(e) => {
               e.preventDefault();
               void send(text());
@@ -445,16 +464,6 @@ export function Assistant() {
                 <option value="hi">हिन्दी</option>
                 <option value="ta">தமிழ்</option>
               </select>
-              <AiSpark use="speech" />
-              <Show when={messages().length}>
-                <button
-                  type="button"
-                  class="text-button"
-                  onClick={clearMessages}
-                >
-                  Clear
-                </button>
-              </Show>
             </div>
             <InlineMicNotice mic={mic} />
             <div class="compose-input" classList={{ "mic-active": mic.busy() }}>
@@ -486,7 +495,7 @@ export function Assistant() {
             </div>
             <InlineMicMessages mic={mic} />
             <small>
-              Uses your selected farm. Guidance depends on available evidence.
+              Uses this chat’s farm. Guidance depends on available evidence.
             </small>
           </form>
         </aside>
@@ -496,7 +505,7 @@ export function Assistant() {
       </Show>
       <button
         class={`assistant-launcher ${open() ? "open" : ""}`}
-        onClick={() => setOpen(!open())}
+        onClick={() => open() ? setOpen(false) : openAssistant()}
         aria-label={open() ? "Close Evara" : "Open Evara"}
       >
         <Show when={open()} fallback={<Evara size={32} />}>

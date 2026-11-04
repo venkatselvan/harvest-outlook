@@ -1,10 +1,12 @@
 import { SeasonPredictionStatus } from './SeasonPredictionStatus';
-import { FieldImage } from "./FieldImage";
-import { createEffect, createMemo, createSignal, For, Match, on, onCleanup, Show, Switch, untrack, type JSX } from "solid-js";
+import { FieldPhotoGallery } from "@harvest/contracts";
+import { timelineMediaMarks } from "./timelineMedia";
+import { FieldImage, fieldPhotoPath } from "./FieldImage";
+import { createEffect, createMemo, createResource, createSignal, For, Match, on, onCleanup, Show, Switch, untrack, type JSX } from "solid-js";
 import type { CareTask, CompleteCheck, FarmAlert, FieldSummary, PricePoint, TodayView as TodayData, UpcomingStep, WeatherPoint } from "@harvest/contracts";
 import { useLocation, useNavigate } from "@solidjs/router";
 import { boundaryArea, useWorkspace, today as browserToday, type Field } from "../state";
-import { newEntryId } from "../../features/photo-region/http";
+import { apiRequest, newEntryId } from "../../features/photo-region/http";
 import { Icon } from "../icons";
 import type { FieldBoundary } from "../fieldGeometry";
 import type { TodayViewProps } from "./types";
@@ -29,7 +31,6 @@ import {
   predictionBlockedReason,
   predictionSourceScene,
   priceAt,
-  sceneMarks,
   sliderModel,
   stageAt,
   stageTicks,
@@ -341,9 +342,27 @@ export function TodayView(props: TodayViewProps) {
     const model = slider();
     return model ? stageTicks(view()?.timeline, model, view()?.cycle?.harvestDate) : [];
   });
+  const galleryScope = () => {
+    const current = view();
+    return current?.cycle ? {farmId:current.farmId,cycleId:current.cycle.id,epoch:s.sessionEpoch()} : null;
+  };
+  const [timelineGallery, {mutate: updateTimelineGallery}] = createResource(galleryScope, async scope => {
+    try {
+      const gallery = FieldPhotoGallery.parse((await apiRequest(fieldPhotoPath(scope.farmId, scope.cycleId))).data);
+      return {...scope,gallery};
+    } catch { return null; }
+  });
+  const currentGallery = () => {
+    const result = timelineGallery(), scope = galleryScope();
+    return result && scope && result.farmId === scope.farmId && result.cycleId === scope.cycleId && result.epoch === scope.epoch ? result.gallery : null;
+  };
+  const galleryChanged = (farmId: string, cycleId: string, gallery: FieldPhotoGallery) => {
+    const scope = galleryScope();
+    if (scope?.farmId === farmId && scope.cycleId === cycleId) updateTimelineGallery({...scope,gallery});
+  };
   const marks = createMemo(() => {
     const model = slider();
-    return model ? sceneMarks(view()?.scenes ?? [], model) : [];
+    return model ? timelineMediaMarks(view()?.scenes ?? [], model, view()?.ndvi, currentGallery()) : [];
   });
   // The slider day's field condition, without alerts dismissed on this screen.
   const condition = createMemo(() => withoutDismissed(conditionAt(view()?.conditions, date()), dismissed()));
@@ -894,7 +913,9 @@ export function TodayView(props: TodayViewProps) {
         </Match>
         <Match when={view()?.cycle}>
           {mapLayout({
-            outlookSubject: gaugeSubject(),
+            // Read the label in the outlook component, not while constructing this whole layout.
+            // Otherwise each Today response remounts the hero, whose pending-preview status loads Today again.
+            get outlookSubject() { return gaugeSubject(); },
             hero: (
               <div class="today-primary">
                 <TodayHero
@@ -908,6 +929,7 @@ export function TodayView(props: TodayViewProps) {
                   cropName={cropName()}
                   boundary={boundary()}
                   scenes={view()!.scenes}
+                  ndvi={view()!.ndvi}
                   imageBbox={view()!.ndvi?.imageBbox ?? null}
                   indexStage={view()!.indexStage ?? null}
                   onCurveDetails={() => setSheet("curve")}
@@ -943,7 +965,7 @@ export function TodayView(props: TodayViewProps) {
                       )}
                     </Show>
                   )}
-                  fieldImage={() => <Show when={`${s.sessionEpoch()}|${view()!.farmId}|${view()!.cycle!.id}`} keyed>{(_key) => <FieldImage farmId={view()!.farmId} cycleId={view()!.cycle!.id} date={date()} today={view()!.today} fieldName={fieldName()}/>}</Show>}
+                  fieldImage={() => <Show when={`${s.sessionEpoch()}|${view()!.farmId}|${view()!.cycle!.id}`} keyed>{(_key) => <FieldImage farmId={view()!.farmId} cycleId={view()!.cycle!.id} date={date()} today={view()!.today} fieldName={fieldName()} onGalleryChange={galleryChanged}/>}</Show>}
                   notes={() => <Show when={`${s.sessionEpoch()}|${view()!.farmId}|${view()!.cycle!.id}`} keyed>{(_key) => <SeasonPredictionStatus farmId={view()!.farmId} cycleId={view()!.cycle!.id} onRefresh={() => reloadQuiet(view()!.farmId,s.sessionEpoch())}/>}</Show>}
                   onAbout={() => setSheet("about")}
                 />
@@ -1041,6 +1063,7 @@ export function FarmOverviewHero(props: Omit<FarmOverviewProps, "empty" | "side"
             cropName={props.cropName}
             boundary={hero().boundary}
             scenes={props.view.scenes}
+            ndvi={props.view.ndvi}
             imageBbox={props.view.ndvi?.imageBbox ?? null}
             indexStage={null}
             onCurveDetails={props.onCurveDetails}

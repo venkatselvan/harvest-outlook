@@ -23,7 +23,10 @@ export async function leafPlanId(db: Db, ownerId: string, planId: string): Promi
 export async function latestFarmPlan(db: Db, ownerId: string, farmId: string, mode: string): Promise<string | null> {
   const r = await db.query<{ id: string }>(
     `SELECT p.id FROM plans p
-     WHERE p.owner_id = $1 AND p.farm_id = $2 AND p.mode = $3 AND NOT EXISTS (SELECT 1 FROM plans k WHERE k.parent_plan_id = p.id)
+     WHERE p.owner_id = $1 AND p.farm_id = $2 AND p.mode = $3
+       AND NOT EXISTS (SELECT 1 FROM archived_plans a WHERE a.plan_id = p.id AND a.owner_id = $1)
+       AND NOT EXISTS (SELECT 1 FROM plans k WHERE k.parent_plan_id = p.id
+         AND NOT EXISTS (SELECT 1 FROM archived_plans a WHERE a.plan_id = k.id AND a.owner_id = $1))
      ORDER BY p.created_at DESC, p.id LIMIT 1`,
     [ownerId, farmId, mode],
   );

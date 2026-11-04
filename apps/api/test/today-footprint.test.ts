@@ -234,7 +234,7 @@ describe('harvest economics (section 1)', () => {
     expect(econ({}, {productId: null})).toMatchObject({status: 'unavailable', reason: 'no_product_recorded', revenuePerHa: null, profitForField: null});
     const noYield = econ({}, {cropId: 'cotton', productId: 'cotton-kapas'});
     expect(noYield).toMatchObject({status: 'unavailable', reason: 'yield_not_sourced', yieldKgPerHa: null});
-    expect(noYield.limitations.join(' ')).toMatch(/No cotton yield rows are sourced for this state/);
+    expect(noYield.limitations.join(' ')).toMatch(/No cotton yield rows are sourced in the available regions/);
     const noArea = econ({farm: {stateId: 'IN-KA', districtId: H, areaHa: null}});
     expect(noArea).toMatchObject({status: 'available', fieldAreaHa: null, yieldForFieldKg: null, profitForField: null, revenueForField: null});
     expect(noArea.profitPerHa).not.toBeNull();
@@ -247,7 +247,7 @@ describe('harvest economics (section 1)', () => {
     const noCost = econ({}, {cropId: 'sesame', productId: 'sesame-seed'});
     expect(noCost).toMatchObject({status: 'partial', reason: null, cost: null, profitPerHa: null, profitForField: null, keepFraction: 0.95, yieldBasis: 'reference'});
     expect(noCost.revenuePerHa).not.toBeNull();
-    expect(noCost.limitations).toContain('No cost-of-cultivation row is sourced for this crop in this state.');
+    expect(noCost.limitations).toContain('No usable per-hectare cultivation cost is sourced at district, state, national or other-region level.');
     expect(noCost.limitations.join(' ')).toMatch(/assumes a yield spread \(sigma 0\.15\)/);
     expect(noCost.basis.map((b) => b.sourceId)).toContain('year-plan-assumption:singleYearYieldSigma');
   });

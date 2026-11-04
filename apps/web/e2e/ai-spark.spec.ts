@@ -17,11 +17,14 @@ for (const vp of VIEWPORTS) {
     test.use({ viewport: vp });
 
     test("AI in this app: opens the list, fits the screen, restores focus", async ({ page }, info) => {
+      // The current phone shell hides the desktop AI shortcut. Open on desktop,
+      // then resize to check the same sheet at each supported screen size.
+      await page.setViewportSize({width: 1280, height: 800});
       await page.goto("/farm");
       const button = page.getByRole("button", { name: "AI in this app" });
       await expect(button).toBeVisible();
       const box = (await button.boundingBox())!;
-      const minTarget = vp.width < 768 ? 44 : 32;
+      const minTarget = 32;
       expect(box.width, "target width").toBeGreaterThanOrEqual(minTarget);
       expect(box.height, "target height").toBeGreaterThanOrEqual(minTarget);
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth), "no overflow with the header button").toBe(true);
@@ -29,12 +32,14 @@ for (const vp of VIEWPORTS) {
       await info.attach("topbar", { body: await page.locator("header.topbar").screenshot(), contentType: "image/png" });
       await button.focus();
       await page.keyboard.press("Enter");
+      await page.setViewportSize(vp);
       const dialog = page.getByRole("dialog", { name: "AI in this app" });
       await expect(dialog).toBeVisible();
-      await expect(dialog.locator("li.ai-row")).toHaveCount(10);
-      await expect(dialog.locator(".ui-chip", { hasText: /^Live$/ })).toHaveCount(10);
+      await expect(dialog.locator("li.ai-row")).toHaveCount(11);
+      await expect(dialog.locator("li.ai-row img")).toHaveCount(11);
+      await expect(dialog.locator(".ui-chip", { hasText: /^Live$/ })).toHaveCount(11);
       await expect(dialog.locator(".ui-chip", { hasText: /^Planned$/ })).toHaveCount(0);
-      await expect(dialog).toContainText("Meta is the only runtime AI provider in Harvest Outlook");
+      await expect(dialog).toContainText("Meta provides the AI features shown here");
       await expect(dialog).toContainText("without provider-side storage (store: false)");
       // No "Claude" outside the provider note.
       expect((await dialog.locator("li.ai-row").allTextContents()).join(" ")).not.toMatch(/claude/i);
@@ -46,7 +51,8 @@ for (const vp of VIEWPORTS) {
       const serious = axe.violations.filter((v) => v.impact === "serious" || v.impact === "critical");
       expect(serious, JSON.stringify(serious.map((v) => ({ id: v.id, nodes: v.nodes.map((n) => n.target) })))).toEqual([]);
 
-      await info.attach("sheet", { body: await page.screenshot(), contentType: "image/png" });
+      await info.attach("sheet", { body: await page.screenshot({path: info.outputPath('sheet.png')}), contentType: "image/png" });
+      await page.setViewportSize({width: 1280, height: 800});
       await page.keyboard.press("Escape");
       await expect(dialog).toHaveCount(0);
       await expect(button).toBeFocused();

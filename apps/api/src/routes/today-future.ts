@@ -33,7 +33,7 @@ export async function todayFutureRoutes(app: FastifyInstance, deps: TodayFutureD
         'kind=stage (default; stageId query required): a typical look of a current or future stage, at most once per stage per crop cycle. ' +
         'kind=gap (2026-11-03; targetDate body field required): the AI-predicted look of the field on a date after the latest real scene and at most 120 days after today, ' +
         'at most one per crop cycle per calendar week (stored on the week start). Both are code-guided (calendar stage, satellite curve, conditions) and never observations; ' +
-        'at most 10 per crop cycle. regenerate=true (gap only, 2026-11-04) replaces the existing ready look of that week with a new one from the latest scene (the per-cycle daily cap still applies; a look already queued or running is returned as deduplicated). 202 while queued or running, 200 when the existing look is ready, failed or unavailable (synthetic/replay mode, no model key, cycle limit).',
+        'FUTURE_LOOK_DAILY_LIMIT per crop cycle in a rolling 24 hours (default 24; 0 disables the cap). regenerate=true (gap only, 2026-11-04) replaces the existing ready look of that week with a new one from the latest scene (the per-cycle daily cap still applies; a look already queued or running is returned as deduplicated). 202 while queued or running, 200 when the existing look is ready, failed or unavailable (synthetic/replay mode, no model key, cycle limit).',
       params: z.object({id: z.uuid(), itemId: z.string().regex(ITEM_ID_RE)}),
       querystring: z.object({stageId: z.string().min(1).max(80).optional(), cycleId: z.string().min(1).max(120).optional()}).strict(),
       // No body (or an empty one) is a stage request, as before 2026-11-03.
@@ -62,7 +62,7 @@ export async function todayFutureRoutes(app: FastifyInstance, deps: TodayFutureD
   r.get('/api/v1/farms/:id/future-look/:assetId/image', {
     config: {rateLimit: {max: 60, timeWindow: '1 minute'}},
     // fieldId (2026-11-03): the field view's predicted-scene paths carry it; it must be the asset cycle's field.
-    schema: {tags: ['farms'], params: farmAsset, querystring: z.object({fieldId: FieldId.optional()}).strict()},
+    schema: {tags: ['farms'], params: farmAsset, querystring: z.object({fieldId: FieldId.optional(), v: z.coerce.number().int().positive().optional()}).strict()},
   }, async (req, reply) => {
     const image = await futureLookImage(deps, requireAuth(req).ownerId, req.params.id, req.params.assetId, req.query.fieldId);
     reply.header('cache-control', 'private, max-age=3600').header('x-content-type-options', 'nosniff').header('content-disposition', 'inline')

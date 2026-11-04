@@ -63,9 +63,9 @@ export async function fieldPhotoRoutes(app: FastifyInstance, deps: {config: Conf
     return reply.code(202).send(envelope(req.id, config.RUNTIME_MODE, await requestPhotoPrediction({...deps, revision:(await seasonEvidence(pool,scope(ownerId,req.params))).revision}, scope(ownerId, req.params), req.params.photoId, req.body.targetDate, sessionId)));
   });
   // PHOTO_COVERAGE_SPEC.md: explicit request or retry of the crop / weed-like / standing-water measurement for one photo.
-  r.post(`${path}/:photoId/coverage`, {config: {rateLimit: {max: 6, timeWindow: '1 minute'}}, schema: {params: params.extend({photoId: z.uuid()}), response: {202: envelopeSchema(FieldPhotoCoverage)}}}, async (req, reply) => {
+  r.post(`${path}/:photoId/coverage`, {config: {rateLimit: {max: 6, timeWindow: '1 minute'}}, schema: {params: params.extend({photoId: z.uuid()}), body: z.object({regenerate: z.boolean().optional()}).strict().nullish(), response: {202: envelopeSchema(FieldPhotoCoverage)}}}, async (req, reply) => {
     const {ownerId, sessionId} = requireAuth(req);
-    return reply.code(202).send(envelope(req.id, config.RUNTIME_MODE, await requestPhotoCoverage({pool, config}, scope(ownerId, req.params), req.params.photoId, sessionId)));
+    return reply.code(202).send(envelope(req.id, config.RUNTIME_MODE, await requestPhotoCoverage({pool, config}, scope(ownerId, req.params), req.params.photoId, sessionId, {regenerate: req.body?.regenerate === true})));
   });
   r.get(`${path}/predictions/:assetId/image`, {schema: {params: params.extend({assetId: z.uuid()})}}, async (req, reply) => {
     const s = scope(requireAuth(req).ownerId, req.params);

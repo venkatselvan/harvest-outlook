@@ -170,7 +170,7 @@ export interface TodayProviders {
 }
 
 export interface TodayViewDeps {
-  config: Pick<Config, 'RUNTIME_MODE'> & Partial<Pick<Config, 'WEATHER_CLIMATOLOGY_YEARS' | 'WEATHER_CLIMATOLOGY_END_YEAR' | 'MODEL_API_KEY'>>;
+  config: Pick<Config, 'RUNTIME_MODE'> & Partial<Pick<Config, 'WEATHER_CLIMATOLOGY_YEARS' | 'WEATHER_CLIMATOLOGY_END_YEAR' | 'MODEL_API_KEY' | 'FUTURE_LOOK_DAILY_LIMIT'>>;
   pool: Pool;
   now?: (() => Date) | undefined;
   /** Planetary Computer fetch for NDVI (live mode only). */
@@ -359,7 +359,6 @@ export function predictedScenes(all: ReadyFutureLook[], cycle: Cycle, timeline: 
     history.push(l);
   }
   history.sort((a,b) => a.createdAt.localeCompare(b.createdAt));
-  const fieldQuery = cycle.fieldId ? `?fieldId=${encodeURIComponent(cycle.fieldId)}` : '';
   const byDate = new Map<string,ReadyFutureLook[]>();
   for (const look of history) byDate.set(look.targetDate!,[...(byDate.get(look.targetDate!) ?? []),look]);
   // Keep the earliest expectation and latest revision per target in the bounded Today payload; all revisions remain stored.
@@ -368,7 +367,7 @@ export function predictedScenes(all: ReadyFutureLook[], cycle: Cycle, timeline: 
     const src = readings.get(l.sourceItemId);
     return {
       date: l.targetDate!, kind: 'predicted', itemId: null, acquisitionDate: src?.date ?? itemDate(l.sourceItemId), cloudPct: src?.sceneCloudPct ?? null,
-      imagePath: `${l.imagePath}${fieldQuery}`, ndviImagePath: null, derivedFromItemId: l.sourceItemId,
+      imagePath: cycle.fieldId ? `${l.imagePath}${l.imagePath.includes('?') ? '&' : '?'}fieldId=${encodeURIComponent(cycle.fieldId)}` : l.imagePath, ndviImagePath: null, derivedFromItemId: l.sourceItemId,
       stageId: timeline ? stageAt(timeline, l.targetDate!).stage?.id ?? null : null,
       targetDate: l.targetDate!, generatedAt:l.createdAt, ...(l.guidance ? {guidance: cap(l.guidance, 400)} : {}),
     };
@@ -1077,7 +1076,7 @@ export async function todayView(deps: TodayViewDeps, ownerId: string, farmId: st
         };
         try {
           const out = await p.requestFutureLook(
-            {config: {RUNTIME_MODE: mode, MODEL_API_KEY: deps.config.MODEL_API_KEY}, pool: deps.pool, now, timeline: () => timeline},
+            {config: {...deps.config, RUNTIME_MODE: mode}, pool: deps.pool, now, timeline: () => timeline},
             ownerId, farmId, {itemId: latestScene.itemId, kind: 'gap', targetDate: today, cycleId: cycle.id, auto: true, context});
           autoRequested = !out.deduplicated && (out.status === 'queued' || out.status === 'running');
           reason = autoRequested ? null : out.deduplicated ? 'week_exists' : (out.reason ?? out.status);

@@ -127,7 +127,7 @@ export function costLabel(c: TurnResult["costEstimate"]): string {
 export function askErrorMessage(e: unknown): { message: string; retryable: boolean } {
   if (e instanceof ApiError) {
     if (e.status === 424 || e.status === 503 || e.code === "provider_unavailable") return { message: "Assistant unavailable in this mode; browse Explore.", retryable: false };
-    if (e.status === 429 && e.code === "budget_exceeded") return { message: `The spending limit would be exceeded, so this question was not sent. ${e.message}. Try again later, or browse Explore.`, retryable: false };
+    if (e.status === 429 && e.code === "budget_exceeded") return { message: `${e.message.replace(/[.!?\s]+$/, "")}. Evara stopped before completing this answer. You can still browse Explore.`, retryable: false };
     if (e.status === 429) return { message: "Too many questions in a short time. Wait a minute and try again.", retryable: true };
     if (e.status === 404) return { message: "Your saved farm or plan was not found. Turn off the context option and ask again.", retryable: false };
     if (e.status === 0 || e.code === "network_error") return { message: "Could not reach the server. Check your connection and try again.", retryable: true };

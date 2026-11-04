@@ -195,14 +195,18 @@ describe("live mode", () => {
     expect(JSON.stringify((await h.pool.query("SELECT trace FROM agent_runs WHERE id=$1", [j.data.traceId])).rows[0])).not.toContain(KEY);
   });
 
-  it("budget exhaustion before any answer is a 429 budget_exceeded", async () => {
-    const budget = new Budget(h.pool, { totalUsd: 1, devAllocationUsd: 0.000001, demoReserveUsd: 0, perSessionUsd: 1, perOwnerDayUsd: 1 });
+  it.each([
+    { label: "global development", devAllocationUsd: 0.000001, perSessionUsd: 1 },
+    { label: "per-session", devAllocationUsd: 1, perSessionUsd: 0.000001 },
+  ])("budget exhaustion preserves the $label cap in the 429 response", async ({ label, devAllocationUsd, perSessionUsd }) => {
+    const budget = new Budget(h.pool, { totalUsd: 1, devAllocationUsd, demoReserveUsd: 0, perSessionUsd, perOwnerDayUsd: 1 });
     const provider: TextModelProvider = { kind: "meta", provenance: "meta_live", billable: true, call: async () => { throw new Error("must not be called"); } };
     const { client } = await appWith({ RUNTIME_MODE: "live", MODEL_API_KEY: "k-123456789" }, { budget, providerFactory: () => provider });
     await budget.init(); // after the server's own init: re-syncs the shared budget_state row to this tiny allocation (last test in the file)
     const res = await post(client, body());
     expect(res.statusCode).toBe(429);
     expect(res.json().error.code).toBe("budget_exceeded");
+    expect(res.json().error.message).toBe(`The ${label} spending limit would be exceeded`);
   });
 });
 

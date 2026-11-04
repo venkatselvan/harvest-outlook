@@ -413,10 +413,13 @@ const AUTHORITY: Record<NonNullable<CostEstimate["authority"]>, string> = {
   other: "Published source",
 };
 
+export const cultivationCostPerHa = (cost: CostEstimate | null | undefined): number | null => cost?.a2flPerHa ?? cost?.c2PerHa ?? cost?.reportedPerHa ?? null;
+
 export function costBasisText(cost: CostEstimate | null): string {
-  if (!cost || cost.a2flPerHa == null) return "Cost not sourced";
+  if (!cost || cultivationCostPerHa(cost) == null) return "Cost not sourced";
   const parts = [cost.authority ? AUTHORITY[cost.authority] : null, cost.year, cost.region].filter(Boolean);
-  return `Paid-out cost plus family labour (A2+FL)${parts.length ? ` · ${parts.join(", ")}` : ""}`;
+  const basis = cost.a2flPerHa != null ? "Paid-out cost plus family labour (A2+FL)" : cost.c2PerHa != null ? "Full cultivation cost (C2-type)" : "Published cultivation budget (may exclude family labour and land charges)";
+  return `${basis}${parts.length ? ` · ${parts.join(", ")}` : ""}`;
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -650,7 +653,7 @@ export function profitText(
     };
   if (option.totalProfitPerHa)
     return { value: formatInrRange(option.totalProfitPerHa), caption: "profit per ha", source: "range" };
-  return { value: "Profit not available", caption: "needs a price and a cost for every crop", source: "none" };
+  return { value: "Profit not available", caption: "needs a price, yield and cost for every crop", source: "none" };
 }
 
 /** No sentence longer than this is drawn on the calendar itself; longer text lives in the detail sheet. */

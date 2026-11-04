@@ -324,7 +324,7 @@ describe('round 3 year plan horizons through the service (test DB)', () => {
   it('from validation (route 400), three later horizons stored side by side, year 2 follows the year-1 first plan, apply on year 2', async () => {
     const d = deps();
     const { id, auth } = await newFarm();
-    expect(ENGINE_VERSION).toBe('year-plan-v6-2026-11-04');
+    expect(ENGINE_VERSION).toBe('year-plan-v7-regional-fallbacks-2026-11-04');
     const bad = await a.call('GET', `/api/v1/farms/${id}/year-plan?from=2020-01-01`);
     expect(bad.statusCode).toBe(400);
     expect(JSON.stringify(bad.json())).toContain('validation_error');

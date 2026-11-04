@@ -345,7 +345,7 @@ export const PREDICTION_MAX_DAYS_AHEAD = 120;
  * daily limit and "a look exists this week" do not stop a farmer's own request.
  */
 export function predictionBlockedReason(reason: string | null | undefined, date: string, today: string): string | null {
-  if (reason === "daily_limit_reached") return "Today’s AI image allowance is used up. Try again tomorrow.";
+  if (reason === "daily_limit_reached") return "This crop’s AI image limit for the last 24 hours is reached. Try again as earlier requests leave that window.";
   if (reason === "cycle_limit_reached") return "This crop has used all its AI predicted looks for the season.";
   if (reason === "budget_exceeded") return "Today's AI budget is used up. Try again tomorrow.";
   if (reason === "provider_unavailable") return "The AI image service is not set up on this server.";
@@ -542,23 +542,22 @@ export function wetnessBadge(point: FieldConditionPoint | null): { wetness: "hig
 
 export interface SceneMark {
   date: string;
-  kind: "observed" | "illustration" | "predicted";
+  kind: "observed" | "illustration" | "predicted" | "photo";
+  note?: string;
   /** 0..1 along the slider. */
   fraction: number;
 }
 /**
  * Slider marks at every observed scene date with an image, every stage illustration date and every AI-predicted look date
- * (its target date; looks superseded by a later real image are left off), inside the slider range, one mark per date and
+ * (its target date, retaining historical generated looks), inside the slider range, one mark per date and
  * kind, in date order.
  */
 export function sceneMarks(scenes: readonly SceneRef[], model: SliderModel): SceneMark[] {
   const marks = new Map<string, SceneMark>();
-  const latestObserved = latestObservedDate(scenes);
   for (const scene of scenes) {
     if (!scene.imagePath || (scene.kind !== "observed" && scene.kind !== "illustration" && scene.kind !== "predicted")) continue;
     const date = scene.kind === "observed" ? observedDate(scene) : scene.kind === "predicted" ? predictedDate(scene) : scene.date;
     if (!Number.isFinite(dayNumber(date)) || date < model.from || date > model.to) continue;
-    if (scene.kind === "predicted" && latestObserved && date <= latestObserved) continue;
     const key = `${scene.kind}|${date}`;
     if (!marks.has(key)) marks.set(key, { date, kind: scene.kind, fraction: fractionOf(model, date) });
   }
@@ -1050,9 +1049,9 @@ export function revenueValue(econ: Pick<HarvestEconomics, "fieldAreaHa" | "reven
 /** Cost the profit was computed with: A2+FL when sourced, else C2, times the field area when it is known. Null when no cost is sourced. */
 export function costValue(econ: Pick<HarvestEconomics, "fieldAreaHa" | "cost">): { label: string; scope: "field" | "ha"; value: number } | null {
   const a2fl = econ.cost?.a2flPerHa ?? null, c2 = econ.cost?.c2PerHa ?? null;
-  const perHa = a2fl ?? c2;
+  const perHa = a2fl ?? c2 ?? econ.cost?.reportedPerHa ?? null;
   if (perHa == null) return null;
-  const label = a2fl != null ? "A2+FL cost" : "C2 cost";
+  const label = a2fl != null ? "A2+FL cost" : c2 != null ? "C2 cost" : "Reported cultivation cost";
   return econ.fieldAreaHa != null ? { label, scope: "field", value: perHa * econ.fieldAreaHa } : { label, scope: "ha", value: perHa };
 }
 export const yieldBasisWords: Record<NonNullable<HarvestEconomics["yieldBasis"]>, string> = {

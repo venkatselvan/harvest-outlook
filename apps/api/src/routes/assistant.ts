@@ -129,7 +129,7 @@ export async function registerAssistantRoutes(app: FastifyInstance, deps: Assist
         if (result.status === "provider_unavailable") {
           return { status: 503, body: errorEnvelope(req.id, config.RUNTIME_MODE, { code: "provider_unavailable", message: "The AI provider is not available. Text exploration without AI remains available.", details: { traceId: result.runId } }) };
         }
-        if (result.status === "budget_exceeded" && result.approved.answerBlocks.length === 0) throw new ApiError(429, "budget_exceeded", "The spending limit would be exceeded", { traceId: result.runId });
+        if (result.status === "budget_exceeded" && result.approved.answerBlocks.length === 0) throw new ApiError(429, "budget_exceeded", result.error?.message ?? "The spending limit would be exceeded", { traceId: result.runId });
         // F13 (review R4 #8): the spoken text carries the server-authored withheld/template notices too, so the
         // hash-bound audio never omits that part of the answer was withheld or replaced.
         const approvedText = result.approved.answerBlocks.length > 0 ? [...result.approved.answerBlocks.map((b) => b.text), ...result.spokenNotices].join("\n\n") : null;

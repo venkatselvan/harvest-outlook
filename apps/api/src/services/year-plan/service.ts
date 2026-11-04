@@ -42,7 +42,7 @@ import { appendBestProfitOption, appendGreenManureOption, deterministicSelection
 /** Part of the context hash: reviews stored under an older version are stale and rebuilt on the next ensure. */
 // v6 (2026-11-04, EVARA_ACTIONS_SPEC.md 1): realised saved seasons are no longer occupants, occupants carry realisation, and
 // a review without a free window carries alternatives; older rows are stale and rebuilt.
-export const ENGINE_VERSION = 'year-plan-v6-2026-11-04';
+export const ENGINE_VERSION = 'year-plan-v7-regional-fallbacks-2026-11-04';
 export const JOB_TYPE = 'farm.year-plan';
 export const EDIT_SUFFIX = ':edit';
 /**
@@ -804,7 +804,7 @@ export async function applyYearPlan(deps: YearPlanDeps, ownerId: string, farmId:
       ...(s.companion ? [`Intercrop with ${s.companion.cropName.toLowerCase()} (rows ${s.companion.rowRatio}; yield shares ${s.companion.shareBasis}${s.companion.source ? `, ${s.companion.source.title}` : ''}); the yield below is the sole-crop figure before the share.`] : []),
       s.yieldKgPerHa ? `Yield ${s.yieldKgPerHa.low}-${s.yieldKgPerHa.high} kg/ha (${s.yieldBasis ?? 'basis unknown'}).` : 'Yield not sourced.',
       s.price?.range ? `Harvest-week wholesale price ${s.price.range.low}-${s.price.range.high} INR/kg (${s.price.scope.level}).` : 'No harvest-week price range.',
-      s.cost?.a2flPerHa ? `Cost A2+FL ${s.cost.a2flPerHa} INR/ha (${s.cost.authority ?? 'source'} ${s.cost.year ?? ''}).` : 'Cost not sourced.',
+      s.cost && (s.cost.a2flPerHa ?? s.cost.c2PerHa ?? s.cost.reportedPerHa) != null ? `Cost ${s.cost.a2flPerHa != null ? 'A2+FL' : s.cost.c2PerHa != null ? 'C2-type' : 'published budget'} ${s.cost.a2flPerHa ?? s.cost.c2PerHa ?? s.cost.reportedPerHa} INR/ha (${s.cost.region ?? ''}, ${s.cost.authority ?? 'source'} ${s.cost.year ?? ''}).` : 'Cost not sourced.',
       'Dates and ranges are calculated references, not predictions.',
     ].join(' ');
     // A green manure has no catalogue product: the season is saved with its crop id only (the product check is skipped).

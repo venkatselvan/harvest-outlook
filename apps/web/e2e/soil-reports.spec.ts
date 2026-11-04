@@ -1,3 +1,4 @@
+import { captureAiPreview } from "./support/ai-preview";
 import { expect, test, type Page, type Route } from "@playwright/test";
 import type {
   SoilReport,
@@ -357,6 +358,7 @@ test("field values require explicit selection; corrected censored result and sou
   await expect(
     dialog.getByRole("heading", { name: "Laboratory soil report" }),
   ).toBeVisible();
+  await captureAiPreview(page, "soil_extraction", dialog);
   expect(api.confirms).toHaveLength(0);
   const notes = dialog.locator(".soil-report-warning-details");
   await expect(notes.locator("summary")).toHaveText(

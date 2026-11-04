@@ -55,6 +55,8 @@ export const PriceEstimate = z.object({
 export const CostEstimate = z.object({
  a2flPerHa: z.number().nullable(),
  c2PerHa: z.number().nullable(),
+ /** Published cultivation budget when A2+FL/C2 is unavailable; its coverage is explained in cost provenance. */
+ reportedPerHa: z.number().nonnegative().nullable().optional(),
  authority: z.enum(['cacp', 'des', 'sau', 'other']).nullable(),
  year: z.string().max(20).nullable(),
  region: z.string().max(40).nullable(),

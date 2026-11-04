@@ -142,10 +142,10 @@ describe('requestFutureLook', () => {
     expect(await errOf(requestFutureLook(svc(), ownerId, farmId, {itemId: LATEST, stageId: 'mid_season'}))).toMatchObject({status: 409, details: {reason: 'scene_not_latest', latestItemId: newer}});
   });
 
-  it('caps a farm cycle at 10 queued/running/ready or billed assets', async () => {
-    expect(FUTURE_LOOK_CYCLE_CAP).toBe(10);
+  it('honours a configured cap of 10 queued/running/ready or billed assets', async () => {
+    expect(FUTURE_LOOK_CYCLE_CAP).toBe(24);
     const {farmId, ownerId} = await farmWithCycle();
-    const deps = svc({timeline: () => LONG});
+    const deps = svc({timeline: () => LONG, config: {RUNTIME_MODE:'live',MODEL_API_KEY:KEY,FUTURE_LOOK_DAILY_LIMIT:10}});
     const ids: string[] = [];
     for (let i = 1; i <= 10; i++) ids.push((await requestFutureLook(deps, ownerId, farmId, {itemId: LATEST, stageId: `s${i}`})).assetId!);
     expect(new Set(ids).size).toBe(10);
@@ -387,7 +387,7 @@ describe('routes (registered on a test server)', () => {
     const ready = await call(liveApp, owner, 'POST', url);
     expect(ready.statusCode).toBe(200);
     expect(ready.json().data).toMatchObject({assetId, status: 'ready'});
-    const img = await call(liveApp, owner, 'GET', `/api/v1/farms/${farmId}/future-look/${assetId}/image`);
+    const img = await call(liveApp, owner, 'GET', `/api/v1/farms/${farmId}/future-look/${assetId}/image?v=1`);
     expect(img.statusCode).toBe(200);
     expect(img.headers['content-type']).toBe('image/png');
     expect(img.headers['cache-control']).toBe('private, max-age=3600');
@@ -465,7 +465,10 @@ describe('requestFutureLook: regenerate a gap look (2026-11-04)', () => {
     expect(await count("jobs WHERE payload->>'farmId'=$1", [farmId])).toBe(2);
     // The new job renders and stores a new image under the same asset.
     expect(await createFutureLookHandler(handlerDeps(editFetch('field')))((await jobOf(id)) as never, {...hb, pool: h.pool, isCancelled: async () => false})).toMatchObject({status: 'ready'});
-    expect(await listReadyFutureLooks(svc(), ownerId, farmId, 'cycle-1')).toHaveLength(1);
+    const refreshed = await listReadyFutureLooks(svc(), ownerId, farmId, 'cycle-1');
+    expect(refreshed).toHaveLength(1);
+    expect(refreshed[0]!.imagePath).toBe(`/api/v1/farms/${farmId}/future-look/${id}/image?v=2`);
+    expect((await futureLookStatus(svc(), ownerId, farmId, id)).imagePath).toBe(refreshed[0]!.imagePath);
   });
 
   it('regenerate while queued or running is a dedup and changes nothing', async () => {
@@ -480,7 +483,7 @@ describe('requestFutureLook: regenerate a gap look (2026-11-04)', () => {
 
   it('respects the per-cycle daily cap and is not blocked by the attempt limit', async () => {
     const {farmId, ownerId} = await farmWithCycle();
-    const deps = svc({timeline: () => LONG, storage: h.storage});
+    const deps = svc({timeline: () => LONG, storage: h.storage, config: {RUNTIME_MODE:'live',MODEL_API_KEY:KEY,FUTURE_LOOK_DAILY_LIMIT:10}});
     const id = await makeReady(ownerId, farmId); // uses MAIZE for the gap row; stage rows below use LONG
     // The attempt limit guards failure retries only: a regenerate at attempt 3 still re-arms.
     await h.pool.query('UPDATE future_look_assets SET attempt=3 WHERE id=$1', [id]);
@@ -490,7 +493,7 @@ describe('requestFutureLook: regenerate a gap look (2026-11-04)', () => {
     for (let i = 1; i <= 9; i++) await requestFutureLook(deps, ownerId, farmId, {itemId: LATEST, stageId: `s${i}`});
     expect(await count("future_look_assets WHERE farm_id=$1", [farmId])).toBe(10);
     const jobs = await count("jobs WHERE payload->>'farmId'=$1", [farmId]);
-    expect(await requestFutureLook(svc({storage: h.storage}), ownerId, farmId, {...GAP, regenerate: true})).toMatchObject({assetId: null, status: 'unavailable', reason: 'daily_limit_reached', kind: 'gap', deduplicated: false});
+    expect(await requestFutureLook({...deps,timeline:()=>MAIZE}, ownerId, farmId, {...GAP, regenerate: true})).toMatchObject({assetId: null, status: 'unavailable', reason: 'daily_limit_reached', kind: 'gap', deduplicated: false});
     expect(await assetRow(id)).toMatchObject({status: 'ready', attempt: 4});
     expect(await count("jobs WHERE payload->>'farmId'=$1", [farmId])).toBe(jobs);
   });
@@ -741,3 +744,11 @@ it('keeps adjacent milestone dates and refreshed revisions distinct while dedupl
   const refreshed=await requestFutureLook(svc(),ownerId,farmId,{...req,milestoneRevision:'evidence-b'});
   expect(refreshed.assetId).not.toBe(first.assetId);
 });
+
+ it('defaults to 24 and accepts more than 24 when the configured limit is zero', async () => {
+   const {farmId,ownerId}=await farmWithCycle();
+   const deps=svc({timeline:()=>LONG});
+   for(let i=1;i<=24;i++) expect(await requestFutureLook(deps,ownerId,farmId,{itemId:LATEST,kind:'gap',targetDate:plusDays('2026-11-02',i),milestoneRevision:'cap-test'})).toMatchObject({status:'queued'});
+   expect(await requestFutureLook(deps,ownerId,farmId,{itemId:LATEST,kind:'gap',targetDate:'2026-11-28',milestoneRevision:'cap-test'})).toMatchObject({reason:'daily_limit_reached'});
+   expect(await requestFutureLook({...deps,config:{...deps.config,FUTURE_LOOK_DAILY_LIMIT:0}},ownerId,farmId,{itemId:LATEST,kind:'gap',targetDate:'2026-11-28',milestoneRevision:'cap-test'})).toMatchObject({status:'queued'});
+ });

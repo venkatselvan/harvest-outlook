@@ -23,6 +23,7 @@ import {
   applyPick,
   calendarWarnings,
   costBasisText,
+  cultivationCostPerHa,
   displayLabel,
   draftFromOption,
   editedFrom,
@@ -642,8 +643,8 @@ export function SlotDetail(props: {
         <div>
           <dt>Cost</dt>
           <dd>
-            <Show when={s().cost?.a2flPerHa != null} fallback={<strong>Cost not sourced</strong>}>
-              <strong>{formatInr(s().cost!.a2flPerHa!)} per ha</strong>
+            <Show when={cultivationCostPerHa(s().cost) != null} fallback={<strong>Cost not sourced</strong>}>
+              <strong>{formatInr(cultivationCostPerHa(s().cost)!)} per ha</strong>
             </Show>
             <span class="yp-basis">{manure() ? "Seed, sowing and ploughing in" : costBasisText(s().cost)}</span>
           </dd>

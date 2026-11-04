@@ -50,9 +50,14 @@ describe('photo coverage block', () => {
     const html = renderToString(() => <PhotoCoverage coverage={outdated} live onRetry={() => {}}/>);
     expect(html).toContain(COVERAGE_OUTDATED);
     expect(html).not.toContain('Outlines cover about 29% for maize plants.');
-    expect(html).toContain('Measure again');
-    expect(renderToString(() => <PhotoCoverage coverage={outdated} onRetry={() => {}}/>)).not.toContain('Measure again');
-    expect(renderToString(() => <PhotoCoverage coverage={base} live onRetry={() => {}}/>)).not.toContain('Measure again');
+    expect(html).toContain('Re-evaluate');
+    expect(renderToString(() => <PhotoCoverage coverage={outdated} onRetry={() => {}}/>)).not.toContain('Re-evaluate');
+    expect(renderToString(() => <PhotoCoverage coverage={base} live onRetry={() => {}}/>)).toContain('Re-evaluate');
+  });
+  it('offers evaluation for older photos without coverage, but not compact comparisons or offline views', () => {
+    expect(renderToString(() => <PhotoCoverage coverage={null} live onRetry={() => {}}/>)).toContain('Re-evaluate');
+    expect(renderToString(() => <PhotoCoverage coverage={base} live compact onRetry={() => {}}/>)).not.toContain('Re-evaluate');
+    expect(renderToString(() => <PhotoCoverage coverage={base} live busy onRetry={() => {}}/>)).toContain('disabled');
   });
   it('renders nothing without coverage and formats percentages', () => {
     expect(renderToString(() => <PhotoCoverage coverage={null}/>)).toBe('');

@@ -315,6 +315,7 @@ export function ProfitSheetBody(props: { econ: HarvestEconomics | null | undefin
                   ["Price source", econ().price?.scopeLabel],
                   ["Cost per hectare (A2+FL)", cost()?.a2flPerHa != null ? `${formatInr(cost()!.a2flPerHa!)}` : null],
                   ["Cost per hectare (C2)", cost()?.c2PerHa != null ? `${formatInr(cost()!.c2PerHa!)}` : null],
+                  ["Published cultivation budget", cost()?.reportedPerHa != null ? `${formatInr(cost()!.reportedPerHa!)} per hectare; may exclude family labour and land charges` : null],
                   ["Cost source", cost() && (cost()!.authority || cost()!.year || cost()!.region) ? [cost()!.authority?.toUpperCase(), cost()!.region, cost()!.year].filter(Boolean).join(" · ") : null],
                   ["Cost used", costValue(econ()) ? `${costValue(econ())!.label}, ${formatInr(costValue(econ())!.value)}${costValue(econ())!.scope === "ha" ? " per hectare" : " for the field"}` : "not sourced"],
                   ["Revenue per hectare", econ().revenuePerHa ? estimateText(econ().revenuePerHa!) : null],

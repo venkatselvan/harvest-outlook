@@ -2,9 +2,8 @@
 .market-view {
   box-sizing: border-box;
   width: 100%;
-  max-width: 980px;
   min-width: 0;
-  margin: 0 auto;
+  margin: 0;
   padding: 16px;
   display: flex;
   flex-direction: column;

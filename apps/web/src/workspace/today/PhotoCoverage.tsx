@@ -33,10 +33,10 @@ export function coverageStatusText(c: FieldPhotoCoverage): string | null {
 
 /**
  * Retry is offered for failures known to have sent nothing. `provider_unavailable` (no live AI when the row was made)
- * is retryable only when the server now answers in live mode (F7); in live mode an outdated ready row can be measured again.
+ * is retryable only when the server now answers in live mode (F7); in live mode a ready row can be re-evaluated explicitly.
  */
 export const canRetryCoverage = (c: FieldPhotoCoverage, live = false) =>
-  (c.status === 'ready' && c.outdated && live) ||
+  (c.status === 'ready' && live) ||
   ((c.status === 'failed' || c.status === 'unavailable') && (c.failureReason !== 'provider_unavailable' || live) && canRetryPhotoCoverage(c.failureReason));
 export const COVERAGE_OUTDATED = 'The photo date or the crop changed after this was measured, so the crop search words or the stage may no longer apply.';
 
@@ -49,7 +49,13 @@ export function searchedAs(k: FieldPhotoCoverage['classes'][number]): string | n
 const searchedNote = (c: FieldPhotoCoverage) => c.classes.map(searchedAs).filter((t): t is string => !!t).join(' ');
 
 export function PhotoCoverage(props: {coverage: FieldPhotoCoverage | null | undefined; busy?: boolean; onRetry?: () => void; compact?: boolean; live?: boolean}) {
-  return <Show when={props.coverage}>{c => <section class="photo-coverage" classList={{compact: !!props.compact}} aria-label="What the photo shows" aria-live="polite" data-testid="photo-coverage">
+  return <Show when={props.coverage} fallback={<Show when={!props.compact && props.onRetry && props.live}>
+    <section class="photo-coverage" aria-label="What the photo shows" data-testid="photo-coverage">
+      <h4>What the photo shows</h4>
+      <p>This photo has not been evaluated yet.</p>
+      <button type="button" class="btn compact secondary" disabled={props.busy} onClick={() => props.onRetry?.()}>Re-evaluate</button>
+    </section>
+  </Show>}>{c => <section class="photo-coverage" classList={{compact: !!props.compact}} aria-label="What the photo shows" aria-live="polite" data-testid="photo-coverage">
     <h4>What the photo shows</h4>
     <Show when={c().status === 'ready'} fallback={<p class="photo-coverage-status" role="status">{coverageStatusText(c())}</p>}>
       <ul class="photo-coverage-bars">
@@ -67,8 +73,8 @@ export function PhotoCoverage(props: {coverage: FieldPhotoCoverage | null | unde
       <Show when={!props.compact && searchedNote(c())}><p class="photo-coverage-caveat">{searchedNote(c())}</p></Show>
       <Show when={!props.compact}><details class="photo-coverage-limits"><summary>How this was measured</summary><For each={c().limitations}>{l => <p>{l}</p>}</For></details></Show>
     </Show>
-    <Show when={props.onRetry && canRetryCoverage(c(), !!props.live)}>
-      <button type="button" class="btn compact secondary" disabled={props.busy} onClick={() => props.onRetry?.()}>{c().status === 'ready' ? 'Measure again' : 'Retry measuring'}</button>
+    <Show when={!props.compact && props.onRetry && canRetryCoverage(c(), !!props.live)}>
+      <button type="button" class="btn compact secondary" disabled={props.busy} onClick={() => props.onRetry?.()}>{c().status === 'ready' ? 'Re-evaluate' : 'Retry measuring'}</button>
     </Show>
   </section>}</Show>;
 }

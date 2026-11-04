@@ -1,3 +1,4 @@
+import { captureAiPreview } from "./support/ai-preview";
 import { expect, test, type Page } from "@playwright/test";
 
 // Every service request and microphone input is a fixture. No provider or real microphone is used.
@@ -218,8 +219,7 @@ async function microphone(
 async function openVoice(page: Page) {
   await page.goto("/farm");
   await page
-    .getByRole("button", { name: "Open Evara", exact: true })
-    .first()
+    .getByRole("button", { name: "Evara assistant", exact: true })
     .click();
   await page.getByLabel("Assistant language").selectOption("ta");
   await page
@@ -233,8 +233,7 @@ test("multilingual typed Evara answers remain complete with no speech requests o
   const api = await fixture(page);
   await page.goto("/farm");
   await page
-    .getByRole("button", { name: "Open Evara", exact: true })
-    .first()
+    .getByRole("button", { name: "Evara assistant", exact: true })
     .click();
   await page.getByLabel("Assistant language").selectOption("ta");
   await page.getByLabel("Message Evara").fill("எப்போது விதைக்கலாம்?");
@@ -386,4 +385,124 @@ test("cancelling a pending microphone prompt stops tracks when permission resolv
     page.getByRole("button", { name: "Stop and add to message" }),
   ).toHaveCount(0);
   expect(api.recordings).toHaveLength(0);
+});
+
+test('Evara preserves an in-flight reply and draft across screens, refreshes, and expanded view', async ({page}) => {
+  await page.setViewportSize({width: 1440, height: 1000});
+  const api = await fixture(page);
+  let release: (() => void) | undefined;
+  await page.route('**/api/v1/assistant/turns', async route => {
+    await new Promise<void>(resolve => {release = resolve;});
+    await route.fallback();
+  });
+  await page.goto('/ask');
+  const panel = page.getByLabel('Evara farm assistant');
+  await page.getByLabel('Message Evara').fill('What is growing on my farm?');
+  await page.getByRole('button', {name: 'Send message', exact: true}).click();
+  await expect.poll(() => !!release).toBe(true);
+  await page.locator('.sidebar').getByRole('link', {name: 'All farms', exact: true}).click();
+  await expect(panel).toBeVisible();
+  await expect(panel).toContainText('What is growing on my farm?');
+  release!();
+  await expect(panel.locator('.chat-message.assistant')).toHaveCount(1);
+  expect(api.turns).toHaveLength(1);
+  await expect(panel.locator('.ai-spark-host')).toHaveCount(0);
+  await page.getByLabel('Message Evara').fill('A draft to keep');
+  await page.getByRole('button', {name: 'Expand assistant'}).click();
+  const box = (await panel.boundingBox())!;
+  expect(box.width).toBeCloseTo(1440 * .75, 0);
+  expect(box.height).toBeGreaterThan(950);
+  await page.reload();
+  await expect(panel).toBeVisible();
+  await expect(panel).toContainText('What is growing on my farm?');
+  await expect(page.getByLabel('Message Evara')).toHaveValue('A draft to keep');
+  await expect(page.getByRole('button', {name: 'Collapse assistant'})).toBeVisible();
+  await page.getByRole('button', {name: 'Collapse assistant'}).click();
+  await captureAiPreview(page, 'assistant', panel);
+  await captureAiPreview(page, 'speech', panel.locator('.assistant-compose'));
+});
+
+test('chat history keeps separate conversations and filters by farm', async ({page}) => {
+  await page.setViewportSize({width: 1440, height: 1000});
+  const api = await fixture(page);
+  await page.goto('/ask');
+  const panel = page.getByLabel('Evara farm assistant');
+  async function send(text: string) {
+    await page.getByLabel('Message Evara').fill(text);
+    await page.getByRole('button', {name: 'Send message', exact: true}).click();
+    await expect(panel.locator('.chat-message.assistant')).toHaveCount(1);
+  }
+  await send('First farm soil question');
+  await page.getByRole('button', {name: 'New chat', exact: true}).click();
+  await send('First farm crop question');
+  await page.getByLabel('Selected farm').selectOption(B);
+  await send('Second farm weather question');
+  await page.getByRole('button', {name: 'Chat history', exact: true}).click();
+  const history = page.getByRole('region', {name: 'Chat history'});
+  await expect(history.locator('.assistant-history-item')).toHaveCount(3);
+  await history.getByRole('button', {name: 'Voice farm 1', exact: true}).click();
+  await expect(history.locator('.assistant-history-item')).toHaveCount(2);
+  await history.getByRole('button', {name: /First farm soil question/}).click();
+  await expect(page.getByLabel('Selected farm')).toHaveValue(A);
+  await expect(panel).toContainText('First farm soil question');
+  await expect(panel).not.toContainText('Second farm weather question');
+  await page.getByLabel('Message Evara').fill('Follow-up');
+  await page.getByRole('button', {name: 'Send message', exact: true}).click();
+  await expect.poll(() => api.turns.length).toBe(4);
+  expect(api.turns[3].farmId).toBe(A);
+  expect(JSON.stringify(api.turns[3])).not.toContain('Second farm weather');
+});
+
+test('a reply completes in its original farm chat after switching farms', async ({page}) => {
+  await page.setViewportSize({width: 1440, height: 1000});
+  await fixture(page);
+  let release: (() => void) | undefined;
+  await page.route('**/api/v1/assistant/turns', async route => {
+    await new Promise<void>(resolve => {release = resolve;});
+    await route.fallback();
+  });
+  await page.goto('/ask');
+  await page.getByLabel('Message Evara').fill('Keep this reply on farm one');
+  await page.getByRole('button', {name: 'Send message', exact: true}).click();
+  await expect.poll(() => !!release).toBe(true);
+  await page.getByLabel('Selected farm').selectOption(B);
+  release!();
+  const panel = page.getByLabel('Evara farm assistant');
+  await expect(panel.locator('.chat-message')).toHaveCount(0);
+  await page.getByLabel('Selected farm').selectOption(A);
+  await expect(panel.locator('.chat-message.assistant')).toHaveCount(1);
+  await page.evaluate(() => window.dispatchEvent(new Event('ho:session-ended')));
+  await expect(panel).toHaveCount(0);
+  expect(await page.evaluate(() => Object.keys(localStorage).filter(key => key.startsWith('ho.chat.v2.')))).toEqual([]);
+});
+
+test('existing per-farm chats migrate once and remain usable in the expanded phone panel', async ({page}) => {
+  await fixture(page);
+  await page.addInitScript(({a, b}) => {
+    if (sessionStorage.getItem('chat-migration-fixture')) return;
+    sessionStorage.setItem('chat-migration-fixture', '1');
+    sessionStorage.setItem('ho.chat.sessionScope', 'previous-session');
+    sessionStorage.setItem(`ho.chat.previous-session.${a}`, JSON.stringify([{role: 'user', text: 'Previous soil discussion'}]));
+    sessionStorage.setItem(`ho.chat.previous-session.${b}`, JSON.stringify([{role: 'user', text: 'Previous harvest discussion'}]));
+  }, {a: A, b: B});
+  await page.goto('/ask');
+  const panel = page.getByLabel('Evara farm assistant');
+  await expect(panel).toContainText('Previous soil discussion');
+  await page.getByRole('button', {name: 'Expand assistant'}).click();
+  const box = (await panel.boundingBox())!;
+  expect(box.x).toBeGreaterThanOrEqual(0);
+  expect(box.y).toBeGreaterThanOrEqual(0);
+  expect(box.x + box.width).toBeLessThanOrEqual(360);
+  expect(box.height).toBeGreaterThan(700);
+  await page.getByRole('button', {name: 'Chat history', exact: true}).click();
+  const history = page.getByRole('region', {name: 'Chat history'});
+  await expect(history.locator('.assistant-history-item')).toHaveCount(2);
+  await history.getByRole('button', {name: /Previous harvest discussion/}).click();
+  await expect(panel).toContainText('Voice farm 2');
+  await expect(panel).toContainText('Previous harvest discussion');
+  await page.reload();
+  await expect(panel).toContainText('Previous harvest discussion');
+  await page.getByRole('button', {name: 'Chat history', exact: true}).click();
+  await expect(history.locator('.assistant-history-item')).toHaveCount(2);
+  expect(await page.evaluate(() => Object.keys(sessionStorage).filter(key => key.startsWith('ho.chat.previous-session.')))).toEqual([]);
 });

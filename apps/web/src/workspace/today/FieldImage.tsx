@@ -15,10 +15,11 @@ const safeImage = (path: string | null) => path && /^\/api\/v1\/(media|farms)\//
 const failureText = (reason: string | null) => reason === 'image_did_not_progress' ? 'The generated image did not show enough crop development, so it was rejected. You can retry.' : reason === 'image_framing_changed' ? 'The generated image changed the framing, so it was rejected. You can retry.' : reason === 'budget_exceeded' ? 'Today’s AI budget is used up. Try another day.' : reason === 'photo_changed' ? 'The photo date changed. Create a new prediction from the corrected date.' : 'This prediction could not be completed. Your original photo is still available.';
 
 /** Keyed by owner session + farm + crop in TodayView: pending requests can never write into another field's gallery. */
-export function FieldImage(props: {farmId: string; cycleId: string; date: string; today: string; fieldName: string | null}) {
+export function FieldImage(props: {farmId: string; cycleId: string; date: string; today: string; fieldName: string | null; onGalleryChange?: (farmId: string, cycleId: string, gallery: FieldPhotoGallery) => void}) {
   const base = fieldPhotoPath(props.farmId, props.cycleId);
   const [gallery, setGallery] = createSignal<FieldPhotoGallery>({photos: [], predictions: []});
   const [loading, setLoading] = createSignal(true);
+  createEffect(() => { if (!loading()) props.onGalleryChange?.(props.farmId, props.cycleId, gallery()); });
   const [busy, setBusy] = createSignal(false);
   const [message, setMessage] = createSignal('');
   const [drafts, setDrafts] = createSignal<Draft[]>([]);
@@ -98,7 +99,7 @@ export function FieldImage(props: {farmId: string; cycleId: string; date: string
     if (busy()) return;
     setBusy(true); setMessage('');
     try {
-      const envelope = await apiRequest(`${base}/${p.id}/coverage`, jsonInit('POST', {}));
+      const envelope = await apiRequest(`${base}/${p.id}/coverage`, jsonInit('POST', {regenerate: true}));
       const coverage = FieldPhotoCoverage.parse(envelope.data);
       if (alive) setLive(envelope.mode === 'live');
       const put = (list: FieldPhoto[] | undefined) => list?.map(x => x.id === p.id ? {...x, coverage} : x);

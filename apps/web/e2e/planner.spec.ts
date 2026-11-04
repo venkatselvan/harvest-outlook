@@ -15,9 +15,10 @@ const crops = [
 ];
 const PIGEON = { id: "rot-pigeon", year: 2027, season: "Kharif", cropId: "pigeon-pea", cropName: "Pigeon pea", productId: "pigeon-pea-whole", productName: "Whole", plannedSowingDate: "2027-05-16", plannedHarvestDate: "2027-12-10" };
 
-async function mock(page: Page, opts: { rotationPlans?: unknown[] } = {}) {
+async function mock(page: Page, opts: { rotationPlans?: unknown[]; cycles?: FarmWorkspace["cycles"] } = {}) {
   let workspace: FarmWorkspace = structuredClone(workspaceBefore);
   if (opts.rotationPlans) workspace = { ...workspace, rotationPlans: opts.rotationPlans as FarmWorkspace["rotationPlans"] };
+  if (opts.cycles) workspace = {...workspace, cycles: opts.cycles};
   let review = occupiedReview;
   const previews: URLSearchParams[] = [];
   await page.clock.setFixedTime(new Date("2026-11-01T10:00:00+05:30"));
@@ -59,7 +60,7 @@ async function mock(page: Page, opts: { rotationPlans?: unknown[] } = {}) {
 test.use({ viewport: { width: 390, height: 844 } });
 
 test("a season saved only in 2027 shows on first paint with the count 1, and Preview opens the season sheet", async ({ page }) => {
-  const calls = await mock(page, { rotationPlans: [PIGEON] });
+  const calls = await mock(page, { rotationPlans: [PIGEON], cycles: [] });
   await page.goto("/planner");
   const board = page.locator(".rotation-board");
   await expect(board.locator(".year-switch strong")).toHaveText("2027");
@@ -88,4 +89,17 @@ test("after Use this plan the board moves to the first added season's year and b
   await expect(page.locator(".rotation-board")).toContainText("Maize");
   const firstYear = await page.locator(".season-list .season-year").first().textContent();
   await expect(page.locator(".rotation-board .year-switch strong")).toHaveText(firstYear!.trim());
+});
+
+
+test('rotation starts with the growing crop and keeps future plans accessible', async ({page}) => {
+  await mock(page, {rotationPlans: [PIGEON]});
+  await page.goto('/planner');
+  const board = page.locator('.rotation-board');
+  await expect(board.locator('.year-switch strong')).toHaveText('2026');
+  await expect(board.getByTestId('rotation-recorded-crop')).toContainText('Paddy');
+  await expect(board.getByTestId('rotation-recorded-crop')).toContainText('Growing');
+  await board.getByRole('button', {name: 'Next year'}).click();
+  await expect(board.getByRole('button', {name: 'Preview season: Pigeon pea'})).toBeVisible();
+  await expect(board.getByTestId('rotation-recorded-crop')).toContainText('Paddy');
 });

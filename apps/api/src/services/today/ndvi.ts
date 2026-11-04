@@ -13,8 +13,7 @@
  * re-read's neighbourhood request fails permanently, the previously stored neighbourhood statistics are kept, not nulled.
  *
  * Integration (done 2026-11-01): `todayNdviRoutes` is registered in routes/index.ts and `deleteFarm` (services/farms.ts)
- * removes the `image_keys` objects of ndvi_scene_stats before the cascade. A worker job type for background back-fill
- * is not wired.
+ * removes the `image_keys` objects of ndvi_scene_stats before the cascade. The daily satellite.refresh worker checks every located farm and field independently of crop monitoring.
  */
 import {z} from 'zod';
 import type {Config} from '../../config';
@@ -43,6 +42,7 @@ export interface NdviSeriesOptions {
   from?: string | undefined; to?: string | undefined; maxScenes?: number | undefined; maxSceneCloudPct?: number | undefined;
   /** 2026-11-03: read the named field's polygon instead of the farm boundary (404 field_not_found when unknown). */
   fieldId?: string | undefined;
+  refreshCatalogue?: boolean | undefined;
 }
 
 export const DEFAULT_MAX_SCENES = 12;
@@ -125,12 +125,12 @@ const CachedScenes = z.object({
 });
 type SceneList = z.infer<typeof CachedScenes>;
 
-async function sceneList(deps: NdviDeps, bbox: Bbox, from: string, to: string, maxCloud: number, now: Date): Promise<SceneList | {reason: string}> {
+async function sceneList(deps: NdviDeps, bbox: Bbox, from: string, to: string, maxCloud: number, now: Date, refresh = false): Promise<SceneList | {reason: string}> {
   const cache = pgCache(deps.pool);
   // Hash, not raw coordinates, in the shared cache key.
   const key = `sentinel2:scenes:v1:${sha256Hex(JSON.stringify({bbox, from, to, maxCloud}))}`;
   const hit = await cache.get(key);
-  if (hit && hit.expiresAt.getTime() > now.getTime()) {
+  if (!refresh && hit && hit.expiresAt.getTime() > now.getTime()) {
     const parsed = CachedScenes.safeParse(hit.payload);
     if (parsed.success) return parsed.data;
   }
@@ -205,7 +205,7 @@ export async function ndviSeries(deps: NdviDeps, ownerId: string, farmId: string
     `SELECT id,item_id,acquired_at,baseline,scene_cloud_pct,field_stats,neighbourhood_stats,usable,image_keys FROM ndvi_scene_stats
      WHERE owner_id=$1 AND farm_id=$2 AND polygon_hash=$3 AND acquired_at >= ($4::date::timestamp AT TIME ZONE 'UTC') AND acquired_at < (($5::date + 1)::timestamp AT TIME ZONE 'UTC')
      ORDER BY acquired_at`, [ownerId, farmId, hash, from, to])).rows;
-  const listing = await sceneList(deps, ringBbox(ring), from, to, maxCloud, now);
+  const listing = await sceneList(deps, ringBbox(ring), from, to, maxCloud, now, opts.refreshCatalogue);
   let rows = await cachedRows();
   const limitations = [...located.limitations];
   let scenesListed = 0, scenesPending = 0, scenesFailed = 0;

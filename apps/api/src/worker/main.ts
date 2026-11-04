@@ -5,6 +5,7 @@ import type { Pool } from "../db/pool";
 import { withTransaction } from "../db/pool";
 import { purgeExpiredIdempotencyKeys } from "../services/idempotency";
 import { ingestHandlers, registerWorkerHandlers } from "./handlers";
+import { enqueueDueSatelliteRefreshes } from '../services/satellite-schedule';
 import { enqueueDueMonitors } from '../services/monitor-schedule';
 
 export interface JobRow {
@@ -147,6 +148,7 @@ async function main() {
   while (!stopping) {
     if (Date.now() - lastMonitorScan >= 60_000) {
       lastMonitorScan = Date.now();
+      await enqueueDueSatelliteRefreshes(pool, config.RUNTIME_MODE).catch(() => console.error(JSON.stringify({ msg: 'satellite scheduling failed' })));
       await enqueueDueMonitors(pool).catch(() => console.error(JSON.stringify({ msg: 'monitor scheduling failed' })));
     }
     if (Date.now() - lastPurge >= PURGE_EVERY_MS) {

@@ -125,7 +125,7 @@ export function CandidateDetail(props: { candidate: CropFitCandidate; review: Pi
         <Show when={c().cost}>
           {(cost) => (
             <p class="cf-muted">
-              Cost deducted: {cost().a2flPerHa ? `A2+FL ${formatInr(cost().a2flPerHa!)}/ha` : cost().c2PerHa ? `C2 ${formatInr(cost().c2PerHa!)}/ha` : "not sourced"} ({(cost().authority ?? "source").toUpperCase()} {cost().year ?? ""})
+              Cost deducted: {cost().a2flPerHa ? `A2+FL ${formatInr(cost().a2flPerHa!)}/ha` : cost().c2PerHa ? `C2 ${formatInr(cost().c2PerHa!)}/ha` : cost().reportedPerHa != null ? `Published cultivation budget ${formatInr(cost().reportedPerHa!)}/ha (may exclude family labour and land charges)` : "not sourced"} ({(cost().authority ?? "source").toUpperCase()} {cost().year ?? ""}{cost().region ? ` · ${cost().region}` : ""})
             </p>
           )}
         </Show>

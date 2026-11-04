@@ -7,6 +7,7 @@ import {
   onMount,
 } from "solid-js";
 import { apiRequest } from "../features/photo-region/http";
+import { Portal } from "solid-js/web";
 import { foregroundModelRequests } from "../lib/model-activity";
 import { useWorkspace } from "./state";
 import { Evara } from "./Evara";
@@ -105,44 +106,47 @@ export function ModelActivity() {
         </Show>
       </button>
       <Show when={active().length}>
-        <aside
-          class="model-activity-toast"
-          role="status"
-          aria-live="polite"
-          aria-label="Actual model activity"
-        >
-          <Evara size={38} />
-          <div>
-            <strong>
-              Evara · Thinking with{" "}
-              {active()[0]?.model ?? active()[0]?.requestedModel}
-            </strong>
-            <span>
-              {activityPurpose(active()[0]?.purpose)}
-              {active().length > 1 ? ` · ${active().length} active calls` : ""}
+        {/* Escape the glass header’s backdrop-filter containing block so fixed means viewport-fixed. */}
+        <Portal>
+          <aside
+            class="model-activity-toast"
+            role="status"
+            aria-live="polite"
+            aria-label="Actual model activity"
+          >
+            <Evara size={38} />
+            <div>
+              <strong>
+                Evara · Thinking with{" "}
+                {active()[0]?.model ?? active()[0]?.requestedModel}
+              </strong>
+              <span>
+                {activityPurpose(active()[0]?.purpose)}
+                {active().length > 1 ? ` · ${active().length} active calls` : ""}
+              </span>
+            </div>
+            <span class="activity-pulse">
+              <i />
+              <i />
+              <i />
             </span>
-          </div>
-          <span class="activity-pulse">
-            <i />
-            <i />
-            <i />
-          </span>
-          <details>
-            <summary aria-label="Show model invocation details">ⓘ</summary>
-            <For each={active()}>
-              {(i) => (
-                <p>
-                  {i.model ?? i.requestedModel} · {activityPurpose(i.purpose)} ·{" "}
-                  {i.processing ?? "standard"} processing
-                </p>
-              )}
-            </For>
-            <p>
-              Reported by the provider invocation tracker. Cached responses do
-              not appear here.
-            </p>
-          </details>
-        </aside>
+            <details>
+              <summary aria-label="Show model invocation details">ⓘ</summary>
+              <For each={active()}>
+                {(i) => (
+                  <p>
+                    {i.model ?? i.requestedModel} · {activityPurpose(i.purpose)} ·{" "}
+                    {i.processing ?? "standard"} processing
+                  </p>
+                )}
+              </For>
+              <p>
+                Reported by the provider invocation tracker. Cached responses do
+                not appear here.
+              </p>
+            </details>
+          </aside>
+        </Portal>
       </Show>
     </>
   );

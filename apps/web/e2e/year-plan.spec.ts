@@ -1,3 +1,4 @@
+import { captureAiPreview } from "./support/ai-preview";
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
 import type { YearPlanReview } from "@harvest/contracts";
@@ -134,6 +135,7 @@ test("four options render with score rings and the profit for the field in full 
   await page.goto("/planner");
   const rows = page.locator(".yp-cal-row");
   await expect(rows).toHaveCount(4);
+  await captureAiPreview(page, "year_plan_select", page.locator(".yp-cal-row").first());
   await expect(page.getByText("Sep 2026 to Sep 2027 · Paddy growing until mid-Nov")).toBeVisible();
   // Likely band (p25 to p75) for the 0.16 ha field, rounded to the nearest 100, Indian grouping, no "thousand".
   const expected = [
@@ -161,12 +163,12 @@ test("three rows carry the AI spark, the calculated fourth carries a chip, and t
   await page.goto("/planner");
   const rows = page.locator(".yp-cal-row");
   await expect(rows).toHaveCount(4);
-  for (const i of [0, 1, 2]) await expect(rows.nth(i).getByRole("button", { name: "AI used: Choosing your three year plans" })).toBeVisible();
+  for (const i of [0, 1, 2]) await expect(rows.nth(i).getByRole("button", { name: "AI used: Comparing your crop plans" })).toBeVisible();
   await expect(rows.nth(3).locator(".ai-spark")).toHaveCount(0);
   await expect(rows.nth(3).locator(".yp-row-line")).toContainText("Calculated");
   await expect(rows.nth(0).locator(".yp-row-line")).not.toContainText("Calculated");
-  await rows.nth(0).getByRole("button", { name: "AI used: Choosing your three year plans" }).click();
-  await expect(page.getByRole("dialog", { name: "Choosing your three year plans" })).toBeVisible();
+  await rows.nth(0).getByRole("button", { name: "AI used: Comparing your crop plans" }).click();
+  await expect(page.getByRole("dialog", { name: "Comparing your crop plans" })).toBeVisible();
   await expect(page.getByRole("dialog", { name: "Best overall" })).toHaveCount(0);
   await page.keyboard.press("Escape");
   await expect(page.getByRole("dialog")).toHaveCount(0);
@@ -279,7 +281,7 @@ test("the sheet shows central, likely and possible per hectare and for the field
   await expect(total.getByRole("group", { name: /^For your 0.16 ha: central ₹15,600, likely ₹8,300 to ₹22,800, possible −₹500 to ₹31,600$/ })).toBeVisible();
   await expect(total).toContainText(explanation);
   // The reasons carry the AI mark.
-  await expect(sheet.getByRole("button", { name: "Reasons by AI (AI used: Choosing your three year plans)" })).toBeVisible();
+  await expect(sheet.getByRole("button", { name: "Reasons by AI (AI used: Comparing your crop plans)" })).toBeVisible();
   // One crop (maize): per ha and for the field in the Profit row, with the yield and price rows still present.
   await sheet.getByRole("button", { name: "Maize", exact: true }).click();
   const profit = sheet.locator(".yp-estimates > div", { has: page.locator("dt", { hasText: "Profit" }) });

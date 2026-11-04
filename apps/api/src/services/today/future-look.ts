@@ -11,8 +11,8 @@
  * Budget bound, enforced under a per-farm-cycle advisory lock:
  * - one queued/running/ready asset per stage per cycle: a request for a stage that already has one returns it
  *   (whatever source scene it was derived from);
- * - at most FUTURE_LOOK_CYCLE_CAP (6) assets per farm cycle that are queued, running, ready or billed (an image was
- *   returned, or the outcome is unknown); beyond that the result is `unavailable` / `cycle_limit_reached`;
+ * - at most the configured number of assets per farm cycle in a rolling 24 hours that are queued, running, ready or billed (an image was
+ *   returned, or the outcome is unknown); beyond that the result is `unavailable` / `daily_limit_reached`;
  * - a second request for the same (farm, cycle, stage, scene, prompt version) returns the existing row. Only a failure
  *   that was not billed (provider refused, rate limited, budget exhausted, scene unavailable) is re-armed on request, at
  *   most FUTURE_LOOK_MAX_ATTEMPTS times; a billed failure (for example scene QA rejected the edit) is final for that tuple.
@@ -33,7 +33,7 @@
  *   and polygon hash). Exporting that function from ndvi.ts would remove the copy; the test suite checks they agree.
  *
  * Milestone refresh (2026-11-03): internal milestoneRevision requests preserve exact target dates and old evidence
- * revisions. The cap is now 10 images per cycle in a rolling 24-hour window, with the existing USD budget enforced by
+ * revisions. The default cap is 24 images per cycle in a rolling 24-hour window (FUTURE_LOOK_DAILY_LIMIT; 0 disables it), with the existing USD budget enforced by
  * each worker. Manual/legacy gap requests still use weekly caching; milestone requests cache by exact date + revision.
  *
  * Predicted looks (FIELDS_MULTICROP_SOIL_SPEC.md section 11, 2026-11-03; prompt version future-look-v2):
@@ -45,7 +45,7 @@
  *   that is later (so it stays in the requested week and after the real image);
  * - one queued/running/ready gap look per cycle per calendar week (`target_week`), whatever scene it came from: a later
  *   real scene does not replace an existing look for that week (the web shows the real scene for dates up to it anyway);
- * - the per-cycle cap is FUTURE_LOOK_CYCLE_CAP (10, raised from 6) across both kinds; FUTURE_LOOK_MAX_ATTEMPTS unchanged;
+ * - the per-cycle cap is FUTURE_LOOK_DAILY_LIMIT (default 24; 0 disables) across both kinds; FUTURE_LOOK_MAX_ATTEMPTS unchanged;
  * - automatic requests (`auto: true`, made only by the live Today view, services/today/view.ts) also take a per-farm
  *   advisory lock and are refused when any gap row (any status) exists for that cycle and week (`auto_week_exists`: a failed
  *   one is re-armed only by an explicit request) or when the farm already has FUTURE_LOOK_AUTO_DAILY_CAP (2) gap rows created
@@ -86,8 +86,8 @@ export const FUTURE_LOOK_PROMPT_VERSION = 'future-look-v3';
 export const FUTURE_LOOK_PROMPT_VERSION_V2 = 'future-look-v2';
 /** Rows made before 2026-11-03 (no guidance); the worker renders them with the v1 template. */
 export const FUTURE_LOOK_PROMPT_VERSION_V1 = 'future-look-v1';
-/** Max assets per farm cycle per rolling day (both kinds) that are queued, running, ready or billed. Raised from 6 on 2026-11-03 (spec 11.2). */
-export const FUTURE_LOOK_CYCLE_CAP = 10;
+/** Max assets per farm cycle per rolling day (both kinds) that are queued, running, ready or billed. Default; configurable through FUTURE_LOOK_DAILY_LIMIT, with 0 disabling it. */
+export const FUTURE_LOOK_CYCLE_CAP = 24;
 /** A gap look's requested target date may be at most this many days after today (spec 11.3). */
 export const GAP_MAX_DAYS_AHEAD = 120;
 /** Automatic gap requests: at most this many gap rows created per farm in any 24 hours (spec 11.2). */
@@ -108,7 +108,7 @@ const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
 // ------------------------------------------------------------------ deps and shapes
 
 export interface FutureLookDeps {
-  config: Pick<Config, 'RUNTIME_MODE'> & {MODEL_API_KEY?: string | undefined};
+  config: Pick<Config, 'RUNTIME_MODE'> & {MODEL_API_KEY?: string | undefined; FUTURE_LOOK_DAILY_LIMIT?: number | undefined};
   pool: Pool;
   now?: (() => Date) | undefined;
   /** Test injection; production computes the timeline from the repo's stage sources. */
@@ -188,7 +188,8 @@ export function promptSafe(s: string | null | undefined, max = 60): string | nul
   return t.length ? t : null;
 }
 
-export const futureLookImagePath = (farmId: string, assetId: string) => `/api/v1/farms/${farmId}/future-look/${assetId}/image`;
+// A regenerated asset keeps its id, so its URL must change to replace an already displayed/cached image.
+export const futureLookImagePath = (farmId: string, assetId: string, attempt = 1) => `/api/v1/farms/${farmId}/future-look/${assetId}/image${attempt > 1 ? `?v=${attempt}` : ''}`;
 export const futureLookStorageKey = (farmId: string, assetId: string) => `future-look/${farmId}/${assetId}.png`;
 const stageLabelOf = (name: string) => (/\bstage\b/i.test(name) ? name : `${name} stage`);
 export const futureLookLabel = (stageName: string) => `Illustration of a typical ${stageLabelOf(stageName)}`;
@@ -491,7 +492,7 @@ export function toFutureLookAsset(r: FutureLookRow): FutureLookAsset {
     status: r.status, failureReason: r.status === 'failed' || r.status === 'unavailable' ? r.failure_reason : null,
     label: kind === 'gap' ? predictedLookLabel(targetDate, derivedFromDate) : kind === 'journey' ? CROP_JOURNEY_LABEL : futureLookLabel(r.stage_name),
     disclaimer: kind === 'gap' ? PREDICTED_LOOK_DISCLAIMER : kind === 'journey' ? CROP_JOURNEY_DISCLAIMER : FUTURE_LOOK_DISCLAIMER,
-    imagePath: r.status === 'ready' ? futureLookImagePath(r.farm_id, r.id) : null,
+    imagePath: r.status === 'ready' ? futureLookImagePath(r.farm_id, r.id, r.attempt) : null,
     qa: qa && qa.success ? qa.data : null, model: r.model, responseDeleted: r.response_deleted, promptVersion: r.prompt_version, attempt: r.attempt,
     createdAt: r.created_at.toISOString(), updatedAt: r.updated_at.toISOString(),
     kind, targetDate, guidance: r.guidance ? r.guidance.slice(0, 400) : null,
@@ -699,9 +700,10 @@ export async function requestFutureLook(deps: FutureLookDeps, ownerId: string, f
     // FUTURE_LOOK_MAX_ATTEMPTS (and the billed rule) guard failure retries; a regenerate of a ready look is a new explicit
     // request, bounded instead by the per-cycle daily cap just below, so it is exempt.
     if (!rearm && same && (same.billed || same.attempt >= FUTURE_LOOK_MAX_ATTEMPTS)) return resultOf(same, true);
-    const counted = (await c.query<{n: number}>(
+    const dailyLimit = deps.config.FUTURE_LOOK_DAILY_LIMIT ?? FUTURE_LOOK_CYCLE_CAP;
+    const counted = dailyLimit === 0 ? 0 : (await c.query<{n: number}>(
       `SELECT count(*)::int AS n FROM future_look_assets WHERE owner_id=$1 AND farm_id=$2 AND cycle_id=$3 AND (status IN ('queued','running','ready') OR billed) AND created_at > now() - interval '1 day'`, scope)).rows[0]!.n;
-    if (counted >= FUTURE_LOOK_CYCLE_CAP) return unavailable('daily_limit_reached');
+    if (dailyLimit > 0 && counted >= dailyLimit) return unavailable('daily_limit_reached');
 
     let replacedKey: string | null = null;
     if (rearm) {
@@ -821,7 +823,7 @@ export async function listReadyFutureLooks(deps: FutureLookDeps, ownerId: string
     "SELECT * FROM future_look_assets WHERE owner_id=$1 AND farm_id=$2 AND cycle_id=$3 AND status='ready' AND storage_key IS NOT NULL ORDER BY created_at, id",
     [ownerId, farmId, cycleId])).rows;
   return rows.map((r) => ({
-    assetId: r.id, stageId: r.stage_id, sourceItemId: r.source_item_id, cropId: r.crop_id, createdAt: r.created_at.toISOString(), imagePath: futureLookImagePath(farmId, r.id),
+    assetId: r.id, stageId: r.stage_id, sourceItemId: r.source_item_id, cropId: r.crop_id, createdAt: r.created_at.toISOString(), imagePath: futureLookImagePath(farmId, r.id, r.attempt),
     kind: r.kind === 'gap' ? 'gap' : 'stage', targetDate: pgDate(r.target_date), guidance: r.guidance ? r.guidance.slice(0, 400) : null,
   }));
 }

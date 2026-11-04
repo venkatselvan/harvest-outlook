@@ -196,7 +196,7 @@ export interface YieldScoreResult { value: number; ratio: number | null; localKg
  * no longer in here (it has its own component). The reference is the state median of recent years (best state year only
  * as a flagged fallback); a farmer override replaces the local yield.
  */
-export function yieldScore(slot: { yieldOverrideKgPerHa?: number | null | undefined }, yieldRef: { p50: number; referenceKgPerHa: number; referenceBasis?: 'state_median' | 'state_best_year' | undefined } | null, windowFit: number, soilFactor = 1): YieldScoreResult {
+export function yieldScore(slot: { yieldOverrideKgPerHa?: number | null | undefined }, yieldRef: { p50: number; referenceKgPerHa: number; referenceBasis?: 'state_median' | 'state_best_year' | 'regional_reference' | undefined } | null, windowFit: number, soilFactor = 1): YieldScoreResult {
   const local = slot.yieldOverrideKgPerHa ?? yieldRef?.p50 ?? null;
   const reference = yieldRef?.referenceKgPerHa ?? null;
   if (local === null || reference === null || !(reference > 0)) return { value: 0, ratio: null, localKgPerHa: local, soilFactor, reasonCodes: ['yield_not_sourced'] };

@@ -182,18 +182,20 @@ describe("hero for a predicted look", () => {
 });
 
 describe("slider marks for predicted looks", () => {
-  it("marks predicted dates as hollow rings and leaves superseded looks off", () => {
+  it("marks generated dates with sparks and retains historical predictions", () => {
     const model = sliderModel(view)!;
     const marks = sceneMarks(view.scenes, model);
-    expect(marks.filter((m) => m.kind === "predicted").map((m) => m.date)).toEqual([PREDICTED_DATES.auto, PREDICTED_DATES.manual]);
+    expect(marks.filter((m) => m.kind === "predicted").map((m) => m.date)).toEqual([PREDICTED_DATES.superseded, PREDICTED_DATES.auto, PREDICTED_DATES.manual]);
     const html = renderToString(() => (
       <StageSlider model={model} value={model.todayIndex} onChange={() => undefined} valueDate={FIXTURE_TODAY} ticks={[]} onBackToToday={() => undefined} startLabel="Sown" endLabel="Harvest" marks={marks} />
     ));
-    expect((html.match(/class="today-slider-mark predicted"/g) ?? []).length).toBe(2);
-    expect((html.match(/data-scene-kind="predicted"/g) ?? []).length).toBe(2);
-    expect(html).toContain('title="AI-predicted look 16 Nov 2026"');
-    expect(text(html)).toContain("Hollow rings mark 2 dates with an AI-predicted look, not an observation.");
-    expect(text(html)).toContain("Dots on the slider mark the 7 dates with a satellite image.");
+    for (const date of [PREDICTED_DATES.superseded, PREDICTED_DATES.auto, PREDICTED_DATES.manual]) {
+      expect(html.includes(`value="predicted|${date}"`) || html.includes(`data-date="${date}" data-scene-kind="predicted"`)).toBe(true);
+    }
+    expect(html).toContain('data-media-kind="predicted"');
+    expect(html).toContain("AI image for 16 Nov 2026");
+    expect(text(html)).toContain("sparks mark 4 generated image dates, not observations.");
+    expect(text(html)).toContain("icons mark 7 dates.");
   });
 });
 
@@ -405,6 +407,11 @@ describe("Predict again on a predicted look", () => {
     expect(blocked).toMatch(/data-testid="today-predict-again" disabled/);
     expect(blocked).toContain('aria-describedby="today-predict-again-blocked"');
     expect(text(blocked)).toContain("This crop has used all its AI predicted looks for the season.");
+  });
+  it("shows a regeneration failure beside the existing predicted look", () => {
+    const failed = hero(FIXTURE_TODAY, { prediction: livePrediction({ message: "Today’s AI budget is used up." }) });
+    expect(failed).toContain('data-testid="today-predict-message"');
+    expect(text(failed)).toContain("Today’s AI budget is used up.");
   });
   it("the click asks for the date with regenerate set", () => {
     const asked: Array<[string, { regenerate?: boolean } | undefined]> = [];

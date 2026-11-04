@@ -8,6 +8,7 @@ describe("loadConfig", () => {
     const c = loadConfig(base);
     expect(c.RUNTIME_MODE).toBe("synthetic");
     expect(c.PORT).toBe(8787);
+    expect(c.FUTURE_LOOK_DAILY_LIMIT).toBe(24);
     expect(c.META_TEXT_MODEL).toBe("muse-spark-1.3");
     expect(c.ALLOWED_ORIGINS).toEqual(["http://localhost:5173"]);
   });
@@ -42,4 +43,10 @@ describe("loadConfig", () => {
     expect(json).not.toContain("s".repeat(40));
     expect(json).toContain('"MODEL_API_KEY_configured":true');
   });
+});
+
+it('accepts zero as unlimited or a positive image cap, rejecting negative and fractional counts',()=>{
+  expect(loadConfig({...base,FUTURE_LOOK_DAILY_LIMIT:'0'}).FUTURE_LOOK_DAILY_LIMIT).toBe(0);
+  expect(loadConfig({...base,FUTURE_LOOK_DAILY_LIMIT:'48'}).FUTURE_LOOK_DAILY_LIMIT).toBe(48);
+  for(const value of ['-1','1.5','invalid']) expect(()=>loadConfig({...base,FUTURE_LOOK_DAILY_LIMIT:value})).toThrow(ConfigError);
 });

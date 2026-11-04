@@ -142,12 +142,12 @@ export function harvestEconomics(i: HarvestEconomicsInput): HarvestEconomics {
   });
 
   // Cost: A2+FL, else a published C2-type total (conservative), else none (partial).
-  const cost = data.costFor(cycle.cropId, {stateId: farm.stateId});
+  const cost = data.costFor(cycle.cropId, {stateId: farm.stateId, districtId: farm.districtId});
   if (cost) {
     const src = data.yieldCostSource(cost.sourceId);
     basis.push({
       kind: 'cost_reference', label: cap(`Cost of cultivation (${cost.estimate.authority ?? 'other'}${cost.estimate.year ? ` ${cost.estimate.year}` : ''}): ${src?.title ?? cost.sourceId ?? 'cost reference'}`, 200),
-      sourceId: cost.sourceId, url: src?.url ?? null, scope: cost.estimate.region, note: cap([`Deducted: ${cost.deductionBasis === 'a2fl' ? 'A2+FL' : 'C2-type total'} Rs ${cost.deductionPerHa}/ha.`, cost.locator, ...cost.notes].filter(Boolean).join(' '), 1000),
+      sourceId: cost.sourceId, url: src?.url ?? null, scope: cost.estimate.region, note: cap([`Deducted: ${data.costBasisLabel(cost)} Rs ${cost.deductionPerHa}/ha.`, cost.locator, ...cost.notes].filter(Boolean).join(' '), 1000),
     });
     limitations.push(...cost.notes);
   } else limitations.push(data.costGapReason(cycle.cropId, farm.stateId));

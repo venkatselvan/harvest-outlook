@@ -1,3 +1,5 @@
+import { createSatelliteRefreshHandler } from './satellite';
+import { SATELLITE_REFRESH_JOB } from '../../services/satellite-schedule';
 import { createSeasonPredictionsHandler } from './season-predictions';
 import { createFieldPhotoHandler } from "./field-photo";
 import { createPhotoCoverageHandler } from "./photo-coverage";
@@ -49,6 +51,7 @@ export function registerWorkerHandlers(registry: Record<string, JobHandler>, dep
   const { config, pool, storage, budget } = deps;
   registry['soil.extract']=createSoilHandler({config,pool,storage,budget,...(deps.fetchImpl?{fetchImpl:deps.fetchImpl}:{})});
   registry['farm.year-plan'] = createYearPlanHandler({ config, pool, budget, ...(deps.fetchImpl ? { fetchImpl: deps.fetchImpl } : {}) });
+  registry[SATELLITE_REFRESH_JOB] = createSatelliteRefreshHandler(deps);
   registry['farm.monitor'] = createMonitorHandler({ config, pool, budget, fetchImpl: deps.fetchImpl });
   registry['today.season-predictions'] = createSeasonPredictionsHandler(deps);
   registry['today.field-photo'] = createFieldPhotoHandler(deps);
@@ -80,7 +83,7 @@ export function registerWorkerHandlers(registry: Record<string, JobHandler>, dep
   });
   registerJournalHandlers(registry as never, { pool, config, storage, budget, plans, ...(deps.fetchImpl ? { fetchImpl: deps.fetchImpl } : {}) });
   for(const[name,handler]of Object.entries(registry)){
-    if(previous.get(name)===handler)continue;
+    if(previous.get(name)===handler || name===SATELLITE_REFRESH_JOB)continue;
     registry[name]=(job,ctx)=>{
       if(!job.owner_id)return handler(job,ctx);
       const payload=job.payload as {sessionId?:unknown}|null;

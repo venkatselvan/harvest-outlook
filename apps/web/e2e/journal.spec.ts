@@ -1,3 +1,4 @@
+import { captureAiPreview } from "./support/ai-preview";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { expect, test, type Page } from "@playwright/test";
@@ -97,6 +98,7 @@ test("entry with a photo, analysis, accepted stage proposal, confirmed revision 
   await expect(page.getByText("AI proposal — confirm before it changes your plan").first()).toBeVisible({ timeout: 30_000 });
   await expect(page.getByText(/Synthetic demonstration answer from a fixture/)).toBeVisible();
   await expect(page.getByTestId("proposal")).toHaveCount(2);
+  await captureAiPreview(page, "journal_observation", page.getByTestId("proposal").first());
   await expect(page.getByTestId("confirmed-facts")).toHaveCount(0);
   await expect(page.getByTestId("revision")).toHaveCount(0);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);

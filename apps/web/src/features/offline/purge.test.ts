@@ -10,7 +10,7 @@ import { snapshots } from "./status";
 
 const mem = () => {
   const m = new Map<string, string>();
-  return { getItem: (k: string) => m.get(k) ?? null, setItem: (k: string, v: string) => void m.set(k, v), removeItem: (k: string) => void m.delete(k), get size() { return m.size; }, keys: () => [...m.keys()] };
+  return { getItem: (k: string) => m.get(k) ?? null, setItem: (k: string, v: string) => void m.set(k, v), removeItem: (k: string) => void m.delete(k), get size() { return m.size; }, get length() { return m.size; }, key: (i: number) => [...m.keys()][i] ?? null, keys: () => [...m.keys()] };
 };
 let local: ReturnType<typeof mem>;
 let session: ReturnType<typeof mem>;
@@ -57,6 +57,7 @@ describe("purge after the workspace ends (M2)", () => {
   it("DELETE /session leaves no drafts, queue items, snapshots, profile or selection keys, and rotates the scope", async () => {
     await seedDevice();
     const before = getOwnerScope();
+    local.setItem(`ho.chat.v2.${before}.chat-1`, 'private chat');
     expect(await createIdb("harvest-journal").keys()).not.toEqual([]);
     await endSession(sessionFetch({ authenticatedOnGet: true }));
     await settle();
@@ -66,6 +67,7 @@ describe("purge after the workspace ends (M2)", () => {
     expect(await snapshots.load("plan:p1")).toBeNull();
     expect(local.getItem("ho.exploreProfile.v1")).toBeNull();
     expect(local.getItem("ho.selectedFarm")).toBeNull();
+    expect(local.getItem(`ho.chat.v2.${before}.chat-1`)).toBeNull();
     expect(session.getItem("ho.selectedCrop")).toBeNull();
     expect(getOwnerScope()).not.toBe(before);
   });

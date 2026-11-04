@@ -1,6 +1,8 @@
 import type { JSX } from "solid-js";
 export function Icon(props: { name: string; size?: number; class?: string }) {
   const paths: Record<string, JSX.Element> = {
+    satellite: <><path d="m9 9 6 6 4-4-6-6Z M3 7l4-4 4 4-4 4Z M13 17l4-4 4 4-4 4Z M5 15l4-4M3 14a7 7 0 0 0 7 7M3 18a3 3 0 0 0 3 3"/></>,
+    camera: <><path d="M8 5 6 8H3v12h18V8h-3l-2-3Z"/><circle cx="12" cy="13" r="4"/></>,
     leaf: (
       <>
         <path d="M20 4c-7-1-14 1-14 8a6 6 0 0 0 6 6c7 0 9-7 8-14Z" />
@@ -44,6 +46,8 @@ export function Icon(props: { name: string; size?: number; class?: string }) {
       </>
     ),
     plus: <path d="M12 5v14M5 12h14" />,
+    expand: <path d="M8 3H3v5m13-5h5v5M3 16v5h5m13-5v5h-5" />,
+    collapse: <path d="M3 8h5V3m8 0v5h5M8 21v-5H3m13 5v-5h5" />,
     info: <><circle cx="12" cy="12" r="9"/><path d="M12 11v6m0-10h.01"/></>,
     moon: <path d="M20.5 13.1A8.6 8.6 0 0 1 10.9 3.5a8.7 8.7 0 1 0 9.6 9.6Z" />,
     close: <path d="m6 6 12 12M6 18 18 6" />,

@@ -66,23 +66,23 @@ describe("AI use registry", () => {
     expect(Object.values(AI_USES).every((use) => !/elevenlabs/i.test(JSON.stringify(use)))).toBe(true);
   });
 
-  it("mentions Claude only in the provider note", () => {
+  it("describes the runtime provider without build-history details", () => {
     expect(JSON.stringify(AI_USES)).not.toMatch(/claude/i);
     expect(AI_PRIVACY_NOTE).not.toMatch(/claude/i);
-    expect(AI_PROVIDER_NOTE).toMatch(/Meta is the only runtime AI provider/);
-    expect(AI_PROVIDER_NOTE).toMatch(/Claude was used to build the app, not to run it/);
+    expect(AI_PROVIDER_NOTE).toMatch(/Meta provides the AI features/);
+    expect(AI_PROVIDER_NOTE).not.toMatch(/Claude/);
   });
 
-  it("keeps the scoring weights in the year-plan copy aligned with the engine (40/30/15/10/5)", () => {
-    expect(AI_USES.year_plan_select.code).toContain("price 40, yield 30, soil and rotation 15, water 10, confidence 5");
+  it("describes recalculation and field constraints without exposing scoring internals", () => {
+    expect(AI_USES.year_plan_select.code).toContain("Edited plans are scored again");
   });
 });
 
 describe("AiSpark markup", () => {
   it("renders a labelled, focusable button and no dialog until it is activated", () => {
     const html = renderToString(() => <AiSpark use="year_plan_select" />);
-    expect(html).toContain('aria-label="AI used: Choosing your three year plans"');
-    expect(html).toContain('title="AI used: Choosing your three year plans.');
+    expect(html).toContain('aria-label="AI used: Comparing your crop plans"');
+    expect(html).toContain('title="AI used: Comparing your crop plans.');
     expect(html).toContain('type="button"');
     expect(html).toContain('aria-haspopup="dialog"');
     expect(html).toContain("--ai-size:16px");

@@ -100,7 +100,7 @@ function evaluationBasis(ctx: EngineContext, inputs: Inputs, plan: SlotPlan, f: 
   if (f.yieldRef) {
     for (const id of f.yieldRef.sourceIds) {
       const s = data.yieldCostSource(id);
-      out.push({ kind: 'yield_reference', label: `Yield: ${s?.title ?? id}`.slice(0, 200), sourceId: id, url: s?.url ?? null, scope: f.yieldRef.region, note: `${f.yieldRef.season} ${f.yieldRef.years.join(', ')}; P25-P75 of the years used; reference ${f.yieldRef.referenceKgPerHa} kg/ha (${f.yieldRef.referenceBasis === 'state_median' ? 'state median of recent years' : 'best state year; no state median'})`.slice(0, 1000) });
+      out.push({ kind: 'yield_reference', label: `Yield: ${s?.title ?? id}`.slice(0, 200), sourceId: id, url: s?.url ?? null, scope: f.yieldRef.region, note: `${f.yieldRef.season} ${f.yieldRef.years.join(', ')}; P25-P75 of the years used; reference ${f.yieldRef.referenceKgPerHa} kg/ha (${f.yieldRef.referenceBasis === 'regional_reference' ? 'broader regional reference' : f.yieldRef.referenceBasis === 'state_median' ? 'state median of recent years' : 'best state year; no state median'})`.slice(0, 1000) });
     }
     if (f.yieldRef.conversion) {
       const s = data.yieldCostSource(f.yieldRef.conversion.sourceId);
@@ -109,7 +109,7 @@ function evaluationBasis(ctx: EngineContext, inputs: Inputs, plan: SlotPlan, f: 
   }
   if (f.cost) {
     const s = data.yieldCostSource(f.cost.sourceId);
-    out.push({ kind: 'cost_reference', label: `Cost of cultivation: ${s?.title ?? f.cost.sourceId ?? 'source'}`.slice(0, 200), sourceId: f.cost.sourceId, url: s?.url ?? null, scope: f.cost.estimate.region, note: `${f.cost.estimate.authority?.toUpperCase() ?? ''} ${f.cost.estimate.year ?? 'year not printed'}; ${f.cost.deductionBasis === 'a2fl' ? 'A2+FL' : 'C2-type total'} ${f.cost.deductionPerHa} INR/ha${f.cost.locator ? `; ${f.cost.locator}` : ''}`.slice(0, 1000) });
+    out.push({ kind: 'cost_reference', label: `Cost of cultivation: ${s?.title ?? f.cost.sourceId ?? 'source'}`.slice(0, 200), sourceId: f.cost.sourceId, url: s?.url ?? null, scope: f.cost.estimate.region, note: `${f.cost.estimate.authority?.toUpperCase() ?? ''} ${f.cost.estimate.year ?? 'year not printed'}; ${data.costBasisLabel(f.cost)} ${f.cost.deductionPerHa} INR/ha${f.cost.locator ? `; ${f.cost.locator}` : ''}`.slice(0, 1000) });
   }
   if (f.outlook) {
     const o = f.outlook;
@@ -212,7 +212,7 @@ function evaluateCrop(ctx: EngineContext, inputs: Inputs, plan: SlotPlan, norm: 
   const flags: ConfidenceFlags = {
     priceVerified: f.outlook?.status === 'available' && f.outlook.yearsUsed.length >= 2,
     districtYield: f.override !== null || (f.yieldRef?.basis === 'district' && !f.yieldRef.stale),
-    costSourced: !!f.cost && (ASSUMPTIONS.confidenceSourcedCost.value as readonly string[]).includes(f.cost.estimate.authority ?? ''),
+    costSourced: !!f.cost && f.cost.deductionBasis !== 'reported' && (ASSUMPTIONS.confidenceSourcedCost.value as readonly string[]).includes(f.cost.estimate.authority ?? ''),
     durationSourced: plan.durationSourced,
     districtWindow: plan.window?.scope === 'district' && !plan.window.provisional,
   };
@@ -345,13 +345,14 @@ function evaluateIntercrop(ctx: EngineContext, inputs: Inputs, plan: SlotPlan, n
   else if (c.outlook.status !== 'available') uncertainties.push(`${comp}: no harvest-week price range (${c.outlook.missingReason ?? 'insufficient history'}); its revenue is not counted.`);
   if (t.cost !== null) uncertainties.push(`Cost: main ${f.cost!.deductionPerHa} + companion ${c.cost!.deductionPerHa} x ${Math.round(t.factor! * 1000) / 1000} (${t.costAssumed ? (t.seedShareUnsourced ? 'seed-rate share without its own source, assumed' : t.rowShareAssumed ? 'default row share, assumed' : 'row share, assumed') : 'sourced seed-rate share'}) = ${Math.round(t.cost)} INR/ha.`);
   else if (f.cost && !c.cost) uncertainties.push(`${data.costGapReason(s.companionCropId, ctx.stateId)} The intercrop cost and profit are not shown.`);
+  if (c.cost?.notes.length) uncertainties.push(`Companion cost: ${c.cost.notes.join(' ')}`);
   if (s.shareBasis === 'assumed') uncertainties.push(`Intercrop yield shares are assumed: ${s.shareNote ?? 'research fallback'}.`);
   if (s.nitrogenCredit && !s.nitrogenCredit.sourced) uncertainties.push(`The system's nitrogen credit of ${s.nitrogenCredit.min}${s.nitrogenCredit.max !== s.nitrogenCredit.min ? `-${s.nitrogenCredit.max}` : ''} kg/ha has no source of its own; the next crop gets no legume credit from it.`);
   // Review L7 (2026-11-01): a state-wide system whose notes name a command area or district (e.g. Bhadra command, IN-KA).
   if (s.localityNote && !(ctx.districtId && s.regions.includes(ctx.districtId))) uncertainties.push(`System reported for ${s.localityNote} in the state, not this district.`);
   const basis = [...base.basis.filter((b) => b.sourceId !== 'estimate:lognormal-yield-price-v1')];
   for (const id of c.yieldRef?.sourceIds.slice(0, 1) ?? []) { const src = data.yieldCostSource(id); basis.push({ kind: 'yield_reference', label: `Companion yield: ${src?.title ?? id}`.slice(0, 200), sourceId: id, url: src?.url ?? null, scope: c.yieldRef!.region, note: `${c.yieldRef!.season} ${c.yieldRef!.years.join(', ')}; sole-crop yield before the share`.slice(0, 1000) }); }
-  if (c.cost) { const src = data.yieldCostSource(c.cost.sourceId); basis.push({ kind: 'cost_reference', label: `Companion cost: ${src?.title ?? c.cost.sourceId ?? 'source'}`.slice(0, 200), sourceId: c.cost.sourceId, url: src?.url ?? null, scope: c.cost.estimate.region, note: `${c.cost.deductionBasis === 'a2fl' ? 'A2+FL' : 'C2-type total'} ${c.cost.deductionPerHa} INR/ha` }); }
+  if (c.cost) { const src = data.yieldCostSource(c.cost.sourceId); basis.push({ kind: 'cost_reference', label: `Companion cost: ${src?.title ?? c.cost.sourceId ?? 'source'}`.slice(0, 200), sourceId: c.cost.sourceId, url: src?.url ?? null, scope: c.cost.estimate.region, note: `${data.costBasisLabel(c.cost)} ${c.cost.deductionPerHa} INR/ha` }); }
   if (c.outlook) basis.push({ kind: 'price_history', label: `Companion price: ${c.outlook.basisLabel}`.slice(0, 200), sourceId: `price-outlook:${c.key}`, url: null, scope: `${c.outlook.scope.level}: ${[c.outlook.scope.districtName, c.outlook.scope.stateName].filter(Boolean).join(', ')}`.slice(0, 120), note: `ISO week ${c.outlook.harvestWeek.week}; years ${c.outlook.yearsUsed.join(', ') || 'none'}` });
   if (t.cost !== null && t.costAssumed && !t.seedShareUnsourced) basis.push(assumptionBasis('intercropCompanionCostRowShare'));
   if (t.cost !== null && t.rowShareAssumed) basis.push(assumptionBasis('intercropDefaultCompanionRowShare'));
@@ -582,7 +583,7 @@ function buildOption(ctx: EngineContext, inputs: Inputs, plans: SlotPlan[], eval
     }
     if (!s.cost) warnings.push(`${s.cropName}: cost of cultivation not sourced; profit not shown.`);
     if (!s.price || s.price.status !== 'available') warnings.push(`${s.cropName}: no harvest-week price range.`);
-    if (!s.yieldKgPerHa) warnings.push(`${s.cropName}: no regional yield for this product form.`);
+    if (!s.yieldKgPerHa) warnings.push(`${s.cropName}: no usable sourced yield for this product form.`);
   }
   if (!totals.revenuePerHa || !totals.profitPerHa) warnings.push('Plan totals are shown only when every slot has a price, yield and cost.');
   const dominant = (['price', 'yield', 'soilRotation', 'water'] as const).reduce((best, k) => (components[k] > components[best] ? k : best), 'price' as 'price' | 'yield' | 'soilRotation' | 'water');

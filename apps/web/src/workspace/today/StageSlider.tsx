@@ -1,5 +1,9 @@
-import { For, Show } from "solid-js";
+import { createMemo, createSignal, For, onCleanup, onMount, Show } from "solid-js";
 import { formatDay, type SceneMark, type SliderModel } from "./model";
+
+import { Icon } from '../icons';
+import { AiSparkIcon } from '../ui/AiSpark';
+import { mediaClusters, type MediaKind } from './timelineMedia';
 
 export interface StageSliderTick {
   id: string;
@@ -31,19 +35,29 @@ export interface StageSliderProps {
   onInteract?: (() => void) | undefined;
 }
 
-/**
- * Season slider: one step per day from `slider.from` to `slider.to`. A native range input, so arrows, Home, End and
- * Page keys work everywhere; ticks mark stage boundaries, small marks show the dates with a satellite image (dots), a
- * stage illustration (dashed rings) or an AI-predicted look (hollow rings), and a marker shows today. Play steps one day at a time; any slider interaction pauses it.
- */
+/** Daily season slider with one compact media row; nearby dates share a date picker. */
 export function StageSlider(props: StageSliderProps) {
-  let input: HTMLInputElement | undefined;
+  let input: HTMLInputElement | undefined, mediaTrack: HTMLDivElement | undefined;
+  const [trackWidth,setTrackWidth] = createSignal(2000);
+  onMount(() => {
+    if (!mediaTrack) return;
+    const measure = () => setTrackWidth(Math.max(1, mediaTrack!.clientWidth - 22));
+    measure();
+    const observer = new ResizeObserver(measure); observer.observe(mediaTrack);
+    onCleanup(() => observer.disconnect());
+  });
+  const icon = (kind: MediaKind) => kind === 'predicted' ? <AiSparkIcon size={17}/> : <Icon name={kind === 'photo' ? 'camera' : 'satellite'} size={17}/>;
+  const groups = createMemo(() => mediaClusters(props.marks ?? [],trackWidth()));
+  const markKey = (mark: SceneMark) => `${mark.kind}|${mark.date}`;
+  const selectMark = (mark: SceneMark) => { props.onInteract?.(); props.onChange(Math.round(mark.fraction * props.model.total)); };
+
   const fraction = (index: number) => (props.model.total ? index / props.model.total : 0);
   const atToday = () => props.value === props.model.todayIndex;
   const observedMarks = () => (props.marks ?? []).filter((mark) => mark.kind === "observed").length;
-  const predictedMarks = () => (props.marks ?? []).filter((mark) => mark.kind === "predicted").length;
+  const predictedMarks = () => (props.marks ?? []).filter((mark) => mark.kind === "predicted" || mark.kind === "illustration").length;
+  const photoMarks = () => (props.marks ?? []).filter(mark => mark.kind === "photo").length;
   const markTitle = (mark: SceneMark) =>
-    `${mark.kind === "observed" ? "Satellite image" : mark.kind === "predicted" ? "AI-predicted look" : "Stage illustration"} ${formatDay(mark.date)}`;
+    `${mark.kind === "observed" ? "Satellite image" : mark.kind === "photo" ? "Photo taken" : "AI image for"} ${formatDay(mark.date)}${mark.note ? ` · ${mark.note}` : ""}`;
   return (
     <div class="today-slider">
       <div class="today-slider-head">
@@ -87,17 +101,6 @@ export function StageSlider(props: StageSliderProps) {
           <For each={props.ticks}>
             {(tick) => <span class="today-slider-tick" style={{ left: `${tick.fraction * 100}%` }} title={`${tick.name} from ${formatDay(tick.date)}`} />}
           </For>
-          <For each={props.marks ?? []}>
-            {(mark) => (
-              <span
-                class={`today-slider-mark ${mark.kind}`}
-                style={{ left: `${mark.fraction * 100}%` }}
-                data-date={mark.date}
-                title={markTitle(mark)}
-                data-scene-kind={mark.kind}
-              />
-            )}
-          </For>
           <span class="today-slider-today" style={{ left: `${fraction(props.model.todayIndex) * 100}%` }}>
             <span>Today</span>
           </span>
@@ -111,7 +114,7 @@ export function StageSlider(props: StageSliderProps) {
           step="1"
           value={props.value}
           aria-valuetext={formatDay(props.valueDate)}
-          aria-describedby={observedMarks() || predictedMarks() ? "today-slider-marks-note" : undefined}
+          aria-describedby={observedMarks() || predictedMarks() || photoMarks() ? "today-slider-marks-note" : undefined}
           onPointerDown={() => props.onInteract?.()}
           onKeyDown={() => props.onInteract?.()}
           onInput={(event) => {
@@ -120,14 +123,34 @@ export function StageSlider(props: StageSliderProps) {
           }}
         />
       </div>
-      <Show when={observedMarks() || predictedMarks()}>
-        <span id="today-slider-marks-note" class="today-sr">
-          <Show when={observedMarks()}>Dots on the slider mark the {observedMarks()} dates with a satellite image.</Show>
-          <Show when={predictedMarks()}>
-            {" "}
-            Hollow rings mark {predictedMarks()} {predictedMarks() === 1 ? "date" : "dates"} with an AI-predicted look, not an observation.
-          </Show>
-        </span>
+      <div class="today-slider-media" ref={mediaTrack}>
+        <Show when={groups().length}>
+          <div class="today-media-row" role="group" aria-label="Image dates">
+            <For each={groups()}>{group => {
+              const symbols = () => <><For each={group.kinds}>{kind => <span class={`today-media-symbol ${kind}`} data-media-kind={kind}>{icon(kind)}</span>}</For><Show when={group.dates > 1}><small>{group.dates}</small></Show></>;
+              const position = () => ({left:`${group.left / trackWidth() * 100}%`,width:`${group.width}px`});
+              return <Show when={group.marks.length > 1} fallback={
+                <button type="button" class={`today-slider-mark ${group.marks[0]!.kind}`} style={position()}
+                  data-date={group.marks[0]!.date} data-scene-kind={group.marks[0]!.kind} title={markTitle(group.marks[0]!)} aria-label={markTitle(group.marks[0]!)}
+                  aria-pressed={props.valueDate === group.marks[0]!.date} onClick={() => selectMark(group.marks[0]!)}>{symbols()}</button>
+              }>
+                <label class="today-slider-mark is-cluster" classList={{'is-selected':group.marks.some(mark => mark.date === props.valueDate)}} style={position()} title={group.marks.map(markTitle).join('; ')}>
+                  {symbols()}
+                  <select aria-label={`Image dates: ${group.marks.map(markTitle).join('; ')}`} value=""
+                    onChange={event => { const mark=group.marks.find(mark=>markKey(mark)===event.currentTarget.value); if(mark)selectMark(mark);event.currentTarget.value=''; }}>
+                    <option value="" disabled selected>Choose an image date</option>
+                    <For each={group.marks}>{mark => <option value={markKey(mark)}>{markTitle(mark)}</option>}</For>
+                  </select>
+                </label>
+              </Show>;
+            }}</For>
+          </div>
+        </Show>
+      </div>
+      <Show when={observedMarks() || predictedMarks() || photoMarks()}>
+        <div class="today-sr" id="today-slider-marks-note">
+          Satellite icons mark {observedMarks()} dates. AI sparks mark {predictedMarks()} generated image dates, not observations. Photo camera icons mark {photoMarks()} capture dates. Select an icon group to choose its exact date.
+        </div>
       </Show>
       <div class="today-slider-milestones" role="group" aria-label="Approximate crop milestones">
         <For each={props.ticks}>{tick => <button type="button" class="today-milestone" aria-pressed={props.valueDate === tick.date}

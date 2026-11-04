@@ -1,0 +1,21 @@
+.assistant-panel .assistant-header { flex-shrink: 0; }
+.assistant-panel .assistant-header > div:nth-child(2) { flex: 1; min-width: 0; }
+.assistant-panel .assistant-header > div:nth-child(2) span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.assistant-chat-tools { display: flex; justify-content: space-between; padding: 8px 16px; border-bottom: 1px solid var(--border); flex-shrink: 0; gap: 12px; }
+.assistant-chat-tools button { display: inline-flex; gap: 6px; align-items: center; min-height: 36px; }
+.assistant-panel .assistant-hidden { display: none; }
+.assistant-history { min-height: 0; flex: 1; overflow: auto; padding: 12px 16px; }
+.assistant-history-filters { display: flex; gap: 7px; overflow-x: auto; padding-bottom: 8px; }
+.assistant-history-filters button { border: 1px solid var(--border); background: var(--surface-soft); color: var(--text-secondary); border-radius: 30px; padding: 8px 13px; white-space: nowrap; min-height: 38px; }
+.assistant-history-filters button[aria-pressed="true"] { background: var(--accent-soft); color: var(--accent); border-color: var(--accent-border); }
+.assistant-history-note { font-size: 11px; color: var(--muted); }
+.assistant-history-item { display: grid; gap: 6px; text-align: left; width: 100%; border: 0; border-bottom: 1px solid var(--border); padding: 16px 8px; background: transparent; color: var(--text); border-radius: 10px; }
+.assistant-history-item[aria-current="true"] { background: var(--surface-soft); }
+.assistant-history-item strong, .assistant-history-item small { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.assistant-history-item span, .assistant-history-item small { color: var(--text-secondary); font-size: 12px; }
+.farm-shell .assistant-panel.is-expanded { width: 75vw; max-width: none; height: calc(100dvh - 32px); max-height: none; inset: 16px 16px 16px auto; z-index: 950; }
+.assistant-panel.is-expanded .assistant-messages, .assistant-panel.is-expanded .assistant-history { padding-inline: clamp(16px, 5vw, 80px); }
+.assistant-panel.is-expanded .assistant-compose { padding-inline: clamp(16px, 5vw, 80px); }
+@media (max-width: 767px) {
+  .farm-shell .assistant-panel.is-expanded { width: auto; inset: 8px; height: calc(100dvh - 16px); }
+}

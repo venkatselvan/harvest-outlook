@@ -1,3 +1,4 @@
+import { captureAiPreview } from "./support/ai-preview";
 import { deflateSync } from "node:zlib";
 import { readyModelReview } from "../src/workspace/farm/soilReviewFixtures";
 import { expect, test, type Page, type Route } from "@playwright/test";
@@ -5,6 +6,8 @@ import {
   FarmCommandCenter as commandSchema,
   TodayView as todaySchema,
   type TodayView,
+  type FieldPhotoCoverage,
+  PHOTO_COVERAGE_PROMPT_VERSION,
 } from "@harvest/contracts";
 import {
   fieldCheckStepFixture,
@@ -12,6 +15,8 @@ import {
   FIXTURE_BOUNDARY,
   todayEmptyFixture,
   todayFixture,
+  todayPredictedFixture,
+  predictedAssetId,
 } from "../src/workspace/today/fixtures";
 import { formatTemp, weatherAt } from "../src/workspace/today/model";
 
@@ -151,6 +156,7 @@ const command = (farmId: string, completed: boolean) => ({
 });
 
 interface MockOptions {
+  rejectedSatellitePass?: boolean;
   conditionCheck?: boolean;
   /** How /today answers: the fixture, a 404 envelope, or a network failure. */
   today?: "ok" | "missing" | "network";
@@ -174,6 +180,10 @@ async function mock(page: Page, options: MockOptions = {}) {
   };
   const todayFor = (farmId: string): TodayView => {
     const view = farmId === A ? todayFixture(A) : todayEmptyFixture(B);
+    if (options.rejectedSatellitePass && view.ndvi?.latestUsable) {
+      const last = view.ndvi.latestUsable;
+      view.ndvi.readings.push({...last, itemId: 'S2A_20261101_REJECTED', date: '2026-11-01', acquiredAt: '2026-11-01T05:19:49Z', usable: false, field: {...last.field, usable: false, clearPixels: 0, clearFraction: 0, rejection: 'insufficient_clear_pixels'}});
+    }
     view.alerts = view.alerts.filter((alert) => !state.dismissed.has(alert.id));
     if (options.conditionCheck && farmId === A) {
       const step = fieldCheckStepFixture({status: state.completed.has('condition') ? 'completed' : 'due'});
@@ -700,6 +710,9 @@ test("recording the first planting replaces the empty state with the new cycle w
   await expect(slider(page)).toBeVisible();
   await expect(page.getByRole("heading", { name: "What's growing on this field?" })).toHaveCount(0);
   expect(fresh.todayCalls - callsBeforePlanting).toBe(1); // exactly one refetch after the workspace version moved
+  await farmTab(page, "Plan").click();
+  await expect(page.getByTestId("rotation-recorded-crop")).toContainText("Maize");
+  await expect(page.getByTestId("rotation-recorded-crop")).toContainText("Sown");
 });
 
 // Presentation regressions: every route stays inside the UI fixture, with no provider traffic.
@@ -887,7 +900,7 @@ test('Field Image reviews EXIF dates, predicts from one photo at the slider date
   });
   await page.goto('/farm');
   await expect(slider(page)).toBeVisible();
-  expect(reads).toBe(0); // no photo network request while another view is open
+  await expect.poll(() => reads).toBe(1); // The shared timeline loads photo dates before the gallery opens.
   await page.getByRole('button', {name: 'Field Image', exact: true}).click();
   await expect(page.getByRole('heading', {name: 'Add your field photos'})).toBeVisible();
   const file = {name: 'field.jpg', mimeType: 'image/jpeg', buffer: observedPng};
@@ -1095,3 +1108,172 @@ test("condition field checks explain the reason and stay completed after refresh
   await expect(page.getByTestId("sc-check-details")).toContainText("Maize leaf damage risk");
   await expect(page.getByRole("button", {name: "Mark done: Check Maize on North strip", exact: true})).toHaveCount(0);
 });
+
+
+test('Predict again replaces the displayed image and reports a failed repeat request', async ({page}) => {
+  await mock(page);
+  let revision = 1;
+  const view = todayPredictedFixture(A);
+  const predicted = view.scenes.find(s => s.kind === 'predicted' && s.targetDate === '2026-10-28')!;
+  const originalPath = predicted.imagePath!;
+  await page.route('**/api/v1/farms/*/today**', route => route.fulfill({json: env(view)}));
+  await page.route('**/future-look/*/image*', route => route.fulfill({contentType: 'image/png', body: revision === 1 ? observedPng : illustrationPng}));
+  await page.route('**/ndvi/*/future*', async route => {
+    expect(route.request().postDataJSON()).toEqual({kind: 'gap', targetDate: '2026-11-01', regenerate: true});
+    if (revision === 2) return route.fulfill({status: 200, json: env({assetId: null, status: 'unavailable', reason: 'budget_exceeded', cycleId: 'maize-cycle', stageId: 'development', deduplicated: false})});
+    revision++;
+    predicted.imagePath = `${originalPath}?v=${revision}`;
+    return route.fulfill({json: env({assetId: predictedAssetId(1), status: 'ready', reason: null, cycleId: 'maize-cycle', stageId: 'development', kind: 'gap', targetDate: '2026-10-28', deduplicated: false})});
+  });
+  await openToday(page);
+  const image = page.locator('.today-sat img').last();
+  await expect(image).toHaveAttribute('src', originalPath);
+  await page.getByRole('button', {name: 'Predict again', exact: true}).click();
+  await expect(image).toHaveAttribute('src', `${originalPath}?v=2`);
+  await page.getByRole('button', {name: 'Predict again', exact: true}).click();
+  await expect(page.getByTestId('today-predict-message')).toBeVisible();
+  await expect(image).toHaveAttribute('src', `${originalPath}?v=2`);
+});
+
+for (const hasCoverage of [true, false]) {
+  test(`Field Image re-evaluates a saved photo with ${hasCoverage ? 'completed' : 'no previous'} coverage`, async ({page}) => {
+    await mock(page);
+    const photoId = '44444444-4444-4444-8444-444444444444';
+    const mediaId = '55555555-5555-4555-8555-555555555555';
+    const ready: FieldPhotoCoverage = {photoId, status: 'ready', method: 'box', modelId: 'sam-3.1', summaryModelId: null, classes: [], summary: null, limitations: [], failureReason: null, promptVersion: PHOTO_COVERAGE_PROMPT_VERSION, createdAt: asOf, outdated: false};
+    let coverage: typeof ready | null = hasCoverage ? ready : null;
+    let requests = 0;
+    await page.route('**/api/v1/media/*/content', route => route.fulfill({contentType: 'image/png', body: observedPng}));
+    await page.route('**/api/v1/farms/**/field-photos**', route => {
+      if (route.request().method() === 'POST') {
+        expect(new URL(route.request().url()).pathname).toMatch(new RegExp(`/${photoId}/coverage$`));
+        expect(route.request().postDataJSON()).toEqual({regenerate: true});
+        requests++;
+        coverage = {...ready, status: 'queued'};
+        return route.fulfill({status: 202, json: {...env(coverage), mode: 'live'}});
+      }
+      if (requests) coverage = {...ready, summary: 'Updated photo evaluation.'};
+      return route.fulfill({json: {...env({photos: [{id: photoId, mediaId, capturedOn: '2026-10-20', createdAt: asOf, imagePath: `/api/v1/media/${mediaId}/content`, coverage}], predictions: []}), mode: 'live'}});
+    });
+    await openToday(page);
+    await page.getByRole('button', {name: 'Field Image', exact: true}).click();
+    await page.getByRole('button', {name: 'Re-evaluate', exact: true}).click();
+    await expect(page.getByTestId('photo-coverage')).toContainText('Measuring photo…');
+    await expect(page.getByTestId('photo-coverage')).toContainText('Updated photo evaluation.', {timeout: 10000});
+    expect(requests).toBe(1);
+    await expect(page.getByRole('button', {name: 'Re-evaluate', exact: true})).toBeEnabled();
+  });
+}
+
+for (const width of [390, 1440]) {
+  test(`Evara activity stays fixed while scrolling at ${width}px`, async ({page}) => {
+    await page.setViewportSize({width, height: 844});
+    await mock(page);
+    await page.route('**/api/v1/ai/activity', route => route.fulfill({json: env({invocations: [{id: 'active', provider: 'meta', model: 'test-active-model', purpose: 'assistant', status: 'running', startedAt: asOf}]})}));
+    await openToday(page);
+    const activity = page.getByLabel('Actual model activity');
+    await expect(activity).toBeVisible();
+    const before = (await activity.boundingBox())!;
+    await page.evaluate(() => window.scrollTo(0, 650));
+    await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(300);
+    await expect(activity).toBeInViewport();
+    const after = (await activity.boundingBox())!;
+    expect(Math.abs(after.y - before.y)).toBeLessThan(1);
+    expect(after.x).toBeGreaterThanOrEqual(0);
+    expect(after.x + after.width).toBeLessThanOrEqual(width);
+  });
+}
+
+
+test('AI guide captures the existing Today screens', async ({page}) => {
+  test.skip(!process.env.CAPTURE_AI_PREVIEWS, 'Run explicitly to refresh example screenshots.');
+  await page.setViewportSize({width: 1100, height: 1000});
+  await mock(page);
+  await page.route('**/api/v1/farms/*/soil-review**', route => route.fulfill({json: env(readyModelReview)}));
+  await page.route('**/api/v1/farms/*/today**', route => route.fulfill({json: env(todayPredictedFixture(A))}));
+  await page.route('**/future-look/*/image*', route => route.fulfill({contentType: 'image/png', body: illustrationPng}));
+  await openToday(page);
+  await captureAiPreview(page, 'today_overview', page.getByTestId('today-overview'));
+  await captureAiPreview(page, 'news_review', page.getByTestId('today-attention'));
+  await captureAiPreview(page, 'harvest_outlook_note', page.getByRole('region', {name: 'Harvest outlook', exact: true}));
+  await captureAiPreview(page, 'future_look', page.locator('.today-hero-frame'));
+  await page.evaluate(async () => {
+    const host = await import(/* @vite-ignore */ '/src/workspace/farm/AiPreviewHarness.tsx');
+    const box = document.createElement('div'); box.id = 'ai-soil-preview'; document.body.appendChild(box);
+    host.mountSoil(box);
+  });
+  await captureAiPreview(page, 'soil_review', page.locator('#ai-soil-preview'));
+});
+
+for (const width of [390, 1440]) {
+  test(`daily satellite status explains the rejected newer pass at ${width}px`, async ({page}, testInfo) => {
+    await page.setViewportSize({width,height:900});
+    await mock(page,{rejectedSatellitePass:true});
+    await openToday(page);
+    await page.getByRole('button',{name:'Satellite',exact:true}).click();
+    const status=page.locator('.today-satellite-status');
+    await expect(status).toContainText('1 Nov');
+    await expect(status).toContainText('too few clear pixels');
+    await expect(status).toContainText('Last usable image: 27 Oct');
+    await expect(status).toContainText('checked daily');
+    await status.scrollIntoViewIfNeeded();
+    expect(await page.evaluate(()=>document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+    await page.screenshot({path:testInfo.outputPath('satellite-freshness.png')});
+  });
+}
+
+test('Field Image stays mounted while its gallery and pending previews refresh', async ({ page }) => {
+  const { state } = await mock(page);
+  let galleryRequests = 0;
+  await page.route('**/season-predictions', route => route.fulfill({ json: env({ state: 'running', pending: 1, result: null }) }));
+  await page.route('**/field-photos', route => {
+    galleryRequests++;
+    return route.fulfill({ json: env({ photos: [], predictions: [] }) });
+  });
+  await openToday(page);
+  await page.getByRole('button', { name: 'Field Image', exact: true }).click();
+  const panel = page.getByTestId('field-images');
+  await expect(panel).toHaveAttribute('aria-busy', 'false');
+  const originalPanel = (await panel.elementHandle())!;
+  const originalSlider = (await slider(page).elementHandle())!;
+  await press(page, 'ArrowRight', 3);
+  const selectedDate = await slider(page).getAttribute('aria-valuetext');
+  // Cover more than one 3-second gallery poll and a 6-second preview-status poll.
+  await page.waitForTimeout(7000);
+  expect(await originalPanel.evaluate(node => node.isConnected)).toBe(true);
+  expect(await originalSlider.evaluate(node => node.isConnected)).toBe(true);
+  await expect(slider(page)).toHaveAttribute('aria-valuetext', selectedDate!);
+  expect(state.todayFarms.length).toBeLessThanOrEqual(2);
+  expect(galleryRequests).toBeLessThanOrEqual(5);
+});
+
+for (const width of [390,1440]) {
+  test(`timeline shows satellite, AI and camera icons and groups nearby dates at ${width}px`, async ({page},testInfo) => {
+    await page.setViewportSize({width,height:1000});
+    await mock(page,{rejectedSatellitePass:true});
+    const mediaId='55555555-5555-4555-8555-555555555555';
+    let photos=['2026-10-20','2026-10-21','2026-10-27'].map((capturedOn,i)=>({id:`44444444-4444-4444-8444-44444444444${i}`,mediaId,capturedOn,createdAt:asOf,imagePath:`/api/v1/media/${mediaId}/content`}));
+    await page.route('**/api/v1/media/**',route=>route.fulfill({contentType:'image/png',body:observedPng}));
+    await page.route('**/api/v1/farms/**/field-photos**',route=>{
+      if(route.request().method()==='DELETE') photos=photos.filter(p=>!new URL(route.request().url()).pathname.endsWith(p.id));
+      return route.fulfill({json:env({photos,predictions:[{id:mediaId,photoId:photos.at(-1)?.id ?? mediaId,sourceDate:'2026-10-27',targetDate:'2026-11-05',status:'ready',imagePath:`/api/v1/media/${mediaId}/content`,failureReason:null}]})});
+    });
+    await openToday(page);
+    const media=page.getByRole('group',{name:'Image dates'});
+    await expect(media).toHaveCount(1);
+    for(const kind of ['observed','predicted','photo']) await expect(media.locator(`[data-media-kind="${kind}"]`).first()).toBeVisible();
+    await expect(media.locator('.ai-spark-icon').first()).toBeVisible();
+    expect((await media.boundingBox())!.height).toBeLessThanOrEqual(36);
+    const picker=media.getByRole('combobox').filter({has:page.locator('option[value="photo|2026-10-20"]')});
+    await picker.selectOption('photo|2026-10-20');
+    await expect(page.getByRole('slider',{name:'Move through the season'})).toHaveAttribute('aria-valuetext','20 Oct 2026');
+    await page.locator('.today-slider-media').scrollIntoViewIfNeeded();
+    expect(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth)).toBe(true);
+    await page.locator('.today-slider').screenshot({path:testInfo.outputPath('timeline-media-icons.png')});
+    // Editing the gallery refreshes markers immediately, without reloading Today.
+    await page.getByRole('button',{name:'Field Image',exact:true}).click();
+    await page.getByRole('button',{name:'Remove photo taken 20 Oct 2026',exact:true}).click();
+    await expect(media.locator('option[value="photo|2026-10-20"]')).toHaveCount(0);
+    await expect(media.locator('[data-date="2026-10-20"][data-scene-kind="photo"]')).toHaveCount(0);
+  });
+}

@@ -5433,7 +5433,7 @@ label small {
 .model-activity-toast {
   position: fixed;
   z-index: 1100;
-  top: 85px;
+  top: 110px;
   right: 30px;
   display: flex;
   align-items: center;
@@ -5793,7 +5793,7 @@ label small {
     border-radius: 50%;
   }
   .model-activity-toast {
-    top: 83px;
+    top: 106px;
     right: 20px;
   }
   .heading-actions > .demo-entry {
@@ -5920,7 +5920,7 @@ label small {
     display: none;
   }
   .model-activity-toast {
-    top: 70px;
+    top: 94px;
     right: 12px;
     padding: 10px 11px 10px 7px;
     max-width: calc(100vw - 24px);
@@ -6789,7 +6789,7 @@ label small {
   margin-top: 15px;
 }
 .soil-extraction-review {
-  padding: 23px 26px;
+  padding: 23px 26px !important;
   overflow: auto;
   min-width: 0;
   background: var(--surface);
@@ -8584,3 +8584,5 @@ h3,
 .soil-printed-reference .form-grid {
   margin-top: 12px;
 }
+
+.today-satellite-status { margin: 0.5rem 0 0; background: var(--surface); border: 1px solid var(--border); border-radius: 0.75rem; padding: 0.75rem 1rem; color: var(--text-muted, #bac8b1); font-size: 0.875rem; line-height: 1.5; }

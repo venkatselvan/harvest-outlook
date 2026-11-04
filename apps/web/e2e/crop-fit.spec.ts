@@ -1,3 +1,4 @@
+import { captureAiPreview } from "./support/ai-preview";
 import { expect, test, type Page } from "@playwright/test";
 import type { CropFitReview, PricedCommodity } from "@harvest/contracts";
 import { planErrorReview, planPendingReview, planReview } from "../src/workspace/farm/cropFitFixtures";
@@ -149,6 +150,7 @@ test("crop fit view: one line says it matches the year plan; cards carry the pla
   await expect(view.getByText("Same candidates, dates and scoring as the year plan.")).toHaveCount(1);
   const cards = view.locator("article.cf-card");
   await expect(cards).toHaveCount(3);
+  await captureAiPreview(page, "crop_fit_picks", cards.first());
   await expect(cards.nth(0)).toContainText("In your year plan: Best overall");
   await expect(cards.nth(0)).toContainText("Field idle 7 weeks before sowing, −2 points");
   const intercrop = cards.nth(1);

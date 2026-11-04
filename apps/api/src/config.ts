@@ -19,6 +19,8 @@ export const configSchema = z.object({
   META_BASE_URL: z.string().url().default("https://api.meta.ai/v1"),
   META_TEXT_MODEL: z.string().default("muse-spark-1.3"),
   META_ESCALATION_MODEL: z.string().default("muse-wonder-1.0"),
+  /** AI satellite predictions per crop cycle in a rolling 24 hours; 0 disables the count cap. */
+  FUTURE_LOOK_DAILY_LIMIT: z.coerce.number().int().nonnegative().default(24),
   META_IMAGE_MODEL: z.string().default("muse-image-1.0"),
   META_STT_MODEL: z.literal("muse-voice-transcribe-1.0").default("muse-voice-transcribe-1.0"),
   META_SEGMENT_MODEL: z.string().default("sam-3.1"),

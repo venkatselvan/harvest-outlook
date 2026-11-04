@@ -37,6 +37,14 @@ export async function purgeLocalData(): Promise<void> {
   await Promise.allSettled([snapshots.clearAll(), syncQueue.clearAll(), clearJournalDrafts()]);
   removeKeys(() => (typeof localStorage === "undefined" ? undefined : localStorage), WORKSPACE_STORAGE_KEYS.local);
   removeKeys(() => (typeof sessionStorage === "undefined" ? undefined : sessionStorage), WORKSPACE_STORAGE_KEYS.session);
+  // Chat records live outside IndexedDB. Purge them even when the assistant is not mounted.
+  for (const getStorage of [() => localStorage, () => sessionStorage]) {
+    try {
+      const storage = getStorage();
+      const keys = Array.from({length: storage.length}, (_, index) => storage.key(index));
+      for (const key of keys) if (key?.startsWith('ho.chat.')) storage.removeItem(key);
+    } catch { /* storage unavailable */ }
+  }
   rotateOwnerScope();
   if (typeof caches !== "undefined") await caches.delete("ho-api-public").catch(() => false);
   if (typeof window !== "undefined") window.dispatchEvent(new CustomEvent("ho:local-data-purged"));

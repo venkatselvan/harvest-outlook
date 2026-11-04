@@ -1743,33 +1743,17 @@
   border-color: var(--primary);
   color: var(--on-accent);
 }
-.today-slider-mark {
-  position: absolute;
-  top: 9px;
-  width: 6px;
-  height: 6px;
-  margin-left: -3px;
-  border-radius: 50%;
-  background: var(--info);
-  pointer-events: none;
-}
-.today-slider-mark.illustration {
-  background: transparent;
-  border: 1.5px dashed var(--text-secondary);
-  width: 7px;
-  height: 7px;
-  margin-left: -3.5px;
-}
-/* AI-predicted look (FIELDS_MULTICROP_SOIL_SPEC.md 11.4): a hollow solid ring, distinct from the dashed illustration ring
-   and the filled observed dot. */
-.today-slider-mark.predicted {
-  background: transparent;
-  border: 1.5px solid var(--info);
-  width: 8px;
-  height: 8px;
-  top: 8px;
-  margin-left: -4px;
-}
+/* A single media strip, with every available image type retained in compact groups. */
+.today-slider-media { padding: 0 11px; }
+.today-media-row { position: relative; height: 36px; }
+.today-slider-mark { position: absolute; top: 0; height: 28px; min-height: 28px; padding: 0 4px; display: flex; align-items: center; justify-content: center; border: 1px solid var(--border); border-radius: 9px; background: var(--surface); cursor: pointer; }
+.today-media-symbol { display: inline-flex; align-items: center; justify-content: center; flex: 0 0 20px; color: var(--info); }
+.today-media-symbol.predicted { color: var(--accent); }
+.today-media-symbol.photo { color: var(--text-primary); }
+.today-slider-mark[aria-pressed="true"], .today-slider-mark.is-selected { border-color: var(--accent); background: var(--surface-raised, var(--surface)); }
+.today-slider-mark:focus-visible, .today-slider-mark:focus-within { outline: 2px solid var(--accent); outline-offset: 2px; }
+.today-slider-mark small { min-width: 12px; font-size: 10px; line-height: 1; color: var(--text-secondary); }
+.today-slider-mark select { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
 
 /* ---------------------------------------------------------------- AI-predicted looks on the satellite hero (spec 11.4) */
 .today-chip.predicted {

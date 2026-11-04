@@ -32,6 +32,14 @@ describe("error messages", () => {
     expect(b.retryable).toBe(false);
     expect(askErrorMessage(new ApiError("rate_limited", "x", 429)).retryable).toBe(true);
   });
+  it.each(["", "per-session ", "per-owner daily ", "per-network daily ", "global development "])("names the %sbudget cap once without claiming no calls were made or that waiting will reset it", (scope) => {
+    const reason = `The ${scope}spending limit would be exceeded`;
+    for (const ending of ["", "."]) {
+      const result = askErrorMessage(new ApiError("budget_exceeded", reason + ending, 429));
+      expect(result.message).toBe(`${reason}. Evara stopped before completing this answer. You can still browse Explore.`);
+      expect(result.retryable).toBe(false);
+    }
+  });
 });
 
 describe("clarification follow-up", () => {

@@ -23,6 +23,7 @@ import {
 } from "./season/seasonPreviewModel";
 import { CHOOSE_FIELD_TO_ADD, isWholeFarmSeason, needsFieldForNewSeason, seasonFieldLabel, seasonsForField, seasonWithField } from "./year/PlanCalendar";
 import "./season/season-preview.css";
+import { recordedForField, cycleInYear, recordedBar, recordedStage } from './season/recordedRotation';
 const MONTHS = [
   "Jan",
   "Feb",
@@ -53,6 +54,8 @@ export function Planner(props: { fieldId?: string | null | undefined; fields?: r
   const navigate = useNavigate();
   // A field's plan lists that field's seasons and legacy whole-farm seasons; "All fields" lists every season.
   const plans = (): Rotation[] => seasonsForField(s.workspace()?.rotationPlans ?? [], props.fieldId);
+  const recorded = () => recordedForField(s.workspace()?.cycles ?? [], props.fieldId);
+  const current = () => recorded().filter(c => c.stage !== 'harvested');
   // ROUND3_SPEC 2.1: open on the year of the earliest saved season sown on or after today (else this year) until the
   // farmer picks a year; the pick is kept per farm.
   const [picked, setPicked] = createSignal<{
@@ -61,7 +64,7 @@ export function Planner(props: { fieldId?: string | null | undefined; fields?: r
   } | null>(null);
   const year = () => {
     const p = picked();
-    return p && p.farmId === s.farm()?.id ? p.year : defaultYear(plans(), today());
+    return p && p.farmId === s.farm()?.id ? p.year : current().length ? Number(today().slice(0, 4)) : defaultYear(plans(), today());
   };
   const setYear = (y: number) => setPicked({ farmId: s.farm()?.id, year: y });
   const [preview, setPreview] = createSignal<Rotation | null>(null);
@@ -89,6 +92,17 @@ export function Planner(props: { fieldId?: string | null | undefined; fields?: r
           (a.plannedSowingDate ?? "").localeCompare(b.plannedSowingDate ?? ""),
         ),
   );
+  const recordedRows = createMemo(() => recorded().filter(c => cycleInYear(c, year())).sort((a,b) => a.sowingDate.localeCompare(b.sowingDate)));
+  // A crop recorded through Plant crop should immediately be visible, even from a future-year plan.
+  let knownCycles: {farmId: string | undefined; ids: Set<string>} | undefined;
+  createEffect(on(() => [s.farm()?.id, s.workspace()?.cycles] as const, ([farmId, cycles]) => {
+    if (!cycles) return;
+    if (knownCycles?.farmId === farmId) {
+      const added = cycles.find(c => !knownCycles!.ids.has(c.id) && c.stage !== 'harvested');
+      if (added) setYear(Number((added.establishmentDate ?? added.sowingDate).slice(0, 4)));
+    }
+    knownCycles = {farmId, ids: new Set(cycles.map(c => c.id))};
+  }));
   let editorFarmId: string | undefined;
   createEffect(
     on(
@@ -317,7 +331,7 @@ export function Planner(props: { fieldId?: string | null | undefined; fields?: r
             <div>
               <Icon name="calendar" />
               <h2>Crop rotation</h2>
-              <span class="tiny-pill">Your planning choices</span>
+              <span class="tiny-pill">Recorded crops &amp; planned seasons</span>
             </div>
             <div class="year-switch">
               <button
@@ -354,7 +368,7 @@ export function Planner(props: { fieldId?: string | null | undefined; fields?: r
               <For each={MONTHS}>{(m) => <span>{m}</span>}</For>
             </div>
             <Show
-              when={rows().length}
+              when={rows().length || recordedRows().length}
               fallback={
                 <div class="rotation-starter">
                   <div class="starter-art">
@@ -376,6 +390,21 @@ export function Planner(props: { fieldId?: string | null | undefined; fields?: r
                 </div>
               }
             >
+              <For each={recordedRows()}>{c => <div class="rotation-row recorded-crop" data-testid="rotation-recorded-crop">
+                <div class="rotation-crop">
+                  <span class="crop-dot tone-1"/>
+                  <span><strong>{c.cropName ?? s.cropName(c.cropId)}{c.companion ? ` + ${c.companion.cropName ?? s.cropName(c.companion.cropId)}` : ''}</strong>
+                    <small>{recordedStage(c)} · {c.fieldId ? props.fields?.find(f => f.id === c.fieldId)?.name ?? 'Field' : 'Whole farm'}</small>
+                    <small>Sown {dateLabel(c.establishmentDate ?? c.sowingDate)}</small>
+                  </span>
+                </div>
+                <div class="rotation-track">
+                  <div class="track-grid"><For each={MONTHS}>{() => <span/>}</For></div>
+                  <div class="rotation-bar tone-1 recorded-bar" classList={{'open-ended': !c.harvestDate}} style={{left: `${recordedBar(c, year()).left}%`, width: `${recordedBar(c, year()).width}%`}} title={c.harvestDate ? `Harvest: ${dateLabel(c.harvestDate)}` : 'Harvest date not recorded'}>
+                    <Icon name="leaf" size={14}/><span>{c.cropName ?? s.cropName(c.cropId)} · {recordedStage(c)}</span>
+                  </div>
+                </div>
+              </div>}</For>
               <For each={rows()}>
                 {(p, i) => {
                   const start = () =>
@@ -449,6 +478,7 @@ export function Planner(props: { fieldId?: string | null | undefined; fields?: r
             </div>
           </div>
           <div class="rotation-legend">
+            <span><i class="legend-dot"/>Recorded crop</span>
             <span>
               <i class="legend-dot green" />
               Planned crop

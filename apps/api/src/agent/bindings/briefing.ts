@@ -515,7 +515,7 @@ export function composeFromToday(b: Briefing, v: TodayView, today: string, lim: 
       reason: cut(he.reason, 120),
       yieldForField: he.yieldForFieldKg ? rng(he.yieldForFieldKg.low, he.yieldForFieldKg.high, "kg") : null,
       revenueForField: he.revenueForField ? rng(he.revenueForField.likely.low, he.revenueForField.likely.high, "INR", he.revenueForField.central) : null,
-      costPerHa: he.cost ? q(he.cost.a2flPerHa ?? he.cost.c2PerHa, "INR/ha") : null,
+      costPerHa: he.cost ? q(he.cost.a2flPerHa ?? he.cost.c2PerHa ?? he.cost.reportedPerHa, "INR/ha") : null,
       profitForField: he.profitForField ? rng(he.profitForField.likely.low, he.profitForField.likely.high, "INR", he.profitForField.central) : null,
       limitations: lims(he.limitations),
     };
@@ -611,7 +611,7 @@ function composePlans(b: Briefing, done: Map<string, unknown>, lim: string[], to
             harvest: { earliest: s.harvest.earliest, latest: s.harvest.latest },
             yield: s.yieldKgPerHa ? rng(s.yieldKgPerHa.low, s.yieldKgPerHa.high, "kg/ha") : null,
             harvestPrice: s.price && s.price.status === "available" ? q(s.price.p50, "INR/kg") : null,
-            cost: s.cost ? q(s.cost.a2flPerHa ?? s.cost.c2PerHa, "INR/ha") : null,
+            cost: s.cost ? q(s.cost.a2flPerHa ?? s.cost.c2PerHa ?? s.cost.reportedPerHa, "INR/ha") : null,
             margin: s.profitPerHa ? rng(s.profitPerHa.low, s.profitPerHa.high, "INR/ha", s.profitEstimate?.central) : null,
           })),
         }

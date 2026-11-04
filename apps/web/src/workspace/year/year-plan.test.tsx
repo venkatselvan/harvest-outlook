@@ -422,7 +422,7 @@ describe("calendar surface", () => {
     expect(nodes.join(" ")).not.toContain("profit per ha");
   });
   it("marks model options with the AI spark and deterministic options with a Calculated chip", () => {
-    expect(html.match(/aria-label="AI used: Choosing your three year plans"/g)).toHaveLength(3);
+    expect(html.match(/aria-label="AI used: Comparing your crop plans"/g)).toHaveLength(3);
     const nodes = textNodes(html);
     expect(nodes.filter((t) => t === "Calculated")).toHaveLength(1);
     const lastRow = html.slice(html.lastIndexOf('class="yp-cal-row"'));

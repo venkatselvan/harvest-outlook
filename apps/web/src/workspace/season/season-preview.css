@@ -46,3 +46,8 @@
 .season-year-group h3.season-year { margin: 12px 0 4px; font-size: 0.9rem; color: var(--text-secondary); letter-spacing: 0.04em; }
 .season-row-actions { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; }
 @media (min-width: 720px) { .sp-money { grid-template-columns: 1fr 1fr; } }
+
+.rotation-board .recorded-crop .rotation-crop { cursor: default; }
+.rotation-board .recorded-bar { display: flex; align-items: center; gap: 6px; background: var(--surface-soft); border: 2px solid var(--text-secondary); }
+.rotation-board .recorded-bar.open-ended { border-right-style: dashed; border-radius: 6px 0 0 6px; }
+.rotation-board .recorded-crop small { display: block; }

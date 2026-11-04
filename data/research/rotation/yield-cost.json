@@ -1,11 +1,21 @@
 {
- "generatedAt": "2026-11-01T00:00:00+05:30",
+ "generatedAt": "2026-11-04T00:00:00+05:30",
  "purpose": "Regional expected-yield and cost-of-cultivation references with farmer override; never field predictions.",
  "conventions": {
   "region": "IN-KA-hassan | IN-KA | IN-TN-coimbatore | IN-TN",
   "yieldKgPerHa": "rounded to whole kg/ha; derivations stated per row",
   "paddy": "DES/TN yields are rice (milled) basis; CACP yields and CoP are paddy basis; no out-turn conversion applied",
-  "nulls": "null means not found in a cited source in this pass"
+  "nulls": "null means not found in a cited source in this pass",
+  "regionalFallback": {
+   "order": [
+    "district",
+    "state",
+    "IN",
+    "other sourced region"
+   ],
+   "cost": "Published INR/ha A2+FL, else C2-type, else explicitly labelled reported cultivation budget. Historical costs are not inflation-adjusted.",
+   "yield": "Product form and season must still match; no unsourced lint-to-kapas conversion."
+  }
  },
  "crops": [
   {
@@ -607,6 +617,215 @@
      "districtAreaHa": 667.0,
      "districtProductionT": 1814.0,
      "sourceId": "datagovin-dws-35be999b"
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Kharif",
+     "cropYear": "2021-22",
+     "yieldKgPerHa": 2705,
+     "basis": "rice (milled) equivalent as published by DES, not paddy grain; do not combine with paddy prices without a sourced out-turn ratio",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Rice sheet, All India, yield kg/ha; country reference, not a local yield."
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Kharif",
+     "cropYear": "2022-23",
+     "yieldKgPerHa": 2735,
+     "basis": "rice (milled) equivalent as published by DES, not paddy grain; do not combine with paddy prices without a sourced out-turn ratio",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Rice sheet, All India, yield kg/ha; country reference, not a local yield."
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Kharif",
+     "cropYear": "2023-24",
+     "yieldKgPerHa": 2780,
+     "basis": "rice (milled) equivalent as published by DES, not paddy grain; do not combine with paddy prices without a sourced out-turn ratio",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Rice sheet, All India, yield kg/ha; country reference, not a local yield."
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Kharif",
+     "cropYear": "2024-25",
+     "yieldKgPerHa": 2825,
+     "basis": "rice (milled) equivalent as published by DES, not paddy grain; do not combine with paddy prices without a sourced out-turn ratio",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Rice sheet, All India, yield kg/ha; country reference, not a local yield."
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Kharif",
+     "cropYear": "2025-26",
+     "yieldKgPerHa": 2793,
+     "basis": "rice (milled) equivalent as published by DES, not paddy grain; do not combine with paddy prices without a sourced out-turn ratio",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Rice sheet, All India, yield kg/ha; country reference, not a local yield."
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Rabi",
+     "cropYear": "2021-22",
+     "yieldKgPerHa": 3525,
+     "basis": "rice (milled) equivalent as published by DES, not paddy grain; do not combine with paddy prices without a sourced out-turn ratio",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Rice sheet, All India, yield kg/ha; country reference, not a local yield."
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Rabi",
+     "cropYear": "2022-23",
+     "yieldKgPerHa": 3467,
+     "basis": "rice (milled) equivalent as published by DES, not paddy grain; do not combine with paddy prices without a sourced out-turn ratio",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Rice sheet, All India, yield kg/ha; country reference, not a local yield."
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Rabi",
+     "cropYear": "2023-24",
+     "yieldKgPerHa": 3582,
+     "basis": "rice (milled) equivalent as published by DES, not paddy grain; do not combine with paddy prices without a sourced out-turn ratio",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Rice sheet, All India, yield kg/ha; country reference, not a local yield."
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Rabi",
+     "cropYear": "2024-25",
+     "yieldKgPerHa": 3606,
+     "basis": "rice (milled) equivalent as published by DES, not paddy grain; do not combine with paddy prices without a sourced out-turn ratio",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Rice sheet, All India, yield kg/ha; country reference, not a local yield."
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Rabi",
+     "cropYear": "2025-26",
+     "yieldKgPerHa": 3696,
+     "basis": "rice (milled) equivalent as published by DES, not paddy grain; do not combine with paddy prices without a sourced out-turn ratio",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Rice sheet, All India, yield kg/ha; country reference, not a local yield."
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Summer",
+     "cropYear": "2022-23",
+     "yieldKgPerHa": 3302,
+     "basis": "rice (milled) equivalent as published by DES, not paddy grain; do not combine with paddy prices without a sourced out-turn ratio",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Rice sheet, All India, yield kg/ha; country reference, not a local yield."
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Summer",
+     "cropYear": "2023-24",
+     "yieldKgPerHa": 3302,
+     "basis": "rice (milled) equivalent as published by DES, not paddy grain; do not combine with paddy prices without a sourced out-turn ratio",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Rice sheet, All India, yield kg/ha; country reference, not a local yield."
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Summer",
+     "cropYear": "2024-25",
+     "yieldKgPerHa": 3391,
+     "basis": "rice (milled) equivalent as published by DES, not paddy grain; do not combine with paddy prices without a sourced out-turn ratio",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Rice sheet, All India, yield kg/ha; country reference, not a local yield."
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Summer",
+     "cropYear": "2025-26",
+     "yieldKgPerHa": 3419,
+     "basis": "rice (milled) equivalent as published by DES, not paddy grain; do not combine with paddy prices without a sourced out-turn ratio",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Rice sheet, All India, yield kg/ha; country reference, not a local yield."
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Total",
+     "cropYear": "2021-22",
+     "yieldKgPerHa": 2798,
+     "basis": "rice (milled) equivalent as published by DES, not paddy grain; do not combine with paddy prices without a sourced out-turn ratio",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Rice sheet, All India, yield kg/ha; country reference, not a local yield."
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Total",
+     "cropYear": "2022-23",
+     "yieldKgPerHa": 2838,
+     "basis": "rice (milled) equivalent as published by DES, not paddy grain; do not combine with paddy prices without a sourced out-turn ratio",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Rice sheet, All India, yield kg/ha; country reference, not a local yield."
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Total",
+     "cropYear": "2023-24",
+     "yieldKgPerHa": 2882,
+     "basis": "rice (milled) equivalent as published by DES, not paddy grain; do not combine with paddy prices without a sourced out-turn ratio",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Rice sheet, All India, yield kg/ha; country reference, not a local yield."
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Total",
+     "cropYear": "2024-25",
+     "yieldKgPerHa": 2929,
+     "basis": "rice (milled) equivalent as published by DES, not paddy grain; do not combine with paddy prices without a sourced out-turn ratio",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Rice sheet, All India, yield kg/ha; country reference, not a local yield."
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Total",
+     "cropYear": "2025-26",
+     "yieldKgPerHa": 2915,
+     "basis": "rice (milled) equivalent as published by DES, not paddy grain; do not combine with paddy prices without a sourced out-turn ratio",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Rice sheet, All India, yield kg/ha; country reference, not a local yield."
     }
    ],
    "costs": [
@@ -723,6 +942,16 @@
      "locator": "Annex Table 5.5, report pp.217-220 (PDF pp.247-250), visually verified",
      "sourceId": "cacp-kharif-kms-2025-26",
      "authority": "cacp"
+    },
+    {
+     "region": "IN",
+     "year": "TE2023-24",
+     "a2flPerHa": 61314,
+     "c2PerHa": null,
+     "authority": "cacp",
+     "sourceId": "cacp-kharif-kms-2025-26",
+     "locator": "Table 5.1, printed page 129, All-India average costs, CoC A2+FL column",
+     "basis": "All-India weighted average actual cost of cultivation for the three years ending 2023-24, INR/ha. Historical reference; not a projected cost or a per-quintal cost."
     }
    ],
    "postHarvestLossPct": {
@@ -795,9 +1024,75 @@
      "estimateStatus": "3rd advance estimate",
      "areaThousandHa": 172.0,
      "sourceId": "des-apy-5yr-2021-26"
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Rabi",
+     "cropYear": "2021-22",
+     "yieldKgPerHa": 3537,
+     "basis": "main product as published",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Wheat sheet, All India, yield kg/ha; country reference, not a local yield."
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Rabi",
+     "cropYear": "2022-23",
+     "yieldKgPerHa": 3521,
+     "basis": "main product as published",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Wheat sheet, All India, yield kg/ha; country reference, not a local yield."
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Rabi",
+     "cropYear": "2023-24",
+     "yieldKgPerHa": 3559,
+     "basis": "main product as published",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Wheat sheet, All India, yield kg/ha; country reference, not a local yield."
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Rabi",
+     "cropYear": "2024-25",
+     "yieldKgPerHa": 3595,
+     "basis": "main product as published",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Wheat sheet, All India, yield kg/ha; country reference, not a local yield."
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Rabi",
+     "cropYear": "2025-26",
+     "yieldKgPerHa": 3591,
+     "basis": "main product as published",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Wheat sheet, All India, yield kg/ha; country reference, not a local yield."
     }
    ],
-   "costs": [],
+   "costs": [
+    {
+     "region": "IN",
+     "year": "TE2023-24",
+     "a2flPerHa": 45558,
+     "c2PerHa": null,
+     "authority": "cacp",
+     "sourceId": "cacp-rabi-rms-2026-27",
+     "locator": "Table 5.1, printed page 113, All-India average costs, CoC A2+FL column",
+     "basis": "All-India weighted average actual cost of cultivation for the three years ending 2023-24, INR/ha. Historical reference; not a projected cost or a per-quintal cost."
+    }
+   ],
    "postHarvestLossPct": {
     "value": null,
     "sourceId": null,
@@ -1409,6 +1704,215 @@
      "districtAreaHa": 138.0,
      "districtProductionT": 450.0,
      "sourceId": "datagovin-dws-35be999b"
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Kharif",
+     "cropYear": "2021-22",
+     "yieldKgPerHa": 2914,
+     "basis": "main product as published",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Maize sheet, All India, yield kg/ha; country reference, not a local yield."
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Kharif",
+     "cropYear": "2022-23",
+     "yieldKgPerHa": 2940,
+     "basis": "main product as published",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Maize sheet, All India, yield kg/ha; country reference, not a local yield."
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Kharif",
+     "cropYear": "2023-24",
+     "yieldKgPerHa": 2671,
+     "basis": "main product as published",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Maize sheet, All India, yield kg/ha; country reference, not a local yield."
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Kharif",
+     "cropYear": "2024-25",
+     "yieldKgPerHa": 2932,
+     "basis": "main product as published",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Maize sheet, All India, yield kg/ha; country reference, not a local yield."
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Kharif",
+     "cropYear": "2025-26",
+     "yieldKgPerHa": 3094,
+     "basis": "main product as published",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Maize sheet, All India, yield kg/ha; country reference, not a local yield."
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Rabi",
+     "cropYear": "2021-22",
+     "yieldKgPerHa": 5084,
+     "basis": "main product as published",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Maize sheet, All India, yield kg/ha; country reference, not a local yield."
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Rabi",
+     "cropYear": "2022-23",
+     "yieldKgPerHa": 5355,
+     "basis": "main product as published",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Maize sheet, All India, yield kg/ha; country reference, not a local yield."
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Rabi",
+     "cropYear": "2023-24",
+     "yieldKgPerHa": 5529,
+     "basis": "main product as published",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Maize sheet, All India, yield kg/ha; country reference, not a local yield."
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Rabi",
+     "cropYear": "2024-25",
+     "yieldKgPerHa": 5306,
+     "basis": "main product as published",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Maize sheet, All India, yield kg/ha; country reference, not a local yield."
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Rabi",
+     "cropYear": "2025-26",
+     "yieldKgPerHa": 5740,
+     "basis": "main product as published",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Maize sheet, All India, yield kg/ha; country reference, not a local yield."
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Summer",
+     "cropYear": "2022-23",
+     "yieldKgPerHa": 5361,
+     "basis": "main product as published",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Maize sheet, All India, yield kg/ha; country reference, not a local yield."
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Summer",
+     "cropYear": "2023-24",
+     "yieldKgPerHa": 4603,
+     "basis": "main product as published",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Maize sheet, All India, yield kg/ha; country reference, not a local yield."
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Summer",
+     "cropYear": "2024-25",
+     "yieldKgPerHa": 4528,
+     "basis": "main product as published",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Maize sheet, All India, yield kg/ha; country reference, not a local yield."
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Summer",
+     "cropYear": "2025-26",
+     "yieldKgPerHa": 4308,
+     "basis": "main product as published",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Maize sheet, All India, yield kg/ha; country reference, not a local yield."
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Total",
+     "cropYear": "2021-22",
+     "yieldKgPerHa": 3387,
+     "basis": "main product as published",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Maize sheet, All India, yield kg/ha; country reference, not a local yield."
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Total",
+     "cropYear": "2022-23",
+     "yieldKgPerHa": 3545,
+     "basis": "main product as published",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Maize sheet, All India, yield kg/ha; country reference, not a local yield."
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Total",
+     "cropYear": "2023-24",
+     "yieldKgPerHa": 3351,
+     "basis": "main product as published",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Maize sheet, All India, yield kg/ha; country reference, not a local yield."
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Total",
+     "cropYear": "2024-25",
+     "yieldKgPerHa": 3590,
+     "basis": "main product as published",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Maize sheet, All India, yield kg/ha; country reference, not a local yield."
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Total",
+     "cropYear": "2025-26",
+     "yieldKgPerHa": 3824,
+     "basis": "main product as published",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Maize sheet, All India, yield kg/ha; country reference, not a local yield."
     }
    ],
    "costs": [
@@ -1525,6 +2029,16 @@
      "locator": "Annex Table 5.5, report pp.217-220 (PDF pp.247-250), visually verified",
      "sourceId": "cacp-kharif-kms-2025-26",
      "authority": "cacp"
+    },
+    {
+     "region": "IN",
+     "year": "TE2023-24",
+     "a2flPerHa": 53388,
+     "c2PerHa": null,
+     "authority": "cacp",
+     "sourceId": "cacp-kharif-kms-2025-26",
+     "locator": "Table 5.1, printed page 129, All-India average costs, CoC A2+FL column",
+     "basis": "All-India weighted average actual cost of cultivation for the three years ending 2023-24, INR/ha. Historical reference; not a projected cost or a per-quintal cost."
     }
    ],
    "postHarvestLossPct": {
@@ -2034,6 +2548,215 @@
      "districtAreaHa": 1126.0,
      "districtProductionT": 960.0,
      "sourceId": "datagovin-dws-35be999b"
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Kharif",
+     "cropYear": "2021-22",
+     "yieldKgPerHa": 1090,
+     "basis": "main product as published",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Jowar sheet, All India, yield kg/ha; country reference, not a local yield."
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Kharif",
+     "cropYear": "2022-23",
+     "yieldKgPerHa": 1071,
+     "basis": "main product as published",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Jowar sheet, All India, yield kg/ha; country reference, not a local yield."
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Kharif",
+     "cropYear": "2023-24",
+     "yieldKgPerHa": 1170,
+     "basis": "main product as published",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Jowar sheet, All India, yield kg/ha; country reference, not a local yield."
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Kharif",
+     "cropYear": "2024-25",
+     "yieldKgPerHa": 1204,
+     "basis": "main product as published",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Jowar sheet, All India, yield kg/ha; country reference, not a local yield."
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Kharif",
+     "cropYear": "2025-26",
+     "yieldKgPerHa": 1085,
+     "basis": "main product as published",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Jowar sheet, All India, yield kg/ha; country reference, not a local yield."
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Rabi",
+     "cropYear": "2021-22",
+     "yieldKgPerHa": 1093,
+     "basis": "main product as published",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Jowar sheet, All India, yield kg/ha; country reference, not a local yield."
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Rabi",
+     "cropYear": "2022-23",
+     "yieldKgPerHa": 1086,
+     "basis": "main product as published",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Jowar sheet, All India, yield kg/ha; country reference, not a local yield."
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Rabi",
+     "cropYear": "2023-24",
+     "yieldKgPerHa": 1165,
+     "basis": "main product as published",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Jowar sheet, All India, yield kg/ha; country reference, not a local yield."
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Rabi",
+     "cropYear": "2024-25",
+     "yieldKgPerHa": 1266,
+     "basis": "main product as published",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Jowar sheet, All India, yield kg/ha; country reference, not a local yield."
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Rabi",
+     "cropYear": "2025-26",
+     "yieldKgPerHa": 1311,
+     "basis": "main product as published",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Jowar sheet, All India, yield kg/ha; country reference, not a local yield."
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Summer",
+     "cropYear": "2022-23",
+     "yieldKgPerHa": 811,
+     "basis": "main product as published",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Jowar sheet, All India, yield kg/ha; country reference, not a local yield."
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Summer",
+     "cropYear": "2023-24",
+     "yieldKgPerHa": 789,
+     "basis": "main product as published",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Jowar sheet, All India, yield kg/ha; country reference, not a local yield."
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Summer",
+     "cropYear": "2024-25",
+     "yieldKgPerHa": 842,
+     "basis": "main product as published",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Jowar sheet, All India, yield kg/ha; country reference, not a local yield."
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Summer",
+     "cropYear": "2025-26",
+     "yieldKgPerHa": 792,
+     "basis": "main product as published",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Jowar sheet, All India, yield kg/ha; country reference, not a local yield."
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Total",
+     "cropYear": "2021-22",
+     "yieldKgPerHa": 1092,
+     "basis": "main product as published",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Jowar sheet, All India, yield kg/ha; country reference, not a local yield."
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Total",
+     "cropYear": "2022-23",
+     "yieldKgPerHa": 1079,
+     "basis": "main product as published",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Jowar sheet, All India, yield kg/ha; country reference, not a local yield."
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Total",
+     "cropYear": "2023-24",
+     "yieldKgPerHa": 1162,
+     "basis": "main product as published",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Jowar sheet, All India, yield kg/ha; country reference, not a local yield."
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Total",
+     "cropYear": "2024-25",
+     "yieldKgPerHa": 1240,
+     "basis": "main product as published",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Jowar sheet, All India, yield kg/ha; country reference, not a local yield."
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Total",
+     "cropYear": "2025-26",
+     "yieldKgPerHa": 1228,
+     "basis": "main product as published",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Jowar sheet, All India, yield kg/ha; country reference, not a local yield."
     }
    ],
    "costs": [
@@ -2108,6 +2831,16 @@
      "locator": "Annex Table 5.5, report pp.217-220 (PDF pp.247-250), visually verified",
      "sourceId": "cacp-kharif-kms-2025-26",
      "authority": "cacp"
+    },
+    {
+     "region": "IN",
+     "year": "TE2023-24",
+     "a2flPerHa": 41209,
+     "c2PerHa": null,
+     "authority": "cacp",
+     "sourceId": "cacp-kharif-kms-2025-26",
+     "locator": "Table 5.1, printed page 129, All-India average costs, CoC A2+FL column",
+     "basis": "All-India weighted average actual cost of cultivation for the three years ending 2023-24, INR/ha. Historical reference; not a projected cost or a per-quintal cost."
     }
    ],
    "postHarvestLossPct": {
@@ -2475,9 +3208,174 @@
      "districtAreaHa": 43.0,
      "districtProductionT": 51.0,
      "sourceId": "datagovin-dws-35be999b"
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Kharif",
+     "cropYear": "2021-22",
+     "yieldKgPerHa": 1430,
+     "basis": "main product as published",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Bajra sheet, All India, yield kg/ha; country reference, not a local yield."
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Kharif",
+     "cropYear": "2022-23",
+     "yieldKgPerHa": 1443,
+     "basis": "main product as published",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Bajra sheet, All India, yield kg/ha; country reference, not a local yield."
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Kharif",
+     "cropYear": "2023-24",
+     "yieldKgPerHa": 1387,
+     "basis": "main product as published",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Bajra sheet, All India, yield kg/ha; country reference, not a local yield."
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Kharif",
+     "cropYear": "2024-25",
+     "yieldKgPerHa": 1459,
+     "basis": "main product as published",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Bajra sheet, All India, yield kg/ha; country reference, not a local yield."
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Kharif",
+     "cropYear": "2025-26",
+     "yieldKgPerHa": 1485,
+     "basis": "main product as published",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Bajra sheet, All India, yield kg/ha; country reference, not a local yield."
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Summer",
+     "cropYear": "2022-23",
+     "yieldKgPerHa": 2705,
+     "basis": "main product as published",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Bajra sheet, All India, yield kg/ha; country reference, not a local yield."
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Summer",
+     "cropYear": "2023-24",
+     "yieldKgPerHa": 2579,
+     "basis": "main product as published",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Bajra sheet, All India, yield kg/ha; country reference, not a local yield."
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Summer",
+     "cropYear": "2024-25",
+     "yieldKgPerHa": 2361,
+     "basis": "main product as published",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Bajra sheet, All India, yield kg/ha; country reference, not a local yield."
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Summer",
+     "cropYear": "2025-26",
+     "yieldKgPerHa": 2353,
+     "basis": "main product as published",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Bajra sheet, All India, yield kg/ha; country reference, not a local yield."
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Total",
+     "cropYear": "2021-22",
+     "yieldKgPerHa": 1430,
+     "basis": "main product as published",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Bajra sheet, All India, yield kg/ha; country reference, not a local yield."
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Total",
+     "cropYear": "2022-23",
+     "yieldKgPerHa": 1510,
+     "basis": "main product as published",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Bajra sheet, All India, yield kg/ha; country reference, not a local yield."
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Total",
+     "cropYear": "2023-24",
+     "yieldKgPerHa": 1453,
+     "basis": "main product as published",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Bajra sheet, All India, yield kg/ha; country reference, not a local yield."
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Total",
+     "cropYear": "2024-25",
+     "yieldKgPerHa": 1523,
+     "basis": "main product as published",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Bajra sheet, All India, yield kg/ha; country reference, not a local yield."
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Total",
+     "cropYear": "2025-26",
+     "yieldKgPerHa": 1558,
+     "basis": "main product as published",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Bajra sheet, All India, yield kg/ha; country reference, not a local yield."
     }
    ],
-   "costs": [],
+   "costs": [
+    {
+     "region": "IN",
+     "year": "TE2023-24",
+     "a2flPerHa": 37123,
+     "c2PerHa": null,
+     "authority": "cacp",
+     "sourceId": "cacp-kharif-kms-2025-26",
+     "locator": "Table 5.1, printed page 129, All-India average costs, CoC A2+FL column",
+     "basis": "All-India weighted average actual cost of cultivation for the three years ending 2023-24, INR/ha. Historical reference; not a projected cost or a per-quintal cost."
+    }
+   ],
    "postHarvestLossPct": {
     "value": null,
     "sourceId": null,
@@ -2750,6 +3648,61 @@
      "districtAreaHa": 46.0,
      "districtProductionT": 82.0,
      "sourceId": "datagovin-dws-35be999b"
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Kharif",
+     "cropYear": "2021-22",
+     "yieldKgPerHa": 1396,
+     "basis": "main product as published",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Ragi sheet, All India, yield kg/ha; country reference, not a local yield."
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Kharif",
+     "cropYear": "2022-23",
+     "yieldKgPerHa": 1454,
+     "basis": "main product as published",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Ragi sheet, All India, yield kg/ha; country reference, not a local yield."
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Kharif",
+     "cropYear": "2023-24",
+     "yieldKgPerHa": 1375,
+     "basis": "main product as published",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Ragi sheet, All India, yield kg/ha; country reference, not a local yield."
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Kharif",
+     "cropYear": "2024-25",
+     "yieldKgPerHa": 1584,
+     "basis": "main product as published",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Ragi sheet, All India, yield kg/ha; country reference, not a local yield."
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Kharif",
+     "cropYear": "2025-26",
+     "yieldKgPerHa": 1486,
+     "basis": "main product as published",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Ragi sheet, All India, yield kg/ha; country reference, not a local yield."
     }
    ],
    "costs": [
@@ -2809,6 +3762,16 @@
      "locator": "Annex Table 5.5, report pp.217-220 (PDF pp.247-250), visually verified",
      "sourceId": "cacp-kharif-kms-2025-26",
      "authority": "cacp"
+    },
+    {
+     "region": "IN",
+     "year": "TE2023-24",
+     "a2flPerHa": 54508,
+     "c2PerHa": null,
+     "authority": "cacp",
+     "sourceId": "cacp-kharif-kms-2025-26",
+     "locator": "Table 5.1, printed page 129, All-India average costs, CoC A2+FL column",
+     "basis": "All-India weighted average actual cost of cultivation for the three years ending 2023-24, INR/ha. Historical reference; not a projected cost or a per-quintal cost."
     }
    ],
    "postHarvestLossPct": {
@@ -2988,6 +3951,61 @@
      "districtAreaHa": 1847.0,
      "districtProductionT": 1897.0,
      "sourceId": "datagovin-dws-35be999b"
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Rabi",
+     "cropYear": "2021-22",
+     "yieldKgPerHa": 1261,
+     "basis": "main product as published",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Gram sheet, All India, yield kg/ha; country reference, not a local yield."
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Rabi",
+     "cropYear": "2022-23",
+     "yieldKgPerHa": 1172,
+     "basis": "main product as published",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Gram sheet, All India, yield kg/ha; country reference, not a local yield."
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Rabi",
+     "cropYear": "2023-24",
+     "yieldKgPerHa": 1151,
+     "basis": "main product as published",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Gram sheet, All India, yield kg/ha; country reference, not a local yield."
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Rabi",
+     "cropYear": "2024-25",
+     "yieldKgPerHa": 1218,
+     "basis": "main product as published",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Gram sheet, All India, yield kg/ha; country reference, not a local yield."
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Rabi",
+     "cropYear": "2025-26",
+     "yieldKgPerHa": 1295,
+     "basis": "main product as published",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Gram sheet, All India, yield kg/ha; country reference, not a local yield."
     }
    ],
    "costs": [
@@ -3052,6 +4070,16 @@
      "authority": "cacp",
      "productBasis": "chickpea grain, qtl",
      "stateShareInAllIndiaProductionPct": 3.9
+    },
+    {
+     "region": "IN",
+     "year": "TE2023-24",
+     "a2flPerHa": 39632,
+     "c2PerHa": null,
+     "authority": "cacp",
+     "sourceId": "cacp-rabi-rms-2026-27",
+     "locator": "Table 5.1, printed page 113, All-India average costs, CoC A2+FL column",
+     "basis": "All-India weighted average actual cost of cultivation for the three years ending 2023-24, INR/ha. Historical reference; not a projected cost or a per-quintal cost."
     }
    ],
    "postHarvestLossPct": {
@@ -3226,6 +4254,61 @@
      "districtAreaHa": 2359.0,
      "districtProductionT": 3433.0,
      "sourceId": "datagovin-dws-35be999b"
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Kharif",
+     "cropYear": "2021-22",
+     "yieldKgPerHa": 861,
+     "basis": "main product as published",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Tur sheet, All India, yield kg/ha; country reference, not a local yield."
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Kharif",
+     "cropYear": "2022-23",
+     "yieldKgPerHa": 814,
+     "basis": "main product as published",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Tur sheet, All India, yield kg/ha; country reference, not a local yield."
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Kharif",
+     "cropYear": "2023-24",
+     "yieldKgPerHa": 827,
+     "basis": "main product as published",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Tur sheet, All India, yield kg/ha; country reference, not a local yield."
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Kharif",
+     "cropYear": "2024-25",
+     "yieldKgPerHa": 836,
+     "basis": "main product as published",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Tur sheet, All India, yield kg/ha; country reference, not a local yield."
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Kharif",
+     "cropYear": "2025-26",
+     "yieldKgPerHa": 805,
+     "basis": "main product as published",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Tur sheet, All India, yield kg/ha; country reference, not a local yield."
     }
    ],
    "costs": [
@@ -3285,6 +4368,16 @@
      "locator": "Annex Table 5.5, report pp.217-220 (PDF pp.247-250), visually verified",
      "sourceId": "cacp-kharif-kms-2025-26",
      "authority": "cacp"
+    },
+    {
+     "region": "IN",
+     "year": "TE2023-24",
+     "a2flPerHa": 49080,
+     "c2PerHa": null,
+     "authority": "cacp",
+     "sourceId": "cacp-kharif-kms-2025-26",
+     "locator": "Table 5.1, printed page 129, All-India average costs, CoC A2+FL column",
+     "basis": "All-India weighted average actual cost of cultivation for the three years ending 2023-24, INR/ha. Historical reference; not a projected cost or a per-quintal cost."
     }
    ],
    "postHarvestLossPct": {
@@ -3779,6 +4872,215 @@
      "districtAreaHa": 36.0,
      "districtProductionT": 12.0,
      "sourceId": "datagovin-dws-35be999b"
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Kharif",
+     "cropYear": "2021-22",
+     "yieldKgPerHa": 385,
+     "basis": "main product as published",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Moong sheet, All India, yield kg/ha; country reference, not a local yield."
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Kharif",
+     "cropYear": "2022-23",
+     "yieldKgPerHa": 493,
+     "basis": "main product as published",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Moong sheet, All India, yield kg/ha; country reference, not a local yield."
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Kharif",
+     "cropYear": "2023-24",
+     "yieldKgPerHa": 364,
+     "basis": "main product as published",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Moong sheet, All India, yield kg/ha; country reference, not a local yield."
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Kharif",
+     "cropYear": "2024-25",
+     "yieldKgPerHa": 520,
+     "basis": "main product as published",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Moong sheet, All India, yield kg/ha; country reference, not a local yield."
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Kharif",
+     "cropYear": "2025-26",
+     "yieldKgPerHa": 516,
+     "basis": "main product as published",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Moong sheet, All India, yield kg/ha; country reference, not a local yield."
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Rabi",
+     "cropYear": "2021-22",
+     "yieldKgPerHa": 987,
+     "basis": "main product as published",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Moong sheet, All India, yield kg/ha; country reference, not a local yield."
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Rabi",
+     "cropYear": "2022-23",
+     "yieldKgPerHa": 730,
+     "basis": "main product as published",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Moong sheet, All India, yield kg/ha; country reference, not a local yield."
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Rabi",
+     "cropYear": "2023-24",
+     "yieldKgPerHa": 733,
+     "basis": "main product as published",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Moong sheet, All India, yield kg/ha; country reference, not a local yield."
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Rabi",
+     "cropYear": "2024-25",
+     "yieldKgPerHa": 738,
+     "basis": "main product as published",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Moong sheet, All India, yield kg/ha; country reference, not a local yield."
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Rabi",
+     "cropYear": "2025-26",
+     "yieldKgPerHa": 865,
+     "basis": "main product as published",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Moong sheet, All India, yield kg/ha; country reference, not a local yield."
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Summer",
+     "cropYear": "2022-23",
+     "yieldKgPerHa": 968,
+     "basis": "main product as published",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Moong sheet, All India, yield kg/ha; country reference, not a local yield."
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Summer",
+     "cropYear": "2023-24",
+     "yieldKgPerHa": 985,
+     "basis": "main product as published",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Moong sheet, All India, yield kg/ha; country reference, not a local yield."
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Summer",
+     "cropYear": "2024-25",
+     "yieldKgPerHa": 1009,
+     "basis": "main product as published",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Moong sheet, All India, yield kg/ha; country reference, not a local yield."
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Summer",
+     "cropYear": "2025-26",
+     "yieldKgPerHa": 1065,
+     "basis": "main product as published",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Moong sheet, All India, yield kg/ha; country reference, not a local yield."
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Total",
+     "cropYear": "2021-22",
+     "yieldKgPerHa": 570,
+     "basis": "main product as published",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Moong sheet, All India, yield kg/ha; country reference, not a local yield."
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Total",
+     "cropYear": "2022-23",
+     "yieldKgPerHa": 663,
+     "basis": "main product as published",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Moong sheet, All India, yield kg/ha; country reference, not a local yield."
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Total",
+     "cropYear": "2023-24",
+     "yieldKgPerHa": 598,
+     "basis": "main product as published",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Moong sheet, All India, yield kg/ha; country reference, not a local yield."
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Total",
+     "cropYear": "2024-25",
+     "yieldKgPerHa": 719,
+     "basis": "main product as published",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Moong sheet, All India, yield kg/ha; country reference, not a local yield."
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Total",
+     "cropYear": "2025-26",
+     "yieldKgPerHa": 727,
+     "basis": "main product as published",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Moong sheet, All India, yield kg/ha; country reference, not a local yield."
     }
    ],
    "costs": [
@@ -3895,6 +5197,16 @@
      "locator": "Annex Table 5.5, report pp.217-220 (PDF pp.247-250), visually verified",
      "sourceId": "cacp-kharif-kms-2025-26",
      "authority": "cacp"
+    },
+    {
+     "region": "IN",
+     "year": "TE2023-24",
+     "a2flPerHa": 28193,
+     "c2PerHa": null,
+     "authority": "cacp",
+     "sourceId": "cacp-kharif-kms-2025-26",
+     "locator": "Table 5.1, printed page 129, All-India average costs, CoC A2+FL column",
+     "basis": "All-India weighted average actual cost of cultivation for the three years ending 2023-24, INR/ha. Historical reference; not a projected cost or a per-quintal cost."
     }
    ],
    "postHarvestLossPct": {
@@ -4403,6 +5715,215 @@
      "districtAreaHa": 45.0,
      "districtProductionT": 20.0,
      "sourceId": "datagovin-dws-35be999b"
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Kharif",
+     "cropYear": "2021-22",
+     "yieldKgPerHa": 515,
+     "basis": "main product as published",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Urad sheet, All India, yield kg/ha; country reference, not a local yield."
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Kharif",
+     "cropYear": "2022-23",
+     "yieldKgPerHa": 571,
+     "basis": "main product as published",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Urad sheet, All India, yield kg/ha; country reference, not a local yield."
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Kharif",
+     "cropYear": "2023-24",
+     "yieldKgPerHa": 598,
+     "basis": "main product as published",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Urad sheet, All India, yield kg/ha; country reference, not a local yield."
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Kharif",
+     "cropYear": "2024-25",
+     "yieldKgPerHa": 615,
+     "basis": "main product as published",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Urad sheet, All India, yield kg/ha; country reference, not a local yield."
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Kharif",
+     "cropYear": "2025-26",
+     "yieldKgPerHa": 532,
+     "basis": "main product as published",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Urad sheet, All India, yield kg/ha; country reference, not a local yield."
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Rabi",
+     "cropYear": "2021-22",
+     "yieldKgPerHa": 903,
+     "basis": "main product as published",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Urad sheet, All India, yield kg/ha; country reference, not a local yield."
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Rabi",
+     "cropYear": "2022-23",
+     "yieldKgPerHa": 988,
+     "basis": "main product as published",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Urad sheet, All India, yield kg/ha; country reference, not a local yield."
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Rabi",
+     "cropYear": "2023-24",
+     "yieldKgPerHa": 828,
+     "basis": "main product as published",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Urad sheet, All India, yield kg/ha; country reference, not a local yield."
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Rabi",
+     "cropYear": "2024-25",
+     "yieldKgPerHa": 894,
+     "basis": "main product as published",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Urad sheet, All India, yield kg/ha; country reference, not a local yield."
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Rabi",
+     "cropYear": "2025-26",
+     "yieldKgPerHa": 934,
+     "basis": "main product as published",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Urad sheet, All India, yield kg/ha; country reference, not a local yield."
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Summer",
+     "cropYear": "2022-23",
+     "yieldKgPerHa": 875,
+     "basis": "main product as published",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Urad sheet, All India, yield kg/ha; country reference, not a local yield."
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Summer",
+     "cropYear": "2023-24",
+     "yieldKgPerHa": 856,
+     "basis": "main product as published",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Urad sheet, All India, yield kg/ha; country reference, not a local yield."
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Summer",
+     "cropYear": "2024-25",
+     "yieldKgPerHa": 974,
+     "basis": "main product as published",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Urad sheet, All India, yield kg/ha; country reference, not a local yield."
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Summer",
+     "cropYear": "2025-26",
+     "yieldKgPerHa": 1055,
+     "basis": "main product as published",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Urad sheet, All India, yield kg/ha; country reference, not a local yield."
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Total",
+     "cropYear": "2021-22",
+     "yieldKgPerHa": 599,
+     "basis": "main product as published",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Urad sheet, All India, yield kg/ha; country reference, not a local yield."
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Total",
+     "cropYear": "2022-23",
+     "yieldKgPerHa": 657,
+     "basis": "main product as published",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Urad sheet, All India, yield kg/ha; country reference, not a local yield."
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Total",
+     "cropYear": "2023-24",
+     "yieldKgPerHa": 656,
+     "basis": "main product as published",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Urad sheet, All India, yield kg/ha; country reference, not a local yield."
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Total",
+     "cropYear": "2024-25",
+     "yieldKgPerHa": 710,
+     "basis": "main product as published",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Urad sheet, All India, yield kg/ha; country reference, not a local yield."
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Total",
+     "cropYear": "2025-26",
+     "yieldKgPerHa": 681,
+     "basis": "main product as published",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Urad sheet, All India, yield kg/ha; country reference, not a local yield."
     }
    ],
    "costs": [
@@ -4519,6 +6040,16 @@
      "locator": "Annex Table 5.5, report pp.217-220 (PDF pp.247-250), visually verified",
      "sourceId": "cacp-kharif-kms-2025-26",
      "authority": "cacp"
+    },
+    {
+     "region": "IN",
+     "year": "TE2023-24",
+     "a2flPerHa": 28444,
+     "c2PerHa": null,
+     "authority": "cacp",
+     "sourceId": "cacp-kharif-kms-2025-26",
+     "locator": "Table 5.1, printed page 129, All-India average costs, CoC A2+FL column",
+     "basis": "All-India weighted average actual cost of cultivation for the three years ending 2023-24, INR/ha. Historical reference; not a projected cost or a per-quintal cost."
     }
    ],
    "postHarvestLossPct": {
@@ -4531,8 +6062,75 @@
   },
   {
    "cropId": "lentil",
-   "yields": [],
-   "costs": [],
+   "yields": [
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Rabi",
+     "cropYear": "2021-22",
+     "yieldKgPerHa": 899,
+     "basis": "grain (dry), kg/ha as published by DES",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Lentil sheet, All India, yield kg/ha; country reference, not a local yield."
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Rabi",
+     "cropYear": "2022-23",
+     "yieldKgPerHa": 952,
+     "basis": "grain (dry), kg/ha as published by DES",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Lentil sheet, All India, yield kg/ha; country reference, not a local yield."
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Rabi",
+     "cropYear": "2023-24",
+     "yieldKgPerHa": 1028,
+     "basis": "grain (dry), kg/ha as published by DES",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Lentil sheet, All India, yield kg/ha; country reference, not a local yield."
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Rabi",
+     "cropYear": "2024-25",
+     "yieldKgPerHa": 973,
+     "basis": "grain (dry), kg/ha as published by DES",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Lentil sheet, All India, yield kg/ha; country reference, not a local yield."
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Rabi",
+     "cropYear": "2025-26",
+     "yieldKgPerHa": 999,
+     "basis": "grain (dry), kg/ha as published by DES",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Lentil sheet, All India, yield kg/ha; country reference, not a local yield."
+    }
+   ],
+   "costs": [
+    {
+     "region": "IN",
+     "year": "TE2023-24",
+     "a2flPerHa": 28618,
+     "c2PerHa": null,
+     "authority": "cacp",
+     "sourceId": "cacp-rabi-rms-2026-27",
+     "locator": "Table 5.1, printed page 113, All-India average costs, CoC A2+FL column",
+     "basis": "All-India weighted average actual cost of cultivation for the three years ending 2023-24, INR/ha. Historical reference; not a projected cost or a per-quintal cost."
+    }
+   ],
    "postHarvestLossPct": {
     "value": null,
     "sourceId": null,
@@ -4628,6 +6226,61 @@
      "areaThousandHa": 0.89,
      "sourceId": "des-apy-5yr-2021-26",
      "note": "Area under 1 thousand ha; weak regional reference."
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Kharif",
+     "cropYear": "2021-22",
+     "yieldKgPerHa": 1069,
+     "basis": "main product as published",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Soybean sheet, All India, yield kg/ha; country reference, not a local yield."
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Kharif",
+     "cropYear": "2022-23",
+     "yieldKgPerHa": 1145,
+     "basis": "main product as published",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Soybean sheet, All India, yield kg/ha; country reference, not a local yield."
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Kharif",
+     "cropYear": "2023-24",
+     "yieldKgPerHa": 985,
+     "basis": "main product as published",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Soybean sheet, All India, yield kg/ha; country reference, not a local yield."
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Kharif",
+     "cropYear": "2024-25",
+     "yieldKgPerHa": 1179,
+     "basis": "main product as published",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Soybean sheet, All India, yield kg/ha; country reference, not a local yield."
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Kharif",
+     "cropYear": "2025-26",
+     "yieldKgPerHa": 1017,
+     "basis": "main product as published",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Soybean sheet, All India, yield kg/ha; country reference, not a local yield."
     }
    ],
    "costs": [
@@ -4687,6 +6340,16 @@
      "locator": "Annex Table 5.5, report pp.217-220 (PDF pp.247-250), visually verified",
      "sourceId": "cacp-kharif-kms-2025-26",
      "authority": "cacp"
+    },
+    {
+     "region": "IN",
+     "year": "TE2023-24",
+     "a2flPerHa": 43498,
+     "c2PerHa": null,
+     "authority": "cacp",
+     "sourceId": "cacp-kharif-kms-2025-26",
+     "locator": "Table 5.1, printed page 129, All-India average costs, CoC A2+FL column",
+     "basis": "All-India weighted average actual cost of cultivation for the three years ending 2023-24, INR/ha. Historical reference; not a projected cost or a per-quintal cost."
     }
    ],
    "postHarvestLossPct": {
@@ -5256,6 +6919,215 @@
      "districtAreaHa": 75.0,
      "districtProductionT": 64.0,
      "sourceId": "datagovin-dws-35be999b"
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Kharif",
+     "cropYear": "2021-22",
+     "yieldKgPerHa": 1717,
+     "basis": "main product as published",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Groundnut sheet, All India, yield kg/ha; country reference, not a local yield."
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Kharif",
+     "cropYear": "2022-23",
+     "yieldKgPerHa": 2009,
+     "basis": "main product as published",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Groundnut sheet, All India, yield kg/ha; country reference, not a local yield."
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Kharif",
+     "cropYear": "2023-24",
+     "yieldKgPerHa": 2142,
+     "basis": "main product as published",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Groundnut sheet, All India, yield kg/ha; country reference, not a local yield."
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Kharif",
+     "cropYear": "2024-25",
+     "yieldKgPerHa": 2080,
+     "basis": "main product as published",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Groundnut sheet, All India, yield kg/ha; country reference, not a local yield."
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Kharif",
+     "cropYear": "2025-26",
+     "yieldKgPerHa": 2255,
+     "basis": "main product as published",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Groundnut sheet, All India, yield kg/ha; country reference, not a local yield."
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Rabi",
+     "cropYear": "2021-22",
+     "yieldKgPerHa": 2147,
+     "basis": "main product as published",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Groundnut sheet, All India, yield kg/ha; country reference, not a local yield."
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Rabi",
+     "cropYear": "2022-23",
+     "yieldKgPerHa": 2619,
+     "basis": "main product as published",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Groundnut sheet, All India, yield kg/ha; country reference, not a local yield."
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Rabi",
+     "cropYear": "2023-24",
+     "yieldKgPerHa": 2208,
+     "basis": "main product as published",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Groundnut sheet, All India, yield kg/ha; country reference, not a local yield."
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Rabi",
+     "cropYear": "2024-25",
+     "yieldKgPerHa": 2011,
+     "basis": "main product as published",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Groundnut sheet, All India, yield kg/ha; country reference, not a local yield."
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Rabi",
+     "cropYear": "2025-26",
+     "yieldKgPerHa": 2404,
+     "basis": "main product as published",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Groundnut sheet, All India, yield kg/ha; country reference, not a local yield."
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Summer",
+     "cropYear": "2022-23",
+     "yieldKgPerHa": 2279,
+     "basis": "main product as published",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Groundnut sheet, All India, yield kg/ha; country reference, not a local yield."
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Summer",
+     "cropYear": "2023-24",
+     "yieldKgPerHa": 2377,
+     "basis": "main product as published",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Groundnut sheet, All India, yield kg/ha; country reference, not a local yield."
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Summer",
+     "cropYear": "2024-25",
+     "yieldKgPerHa": 2029,
+     "basis": "main product as published",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Groundnut sheet, All India, yield kg/ha; country reference, not a local yield."
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Summer",
+     "cropYear": "2025-26",
+     "yieldKgPerHa": 1861,
+     "basis": "main product as published",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Groundnut sheet, All India, yield kg/ha; country reference, not a local yield."
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Total",
+     "cropYear": "2021-22",
+     "yieldKgPerHa": 1777,
+     "basis": "main product as published",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Groundnut sheet, All India, yield kg/ha; country reference, not a local yield."
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Total",
+     "cropYear": "2022-23",
+     "yieldKgPerHa": 2075,
+     "basis": "main product as published",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Groundnut sheet, All India, yield kg/ha; country reference, not a local yield."
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Total",
+     "cropYear": "2023-24",
+     "yieldKgPerHa": 2163,
+     "basis": "main product as published",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Groundnut sheet, All India, yield kg/ha; country reference, not a local yield."
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Total",
+     "cropYear": "2024-25",
+     "yieldKgPerHa": 2073,
+     "basis": "main product as published",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Groundnut sheet, All India, yield kg/ha; country reference, not a local yield."
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Total",
+     "cropYear": "2025-26",
+     "yieldKgPerHa": 2228,
+     "basis": "main product as published",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Groundnut sheet, All India, yield kg/ha; country reference, not a local yield."
     }
    ],
    "costs": [
@@ -5372,6 +7244,16 @@
      "locator": "Annex Table 5.5, report pp.217-220 (PDF pp.247-250), visually verified",
      "sourceId": "cacp-kharif-kms-2025-26",
      "authority": "cacp"
+    },
+    {
+     "region": "IN",
+     "year": "TE2023-24",
+     "a2flPerHa": 76772,
+     "c2PerHa": null,
+     "authority": "cacp",
+     "sourceId": "cacp-kharif-kms-2025-26",
+     "locator": "Table 5.1, printed page 129, All-India average costs, CoC A2+FL column",
+     "basis": "All-India weighted average actual cost of cultivation for the three years ending 2023-24, INR/ha. Historical reference; not a projected cost or a per-quintal cost."
     }
    ],
    "postHarvestLossPct": {
@@ -5720,9 +7602,218 @@
      "districtAreaHa": 3613.0,
      "districtProductionT": 1768.0,
      "sourceId": "datagovin-dws-35be999b"
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Kharif",
+     "cropYear": "2021-22",
+     "yieldKgPerHa": 485,
+     "basis": "main product as published",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Sesamum sheet, All India, yield kg/ha; country reference, not a local yield."
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Kharif",
+     "cropYear": "2022-23",
+     "yieldKgPerHa": 375,
+     "basis": "main product as published",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Sesamum sheet, All India, yield kg/ha; country reference, not a local yield."
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Kharif",
+     "cropYear": "2023-24",
+     "yieldKgPerHa": 392,
+     "basis": "main product as published",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Sesamum sheet, All India, yield kg/ha; country reference, not a local yield."
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Kharif",
+     "cropYear": "2024-25",
+     "yieldKgPerHa": 427,
+     "basis": "main product as published",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Sesamum sheet, All India, yield kg/ha; country reference, not a local yield."
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Kharif",
+     "cropYear": "2025-26",
+     "yieldKgPerHa": 470,
+     "basis": "main product as published",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Sesamum sheet, All India, yield kg/ha; country reference, not a local yield."
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Rabi",
+     "cropYear": "2022-23",
+     "yieldKgPerHa": 592,
+     "basis": "main product as published",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Sesamum sheet, All India, yield kg/ha; country reference, not a local yield."
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Rabi",
+     "cropYear": "2023-24",
+     "yieldKgPerHa": 559,
+     "basis": "main product as published",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Sesamum sheet, All India, yield kg/ha; country reference, not a local yield."
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Rabi",
+     "cropYear": "2024-25",
+     "yieldKgPerHa": 467,
+     "basis": "main product as published",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Sesamum sheet, All India, yield kg/ha; country reference, not a local yield."
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Rabi",
+     "cropYear": "2025-26",
+     "yieldKgPerHa": 535,
+     "basis": "main product as published",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Sesamum sheet, All India, yield kg/ha; country reference, not a local yield."
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Summer",
+     "cropYear": "2022-23",
+     "yieldKgPerHa": 888,
+     "basis": "main product as published",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Sesamum sheet, All India, yield kg/ha; country reference, not a local yield."
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Summer",
+     "cropYear": "2023-24",
+     "yieldKgPerHa": 896,
+     "basis": "main product as published",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Sesamum sheet, All India, yield kg/ha; country reference, not a local yield."
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Summer",
+     "cropYear": "2024-25",
+     "yieldKgPerHa": 867,
+     "basis": "main product as published",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Sesamum sheet, All India, yield kg/ha; country reference, not a local yield."
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Summer",
+     "cropYear": "2025-26",
+     "yieldKgPerHa": 895,
+     "basis": "main product as published",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Sesamum sheet, All India, yield kg/ha; country reference, not a local yield."
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Total",
+     "cropYear": "2021-22",
+     "yieldKgPerHa": 485,
+     "basis": "main product as published",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Sesamum sheet, All India, yield kg/ha; country reference, not a local yield."
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Total",
+     "cropYear": "2022-23",
+     "yieldKgPerHa": 527,
+     "basis": "main product as published",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Sesamum sheet, All India, yield kg/ha; country reference, not a local yield."
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Total",
+     "cropYear": "2023-24",
+     "yieldKgPerHa": 553,
+     "basis": "main product as published",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Sesamum sheet, All India, yield kg/ha; country reference, not a local yield."
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Total",
+     "cropYear": "2024-25",
+     "yieldKgPerHa": 567,
+     "basis": "main product as published",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Sesamum sheet, All India, yield kg/ha; country reference, not a local yield."
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Total",
+     "cropYear": "2025-26",
+     "yieldKgPerHa": 613,
+     "basis": "main product as published",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Sesamum sheet, All India, yield kg/ha; country reference, not a local yield."
     }
    ],
-   "costs": [],
+   "costs": [
+    {
+     "region": "IN",
+     "year": "TE2023-24",
+     "a2flPerHa": 31710,
+     "c2PerHa": null,
+     "authority": "cacp",
+     "sourceId": "cacp-kharif-kms-2025-26",
+     "locator": "Table 5.1, printed page 129, All-India average costs, CoC A2+FL column",
+     "basis": "All-India weighted average actual cost of cultivation for the three years ending 2023-24, INR/ha. Historical reference; not a projected cost or a per-quintal cost."
+    }
+   ],
    "postHarvestLossPct": {
     "value": null,
     "sourceId": null,
@@ -6250,6 +8341,215 @@
      "districtAreaHa": 908.0,
      "districtProductionT": 691.0,
      "sourceId": "datagovin-dws-35be999b"
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Kharif",
+     "cropYear": "2021-22",
+     "yieldKgPerHa": 802,
+     "basis": "main product as published",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Sunflower sheet, All India, yield kg/ha; country reference, not a local yield."
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Kharif",
+     "cropYear": "2022-23",
+     "yieldKgPerHa": 933,
+     "basis": "main product as published",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Sunflower sheet, All India, yield kg/ha; country reference, not a local yield."
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Kharif",
+     "cropYear": "2023-24",
+     "yieldKgPerHa": 894,
+     "basis": "main product as published",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Sunflower sheet, All India, yield kg/ha; country reference, not a local yield."
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Kharif",
+     "cropYear": "2024-25",
+     "yieldKgPerHa": 925,
+     "basis": "main product as published",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Sunflower sheet, All India, yield kg/ha; country reference, not a local yield."
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Kharif",
+     "cropYear": "2025-26",
+     "yieldKgPerHa": 997,
+     "basis": "main product as published",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Sunflower sheet, All India, yield kg/ha; country reference, not a local yield."
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Rabi",
+     "cropYear": "2021-22",
+     "yieldKgPerHa": 1048,
+     "basis": "main product as published",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Sunflower sheet, All India, yield kg/ha; country reference, not a local yield."
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Rabi",
+     "cropYear": "2022-23",
+     "yieldKgPerHa": 1061,
+     "basis": "main product as published",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Sunflower sheet, All India, yield kg/ha; country reference, not a local yield."
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Rabi",
+     "cropYear": "2023-24",
+     "yieldKgPerHa": 1397,
+     "basis": "main product as published",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Sunflower sheet, All India, yield kg/ha; country reference, not a local yield."
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Rabi",
+     "cropYear": "2024-25",
+     "yieldKgPerHa": 1481,
+     "basis": "main product as published",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Sunflower sheet, All India, yield kg/ha; country reference, not a local yield."
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Rabi",
+     "cropYear": "2025-26",
+     "yieldKgPerHa": 1350,
+     "basis": "main product as published",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Sunflower sheet, All India, yield kg/ha; country reference, not a local yield."
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Summer",
+     "cropYear": "2022-23",
+     "yieldKgPerHa": 1181,
+     "basis": "main product as published",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Sunflower sheet, All India, yield kg/ha; country reference, not a local yield."
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Summer",
+     "cropYear": "2023-24",
+     "yieldKgPerHa": 1247,
+     "basis": "main product as published",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Sunflower sheet, All India, yield kg/ha; country reference, not a local yield."
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Summer",
+     "cropYear": "2024-25",
+     "yieldKgPerHa": 1241,
+     "basis": "main product as published",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Sunflower sheet, All India, yield kg/ha; country reference, not a local yield."
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Summer",
+     "cropYear": "2025-26",
+     "yieldKgPerHa": 1277,
+     "basis": "main product as published",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Sunflower sheet, All India, yield kg/ha; country reference, not a local yield."
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Total",
+     "cropYear": "2021-22",
+     "yieldKgPerHa": 923,
+     "basis": "main product as published",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Sunflower sheet, All India, yield kg/ha; country reference, not a local yield."
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Total",
+     "cropYear": "2022-23",
+     "yieldKgPerHa": 996,
+     "basis": "main product as published",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Sunflower sheet, All India, yield kg/ha; country reference, not a local yield."
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Total",
+     "cropYear": "2023-24",
+     "yieldKgPerHa": 1144,
+     "basis": "main product as published",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Sunflower sheet, All India, yield kg/ha; country reference, not a local yield."
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Total",
+     "cropYear": "2024-25",
+     "yieldKgPerHa": 1214,
+     "basis": "main product as published",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Sunflower sheet, All India, yield kg/ha; country reference, not a local yield."
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Total",
+     "cropYear": "2025-26",
+     "yieldKgPerHa": 1201,
+     "basis": "main product as published",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Sunflower sheet, All India, yield kg/ha; country reference, not a local yield."
     }
    ],
    "costs": [
@@ -6309,6 +8609,16 @@
      "locator": "Annex Table 5.5, report pp.217-220 (PDF pp.247-250), visually verified",
      "sourceId": "cacp-kharif-kms-2025-26",
      "authority": "cacp"
+    },
+    {
+     "region": "IN",
+     "year": "TE2023-24",
+     "a2flPerHa": 40749,
+     "c2PerHa": null,
+     "authority": "cacp",
+     "sourceId": "cacp-kharif-kms-2025-26",
+     "locator": "Table 5.1, printed page 129, All-India average costs, CoC A2+FL column",
+     "basis": "All-India weighted average actual cost of cultivation for the three years ending 2023-24, INR/ha. Historical reference; not a projected cost or a per-quintal cost."
     }
    ],
    "postHarvestLossPct": {
@@ -6440,9 +8750,75 @@
      "districtAreaHa": 180.0,
      "districtProductionT": 39.0,
      "sourceId": "datagovin-dws-35be999b"
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Rabi",
+     "cropYear": "2021-22",
+     "yieldKgPerHa": 1497,
+     "basis": "main product as published",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Rapeseed & Mustard sheet, All India, yield kg/ha; country reference, not a local yield."
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Rabi",
+     "cropYear": "2022-23",
+     "yieldKgPerHa": 1428,
+     "basis": "main product as published",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Rapeseed & Mustard sheet, All India, yield kg/ha; country reference, not a local yield."
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Rabi",
+     "cropYear": "2023-24",
+     "yieldKgPerHa": 1444,
+     "basis": "main product as published",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Rapeseed & Mustard sheet, All India, yield kg/ha; country reference, not a local yield."
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Rabi",
+     "cropYear": "2024-25",
+     "yieldKgPerHa": 1463,
+     "basis": "main product as published",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Rapeseed & Mustard sheet, All India, yield kg/ha; country reference, not a local yield."
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Rabi",
+     "cropYear": "2025-26",
+     "yieldKgPerHa": 1460,
+     "basis": "main product as published",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Rapeseed & Mustard sheet, All India, yield kg/ha; country reference, not a local yield."
     }
    ],
-   "costs": [],
+   "costs": [
+    {
+     "region": "IN",
+     "year": "TE2023-24",
+     "a2flPerHa": 41025,
+     "c2PerHa": null,
+     "authority": "cacp",
+     "sourceId": "cacp-rabi-rms-2026-27",
+     "locator": "Table 5.1, printed page 113, All-India average costs, CoC A2+FL column",
+     "basis": "All-India weighted average actual cost of cultivation for the three years ending 2023-24, INR/ha. Historical reference; not a projected cost or a per-quintal cost."
+    }
+   ],
    "postHarvestLossPct": {
     "value": null,
     "sourceId": null,
@@ -6588,6 +8964,61 @@
      "districtAreaHa": 563,
      "districtProductionBales170kg": 1065,
      "districtYieldIndependent": true
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Kharif",
+     "cropYear": "2021-22",
+     "yieldKgPerHa": 428,
+     "basis": "kg lint per ha (DES production in bales of 170 kg lint)",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Cotton sheet, All India, yield kg/ha; country reference, not a local yield."
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Kharif",
+     "cropYear": "2022-23",
+     "yieldKgPerHa": 443,
+     "basis": "kg lint per ha (DES production in bales of 170 kg lint)",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Cotton sheet, All India, yield kg/ha; country reference, not a local yield."
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Kharif",
+     "cropYear": "2023-24",
+     "yieldKgPerHa": 436,
+     "basis": "kg lint per ha (DES production in bales of 170 kg lint)",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Cotton sheet, All India, yield kg/ha; country reference, not a local yield."
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Kharif",
+     "cropYear": "2024-25",
+     "yieldKgPerHa": 440,
+     "basis": "kg lint per ha (DES production in bales of 170 kg lint)",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Cotton sheet, All India, yield kg/ha; country reference, not a local yield."
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Kharif",
+     "cropYear": "2025-26",
+     "yieldKgPerHa": 428,
+     "basis": "kg lint per ha (DES production in bales of 170 kg lint)",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Cotton sheet, All India, yield kg/ha; country reference, not a local yield."
     }
    ],
    "costs": [
@@ -6704,6 +9135,16 @@
      "locator": "Annex Table 5.5, report pp.217-220 (PDF pp.247-250), visually verified",
      "sourceId": "cacp-kharif-kms-2025-26",
      "authority": "cacp"
+    },
+    {
+     "region": "IN",
+     "year": "TE2023-24",
+     "a2flPerHa": 76543,
+     "c2PerHa": null,
+     "authority": "cacp",
+     "sourceId": "cacp-kharif-kms-2025-26",
+     "locator": "Table 5.1, printed page 129, All-India average costs, CoC A2+FL column",
+     "basis": "All-India weighted average actual cost of cultivation for the three years ending 2023-24, INR/ha. Historical reference; not a projected cost or a per-quintal cost."
     }
    ],
    "postHarvestLossPct": {
@@ -6801,7 +9242,19 @@
      "sourceId": "datagovin-dws-35be999b"
     }
    ],
-   "costs": [],
+   "costs": [
+    {
+     "region": "IN-KL",
+     "season": "Winter",
+     "year": "2021-22",
+     "a2flPerHa": null,
+     "c2PerHa": 319455,
+     "authority": "des",
+     "sourceId": "kerala-des-coc-2021-22",
+     "locator": "Table 190, page 112, All Sizes, Cost C",
+     "basis": "Kerala Cost C, a C2-type full-cost reference including interest on fixed capital, land value and imputed household labour; not an exact CACP C2 series. Sample: 10 holdings, 1.36 ha."
+    }
+   ],
    "postHarvestLossPct": {
     "value": null,
     "sourceId": null,
@@ -6973,7 +9426,19 @@
   {
    "cropId": "shallot",
    "yields": [],
-   "costs": [],
+   "costs": [
+    {
+     "region": "IN-TN",
+     "year": "2015",
+     "a2flPerHa": null,
+     "c2PerHa": null,
+     "totalCostPerHa": 96371,
+     "authority": "sau",
+     "sourceId": "tnau-small-onion-case-2015",
+     "basis": "Single-farm small onion case, total reported cost INR 78,000 / (2 acres × 0.40468564224 ha/acre). Historical reference, not a regional average.",
+     "costIncludes": "The case study gives a total budget without an A2+FL or C2 breakdown; family labour and land charges are not separately stated."
+    }
+   ],
    "postHarvestLossPct": {
     "value": null,
     "sourceId": null,
@@ -7761,6 +10226,16 @@
      "sourceId": "asha-maurya-jpp-2020-ginger-bidar",
      "authority": "other",
      "productBasis": "ginger, product form not stated (fresh by magnitude, inferred)"
+    },
+    {
+     "region": "IN-KL",
+     "year": "2021-22",
+     "a2flPerHa": null,
+     "c2PerHa": 636890,
+     "authority": "des",
+     "sourceId": "kerala-des-coc-2021-22",
+     "locator": "Table 45, printed page 39 (PDF page 48), All Sizes, Cost C",
+     "basis": "Kerala Cost C, a C2-type full-cost reference including interest on fixed capital, land value and imputed household labour; not an exact CACP C2 series. 429 sample holdings."
     }
    ],
    "postHarvestLossPct": {
@@ -8316,6 +10791,61 @@
      "districtAreaHa": 1568.0,
      "districtProductionT": 171304.0,
      "sourceId": "datagovin-dws-35be999b"
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Kharif",
+     "cropYear": "2021-22",
+     "yieldKgPerHa": 84906,
+     "basis": "cane",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Sugarcane sheet, All India, yield kg/ha; country reference, not a local yield."
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Kharif",
+     "cropYear": "2022-23",
+     "yieldKgPerHa": 83349,
+     "basis": "cane",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Sugarcane sheet, All India, yield kg/ha; country reference, not a local yield."
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Kharif",
+     "cropYear": "2023-24",
+     "yieldKgPerHa": 78953,
+     "basis": "cane",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Sugarcane sheet, All India, yield kg/ha; country reference, not a local yield."
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Kharif",
+     "cropYear": "2024-25",
+     "yieldKgPerHa": 83416,
+     "basis": "cane",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Sugarcane sheet, All India, yield kg/ha; country reference, not a local yield."
+    },
+    {
+     "region": "IN",
+     "level": "national",
+     "season": "Kharif",
+     "cropYear": "2025-26",
+     "yieldKgPerHa": 84987,
+     "basis": "cane",
+     "sourceId": "des-apy-5yr-2021-26",
+     "estimateStatus": "2025-26 third advance estimate; earlier years as published",
+     "note": "Sugarcane sheet, All India, yield kg/ha; country reference, not a local yield."
     }
    ],
    "costs": [
@@ -8746,6 +11276,19 @@
    "excerpt": "\"The average yield per acre was 41.69 quintals, each quintal fetching a price of Rs.1833.00, resulting in gross returns of 76409. The cost of cultivation of onion was Rs.49,283.87 per acre of which the variable cost constituted 87.34 per cent and fixed cost constituted 12.66 per cent. Returns per rupee of expenditure ... Rs.1.55.\"",
    "sha256": "ada98d19ee881bcee58c2f124889e480966df5bd912320ba32aee09beba549fa",
    "usedForValues": true
+  },
+  "kerala-des-coc-2021-22": {
+   "url": "https://www.ecostat.kerala.gov.in/storage/publications/666.pdf",
+   "title": "Report on Cost of Cultivation of Important Crops in Kerala 2021-22",
+   "publisher": "Department of Economics and Statistics, Kerala",
+   "locator": "Table 190, printed page 112 (PDF page 121), Potato (winter), All Sizes",
+   "sha256": "2d630d5beb4f7dd8c271e575146034d5d40bcc0fb626ca02b10e8b9ad4438a4f"
+  },
+  "tnau-small-onion-case-2015": {
+   "url": "https://agritech.tnau.ac.in/farm_innovations/farm_innovations_viswanathan_puttu_onion.html",
+   "title": "Small onion cultivation: farmer Viswanathan case study",
+   "publisher": "Tamil Nadu Agricultural University",
+   "locator": "Crop planted 16 March 2015; total cultivation cost Rs 78,000 for two acres"
   }
  },
  "conversions": {

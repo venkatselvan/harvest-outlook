@@ -90,7 +90,7 @@ const YieldRow = z.object({
   basis: z.string().default(''), note: optStr, stale: z.boolean().optional(), districtYieldIndependent: z.boolean().optional(), sourceId: optStr, estimateStatus: optStr,
 });
 const CostRow = z.object({
-  region: z.string().min(1), district: optStr, season: optStr, year: yearText.nullable().optional(), a2flPerHa: optNum, c2PerHa: optNum,
+  region: z.string().min(1), district: optStr, season: optStr, year: yearText.nullable().optional(), a2flPerHa: optNum, c2PerHa: optNum, totalCostPerHa: optNum,
   authority: optStr, reliability: optStr, sourceId: optStr, locator: optStr, basis: optStr, figureType: optStr, costIncludes: optStr,
 });
 const YieldCostCrop = z.object({
@@ -424,7 +424,7 @@ export interface YieldRef {
   high: number;
   referenceKgPerHa: number;
   /** Round 3 yield v2: the state median of recent years, or the best state year when no median exists (flagged). */
-  referenceBasis: 'state_median' | 'state_best_year';
+  referenceBasis: 'state_median' | 'state_best_year' | 'regional_reference';
   basis: 'district' | 'state' | 'reference';
   /** Region id of the rows used (district or state). */
   region: string;
@@ -443,16 +443,18 @@ export interface YieldRef {
  * year is returned with basis 'reference' and no spread. Exact season rows are preferred over season-combined rows.
  * District rows that restate the state average (districtYieldIndependent false) are not district evidence. Rice
  * (milled) rows for paddy-grain are converted with conversions.riceToPaddy and carry a note. Reference yield is the
- * best state year of the same form. Returns null when no row of the product's form exists for the state.
+ * state median (or best state year). Without local data, national then other-region references are labelled explicitly.
+ * Returns null when no usable row matches the product form and season in any sourced region.
  */
 export function yieldFor(cropId: string, productId: string, where: Where & { season: Season | null; asOf?: string | null | undefined }): YieldRef | null {
-  if (!where.stateId) return null;
   const accepted = (yieldCostCrop(cropId)?.yields ?? []).map((r) => acceptYieldRow(cropId, productId, r)).filter((a): a is Accepted => a !== null);
   const districtAll = where.districtId ? accepted.filter((a) => a.row.region === where.districtId && a.row.districtYieldIndependent !== false) : [];
   // ASSUMPTIONS.districtYieldMaxAgeYears: district rows older than 6 crop years before asOf are not a district basis.
   const oldest = where.asOf ? cropYearStart(where.asOf) - ASSUMPTIONS.districtYieldMaxAgeYears.value : Number.NEGATIVE_INFINITY;
   const district = districtAll.filter((a) => yearKey(a.row.cropYear) >= oldest);
   const state = accepted.filter((a) => a.row.region === where.stateId);
+  const broader = [...new Set(accepted.map(a => a.row.region))].filter(r => r !== where.stateId && !r.startsWith(`${where.stateId}-`))
+    .sort((a, b) => Number(b === 'IN') - Number(a === 'IN') || Math.max(...accepted.filter(x => x.row.region === b).map(x => yearKey(x.row.cropYear))) - Math.max(...accepted.filter(x => x.row.region === a).map(x => yearKey(x.row.cropYear))) || a.localeCompare(b));
   const seasonSets = (set: Accepted[]) => [
     { match: 'exact' as const, list: where.season ? set.filter((a) => a.row.season.trim().toLowerCase() === where.season) : [] },
     { match: 'combined' as const, list: set.filter((a) => COMBINED_SEASON.test(a.row.season)) },
@@ -477,6 +479,14 @@ export function yieldFor(cropId: string, productId: string, where: Where & { sea
     }
     if (chosen) notes.push('Only one published year is available; the yield has no year-to-year range.');
   }
+  let broaderReference = false;
+  if (!chosen) {
+    for (const region of broader) {
+      const set = seasonSets(accepted.filter(a => a.row.region === region)).find(s => s.list.length);
+      if (set) { chosen = {level: 'reference', match: set.match, years: lastYears(set.list, nYears)}; broaderReference = true; break; }
+    }
+    if (chosen) notes.push(`No usable district or state yield for this product and season; using ${chosen.years[0]!.rows[0]!.row.region === 'IN' ? 'an all-India' : chosen.years[0]!.rows[0]!.row.region + ' (another region)'} reference. This is not a local yield estimate.`);
+  }
   if (!chosen) return null;
   const values = chosen.years.map((y) => y.value);
   const rows = chosen.years.flatMap((y) => y.rows);
@@ -485,8 +495,8 @@ export function yieldFor(cropId: string, productId: string, where: Where & { sea
   const stateSet = seasonSets(state).find((s) => s.list.length)?.list ?? [];
   const stateYears = lastYears(stateSet, nYears);
   const medianRef = stateYears.length >= ASSUMPTIONS.minYieldYears.value ? quantile7(stateYears.map((s) => s.value), 0.5) : null;
-  const reference = medianRef ?? Math.max(...(stateSet.length ? stateSet : rows).map((a) => a.value));
-  if (medianRef === null) notes.push('No state median of recent years for this season and form; the best state year is the yield reference.');
+  const reference = broaderReference ? quantile7(values, 0.5) : medianRef ?? Math.max(...(stateSet.length ? stateSet : rows).map((a) => a.value));
+  if (medianRef === null && !broaderReference) notes.push('No state median of recent years for this season and form; the best state year is the yield reference.');
   const stale = rows.some((a) => a.row.stale === true);
   if (stale) notes.push(`District yields are from ${chosen.years.map((y) => y.year).sort().join(', ')} (latest published for the district; stale).`);
   if (chosen.match === 'combined') notes.push(`Season-combined yield ("${rows[0]!.row.season}") is used; no ${where.season ?? 'season'} rows.`);
@@ -499,7 +509,7 @@ export function yieldFor(cropId: string, productId: string, where: Where & { sea
     low: Math.round(quantile7(values, 0.25)),
     high: Math.round(quantile7(values, 0.75)),
     referenceKgPerHa: Math.round(reference),
-    referenceBasis: medianRef !== null ? 'state_median' : 'state_best_year',
+    referenceBasis: broaderReference ? 'regional_reference' : medianRef !== null ? 'state_median' : 'state_best_year',
     basis: chosen.level,
     region: rows[0]!.row.region,
     years: chosen.years.map((y) => y.year),
@@ -512,55 +522,54 @@ export function yieldFor(cropId: string, productId: string, where: Where & { sea
   };
 }
 /** Why yieldFor returned null, for the slot's uncertainty list. */
-export function yieldGapReason(cropId: string, productId: string, stateId: string | null): string {
-  const rows = (yieldCostCrop(cropId)?.yields ?? []).filter((r) => r.region === stateId || (stateId !== null && r.region.startsWith(`${stateId}-`)));
-  if (!rows.length) return `No ${cropDisplayName(cropId).toLowerCase()} yield rows are sourced for this state.`;
+export function yieldGapReason(cropId: string, productId: string, _stateId: string | null): string {
+  const rows = yieldCostCrop(cropId)?.yields ?? [];
+  if (!rows.length) return `No ${cropDisplayName(cropId).toLowerCase()} yield rows are sourced in the available regions.`;
   const forms = [...new Set(rows.map((r) => yieldRowForm(r)))];
   if (productId === 'cotton-kapas' && forms.includes('lint')) return 'Cotton yields are published as lint; no sourced lint-to-kapas ratio, so no kapas yield is shown.';
-  return `Yield rows for this state are published as ${forms.join(', ')}, not as ${productDisplayName(cropId, productId).toLowerCase()}.`;
+  return `Available yield rows are published as ${forms.join(', ')}, not as ${productDisplayName(cropId, productId).toLowerCase()}.`;
 }
 
 // ------------------------------------------------------------------ costs
 const AUTHORITY_RANK: Record<string, number> = { cacp: 0, des: 1, sau: 2, other: 3 };
-const authorityOf = (a: string | null | undefined): CostEstimate['authority'] => (a === 'cacp' || a === 'des' || a === 'sau' ? a : 'other');
+const authorityOf = (a: string | null | undefined): NonNullable<CostEstimate['authority']> => (a === 'cacp' || a === 'des' || a === 'sau' ? a : 'other');
 const lowReliability = (r: string | null | undefined): boolean => !!r && /^\s*low\b/i.test(r);
-export interface CostRef { estimate: CostEstimate; deductionPerHa: number; deductionBasis: 'a2fl' | 'c2'; sourceId: string | null; locator: string | null; notes: string[] }
+export interface CostRef { estimate: CostEstimate; deductionPerHa: number; deductionBasis: 'a2fl' | 'c2' | 'reported'; sourceId: string | null; locator: string | null; notes: string[] }
 
-/**
- * Cost of cultivation for the state: rows with a per-hectare A2+FL or C2 figure, excluding reliability "low", preferring
- * CACP > DES > SAU > other and then the most recent year. Rows with only per-quintal or cash-cost totals are not
- * per-hectare A2+FL/C2 and are not used. Profit deducts A2+FL, else the published C2-type total (flagged).
- */
-export function costFor(cropId: string, where: { stateId: string | null }): CostRef | null {
-  if (!where.stateId) return null;
-  const st = where.stateId;
-  const rows = (yieldCostCrop(cropId)?.costs ?? []).filter((r) => (r.region === st || r.region.startsWith(`${st}-`)) && !lowReliability(r.reliability) && ((r.a2flPerHa ?? 0) > 0 || (r.c2PerHa ?? 0) > 0));
-  rows.sort((a, b) => (AUTHORITY_RANK[authorityOf(a.authority)!] ?? 9) - (AUTHORITY_RANK[authorityOf(b.authority)!] ?? 9) || yearKey(b.year) - yearKey(a.year) || Number((b.a2flPerHa ?? 0) > 0) - Number((a.a2flPerHa ?? 0) > 0));
+/** Sourced per-hectare costs, preserving their original accounting basis and geographic provenance. */
+const costUsable = (r: CostRow) => !lowReliability(r.reliability) && ((r.a2flPerHa ?? 0) > 0 || (r.c2PerHa ?? 0) > 0 || (r.totalCostPerHa ?? 0) > 0);
+/** District, state, all-India, then an explicitly labelled reference from another region. */
+export function costFor(cropId: string, where: { stateId: string | null; districtId?: string | null }): CostRef | null {
+  const rank = (r: CostRow) => where.districtId && (r.region === where.districtId || (r.region === where.stateId && r.district && districtSlug(r.district) === districtPart(where.districtId, where.stateId!))) ? 0
+    : where.stateId && (r.region === where.stateId || r.region.startsWith(`${where.stateId}-`)) ? 1 : r.region === 'IN' ? 2 : 3;
+  const rows = (yieldCostCrop(cropId)?.costs ?? []).filter(costUsable);
+  rows.sort((a, b) => rank(a) - rank(b) || Number(!(a.a2flPerHa || a.c2PerHa)) - Number(!(b.a2flPerHa || b.c2PerHa)) || (AUTHORITY_RANK[authorityOf(a.authority)] ?? 9) - (AUTHORITY_RANK[authorityOf(b.authority)] ?? 9) || yearKey(b.year) - yearKey(a.year) || a.region.localeCompare(b.region));
   const r = rows[0];
   if (!r) return null;
   const a2fl = r.a2flPerHa && r.a2flPerHa > 0 ? Math.round(r.a2flPerHa) : null;
   const c2 = r.c2PerHa && r.c2PerHa > 0 ? Math.round(r.c2PerHa) : null;
+  const reported = a2fl === null && c2 === null ? Math.round(r.totalCostPerHa!) : null;
   const notes: string[] = [];
-  if (a2fl === null) notes.push('Only a C2-type total cost (includes land rent and interest) is published; profit uses it and is conservative.');
-  if (r.district) notes.push(`Cost is a ${r.district} district survey figure, used for the state.`);
-  if (!r.year) notes.push('The cost source does not print its survey year.');
+  if (rank(r) === 2) notes.push('Local cultivation cost is unavailable; using the published all-India cost reference.');
+  if (rank(r) === 3) notes.push(`Local and all-India cultivation costs are unavailable; using a reference from ${r.region}, not a local estimate.`);
+  if (a2fl === null && c2 !== null) notes.push('Only a C2-type total cost (includes land rent and interest) is published; profit uses it and is conservative.');
+  if (reported !== null) notes.push(`Uses the published cultivation budget, not A2+FL or C2. ${r.costIncludes ?? 'The source does not give a full economic-cost breakdown.'} Profit is the balance after this reported cost; omitted costs are not deducted.`);
+  if (r.district) notes.push(`Cost is a ${r.district} district survey figure.`);
+  if (r.basis) notes.push(r.basis);
+  if (!r.year) notes.push('The cost source does not print its survey year; this is a historical reference, not a current quote.');
+  else notes.push(`Historical cost reference (${r.year}); not inflation-adjusted to the planned year.`);
   if (r.reliability) notes.push(`Source reliability noted by research: ${r.reliability.split('.')[0]}.`);
   return {
-    estimate: { a2flPerHa: a2fl, c2PerHa: c2, authority: authorityOf(r.authority), year: r.year ? r.year.slice(0, 20) : null, region: (r.district ? `${r.region} ${r.district}` : r.region).slice(0, 40) },
-    deductionPerHa: (a2fl ?? c2)!,
-    deductionBasis: a2fl !== null ? 'a2fl' : 'c2',
-    sourceId: r.sourceId ?? null,
-    locator: r.locator ?? null,
-    notes,
+    estimate: { a2flPerHa: a2fl, c2PerHa: c2, ...(reported !== null ? {reportedPerHa: reported} : {}), authority: authorityOf(r.authority), year: r.year ? r.year.slice(0, 20) : null, region: (r.district ? `${r.region} ${r.district}` : r.region).slice(0, 40) },
+    deductionPerHa: (a2fl ?? c2 ?? reported)!, deductionBasis: a2fl !== null ? 'a2fl' : c2 !== null ? 'c2' : 'reported',
+    sourceId: r.sourceId ?? null, locator: r.locator ?? null, notes,
   };
 }
-export function costGapReason(cropId: string, stateId: string | null): string {
-  const rows = (yieldCostCrop(cropId)?.costs ?? []).filter((r) => stateId !== null && (r.region === stateId || r.region.startsWith(`${stateId}-`)));
-  if (!rows.length) return 'No cost-of-cultivation row is sourced for this crop in this state.';
-  if (rows.every((r) => lowReliability(r.reliability) || !((r.a2flPerHa ?? 0) > 0 || (r.c2PerHa ?? 0) > 0))) {
-    return rows.some((r) => lowReliability(r.reliability)) ? 'The only per-hectare cost row is marked low reliability and is not used.' : 'Cost rows give per-quintal or cash-cost figures only, not per-hectare A2+FL or C2.';
-  }
-  return 'No usable cost row.';
+export const costBasisLabel = (cost: CostRef): string => cost.deductionBasis === 'a2fl' ? 'A2+FL' : cost.deductionBasis === 'c2' ? 'C2-type total' : 'Published cultivation budget';
+export function costGapReason(cropId: string, _stateId: string | null): string {
+  return (yieldCostCrop(cropId)?.costs ?? []).some(r => lowReliability(r.reliability))
+    ? 'No usable cultivation cost across the available regions; low-reliability rows are excluded.'
+    : 'No usable per-hectare cultivation cost is sourced at district, state, national or other-region level.';
 }
 
 export function postHarvestLoss(cropId: string): { pct: number; sourceId: string | null } | null {

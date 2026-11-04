@@ -256,6 +256,27 @@ describe('photo coverage job and routes', () => {
     expect(seen.sam).toHaveLength(4);
   });
 
+  it('explicit re-evaluation queues a fresh job for a completed photo, deduplicates while pending, and retains the daily cap', async () => {
+    const {scope, photo, row} = await queued(await login(h.app));
+    const {f} = fakeMeta();
+    await handlerWith(f)(await jobFor(row.job_id), ctx);
+    const deps = {pool: h.pool, config: liveConfig};
+    expect((await requestPhotoCoverage(deps, scope, photo.id, null, {auto: true, regenerate: true})).status).toBe('ready');
+    const results = await Promise.all([
+      requestPhotoCoverage(deps, scope, photo.id, null, {regenerate: true}),
+      requestPhotoCoverage(deps, scope, photo.id, null, {regenerate: true}),
+    ]);
+    expect(results.map(r => r.status)).toEqual(['queued', 'queued']);
+    const [fresh] = await rowFor(photo.id);
+    expect(fresh.job_id).not.toBe(row.job_id);
+    expect((await h.pool.query('SELECT count(*)::int AS n FROM jobs WHERE owner_id=$1 AND type=$2', [scope.ownerId, PHOTO_COVERAGE_JOB])).rows[0].n).toBe(2);
+    await handlerWith(f)(await jobFor(fresh.job_id), ctx);
+    expect((await photoGallery(h.pool, scope)).photos[0]!.coverage?.status).toBe('ready');
+    await h.pool.query("INSERT INTO jobs (owner_id,type,payload) SELECT $1,$2,'{}'::jsonb FROM generate_series(1,$3)", [scope.ownerId, PHOTO_COVERAGE_JOB, PHOTO_COVERAGE_DAILY_LIMIT - 2]);
+    await expect(requestPhotoCoverage(deps, scope, photo.id, null, {regenerate: true})).rejects.toMatchObject({code: 'coverage_limit'});
+    expect((await rowFor(photo.id))[0].status).toBe('ready');
+  });
+
   it('water: the first phrase that outlines a region wins; the phrases sent are recorded; budget is settled per call actually sent', async () => {
     expect(WATER_PHRASES).toEqual(['muddy water', 'flooded field']);
     expect(WEED_PHRASES).toEqual(['weeds']);

@@ -166,7 +166,7 @@ async function fixture(page: Page) {
   };
 }
 
-test("assistant captures farm/language and ignores an answer completed after farm switching", async ({
+test("assistant captures farm/language and keeps a late answer only in its original farm chat", async ({
   page,
 }) => {
   const api = await fixture(page);
@@ -183,17 +183,8 @@ test("assistant captures farm/language and ignores an answer completed after far
     page.getByText("Late answer for Farm Alpha", { exact: true }),
   ).toHaveCount(0);
   await page.getByLabel("Selected farm").selectOption(A);
-  await expect(
-    page.getByText("Late answer for Farm Alpha", { exact: true }),
-  ).toHaveCount(0);
-  expect(
-    await page.evaluate(() =>
-      Object.entries(sessionStorage).some(
-        ([k, v]) =>
-          k.startsWith("ho.chat.") && v.includes("Late answer for Farm Alpha"),
-      ),
-    ),
-  ).toBe(false);
+  await expect(page.getByText("Late answer for Farm Alpha", {exact: true})).toBeVisible();
+  expect(await page.evaluate(() => Object.entries(localStorage).some(([k,v]) => k.startsWith('ho.chat.v2.') && v.includes('Late answer for Farm Alpha')))).toBe(true);
 });
 
 test("session end purges transcript state and prevents a pending answer from being restored", async ({
@@ -213,7 +204,7 @@ test("session end purges transcript state and prevents a pending answer from bei
   await expect(
     page.getByText("Late answer for Farm Alpha", { exact: true }),
   ).toHaveCount(0);
-  await expect(page.getByLabel("Message Evara")).toHaveValue("");
+  await expect(page.getByLabel("Evara farm assistant")).toHaveCount(0);
   expect(
     await page.evaluate(() =>
       Object.keys(sessionStorage).filter(

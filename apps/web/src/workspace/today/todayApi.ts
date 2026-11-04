@@ -235,7 +235,7 @@ export const PREDICTION_RELOAD_REASONS: ReadonlySet<string> = new Set(["scene_no
 
 /** Short message for a prediction that did not come through. */
 export function predictionMessage(reason: string): string {
-  if (reason === "daily_limit_reached") return "Today’s AI image allowance is used up. Try again tomorrow.";
+  if (reason === "daily_limit_reached") return "This crop’s AI image limit for the last 24 hours is reached. Try again as earlier requests leave that window.";
   if (reason === "cycle_limit_reached") return "This crop has used all its AI predicted looks for the season.";
   if (reason === "target_too_far") return `That date is too far ahead to predict. Pick a date within 120 days of today.`;
   if (PREDICTION_RELOAD_REASONS.has(reason)) return "The satellite images changed since this view loaded. Reloading the view.";

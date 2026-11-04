@@ -513,9 +513,9 @@ describe("slider scene marks and play", () => {
       <StageSlider model={model} value={model.todayIndex} onChange={() => undefined} valueDate={FIXTURE_TODAY} ticks={[]} onBackToToday={() => undefined} startLabel="Sown" endLabel="Harvest" marks={marks} />
     ));
     expect((html.match(/class="today-slider-mark observed"/g) ?? []).length).toBe(7);
-    expect(html).toContain(`class="today-slider-mark illustration" style="left:${(daysBetween(model.from, "2026-12-10") / model.total) * 100}%"`);
+    expect(html).toContain('data-date="2026-12-10" data-scene-kind="illustration"');
     expect(html).toContain('title="Satellite image 22 Sept 2026"');
-    expect(text(html)).toContain("Dots on the slider mark the 7 dates with a satellite image.");
+    expect(text(html)).toContain("icons mark 7 dates.");
   });
   it("Play and Pause: a toggle button with aria-pressed beside Back to today", () => {
     const slider = (playing: boolean, value = 10) =>

@@ -447,3 +447,11 @@
   line-height: 1.4;
   overflow-wrap: anywhere;
 }
+
+/* Previews captured from the shipped components with illustrative fixture data. */
+.ai-row { display: grid; grid-template-columns: 112px minmax(0, 1fr); gap: 14px; align-items: start; }
+.ai-preview { margin: 0; min-width: 0; }
+.ai-preview img { display: block; width: 100%; aspect-ratio: 1.5; object-fit: cover; object-position: top left; border-radius: 9px; border: 1px solid var(--border); background: var(--surface-soft); }
+.ai-preview figcaption { font-size: 10px; color: var(--text-secondary); margin-top: 4px; }
+.ai-detail > .ai-preview { max-width: 420px; margin-bottom: 18px; }
+@media (max-width: 420px) { .ai-row { grid-template-columns: 86px minmax(0, 1fr); gap: 10px; } }

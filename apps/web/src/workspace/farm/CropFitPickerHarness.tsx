@@ -1,3 +1,4 @@
+import { WorkspaceProvider } from "../state";
 import { render } from "solid-js/web";
 import CropFitView from "./CropFitView";
 import { CropFitPicker, type CropFitPickerProps } from "./CropFitPicker";
@@ -25,5 +26,5 @@ export function mountPicker(container: HTMLElement, props: Omit<CropFitPickerPro
   );
 }
 export function mountView(container: HTMLElement, farmId: string): () => void {
-  return render(() => <CropFitView farmId={farmId} />, container);
+  return render(() => <WorkspaceProvider><CropFitView farmId={farmId} /></WorkspaceProvider>, container);
 }

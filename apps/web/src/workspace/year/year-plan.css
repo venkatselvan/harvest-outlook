@@ -1301,7 +1301,7 @@ strong.yp-band-val {
   }
 }
 
-/* Alternatives (EVARA_ACTIONS_SPEC.md 1.3): one stacked card per option; nothing scrolls sideways, so 375 px is the same list. */
+/* Alternatives stack on smaller screens and form a three-column grid on desktop. */
 .yp-subhead {
   margin: 4px 0 8px;
   font-size: 16px;
@@ -1390,6 +1390,32 @@ strong.yp-band-val {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
+}
+@media (min-width: 1024px) {
+  .yp-alt-list {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    align-items: stretch;
+  }
+  .yp-alt-list > [role="listitem"] {
+    min-width: 0;
+  }
+  .yp-alt-card {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+  }
+  .yp-alt-head {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .yp-alt-actions {
+    margin-top: auto;
+  }
+  .yp-alt-actions .btn {
+    min-width: 0;
+    white-space: normal;
+    text-align: center;
+  }
 }
 @media (max-width: 479px) {
   .yp-alt-card {

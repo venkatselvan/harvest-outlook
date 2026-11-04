@@ -33,9 +33,12 @@ import {
 import { sceneImageUrl } from "./todayApi";
 import { createHeroNotes, HeroNotesButton, HeroNotesPanel } from "./TodayHeroNotes";
 
+import { satelliteStatus } from "./satelliteStatus";
+
 export type HeroMode = "illustration" | "satellite" | "field-image";
 
 export interface TodayHeroProps {
+  ndvi?: NdviSeries | null | undefined;
   fieldImage?: () => JSX.Element;
   timeline?: () => JSX.Element;
   mode: HeroMode;
@@ -677,6 +680,11 @@ function SatelliteCaption(props: { pick: ScenePick; stage: StageAt; date: string
                         {prediction().blocked}
                       </span>
                     </Show>
+                    <Show when={prediction().message}>
+                      <span class="today-predict-note is-error" role="alert" data-testid="today-predict-message">
+                        {prediction().message}
+                      </span>
+                    </Show>
                   </>
                 )}
               </Show>
@@ -920,6 +928,7 @@ export function TodayHero(props: TodayHeroProps) {
         </div>
         </div>
       </div>
+      <Show when={satellite() && satelliteStatus(props.ndvi)}>{(status) => <p class="today-satellite-status" role="status">{status()}</p>}</Show>
       <Show when={actualScene() && expectedScene()}>
         <details class="field-image-evidence"><summary>AI estimate vs actual satellite observation · {formatDay(props.date)}</summary>
           <p>Compare the saved AI image with the real satellite observation. The estimate was generated {expectedScene()?.generatedAt?.slice(0,10) ?? 'at an unrecorded time'}.</p>

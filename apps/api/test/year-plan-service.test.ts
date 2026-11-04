@@ -105,9 +105,9 @@ describe('year-plan review service', () => {
     const meta = fakeMeta('valid');
     const review = await generate(liveDeps(meta.provider), auth, f.id);
     expect(review.status).toBe('ready');
-    // Round 2: Meta's three plus, when one fits, the code-added Green manure first plan.
+    // Three model choices plus optional Best profit and Green manure first references.
     expect(review.options.length).toBeGreaterThanOrEqual(3);
-    expect(review.options.length).toBeLessThanOrEqual(4);
+    expect(review.options.length).toBeLessThanOrEqual(5);
     if (review.options[3]) expect(review.options[3]).toMatchObject({ origin: 'deterministic' });
     for (const o of review.options.slice(0, 3)) {
       YearPlanOption.parse(o);
@@ -318,13 +318,14 @@ describe('round 2: green manure first as the fourth plan through the service (20
     const d = liveDeps(fakeMeta('valid').provider);
     const review = await generate(d, auth, f.id);
     expect(YearPlanReview.safeParse(review).success).toBe(true);
-    expect(review.options).toHaveLength(4);
-    const fourth = review.options[3]!;
+    expect(review.options.length).toBeGreaterThanOrEqual(4);
+    expect(review.options.length).toBeLessThanOrEqual(5);
+    const fourth = review.options.find(o => o.origin === 'deterministic' && greenManureEvidenced(o))!;
     expect(fourth.origin).toBe('deterministic');
     expect(['Green manure first', 'Alternative']).toContain(fourth.label);
     expect(review.options.filter((o) => o.label === 'Green manure first').length).toBeLessThanOrEqual(1);
     expect(greenManureEvidenced(fourth)).toBe(true);
-    expect(new Set(review.options.map((o) => o.optionId)).size).toBe(4);
+    expect(new Set(review.options.map((o) => o.optionId)).size).toBe(review.options.length);
     const gm = fourth.slots.find((s) => !s.fixed)!;
     expect(gm).toMatchObject({ kind: 'green_manure', price: null, yieldKgPerHa: null, revenueEstimate: { central: 0, likely: { low: 0, high: 0 }, possible: { low: 0, high: 0 } } });
     expect(gm.cropId.startsWith('gm-')).toBe(true);

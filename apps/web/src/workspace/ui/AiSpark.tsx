@@ -47,6 +47,7 @@ export function AiUseBody(props: { use: AiUse }) {
   return (
     // Focusable so keyboard users can scroll the sheet body when the text is taller than the screen.
     <div class="ai-detail" tabindex="0" role="group" aria-label={`${props.use.title}: what the AI and the code do`}>
+      <figure class="ai-preview"><img src={`/ai-previews/${props.use.key}.png`} alt={`Example screen: ${props.use.title}`} loading="lazy"/><figcaption>Example screen</figcaption></figure>
       <div class="ai-detail-status">
         <StatusChip status={props.use.status} />
         <Show when={props.use.status === "planned"}>
@@ -78,7 +79,7 @@ export function AiUsesList() {
           const use = AI_USES[key];
           return (
             <li class="ai-row" data-ai-use={use.key}>
-              <AiSparkIcon size={16} class="ai-row-icon" />
+              <figure class="ai-preview"><img src={`/ai-previews/${use.key}.png`} alt={`Example screen: ${use.title}`} loading="lazy"/><figcaption>Example screen</figcaption></figure>
               <div class="ai-row-main">
                 <div class="ai-row-title">
                   <strong>{use.title}</strong>
